@@ -63,6 +63,7 @@ Specify the language code when running the script to use these languages.
 ### Usage
 
 Navigate to the script's directory in the terminal and execute one of the following commands:
+If you have any trouble getting it to run in Windows then it should run fine in WSL2
 
 Basic Usage:
 ```bash
