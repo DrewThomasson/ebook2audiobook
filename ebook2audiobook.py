@@ -258,9 +258,9 @@ def create_chapter_labeled_book(ebook_file_path):
         files = [f for f in os.listdir(input_folder) if f.endswith('.txt')]
         sorted_files = sorted(files, key=sort_key)
 
-        with open(output_file, 'w') as outfile:
+        with open(output_file, 'w', encoding='utf-8') as outfile:  # Specify UTF-8 encoding here
             for i, filename in enumerate(sorted_files):
-                with open(os.path.join(input_folder, filename), 'r') as infile:
+                with open(os.path.join(input_folder, filename), 'r', encoding='utf-8') as infile:  # And here
                     outfile.write(infile.read())
                     # Add the marker unless it's the last file
                     if i < len(sorted_files) - 1:
