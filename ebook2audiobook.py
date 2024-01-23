@@ -1,8 +1,12 @@
+print("starting...")
+
 import os
 import subprocess
 import re
 from pydub import AudioSegment
 import tempfile
+from pydub import AudioSegment
+import os
 def is_folder_empty(folder_path):
     if os.path.exists(folder_path) and os.path.isdir(folder_path):
         # List directory contents
@@ -57,13 +61,18 @@ def create_m4b_from_chapters(input_dir, ebook_file, output_dir):
         except Exception as e:
             print(f"Error extracting eBook metadata or cover: {e}")
         return None
-
     # Combine WAV files into a single file
     def combine_wav_files(chapter_files, output_path):
-        combined = AudioSegment.empty()
-        for chapter_file in chapter_files:
-            combined += AudioSegment.from_wav(chapter_file)
-        combined.export(output_path, format='wav')
+    	# Initialize an empty audio segment
+    	combined_audio = AudioSegment.empty()
+
+    	# Sequentially append each file to the combined_audio
+    	for chapter_file in chapter_files:
+    		audio_segment = AudioSegment.from_wav(chapter_file)
+    		combined_audio += audio_segment
+    	# Export the combined audio to the output file path
+    	combined_audio.export(output_path, format='wav')
+    	print(f"Combined audio saved to {output_path}")
 
     # Function to generate metadata for M4B chapters
     def generate_ffmpeg_metadata(chapter_files, metadata_file):
@@ -273,12 +282,10 @@ def create_chapter_labeled_book(ebook_file_path):
 
 
 
-
-
 import os
 import subprocess
-from styletts2 import tts
 import sys
+import torchaudio
 
 # Check if Calibre's ebook-convert tool is installed
 def calibre_installed():
@@ -290,25 +297,110 @@ def calibre_installed():
         return False
 
 
-# Convert chapters to audio using StyleTTS2
-def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=None):
-    my_tts = tts.StyleTTS2()
+import os
+import torch
+from TTS.api import TTS
+from nltk.tokenize import sent_tokenize
+from pydub import AudioSegment
+# Assuming split_long_string and wipe_folder are defined elsewhere in your code
+
+default_target_voice_path = "default_voice.wav"  # Ensure this is a valid path
+default_language_code = "en"
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+def combine_wav_files(input_directory, output_directory, file_name):
+    # Ensure that the output directory exists, create it if necessary
+    os.makedirs(output_directory, exist_ok=True)
+
+    # Specify the output file path
+    output_file_path = os.path.join(output_directory, file_name)
+
+    # Initialize an empty audio segment
+    combined_audio = AudioSegment.empty()
+
+    # Get a list of all .wav files in the specified input directory and sort them
+    input_file_paths = sorted(
+        [os.path.join(input_directory, f) for f in os.listdir(input_directory) if f.endswith(".wav")],
+        key=lambda f: int(''.join(filter(str.isdigit, f)))
+    )
+
+    # Sequentially append each file to the combined_audio
+    for input_file_path in input_file_paths:
+        audio_segment = AudioSegment.from_wav(input_file_path)
+        combined_audio += audio_segment
+
+    # Export the combined audio to the output file path
+    combined_audio.export(output_file_path, format='wav')
+
+    print(f"Combined audio saved to {output_file_path}")
+
+# Function to split long strings into parts
+def split_long_string(text, limit=250):
+    if len(text) <= limit:
+        return [text]
+    
+    # Split by commas
+    parts = text.split(',')
+    new_parts = []
+    
+    for part in parts:
+        while len(part) > limit:
+            # Split at the last space before the limit
+            break_point = part.rfind(' ', 0, limit)
+            if break_point == -1:  # If no space found, split at the limit
+                break_point = limit
+            new_parts.append(part[:break_point].strip())
+            part = part[break_point:].strip()
+        new_parts.append(part)
+    
+    return new_parts
+
+"""
+if 'tts' not in locals():
+	tts = TTS(selected_tts_model, progress_bar=True).to(device)
+"""
+
+# Convert chapters to audio using XTTS
+def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=None, language=None):
+    selected_tts_model = "tts_models/multilingual/multi-dataset/xtts_v2"
+    tts = TTS(selected_tts_model, progress_bar=True).to(device)
 
     if not os.path.exists(output_audio_dir):
         os.makedirs(output_audio_dir)
 
     for chapter_file in sorted(os.listdir(chapters_dir)):
         if chapter_file.endswith('.txt'):
+            # Extract chapter number from the filename
+            match = re.search(r"chapter_(\d+).txt", chapter_file)
+            if match:
+                chapter_num = int(match.group(1))
+            else:
+                print(f"Skipping file {chapter_file} as it does not match the expected format.")
+                continue
+
             chapter_path = os.path.join(chapters_dir, chapter_file)
-            output_file_path = os.path.join(output_audio_dir, chapter_file.replace('.txt', '.wav'))
+            output_file_name = f"audio_chapter_{chapter_num}.wav"
+            output_file_path = os.path.join(output_audio_dir, output_file_name)
+            temp_audio_directory = "Working_files/temp"
+            os.makedirs(temp_audio_directory, exist_ok=True)
+            temp_count = 0
+
             with open(chapter_path, 'r', encoding='utf-8') as file:
                 chapter_text = file.read()
-            if target_voice_path:
-                my_tts.inference(chapter_text, target_voice_path=target_voice_path, output_wav_file=output_file_path)
-            else:
-                my_tts.inference(chapter_text, output_wav_file=output_file_path)
-            print(f"Converted {chapter_file} to audio.")
+                sentences = sent_tokenize(chapter_text)
+                for sentence in sentences:
+                    fragments = split_long_string(sentence)
+                    for fragment in fragments:
+                        print(f"Generating fragment: {fragment}...")
+                        fragment_file_path = f"{temp_audio_directory}/{temp_count}.wav"
+                        speaker_wav_path = target_voice_path if target_voice_path else default_target_voice_path
+                        language_code = language if language else default_language_code
+                        tts.tts_to_file(text=fragment, file_path=fragment_file_path, speaker_wav=speaker_wav_path, language=language_code)
+                        temp_count += 1
 
+            combine_wav_files(temp_audio_directory, output_audio_dir, output_file_name)
+            wipe_folder(temp_audio_directory)
+            print(f"Converted chapter {chapter_num} to audio.")
 
 # Main execution flow
 if __name__ == "__main__":
@@ -318,6 +410,7 @@ if __name__ == "__main__":
 
     ebook_file_path = sys.argv[1]
     target_voice = sys.argv[2] if len(sys.argv) > 2 else None
+    language = sys.argv[3] if len(sys.argv) > 3 else None
 
     if not calibre_installed():
         sys.exit(1)
@@ -330,5 +423,5 @@ if __name__ == "__main__":
         wipe_folder(chapters_directory)
     audiobook_output_path = os.path.join(".", "Audiobooks")
     print(f"{chapters_directory}||||{output_audio_directory}|||||{target_voice}")
-    convert_chapters_to_audio(chapters_directory, output_audio_directory, target_voice)
+    convert_chapters_to_audio(chapters_directory, output_audio_directory, target_voice, language)
     create_m4b_from_chapters(output_audio_directory, ebook_file_path, audiobook_output_path)
