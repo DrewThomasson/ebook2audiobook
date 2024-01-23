@@ -24,10 +24,12 @@ Install Python 3.x from [Python.org](https://www.python.org/downloads/).
 Install Calibre:
 - Ubuntu: `sudo apt-get install -y calibre`
 - macOS: `brew install calibre`
+- Windows(Powershell in Administrator mode): `choco install calibre` 
 
 Install FFmpeg:
 - Ubuntu: `sudo apt-get install -y ffmpeg`
 - macOS: `brew install ffmpeg`
+- Windows(Powershell in Administrator mode): `choco install ffmpeg` 
 
 Install Python packages:
 ```bash
