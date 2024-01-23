@@ -33,7 +33,30 @@ Install Python packages:
 ```bash
 pip install tts pydub nltk beautifulsoup4 ebooklib
 ```
-Usage
+
+###Supported Languages
+
+The script supports the following languages for text-to-speech conversion:
+
+English (en),
+Spanish (es),
+French (fr),
+German (de),
+Italian (it),
+Portuguese (pt),
+Polish (pl),
+Turkish (tr),
+Russian (ru),
+Dutch (nl),
+Czech (cs),
+Arabic (ar),
+Chinese (zh-cn),
+Japanese (ja),
+Hungarian (hu),
+Korean (ko)
+Specify the language code when running the script to use these languages.
+
+###Usage
 
 Navigate to the script's directory in the terminal and execute one of the following commands:
 
