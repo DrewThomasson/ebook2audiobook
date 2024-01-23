@@ -381,7 +381,7 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
             chapter_path = os.path.join(chapters_dir, chapter_file)
             output_file_name = f"audio_chapter_{chapter_num}.wav"
             output_file_path = os.path.join(output_audio_dir, output_file_name)
-            temp_audio_directory = "Working_files/temp"
+            temp_audio_directory = os.path.join(".","Working_files", "temp")
             os.makedirs(temp_audio_directory, exist_ok=True)
             temp_count = 0
 
@@ -392,7 +392,7 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
                     fragments = split_long_string(sentence)
                     for fragment in fragments:
                         print(f"Generating fragment: {fragment}...")
-                        fragment_file_path = f"{temp_audio_directory}/{temp_count}.wav"
+                        fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
                         speaker_wav_path = target_voice_path if target_voice_path else default_target_voice_path
                         language_code = language if language else default_language_code
                         tts.tts_to_file(text=fragment, file_path=fragment_file_path, speaker_wav=speaker_wav_path, language=language_code)
