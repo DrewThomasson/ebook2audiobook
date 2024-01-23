@@ -54,6 +54,7 @@ Chinese (zh-cn),
 Japanese (ja),
 Hungarian (hu),
 Korean (ko)
+
 Specify the language code when running the script to use these languages.
 
 ###Usage
