@@ -39,7 +39,6 @@ Navigate to the script's directory in the terminal and execute one of the follow
 
 Basic Usage:
 ```bash
-Copy code
 python ebook_to_audiobook.py <path_to_ebook_file>
 ```
 Replace <path_to_ebook_file> with the path to your eBook file.
