@@ -31,7 +31,7 @@ Install FFmpeg:
 
 Install Python packages:
 ```bash
-pip install tts pydub nltk beautifulsoup4
+pip install tts pydub nltk beautifulsoup4 ebooklib
 ```
 Usage
 
