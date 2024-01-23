@@ -39,13 +39,13 @@ Navigate to the script's directory in the terminal and execute one of the follow
 
 Basic Usage:
 ```bash
-python ebook_to_audiobook.py <path_to_ebook_file>
+python ebook2audiobook.py <path_to_ebook_file>
 ```
 Replace <path_to_ebook_file> with the path to your eBook file.
 
 With Voice Cloning(Optional):
 ```bash
-python ebook_to_audiobook.py <path_to_ebook_file> <path_to_voice_file>
+python ebook2audiobook.py <path_to_ebook_file> <path_to_voice_file>
 ```
 Replace <path_to_ebook_file> with the path to your eBook file.
 
@@ -53,7 +53,7 @@ Replace <path_to_voice_file> with the path to the voice file for cloning.
 
 With Language Specification(Optional):
 ```bash
-python ebook_to_audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_code]
+python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_code]
 ```
 Replace <path_to_ebook_file> with the path to your eBook file.
 Optionally, include <path_to_voice_file> for voice cloning.
