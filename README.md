@@ -47,8 +47,8 @@ Replace <path_to_ebook_file> with the path to your eBook file.
 With Voice Cloning(Optional):
 ```bash
 python ebook_to_audiobook.py <path_to_ebook_file> <path_to_voice_file>
-Replace <path_to_ebook_file> with the path to your eBook file.
 ```
+Replace <path_to_ebook_file> with the path to your eBook file.
 
 Replace <path_to_voice_file> with the path to the voice file for cloning.
 
