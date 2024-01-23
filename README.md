@@ -34,7 +34,7 @@ Install Python packages:
 pip install tts pydub nltk beautifulsoup4 ebooklib
 ```
 
-###Supported Languages
+### Supported Languages
 
 The script supports the following languages for text-to-speech conversion:
 
@@ -57,7 +57,7 @@ Korean (ko)
 
 Specify the language code when running the script to use these languages.
 
-###Usage
+### Usage
 
 Navigate to the script's directory in the terminal and execute one of the following commands:
 
