@@ -8,6 +8,7 @@ Generates an audiobook with chapters and ebook metadata using Calibre and Xtts f
 - Uses XTTS from Coqui TTS for high-quality text-to-speech conversion.
 - Optional voice cloning feature using a provided voice file.
 - Supports different languages for text-to-speech conversion, with English as the default.
+- Confirmed to run on only 4 gb ram
 
 ## Requirements
 
