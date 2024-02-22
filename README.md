@@ -86,3 +86,18 @@ python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_co
 Replace <path_to_ebook_file> with the path to your eBook file.
 Optionally, include <path_to_voice_file> for voice cloning.
 Optionally, include <language_code> to specify the language (default is "en" for English).
+
+
+## Demo
+
+
+https://github.com/DrewThomasson/ebook2audiobookSTYLETTS2/assets/126999465/b55f9fe8-98d1-41ab-a585-3c5b99f9b39f
+
+### Supported ebook File Types: 
+.epub, .pdf, .mobi, .txt, .html, .rtf, .chm, .lit, .pdb, .fb2, .odt, .cbr, .cbz, .prc, .lrf, .pml, .snb, .cbc, .rb, and .tcr,
+(Best results are from using epub or mobi for auto chapter detection)
+
+### outputs as a m4b with all book metadata and chapters, example output file in an audiobook player app
+![Example_of_output_in_audiobook_program](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+
+
