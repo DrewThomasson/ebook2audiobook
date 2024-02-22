@@ -359,11 +359,12 @@ def split_long_string(text, limit=250):
 if 'tts' not in locals():
 	tts = TTS(selected_tts_model, progress_bar=True).to(device)
 """
+from tqdm import tqdm
 
 # Convert chapters to audio using XTTS
 def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=None, language=None):
     selected_tts_model = "tts_models/multilingual/multi-dataset/xtts_v2"
-    tts = TTS(selected_tts_model, progress_bar=True).to(device)
+    tts = TTS(selected_tts_model, progress_bar=False).to(device)  # Set progress_bar to False to avoid nested progress bars
 
     if not os.path.exists(output_audio_dir):
         os.makedirs(output_audio_dir)
@@ -381,14 +382,14 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
             chapter_path = os.path.join(chapters_dir, chapter_file)
             output_file_name = f"audio_chapter_{chapter_num}.wav"
             output_file_path = os.path.join(output_audio_dir, output_file_name)
-            temp_audio_directory = os.path.join(".","Working_files", "temp")
+            temp_audio_directory = os.path.join(".", "Working_files", "temp")
             os.makedirs(temp_audio_directory, exist_ok=True)
             temp_count = 0
 
             with open(chapter_path, 'r', encoding='utf-8') as file:
                 chapter_text = file.read()
                 sentences = sent_tokenize(chapter_text)
-                for sentence in sentences:
+                for sentence in tqdm(sentences, desc=f"Chapter {chapter_num}"):
                     fragments = split_long_string(sentence)
                     for fragment in fragments:
                         print(f"Generating fragment: {fragment}...")
@@ -401,6 +402,7 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
             combine_wav_files(temp_audio_directory, output_audio_dir, output_file_name)
             wipe_folder(temp_audio_directory)
             print(f"Converted chapter {chapter_num} to audio.")
+
 
 # Main execution flow
 if __name__ == "__main__":
