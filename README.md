@@ -91,7 +91,10 @@ Optionally, include <language_code> to specify the language (default is "en" for
 ## Demo
 
 
-https://github.com/DrewThomasson/ebook2audiobookSTYLETTS2/assets/126999465/b55f9fe8-98d1-41ab-a585-3c5b99f9b39f
+
+https://github.com/DrewThomasson/ebook2audiobookXTTS/assets/126999465/bccd7240-f967-4d27-a87d-445034db7d21
+
+
 
 ### Supported ebook File Types: 
 .epub, .pdf, .mobi, .txt, .html, .rtf, .chm, .lit, .pdb, .fb2, .odt, .cbr, .cbz, .prc, .lrf, .pml, .snb, .cbc, .rb, and .tcr,
