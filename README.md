@@ -105,4 +105,6 @@ https://github.com/DrewThomasson/ebook2audiobookXTTS/assets/126999465/bccd7240-f
 
 A special thanks to the creaters of:
 Calibre 
+
+
 Coqui TTS
