@@ -103,4 +103,6 @@ https://github.com/DrewThomasson/ebook2audiobookXTTS/assets/126999465/bccd7240-f
 ### outputs as a m4b with all book metadata and chapters, example output file in an audiobook player app
 ![Example_of_output_in_audiobook_program](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
-
+A special thanks to the creaters of:
+Calibre 
+Coqui TTS
