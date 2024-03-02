@@ -302,7 +302,7 @@ import torch
 from TTS.api import TTS
 from nltk.tokenize import sent_tokenize
 from pydub import AudioSegment
-# Assuming split_long_string and wipe_folder are defined elsewhere in your code
+# Assuming split_long_sentence and wipe_folder are defined elsewhere in your code
 
 default_target_voice_path = "default_voice.wav"  # Ensure this is a valid path
 default_language_code = "en"
@@ -335,25 +335,37 @@ def combine_wav_files(input_directory, output_directory, file_name):
     print(f"Combined audio saved to {output_file_path}")
 
 # Function to split long strings into parts
-def split_long_string(text, limit=250):
-    if len(text) <= limit:
-        return [text]
+def split_long_sentence(sentence, max_length=250, max_pauses=10):
+    """
+    Recursively splits a sentence based on length or number of pauses.
     
-    # Split by commas
-    parts = text.split(',')
-    new_parts = []
-    
-    for part in parts:
-        while len(part) > limit:
-            # Split at the last space before the limit
-            break_point = part.rfind(' ', 0, limit)
-            if break_point == -1:  # If no space found, split at the limit
-                break_point = limit
-            new_parts.append(part[:break_point].strip())
-            part = part[break_point:].strip()
-        new_parts.append(part)
-    
-    return new_parts
+    :param sentence: The sentence to split.
+    :param max_length: Maximum allowed length of a sentence.
+    :param max_pauses: Maximum allowed number of pauses in a sentence.
+    :return: A list of sentence parts that meet the criteria.
+    """
+    # Check if the sentence meets the splitting criteria
+    if len(sentence) >= max_length or sentence.count(',') + sentence.count(';') + sentence.count('.') > max_pauses:
+        # Find the best place to split the sentence (middle pause or just the middle)
+        possible_splits = [i for i, char in enumerate(sentence) if char in ',;.']
+        
+        if possible_splits:
+            # Find the closest split point to the middle
+            middle_index = len(sentence) // 2
+            closest_split = min(possible_splits, key=lambda x: abs(x - middle_index))
+        else:
+            # If no punctuation to split on, choose the middle of the sentence
+            closest_split = len(sentence) // 2
+        
+        # Split the sentence
+        first_half = sentence[:closest_split + 1].strip()
+        second_half = sentence[closest_split + 1:].strip()
+        
+        # Recursively split each half if necessary
+        return split_long_sentence(first_half, max_length, max_pauses) + split_long_sentence(second_half, max_length, max_pauses)
+    else:
+        # If the sentence doesn't need splitting, return it as a single element list
+        return [sentence]
 
 """
 if 'tts' not in locals():
@@ -390,7 +402,7 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
                 chapter_text = file.read()
                 sentences = sent_tokenize(chapter_text)
                 for sentence in tqdm(sentences, desc=f"Chapter {chapter_num}"):
-                    fragments = split_long_string(sentence)
+                    fragments = split_long_sentence(sentence)
                     for fragment in fragments:
                         print(f"Generating fragment: {fragment}...")
                         fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
