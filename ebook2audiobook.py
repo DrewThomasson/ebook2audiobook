@@ -401,7 +401,7 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
                 # Use the specified language model for sentence tokenization
                 sentences = sent_tokenize(chapter_text, language='italian' if language == 'it' else 'english')
                 for sentence in tqdm(sentences, desc=f"Chapter {chapter_num}"):
-                    fragments = split_long_sentence(sentence, max_length=250, max_pauses=10)
+                    fragments = split_long_sentence(sentence)
                     for fragment in fragments:
                         print(f"Generating fragment: {fragment}...")
                         fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
