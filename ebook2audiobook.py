@@ -7,6 +7,9 @@ from pydub import AudioSegment
 import tempfile
 from pydub import AudioSegment
 import os
+import nltk
+from nltk.tokenize import sent_tokenize
+nltk.download('punkt')  # Make sure to download the necessary models
 def is_folder_empty(folder_path):
     if os.path.exists(folder_path) and os.path.isdir(folder_path):
         # List directory contents
@@ -335,37 +338,32 @@ def combine_wav_files(input_directory, output_directory, file_name):
     print(f"Combined audio saved to {output_file_path}")
 
 # Function to split long strings into parts
-def split_long_sentence(sentence, max_length=250, max_pauses=10):
+def split_long_sentence(sentence, max_length=249, max_pauses=10):
     """
-    Recursively splits a sentence based on length or number of pauses.
+    Splits a sentence into parts based on length or number of pauses without recursion.
     
     :param sentence: The sentence to split.
     :param max_length: Maximum allowed length of a sentence.
     :param max_pauses: Maximum allowed number of pauses in a sentence.
     :return: A list of sentence parts that meet the criteria.
     """
-    # Check if the sentence meets the splitting criteria
-    if len(sentence) >= max_length or sentence.count(',') + sentence.count(';') + sentence.count('.') > max_pauses:
-        # Find the best place to split the sentence (middle pause or just the middle)
-        possible_splits = [i for i, char in enumerate(sentence) if char in ',;.']
-        
+    parts = []
+    while len(sentence) > max_length or sentence.count(',') + sentence.count(';') + sentence.count('.') > max_pauses:
+        possible_splits = [i for i, char in enumerate(sentence) if char in ',;.' and i < max_length]
         if possible_splits:
-            # Find the closest split point to the middle
-            middle_index = len(sentence) // 2
-            closest_split = min(possible_splits, key=lambda x: abs(x - middle_index))
+            # Find the best place to split the sentence, preferring the last possible split to keep parts longer
+            split_at = possible_splits[-1] + 1
         else:
-            # If no punctuation to split on, choose the middle of the sentence
-            closest_split = len(sentence) // 2
+            # If no punctuation to split on within max_length, split at max_length
+            split_at = max_length
         
-        # Split the sentence
-        first_half = sentence[:closest_split + 1].strip()
-        second_half = sentence[closest_split + 1:].strip()
-        
-        # Recursively split each half if necessary
-        return split_long_sentence(first_half, max_length, max_pauses) + split_long_sentence(second_half, max_length, max_pauses)
-    else:
-        # If the sentence doesn't need splitting, return it as a single element list
-        return [sentence]
+        # Split the sentence and add the first part to the list
+        parts.append(sentence[:split_at].strip())
+        sentence = sentence[split_at:].strip()
+    
+    # Add the remaining part of the sentence
+    parts.append(sentence)
+    return parts
 
 """
 if 'tts' not in locals():
@@ -400,9 +398,10 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
 
             with open(chapter_path, 'r', encoding='utf-8') as file:
                 chapter_text = file.read()
-                sentences = sent_tokenize(chapter_text)
+                # Use the specified language model for sentence tokenization
+                sentences = sent_tokenize(chapter_text, language='italian' if language == 'it' else 'english')
                 for sentence in tqdm(sentences, desc=f"Chapter {chapter_num}"):
-                    fragments = split_long_sentence(sentence)
+                    fragments = split_long_sentence(sentence, max_length=250, max_pauses=10)
                     for fragment in fragments:
                         print(f"Generating fragment: {fragment}...")
                         fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
@@ -414,6 +413,7 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
             combine_wav_files(temp_audio_directory, output_audio_dir, output_file_name)
             wipe_folder(temp_audio_directory)
             print(f"Converted chapter {chapter_num} to audio.")
+
 
 
 # Main execution flow
