@@ -32,9 +32,19 @@ Install FFmpeg:
 - macOS: `brew install ffmpeg`
 - Windows(Powershell in Administrator mode): `choco install ffmpeg` 
 
+Install Mecab for (Non Latin-based Languages tts support)(Optional):
+- Ubuntu: `sudo apt-get install -y mecab libmecab-dev mecab-ipadic-utf8`
+- macOS: `brew install mecab`, `brew install mecab-ipadic`
+- Windows(Powershell in Administrator mode no support for mecab-ipadic easy install so no Japanese for windows :/): `choco install mecab ` 
+
 Install Python packages:
 ```bash
-pip install tts pydub nltk beautifulsoup4 ebooklib tqdm
+pip install tts pydub nltk beautifulsoup4 ebooklib tqdm mecab mecab-python3 unidic
+```
+(For non Latin-based Languages tts support)(Optional)  
+`python -m unidic download`
+```bash
+pip install mecab mecab-python3 unidic
 ```
 
 ### Supported Languages
