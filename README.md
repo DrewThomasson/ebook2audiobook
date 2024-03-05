@@ -39,7 +39,7 @@ Install Mecab for (Non Latin-based Languages tts support)(Optional):
 
 Install Python packages:
 ```bash
-pip install tts pydub nltk beautifulsoup4 ebooklib tqdm mecab mecab-python3 unidic
+pip install tts pydub nltk beautifulsoup4 ebooklib tqdm
 ```
 (For non Latin-based Languages tts support)(Optional)  
 `python -m unidic download`
