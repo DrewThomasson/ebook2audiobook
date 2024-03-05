@@ -1,6 +1,7 @@
 print("starting...")
 
 import os
+import shutil
 import subprocess
 import re
 from pydub import AudioSegment
@@ -21,27 +22,36 @@ def is_folder_empty(folder_path):
         print(f"The path {folder_path} is not a valid folder.")
         return None  # The path is not a valid folder
 
+def remove_folder_with_contents(folder_path):
+    try:
+        shutil.rmtree(folder_path)
+        print(f"Successfully removed {folder_path} and all of its contents.")
+    except Exception as e:
+        print(f"Error removing {folder_path}: {e}")
+
+
+
+
 def wipe_folder(folder_path):
     # Check if the folder exists
     if not os.path.exists(folder_path):
         print(f"The folder {folder_path} does not exist.")
         return
 
-    # Iterate through all items in the folder
+    # Iterate over all the items in the given folder
     for item in os.listdir(folder_path):
         item_path = os.path.join(folder_path, item)
-        try:
-            # If it's a file, remove it
-            if os.path.isfile(item_path):
-                os.remove(item_path)
-                print(f"Removed file: {item_path}")
-            # If it's a directory, you can decide whether to delete it or not
-            elif os.path.isdir(item_path):
-                print(f"Found directory, not removing: {item_path}")
-                # Optionally, you can call wipe_folder recursively if you want to delete subdirectories:
-                # wipe_folder(item_path)
-        except Exception as e:
-            print(f"Failed to remove {item_path}. Reason: {e}")
+        # If it's a file, remove it and print a message
+        if os.path.isfile(item_path):
+            os.remove(item_path)
+            print(f"Removed file: {item_path}")
+        # If it's a directory, remove it recursively and print a message
+        elif os.path.isdir(item_path):
+            shutil.rmtree(item_path)
+            print(f"Removed directory and its contents: {item_path}")
+    
+    print(f"All contents wiped from {folder_path}.")
+
 
 # Example usage
 # folder_to_wipe = 'path_to_your_folder'
@@ -433,12 +443,18 @@ if __name__ == "__main__":
     if not calibre_installed():
         sys.exit(1)
 
-    create_chapter_labeled_book(ebook_file_path)
+    working_files = os.path.join(".","Working_files", "temp_ebook")
+    full_folder_working_files =os.path.join(".","Working_files")
     chapters_directory = os.path.join(".","Working_files", "temp_ebook")
     output_audio_directory = os.path.join(".", 'Chapter_wav_files')
-    if is_folder_empty == False:
-        wipe_folder(output_audio_directory)
-        wipe_folder(chapters_directory)
+
+    print("Wiping and removeing Working_files folder...")
+    remove_folder_with_contents(full_folder_working_files)
+
+    print("Wiping and and removeing chapter_wav_files folder...")
+    remove_folder_with_contents(output_audio_directory)
+
+    create_chapter_labeled_book(ebook_file_path)
     audiobook_output_path = os.path.join(".", "Audiobooks")
     print(f"{chapters_directory}||||{output_audio_directory}|||||{target_voice}")
     convert_chapters_to_audio(chapters_directory, output_audio_directory, target_voice, language)
