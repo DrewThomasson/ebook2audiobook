@@ -76,26 +76,13 @@ Navigate to the script's directory in the terminal and execute one of the follow
 If you have any trouble getting it to run in Windows then it should run fine in WSL2
 
 Basic Usage:
-```bash
-python ebook2audiobook.py <path_to_ebook_file>
-```
-Replace <path_to_ebook_file> with the path to your eBook file.
 
-With Voice Cloning(Optional):
-```bash
-python ebook2audiobook.py <path_to_ebook_file> <path_to_voice_file>
-```
-Replace <path_to_ebook_file> with the path to your eBook file.
-
-Replace <path_to_voice_file> with the path to the voice file for cloning.
-
-With Language Specification(Optional):
 ```bash
 python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_code]
 ```
 Replace <path_to_ebook_file> with the path to your eBook file.
-Optionally, include <path_to_voice_file> for voice cloning.
-Optionally, include <language_code> to specify the language (default is "en" for English).
+include <path_to_voice_file> for voice cloning.
+include <language_code> to specify the language
 
 
 ## Demo
