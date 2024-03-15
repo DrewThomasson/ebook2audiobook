@@ -417,12 +417,13 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
                     if language == "it":
                         fragments = split_long_sentence(sentence, max_length=213, max_pauses=10)
                     for fragment in fragments:
-                        print(f"Generating fragment: {fragment}...")
-                        fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
-                        speaker_wav_path = target_voice_path if target_voice_path else default_target_voice_path
-                        language_code = language if language else default_language_code
-                        tts.tts_to_file(text=fragment, file_path=fragment_file_path, speaker_wav=speaker_wav_path, language=language_code)
-                        temp_count += 1
+			if fragment != "": #a hot fix to avoid blank fragments
+                            print(f"Generating fragment: {fragment}...")
+                            fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
+                            speaker_wav_path = target_voice_path if target_voice_path else default_target_voice_path
+                            language_code = language if language else default_language_code
+                            tts.tts_to_file(text=fragment, file_path=fragment_file_path, speaker_wav=speaker_wav_path, language=language_code)
+                            temp_count += 1
 
             combine_wav_files(temp_audio_directory, output_audio_dir, output_file_name)
             wipe_folder(temp_audio_directory)
