@@ -417,7 +417,7 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
                     if language == "it":
                         fragments = split_long_sentence(sentence, max_length=213, max_pauses=10)
                     for fragment in fragments:
-			if fragment != "": #a hot fix to avoid blank fragments
+                        if fragment != "": #a hot fix to avoid blank fragments
                             print(f"Generating fragment: {fragment}...")
                             fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
                             speaker_wav_path = target_voice_path if target_voice_path else default_target_voice_path
