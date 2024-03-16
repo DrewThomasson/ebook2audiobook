@@ -75,7 +75,7 @@ Specify the language code when running the script to use these languages.
 Navigate to the script's directory in the terminal and execute one of the following commands:
 If you have any trouble getting it to run in Windows then it should run fine in WSL2
 
-Basic Usage:
+Basic Usage: ALL PARAMETERS ARE MANDATORY WHEN CALLED THE SCRIPT
 
 ```bash
 python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_code]
