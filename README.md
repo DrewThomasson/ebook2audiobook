@@ -84,6 +84,16 @@ Replace <path_to_ebook_file> with the path to your eBook file.
 include <path_to_voice_file> for voice cloning.
 include <language_code> to specify the language
 
+### for loading a custom xtts model
+```bash
+python custom_model_ebook2audiobookXTTS.py <ebook_file_path> <target_voice_file_path> <language> <custom_model_path> <custom_config_path> <custom_vocab_path>
+```
+Replace <path_to_ebook_file> with the path to your eBook file.
+include <path_to_voice_file> for voice cloning.
+include <language_code> to specify the language
+Replace <custom_model_path> with the specified `model.pth` file
+Replace <custom_config_path> with the specified `config.json` file
+Replace <custom_vocab_path> with the specified `vocab.json_` file
 
 ## Demo
 
