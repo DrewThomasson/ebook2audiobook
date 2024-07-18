@@ -118,7 +118,7 @@ docker run -it --rm -p 7860:7860 athomasson2/ebook2audiobookxtts:latest
 
 This command will start the Gradio interface on port 7860.
 
-More details can be found at the [Dockerfile Hub Page](https://github.com/DrewThomasson/ebook2audiobookXTTS).
+More details can be found at the [Dockerfile Hub Page]([https://github.com/DrewThomasson/ebook2audiobookXTTS](https://hub.docker.com/repository/docker/athomasson2/ebook2audiobookxtts/general)).
 
 ## 🎥 Demos
 
