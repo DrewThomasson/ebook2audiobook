@@ -75,7 +75,20 @@ Specify the language code when running the script to use these languages.
 Navigate to the script's directory in the terminal and execute one of the following commands:
 If you have any trouble getting it to run in Windows then it should run fine in WSL2
 
-Basic Usage: ALL PARAMETERS ARE MANDATORY WHEN CALLED THE SCRIPT
+## For an easy Gradio web-based Interface
+
+This script creates a web app using Gradio to convert eBooks into audiobooks with a custom model.
+
+1. **Run the Script**:
+    ```bash
+    python custom_model_ebook2audiobookXTTS_gradio.py
+    ```
+
+2. **Open the Web App**: After running the script, you'll see a URL in the terminal. Click on this URL to use the web app and convert eBooks into audiobooks.
+
+
+
+### Basic Usage: ALL PARAMETERS ARE MANDATORY WHEN CALLED THE SCRIPT
 
 ```bash
 python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_code]
