@@ -104,6 +104,22 @@ python custom_model_ebook2audiobookXTTS.py <ebook_file_path> <target_voice_file_
 - **<custom_config_path>**: Path to `config.json`.
 - **<custom_vocab_path>**: Path to `vocab.json`.
 
+### 🐳 Using Docker
+
+You can also use Docker to run the eBook to Audiobook converter. This method ensures consistency across different environments and simplifies setup.
+
+#### 🚀 Running the Docker Container
+
+To run the Docker container and start the Gradio interface, use the following command:
+
+```powershell
+docker run -it --rm -p 7860:7860 athomasson2/ebook2audiobookxtts:latest
+```
+
+This command will start the Gradio interface on port 7860.
+
+More details can be found at the [Dockerfile Hub Page](https://github.com/DrewThomasson/ebook2audiobookXTTS).
+
 ## 🎥 Demos
 
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
