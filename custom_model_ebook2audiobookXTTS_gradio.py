@@ -57,10 +57,14 @@ def convert_ebook_to_audio(ebook_file, target_voice_file, language, use_custom_m
     return f"Audiobook created at {audiobook_output_path}"
 
 # Define Gradio interface components
+language_options = [
+    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko"
+]
+
 inputs = [
     gr.File(label="eBook File"),
     gr.File(label="Target Voice File (Optional)"),
-    gr.Textbox(label="Language", placeholder="en"),
+    gr.Dropdown(label="Language", choices=language_options, value="en"),
     gr.Checkbox(label="Use Custom Model"),
     gr.File(label="Custom Model File (Optional)"),
     gr.File(label="Custom Config File (Optional)"),
@@ -76,6 +80,7 @@ gr.Interface(
     title="eBook to Audiobook Converter",
     description="Convert eBooks to audiobooks with optional custom TTS models."
 ).launch(share=False)
+
 
 
 
