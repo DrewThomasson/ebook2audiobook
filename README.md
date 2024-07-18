@@ -95,11 +95,11 @@ Replace <custom_model_path> with the specified `model.pth` file
 Replace <custom_config_path> with the specified `config.json` file
 Replace <custom_vocab_path> with the specified `vocab.json_` file
 
-## Demo
+## Demos
 
 
 
-https://github.com/DrewThomasson/ebook2audiobookXTTS/assets/126999465/bccd7240-f967-4d27-a87d-445034db7d21
+https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
 
 
