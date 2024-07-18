@@ -1,136 +1,132 @@
-# ebook2audiobook
-Generates an audiobook with chapters and ebook metadata using Calibre and Xtts from Coqui tts, and with optional voice cloning, and supports multiple languages
+Here's a more user-friendly version of your README with emojis and improved navigation:
 
-## Features
+---
 
-- Converts eBooks to text format using Calibre's `ebook-convert` tool.
-- Splits the eBook into chapters for structured audio conversion.
-- Uses XTTS from Coqui TTS for high-quality text-to-speech conversion.
-- Optional voice cloning feature using a provided voice file.
-- Supports different languages for text-to-speech conversion, with English as the default.
-- Confirmed to run on only 4 gb ram
+# 📚 ebook2audiobook
 
-## Requirements
+Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui XTTS. Supports optional voice cloning and multiple languages!
+
+## 🌟 Features
+
+- 📖 Converts eBooks to text format with Calibre.
+- 📚 Splits eBook into chapters for organized audio.
+- 🎙️ High-quality text-to-speech with Coqui XTTS.
+- 🗣️ Optional voice cloning with your own voice file.
+- 🌍 Supports multiple languages (English by default).
+- 🖥️ Designed to run on 4GB RAM.
+
+## 🛠️ Requirements
 
 - Python 3.x
 - `coqui-tts` Python package
 - Calibre (for eBook conversion)
-- FFmpeg (for audiobook file creation)
+- FFmpeg (for audiobook creation)
 - Optional: Custom voice file for voice cloning
 
-### Installation Instructions for Dependencies
+### 🔧 Installation Instructions
 
-Install Python 3.x from [Python.org](https://www.python.org/downloads/).
+1. **Install Python 3.x** from [Python.org](https://www.python.org/downloads/).
 
-Install Calibre:
-- Ubuntu: `sudo apt-get install -y calibre`
-- macOS: `brew install calibre`
-- Windows(Powershell in Administrator mode): `choco install calibre` 
+2. **Install Calibre**:
+   - **Ubuntu**: `sudo apt-get install -y calibre`
+   - **macOS**: `brew install calibre`
+   - **Windows** (Admin Powershell): `choco install calibre`
 
-Install FFmpeg:
-- Ubuntu: `sudo apt-get install -y ffmpeg`
-- macOS: `brew install ffmpeg`
-- Windows(Powershell in Administrator mode): `choco install ffmpeg` 
+3. **Install FFmpeg**:
+   - **Ubuntu**: `sudo apt-get install -y ffmpeg`
+   - **macOS**: `brew install ffmpeg`
+   - **Windows** (Admin Powershell): `choco install ffmpeg`
 
-Install Mecab for (Non Latin-based Languages tts support)(Optional):
-- Ubuntu: `sudo apt-get install -y mecab libmecab-dev mecab-ipadic-utf8`
-- macOS: `brew install mecab`, `brew install mecab-ipadic`
-- Windows(Powershell in Administrator mode no support for mecab-ipadic easy install so no Japanese for windows :/): `choco install mecab ` 
+4. **Optional: Install Mecab** (for non-Latin languages):
+   - **Ubuntu**: `sudo apt-get install -y mecab libmecab-dev mecab-ipadic-utf8`
+   - **macOS**: `brew install mecab`, `brew install mecab-ipadic`
+   - **Windows** (Admin Powershell): `choco install mecab` (Note: Japanese support is limited)
 
-Install Python packages:
-```bash
-pip install tts==0.21.3 pydub nltk beautifulsoup4 ebooklib tqdm
-```
-(For non Latin-based Languages tts support)(Optional)  
-`python -m unidic download`
-```bash
-pip install mecab mecab-python3 unidic
-```
+5. **Install Python packages**:
+   ```bash
+   pip install tts==0.21.3 pydub nltk beautifulsoup4 ebooklib tqdm
+   ```
 
-### Supported Languages
+   **For non-Latin languages**:
+   ```bash
+   python -m unidic download
+   pip install mecab mecab-python3 unidic
+   ```
 
-The script supports the following languages for text-to-speech conversion:
+## 🌐 Supported Languages
 
-English (en),
-Spanish (es),
-French (fr),
-German (de),
-Italian (it),
-Portuguese (pt),
-Polish (pl),
-Turkish (tr),
-Russian (ru),
-Dutch (nl),
-Czech (cs),
-Arabic (ar),
-Chinese (zh-cn),
-Japanese (ja),
-Hungarian (hu),
-Korean (ko)
+- **English (en)**
+- **Spanish (es)**
+- **French (fr)**
+- **German (de)**
+- **Italian (it)**
+- **Portuguese (pt)**
+- **Polish (pl)**
+- **Turkish (tr)**
+- **Russian (ru)**
+- **Dutch (nl)**
+- **Czech (cs)**
+- **Arabic (ar)**
+- **Chinese (zh-cn)**
+- **Japanese (ja)**
+- **Hungarian (hu)**
+- **Korean (ko)**
 
-Specify the language code when running the script to use these languages.
+Specify the language code when running the script.
 
-### Usage
+## 🚀 Usage
 
-Navigate to the script's directory in the terminal and execute one of the following commands:
-If you have any trouble getting it to run in Windows then it should run fine in WSL2
-
-## For an easy Gradio web-based Interface
-
-This script creates a web app using Gradio to convert eBooks into audiobooks with a custom model.
+### 🖥️ Gradio Web Interface
 
 1. **Run the Script**:
-    ```bash
-    python custom_model_ebook2audiobookXTTS_gradio.py
-    ```
+   ```bash
+   python custom_model_ebook2audiobookXTTS_gradio.py
+   ```
 
-2. **Open the Web App**: After running the script, you'll see a URL in the terminal. Click on this URL to use the web app and convert eBooks into audiobooks.
+2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
 
-
-
-### Basic Usage: ALL PARAMETERS ARE MANDATORY WHEN CALLED THE SCRIPT
+### 📝 Basic Usage
 
 ```bash
 python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_code]
 ```
-Replace <path_to_ebook_file> with the path to your eBook file.
-include <path_to_voice_file> for voice cloning.
-include <language_code> to specify the language
 
-### for loading a custom xtts model
+- **<path_to_ebook_file>**: Path to your eBook file.
+- **[path_to_voice_file]**: Optional for voice cloning.
+- **[language_code]**: Optional to specify language.
+
+### 🧩 Custom XTTS Model
+
 ```bash
 python custom_model_ebook2audiobookXTTS.py <ebook_file_path> <target_voice_file_path> <language> <custom_model_path> <custom_config_path> <custom_vocab_path>
 ```
-Replace <path_to_ebook_file> with the path to your eBook file.
-include <path_to_voice_file> for voice cloning.
-include <language_code> to specify the language
-Replace <custom_model_path> with the specified `model.pth` file
-Replace <custom_config_path> with the specified `config.json` file
-Replace <custom_vocab_path> with the specified `vocab.json_` file
 
-## Demos
+- **<ebook_file_path>**: Path to your eBook file.
+- **<target_voice_file_path>**: Optional for voice cloning.
+- **<language>**: Optional to specify language.
+- **<custom_model_path>**: Path to `model.pth`.
+- **<custom_config_path>**: Path to `config.json`.
+- **<custom_vocab_path>**: Path to `vocab.json`.
 
-
+## 🎥 Demos
 
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
+## 📚 Supported eBook Formats
 
+- `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
+- **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
-### Supported ebook File Types: 
-.epub, .pdf, .mobi, .txt, .html, .rtf, .chm, .lit, .pdb, .fb2, .odt, .cbr, .cbz, .prc, .lrf, .pml, .snb, .cbc, .rb, and .tcr,
-(Best results are from using epub or mobi for auto chapter detection)
+## 📂 Output
 
-### outputs as a m4b with all book metadata and chapters, example output file in an audiobook player app
-![Example_of_output_in_audiobook_program](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+- Creates an `.m4b` file with metadata and chapters.
+- **Example Output**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
-A special thanks to the creaters of:
+## 🙏 Special Thanks
 
+- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/coqui-ai/TTS)
+- **Calibre**: [Calibre Website](https://calibre-ebook.com)
 
--Coqui TTS
+---
 
--https://github.com/coqui-ai/TTS
-
-
--Calibre
-
--https://calibre-ebook.com
+Feel free to adjust as needed!
