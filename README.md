@@ -1,7 +1,3 @@
-Here's a more user-friendly version of your README with emojis and improved navigation:
-
----
-
 # 📚 ebook2audiobook
 
 Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui XTTS. Supports optional voice cloning and multiple languages!
@@ -126,7 +122,3 @@ https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
 - **Coqui TTS**: [Coqui TTS GitHub](https://github.com/coqui-ai/TTS)
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
-
----
-
-Feel free to adjust as needed!
