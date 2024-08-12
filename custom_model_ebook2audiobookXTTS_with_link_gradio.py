@@ -29,6 +29,10 @@ import urllib.request
 import zipfile
 from tqdm import tqdm
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Device selected is: {device}")
+
+
 def download_and_extract_zip(url, extract_to='.'):
     try:
         # Ensure the directory exists
@@ -387,8 +391,6 @@ from pydub import AudioSegment
 
 default_target_voice_path = "default_voice.wav"  # Ensure this is a valid path
 default_language_code = "en"
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Device selected is: {device}")
 def combine_wav_files(input_directory, output_directory, file_name):
     # Ensure that the output directory exists, create it if necessary
     os.makedirs(output_directory, exist_ok=True)
