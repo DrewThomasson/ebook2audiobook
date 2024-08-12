@@ -680,4 +680,4 @@ with gr.Blocks(theme=theme) as demo:
         outputs=[custom_model_file, custom_config_file, custom_vocab_file, custom_model_url]
     )
 
-demo.launch(share=False)
+demo.launch(share=True)
