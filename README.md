@@ -120,6 +120,10 @@ This command will start the Gradio interface on port 7860.
 
 More details can be found at the [Dockerfile Hub Page]([https://github.com/DrewThomasson/ebook2audiobookXTTS](https://hub.docker.com/repository/docker/athomasson2/ebook2audiobookxtts/general)).
 
+## 🌐 Fine Tuned Xtts models
+
+To find already fine-tuned XTTS models, visit [this Hugging Face link](https://huggingface.co/drewThomasson) 🌐. Search for models that include "xtts fine tune" in their names.
+
 ## 🎥 Demos
 
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
