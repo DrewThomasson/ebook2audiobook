@@ -16,21 +16,15 @@ from TTS.api import TTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 from tqdm import tqdm
-
-nltk.download('punkt')  # Make sure to download the necessary models
-
 import gradio as gr
 from gradio import Progress
-
-
-
-import os
 import urllib.request
 import zipfile
-from tqdm import tqdm
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Device selected is: {device}")
+
+nltk.download('punkt')  # Make sure to download the necessary models
 
 
 def download_and_extract_zip(url, extract_to='.'):
@@ -632,6 +626,20 @@ def convert_ebook_to_audio(ebook_file, target_voice_file, language, use_custom_m
     
     return f"Audiobook created at {m4b_filepath}", m4b_filepath
 
+
+def list_audiobook_files(audiobook_folder):
+    # List all files in the audiobook folder
+    files = []
+    for filename in os.listdir(audiobook_folder):
+        if filename.endswith('.m4b'):  # Adjust the file extension as needed
+            files.append(os.path.join(audiobook_folder, filename))
+    return files
+
+def download_audiobooks():
+    audiobook_output_path = os.path.join(".", "Audiobooks")
+    return list_audiobook_files(audiobook_output_path)
+
+
 language_options = [
     "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko"
 ]
@@ -643,6 +651,7 @@ theme = gr.themes.Soft(
     text_size=gr.themes.sizes.text_md,
 )
 
+# Gradio UI setup
 with gr.Blocks(theme=theme) as demo:
     gr.Markdown(
     """
@@ -668,7 +677,8 @@ with gr.Blocks(theme=theme) as demo:
     convert_btn = gr.Button("Convert to Audiobook", variant="primary")
     output = gr.Textbox(label="Conversion Status")
     audio_player = gr.Audio(label="Audiobook Player", type="filepath")
-
+    download_btn = gr.Button("Download Audiobook Files")
+    download_files = gr.File(label="Download Files", interactive=False)
 
     convert_btn.click(
         convert_ebook_to_audio,
@@ -680,6 +690,11 @@ with gr.Blocks(theme=theme) as demo:
         lambda x: [gr.update(visible=x)] * 4,
         inputs=[use_custom_model],
         outputs=[custom_model_file, custom_config_file, custom_vocab_file, custom_model_url]
+    )
+
+    download_btn.click(
+        download_audiobooks,
+        outputs=[download_files]
     )
 
 demo.launch(share=True)
