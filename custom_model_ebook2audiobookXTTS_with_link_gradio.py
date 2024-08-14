@@ -623,7 +623,7 @@ def convert_ebook_to_audio(ebook_file, target_voice_file, language, use_custom_m
         progress(1.0, desc="Conversion complete")
     except Exception as e:
         print(f"Error updating progress: {e}")
-    
+    print(f"Audiobook created at {m4b_filepath}")
     return f"Audiobook created at {m4b_filepath}", m4b_filepath
 
 
