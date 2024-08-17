@@ -3,6 +3,7 @@ print("starting...")
 import os
 import shutil
 import subprocess
+import re
 from pydub import AudioSegment
 import tempfile
 from tqdm import tqdm
@@ -12,6 +13,9 @@ import ebooklib
 import bs4
 from ebooklib import epub
 from bs4 import BeautifulSoup
+from gradio import Progress
+import sys
+from nltk.tokenize import sent_tokenize
 
 
 #nltk.download('punkt')   Ensure necessary models are downloaded
