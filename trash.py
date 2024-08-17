@@ -16,6 +16,8 @@ from bs4 import BeautifulSoup
 from gradio import Progress
 import sys
 from nltk.tokenize import sent_tokenize
+import csv
+
 
 
 #nltk.download('punkt')   Ensure necessary models are downloaded
