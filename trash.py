@@ -9,7 +9,7 @@ from tqdm import tqdm
 import gradio as gr
 import nltk
 
-nltk.download('punkt')  # Ensure necessary models are downloaded
+#nltk.download('punkt')   Ensure necessary models are downloaded
 
 def is_folder_empty(folder_path):
     if os.path.exists(folder_path) and os.path.isdir(folder_path):
@@ -159,7 +159,7 @@ def create_chapter_labeled_book(ebook_file_path):
     if convert_to_epub(input_ebook, output_epub):
         save_chapters_as_text(output_epub)
 
-    nltk.download('punkt')
+    #nltk.download('punkt')
 
     def process_chapter_files(folder_path, output_csv):
         with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
