@@ -9,7 +9,10 @@ from tqdm import tqdm
 import gradio as gr
 import nltk
 import ebooklib
+import bs4
 from ebooklib import epub
+from bs4 import BeautifulSoup
+
 
 #nltk.download('punkt')   Ensure necessary models are downloaded
 
