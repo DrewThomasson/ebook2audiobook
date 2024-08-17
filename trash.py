@@ -8,6 +8,7 @@ import tempfile
 from tqdm import tqdm
 import gradio as gr
 import nltk
+import ebooklib
 
 #nltk.download('punkt')   Ensure necessary models are downloaded
 
@@ -132,7 +133,7 @@ def create_chapter_labeled_book(ebook_file_path):
         chapter_counter = 0
 
         for item in book.get_items():
-            if item.get_type() == ebooklib.ITEM_DOCUMENT:
+            if item.get_type() == .ITEM_DOCUMENT:
                 soup = BeautifulSoup(item.get_content(), 'html.parser')
                 text = soup.get_text()
 
