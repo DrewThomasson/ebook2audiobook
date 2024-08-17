@@ -9,6 +9,7 @@ from tqdm import tqdm
 import gradio as gr
 import nltk
 import ebooklib
+from ebooklib import epub
 
 #nltk.download('punkt')   Ensure necessary models are downloaded
 
