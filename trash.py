@@ -19,8 +19,8 @@ from nltk.tokenize import sent_tokenize
 import csv
 
 
-
-#nltk.download('punkt')   Ensure necessary models are downloaded
+# Ensure necessary models are downloaded
+# nltk.download('punkt')
 
 def is_folder_empty(folder_path):
     if os.path.exists(folder_path) and os.path.isdir(folder_path):
@@ -58,7 +58,7 @@ def create_m4b_from_chapters(input_dir, ebook_file, output_dir):
         try:
             cover_path = ebook_path.rsplit('.', 1)[0] + '.jpg'
             subprocess.run(['ebook-meta', ebook_path, '--get-cover', cover_path], check=True)
-            if os.path.exists(cover_path):
+            if (os.path.exists(cover_path)):
                 return cover_path
         except Exception as e:
             print(f"Error extracting eBook metadata or cover: {e}")
@@ -170,7 +170,7 @@ def create_chapter_labeled_book(ebook_file_path):
     if convert_to_epub(input_ebook, output_epub):
         save_chapters_as_text(output_epub)
 
-    #nltk.download('punkt')
+    # nltk.download('punkt')
 
     def process_chapter_files(folder_path, output_csv):
         with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
@@ -225,7 +225,7 @@ def create_chapter_labeled_book(ebook_file_path):
 
     ensure_directory(os.path.join(".", "Working_files", "Book"))
 
-def convert_chapters_to_audio_espeak(chapters_dir, output_audio_dir, speed="170", pitch="50"):
+def convert_chapters_to_audio_espeak(chapters_dir, output_audio_dir, speed="170", pitch="50", voice="en"):
     if not os.path.exists(output_audio_dir):
         os.makedirs(output_audio_dir)
 
@@ -249,14 +249,14 @@ def convert_chapters_to_audio_espeak(chapters_dir, output_audio_dir, speed="170"
 
                 for sentence in tqdm(sentences, desc=f"Chapter {chapter_num}"):
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_wav:
-                        subprocess.run(["espeak-ng", "-w", temp_wav.name, f"-s{speed}", f"-p{pitch}", sentence])
+                        subprocess.run(["espeak-ng", "-v", voice, "-w", temp_wav.name, f"-s{speed}", f"-p{pitch}", sentence])
                         combined_audio += AudioSegment.from_wav(temp_wav.name)
                         os.remove(temp_wav.name)
 
                 combined_audio.export(output_file_path, format='wav')
                 print(f"Converted chapter {chapter_num} to audio.")
 
-def convert_ebook_to_audio(ebook_file, speed, pitch, progress=gr.Progress()):
+def convert_ebook_to_audio(ebook_file, speed, pitch, voice, progress=gr.Progress()):
     ebook_file_path = ebook_file.name
     working_files = os.path.join(".", "Working_files", "temp_ebook")
     full_folder_working_files = os.path.join(".", "Working_files")
@@ -278,7 +278,7 @@ def convert_ebook_to_audio(ebook_file, speed, pitch, progress=gr.Progress()):
     except Exception as e:
         print(f"Error updating progress: {e}")
 
-    convert_chapters_to_audio_espeak(chapters_directory, output_audio_directory, speed, pitch)
+    convert_chapters_to_audio_espeak(chapters_directory, output_audio_directory, speed, pitch, voice.split()[0])
 
     try:
         progress(0.9, desc="Creating M4B from chapters")
@@ -308,6 +308,18 @@ def download_audiobooks():
     audiobook_output_path = os.path.join(".", "Audiobooks")
     return list_audiobook_files(audiobook_output_path)
 
+def get_available_voices():
+    result = subprocess.run(['espeak-ng', '--voices'], stdout=subprocess.PIPE, text=True)
+    lines = result.stdout.splitlines()[1:]  # Skip the header line
+    voices = []
+    for line in lines:
+        parts = line.split()
+        if len(parts) > 1:
+            voice_name = parts[1]
+            description = ' '.join(parts[2:])
+            voices.append((voice_name, description))
+    return voices
+
 theme = gr.themes.Soft(
     primary_hue="blue",
     secondary_hue="blue",
@@ -330,6 +342,9 @@ with gr.Blocks(theme=theme) as demo:
             ebook_file = gr.File(label="eBook File")
             speed = gr.Slider(minimum=80, maximum=450, value=170, step=1, label="Speed")
             pitch = gr.Slider(minimum=0, maximum=99, value=50, step=1, label="Pitch")
+            voices = get_available_voices()
+            voice_choices = [f"{voice} ({desc})" for voice, desc in voices]
+            voice_dropdown = gr.Dropdown(choices=voice_choices, label="Select Voice", value=voice_choices[0])
 
     convert_btn = gr.Button("Convert to Audiobook", variant="primary")
     output = gr.Textbox(label="Conversion Status")
@@ -339,7 +354,7 @@ with gr.Blocks(theme=theme) as demo:
 
     convert_btn.click(
         convert_ebook_to_audio,
-        inputs=[ebook_file, speed, pitch],
+        inputs=[ebook_file, speed, pitch, voice_dropdown],
         outputs=[output, audio_player]
     )
 
