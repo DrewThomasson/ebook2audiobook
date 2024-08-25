@@ -118,6 +118,22 @@ docker run -it --rm -p 7860:7860 athomasson2/ebook2audiobookxtts:latest
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
 
+#### 🖥️ Docker GUI 
+
+<img width="1401" alt="Screenshot 2024-08-25 at 10 08 40 AM" src="https://github.com/user-attachments/assets/78cfd33e-cd46-41cc-8128-3820160a5e40">
+<img width="1406" alt="Screenshot 2024-08-25 at 10 08 51 AM" src="https://github.com/user-attachments/assets/dbfad9f6-e6e5-4cad-b248-adb76c5434f3">
+
+### 🛠️ For Custom Xtts Models
+
+Models built to be better at a specific voice. Check out my Hugging Face page [here](https://huggingface.co/drewThomasson).
+
+To use a custom model, paste the link of the `Finished_model_files.zip` file like this:
+
+[David Attenborough fine tuned Finished_model_files.zip](https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true)
+
+
+
+
 More details can be found at the [Dockerfile Hub Page]([https://github.com/DrewThomasson/ebook2audiobookXTTS](https://hub.docker.com/repository/docker/athomasson2/ebook2audiobookxtts/general)).
 
 ## 🌐 Fine Tuned Xtts models
