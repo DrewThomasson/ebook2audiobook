@@ -111,11 +111,11 @@ You can also use Docker to run the eBook to Audiobook converter. This method ens
 #### 🚀 Running the Docker Container
 
 To run the Docker container and start the Gradio interface, use the following command:
- Run with CPU only
+ -Run with CPU only
 ```powershell
 docker run -it --rm -p 7860:7860 athomasson2/ebook2audiobookxtts:latest
 ```
- Run with GPU Speedup (Nvida graphics cards only)
+ -Run with GPU Speedup (Nvida graphics cards only)
 ```powershell
 docker run -it --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobookxtts:latest
 ```
