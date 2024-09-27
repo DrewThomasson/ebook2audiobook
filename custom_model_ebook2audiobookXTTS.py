@@ -396,7 +396,7 @@ def convert_chapters_to_audio(chapters_dir, output_audio_dir, target_voice_path=
         config.load_json(custom_model['config'])
         model = Xtts.init_from_config(config)
         model.load_checkpoint(config, checkpoint_path=custom_model['model'], vocab_path=custom_model['vocab'], use_deepspeed=False)
-        model.cuda()
+        model.to(device)
         print("Computing speaker latents...")
         gpt_cond_latent, speaker_embedding = model.get_conditioning_latents(audio_path=[target_voice_path])
     else:
