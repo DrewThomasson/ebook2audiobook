@@ -149,6 +149,8 @@ To find already fine-tuned XTTS models, visit [this Hugging Face link](https://h
 
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
+## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobookXTTS)
+
 ## 📚 Supported eBook Formats
 
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
