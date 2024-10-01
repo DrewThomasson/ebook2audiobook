@@ -149,7 +149,7 @@ To find already fine-tuned XTTS models, visit [this Hugging Face link](https://h
 
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
-## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobookXTTS)
+## 🤗 [Huggingface space demo(runs on free cpu tier with no GPUso expect very slow or timeout lol](https://huggingface.co/spaces/drewThomasson/ebook2audiobookXTTS)
 
 ## 📚 Supported eBook Formats
 
