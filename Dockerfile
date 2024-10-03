@@ -33,7 +33,7 @@ RUN pip install bs4 pydub nltk beautifulsoup4 ebooklib tqdm mecab-python3 tts==0
 RUN python -m unidic download
 
 # Copy test audio file
-COPY 1.wav /ebook2audiobookXTTS/
+COPY default_voice.wav /ebook2audiobookXTTS/
 
 # Run a test to set up XTTS
 RUN echo "import torch" > /tmp/script1.py && \
@@ -41,8 +41,8 @@ RUN echo "import torch" > /tmp/script1.py && \
     echo "device = 'cuda' if torch.cuda.is_available() else 'cpu'" >> /tmp/script1.py && \
     echo "print(TTS().list_models())" >> /tmp/script1.py && \
     echo "tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2').to(device)" >> /tmp/script1.py && \
-    echo "wav = tts.tts(text='Hello world!', speaker_wav='1.wav', language='en')" >> /tmp/script1.py && \
-    echo "tts.tts_to_file(text='Hello world!', speaker_wav='1.wav', language='en', file_path='output.wav')" >> /tmp/script1.py && \
+    echo "wav = tts.tts(text='Hello world!', speaker_wav='default_voice.wav', language='en')" >> /tmp/script1.py && \
+    echo "tts.tts_to_file(text='Hello world!', speaker_wav='default_voice.wav', language='en', file_path='output.wav')" >> /tmp/script1.py && \
     yes | python3 /tmp/script1.py
 
 # Remove the test audio file
