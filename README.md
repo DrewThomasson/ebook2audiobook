@@ -36,7 +36,7 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 4. **Optional: Install Mecab** (for non-Latin languages):
    - **Ubuntu**: `sudo apt-get install -y mecab libmecab-dev mecab-ipadic-utf8`
    - **macOS**: `brew install mecab`, `brew install mecab-ipadic`
-   - **Windows** (Admin Powershell): `choco install mecab` (Note: Japanese support is limited)
+   - **Windows**: [mecab-website-to-install-manually](https://taku910.github.io/mecab/#download) (Note: Japanese support is limited)
 
 5. **Install Python packages**:
    ```bash
