@@ -47,9 +47,9 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 
    **For non-Latin languages**:
    ```bash
-   python -m unidic download
-   
    pip install mecab mecab-python3 unidic
+   
+   python -m unidic download
    ```
 
 ## 🌐 Supported Languages
