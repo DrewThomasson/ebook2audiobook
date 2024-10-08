@@ -126,6 +126,99 @@ docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/e
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
 - For more options like running the docker in headless mode or making the gradio link public add the `-h` parameter after the `app.py` in the docker launch command
+<details>
+  <summary><strong>Example of using docker in headless mode or modifying anything with the extra parameters + Full guide</strong></summary>
+   
+## Example of using docker in headless mode
+
+first for a docker pull of the latest with
+```bash 
+docker pull registry.hf.space/drewthomasson-ebook2audiobookxtts:latest
+```
+
+- Before you do run this you need to create a dir named "input-folder" in your current dir which will be linked, This is where you can put your input files for the docker image to see
+```bash
+mkdir input-folder && mkdir Audiobooks
+```
+
+- In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
+
+```bash
+docker run -it --rm \
+    -v $(pwd)/input-folder:/home/user/app/input_folder \
+    -v $(pwd)/Audiobooks:/home/user/app/Audiobooks \
+    --platform linux/amd64 \
+    registry.hf.space/drewthomasson-ebook2audiobookxtts:latest \
+    python app.py --headless True --ebook /home/user/app/input_folder/YOUR_INPUT_FILE.TXT
+```
+
+- And that should be it! 
+
+- The output Audiobooks will be found in the Audiobook folder which will also be located in your local dir you ran this docker command in
+
+
+## To get the help command for the other parameters this program has you can run this 
+
+```bash
+docker run -it --rm \
+    --platform linux/amd64 \
+    registry.hf.space/drewthomasson-ebook2audiobookxtts:latest \
+    python app.py -h
+
+```
+
+
+and that will output this 
+
+```bash
+user/app/ebook2audiobookXTTS/input-folder -v $(pwd)/Audiobooks:/home/user/app/ebook2audiobookXTTS/Audiobooks --memory="4g" --network none --platform linux/amd64 registry.hf.space/drewthomasson-ebook2audiobookxtts:latest python app.py -h
+starting...
+usage: app.py [-h] [--share SHARE] [--headless HEADLESS] [--ebook EBOOK] [--voice VOICE]
+              [--language LANGUAGE] [--use_custom_model USE_CUSTOM_MODEL]
+              [--custom_model CUSTOM_MODEL] [--custom_config CUSTOM_CONFIG]
+              [--custom_vocab CUSTOM_VOCAB] [--custom_model_url CUSTOM_MODEL_URL]
+
+Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the
+Gradio interface or run the script in headless mode for direct conversion.
+
+options:
+  -h, --help            show this help message and exit
+  --share SHARE         Set to True to enable a public shareable Gradio link. Defaults
+                        to False.
+  --headless HEADLESS   Set to True to run in headless mode without the Gradio
+                        interface. Defaults to False.
+  --ebook EBOOK         Path to the ebook file for conversion. Required in headless
+                        mode.
+  --voice VOICE         Path to the target voice file for TTS. Optional, uses a default
+                        voice if not provided.
+  --language LANGUAGE   Language for the audiobook conversion. Options: en, es, fr, de,
+                        it, pt, pl, tr, ru, nl, cs, ar, zh-cn, ja, hu, ko. Defaults to
+                        English (en).
+  --use_custom_model USE_CUSTOM_MODEL
+                        Set to True to use a custom TTS model. Defaults to False. Must
+                        be True to use custom models, otherwise you'll get an error.
+  --custom_model CUSTOM_MODEL
+                        Path to the custom model file (.pth). Required if using a custom
+                        model.
+  --custom_config CUSTOM_CONFIG
+                        Path to the custom config file (config.json). Required if using
+                        a custom model.
+  --custom_vocab CUSTOM_VOCAB
+                        Path to the custom vocab file (vocab.json). Required if using a
+                        custom model.
+  --custom_model_url CUSTOM_MODEL_URL
+                        URL to download the custom model as a zip file. Optional, but
+                        will be used if provided. Examples include David Attenborough's
+                        model: 'https://huggingface.co/drewThomasson/xtts_David_Attenbor
+                        ough_fine_tune/resolve/main/Finished_model_files.zip?download=tr
+                        ue'. More XTTS fine-tunes can be found on my Hugging Face at
+                        'https://huggingface.co/drewThomasson'.
+
+Example: python script.py --headless --ebook path_to_ebook --voice path_to_voice
+--language en --use_custom_model True --custom_model model.pth --custom_config
+config.json --custom_vocab vocab.json
+```
+</details>
 
 #### 🖥️ Docker GUI 
 
@@ -165,6 +258,12 @@ https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
 - Creates an `.m4b` file with metadata and chapters.
 - **Example Output**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+
+## 🛠️ Common Issues:
+- "It's slow!" - On CPU only this is very slow, and you can only get speedups though a NVIDIA GPU. [Discussion about this](https://github.com/DrewThomasson/ebook2audiobookXTTS/discussions/19#discussioncomment-10879846) For faster multilingual generation I would suggest my other [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead(It doesn't have zero-shot voice cloning though, and is siri quality voices, but it is much faster on cpu.)
+- "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode, add `-h` parameter after the `app.py` in the docker run command for more information.
+- "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS, I don't speak every language and I need advise from each person to fine tune my sentense splitting function on any other languages.😊
+- "The loading bar is stuck at 30% in the web gui!" - The web gui loading bar is extreamly basic as its just split between the three loading steps, refer to the terminal and what sentense it's on for a more accurate gauge on where is it progress wise.
 
 ## 🙏 Special Thanks
 
