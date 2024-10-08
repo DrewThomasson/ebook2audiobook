@@ -72,7 +72,113 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 - **Korean (ko)**
 
 Specify the language code when running the script.
+## 🚀 Usage
 
+### 🖥️ Gradio Web Interface
+
+1. **Run the Script**:
+   ```bash
+   python app.py
+   ```
+
+2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
+3. **For Public Link**: Add `--share True` to the end of it like this: `python app.py --share True`
+- **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
+
+### 📝 Basic Headless Usage
+
+```bash
+python app.py --headless True --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+```
+
+- **<path_to_ebook_file>**: Path to your eBook file.
+- **[path_to_voice_file]**: Optional for voice cloning.
+- **[language_code]**: Optional to specify language.
+- **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
+
+### 🧩 Headless Custom XTTS Model Usage
+
+```bash
+python app.py --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+```
+
+- **<ebook_file_path>**: Path to your eBook file.
+- **<target_voice_file_path>**: Optional for voice cloning.
+- **<language>**: Optional to specify language.
+- **<custom_model_path>**: Path to `model.pth`.
+- **<custom_config_path>**: Path to `config.json`.
+- **<custom_vocab_path>**: Path to `vocab.json`.
+- **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
+
+
+### 🧩 Headless Custom XTTS Model Usage With Zip link to XTTS Fine-Tune Model 🌐
+
+```bash
+python app.py --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
+```
+
+- **<ebook_file_path>**: Path to your eBook file.
+- **<target_voice_file_path>**: Optional for voice cloning.
+- **<language>**: Optional to specify language.
+- **<custom_model_URL_ZIP_path>**: URL Path to zip of Model folder. For Example this for the [xtts_David_Attenborough_fine_tune](https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/tree/main) `https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true`
+- **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
+
+### 🔍 For Detailed Guide with list of all Parameters to use
+```bash
+python app.py -h
+```
+- This will output the following:
+```bash
+usage: app.py [-h] [--share SHARE] [--headless HEADLESS] [--ebook EBOOK] [--voice VOICE]
+              [--language LANGUAGE] [--use_custom_model USE_CUSTOM_MODEL]
+              [--custom_model CUSTOM_MODEL] [--custom_config CUSTOM_CONFIG]
+              [--custom_vocab CUSTOM_VOCAB] [--custom_model_url CUSTOM_MODEL_URL]
+
+Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the
+Gradio interface or run the script in headless mode for direct conversion.
+
+options:
+  -h, --help            show this help message and exit
+  --share SHARE         Set to True to enable a public shareable Gradio link. Defaults
+                        to False.
+  --headless HEADLESS   Set to True to run in headless mode without the Gradio
+                        interface. Defaults to False.
+  --ebook EBOOK         Path to the ebook file for conversion. Required in headless
+                        mode.
+  --voice VOICE         Path to the target voice file for TTS. Optional, uses a default
+                        voice if not provided.
+  --language LANGUAGE   Language for the audiobook conversion. Options: en, es, fr, de,
+                        it, pt, pl, tr, ru, nl, cs, ar, zh-cn, ja, hu, ko. Defaults to
+                        English (en).
+  --use_custom_model USE_CUSTOM_MODEL
+                        Set to True to use a custom TTS model. Defaults to False. Must
+                        be True to use custom models, otherwise you'll get an error.
+  --custom_model CUSTOM_MODEL
+                        Path to the custom model file (.pth). Required if using a custom
+                        model.
+  --custom_config CUSTOM_CONFIG
+                        Path to the custom config file (config.json). Required if using
+                        a custom model.
+  --custom_vocab CUSTOM_VOCAB
+                        Path to the custom vocab file (vocab.json). Required if using a
+                        custom model.
+  --custom_model_url CUSTOM_MODEL_URL
+                        URL to download the custom model as a zip file. Optional, but
+                        will be used if provided. Examples include David Attenborough's
+                        model: 'https://huggingface.co/drewThomasson/xtts_David_Attenbor
+                        ough_fine_tune/resolve/main/Finished_model_files.zip?download=tr
+                        ue'. More XTTS fine-tunes can be found on my Hugging Face at
+                        'https://huggingface.co/drewThomasson'.
+
+Example: python script.py --headless --ebook path_to_ebook --voice path_to_voice
+--language en --use_custom_model True --custom_model model.pth --custom_config
+config.json --custom_vocab vocab.json
+```
+
+
+<details>
+  <summary>⚠️ Legacy-Depricated Old Use Instructions</summary>
+   
 ## 🚀 Usage
 
 ### 🖥️ Gradio Web Interface
@@ -106,6 +212,7 @@ python custom_model_ebook2audiobookXTTS.py <ebook_file_path> <target_voice_file_
 - **<custom_model_path>**: Path to `model.pth`.
 - **<custom_config_path>**: Path to `config.json`.
 - **<custom_vocab_path>**: Path to `vocab.json`.
+</details>
 
 ### 🐳 Using Docker
 
