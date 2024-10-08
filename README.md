@@ -125,6 +125,7 @@ docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/e
 ```
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
+- For more options like running the docker in headless mode or making the gradio link public add the `-h` parameter after the `app.py` in the docker launch command
 
 #### 🖥️ Docker GUI 
 
