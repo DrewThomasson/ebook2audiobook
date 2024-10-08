@@ -5,6 +5,48 @@ import argparse
 language_options = [
     "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko"
 ]
+char_limits = {
+    "en": 250,      # English
+    "es": 239,      # Spanish
+    "fr": 273,      # French
+    "de": 253,      # German
+    "it": 213,      # Italian
+    "pt": 203,      # Portuguese
+    "pl": 224,      # Polish
+    "tr": 226,      # Turkish
+    "ru": 182,      # Russian
+    "nl": 251,      # Dutch
+    "cs": 186,      # Czech
+    "ar": 166,      # Arabic
+    "zh-cn": 82,    # Chinese (Simplified)
+    "ja": 71,       # Japanese
+    "hu": 224,      # Hungarian
+    "ko": 95,       # Korean
+}
+
+# Mapping of language codes to NLTK's supported language names
+language_mapping = {
+    "en": "english",
+    "de": "german",
+    "fr": "french",
+    "es": "spanish",
+    "it": "italian",
+    "pt": "portuguese",
+    "nl": "dutch",
+    "pl": "polish",  
+    "cs": "czech",   
+    "ru": "russian",
+    "tr": "turkish",
+    "el": "greek",
+    "et": "estonian",
+    "no": "norwegian",
+    "ml": "malayalam",
+    "sl": "slovene",
+    "da": "danish",
+    "fi": "finnish",
+    "sv": "swedish"
+}
+
 
 # Convert the list of languages to a string to display in the help text
 language_options_str = ", ".join(language_options)
@@ -492,17 +534,26 @@ def split_long_sentence(sentence, language='en', max_pauses=10):
     :param max_pauses: Maximum allowed number of pauses in a sentence.
     :return: A list of sentence parts that meet the criteria.
     """
-    # Adjust the max_length and punctuation symbols based on language
-    if language == 'zh-cn':
-        max_length = 82  # Chinese-specific max length
-        punctuation = ['，', '。', '；', '！', '？']  # Chinese-specific punctuation
-    elif language == 'it':
-        max_length = 213  # Italian-specific max length
-        punctuation = [',', ';', '.']  # Standard punctuation
-    else:
-        max_length = 249  # Default max length for other languages
-        punctuation = [',', ';', '.']  # Default punctuation
+    #Get the Max character length for the selected language -2 : with a default of 248 if no language is found
+    max_length = (char_limits.get(language, 250)-2)
 
+    # Adjust the pause punctuation symbols based on language
+    if language == 'zh-cn':
+        punctuation = ['，', '。', '；', '？', '！']  # Chinese-specific pause punctuation including sentence-ending marks
+    elif language == 'ja':
+        punctuation = ['、', '。', '；', '？', '！']  # Japanese-specific pause punctuation
+    elif language == 'ko':
+        punctuation = ['，', '。', '；', '？', '！']  # Korean-specific pause punctuation
+    elif language == 'ar':
+        punctuation = ['،', '؛', '؟', '!', '·', '؛', '.']  # Arabic-specific punctuation
+    elif language == 'en':
+        punctuation = [',', ';', '.']  # English-specific pause punctuation
+    else:
+        # Default pause punctuation for other languages (es, fr, de, it, pt, pl, cs, ru, nl, tr, hu)
+        punctuation = [',', '.', ';', ':', '?', '!']
+
+
+    
     parts = []
     while len(sentence) > max_length or sum(sentence.count(p) for p in punctuation) > max_pauses:
         possible_splits = [i for i, char in enumerate(sentence) if char in punctuation and i < max_length]
@@ -568,7 +619,15 @@ def convert_chapters_to_audio_custom_model(chapters_dir, output_audio_dir, targe
 
             with open(chapter_path, 'r', encoding='utf-8') as file:
                 chapter_text = file.read()
-                sentences = sent_tokenize(chapter_text, language='italian' if language == 'it' else 'english')
+                # Check if the language code is supported
+                nltk_language = language_mapping.get(language)
+                if nltk_language:
+                    # If the language is supported, tokenize using sent_tokenize
+                    sentences = sent_tokenize(chapter_text, language=nltk_language)
+                else:
+                    # If the language is not supported, handle it (e.g., return the text unchanged)
+                    sentences = [chapter_text]  # No tokenization, just wrap the text in a list
+                #sentences = sent_tokenize(chapter_text, language='italian' if language == 'it' else 'english')
                 for sentence in tqdm(sentences, desc=f"Chapter {chapter_num}"):
                     fragments = split_long_sentence(sentence, language=language)
                     for fragment in fragments:
@@ -615,7 +674,15 @@ def convert_chapters_to_audio_standard_model(chapters_dir, output_audio_dir, tar
 
             with open(chapter_path, 'r', encoding='utf-8') as file:
                 chapter_text = file.read()
-                sentences = sent_tokenize(chapter_text, language='italian' if language == 'it' else 'english')
+                # Check if the language code is supported
+                nltk_language = language_mapping.get(language)
+                if nltk_language:
+                    # If the language is supported, tokenize using sent_tokenize
+                    sentences = sent_tokenize(chapter_text, language=nltk_language)
+                else:
+                    # If the language is not supported, handle it (e.g., return the text unchanged)
+                    sentences = [chapter_text]  # No tokenization, just wrap the text in a list
+                #sentences = sent_tokenize(chapter_text, language='italian' if language == 'it' else 'english')
                 for sentence in tqdm(sentences, desc=f"Chapter {chapter_num}"):
                     fragments = split_long_sentence(sentence, language=language)
                     for fragment in fragments:
