@@ -240,7 +240,7 @@ This command will start the Gradio interface on port 7860.(localhost:7860)
 
 first for a docker pull of the latest with
 ```bash 
-docker pull registry.hf.space/drewthomasson-ebook2audiobookxtts:latest
+docker pull athomasson2/ebook2audiobookxtts:huggingface
 ```
 
 - Before you do run this you need to create a dir named "input-folder" in your current dir which will be linked, This is where you can put your input files for the docker image to see
@@ -255,7 +255,7 @@ docker run -it --rm \
     -v $(pwd)/input-folder:/home/user/app/input_folder \
     -v $(pwd)/Audiobooks:/home/user/app/Audiobooks \
     --platform linux/amd64 \
-    registry.hf.space/drewthomasson-ebook2audiobookxtts:latest \
+    athomasson2/ebook2audiobookxtts:huggingface \
     python app.py --headless True --ebook /home/user/app/input_folder/YOUR_INPUT_FILE.TXT
 ```
 
@@ -269,7 +269,7 @@ docker run -it --rm \
 ```bash
 docker run -it --rm \
     --platform linux/amd64 \
-    registry.hf.space/drewthomasson-ebook2audiobookxtts:latest \
+    athomasson2/ebook2audiobookxtts:huggingface \
     python app.py -h
 
 ```
@@ -278,7 +278,7 @@ docker run -it --rm \
 and that will output this 
 
 ```bash
-user/app/ebook2audiobookXTTS/input-folder -v $(pwd)/Audiobooks:/home/user/app/ebook2audiobookXTTS/Audiobooks --memory="4g" --network none --platform linux/amd64 registry.hf.space/drewthomasson-ebook2audiobookxtts:latest python app.py -h
+user/app/ebook2audiobookXTTS/input-folder -v $(pwd)/Audiobooks:/home/user/app/ebook2audiobookXTTS/Audiobooks --memory="4g" --network none --platform linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py -h
 starting...
 usage: app.py [-h] [--share SHARE] [--headless HEADLESS] [--ebook EBOOK] [--voice VOICE]
               [--language LANGUAGE] [--use_custom_model USE_CUSTOM_MODEL]
@@ -371,6 +371,10 @@ https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode, add `-h` parameter after the `app.py` in the docker run command for more information.
 - "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS, I don't speak every language and I need advise from each person to fine tune my sentense splitting function on any other languages.😊
 - "The loading bar is stuck at 30% in the web gui!" - The web gui loading bar is extreamly basic as its just split between the three loading steps, refer to the terminal and what sentense it's on for a more accurate gauge on where is it progress wise.
+
+## What I need help with! 🙌
+- Any help from people speaking any of the supported langues to help with proper sentence splitting methods
+- Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
 
 ## 🙏 Special Thanks
 
