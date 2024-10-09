@@ -133,6 +133,9 @@ usage: app.py [-h] [--share SHARE] [--headless HEADLESS] [--ebook EBOOK] [--voic
               [--language LANGUAGE] [--use_custom_model USE_CUSTOM_MODEL]
               [--custom_model CUSTOM_MODEL] [--custom_config CUSTOM_CONFIG]
               [--custom_vocab CUSTOM_VOCAB] [--custom_model_url CUSTOM_MODEL_URL]
+              [--temperature TEMPERATURE] [--length_penalty LENGTH_PENALTY]
+              [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K] [--top_p TOP_P]
+              [--speed SPEED] [--enable_text_splitting ENABLE_TEXT_SPLITTING]
 
 Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the
 Gradio interface or run the script in headless mode for direct conversion.
@@ -169,6 +172,25 @@ options:
                         ough_fine_tune/resolve/main/Finished_model_files.zip?download=tr
                         ue'. More XTTS fine-tunes can be found on my Hugging Face at
                         'https://huggingface.co/drewThomasson'.
+  --temperature TEMPERATURE
+                        Temperature for the model. Defaults to 0.65. Higher Tempatures
+                        will lead to more creative outputs IE: more Hallucinations.
+                        Lower Tempatures will be more monotone outputs IE: less
+                        Hallucinations.
+  --length_penalty LENGTH_PENALTY
+                        A length penalty applied to the autoregressive decoder. Defaults
+                        to 1.0.
+  --repetition_penalty REPETITION_PENALTY
+                        A penalty that prevents the autoregressive decoder from
+                        repeating itself. Defaults to 2.0.
+  --top_k TOP_K         Top-k sampling. Lower values mean more likely outputs and
+                        increased audio generation speed. Defaults to 50.
+  --top_p TOP_P         Top-p sampling. Lower values mean more likely outputs and
+                        increased audio generation speed. Defaults to 0.8.
+  --speed SPEED         Speed factor for the speech generation. IE: How fast the
+                        Narrerator will speak. Defaults to 1.0.
+  --enable_text_splitting ENABLE_TEXT_SPLITTING
+                        Enable splitting text into sentences. Defaults to True.
 
 Example: python script.py --headless --ebook path_to_ebook --voice path_to_voice
 --language en --use_custom_model True --custom_model model.pth --custom_config
@@ -284,6 +306,9 @@ usage: app.py [-h] [--share SHARE] [--headless HEADLESS] [--ebook EBOOK] [--voic
               [--language LANGUAGE] [--use_custom_model USE_CUSTOM_MODEL]
               [--custom_model CUSTOM_MODEL] [--custom_config CUSTOM_CONFIG]
               [--custom_vocab CUSTOM_VOCAB] [--custom_model_url CUSTOM_MODEL_URL]
+              [--temperature TEMPERATURE] [--length_penalty LENGTH_PENALTY]
+              [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K] [--top_p TOP_P]
+              [--speed SPEED] [--enable_text_splitting ENABLE_TEXT_SPLITTING]
 
 Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the
 Gradio interface or run the script in headless mode for direct conversion.
@@ -320,6 +345,25 @@ options:
                         ough_fine_tune/resolve/main/Finished_model_files.zip?download=tr
                         ue'. More XTTS fine-tunes can be found on my Hugging Face at
                         'https://huggingface.co/drewThomasson'.
+  --temperature TEMPERATURE
+                        Temperature for the model. Defaults to 0.65. Higher Tempatures
+                        will lead to more creative outputs IE: more Hallucinations.
+                        Lower Tempatures will be more monotone outputs IE: less
+                        Hallucinations.
+  --length_penalty LENGTH_PENALTY
+                        A length penalty applied to the autoregressive decoder. Defaults
+                        to 1.0.
+  --repetition_penalty REPETITION_PENALTY
+                        A penalty that prevents the autoregressive decoder from
+                        repeating itself. Defaults to 2.0.
+  --top_k TOP_K         Top-k sampling. Lower values mean more likely outputs and
+                        increased audio generation speed. Defaults to 50.
+  --top_p TOP_P         Top-p sampling. Lower values mean more likely outputs and
+                        increased audio generation speed. Defaults to 0.8.
+  --speed SPEED         Speed factor for the speech generation. IE: How fast the
+                        Narrerator will speak. Defaults to 1.0.
+  --enable_text_splitting ENABLE_TEXT_SPLITTING
+                        Enable splitting text into sentences. Defaults to True.
 
 Example: python script.py --headless --ebook path_to_ebook --voice path_to_voice
 --language en --use_custom_model True --custom_model model.pth --custom_config
@@ -329,8 +373,10 @@ config.json --custom_vocab vocab.json
 
 #### 🖥️ Docker GUI 
 
-<img width="1401" alt="Screenshot 2024-08-25 at 10 08 40 AM" src="https://github.com/user-attachments/assets/78cfd33e-cd46-41cc-8128-3820160a5e40">
-<img width="1406" alt="Screenshot 2024-08-25 at 10 08 51 AM" src="https://github.com/user-attachments/assets/dbfad9f6-e6e5-4cad-b248-adb76c5434f3">
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/b36c71cf-8e06-484c-a252-934e6b1d0c2f">
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/c0dab57a-d2d4-4658-bff9-3842ec90cb40">
+<img width="1728" alt="image" src="https://github.com/user-attachments/assets/0a99eeac-c521-4b21-8656-e064c1adc528">
+
 
 ### 🛠️ For Custom Xtts Models
 
