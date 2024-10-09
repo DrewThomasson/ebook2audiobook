@@ -428,3 +428,6 @@ https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
 - **Coqui TTS**: [Coqui TTS GitHub](https://github.com/coqui-ai/TTS)
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
+
+- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/8) 
+
