@@ -72,6 +72,14 @@ parser.add_argument("--custom_model_url", type=str,
                           "Examples include David Attenborough's model: "
                           "'https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true'. "
                           "More XTTS fine-tunes can be found on my Hugging Face at 'https://huggingface.co/drewThomasson'."))
+parser.add_argument("--temperature", type=float, default=0.65, help="Temperature for the model. Defaults to 0.65. Higher Tempatures will lead to more creative outputs IE: more Hallucinations. Lower Tempatures will be more monotone outputs IE: less Hallucinations.")
+parser.add_argument("--length_penalty", type=float, default=1.0, help="A length penalty applied to the autoregressive decoder. Defaults to 1.0.")
+parser.add_argument("--repetition_penalty", type=float, default=2.0, help="A penalty that prevents the autoregressive decoder from repeating itself. Defaults to 2.0.")
+parser.add_argument("--top_k", type=int, default=50, help="Top-k sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 50.")
+parser.add_argument("--top_p", type=float, default=0.8, help="Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 0.8.")
+parser.add_argument("--speed", type=float, default=1.0, help="Speed factor for the speech generation. IE: How fast the Narrerator will speak. Defaults to 1.0.")
+parser.add_argument("--enable_text_splitting", type=bool, default=False, help="Enable splitting text into sentences. Defaults to True.")
+
 args = parser.parse_args()
 
 
@@ -580,7 +588,7 @@ from tqdm import tqdm
 
 # Convert chapters to audio using XTTS
 
-def convert_chapters_to_audio_custom_model(chapters_dir, output_audio_dir, target_voice_path=None, language=None, custom_model=None):
+def convert_chapters_to_audio_custom_model(chapters_dir, output_audio_dir, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_path=None, language=None, custom_model=None):
 
     if target_voice_path==None:
         target_voice_path = default_target_voice_path
@@ -635,12 +643,13 @@ def convert_chapters_to_audio_custom_model(chapters_dir, output_audio_dir, targe
                             print(f"Generating fragment: {fragment}...")
                             fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
                             if custom_model:
-                                out = model.inference(fragment, language, gpt_cond_latent, speaker_embedding, temperature=0.7)
+                                out = model.inference(fragment, language, gpt_cond_latent, speaker_embedding, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting)
                                 torchaudio.save(fragment_file_path, torch.tensor(out["wav"]).unsqueeze(0), 24000)
                             else:
                                 speaker_wav_path = target_voice_path if target_voice_path else default_target_voice_path
                                 language_code = language if language else default_language_code
-                                tts.tts_to_file(text=fragment, file_path=fragment_file_path, speaker_wav=speaker_wav_path, language=language_code)
+                                tts.tts_to_file(text=fragment, file_path=fragment_file_path, speaker_wav=speaker_wav_path, language=language_code, temperature=temperature, length_penalty=length_penalty, repetition_penalty=repetition_penalty, top_k=top_k, top_p=top_p, speed=speed, enable_text_splitting=enable_text_splitting)
+
                             temp_count += 1
 
             combine_wav_files(temp_audio_directory, output_audio_dir, output_file_name)
@@ -649,7 +658,7 @@ def convert_chapters_to_audio_custom_model(chapters_dir, output_audio_dir, targe
 
 
 
-def convert_chapters_to_audio_standard_model(chapters_dir, output_audio_dir, target_voice_path=None, language="en"):
+def convert_chapters_to_audio_standard_model(chapters_dir, output_audio_dir, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_path=None, language="en"):
     selected_tts_model = "tts_models/multilingual/multi-dataset/xtts_v2"
     tts = TTS(selected_tts_model, progress_bar=False).to(device)
 
@@ -690,7 +699,20 @@ def convert_chapters_to_audio_standard_model(chapters_dir, output_audio_dir, tar
                             print(f"Generating fragment: {fragment}...")
                             fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
                             speaker_wav_path = target_voice_path if target_voice_path else default_target_voice_path
-                            tts.tts_to_file(text=fragment, file_path=fragment_file_path, speaker_wav=speaker_wav_path, language=language)
+                            tts.tts_to_file(
+                                text=fragment, 
+                                file_path=fragment_file_path, 
+                                speaker_wav=speaker_wav_path, 
+                                language=language, 
+                                temperature=temperature, 
+                                length_penalty=length_penalty, 
+                                repetition_penalty=repetition_penalty, 
+                                top_k=top_k, 
+                                top_p=top_p, 
+                                speed=speed, 
+                                enable_text_splitting=enable_text_splitting
+                            )
+
                             temp_count += 1
 
             combine_wav_files(temp_audio_directory, output_audio_dir, output_file_name)
@@ -700,7 +722,8 @@ def convert_chapters_to_audio_standard_model(chapters_dir, output_audio_dir, tar
 
 
 # Define the functions to be used in the Gradio interface
-def convert_ebook_to_audio(ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, custom_model_url=None, progress=gr.Progress()):
+def convert_ebook_to_audio(ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, custom_model_url=None, progress=gr.Progress()):
+
     ebook_file_path = args.ebook if args.ebook else ebook_file.name
     target_voice = args.voice if args.voice else target_voice_file.name if target_voice_file else None
     custom_model = None
@@ -771,9 +794,9 @@ def convert_ebook_to_audio(ebook_file, target_voice_file, language, use_custom_m
         print(f"Error updating progress: {e}")
     
     if use_custom_model:
-        convert_chapters_to_audio_custom_model(chapters_directory, output_audio_directory, target_voice, language, custom_model)
+        convert_chapters_to_audio_custom_model(chapters_directory, output_audio_directory, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice, language, custom_model)
     else:
-        convert_chapters_to_audio_standard_model(chapters_directory, output_audio_directory, target_voice, language)
+        convert_chapters_to_audio_standard_model(chapters_directory, output_audio_directory, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice, language)
     
     try:
         progress(0.9, desc="Creating M4B from chapters")
@@ -820,6 +843,19 @@ def run_gradio_interface():
         text_size=gr.themes.sizes.text_md,
     )
 
+# Gradio UI setup
+def run_gradio_interface():
+    language_options = [
+        "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko"
+    ]
+
+    theme = gr.themes.Soft(
+        primary_hue="blue",
+        secondary_hue="blue",
+        neutral_hue="blue",
+        text_size=gr.themes.sizes.text_md,
+    )
+
     with gr.Blocks(theme=theme) as demo:
         gr.Markdown(
         """
@@ -831,18 +867,82 @@ def run_gradio_interface():
         """
         )
 
-        with gr.Row():
-            with gr.Column(scale=3):
-                ebook_file = gr.File(label="eBook File")
-                target_voice_file = gr.File(label="Target Voice File (Optional)")
-                language = gr.Dropdown(label="Language", choices=language_options, value="en")
+        with gr.Tabs():  # Create tabs for better UI organization
+            with gr.TabItem("Input Options"):
+                with gr.Row():
+                    with gr.Column(scale=3):
+                        ebook_file = gr.File(label="eBook File")
+                        target_voice_file = gr.File(label="Target Voice File (Optional)")
+                        language = gr.Dropdown(label="Language", choices=language_options, value="en")
 
-            with gr.Column(scale=3):
-                use_custom_model = gr.Checkbox(label="Use Custom Model")
-                custom_model_file = gr.File(label="Custom Model File (Optional)", visible=False)
-                custom_config_file = gr.File(label="Custom Config File (Optional)", visible=False)
-                custom_vocab_file = gr.File(label="Custom Vocab File (Optional)", visible=False)
-                custom_model_url = gr.Textbox(label="Custom Model Zip URL (Optional)", visible=False)
+                    with gr.Column(scale=3):
+                        use_custom_model = gr.Checkbox(label="Use Custom Model")
+                        custom_model_file = gr.File(label="Custom Model File (Optional)", visible=False)
+                        custom_config_file = gr.File(label="Custom Config File (Optional)", visible=False)
+                        custom_vocab_file = gr.File(label="Custom Vocab File (Optional)", visible=False)
+                        custom_model_url = gr.Textbox(label="Custom Model Zip URL (Optional)", visible=False)
+
+            with gr.TabItem("Audio Generation Preferences"):  # New tab for preferences
+                gr.Markdown(
+                """
+                ### Customize Audio Generation Parameters
+                
+                Adjust the settings below to influence how the audio is generated. You can control the creativity, speed, repetition, and more.
+                """
+                )
+                temperature = gr.Slider(
+                    label="Temperature", 
+                    minimum=0.1, 
+                    maximum=10.0, 
+                    step=0.1, 
+                    value=0.65,
+                    info="Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone."
+                )
+                length_penalty = gr.Slider(
+                    label="Length Penalty", 
+                    minimum=0.5, 
+                    maximum=10.0, 
+                    step=0.1, 
+                    value=1.0, 
+                    info="Penalize longer sequences. Higher values produce shorter outputs."
+                )
+                repetition_penalty = gr.Slider(
+                    label="Repetition Penalty", 
+                    minimum=1.0, 
+                    maximum=10.0, 
+                    step=0.1, 
+                    value=2.0, 
+                    info="Penalizes repeated phrases. Higher values reduce repetition."
+                )
+                top_k = gr.Slider(
+                    label="Top-k Sampling", 
+                    minimum=10, 
+                    maximum=100, 
+                    step=1, 
+                    value=50, 
+                    info="Lower values restrict outputs to more likely words and increase speed at which audio generates. "
+                )
+                top_p = gr.Slider(
+                    label="Top-p Sampling", 
+                    minimum=0.1, 
+                    maximum=1.0, 
+                    step=.01, 
+                    value=0.8, 
+                    info="Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates."
+                )
+                speed = gr.Slider(
+                    label="Speed", 
+                    minimum=0.5, 
+                    maximum=3.0, 
+                    step=0.1, 
+                    value=1.0, 
+                    info="Adjusts How fast the narrator will speak."
+                )
+                enable_text_splitting = gr.Checkbox(
+                    label="Enable Text Splitting", 
+                    value=False,
+                    info="Splits long texts into sentences to generate audio in chunks. Useful for very long inputs."
+                )
 
         convert_btn = gr.Button("Convert to Audiobook", variant="primary")
         output = gr.Textbox(label="Conversion Status")
@@ -851,10 +951,24 @@ def run_gradio_interface():
         download_files = gr.File(label="Download Files", interactive=False)
 
         convert_btn.click(
-            convert_ebook_to_audio,
-            inputs=[ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, custom_model_url],
+            lambda *args: convert_ebook_to_audio(
+                *args[:7], 
+                float(args[7]),  # Ensure temperature is float
+                float(args[8]),  # Ensure length_penalty is float
+                float(args[9]),  # Ensure repetition_penalty is float
+                int(args[10]),   # Ensure top_k is int
+                float(args[11]), # Ensure top_p is float
+                float(args[12]), # Ensure speed is float
+                *args[13:]
+            ),
+            inputs=[
+                ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, 
+                custom_vocab_file, temperature, length_penalty, repetition_penalty, 
+                top_k, top_p, speed, enable_text_splitting, custom_model_url
+            ],
             outputs=[output, audio_player]
         )
+
 
         use_custom_model.change(
             lambda x: [gr.update(visible=x)] * 4,
@@ -877,6 +991,8 @@ def run_gradio_interface():
 
     # Launch Gradio app
     demo.launch(server_name="0.0.0.0", server_port=7860, share=args.share)
+
+
 
 
 
@@ -915,7 +1031,8 @@ if args.headless:
 
 
     # Example headless execution
-    convert_ebook_to_audio(ebook_file_path, target_voice, args.language, args.use_custom_model, args.custom_model, args.custom_config, args.custom_vocab, custom_model_url)
+    convert_ebook_to_audio(ebook_file_path, target_voice, args.language, args.use_custom_model, args.custom_model, args.custom_config, args.custom_vocab, args.temperature, args.length_penalty, args.repetition_penalty, args.top_k, args.top_p, args.speed, args.enable_text_splitting, custom_model_url)
+
 
 else:
     # Launch Gradio UI
