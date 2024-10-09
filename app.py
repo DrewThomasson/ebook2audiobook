@@ -73,7 +73,7 @@ parser.add_argument("--custom_model_url", type=str,
                           "'https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true'. "
                           "More XTTS fine-tunes can be found on my Hugging Face at 'https://huggingface.co/drewThomasson'."))
 parser.add_argument("--temperature", type=float, default=0.65, help="Temperature for the model. Defaults to 0.65. Higher Tempatures will lead to more creative outputs IE: more Hallucinations. Lower Tempatures will be more monotone outputs IE: less Hallucinations.")
-parser.add_argument("--length_penalty", type=float, default=1.0, help="A length penalty applied to the autoregressive decoder. Defaults to 1.0.")
+parser.add_argument("--length_penalty", type=float, default=1.0, help="A length penalty applied to the autoregressive decoder. Defaults to 1.0.  Not applied to custom models.")
 parser.add_argument("--repetition_penalty", type=float, default=2.0, help="A penalty that prevents the autoregressive decoder from repeating itself. Defaults to 2.0.")
 parser.add_argument("--top_k", type=int, default=50, help="Top-k sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 50.")
 parser.add_argument("--top_p", type=float, default=0.8, help="Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 0.8.")
@@ -643,7 +643,9 @@ def convert_chapters_to_audio_custom_model(chapters_dir, output_audio_dir, tempe
                             print(f"Generating fragment: {fragment}...")
                             fragment_file_path = os.path.join(temp_audio_directory, f"{temp_count}.wav")
                             if custom_model:
-                                out = model.inference(fragment, language, gpt_cond_latent, speaker_embedding, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting)
+                                # length penalty will not apply for custome models, its just too much of a headache perhaps if someone else can do it for me lol, im just one man :(
+                                out = model.inference(fragment, language, gpt_cond_latent, speaker_embedding, temperature=temperature, repetition_penalty=repetition_penalty, top_k=top_k, top_p=top_p, speed=speed, enable_text_splitting=enable_text_splitting)
+                                #out = model.inference(fragment, language, gpt_cond_latent, speaker_embedding, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting)
                                 torchaudio.save(fragment_file_path, torch.tensor(out["wav"]).unsqueeze(0), 24000)
                             else:
                                 speaker_wav_path = target_voice_path if target_voice_path else default_target_voice_path
@@ -904,7 +906,7 @@ def run_gradio_interface():
                     maximum=10.0, 
                     step=0.1, 
                     value=1.0, 
-                    info="Penalize longer sequences. Higher values produce shorter outputs."
+                    info="Penalize longer sequences. Higher values produce shorter outputs. Not applied to custom models."
                 )
                 repetition_penalty = gr.Slider(
                     label="Repetition Penalty", 
