@@ -179,7 +179,7 @@ options:
                         Hallucinations.
   --length_penalty LENGTH_PENALTY
                         A length penalty applied to the autoregressive decoder. Defaults
-                        to 1.0.
+                        to 1.0. Not applied to custom models.
   --repetition_penalty REPETITION_PENALTY
                         A penalty that prevents the autoregressive decoder from
                         repeating itself. Defaults to 2.0.
@@ -352,7 +352,7 @@ options:
                         Hallucinations.
   --length_penalty LENGTH_PENALTY
                         A length penalty applied to the autoregressive decoder. Defaults
-                        to 1.0.
+                        to 1.0. Not applied to custom models.
   --repetition_penalty REPETITION_PENALTY
                         A penalty that prevents the autoregressive decoder from
                         repeating itself. Defaults to 2.0.
