@@ -373,9 +373,13 @@ config.json --custom_vocab vocab.json
 
 #### 🖥️ Docker GUI 
 ![demo_web_gui](https://github.com/user-attachments/assets/85af88a7-05dd-4a29-91de-76a14cf5ef06)
+
+<details>
+  <summary>Click to see images</summary>
 <img width="1728" alt="image" src="https://github.com/user-attachments/assets/b36c71cf-8e06-484c-a252-934e6b1d0c2f">
 <img width="1728" alt="image" src="https://github.com/user-attachments/assets/c0dab57a-d2d4-4658-bff9-3842ec90cb40">
 <img width="1728" alt="image" src="https://github.com/user-attachments/assets/0a99eeac-c521-4b21-8656-e064c1adc528">
+</details>
 ### 🛠️ For Custom Xtts Models
 
 Models built to be better at a specific voice. Check out my Hugging Face page [here](https://huggingface.co/drewThomasson).
