@@ -1,4 +1,22 @@
-impott setuptools
+import subprocess
+from setuptools import setup, find_packages, Command
+
+class InstallExtra(Command):
+    description = 'Install dependencies and download additional resources'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        # Run the standard installation
+        subprocess.check_call(['pip', 'install', '-r', 'requirements.txt'])
+        # Download unidic and nltk punkt
+        subprocess.check_call(['python', '-m', 'unidic', 'download'])
+        subprocess.check_call(['python', '-m', 'nltk.downloader', 'punkt'])
 
 with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
@@ -7,7 +25,7 @@ with open("README.md", "r", encoding='utf-8') as fh:
 with open('requirements.txt') as f:
     requirements = f.read().splitlines()
 
-setuptools.setup(
+setup(
     name="ebook2audiobookXTTS",
     version="1.2",
     author="Drew Thomasson",
@@ -15,10 +33,9 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/DrewThomasson/ebook2audiobookXTTS",
-    packages=setuptools.find_packages(),
+    packages=find_packages(),
     entry_points={
         'console_scripts': [
-            'turnvoice=turnvoice.core.turnvoice:main',
             'ebook2audiobook=ebook2audiobook:main',
         ],
     },
@@ -29,6 +46,6 @@ setuptools.setup(
     ],
     python_requires='>=3.10',
     install_requires=requirements,
-    keywords='replace, voice, ebook, audiobook, '
-             'sentence-segmentation, TTS-engine, sentence-fragment, python'
+    keywords='ebook, audiobook, '
+             'TTS-engine, python'
 )
