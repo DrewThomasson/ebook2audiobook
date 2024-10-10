@@ -25,7 +25,7 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 
 ## 🛠️ Requirements
 
-- Python 3.x
+- Python 3.10
 - `coqui-tts` Python package
 - Calibre (for eBook conversion)
 - FFmpeg (for audiobook creation)
