@@ -1,4 +1,4 @@
-tts==0.21.3
+coqui-tts
 pydub
 nltk
 beautifulsoup4
