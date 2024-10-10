@@ -42,7 +42,7 @@ setup(
     ],
     cmdclass={
         'install': InstallPackages,
-    }
+    },
     python_requires='>=3.10',
     install_requires=requirements,
     keywords='ebook, audiobook, '
