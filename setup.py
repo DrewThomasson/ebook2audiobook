@@ -1,7 +1,7 @@
 import subprocess
 from setuptools import setup, find_packages, Command
 
-class InstallExtra(Command):
+class InstallPackages(Command):
     description = 'Install dependencies and download additional resources'
     user_options = []
 
@@ -12,9 +12,7 @@ class InstallExtra(Command):
         pass
 
     def run(self):
-        # Run the standard installation
         subprocess.check_call(['pip', 'install', '-r', 'requirements.txt'])
-        # Download unidic and nltk punkt
         subprocess.check_call(['python', '-m', 'unidic', 'download'])
         subprocess.check_call(['python', '-m', 'nltk.downloader', 'punkt'])
 
@@ -30,8 +28,6 @@ setup(
     version="1.2",
     author="Drew Thomasson",
     description="Convert eBooks to audiobooks with chapters and metadata.",
-    long_description=long_description,
-    long_description_content_type="text/markdown",
     url="https://github.com/DrewThomasson/ebook2audiobookXTTS",
     packages=find_packages(),
     entry_points={
@@ -44,6 +40,9 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    cmdclass={
+        'install': InstallPackages,
+    }
     python_requires='>=3.10',
     install_requires=requirements,
     keywords='ebook, audiobook, '
