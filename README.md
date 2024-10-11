@@ -13,6 +13,10 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 <img width="1728" alt="image" src="https://github.com/user-attachments/assets/0a99eeac-c521-4b21-8656-e064c1adc528">
 </details>
 
+## README.md
+- en [English](README.md)
+- zh_CN [简体中文](readme/README_CN.md)
+
 
 ## 🌟 Features
 
@@ -215,6 +219,8 @@ config.json --custom_vocab vocab.json
   <summary>⚠️ Legacy-Depricated Old Use Instructions</summary>
    
 ## 🚀 Usage
+
+## Legacy files have been moved to `ebook2audiobookXTTS/legacy/`
 
 ### 🖥️ Gradio Web Interface
 
