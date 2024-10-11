@@ -995,47 +995,46 @@ def run_gradio_interface():
     demo.launch(server_name="0.0.0.0", server_port=7860, share=args.share)
 
 
+ if __name__ == "__main__":
+    # Check if running in headless mode
+    if args.headless:
+        # If the arg.custom_model_url exists then use it as the custom_model_url lol
+        custom_model_url = args.custom_model_url if args.custom_model_url else None
+        
+        if not args.ebook:
+            print("Error: In headless mode, you must specify an ebook file using --ebook.")
+            exit(1)
 
+        ebook_file_path = args.ebook
+        target_voice = args.voice if args.voice else None
+        custom_model = None
 
-
-# Check if running in headless mode
-if args.headless:
-    # If the arg.custom_model_url exists then use it as the custom_model_url lol
-    custom_model_url = args.custom_model_url if args.custom_model_url else None
-    
-    if not args.ebook:
-        print("Error: In headless mode, you must specify an ebook file using --ebook.")
-        exit(1)
-
-    ebook_file_path = args.ebook
-    target_voice = args.voice if args.voice else None
-    custom_model = None
-
-    if args.use_custom_model:
-        # Check if custom_model_url is provided
-        if args.custom_model_url:
-            # Download the custom model from the provided URL
-            custom_model_url = args.custom_model_url
-        else:
-            # If no URL is provided, ensure all custom model files are provided
-            if not args.custom_model or not args.custom_config or not args.custom_vocab:
-                print("Error: You must provide either a --custom_model_url or all of the following arguments:")
-                print("--custom_model, --custom_config, and --custom_vocab")
-                exit(1)
+        if args.use_custom_model:
+            # Check if custom_model_url is provided
+            if args.custom_model_url:
+                # Download the custom model from the provided URL
+                custom_model_url = args.custom_model_url
             else:
-                # Assign the custom model files
-                custom_model = {
-                    'model': args.custom_model,
-                    'config': args.custom_config,
-                    'vocab': args.custom_vocab
-                }
+                # If no URL is provided, ensure all custom model files are provided
+                if not args.custom_model or not args.custom_config or not args.custom_vocab:
+                    print("Error: You must provide either a --custom_model_url or all of the following arguments:")
+                    print("--custom_model, --custom_config, and --custom_vocab")
+                    exit(1)
+                else:
+                    # Assign the custom model files
+                    custom_model = {
+                        'model': args.custom_model,
+                        'config': args.custom_config,
+                        'vocab': args.custom_vocab
+                    }
 
 
 
-    # Example headless execution
-    convert_ebook_to_audio(ebook_file_path, target_voice, args.language, args.use_custom_model, args.custom_model, args.custom_config, args.custom_vocab, args.temperature, args.length_penalty, args.repetition_penalty, args.top_k, args.top_p, args.speed, args.enable_text_splitting, custom_model_url)
+        # Example headless execution
+        convert_ebook_to_audio(ebook_file_path, target_voice, args.language, args.use_custom_model, args.custom_model, args.custom_config, args.custom_vocab, args.temperature, args.length_penalty, args.repetition_penalty, args.top_k, args.top_p, args.speed, args.enable_text_splitting, custom_model_url)
 
 
-else:
-    # Launch Gradio UI
-    run_gradio_interface()
+    else:
+        # Launch Gradio UI
+        run_gradio_interface()
+      
