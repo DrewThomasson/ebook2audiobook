@@ -220,6 +220,8 @@ config.json --custom_vocab vocab.json
    
 ## 🚀 Usage
 
+## Legacy files have been moved to `ebook2audiobookXTTS/legacy/`
+
 ### 🖥️ Gradio Web Interface
 
 1. **Run the Script**:
