@@ -1,0 +1,9 @@
+coqui-tts
+pydub
+nltk
+beautifulsoup4
+ebooklib
+tqdm
+mecab
+mecab-python3
+unidic-lite
