@@ -6,4 +6,4 @@ ebooklib
 tqdm
 mecab
 mecab-python3
-unidic
+unidic-lite
