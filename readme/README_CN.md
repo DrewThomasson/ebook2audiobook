@@ -212,6 +212,8 @@ config.json --custom_vocab vocab.json
 
 ## 🚀 使用
 
+----> `ebook2audiobookXTTS/legacy/`
+
 ### 🖥️ Web界面
 
 1. **运行脚本**:
