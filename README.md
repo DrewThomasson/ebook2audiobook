@@ -439,7 +439,8 @@ https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 - "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS, I don't speak every language and I need advise from each person to fine tune my sentense splitting function on any other languages.😊
 - "The loading bar is stuck at 30% in the web gui!" - The web gui loading bar is extreamly basic as its just split between the three loading steps, refer to the terminal and what sentense it's on for a more accurate gauge on where is it progress wise.
 
-## What I need help with! 🙌
+## What I need help with! 🙌 
+## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/32)
 - Any help from people speaking any of the supported langues to help with proper sentence splitting methods
 - Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
 
