@@ -57,7 +57,7 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 
 5. **Install Python packages**:
    ```bash
-   pip install coqui-tts==0.24.2 pydub nltk beautifulsoup4 ebooklib tqdm
+   pip install coqui-tts==0.24.2 pydub nltk beautifulsoup4 ebooklib tqdm gradio
    
    python -m nltk.downloader punkt
    ```
