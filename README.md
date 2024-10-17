@@ -423,7 +423,14 @@ To find already fine-tuned XTTS models, visit [this Hugging Face link](https://h
 
 ## 🎥 Demos
 
+Rainy day voice
+
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
+
+David Attenborough voice
+
+https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
+
 
 ## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobookXTTS)
 - Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
