@@ -27,6 +27,13 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 - 🌍 Supports multiple languages (English by default).
 - 🖥️ Designed to run on 4GB RAM.
 
+## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobookXTTS)
+- Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
+- Best to duplicate space or run locally.
+
+## Free Google Colab [![Free Google Colab](https://github.com/user-attachments/assets/a8a0d8c8-d605-4f52-a812-d45c779510a9)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobookXTTS/blob/main/Notebooks/colab_ebook2audiobookxtts.ipynb)
+
+
 ## 🛠️ Requirements
 
 - Python 3.10
