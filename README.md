@@ -31,7 +31,7 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 - Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
 - Best to duplicate space or run locally.
 
-## Free Google Colab [![Free Google Colab](https://github.com/user-attachments/assets/a8a0d8c8-d605-4f52-a812-d45c779510a9)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobookXTTS/blob/main/Notebooks/colab_ebook2audiobookxtts.ipynb)
+## Free Google Colab [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobookXTTS/blob/main/Notebooks/colab_ebook2audiobookxtts.ipynb)
 
 
 ## 🛠️ Requirements
@@ -443,7 +443,7 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
 - Best to duplicate space or run locally.
 
-## Free Google Colab [![Free Google Colab](https://github.com/user-attachments/assets/a8a0d8c8-d605-4f52-a812-d45c779510a9)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobookXTTS/blob/main/Notebooks/colab_ebook2audiobookxtts.ipynb)
+## Free Google Colab [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobookXTTS/blob/main/Notebooks/colab_ebook2audiobookxtts.ipynb)
 
 
 
