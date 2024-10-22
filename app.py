@@ -75,7 +75,7 @@ Linux/Mac:
                         help="Speed factor for the speech generation. Defaults to 1.0.")
     parser.add_argument("--enable_text_splitting", action="store_true",
                         help="Enable splitting text into sentences. Defaults to False.")
-    parser.add_argument("--version", action="version",version=f"%(prog)s version {version}",
+    parser.add_argument("--version", action="version",version=f"ebook2audiobook version {version}",
                         help="Show the version of the script and exit")
 
     args = parser.parse_args()
