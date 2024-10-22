@@ -171,7 +171,7 @@ if ((Check-CondaInstalled) -and (Check-Docker)) {
         Write-Host "******************* ebook2audiobookXTTS installation successful! *******************" -ForegroundColor Green
         Write-Host "To launch ebook2audiobookXTTS:" -ForegroundColor Yellow
         Write-Host "- in command line mode: ./ebook2audiobookXTTS.cmd --headless [other options]"
-        Write-Host "- in graphic web mode: ./ebook2audiobookXTTS.cmd"
+        Write-Host "- in graphic web mode: ./ebook2audiobookXTTS.cmd [--share]"
     } else {
         Write-Host "The python terminal is still using the OS python version $pythonVersion, but it should be $pythonEnvVersion from the python_env virtual environment"
     }
@@ -182,5 +182,3 @@ if ((Check-CondaInstalled) -and (Check-Docker)) {
 } else {
     Write-Host "Installation cannot proceed. Either Conda is not installed or Docker is not running." -ForegroundColor Red
 }
-
-pause
