@@ -59,6 +59,8 @@ ebook_pronouns = {
     "female": ["she", "her", "hers"]
 }
 
+client = docker.from_env()
+
 def import_globals(target_namespace):
     target_namespace.update({k: v for k, v in globals().items() if not k.startswith("__")})
 
