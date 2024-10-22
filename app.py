@@ -2,7 +2,7 @@ import argparse
 import os
 import socket
 
-from lib.conf import web_interface_port, ebooks_dir, supported_ebook_formats
+from lib.conf import version, web_interface_port, ebooks_dir, supported_ebook_formats
 from lib.lang import language_options
 from lib.functions import web_interface, convert_ebook
 
@@ -11,7 +11,7 @@ def is_port_in_use(port):
         return s.connect_ex(('0.0.0.0', port)) == 0
 
 def main():
-    global web_interface_port, ebooks_dir, supported_ebook_formats
+    global ebooks_dir
     
     # Convert the list of languages to a string to display in the help text
     language_options_str = ", ".join(language_options)
@@ -41,7 +41,7 @@ Linux/Mac:
     parser.add_argument("--ebook", type=str,
                         help="Path to the ebook file for conversion. Required in headless mode.")
     parser.add_argument("--ebooks_dir", nargs='?', const="default", type=str,
-                        help=f"Path to the directory containing ebooks for batch conversion. Defaults to './{os.path.basename(ebooks_dir)}' if 'default' value is provided.")
+                        help=f"Path to the directory containing ebooks for batch conversion. Defaults to '{os.path.basename(ebooks_dir)}' if 'default' value is provided.")
     parser.add_argument("--voice", type=str,
                         help="Path to the target voice file for TTS. Optional, uses a default voice if not provided.")
     parser.add_argument("--language", type=str, default="en",
@@ -75,6 +75,8 @@ Linux/Mac:
                         help="Speed factor for the speech generation. Defaults to 1.0.")
     parser.add_argument("--enable_text_splitting", action="store_true",
                         help="Enable splitting text into sentences. Defaults to False.")
+    parser.add_argument("--version", action="version",version=f"%(prog)s version {version}",
+                        help="Show the version of the script and exit")
 
     args = parser.parse_args()
 

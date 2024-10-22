@@ -782,7 +782,7 @@ def download_audiobooks():
     return files
 
 def convert_ebook(args, ui_needed):
-    global is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
 
     is_web_process = ui_needed
     device = args.device
