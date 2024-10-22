@@ -50,9 +50,10 @@
 
 5. **安装 Python packages**:
    ```bash
-   pip install tts==0.21.3 pydub nltk beautifulsoup4 ebooklib tqdm
+   pip install coqui-tts==0.24.2 pydub nltk beautifulsoup4 ebooklib tqdm gradio==4.44.0
 
    python -m nltk.downloader punkt
+   python -m nltk.downloader punkt_tab
    ```
 
    **For non-Latin languages**:
