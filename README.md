@@ -80,20 +80,29 @@ Specify the language code when running the script in headless mode.
 
 ### 🖥️ Launching Gradio Web Interface
 
-1. **Run the Script**:
-   ```bash
-   python app.py
-   ```
+1. **Run ebook2audiobook**:
+   - **Linux/MacOS**:
+     ```bash
+     .\ebook2audiobook.sh  # Run Launch script
+     ```
+   - **Windows**
+     ```bash
+     .\ebook2audiobook.cmd  # Run launch script
+     ```
 
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
 3. **For Public Link**: Add `--share True` to the end of it like this: `python app.py --share True`
 - **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
 
 ### 📝 Basic Headless Usage
-
-```bash
-python app.py --headless True --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
-```
+   - **Linux/MacOS**:
+     ```bash
+     .\ebook2audiobook.sh  --headless True --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     ```
+   - **Windows**
+     ```bash
+     .\ebook2audiobook.cmd  --headless True --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     ```
 
 - **<path_to_ebook_file>**: Path to your eBook file.
 - **[path_to_voice_file]**: Optional for voice cloning.
@@ -101,10 +110,14 @@ python app.py --headless True --ebook <path_to_ebook_file> --voice [path_to_voic
 - **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
 
 ### 🧩 Headless Custom XTTS Model Usage
-
-```bash
-python app.py --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
-```
+   - **Linux/MacOS**:
+     ```bash
+     .\ebook2audiobook.sh  --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+     ```
+   - **Windows**
+     ```bash
+     .\ebook2audiobook.cmd  --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+     ```
 
 - **<ebook_file_path>**: Path to your eBook file.
 - **<target_voice_file_path>**: Optional for voice cloning.
@@ -116,10 +129,14 @@ python app.py --headless True --use_custom_model True --ebook <ebook_file_path> 
 
 
 ### 🧩 Headless Custom XTTS Model Usage With Zip link to XTTS Fine-Tune Model 🌐
-
-```bash
-python app.py --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
-```
+   - **Linux/MacOS**:
+     ```bash
+     .\ebook2audiobook.sh  --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
+     ```
+   - **Windows**
+     ```bash
+     .\ebook2audiobook.cmd  --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
+     ```
 
 - **<ebook_file_path>**: Path to your eBook file.
 - **<target_voice_file_path>**: Optional for voice cloning.
@@ -130,9 +147,15 @@ python app.py --headless True --use_custom_model True --ebook <ebook_file_path> 
 - **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
 
 ### 🔍 For Detailed Guide with list of all Parameters to use
-```bash
-python app.py -h
-```
+   - **Linux/MacOS**:
+     ```bash
+     .\ebook2audiobook.sh  -h
+     ```
+   - **Windows**
+     ```bash
+     .\ebook2audiobook.cmd  -h
+     ```
+
 - This will output the following:
 ```bash
 usage: app.py [-h] [--share] [--headless [HEADLESS]] [--ebook EBOOK]
