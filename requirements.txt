@@ -8,6 +8,6 @@ tqdm
 mecab
 mecab-python3
 unidic
-gradio
+gradio>=4.44.0
 docker
 

@@ -146,7 +146,7 @@ if ((Check-CondaInstalled) -and (Check-Docker)) {
         # Install required Python packages with pip, showing progress
         Write-Host "Installing required Python packages..."
         & conda run --prefix "$scriptDir\python_env" python.exe -m pip install --upgrade pip --progress-bar on -v
-        & conda run --prefix "$scriptDir\python_env" pip install pydub nltk beautifulsoup4 ebooklib translate coqui-tts tqdm mecab mecab-python3 unidic gradio docker --progress-bar on -v
+        & conda run --prefix "$scriptDir\python_env" pip install pydub nltk beautifulsoup4 ebooklib translate coqui-tts tqdm mecab mecab-python3 unidic gradio>=4.44.0 docker --progress-bar on -v
 
         # Download unidic language model for MeCab with progress
         Write-Host "Downloading unidic language model for MeCab..."

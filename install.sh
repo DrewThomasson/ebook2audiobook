@@ -89,7 +89,7 @@ if [[ -n "$WGET" && -n "$CONDA_VERSION" && -n "$DOCKER" ]]; then
 	conda activate $(pwd)/python_env && \
 	$DOCKER build -f DockerfileUtils -t utils . && \
 	pip install --upgrade pip && \
-	pip install pydub nltk beautifulsoup4 ebooklib translate coqui-tts tqdm mecab mecab-python3 unidic gradio docker && \
+	pip install pydub nltk beautifulsoup4 ebooklib translate coqui-tts tqdm mecab mecab-python3 unidic gradio>=4.44.0 docker && \
 	python -m unidic download && \
 	python -m spacy download en_core_web_sm && \
 	pip install -e . && \
