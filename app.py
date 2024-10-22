@@ -47,7 +47,7 @@ Linux/Mac:
     parser.add_argument("--language", type=str, default="en",
                         help=f"Language for the audiobook conversion. Options: {language_options_str}. Defaults to English (en).")
     parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "gpu"],
-                        help=f"Type of processor unit for the audiobook conversion. Defaults to cpu.")
+                        help=f"Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.")
     parser.add_argument("--use_custom_model", action="store_true",
                         help="Use a custom TTS model. Defaults to False. Must be True to use custom models.")
     parser.add_argument("--custom_model", type=str,

@@ -854,6 +854,8 @@ def convert_ebook(args, ui_needed):
             create_chapter_labeled_book(ebook_filename_noext)
 
             if torch.cuda.is_available() == False:
+                if device == "gpu":
+                    print("GPU is not available on your device!")
                 device = "cpu"
                     
             torch.device(device)
