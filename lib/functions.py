@@ -883,6 +883,11 @@ def convert_ebook(args, ui_needed):
 def delete_old_web_folders(root_dir):
     global web_dir_expire
 
+    # Ensure the root_dir directory exists
+    if not os.path.exists(root_dir):
+        os.makedirs(root_dir)
+        print(f"Created missing directory: {root_dir}")
+
     current_time = time.time()
     age_limit = current_time - web_dir_expire * 60 * 60  # 24 hours in seconds
 
