@@ -2,12 +2,12 @@ import argparse
 import os
 import socket
 
-from lib.conf import web_interface_port
+from lib.conf import web_interface_port, ebooks_dir
 from lib.lang import language_options
 from lib.functions import web_interface, convert_ebook
 
 # Global default ebooks directory
-default_ebooks_dir = os.path.abspath("./ebooks")
+
 
 # List of supported Calibre ebook formats
 supported_ebook_formats = ['.epub', '.mobi', '.azw3', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
@@ -24,7 +24,20 @@ def main():
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description="Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.",
-        epilog="Example: python script.py --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json"
+        epilog="""\
+Example usage:    
+Windows:
+    headless:
+    ./ebook2audiobook.cmd --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json
+    Graphic Interface:
+    ./ebook2audiobook.cmd
+Linux/Mac:
+    headless:
+    ./ebook2audiobook.sh --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json
+    Graphic Interface:
+    ./ebook2audiobook.sh
+""",
+        formatter_class=argparse.RawTextHelpFormatter
     )
     parser.add_argument("--share", action="store_true",
                         help="Enable a public shareable Gradio link. Defaults to False.")
@@ -33,7 +46,7 @@ def main():
     parser.add_argument("--ebook", type=str,
                         help="Path to the ebook file for conversion. Required in headless mode.")
     parser.add_argument("--ebooks_dir", nargs='?', const="default", type=str,
-                        help="Path to the directory containing ebooks for batch conversion. Defaults to 'default' if no value is provided.")
+                        help="Path to the directory containing ebooks for batch conversion. Defaults to './ebooks' if no value is provided.")
     parser.add_argument("--voice", type=str,
                         help="Path to the target voice file for TTS. Optional, uses a default voice if not provided.")
     parser.add_argument("--language", type=str, default="en",
@@ -85,8 +98,8 @@ def main():
         # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
         if args.ebooks_dir is not None:
             if args.ebooks_dir == "default":
-                print(f"Using the default ebooks_dir: {default_ebooks_dir}")
-                ebooks_dir =  os.path.abspath(default_ebooks_dir)
+                print(f"Using the default ebooks_dir: {ebooks_dir}")
+                ebooks_dir =  os.path.abspath(ebooks_dir)
             else:
                 # Check if the directory exists
                 if os.path.exists(args.ebooks_dir):

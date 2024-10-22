@@ -7,5 +7,6 @@ web_interface_port = 7860
 web_dir_expire = 72 # hours
 
 model_root = os.path.abspath("./models")
+ebooks_dir = os.path.abspath("./ebooks")
 audiobooks_dir = os.path.abspath("./audiobooks")
 process_dir = os.path.abspath("./tmp")

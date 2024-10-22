@@ -45,7 +45,7 @@ is_web_process = False
 is_web_shared = False
 
 ebook_id = None
-ebook_dir = None
+tmp_dir = None
 ebook_chapters_dir = None
 ebook_chapters_audio_dir = None
 audiobook_web_dir = None
@@ -63,12 +63,12 @@ def import_globals(target_namespace):
     target_namespace.update({k: v for k, v in globals().items() if not k.startswith("__")})
 
 def define_props(ebook_src):
-    global ebook_file, ebook_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
     try:
-        os.makedirs(ebook_dir, exist_ok=True)
+        os.makedirs(tmp_dir, exist_ok=True)
         os.makedirs(ebook_chapters_dir, exist_ok=True)
         os.makedirs(ebook_chapters_audio_dir, exist_ok=True)
-        ebook_file = os.path.join(ebook_dir, os.path.basename(ebook_src))
+        ebook_file = os.path.join(tmp_dir, os.path.basename(ebook_src))
         shutil.copy(ebook_src, ebook_file)
         return True
     except Exception as e:
@@ -169,7 +169,7 @@ def translate_pronouns(language):
     return translated_pronouns
         
 def extract_metadata_and_cover(ebook_filename_noext):
-    global  ebook_file, ebook_dir
+    global  ebook_file, tmp_dir
     metadatas = None
 
     def parse_metadata(metadata_str):
@@ -180,14 +180,14 @@ def extract_metadata_and_cover(ebook_filename_noext):
                 metadata[key.strip()] = value.strip()
         return metadata
         
-    cover_file = os.path.join(ebook_dir, ebook_filename_noext + '.jpg')
+    cover_file = os.path.join(tmp_dir, ebook_filename_noext + '.jpg')
 
     # Ensure the ebook file and directory exist
     if not os.path.exists(ebook_file):
         print(f"Error: eBook file {ebook_file} not found.")
         return None, None
-    if not os.path.exists(ebook_dir):
-        os.makedirs(ebook_dir, exist_ok=True)
+    if not os.path.exists(tmp_dir):
+        os.makedirs(tmp_dir, exist_ok=True)
 
     # Handle the case when running inside Docker
     if is_running_in_docker():
@@ -206,7 +206,7 @@ def extract_metadata_and_cover(ebook_filename_noext):
     # Handle the case when not running inside Docker (e.g., on the host machine)
     else:
         source_dir = os.path.abspath(os.path.dirname(ebook_file))
-        docker_dir = os.path.basename(ebook_dir)
+        docker_dir = os.path.basename(tmp_dir)
         docker_file_in = os.path.basename(ebook_file)
         docker_file_out = os.path.basename(cover_file)
 
@@ -245,7 +245,7 @@ def extract_metadata_and_cover(ebook_filename_noext):
         return metadatas, None
 
 def concat_audio_chapters(metadatas, cover_file):
-    global is_web_process, ebook_title, final_format, ebook_file, ebook_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global is_web_process, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
     
     # Function to sort chapters based on their numeric order
     def sort_key(chapter_file):
@@ -353,9 +353,9 @@ def concat_audio_chapters(metadatas, cover_file):
          
         return ebook_title
 
-    def convert_wav(ebook_dir,combined_wav, metadata_file, cover_image, final_file):
+    def convert_wav(tmp_dir,combined_wav, metadata_file, cover_image, final_file):
         in_docker = is_running_in_docker();
-        docker_dir = os.path.basename(ebook_dir)
+        docker_dir = os.path.basename(tmp_dir)
             
         ffmpeg_combined_wav = combined_wav if in_docker else f'/files/{docker_dir}/' + os.path.basename(combined_wav)
         ffmpeg_metadata_file = metadata_file if in_docker else f'/files/{docker_dir}/' + os.path.basename(metadata_file)
@@ -397,7 +397,7 @@ def concat_audio_chapters(metadatas, cover_file):
                 container = client.containers.run(
                     docker_utils_image,
                     command=ffmpeg_cmd,
-                    volumes={ebook_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
+                    volumes={tmp_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                     remove=True,
                     detach=False,
                     stdout=True,
@@ -417,9 +417,9 @@ def concat_audio_chapters(metadatas, cover_file):
         return True
 
     chapter_files = sorted([os.path.join(ebook_chapters_audio_dir, f) for f in os.listdir(ebook_chapters_audio_dir) if f.endswith('.wav')], key=sort_key)
-    docker_dir = os.path.basename(ebook_dir)
-    combined_wav = os.path.join(ebook_dir, 'combined.wav')
-    metadata_file = os.path.join(ebook_dir, 'metadata.txt')
+    docker_dir = os.path.basename(tmp_dir)
+    combined_wav = os.path.join(tmp_dir, 'combined.wav')
+    metadata_file = os.path.join(tmp_dir, 'metadata.txt')
     
     combine_chapters(chapter_files, combined_wav)
     generate_ffmpeg_metadata(chapter_files, metadata_file, metadatas)
@@ -427,22 +427,22 @@ def concat_audio_chapters(metadatas, cover_file):
     if not ebook_title:
         ebook_title = os.path.splitext(os.path.basename(ebook_file))[0]
 
-    concat_file = os.path.join(ebook_dir, ebook_title + '.' + final_format)
+    concat_file = os.path.join(tmp_dir, ebook_title + '.' + final_format)
     if is_web_process:
         os.makedirs(audiobook_web_dir, exist_ok=True)
         final_file = audiobook_web_dir + '/' + os.path.basename(concat_file);
     else:
         final_file = audiobooks_dir + '/' + os.path.basename(concat_file);
     
-    if convert_wav(ebook_dir,combined_wav, metadata_file, cover_file, concat_file):
+    if convert_wav(tmp_dir,combined_wav, metadata_file, cover_file, concat_file):
         if shutil.copy(concat_file, final_file) == final_file:
-            shutil.rmtree(ebook_dir)
+            shutil.rmtree(tmp_dir)
             return final_file
 
     return None
 
 def create_chapter_labeled_book(ebook_filename_noext):
-    global ebook_title, ebook_file, ebook_dir, ebook_chapters_dir
+    global ebook_title, ebook_file, tmp_dir, ebook_chapters_dir
     
     def convert_to_epub(ebook_file, epub_path):
         if os.path.basename(ebook_file) == os.path.basename(epub_path):
@@ -457,7 +457,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
                 return True
             else:
                 # Extract the original filenames
-                docker_dir = os.path.basename(ebook_dir)
+                docker_dir = os.path.basename(tmp_dir)
                 docker_file_in = os.path.basename(ebook_file)
                 docker_file_out = os.path.basename(epub_path)
                 
@@ -472,7 +472,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
                     container = client.containers.run(
                         docker_utils_image,
                         command=f"ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out}",
-                        volumes={ebook_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
+                        volumes={tmp_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                         remove=True,
                         detach=False,
                         stdout=True,
@@ -523,7 +523,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
                             file.write(text)
                             print(f"Saved chapter: {previous_filename}")
                             
-    epub_path = os.path.join(ebook_dir, ebook_filename_noext + '.epub')       
+    epub_path = os.path.join(tmp_dir, ebook_filename_noext + '.epub')       
     if convert_to_epub(ebook_file, epub_path):
         save_chapters_as_text(epub_path)
 
@@ -555,7 +555,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
                 except Exception as e:
                     print(f"Error processing file {filename}: {e}")
 
-    output_csv = os.path.join(ebook_dir, "chapters.csv")
+    output_csv = os.path.join(tmp_dir, "chapters.csv")
     os.makedirs(os.path.dirname(output_csv), exist_ok=True)
     process_chapter_files(ebook_chapters_dir, output_csv)
 
@@ -782,7 +782,7 @@ def download_audiobooks():
     return files
 
 def convert_ebook(args, ui_needed):
-    global is_web_process, ebook_id, ebook_title, final_format, ebook_file, ebook_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
 
     is_web_process = ui_needed
     device = args.device
@@ -804,8 +804,8 @@ def convert_ebook(args, ui_needed):
     if is_web_process == False:
         ebook_id = str(uuid.uuid4())
 
-    ebook_dir = os.path.join(process_dir, f"ebook-{ebook_id}")
-    ebook_chapters_dir = os.path.join(ebook_dir, "chapters")
+    tmp_dir = os.path.join(process_dir, f"ebook-{ebook_id}")
+    ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
     ebook_chapters_audio_dir = os.path.join(ebook_chapters_dir, "audio")
     audiobook_web_dir = os.path.join(audiobooks_dir, f"web-{ebook_id}") if is_web_shared else audiobooks_dir
     
@@ -865,7 +865,7 @@ def convert_ebook(args, ui_needed):
                 output_file = concat_audio_chapters(metadatas, cover_file)
                 
                 if output_file is not None:
-                    print(f"Temporary directory {ebook_dir} removed successfully.")
+                    print(f"Temporary directory {tmp_dir} removed successfully.")
                     gr.update(value=None)
                     return f"Audiobook {os.path.basename(output_file)} created!", output_file 
                 else:
@@ -877,7 +877,7 @@ def convert_ebook(args, ui_needed):
             print(f"Error in convert_ebook(): {e}")
             traceback.print_exc()
         
-    print(f"Temporary directory {ebook_dir} not removed due to failure.")  
+    print(f"Temporary directory {tmp_dir} not removed due to failure.")  
     return None, None
     
 def delete_old_web_folders(root_dir):

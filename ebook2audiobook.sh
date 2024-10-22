@@ -30,7 +30,7 @@ if [[ -d ./python_env ]]; then
         
         # Deactivate conda environment
         conda deactivate
-	exit 0
+		exit 0
     else
         echo -e "\e[31mDocker image '$DOCKER_IMG' not found. Please build or pull the image.\e[0m"
     fi

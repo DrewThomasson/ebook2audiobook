@@ -18,7 +18,7 @@ class PostInstallCommand(install):
 
 setup(
     name='ebook2audiobookXTTS',
-    version='1.2.0',
+    version='2.0',
     author="Drew Thomasson",
     description="Convert eBooks to audiobooks with chapters and metadata",
     long_description=long_description,
