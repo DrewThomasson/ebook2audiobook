@@ -45,37 +45,20 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 
 ### 🔧 Installation Instructions
 
-1. **Install Python 3.x** from [Python.org](https://www.python.org/downloads/).
+1. **Clone repo**
+```bash
+git clone https://github.com/DrewThomasson/ebook2audiobookXTTS.git
+```
 
-2. **Install Calibre**:
-   - **Ubuntu**: `sudo apt-get install -y calibre`
-   - **macOS**: `brew install calibre`
-   - **Windows** (Admin Powershell): `choco install calibre`
-
-3. **Install FFmpeg**:
-   - **Ubuntu**: `sudo apt-get install -y ffmpeg`
-   - **macOS**: `brew install ffmpeg`
-   - **Windows** (Admin Powershell): `choco install ffmpeg`
-
-4. **Optional: Install Mecab** (for non-Latin languages):
-   - **Ubuntu**: `sudo apt-get install -y mecab libmecab-dev mecab-ipadic-utf8`
-   - **macOS**: `brew install mecab`, `brew install mecab-ipadic`
-   - **Windows**: [mecab-website-to-install-manually](https://taku910.github.io/mecab/#download) (Note: Japanese support is limited)
-
-5. **Install Python packages**:
-   ```bash
-   pip install coqui-tts==0.24.2 pydub nltk beautifulsoup4 ebooklib tqdm gradio==4.44.0
-   
-   python -m nltk.downloader punkt
-   python -m nltk.downloader punkt_tab
-   ```
-
-   **For non-Latin languages**:
-   ```bash
-   pip install mecab mecab-python3 unidic
-   
-   python -m unidic download
-   ```
+2. **Install ebook2audiobook**:
+   - **Linux/MacOS**:
+     ```bash
+     .\install.sh  # Run the .sh install file
+     ```
+   - **Windows**
+     ```bash
+     .\install.bat  # Run the .bat install file
+     ```
 
 ## 🌐 Supported Languages
 
