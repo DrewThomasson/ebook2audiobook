@@ -27,7 +27,6 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
     rm ~/miniconda.sh
 
 
-
 # Set PATH to include conda
 ENV PATH=/opt/conda/bin:$PATH
 
@@ -46,13 +45,18 @@ RUN conda install -n ebookenv -c conda-forge \
     bs4 \
     beautifulsoup4 \
     ebooklib \
+    translate \
     tqdm \
     tts==0.21.3 \
     unidic \
-    gradio
+    gradio \
+    docker
 
 # Download unidic
 RUN python -m unidic download
+
+# Download spacy NLP
+RUN python -m spacy download en_core_web_sm
 
 # Set the working directory in the container
 WORKDIR /ebook2audiobookXTTS
@@ -61,7 +65,7 @@ WORKDIR /ebook2audiobookXTTS
 RUN git clone https://github.com/DrewThomasson/ebook2audiobookXTTS.git .
 
 # Copy test audio file
-COPY default_voice.wav /ebook2audiobookXTTS/
+COPY ./voices/adult/female/en/default_voice.wav /ebook2audiobookXTTS/
 
 # Run a test to set up XTTS
 RUN echo "import torch" > /tmp/script1.py && \
