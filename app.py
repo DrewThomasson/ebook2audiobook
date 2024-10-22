@@ -46,7 +46,7 @@ Linux/Mac:
     parser.add_argument("--ebook", type=str,
                         help="Path to the ebook file for conversion. Required in headless mode.")
     parser.add_argument("--ebooks_dir", nargs='?', const="default", type=str,
-                        help="Path to the directory containing ebooks for batch conversion. Defaults to './ebooks' if no value is provided.")
+                        help=f"Path to the directory containing ebooks for batch conversion. Defaults to '{ebooks_dir}' if 'default' value is provided.")
     parser.add_argument("--voice", type=str,
                         help="Path to the target voice file for TTS. Optional, uses a default voice if not provided.")
     parser.add_argument("--language", type=str, default="en",
