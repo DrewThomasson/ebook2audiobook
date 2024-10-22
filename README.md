@@ -36,12 +36,8 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 
 ## 🛠️ Requirements
 
-- Python 3.10
-- `coqui-tts` Python package
-- Calibre (for eBook conversion)
-- FFmpeg (for audiobook creation)
-- Optional: Custom voice file for voice cloning
-
+- 4gb ram
+- Virtualization enabled if running on windows (for docker)
 
 ### 🔧 Installation Instructions
 
