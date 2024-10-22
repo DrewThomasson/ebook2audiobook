@@ -882,7 +882,7 @@ def convert_ebook(args, ui_needed):
     
 def delete_old_web_folders(root_dir):
     global web_dir_expire
-
+    
     # Ensure the root_dir directory exists
     if not os.path.exists(root_dir):
         os.makedirs(root_dir)
