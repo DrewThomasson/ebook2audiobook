@@ -2,22 +2,17 @@ import argparse
 import os
 import socket
 
-from lib.conf import web_interface_port, ebooks_dir
+from lib.conf import web_interface_port, ebooks_dir, supported_ebook_formats
 from lib.lang import language_options
 from lib.functions import web_interface, convert_ebook
 
-# Global default ebooks directory
-
-
-# List of supported Calibre ebook formats
-supported_ebook_formats = ['.epub', '.mobi', '.azw3', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
-
 def is_port_in_use(port):
-    """Check if the specified port is already in use."""
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('0.0.0.0', port)) == 0
 
 def main():
+    global web_interface_port, ebooks_dir, supported_ebook_formats
+    
     # Convert the list of languages to a string to display in the help text
     language_options_str = ", ".join(language_options)
 

@@ -10,3 +10,5 @@ model_root = os.path.abspath("./models")
 ebooks_dir = os.path.abspath("./ebooks")
 audiobooks_dir = os.path.abspath("./audiobooks")
 process_dir = os.path.abspath("./tmp")
+
+supported_ebook_formats = ['.epub', '.mobi', '.azw3', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
