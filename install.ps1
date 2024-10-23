@@ -113,11 +113,11 @@ if (-not (Check-Docker)) {
     Write-Host "Docker service is now running."
 }
 
-######### Install ebook2audiobookXTTS
+######### Install ebook2audiobook
 
 if ((Check-CondaInstalled) -and (Check-Docker)) {
 
-    Write-Host "Installing ebook2audiobookXTTS..." -ForegroundColor Yellow
+    Write-Host "Installing ebook2audiobook..." -ForegroundColor Yellow
 
     # Set the working directory to the script's directory
     $scriptDir = $PSScriptRoot
@@ -156,8 +156,8 @@ if ((Check-CondaInstalled) -and (Check-Docker)) {
         Write-Host "Downloading spaCy language model..."
         & conda run --prefix "$scriptDir\python_env" python.exe -m spacy download en_core_web_sm
 
-        # Install ebook2audiobookXTTS
-        Write-Host "Installing ebook2audiobookXTTS..."
+        # Install ebook2audiobook
+        Write-Host "Installing ebook2audiobook..."
         & conda run --prefix "$scriptDir\python_env" pip install -e .
 
         # Delete Docker and Miniconda installers if both are installed and running
@@ -168,10 +168,10 @@ if ((Check-CondaInstalled) -and (Check-Docker)) {
             Write-Host "Installer files deleted."
         }
 
-        Write-Host "******************* ebook2audiobookXTTS installation successful! *******************" -ForegroundColor Green
-        Write-Host "To launch ebook2audiobookXTTS:" -ForegroundColor Yellow
-        Write-Host "- in command line mode: ./ebook2audiobookXTTS.cmd --headless [other options]"
-        Write-Host "- in graphic web mode: ./ebook2audiobookXTTS.cmd [--share]"
+        Write-Host "******************* ebook2audiobook installation successful! *******************" -ForegroundColor Green
+        Write-Host "To launch ebook2audiobook:" -ForegroundColor Yellow
+        Write-Host "- in command line mode: ./ebook2audiobook.cmd --headless [other options]"
+        Write-Host "- in graphic web mode: ./ebook2audiobook.cmd [--share]"
     } else {
         Write-Host "The python terminal is still using the OS python version $pythonVersion, but it should be $pythonEnvVersion from the python_env virtual environment"
     }

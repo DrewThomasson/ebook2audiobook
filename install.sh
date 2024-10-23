@@ -83,7 +83,7 @@ fi
 
 if [[ -n "$WGET" && -n "$CONDA_VERSION" && -n "$DOCKER" ]]; then
 	SHELL_RC=~/miniconda3/etc/profile.d/conda.sh
-	echo -e "\e[33m Installing ebook2audiobookXTTS... \e[0m"
+	echo -e "\e[33m Installing ebook2audiobook... \e[0m"
 	conda create --prefix $(pwd)/python_env python=3.11 -y && \
 	source $SHELL_RC
 	conda activate $(pwd)/python_env && \
@@ -95,10 +95,10 @@ if [[ -n "$WGET" && -n "$CONDA_VERSION" && -n "$DOCKER" ]]; then
 	pip install -e . && \
 	conda deactivate
 
-	echo -e "\e[32m******************* ebook2audiobookXTTS installation successful! *******************\e[0m"
-	echo -e "\e[33mTo launch ebook2audiobookXTTS:\e[0m"
-	echo -e "- in command line mode: ./ebook2audiobookXTTS.sh --headless [other options]"
-	echo -e "- in graphic web mode: ./ebook2audiobookXTTS.sh [--share]"
+	echo -e "\e[32m******************* ebook2audiobook installation successful! *******************\e[0m"
+	echo -e "\e[33mTo launch ebook2audiobook:\e[0m"
+	echo -e "- in command line mode: ./ebook2audiobook.sh --headless [other options]"
+	echo -e "- in graphic web mode: ./ebook2audiobook.sh [--share]"
 fi
 
 exit 0
