@@ -828,11 +828,11 @@ def convert_ebook(args, ui_needed):
     
     in_docker = is_running_in_docker();
     in_python_env = check_virtual_env();
+    
     if in_python_env:
         import docker
-    else:
-        if not check_program_installed("Calibre","calibre") or not check_program_installed("FFmpeg","ffmpeg"):
-            sys.exit(1)
+    elif not check_program_installed("Calibre","calibre") or not check_program_installed("FFmpeg","ffmpeg"):
+        sys.exit(1)
                     
     if is_web_process == False:
         ebook_id = str(uuid.uuid4())
