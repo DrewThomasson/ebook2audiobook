@@ -14,4 +14,4 @@ ebooks_dir = os.path.abspath("./ebooks")
 audiobooks_dir = os.path.abspath("./audiobooks")
 process_dir = os.path.abspath("./tmp")
 
-supported_ebook_formats = ['.epub', '.mobi', '.azw3', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
+supported_ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
