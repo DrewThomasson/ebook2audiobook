@@ -93,7 +93,8 @@ def is_running_in_docker():
     
 def check_virtual_env():
     if sys.prefix != sys.base_prefix:
-        return True
+        if sys.prefix == python_env_dir
+            return True
 
     return False
     
@@ -121,7 +122,7 @@ def get_model_dir_from_url(custom_model_url):
 
     return model_dir
     
-def download_and_extract(path_or_url, extract_to='model_root'):
+def download_and_extract(path_or_url, extract_to=models_dir):
     try:
         # Check if the input is a URL or a local file
         parsed_url = urlparse(path_or_url)
@@ -848,7 +849,7 @@ def convert_ebook(args, ui_needed):
     if not is_web_process:
         ebook_id = str(uuid.uuid4())
 
-    tmp_dir = os.path.join(process_dir, f"ebook-{ebook_id}")
+    tmp_dir = os.path.join(processes_dir, f"ebook-{ebook_id}")
     ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
     ebook_chapters_audio_dir = os.path.join(ebook_chapters_dir, "audio")
     audiobook_web_dir = os.path.join(audiobooks_dir, f"web-{ebook_id}") if is_web_shared else audiobooks_dir
