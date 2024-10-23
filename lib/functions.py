@@ -90,14 +90,13 @@ def is_running_in_docker():
     
 def check_virtual_env():
     if sys.prefix != sys.base_prefix:
-        if sys.prefix == os.path.abspath("./python_env")
-            return True
+        return True
 
     return False
     
-def check_program_installed(program_name, command):
+def check_program_installed(program_name, command, options):
     try:
-        subprocess.run([command, "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run([command, options], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return True
     except FileNotFoundError:
         print(f"Error: {program_name} is not installed.")
@@ -832,7 +831,7 @@ def convert_ebook(args, ui_needed):
     
     if in_python_env:
         import docker
-    elif not check_program_installed("Calibre", "calibre") or not check_program_installed("FFmpeg", "ffmpeg"):
+    elif not check_program_installed("Calibre", "calibre", "--version") or not check_program_installed("FFmpeg", "ffmpeg", "-version"):
         sys.exit(1)
                     
     if is_web_process == False:
