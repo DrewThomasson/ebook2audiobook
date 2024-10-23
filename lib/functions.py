@@ -32,6 +32,9 @@ from urllib.parse import urlparse
 import lib.conf as conf
 import lib.lang as lang
 
+class DependencyError(Exception):
+    pass
+
 def inject_configs(target_namespace):
     # Extract variables from both modules and inject them into the target namespace
     for module in (conf, lang):
@@ -97,13 +100,15 @@ def check_virtual_env():
 def check_program_installed(program_name, command, options):
     try:
         subprocess.run([command, options], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return True
+        return True, None
     except FileNotFoundError:
-        print(f"Error: {program_name} is not installed.")
-        return False
+        error = f"Error: {program_name} is not installed."
+        print(error)
+        return False, error
     except subprocess.CalledProcessError:
-        print(f"Error: There was an issue running {program_name}.")
-        return False
+        error = f"Error: There was an issue running {program_name}."
+        print(error)
+        return False, error
 
 def get_model_dir_from_url(custom_model_url):
     # Extract the last part of the custom_model_url as the model_dir
@@ -831,10 +836,16 @@ def convert_ebook(args, ui_needed):
     
     if in_python_env:
         import docker
-    elif not check_program_installed("Calibre", "calibre", "--version") or not check_program_installed("FFmpeg", "ffmpeg", "-version"):
-        sys.exit(1)
+    else:
+        bool, error = check_program_installed("Calibre", "calibre", "--version")
+        if not bool:
+            raise DependencyError(error)
+            
+        bool, error = check_program_installed("FFmpeg", "ffmpeg", "-version")
+        if not bool:
+            raise DependencyError(error)
                     
-    if is_web_process == False:
+    if not is_web_process:
         ebook_id = str(uuid.uuid4())
 
     tmp_dir = os.path.join(process_dir, f"ebook-{ebook_id}")
