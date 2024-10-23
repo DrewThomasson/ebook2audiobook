@@ -93,7 +93,7 @@ def is_running_in_docker():
     
 def check_virtual_env():
     if sys.prefix != sys.base_prefix:
-        if sys.prefix == python_env_dir
+        if sys.prefix == python_env_dir:
             return True
 
     return False
