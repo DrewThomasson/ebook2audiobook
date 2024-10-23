@@ -2,6 +2,9 @@ import os
 
 version = "2.0.0"
 
+min_python_version = (3, 10)
+max_python_version = (3, 11)
+
 docker_utils_image = 'utils'
 web_interface_port = 7860
 web_dir_expire = 72 # hours

@@ -1,10 +1,24 @@
 import argparse
 import os
 import socket
+import sys
 
-from lib.conf import version, web_interface_port, ebooks_dir, supported_ebook_formats
+from lib.conf import *
 from lib.lang import language_options
 from lib.functions import web_interface, convert_ebook
+
+def check_python_version():
+    current_version = sys.version_info[:2]  # (major, minor)
+    if current_version < min_python_version:
+        print(f"Error: Your OS Python version is too old! (current: {current_version[0]}.{current_version[1]})")
+        print(f"Please use OS Python {min_python_version[0]}.{min_python_version[1]} or higher.")
+        return False
+    elif current_version > max_python_version:
+        print(f"Error: Your OS Python version is too new! (current: {current_version[0]}.{current_version[1]})")
+        print(f"Please use OS Python {max_python_version[0]}.{max_python_version[1]} or lower.")
+        return False
+    else:
+        return True
 
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -12,6 +26,9 @@ def is_port_in_use(port):
 
 def main():
     global ebooks_dir
+    
+    if not check_python_version():
+        sys.exit(1)
     
     # Convert the list of languages to a string to display in the help text
     language_options_str = ", ".join(language_options)

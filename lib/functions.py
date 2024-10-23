@@ -1,6 +1,5 @@
 import argparse
 import csv
-import docker
 import ebooklib
 import gradio as gr
 import nltk
@@ -43,6 +42,8 @@ inject_configs(globals())
 
 is_web_process = False
 is_web_shared = False
+in_docker = False
+in_python_env = False
 
 ebook_id = None
 tmp_dir = None
@@ -59,7 +60,7 @@ ebook_pronouns = {
     "female": ["she", "her", "hers"]
 }
 
-client = docker.from_env()
+client = None
 
 def import_globals(target_namespace):
     target_namespace.update({k: v for k, v in globals().items() if not k.startswith("__")})
@@ -76,17 +77,6 @@ def define_props(ebook_src):
     except Exception as e:
         print(f"Error copying ebook file: {e}")
         return False
-
-def get_model_dir_from_url(custom_model_url):
-    # Extract the last part of the custom_model_url as the model_dir
-    parsed_url = urlparse(custom_model_url)
-    model_dir_name = os.path.basename(parsed_url.path)
-    model_dir = f"./models/{model_dir_name}"
-
-    # Ensure the model directory exists
-    os.makedirs(model_dir, exist_ok=True)
-
-    return model_dir
     
 def is_running_in_docker():
     try:
@@ -97,7 +87,35 @@ def is_running_in_docker():
     except FileNotFoundError:
         return False
     return False
+    
+def check_virtual_env():
+    if sys.prefix != sys.base_prefix:
+        return True
 
+    return False
+    
+def check_program_installed(program_name, command):
+    try:
+        subprocess.run([command, "--version"], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return True
+    except FileNotFoundError:
+        print(f"Error: {program_name} is not installed.")
+        return False
+    except subprocess.CalledProcessError:
+        print(f"Error: There was an issue running {program_name}.")
+        return False
+
+def get_model_dir_from_url(custom_model_url):
+    # Extract the last part of the custom_model_url as the model_dir
+    parsed_url = urlparse(custom_model_url)
+    model_dir_name = os.path.basename(parsed_url.path)
+    model_dir = f"./models/{model_dir_name}"
+    
+    # Ensure the model directory exists
+    os.makedirs(model_dir, exist_ok=True)
+
+    return model_dir
+    
 def download_and_extract(path_or_url, extract_to='model_root'):
     try:
         # Check if the input is a URL or a local file
@@ -171,7 +189,7 @@ def translate_pronouns(language):
     return translated_pronouns
         
 def extract_metadata_and_cover(ebook_filename_noext):
-    global  ebook_file, tmp_dir
+    global  client, ebook_file, tmp_dir
     metadatas = None
 
     def parse_metadata(metadata_str):
@@ -192,7 +210,7 @@ def extract_metadata_and_cover(ebook_filename_noext):
         os.makedirs(tmp_dir, exist_ok=True)
 
     # Handle the case when running inside Docker
-    if is_running_in_docker():
+    if in_docker or not in_python_env:
         try:
             # Extract the cover image
             subprocess.run(['ebook-meta', ebook_file, '--get-cover', cover_file], check=True)
@@ -214,6 +232,8 @@ def extract_metadata_and_cover(ebook_filename_noext):
 
         try:
             # Run the Docker container to extract metadata and cover image
+            if client is None:
+                client = docker.from_env()
             metadata_result = client.containers.run(
                 docker_utils_image,
                 command=f"ebook-meta /files/{docker_dir}/{docker_file_in} --get-cover /files/{docker_dir}/{docker_file_out}",
@@ -276,7 +296,7 @@ def concat_audio_chapters(metadatas, cover_file):
         print(f"Combined audio saved to {combined_wav}")
 
     def generate_ffmpeg_metadata(chapter_files, metadata_file, metadatas):
-        global ebook_title
+        global client, ebook_title
         
         ffmpeg_metadata = ";FFMETADATA1\n"
         
@@ -356,7 +376,6 @@ def concat_audio_chapters(metadatas, cover_file):
         return ebook_title
 
     def convert_wav(tmp_dir,combined_wav, metadata_file, cover_image, final_file):
-        in_docker = is_running_in_docker();
         docker_dir = os.path.basename(tmp_dir)
             
         ffmpeg_combined_wav = combined_wav if in_docker else f'/files/{docker_dir}/' + os.path.basename(combined_wav)
@@ -387,7 +406,7 @@ def concat_audio_chapters(metadatas, cover_file):
             
         ffmpeg_cmd += ['-movflags', '+faststart', ffmpeg_final_file]
         
-        if in_docker:
+        if in_docker or not is_in_python_env:
             try:
                 subprocess.run(ffmpeg_cmd, check=True)
             except subprocess.CalledProcessError as e:
@@ -396,6 +415,8 @@ def concat_audio_chapters(metadatas, cover_file):
         else:
             try:
                 # Run the Docker container with FFmpeg command
+                if client is None:
+                    client = docker.from_env()
                 container = client.containers.run(
                     docker_utils_image,
                     command=ffmpeg_cmd,
@@ -444,13 +465,13 @@ def concat_audio_chapters(metadatas, cover_file):
     return None
 
 def create_chapter_labeled_book(ebook_filename_noext):
-    global ebook_title, ebook_file, tmp_dir, ebook_chapters_dir
+    global client, ebook_title, ebook_file, tmp_dir, ebook_chapters_dir
     
     def convert_to_epub(ebook_file, epub_path):
         if os.path.basename(ebook_file) == os.path.basename(epub_path):
             return True
         else:
-            if is_running_in_docker():
+            if in_docker or not in_python_env:
                 try:
                     subprocess.run(['ebook-convert', ebook_file, epub_path], check=True)
                 except subprocess.CalledProcessError as e:
@@ -471,6 +492,8 @@ def create_chapter_labeled_book(ebook_filename_noext):
                 # Convert the ebook to EPUB format using utils Docker image
                 try:
                     # Run the Docker container
+                    if client is None:
+                        client = docker.from_env()
                     container = client.containers.run(
                         docker_utils_image,
                         command=f"ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out}",
@@ -784,7 +807,7 @@ def download_audiobooks():
     return files
 
 def convert_ebook(args, ui_needed):
-    global audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global in_docker, in_python_env, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
 
     is_web_process = ui_needed
     device = args.device
@@ -803,6 +826,14 @@ def convert_ebook(args, ui_needed):
     enable_text_splitting = args.enable_text_splitting
     custom_model_url = args.custom_model_url
     
+    in_docker = is_running_in_docker();
+    in_python_env = check_virtual_env();
+    if in_python_env:
+        import docker
+    else:
+        if not check_program_installed("Calibre","calibre") or not check_program_installed("FFmpeg","ffmpeg"):
+            sys.exit(1)
+                    
     if is_web_process == False:
         ebook_id = str(uuid.uuid4())
 
@@ -905,8 +936,7 @@ def delete_old_web_folders(root_dir):
                 shutil.rmtree(folder_path)
   
 def initialize_session(session_id):
-    global ebook_id
-    global is_web_shared
+    global ebook_id, is_web_shared
     
     if session_id == "":
         session_id = str(uuid.uuid4())
