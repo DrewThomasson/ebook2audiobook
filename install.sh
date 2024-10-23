@@ -97,8 +97,8 @@ if [[ -n "$WGET" && -n "$CONDA_VERSION" && -n "$DOCKER" ]]; then
 
 	echo -e "\e[32m******************* ebook2audiobookXTTS installation successful! *******************\e[0m"
 	echo -e "\e[33mTo launch ebook2audiobookXTTS:\e[0m"
-	echo -e "- in command line mode: ./ebook2audiobookXTTS.cmd --headless [other options]"
-	echo -e "- in graphic web mode: ./ebook2audiobookXTTS.cmd [--share]"
+	echo -e "- in command line mode: ./ebook2audiobookXTTS.sh --headless [other options]"
+	echo -e "- in graphic web mode: ./ebook2audiobookXTTS.sh [--share]"
 fi
 
 exit 0
