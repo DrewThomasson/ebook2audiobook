@@ -406,7 +406,7 @@ def concat_audio_chapters(metadatas, cover_file):
             
         ffmpeg_cmd += ['-movflags', '+faststart', ffmpeg_final_file]
         
-        if in_docker or not is_in_python_env:
+        if in_docker or not in_python_env:
             try:
                 subprocess.run(ffmpeg_cmd, check=True)
             except subprocess.CalledProcessError as e:
