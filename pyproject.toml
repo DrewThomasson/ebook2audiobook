@@ -1,3 +1,6 @@
 [build-system]
+name = "ebook2audiobook"
+version = "2.0.0"
 requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
+requires-python = ">=3.10,<3.12"

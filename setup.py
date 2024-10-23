@@ -17,8 +17,9 @@ class PostInstallCommand(install):
         subprocess.run([sys.executable, 'python -m', 'unidic', 'download'], check=True)
 
 setup(
-    name='ebook2audiobookXTTS',
-    version='2.0',
+    name='ebook2audiobook',
+    version='2.0.0',
+    python_requires=">=3.10,<3.12",
     author="Drew Thomasson",
     description="Convert eBooks to audiobooks with chapters and metadata",
     long_description=long_description,
