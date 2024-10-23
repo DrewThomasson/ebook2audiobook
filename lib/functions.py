@@ -22,11 +22,11 @@ from bs4 import BeautifulSoup
 from pydub import AudioSegment
 from datetime import datetime
 from ebooklib import epub
+from tqdm import tqdm
+from translate import Translator
 from TTS.api import TTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
-from tqdm import tqdm
-from translate import Translator
 from urllib.parse import urlparse
 
 import lib.conf as conf
@@ -103,7 +103,8 @@ def check_program_installed(program_name, command, options):
         subprocess.run([command, options], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return True, None
     except FileNotFoundError:
-        error = f"Error: {program_name} is not installed."
+        error = f"""\033[33m********** Error: {program_name} is not installed! if your OS calibre package version 
+        is not compatible you still can install ebook2audiobook via install.sh (linux/mac) or install.bat (windows) **********\033[0m"""
         print(error)
         return False, error
     except subprocess.CalledProcessError:
@@ -814,7 +815,7 @@ def download_audiobooks():
 
 def convert_ebook(args, ui_needed):
     global in_docker, in_python_env, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
-
+    
     is_web_process = ui_needed
     device = args.device
     target_voice_file = args.voice

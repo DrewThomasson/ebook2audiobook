@@ -1,24 +1,60 @@
 import argparse
 import os
 import socket
+import spacy.cli
+import subprocess
 import sys
 
 from lib.conf import *
-from lib.lang import language_options
-from lib.functions import web_interface, convert_ebook
+from lib.lang import language_options, default_language_code
 
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
-    if current_version < min_python_version:
-        print(f"Error: Your OS Python version is too old! (current: {current_version[0]}.{current_version[1]})")
-        print(f"Please use OS Python {min_python_version[0]}.{min_python_version[1]} or higher.")
-        return False
-    elif current_version > max_python_version:
-        print(f"Error: Your OS Python version is too new! (current: {current_version[0]}.{current_version[1]})")
-        print(f"Please use OS Python {max_python_version[0]}.{max_python_version[1]} or lower.")
+    if current_version < min_python_version or current_version > max_python_version:
+        error = f"""\033[33m********** Error: Your OS Python version is too old! (current: {current_version[0]}.{current_version[1]})
+        Please use OS Python {min_python_version[0]}.{min_python_version[1]} or {max_python_version[0]}.{max_python_version[1]} **********\033[0m"""
+        print(error)
         return False
     else:
         return True
+
+def check_dictionary():
+    version_obj = sys.version_info
+    version = f"{version_obj.major}.{version_obj.minor}"
+    dictionary_path = f"{sys.prefix}/lib/python{version}/site-packages/unidic/dicdir"
+    required_model = f"{default_language_code}_core_web_sm"
+
+    if os.path.isdir(dictionary_path):
+        info = spacy.cli.info()
+        installed_models = info.get("pipelines", {}).keys()
+        if installed_models:
+            for model in installed_models:
+                if model == required_model:
+                    return True
+
+        try:
+            print(f"\033[33m*** default spacy model is missing! trying to download it... ***\033[0m")
+            subprocess.run(["python", "-m", "spacy", "download", required_model], check=True)
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to download spaCy model: {e}")
+            return False
+        except Exception as e:
+            print(f"Error during spaCy model download: {e}")
+            return False
+
+    else:
+        try:
+            print(f"\033[33m*** No default dictionary found! trying to download it... ***\033[0m")
+            subprocess.run(["python", "-m", "unidic", "download"], check=True)
+            print("Successfully downloaded UniDic.")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to download UniDic: {e}")
+            return False
+        except Exception as e:
+            print(f"Error during UniDic download: {e}")
+            return False
 
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
@@ -26,9 +62,6 @@ def is_port_in_use(port):
 
 def main():
     global ebooks_dir
-    
-    if not check_python_version():
-        sys.exit(1)
     
     # Convert the list of languages to a string to display in the help text
     language_options_str = ", ".join(language_options)
@@ -99,7 +132,7 @@ Linux/Mac:
 
     # Check if the port is already in use to prevent multiple launches
     if not args.headless and is_port_in_use(web_interface_port):
-        print(f"Error: Port {web_interface_port} is already in use. The web interface may already be running.")
+        print(f"\033[33mError: Port {web_interface_port} is already in use. The web interface may already be running.\033[0m")
         exit(1)
 
     # Conditions based on the --headless flag
@@ -148,4 +181,10 @@ Linux/Mac:
         web_interface(args.share, True)
 
 if __name__ == '__main__':
-    main()
+    if not check_python_version():
+        sys.exit(1)
+    elif not check_dictionary():
+        sys.exit(1)
+    else:
+        from lib.functions import web_interface, convert_ebook
+        main()
