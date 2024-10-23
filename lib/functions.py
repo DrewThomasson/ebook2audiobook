@@ -90,7 +90,8 @@ def is_running_in_docker():
     
 def check_virtual_env():
     if sys.prefix != sys.base_prefix:
-        return True
+        if sys.prefix == os.path.abspath("./python_env")
+            return True
 
     return False
     
@@ -831,7 +832,7 @@ def convert_ebook(args, ui_needed):
     
     if in_python_env:
         import docker
-    elif not check_program_installed("Calibre","calibre") or not check_program_installed("FFmpeg","ffmpeg"):
+    elif not check_program_installed("Calibre", "calibre") or not check_program_installed("FFmpeg", "ffmpeg"):
         sys.exit(1)
                     
     if is_web_process == False:
