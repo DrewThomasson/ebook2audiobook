@@ -123,7 +123,7 @@ def check_lxml_package():
 				# Return the location path
 				package_location = line.split(': ')[1]
 				break
-		if packge_location is not None:
+		if package_location is not None:
 			if "/usr/local/lib64/" in package_location:
 				result = subprocess.run([util_path, 'uninstall', package_name, '-y'], stdout=subprocess.PIPE, text=True, check=True)
 	except subprocess.CalledProcessError as e:

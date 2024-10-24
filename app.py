@@ -38,22 +38,22 @@ def check_dictionary():
             return False
 
     info = spacy.cli.info()
-	installed_models = info.get("pipelines", {}).keys()
-	if installed_models:
-		for model in installed_models:
-			if model == required_model:
-				return True
+    installed_models = info.get("pipelines", {}).keys()
+    if installed_models:
+        for model in installed_models:
+            if model == required_model:
+                return True
 
-	try:
-		print(f"\033[33m*** default spacy model is missing! trying to download it... ***\033[0m")
-		subprocess.run(["python", "-m", "spacy", "download", required_model], check=True)
-		return True
-	except subprocess.CalledProcessError as e:
-		print(f"Failed to download spaCy model: {e}")
-		return False
-	except Exception as e:
-		print(f"Error during spaCy model download: {e}")
-		return False
+    try:
+        print(f"\033[33m*** default spacy model is missing! trying to download it... ***\033[0m")
+        subprocess.run(["python", "-m", "spacy", "download", required_model], check=True)
+        return True
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to download spaCy model: {e}")
+        return False
+    except Exception as e:
+        print(f"Error during spaCy model download: {e}")
+        return False
 
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
