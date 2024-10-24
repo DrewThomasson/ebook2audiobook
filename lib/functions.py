@@ -112,6 +112,23 @@ def check_program_installed(program_name, command, options):
         print(error)
         return False, error
 
+def check_lxml_package():
+	try:
+		util_path = shutil.which("pip")
+		package_name = "lxml"
+		result = subprocess.run([util_path, 'show', package_name], stdout=subprocess.PIPE, text=True, check=True)
+		package_location = None
+		for line in result.stdout.splitlines():
+			if line.startswith('Location'):
+				# Return the location path
+				package_location = line.split(': ')[1]
+				break
+		if packge_location is not None:
+			if "/usr/local/lib64/" in package_location:
+				result = subprocess.run([util_path, 'uninstall', package_name, '-y'], stdout=subprocess.PIPE, text=True, check=True)
+	except subprocess.CalledProcessError as e:
+		print(f"Error running 'pip show': {e}")
+
 def get_model_dir_from_url(custom_model_url):
     # Extract the last part of the custom_model_url as the model_dir
     parsed_url = urlparse(custom_model_url)
@@ -220,14 +237,17 @@ def extract_metadata_and_cover(ebook_filename_noext):
     if in_docker or not in_python_env:
         try:
             # Extract the cover image
-            subprocess.run(['ebook-meta', ebook_file, '--get-cover', cover_file], check=True)
+            util_path = shutil.which("ebook-meta")
+            subprocess.run([util_path, ebook_file, '--get-cover', cover_file], check=True)
 
             # Extract metadata without writing to a file
-            metadata_result = subprocess.check_output(['ebook-meta', ebook_file], universal_newlines=True)
+            metadata_result = subprocess.check_output([util_path, ebook_file], universal_newlines=True)
             metadatas = parse_metadata(metadata_result)
 
         except subprocess.CalledProcessError as e:
+            # Maybe the issue comes from lxml package
             print(f"An error occurred during metadata extraction: {e}")
+            check_lxml_package()
             return None, None
 
     # Handle the case when not running inside Docker (e.g., on the host machine)
@@ -392,8 +412,9 @@ def concat_audio_chapters(metadatas, cover_file):
 
         if cover_image:
             ffmpeg_cover_image = cover_image if in_docker else f'/files/{docker_dir}/' + os.path.basename(cover_image)
-            
-        ffmpeg_cmd = ['ffmpeg', '-i', ffmpeg_combined_wav, '-i', ffmpeg_metadata_file]
+        
+        ffmpeg_path = shutil.which("ffmpeg") 
+        ffmpeg_cmd = [ffmpeg_path, '-i', ffmpeg_combined_wav, '-i', ffmpeg_metadata_file]
         
         if ffmpeg_cover_image:
             ffmpeg_cmd += ['-i', ffmpeg_cover_image, '-map', '0:a', '-map', '2:v']
@@ -480,9 +501,12 @@ def create_chapter_labeled_book(ebook_filename_noext):
         else:
             if in_docker or not in_python_env:
                 try:
-                    subprocess.run(['ebook-convert', ebook_file, epub_path], check=True)
+                    util_path = shutil.which("ebook-convert")
+                    subprocess.run([util_path, ebook_file, epub_path], check=True)
                 except subprocess.CalledProcessError as e:
+                    # Maybe the issue comes from lxml package
                     print(f"An error occurred at create_chapter_labeled_book(): {e}")
+                    check_lxml_package()
                     return False
                 return True
             else:

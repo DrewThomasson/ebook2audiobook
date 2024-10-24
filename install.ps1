@@ -26,6 +26,71 @@ function Check-CondaInstalled {
     }
 }
 
+function Check-ProgramsInstalled {
+	param (
+		[string[]]$Programs
+	)
+
+	$programsMissing = @()
+
+	if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+		Write-Host "Chocolatey is not installed. Installing Chocolatey..."
+		Set-ExecutionPolicy Bypass -Scope Process -Force
+		[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+		iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+		if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+			return $true
+		} else {
+			Write-Host "Chocolatey installed successfully."
+		}
+	}
+
+	foreach ($program in $Programs) {
+		if (Get-Command $program -ErrorAction SilentlyContinue) {
+			Write-Host "$program is installed."
+		} else {
+			$programsMissing += $program
+		}
+	}
+
+	$missingCount = $programsMissing.Count
+
+	if ($missingCount -eq 0) {
+		return $true
+	} else {
+		$installedCount = 0
+		foreach ($program in $programsMissing) {
+			if ($program -eq "ffmpeg") {
+				Write-Host "Installing ffmpeg..."
+				choco install ffmpeg -y
+
+				if (Get-Command ffmpeg -ErrorAction SilentlyContinue) {
+					Write-Host "ffmpeg installed successfully!"
+					$installedCount += 1
+				}
+			} elseif ($program -eq "calibre") {
+                                # Avoid conflict with calibre built-in lxml
+                                pip uninstall lxml -y
+
+                                # Install Calibre using Chocolatey
+                                Write-Host "Installing Calibre..."
+                                choco install calibre -y
+
+                                # Verify Calibre installation
+                                if (Get-Command calibre -ErrorAction SilentlyContinue) {
+                                        Write-Host "Calibre installed successfully!"
+                        		$installedCount += 1
+				}
+			}
+		}
+	}
+	if ($installedCount -eq $countMissing) {
+		return $false
+	}
+	return $true
+}
+
 # Function to check if Docker is installed and running
 function Check-Docker {
     Write-Host "Checking if Docker is installed..."
@@ -87,30 +152,34 @@ if (-not (Check-CondaInstalled)) {
 $dockerMsiUrl = "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe"
 $dockerInstallerPath = "$env:TEMP\DockerInstaller.exe"
 
-if (-not (Check-Docker)) {
-    # Verify the installer file or re-download if corrupted or missing
-    if (-not (Test-Path $dockerInstallerPath)) {
-        Write-Host "Downloading Docker installer for Windows..."
-        Invoke-WebRequest -Uri $dockerMsiUrl -OutFile $dockerInstallerPath
-    }
+$dockerUtilsNeeded = Check-ProgramsInstalled -Programs @("ffmpeg", "calibre")
 
-    # Launch the Docker installer
-    Write-Host "Launching Docker installer..."
-    Start-Process -FilePath $dockerInstallerPath
-    Write-Host "Please complete the Docker installation manually."
-    pause
+if ($dockerUtilsNeeded) {
+	if (-not (Check-Docker)) {
+	    # Verify the installer file or re-download if corrupted or missing
+	    if (-not (Test-Path $dockerInstallerPath)) {
+	        Write-Host "Downloading Docker installer for Windows..."
+	        Invoke-WebRequest -Uri $dockerMsiUrl -OutFile $dockerInstallerPath
+	    }
 
-    # Ensure Docker service is running after installation
-    Write-Host "Ensuring Docker service is running..."
-    Start-Service -Name "com.docker.service" -ErrorAction SilentlyContinue
+	    # Launch the Docker installer
+	    Write-Host "Launching Docker installer..."
+	    Start-Process -FilePath $dockerInstallerPath
+	    Write-Host "Please complete the Docker installation manually."
+	    pause
 
-    # Wait for Docker service to start
-    while ((Get-Service -Name "com.docker.service").Status -ne 'Running') {
-        Write-Host "Waiting for Docker service to start..."
-        Start-Sleep -Seconds 5
-    }
+	    # Ensure Docker service is running after installation
+	    Write-Host "Ensuring Docker service is running..."
+	    Start-Service -Name "com.docker.service" -ErrorAction SilentlyContinue
 
-    Write-Host "Docker service is now running."
+	    # Wait for Docker service to start
+	    while ((Get-Service -Name "com.docker.service").Status -ne 'Running') {
+	        Write-Host "Waiting for Docker service to start..."
+	        Start-Sleep -Seconds 5
+	    }
+
+	    Write-Host "Docker service is now running."
+	}
 }
 
 ######### Install ebook2audiobook
