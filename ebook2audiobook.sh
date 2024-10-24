@@ -4,7 +4,7 @@
 PARAMS="$@"
 CONDA_PATH="$HOME/miniconda3/bin"
 CONFIG_FILE="$HOME/.bashrc"
-PATH=$PATH:$CONDA_PATH
+PATH=$CONDA_PATH:$PATH
 
 source "$CONFIG_FILE"
 
@@ -14,7 +14,6 @@ if ! command -v conda &> /dev/null; then
     exit 1
 fi
 
-# Activate conda only if conda is installed and the environment exists
 if [[ -d ./python_env ]]; then
 
 	if ! command -v docker &> /dev/null; then
