@@ -147,20 +147,21 @@ fi
 if [[ -n "$WGET" && -n "$CONDA_VERSION" ]]; then
 	SHELL_RC=~/miniconda3/etc/profile.d/conda.sh
 	echo -e "\e[33m Installing ebook2audiobook... \e[0m"
-	conda create --prefix $(pwd)/python_env python=3.11 -y && \
-	source $SHELL_RC
-	conda activate $(pwd)/python_env
 	if [ $DOCKER_UTILS_NEEDED = true ]; then
+		conda create --prefix $(pwd)/python_env python=3.11 -y
+		source $SHELL_RC
+		conda activate $(pwd)/python_env
 		$DOCKER_UTILS build -f DockerfileUtils -t utils .
 	fi
 	pip install --upgrade pip && \
 	pip install pydub nltk beautifulsoup4 ebooklib translate coqui-tts tqdm mecab mecab-python3 unidic gradio>=4.44.0 docker && \
 	python -m unidic download && \
 	python -m spacy download en_core_web_sm && \
-	pip install -e . && \
-	conda deactivate && \
-	conda deactivate
-
+	pip install -e .
+	if [ $DOCKER_UTILS_NEEDED = true ]; then
+		conda deactivate
+		conda deactivate
+	fi
 	echo -e "\e[32m******************* ebook2audiobook installation successful! *******************\e[0m"
 	echo -e "\e[33mTo launch ebook2audiobook:\e[0m"
 	echo -e "- in command line mode: ./ebook2audiobook.sh --headless [other options]"
