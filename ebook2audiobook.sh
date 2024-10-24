@@ -4,6 +4,7 @@
 PARAMS="$@"
 CONDA_PATH="$HOME/miniconda3/bin"
 CONFIG_FILE="$HOME/.bashrc"
+PATH=$PATH:$CONDA_PATH
 
 source "$CONFIG_FILE"
 
