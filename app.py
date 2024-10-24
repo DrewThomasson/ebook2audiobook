@@ -37,7 +37,7 @@ def check_dictionary():
             print(f"Error during UniDic download: {e}")
             return False
 
-	info = spacy.cli.info()
+    info = spacy.cli.info()
 	installed_models = info.get("pipelines", {}).keys()
 	if installed_models:
 		for model in installed_models:
