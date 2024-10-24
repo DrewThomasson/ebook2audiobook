@@ -24,26 +24,7 @@ def check_dictionary():
     dictionary_path = f"{sys.prefix}/lib/python{version}/site-packages/unidic/dicdir"
     required_model = f"{default_language_code}_core_web_sm"
 
-    if os.path.isdir(dictionary_path):
-        info = spacy.cli.info()
-        installed_models = info.get("pipelines", {}).keys()
-        if installed_models:
-            for model in installed_models:
-                if model == required_model:
-                    return True
-
-        try:
-            print(f"\033[33m*** default spacy model is missing! trying to download it... ***\033[0m")
-            subprocess.run(["python", "-m", "spacy", "download", required_model], check=True)
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to download spaCy model: {e}")
-            return False
-        except Exception as e:
-            print(f"Error during spaCy model download: {e}")
-            return False
-
-    else:
+    if not os.path.isdir(dictionary_path):
         try:
             print(f"\033[33m*** No default dictionary found! trying to download it... ***\033[0m")
             subprocess.run(["python", "-m", "unidic", "download"], check=True)
@@ -55,6 +36,24 @@ def check_dictionary():
         except Exception as e:
             print(f"Error during UniDic download: {e}")
             return False
+
+	info = spacy.cli.info()
+	installed_models = info.get("pipelines", {}).keys()
+	if installed_models:
+		for model in installed_models:
+			if model == required_model:
+				return True
+
+	try:
+		print(f"\033[33m*** default spacy model is missing! trying to download it... ***\033[0m")
+		subprocess.run(["python", "-m", "spacy", "download", required_model], check=True)
+		return True
+	except subprocess.CalledProcessError as e:
+		print(f"Failed to download spaCy model: {e}")
+		return False
+	except Exception as e:
+		print(f"Error during spaCy model download: {e}")
+		return False
 
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
