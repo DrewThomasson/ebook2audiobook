@@ -11,7 +11,7 @@ from lib.lang import language_options, default_language_code
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
-        error = f"""\033[33m********** Error: Your OS Python version is too old! (current: {current_version[0]}.{current_version[1]})
+        error = f"""\033[33m********** Error: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
         Please use OS Python {min_python_version[0]}.{min_python_version[1]} or {max_python_version[0]}.{max_python_version[1]} **********\033[0m"""
         print(error)
         return False
