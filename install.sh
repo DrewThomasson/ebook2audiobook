@@ -10,18 +10,18 @@ PACK_MGR_OPTIONS=""
 if [[ "$OSTYPE" == "darwin"* ]]; then
 	PACK_MGR="brew install"
 elif command -v emerge &> /dev/null; then
-		PACK_MGR="sudo emerge"
+	PACK_MGR="sudo emerge"
 elif command -v dnf &> /dev/null; then
-		PACK_MGR="sudo dnf install"
-		PACK_MGR_OPTIONS="-y"
+	PACK_MGR="sudo dnf install"
+	PACK_MGR_OPTIONS="-y"
 elif command -v yum &> /dev/null; then
-		PACK_MGR="sudo yum install"
-		PACK_MGR_OPTIONS="-y"
+	PACK_MGR="sudo yum install"
+	PACK_MGR_OPTIONS="-y"
 elif command -v zypper &> /dev/null; then
-		PACK_MGR="sudo zypper install"
-		PACK_MGR_OPTIONS="-y"
+	PACK_MGR="sudo zypper install"
+	PACK_MGR_OPTIONS="-y"
 elif command -v pacman &> /dev/null; then
-		PACK_MGR="sudo pacman -Sy"
+	PACK_MGR="sudo pacman -Sy"
 elif command -v apt-get &> /dev/null; then
 	sudo apt-get update
 	PACK_MGR="sudo apt-get install"
@@ -51,20 +51,21 @@ check_programs_installed() {
 		for program in "${programs_missing[@]}"; do
 			if [ "$program" = "ffmpeg" ];then
 				eval "$PKG_MGR ffmpeg $PKG_MGR_OPTIONS"				
-                                if command -v ffmpeg >/dev/null 2>&1; then
-                                        echo "FFmpeg installed successfully!"
-                                else
-                                        echo "FFmpeg installation failed."
-                                fi
-			elif [ "$program" = "calibre" ];then
-				
+				if command -v ffmpeg >/dev/null 2>&1; then
+					echo "FFmpeg installed successfully!"
+				else
+					echo "FFmpeg installation failed."
+					DOCKER_UTILS_NEEDED=true
+					break
+				fi
+			elif [ "$program" = "calibre" ];then				
 				# avoid conflict with calibre builtin lxml
-				pip uninstall lxml -y
+				pip uninstall lxml -y 2>/dev/null
 				
-				if [[ "$OS" == "Linux" ]]; then
+				if [[ "$OSTYPE" == "Linux" ]]; then
 					echo "Installing Calibre for Linux..."
 					$WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sh /dev/stdin
-				elif [[ "$OS" == "Darwin" ]]; then
+				elif [[ "$OSTYPE" == "Darwin"* ]]; then
 					echo "Installing Calibre for macOS using Homebrew..."
 					eval "$PACK_MGR --cask calibre"
 				fi
@@ -157,6 +158,7 @@ if [[ -n "$WGET" && -n "$CONDA_VERSION" ]]; then
 	python -m unidic download && \
 	python -m spacy download en_core_web_sm && \
 	pip install -e . && \
+	conda deactivate && \
 	conda deactivate
 
 	echo -e "\e[32m******************* ebook2audiobook installation successful! *******************\e[0m"
