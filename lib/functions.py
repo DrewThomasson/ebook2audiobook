@@ -841,6 +841,7 @@ def convert_ebook(args, ui_needed):
     global in_docker, in_python_env, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
     
     is_web_process = ui_needed
+    ebook_file = args.ebook
     device = args.device
     target_voice_file = args.voice
     language = args.language
@@ -856,6 +857,9 @@ def convert_ebook(args, ui_needed):
     speed = args.speed
     enable_text_splitting = args.enable_text_splitting
     custom_model_url = args.custom_model_url
+    
+    if not os.path.splitext(ebook_file)[1]:
+        raise ValueError("The selected ebook file has no extension. Please select a valid file.")
     
     in_docker = is_running_in_docker();
     in_python_env = check_virtual_env();
