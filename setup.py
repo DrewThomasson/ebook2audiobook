@@ -24,7 +24,7 @@ setup(
     description="Convert eBooks to audiobooks with chapters and metadata",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/DrewThomasson/ebook2audiobookXTTS",
+    url="https://github.com/DrewThomasson/ebook2audiobook",
     packages=find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",

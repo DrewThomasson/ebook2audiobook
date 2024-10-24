@@ -1007,7 +1007,7 @@ def web_interface(share, ui_needed):
 
         Transform your eBooks into immersive audiobooks with optional custom TTS models.
 
-        This interface is based on [Ebook2AudioBookXTTS](https://github.com/DrewThomasson/ebook2audiobookXTTS).
+        This interface is based on [Ebook2AudioBook](https://github.com/DrewThomasson/ebook2audiobook).
         """
         )
 
