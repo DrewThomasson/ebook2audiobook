@@ -405,13 +405,13 @@ def concat_audio_chapters(metadatas, cover_file):
     def convert_wav(tmp_dir,combined_wav, metadata_file, cover_image, final_file):
         docker_dir = os.path.basename(tmp_dir)
             
-        ffmpeg_combined_wav = combined_wav if in_docker else f'/files/{docker_dir}/' + os.path.basename(combined_wav)
-        ffmpeg_metadata_file = metadata_file if in_docker else f'/files/{docker_dir}/' + os.path.basename(metadata_file)
-        ffmpeg_final_file = final_file if in_docker else f'/files/{docker_dir}/' + os.path.basename(final_file)
+        ffmpeg_combined_wav = combined_wav if in_docker or not in_python_env else f'/files/{docker_dir}/' + os.path.basename(combined_wav)
+        ffmpeg_metadata_file = metadata_file if in_docker or not in_python_env else f'/files/{docker_dir}/' + os.path.basename(metadata_file)
+        ffmpeg_final_file = final_file if in_docker or not in_python_env else f'/files/{docker_dir}/' + os.path.basename(final_file)
         ffmpeg_cover_image = None
 
         if cover_image:
-            ffmpeg_cover_image = cover_image if in_docker else f'/files/{docker_dir}/' + os.path.basename(cover_image)
+            ffmpeg_cover_image = cover_image if in_docker or not in_python_env else f'/files/{docker_dir}/' + os.path.basename(cover_image)
         
         ffmpeg_path = shutil.which("ffmpeg") 
         ffmpeg_cmd = [ffmpeg_path, '-i', ffmpeg_combined_wav, '-i', ffmpeg_metadata_file]
