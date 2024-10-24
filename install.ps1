@@ -70,15 +70,15 @@ function Check-ProgramsInstalled {
 					$installedCount += 1
 				}
 			} elseif ($program -eq "calibre") {
-					# Avoid conflict with calibre built-in lxml
-					pip uninstall lxml -y
+				# Avoid conflict with calibre built-in lxml
+				pip uninstall lxml -y
 
-					# Install Calibre using Chocolatey
-					Write-Host "Installing Calibre..."
-					choco install calibre -y
+				# Install Calibre using Chocolatey
+				Write-Host "Installing Calibre..."
+				choco install calibre -y
 
-					# Verify Calibre installation
-					if (Get-Command calibre -ErrorAction SilentlyContinue) {
+				# Verify Calibre installation
+				if (Get-Command calibre -ErrorAction SilentlyContinue) {
 						Write-Host "Calibre installed successfully!"
 					$installedCount += 1
 				}
@@ -249,7 +249,7 @@ if (Check-CondaInstalled) {
 	
 	# Deactivate Conda environment
 	Write-Host "Deactivating Conda environment..."
-	conda deactivate
+	& conda deactivate
 } else {
 	Write-Host "Installation cannot proceed. Either Conda is not installed or Docker is not running." -ForegroundColor Red
 }
