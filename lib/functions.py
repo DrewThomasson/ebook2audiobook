@@ -32,8 +32,8 @@ from urllib.parse import urlparse
 import lib.conf as conf
 import lib.lang as lang
 
-class DependencyError(Exception):
-    pass
+# Automatically accept the non-commercial license
+os.environ["COQUI_TOS_AGREED"] = "1"
 
 def inject_configs(target_namespace):
     # Extract variables from both modules and inject them into the target namespace
@@ -43,10 +43,9 @@ def inject_configs(target_namespace):
 # Inject configurations into the global namespace of this module
 inject_configs(globals())
 
+script_mode = None
 is_web_process = False
 is_web_shared = False
-in_docker = False
-in_python_env = False
 
 ebook_id = None
 tmp_dir = None
@@ -55,7 +54,6 @@ ebook_chapters_audio_dir = None
 audiobook_web_dir = None
 ebook_file = None
 ebook_title = None
-final_format = "m4b"
 
 # Base pronouns in English
 ebook_pronouns = {
@@ -63,10 +61,23 @@ ebook_pronouns = {
     "female": ["she", "her", "hers"]
 }
 
-client = None
+class DependencyError(Exception):
+    def __init__(self, message=None):
+        super().__init__(message)
+        
+        # Automatically handle the exception when it's raised
+        self.handle_exception()
 
-def import_globals(target_namespace):
-    target_namespace.update({k: v for k, v in globals().items() if not k.startswith("__")})
+    def handle_exception(self):
+        # Print the full traceback of the exception
+        traceback.print_exc()
+        
+        # Print the exception message
+        print(f"Caught DependencyError: {self}")
+        
+        # Exit the script if it's not a web process
+        if not is_web_process:
+            sys.exit(1)
 
 def define_props(ebook_src):
     global ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
@@ -78,66 +89,45 @@ def define_props(ebook_src):
         shutil.copy(ebook_src, ebook_file)
         return True
     except Exception as e:
-        print(f"Error copying ebook file: {e}")
-        return False
-    
-def is_running_in_docker():
-    try:
-        with open('/proc/1/cgroup', 'r') as f:
-            content = f.read()
-            if 'docker' in content or 'containerd' in content:
-                return True
-    except FileNotFoundError:
-        return False
-    return False
-    
-def check_virtual_env():
-    if sys.prefix != sys.base_prefix:
-        if sys.prefix == python_env_dir:
-            return True
+        raise DependencyError(e)
 
-    return False
-    
 def check_program_installed(program_name, command, options):
     try:
         subprocess.run([command, options], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return True, None
     except FileNotFoundError:
-        error = f"""\033[33m********** Error: {program_name} is not installed! if your OS calibre package version 
+        e = f"""\033[33m********** Error: {program_name} is not installed! if your OS calibre package version 
         is not compatible you still can install ebook2audiobook via install.sh (linux/mac) or install.bat (windows) **********\033[0m"""
-        print(error)
-        return False, error
+        raise DependencyError(e)
     except subprocess.CalledProcessError:
-        error = f"Error: There was an issue running {program_name}."
-        print(error)
-        return False, error
+        e = f"Error: There was an issue running {program_name}."
+        raise DependencyError(e)
 
-def check_lxml_package():
-	try:
-		util_path = shutil.which("pip")
-		package_name = "lxml"
-		result = subprocess.run([util_path, 'show', package_name], stdout=subprocess.PIPE, text=True, check=True)
-		package_location = None
-		for line in result.stdout.splitlines():
-			if line.startswith('Location'):
-				# Return the location path
-				package_location = line.split(': ')[1]
-				break
-		if package_location is not None:
-			if "/usr/local/lib64/" in package_location:
-				result = subprocess.run([util_path, 'uninstall', package_name, '-y'], stdout=subprocess.PIPE, text=True, check=True)
-	except subprocess.CalledProcessError as e:
-		print(f"Error running 'pip show': {e}")
+def remove_conflict_pkg(pkg):
+    try:
+        result = subprocess.run(["pip", 'show', pkg], env={}, stdout=subprocess.PIPE, text=True, check=True)
+        package_location = None
+        for line in result.stdout.splitlines():
+            if line.startswith('Location'):
+                package_location = line.split(': ')[1]
+                break
+        if package_location is not None:
+            try:
+                print(f"\033[33m*** {pkg} is in conflict with an external OS python library, trying to solve it....***\033[0m")
+                result = subprocess.run(["pip", 'uninstall', pkg, '-y'], env={}, stdout=subprocess.PIPE, text=True, check=True)               
+            except subprocess.CalledProcessError as e:
+                raise DependencyError(e)
+
+    except Exception as e:
+        raise DependencyError(e)
 
 def get_model_dir_from_url(custom_model_url):
     # Extract the last part of the custom_model_url as the model_dir
     parsed_url = urlparse(custom_model_url)
     model_dir_name = os.path.basename(parsed_url.path)
     model_dir = f"./models/{model_dir_name}"
-    
     # Ensure the model directory exists
     os.makedirs(model_dir, exist_ok=True)
-
     return model_dir
     
 def download_and_extract(path_or_url, extract_to=models_dir):
@@ -195,9 +185,7 @@ def download_and_extract(path_or_url, extract_to=models_dir):
             print(f"Missing files: {', '.join(missing_files)}")
     
     except Exception as e:
-        print(f"Failed to download or extract zip file: {e}")
-
-
+        raise DependencyError(e)
 
 def translate_pronouns(language):
     global ebook_pronouns
@@ -213,7 +201,7 @@ def translate_pronouns(language):
     return translated_pronouns
         
 def extract_metadata_and_cover(ebook_filename_noext):
-    global  client, ebook_file, tmp_dir
+    global ebook_file, tmp_dir
     metadatas = None
 
     def parse_metadata(metadata_str):
@@ -232,66 +220,52 @@ def extract_metadata_and_cover(ebook_filename_noext):
         return None, None
     if not os.path.exists(tmp_dir):
         os.makedirs(tmp_dir, exist_ok=True)
+        
+    util_app = "ebook-meta"
 
-    # Handle the case when running inside Docker
-    if in_docker or not in_python_env:
+    if script_mode == FULL_DOCKER or script_mode == NATIVE:
         try:
-            # Extract the cover image
-            util_path = shutil.which("ebook-meta")
-            subprocess.run([util_path, ebook_file, '--get-cover', cover_file], check=True)
-
-            # Extract metadata without writing to a file
-            metadata_result = subprocess.check_output([util_path, ebook_file], universal_newlines=True)
+            subprocess.run([util_app, ebook_file, '--get-cover', cover_file], env={}, check=True)
+            metadata_result = subprocess.check_output([util_app, ebook_file], universal_newlines=True)
             metadatas = parse_metadata(metadata_result)
-
+            if os.path.exists(cover_file):
+                return metadatas, cover_file
+            else:
+                return metadatas, None
         except subprocess.CalledProcessError as e:
-            # Maybe the issue comes from lxml package
-            print(f"An error occurred during metadata extraction: {e}")
-            check_lxml_package()
-            return None, None
-
-    # Handle the case when not running inside Docker (e.g., on the host machine)
+            remove_conflict_pkg("lxml")           
+            raise DependencyError(e)
     else:
-        source_dir = os.path.abspath(os.path.dirname(ebook_file))
-        docker_dir = os.path.basename(tmp_dir)
-        docker_file_in = os.path.basename(ebook_file)
-        docker_file_out = os.path.basename(cover_file)
-
         try:
-            # Run the Docker container to extract metadata and cover image
-            if client is None:
-                client = docker.from_env()
+            import docker
+            source_dir = os.path.abspath(os.path.dirname(ebook_file))
+            docker_dir = os.path.basename(tmp_dir)
+            docker_file_in = os.path.basename(ebook_file)
+            docker_file_out = os.path.basename(cover_file)
+            client = docker.from_env()
             metadata_result = client.containers.run(
                 docker_utils_image,
-                command=f"ebook-meta /files/{docker_dir}/{docker_file_in} --get-cover /files/{docker_dir}/{docker_file_out}",
+                command=f"{util_app} /files/{docker_dir}/{docker_file_in} --get-cover /files/{docker_dir}/{docker_file_out}",
                 volumes={source_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                 remove=True,
                 detach=False,
                 stdout=True,
                 stderr=True
-            )
-
-            # Parse the metadata from the Docker container output
+            )      
+            print(container.decode('utf-8'))
             metadata_lines = metadata_result.decode('utf-8').split('\n')[1:]  # This omits the first line
             metadata_result_omitted = '\n'.join(metadata_lines)  # Rejoin the remaining lines
-
-            # Parse the metadata without the first line
             metadatas = parse_metadata(metadata_result_omitted)
-
+            if os.path.exists(cover_file):
+                return metadatas, cover_file
+            else:
+                return metadatas, None
         except docker.errors.ContainerError as e:
-            print(f"An error occurred in Docker container: {e}")
-            return None, None
+            raise DependencyError(e)
         except docker.errors.ImageNotFound as e:
-            print(f"Docker image '{docker_utils_image}' not found: {e}")
-            return None, None
+            raise DependencyError(e)
         except docker.errors.APIError as e:
-            print(f"Docker API error: {e}")
-            return None, None
-
-    if os.path.exists(cover_file):
-        return metadatas, cover_file
-    else:
-        return metadatas, None
+            raise DependencyError(e)
 
 def concat_audio_chapters(metadatas, cover_file):
     global is_web_process, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
@@ -323,14 +297,14 @@ def concat_audio_chapters(metadatas, cover_file):
         print(f"Combined audio saved to {combined_wav}")
 
     def generate_ffmpeg_metadata(chapter_files, metadata_file, metadatas):
-        global client, ebook_title
+        global ebook_title
         
         ffmpeg_metadata = ";FFMETADATA1\n"
         
         # Map metadatas to FFmpeg tags
         if metadatas:
             ebook_title = metadatas.get('Title', None)
-            if ebook_title:
+            if ebook_title is not None:
                 ffmpeg_metadata += f"title={ebook_title}\n"  # Title
                 
             author = metadatas.get('Author(s)', None)
@@ -402,80 +376,83 @@ def concat_audio_chapters(metadatas, cover_file):
          
         return ebook_title
 
-    def convert_wav(tmp_dir,combined_wav, metadata_file, cover_image, final_file):
-        docker_dir = os.path.basename(tmp_dir)
-            
-        ffmpeg_combined_wav = combined_wav if in_docker or not in_python_env else f'/files/{docker_dir}/' + os.path.basename(combined_wav)
-        ffmpeg_metadata_file = metadata_file if in_docker or not in_python_env else f'/files/{docker_dir}/' + os.path.basename(metadata_file)
-        ffmpeg_final_file = final_file if in_docker or not in_python_env else f'/files/{docker_dir}/' + os.path.basename(final_file)
-        ffmpeg_cover_image = None
-
-        if cover_image:
-            ffmpeg_cover_image = cover_image if in_docker or not in_python_env else f'/files/{docker_dir}/' + os.path.basename(cover_image)
-        
-        ffmpeg_path = shutil.which("ffmpeg") 
-        ffmpeg_cmd = [ffmpeg_path, '-i', ffmpeg_combined_wav, '-i', ffmpeg_metadata_file]
-        
-        if ffmpeg_cover_image:
-            ffmpeg_cmd += ['-i', ffmpeg_cover_image, '-map', '0:a', '-map', '2:v']
-        else:
-            ffmpeg_cmd += ['-map', '0:a'] 
-
-        ffmpeg_cmd += ['-map_metadata', '1', '-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
-        
-        if ffmpeg_cover_image:
-            if ffmpeg_cover_image.lower().endswith('.png'):
-                ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
+    def convert_wav(tmp_dir,combined_wav, metadata_file, cover_file, final_file):
+        try:
+            ffmpeg_cover = None
+            if script_mode == FULL_DOCKER or script_mode == NATIVE:
+                ffmpeg_combined_wav = combined_wav
+                ffmpeg_metadata_file = metadata_file
+                ffmpeg_final_file = final_file
+                if cover_file is not None:
+                    ffmpeg_cover = cover_file
             else:
-                ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
+                import docker
+                docker_dir = os.path.basename(tmp_dir)
+                ffmpeg_combined_wav = f'/files/{docker_dir}/' + os.path.basename(combined_wav)
+                ffmpeg_metadata_file = f'/files/{docker_dir}/' + os.path.basename(metadata_file)
+                ffmpeg_final_file = f'/files/{docker_dir}/' + os.path.basename(final_file)           
+                if cover_file is not None:
+                    ffmpeg_cover = f'/files/{docker_dir}/' + os.path.basename(cover_file)
                 
-        if ffmpeg_cover_image and ffmpeg_cover_image.lower().endswith('.png'):
-            ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
+            util_app = shutil.which("ffmpeg")
+            ffmpeg_cmd = [util_app, '-i', ffmpeg_combined_wav, '-i', ffmpeg_metadata_file]
             
-        ffmpeg_cmd += ['-movflags', '+faststart', ffmpeg_final_file]
-        
-        if in_docker or not in_python_env:
-            try:
-                subprocess.run(ffmpeg_cmd, check=True)
-            except subprocess.CalledProcessError as e:
-                print(f"An error occurred at convert_wav(): {e}")
-                return None
-        else:
-            try:
-                # Run the Docker container with FFmpeg command
-                if client is None:
-                    client = docker.from_env()
-                container = client.containers.run(
-                    docker_utils_image,
-                    command=ffmpeg_cmd,
-                    volumes={tmp_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
-                    remove=True,
-                    detach=False,
-                    stdout=True,
-                    stderr=True
-                )
-                print(container.decode('utf-8'))
-            except docker.errors.ContainerError as e:
-                print(f"An error occurred at convert_wav(): {e}")
-                return None
-            except docker.errors.ImageNotFound as e:
-                print(f"The Docker image '{docker_utils_image}' was not found: {e}")
-                return None
-            except docker.errors.APIError as e:
-                print(f"A Docker API error occurred: {e}")
-                return None
+            if ffmpeg_cover is not None:
+                ffmpeg_cmd += ['-i', ffmpeg_cover, '-map', '0:a', '-map', '2:v']
+            else:
+                ffmpeg_cmd += ['-map', '0:a'] 
 
-        return True
+            ffmpeg_cmd += ['-map_metadata', '1', '-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+            
+            if ffmpeg_cover is not None:
+                if ffmpeg_cover.lower().endswith('.png'):
+                    ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
+                else:
+                    ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
+                    
+            if ffmpeg_cover is not None and ffmpeg_cover.lower().endswith('.png'):
+                ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
+                
+            ffmpeg_cmd += ['-movflags', '+faststart', '-y', ffmpeg_final_file]
+            
+            if script_mode == FULL_DOCKER or script_mode == NATIVE:
+                try:
+                    subprocess.run(ffmpeg_cmd, env={}, check=True)
+                    return True
+                except subprocess.CalledProcessError as e:
+                    raise DependencyError(e)
+            else:
+                try:
+                    client = docker.from_env()
+                    container = client.containers.run(
+                        docker_utils_image,
+                        command=ffmpeg_cmd,
+                        volumes={tmp_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
+                        remove=True,
+                        detach=False,
+                        stdout=True,
+                        stderr=True
+                    )
+                    print(container.decode('utf-8'))
+                    return True
+                except docker.errors.ContainerError as e:
+                    raise DependencyError(e)
+                except docker.errors.ImageNotFound as e:
+                    raise DependencyError(e)
+                except docker.errors.APIError as e:
+                    raise DependencyError(e)
+ 
+        except Exception as e:
+            raise DependencyError(e)
 
     chapter_files = sorted([os.path.join(ebook_chapters_audio_dir, f) for f in os.listdir(ebook_chapters_audio_dir) if f.endswith('.wav')], key=sort_key)
-    docker_dir = os.path.basename(tmp_dir)
     combined_wav = os.path.join(tmp_dir, 'combined.wav')
     metadata_file = os.path.join(tmp_dir, 'metadata.txt')
     
     combine_chapters(chapter_files, combined_wav)
     generate_ffmpeg_metadata(chapter_files, metadata_file, metadatas)
     
-    if not ebook_title:
+    if ebook_title is None:
         ebook_title = os.path.splitext(os.path.basename(ebook_file))[0]
 
     concat_file = os.path.join(tmp_dir, ebook_title + '.' + final_format)
@@ -485,70 +462,58 @@ def concat_audio_chapters(metadatas, cover_file):
     else:
         final_file = audiobooks_dir + '/' + os.path.basename(concat_file);
     
-    if convert_wav(tmp_dir,combined_wav, metadata_file, cover_file, concat_file):
-        if shutil.copy(concat_file, final_file) == final_file:
-            shutil.rmtree(tmp_dir)
-            return final_file
+    if convert_wav(tmp_dir,combined_wav, metadata_file, cover_file, final_file):
+        shutil.rmtree(tmp_dir)
+        return final_file
 
     return None
 
 def create_chapter_labeled_book(ebook_filename_noext):
-    global client, ebook_title, ebook_file, tmp_dir, ebook_chapters_dir
+    global ebook_title, ebook_file, tmp_dir, ebook_chapters_dir
     
     def convert_to_epub(ebook_file, epub_path):
         if os.path.basename(ebook_file) == os.path.basename(epub_path):
             return True
         else:
-            if in_docker or not in_python_env:
+            util_app = "ebook-convert"
+            if script_mode == FULL_DOCKER or script_mode == NATIVE:
                 try:
-                    util_path = shutil.which("ebook-convert")
-                    subprocess.run([util_path, ebook_file, epub_path], check=True)
-                except subprocess.CalledProcessError as e:
-                    # Maybe the issue comes from lxml package
-                    print(f"An error occurred at create_chapter_labeled_book(): {e}")
-                    check_lxml_package()
-                    return False
-                return True
-            else:
-                # Extract the original filenames
-                docker_dir = os.path.basename(tmp_dir)
-                docker_file_in = os.path.basename(ebook_file)
-                docker_file_out = os.path.basename(epub_path)
-                
-                # Check if the input file is already an EPUB
-                if docker_file_in.lower().endswith('.epub'):
-                    shutil.copy(ebook_file, epub_path)
+                    subprocess.run([util_app, ebook_file, epub_path], env={}, check=True)
                     return True
-
-                # Convert the ebook to EPUB format using utils Docker image
+                except subprocess.CalledProcessError as e:
+                    remove_conflict_pkg("lxml")
+                    raise DependencyError(e)
+            else:
                 try:
-                    # Run the Docker container
-                    if client is None:
-                        client = docker.from_env()
+                    import docker
+                    client = docker.from_env()
+                    docker_dir = os.path.basename(tmp_dir)
+                    docker_file_in = os.path.basename(ebook_file)
+                    docker_file_out = os.path.basename(epub_path)
+                    
+                    # Check if the input file is already an EPUB
+                    if docker_file_in.lower().endswith('.epub'):
+                        shutil.copy(ebook_file, epub_path)
+                        return True
+
+                    # Convert the ebook to EPUB format using utils Docker image
                     container = client.containers.run(
                         docker_utils_image,
-                        command=f"ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out}",
+                        command=f"{util_app} /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out}",
                         volumes={tmp_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                         remove=True,
                         detach=False,
                         stdout=True,
                         stderr=True
                     )
-
-                    # Print container logs for verbose output
                     print(container.decode('utf-8'))
-
+                    return True
                 except docker.errors.ContainerError as e:
-                    print(f"An error occurred while converting the eBook: {e}")
-                    return False
+                    raise DependencyError(e)
                 except docker.errors.ImageNotFound as e:
-                    print(f"The Docker image '{docker_utils_image}' was not found: {e}")
-                    return False
+                    raise DependencyError(e)
                 except docker.errors.APIError as e:
-                    print(f"A Docker API error occurred: {e}")
-                    return False
-
-                return True
+                    raise DependencyError(e)
 
     def save_chapters_as_text(epub_path):
         # Open the EPUB file
@@ -609,7 +574,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
                             end_location = start_location + len(sentence)
                             writer.writerow([sentence, start_location, end_location, 'True', 'Narrator', chapter_number])
                 except Exception as e:
-                    print(f"Error processing file {filename}: {e}")
+                    raise DependencyError(e)
 
     output_csv = os.path.join(tmp_dir, "chapters.csv")
     os.makedirs(os.path.dirname(output_csv), exist_ok=True)
@@ -838,8 +803,9 @@ def download_audiobooks():
     return files
 
 def convert_ebook(args, ui_needed):
-    global in_docker, in_python_env, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
-    
+    global script_mode, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+
+    script_mode = args.script_mode if args.script_mode else NATIVE
     is_web_process = ui_needed
     ebook_file = args.ebook
     device = args.device
@@ -860,20 +826,15 @@ def convert_ebook(args, ui_needed):
     
     if not os.path.splitext(ebook_file)[1]:
         raise ValueError("The selected ebook file has no extension. Please select a valid file.")
-    
-    in_docker = is_running_in_docker();
-    in_python_env = check_virtual_env();
-    
-    if in_python_env:
-        import docker
-    else:
-        bool, error = check_program_installed("Calibre", "calibre", "--version")
+
+    if script_mode == NATIVE:
+        bool, e = check_program_installed("Calibre", "calibre", "--version")
         if not bool:
-            raise DependencyError(error)
+            raise DependencyError(e)
             
-        bool, error = check_program_installed("FFmpeg", "ffmpeg", "-version")
+        bool, e = check_program_installed("FFmpeg", "ffmpeg", "-version")
         if not bool:
-            raise DependencyError(error)
+            raise DependencyError(e)
                     
     if not is_web_process:
         ebook_id = str(uuid.uuid4())
@@ -941,17 +902,17 @@ def convert_ebook(args, ui_needed):
                 output_file = concat_audio_chapters(metadatas, cover_file)
                 
                 if output_file is not None:
+                    status = f"Audiobook {os.path.basename(output_file)} created!"
                     print(f"Temporary directory {tmp_dir} removed successfully.")
-                    gr.update(value=None)
-                    return f"Audiobook {os.path.basename(output_file)} created!", output_file 
+                    print(status)
+                    return status, output_file 
                 else:
-                    print("Error concat_audio_chapters()")
+                    raise DependencyError(f"{output_file} not created!")
             else:
-                print("Error convert_chapters_to_audio()")
+                raise DependencyError("convert_chapters_to_audio() failed!")
 
         except Exception as e:
-            print(f"Error in convert_ebook(): {e}")
-            traceback.print_exc()
+            raise DependencyError(e)
         
     print(f"Temporary directory {tmp_dir} not removed due to failure.")  
     return None, None
@@ -989,9 +950,10 @@ def initialize_session(session_id):
         warning_text = str(f" Note: if the page is reloaded or closed all converted files will be lost. Access limit time: {web_dir_expire} hours")
     return f"Session: {session_id}.{warning_text}", session_id
 
-def web_interface(share, ui_needed):
-    global is_web_shared
+def web_interface(mode, share, ui_needed):
+    global script_mode, is_web_shared
     
+    script_mode = mode
     is_web_shared = share
     
     theme = gr.themes.Soft(
@@ -1007,7 +969,7 @@ def web_interface(share, ui_needed):
 
         Transform your eBooks into immersive audiobooks with optional custom TTS models.
 
-        This interface is based on [Ebook2AudioBook](https://github.com/DrewThomasson/ebook2audiobook).
+        This interface is based on [Ebook2AudioBookXTTS](https://github.com/DrewThomasson/ebook2audiobookXTTS).
         """
         )
 
@@ -1141,6 +1103,7 @@ def web_interface(share, ui_needed):
 
             # Call the convert_ebook function with the processed parameters
             args = argparse.Namespace(
+                script_mode=script_mode,
                 device=device,
                 ebook=ebook_file,
                 voice=target_voice_file,
@@ -1187,14 +1150,14 @@ def web_interface(share, ui_needed):
             outputs=[download_files]
         )
 
-    # Get the correct local IP or localhost
     hostname = socket.gethostname()
+    
     try:
         local_ip = socket.gethostbyname(hostname)
-        print(f"Running on local URL: http://{local_ip}:{web_interface_port}")
     except socket.gaierror:
         local_ip = '127.0.0.1'
-        print(f"Running on local URL: http://localhost:{web_interface_port}")
-
-    # Launch Gradio app
-    demo.launch(server_name="0.0.0.0", server_port=web_interface_port, share=share)
+    
+    if local_ip != "127.0.0.1":
+        print(f"* Running on local URL:  http://127.0.0.1:{web_interface_port}")
+        
+    demo.launch(server_name=local_ip, server_port=web_interface_port, share=share)

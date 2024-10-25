@@ -10,4 +10,3 @@ mecab-python3
 unidic
 gradio>=4.44.0
 docker
-
