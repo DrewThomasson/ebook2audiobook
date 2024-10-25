@@ -43,7 +43,7 @@ def check_and_install_requirements(file_path):
         if missing_packages:
             print("\nInstalling missing packages...")
             try:
-                subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade pip"] + missing_packages)
+                subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"] + missing_packages)
                 subprocess.check_call([sys.executable, "-m", "pip", "install"] + missing_packages)
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install packages: {e}")

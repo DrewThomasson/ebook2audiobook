@@ -44,13 +44,18 @@ if check_external_programs "${REQUIRED_PROGRAMS[@]}"; then
     echo -e "\e[33mRunning in native mode\e[0m"
 	SCRIPT_MODE="$NATIVE"
 elif check_docker; then
-	if [[ -d ./python_env ]]; then
+	if [[ -d $PYTHON_ENV_DOCKER_UTILS ]]; then
 		echo -e "\e[33mRunning in docker utils mode\e[0m"
 		PYTHON_INSTALL_ENV="$(readlink -f $PYTHON_ENV_DOCKER_UTILS)"
 		SCRIPT_MODE="$DOCKER_UTILS"
 	else
-		echo -e "\e[33mRunning in full docker mode\e[0m"
-		SCRIPT_MODE="$FULL_DOCKER"
+		# Method 1: Check if the "container" environment variable is set
+		if [[ -n "$container" || -f /.dockerenv ]]; then
+			echo -e "\e[33mRunning inside Docker (detected via environment variable)\e[0m"
+			SCRIPT_MODE="$FULL_DOCKER"
+		else
+			SCRIPT_MODE="$NATIVE"
+		fi
 	fi
 else
     echo -e "\e[33mCould not determine in which mode to run the script. Exiting...\e[0m"
@@ -79,7 +84,7 @@ elif [ "$SCRIPT_MODE" = "$DOCKER_UTILS" ]; then
 			conda deactivate
 			exit 0
 		else
-			echo -e "\e[33mDocker image '$DOCKER_IMG' not found. Please build or pull the image.\e[0m"
+			echo -e "\e[33mDocker image '$DOCKER_UTILS_NAME' not found. Please build or pull the image.\e[0m"
 		fi
 	else
 		echo -e "\e[33mDocker is not installed. Please install it first.\e[0m"
