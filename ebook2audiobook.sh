@@ -78,6 +78,7 @@ elif [ "$SCRIPT_MODE" = "$DOCKER_UTILS" ]; then
 	elif command -v docker &> /dev/null; then
 		if [[ "$(docker images -q $DOCKER_UTILS_NAME 2> /dev/null)" != "" ]]; then
 			source $(conda info --base)/etc/profile.d/conda.sh
+			conda create --prefix $PYTHON_ENV_DOCKER_UTILS python=3.11 -y
 			conda activate $PYTHON_INSTALL_ENV
 			python app.py "$@"
 			python app.py --script_mode "docker_utils" $PARAMS

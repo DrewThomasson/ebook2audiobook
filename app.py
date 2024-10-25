@@ -13,9 +13,9 @@ script_mode = NATIVE
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
-        error = f"""\033[33m********** Error: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
+        error = f"""{color_yellow_start}********** Error: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
         Please create a virtual python environment verrsion {min_python_version[0]}.{min_python_version[1]} or {max_python_version[0]}.{max_python_version[1]} 
-        with conda or python -v venv **********\033[0m"""
+        with conda or python -v venv **********{color_yellow_end}"""
         print(error)
         return False
     else:
@@ -44,7 +44,6 @@ def check_and_install_requirements(file_path):
             print("\nInstalling missing packages...")
             try:
                 subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "pip"] + missing_packages)
-                subprocess.check_call([sys.executable, "-m", "pip", "install"] + missing_packages)
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install packages: {e}")
                 return False
@@ -64,7 +63,7 @@ def check_dictionary():
 
     if not os.path.isdir(dictionary_path):
         try:
-            print(f"\033[33m*** No default dictionary found! trying to download it... ***\033[0m")
+            print(f"{color_yellow_start}*** No default dictionary found! trying to download it... ***{color_yellow_end}")
             subprocess.run(["python", "-m", "unidic", "download"], check=True)
             print("Successfully downloaded UniDic.")
             return True
@@ -83,7 +82,7 @@ def check_dictionary():
                 return True
 
     try:
-        print(f"\033[33m*** default spacy model is missing! trying to download it... ***\033[0m")
+        print(f"{color_yellow_start}*** default spacy model is missing! trying to download it... ***{color_yellow_end}")
         subprocess.run(["python", "-m", "spacy", "download", required_model], check=True)
         return True
     except subprocess.CalledProcessError as e:
@@ -170,7 +169,7 @@ Linux/Mac:
 
     # Check if the port is already in use to prevent multiple launches
     if not args.headless and is_port_in_use(web_interface_port):
-        print(f"\033[33mError: Port {web_interface_port} is already in use. The web interface may already be running.\033[0m")
+        print(f"{color_yellow_start}Error: Port {web_interface_port} is already in use. The web interface may already be running.{color_yellow_end}")
         sys.exit(1)
     
     script_mode = args.script_mode if args.script_mode else script_mode

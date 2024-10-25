@@ -96,8 +96,8 @@ def check_program_installed(program_name, command, options):
         subprocess.run([command, options], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return True, None
     except FileNotFoundError:
-        e = f"""\033[33m********** Error: {program_name} is not installed! if your OS calibre package version 
-        is not compatible you still can install ebook2audiobook via install.sh (linux/mac) or install.bat (windows) **********\033[0m"""
+        e = f"""{color_yellow_start}********** Error: {program_name} is not installed! if your OS calibre package version 
+        is not compatible you still can install ebook2audiobook via install.sh (linux/mac) or install.bat (windows) **********{color_yellow_end}"""
         raise DependencyError(e)
     except subprocess.CalledProcessError:
         e = f"Error: There was an issue running {program_name}."
@@ -113,7 +113,7 @@ def remove_conflict_pkg(pkg):
                 break
         if package_location is not None:
             try:
-                print(f"\033[33m*** {pkg} is in conflict with an external OS python library, trying to solve it....***\033[0m")
+                print(f"{color_yellow_start}*** {pkg} is in conflict with an external OS python library, trying to solve it....***{color_yellow_end}")
                 result = subprocess.run(["pip", 'uninstall', pkg, '-y'], env={}, stdout=subprocess.PIPE, text=True, check=True)               
             except subprocess.CalledProcessError as e:
                 raise DependencyError(e)
@@ -1160,4 +1160,4 @@ def web_interface(mode, share, ui_needed):
     if local_ip != "127.0.0.1":
         print(f"* Running on local URL:  http://127.0.0.1:{web_interface_port}")
         
-    demo.launch(server_name=local_ip, server_port=web_interface_port, share=share)
+    demo.launch(server_name="0.0.0.0", server_port=web_interface_port, share=share)

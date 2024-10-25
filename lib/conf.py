@@ -22,3 +22,6 @@ processes_dir = os.path.abspath("./tmp")
 
 supported_ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
 final_format = "m4b"
+
+color_yellow_start = "" if os.name == "nt" else "\\033[33m"
+color_yellow_end = "" if os.name == "nt" else "\\033[0m"
