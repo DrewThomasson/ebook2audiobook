@@ -94,10 +94,10 @@ if [ "$SCRIPT_MODE" != "$FULL_DOCKER" ]; then
 		if docker_check; then
 			if [[ "$(docker images -q $DOCKER_UTILS_IMG 2> /dev/null)" = "" ]]; then
 				echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Installing it now...\e[0m"
-				pip install --upgrade pip && \
-				pip install pydub nltk beautifulsoup4 ebooklib unidic translate coqui-tts tqdm mecab mecab-python3 docker gradio>=4.44.0  && \
-				python -m unidic download && \
-				python -m spacy download en_core_web_sm && \
+				pip install --upgrade pip
+				pip install pydub nltk beautifulsoup4 ebooklib unidic translate coqui-tts tqdm mecab mecab-python3 docker gradio>=4.44.0
+				python -m unidic download
+				python -m spacy download en_core_web_sm
 				pip install -e .
 			fi	
 		else
