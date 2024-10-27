@@ -8,22 +8,23 @@ NATIVE="native"
 DOCKER_UTILS="docker_utils"
 FULL_DOCKER="full_docker"
 
-SCRIPT_MODE=""
+SCRIPT_MODE="$NATIVE"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("calibre" "ffmpeg")
 DOCKER_UTILS_IMG="utils"
 PYTHON_ENV="python_env"
 
 if [[ "$OSTYPE" = "darwin"* ]]; then
-    MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
+    CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
 else
-	MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+	CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
 fi
-
-MINICONDA_INSTALLER="/tmp/Miniconda3-latest.sh"
-CONDA_PATH="$HOME/miniconda3/bin"
-INSTALL_DIR="$HOME/miniconda3"
+CONDA_INSTALLER=/tmp/Miniconda3-latest.sh
+CONDA_INSTALL_DIR=$HOME/miniconda3
+CONDA_PATH=$HOME/miniconda3/bin
+CONDA_ENV=~/miniconda3/etc/profile.d/conda.sh
 CONFIG_FILE="$HOME/.bashrc"
 PATH="$CONDA_PATH:$PATH"
 
@@ -50,32 +51,94 @@ function required_programs_check {
 	fi
 }
 
-function docker_check {
-	if ! command -v docker &> /dev/null; then
-		echo -e "\e[33mDocker is not installed.\e[0m"
-		return 1
+function install_programs {
+	echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges or it will fail.\e[0m"
+	if [[ "$OSTYPE" = "darwin"* ]]; then
+		PACK_MGR="brew install"
+			if ! command -v brew &> /dev/null; then
+				echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
+				/usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+				echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+				eval "$(/opt/homebrew/bin/brew shellenv)"
+			fi
 	else
-		# Check if Docker service is running
-		if ! docker info >/dev/null 2>&1; then
-			echo "\e[33mDocker is not running\e[0m"
+		if command -v emerge &> /dev/null; then
+			PACK_MGR="sudo emerge"
+		elif command -v dnf &> /dev/null; then
+			PACK_MGR="sudo dnf install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v yum &> /dev/null; then
+			PACK_MGR="sudo yum install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v zypper &> /dev/null; then
+			PACK_MGR="sudo zypper install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v pacman &> /dev/null; then
+			PACK_MGR="sudo pacman -Sy"
+		elif command -v apt-get &> /dev/null; then
+			sudo apt-get update
+			PACK_MGR="sudo apt-get install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v apk &> /dev/null; then
+			PACK_MGR="sudo apk add"
+		else
+			echo "Cannot recognize your applications package manager. Please install the required applications manually."
 			return 1
 		fi
-		return 0
+		
+	fi
+	if [ -z "$WGET" ]; then
+		echo -e "\e[33m wget is missing! trying to install it... \e[0m"
+		result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
+		result_code=$?
+		if [ $result_code -eq 0 ]; then
+			WGET=$(which wget 2>/dev/null)
+		else
+			echo "Cannot 'wget'. Please install 'wget'  manually."
+			return 1
+		fi
+	fi
+	for program in "${programs_missing[@]}"; do
+		if [ "$program" = "calibre" ];then				
+			# avoid conflict with calibre builtin lxml
+			pip uninstall lxml -y 2>/dev/null
+			echo -e "\e[33mInstalling Calibre...\e[0m"
+			if [[ "$OSTYPE" = "darwin"* ]]; then
+				eval "$PACK_MGR --cask calibre"
+			else
+				$WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sh /dev/stdin
+			fi
+			if command -v calibre >/dev/null 2>&1; then
+				echo -e "\e[33mCalibre installed successfully!\e[0m"
+			else
+				echo "Calibre installation failed."
+			fi
+		else
+			eval "$PACK_MGR $program $PKG_MGR_OPTIONS"				
+			if command -v $program >/dev/null 2>&1; then
+				echo -e "\e[33m$program installed successfully!\e[0m"
+			else
+				echo "$program installation failed."
+			fi
+		fi
+	done
+	if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
+		echo -e "\e[33mYou can run 'ebook2audiobook.sh --script_mode docker_utils' to avoid to install $REQUIRED_PROGRAMS natively.\e[0m"
+		return 1
 	fi
 }
 
 function conda_check {
 	if ! command -v conda &> /dev/null; then
-		echo -e "\e[33mMiniconda is not installed!\e[0m"
-		echo -e "\e[33mDownloading Miniconda installer...\e[0m"
-		wget -O "$MINICONDA_INSTALLER" "$MINICONDA_URL"
-		if [[ -f "$MINICONDA_INSTALLER" ]]; then
+		echo -e "\e[33mconda is not installed!\e[0m"
+		echo -e "\e[33mDownloading conda installer...\e[0m"
+		wget -O "$CONDA_INSTALLER" "$CONDA_URL"
+		if [[ -f "$CONDA_INSTALLER" ]]; then
 			echo -e "\e[33mInstalling Miniconda...\e[0m"
-			bash "$MINICONDA_INSTALLER" -b -p "$INSTALL_DIR"
-			rm -f "$MINICONDA_INSTALLER"
-			if [[ -f "$INSTALL_DIR/bin/conda" ]]; then
+			bash "$CONDA_INSTALLER" -b -p "$CONDA_INSTALL_DIR"
+			rm -f "$CONDA_INSTALLER"
+			if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
 				echo -e "\e[33Miniconda installed successfully!\e[0m"
-				return 0
 			else
 				echo -e "\e[31mMiniconda installation failed.\e[0m"		
 				return 1
@@ -86,141 +149,72 @@ function conda_check {
 			return 1
 		fi
 	fi
-	return 0
-}
-
-if [ "$SCRIPT_MODE" != "$FULL_DOCKER" ]; then
-	if [ "$SCRIPT_MODE" = "$DOCKER_UTILS" ]; then
-		if docker_check; then
-			if [[ "$(docker images -q $DOCKER_UTILS_IMG 2> /dev/null)" = "" ]]; then
-				echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Installing it now...\e[0m"
-				pip install --upgrade pip
-				pip install pydub nltk beautifulsoup4 ebooklib unidic translate coqui-tts tqdm mecab mecab-python3 docker gradio>=4.44.0
-				python -m unidic download
-				python -m spacy download en_core_web_sm
-				pip install -e .
-			fi	
-		else
-			echo -e "\e[33mDocker failed to run. Try to run ebook2audiobook in full docker mode.\e[0m"
-			exit 1
-		fi
-	else
-		if required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
-			SCRIPT_MODE="$NATIVE"
-		else
-			if [[ "$OSTYPE" = "darwin"* ]]; then
-				PACK_MGR="brew install"
-					if ! command -v brew &> /dev/null; then
-						echo "Homebrew is not installed. Installing Homebrew..."
-						/usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-						echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
-						eval "$(/opt/homebrew/bin/brew shellenv)"
-					fi
-			else
-				if command -v emerge &> /dev/null; then
-					PACK_MGR="sudo emerge"
-				elif command -v dnf &> /dev/null; then
-					PACK_MGR="sudo dnf install"
-					PACK_MGR_OPTIONS="-y"
-				elif command -v yum &> /dev/null; then
-					PACK_MGR="sudo yum install"
-					PACK_MGR_OPTIONS="-y"
-				elif command -v zypper &> /dev/null; then
-					PACK_MGR="sudo zypper install"
-					PACK_MGR_OPTIONS="-y"
-				elif command -v pacman &> /dev/null; then
-					PACK_MGR="sudo pacman -Sy"
-				elif command -v apt-get &> /dev/null; then
-					sudo apt-get update
-					PACK_MGR="sudo apt-get install"
-					PACK_MGR_OPTIONS="-y"
-				elif command -v apk &> /dev/null; then
-					PACK_MGR="sudo apk add"
-				fi
-				
-			fi
-
-			if [ -z "$WGET" ]; then
-				echo -e "\e[33m wget is missing! trying to install it... \e[0m"
-				if [ "$PACK_MGR" != "" ]; then
-					eval "$PACK_MGR wget $PACK_MGR_OPTIONS"
-					WGET=$(which wget 2>/dev/null)
-				else
-					echo "Cannot recognize your package manager. Please install wget manually."
-					exit 1
-				fi
-			fi
-			
-			if [ "$WGET" != "" ]; then
-				for program in "${programs_missing[@]}"; do
-					if [ "$program" = "ffmpeg" ];then
-						eval "$PACK_MGR ffmpeg $PKG_MGR_OPTIONS"				
-						if command -v ffmpeg >/dev/null 2>&1; then
-							echo "FFmpeg installed successfully!"
-						else
-							echo "FFmpeg installation failed."
-						fi
-					elif [ "$program" = "calibre" ];then				
-						# avoid conflict with calibre builtin lxml
-						pip uninstall lxml -y 2>/dev/null
-						
-						if [[ "$OSTYPE" = "darwin"* ]]; then
-							echo "Installing Calibre for macOS using Homebrew..."
-							eval "$PACK_MGR --cask calibre"
-						else
-							echo "Installing Calibre for Linux..."
-							$WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sh /dev/stdin
-						fi
-
-						if command -v calibre >/dev/null 2>&1; then
-							echo "Calibre installed successfully!"
-						else
-							echo "Calibre installation failed."
-						fi
-					fi
-				done
-				
-				if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
-					echo -e "\e[33mYou can run 'ebook2audiobook.sh --script_mode docker_utils' to avoid to install $REQUIRED_PROGRAMS natively.\e[0m"
-					exit 1
-				fi
-			else
-				echo "Cannot install wget. Please install wget manually."
-				exit 1
-			fi
-		fi
-	fi
-	conda_check
-fi
-
-if [ "$SCRIPT_MODE" = "$NATIVE" ]; then
-	echo -e "\e[33mRunning in $NATIVE mode\e[0m"
-	if [[ -n "$VIRTUAL_ENV" || -n "$CONDA_DEFAULT_ENV" ]]; then
-		python app.py --script_mode "$NATIVE" $ARGS
-	else
-		if [[ ! -d $SCRIPT_DIR/$PYTHON_ENV ]]; then
-			conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y
-		fi
-		source "$CONFIG_FILE"
-		conda activate $SCRIPT_DIR/$PYTHON_ENV
-		python app.py --script_mode "$NATIVE" $ARGS
-		conda deactivate
-	fi
-elif [ "$SCRIPT_MODE" = "$DOCKER_UTILS" ]; then
-	echo -e "\e[33mRunning in $DOCKER_UTILS mode\e[0m"
 	if [[ ! -d $SCRIPT_DIR/$PYTHON_ENV ]]; then
 		conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y
 	fi
-	source "$CONFIG_FILE"
-	conda activate $SCRIPT_DIR/$PYTHON_ENV
-	python app.py --script_mode "$DOCKER_UTILS" $ARGS
-	conda deactivate
+	return 0
+}
+
+function docker_check {
+	if ! command -v docker &> /dev/null; then
+		echo -e "\e[33mDocker is not installed.\e[0m"
+		return 1
+	else
+		# Check if Docker service is running
+		if ! docker info >/dev/null 2>&1; then
+			echo -e "\e[33mDocker is not running\e[0m"
+			return 1
+		fi
+	fi
+	return 0
+}
+
+function docker_build {
+	echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Trying to build it...\e[0m"
+	python -m pip install --upgrade pip
+	pip install pydub beautifulsoup4 ebooklib translate coqui-tts tqdm mecab mecab-python3 docker unidic nltk>=3.8.2 gradio>=4.44.0
+	python -m unidic download
+	python -m spacy download en_core_web_sm
+	python -m nltk.downloader punkt
+	python -m nltk.downloader punkt_tab
+	pip install -e .
+	docker build -f DockerfileUtils -t utils .
+}
+
+if [ "$SCRIPT_MODE" == "$NATIVE" ]; then
+	pass=true
+	if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
+		if ! install_programs; then
+			pass=false
+		fi
+	fi
+	if [ $pass = true ]; then
+		if conda_check; then
+			echo -e "\e[33mRunning in $NATIVE mode\e[0m"
+			source $CONDA_ENV
+			conda activate $SCRIPT_DIR/$PYTHON_ENV
+			python app.py --script_mode $SCRIPT_MODE $ARGS
+			conda deactivate
+		fi
+	fi
+elif [ "$SCRIPT_MODE" = "$DOCKER_UTILS" ]; then
+	echo -e "\e[33mRunning in $DOCKER_UTILS mode\e[0m"
+	if conda_check; then
+		if docker_check; then
+			source $CONDA_ENV
+			conda activate $SCRIPT_DIR/$PYTHON_ENV
+			if [[ "$(docker images -q $DOCKER_UTILS_IMG 2> /dev/null)" = "" ]]; then
+				docker_build
+			fi
+			python app.py --script_mode $DOCKER_UTILS $ARGS
+			conda deactivate
+		fi
+	fi
 elif [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 	echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
-	python app.py --script_mode "$FULL_DOCKER" $ARGS
+	python app.py --script_mode $SCRIPT_MODE $ARGS
 else
 	echo -e "\e[33mebook2audiobook is not correctly installed.\e[0m"
-	exit 1
 fi
 
 exit 0
