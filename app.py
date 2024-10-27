@@ -177,7 +177,12 @@ Linux/Mac:
     script_mode = args.script_mode if args.script_mode else script_mode
     
     if script_mode == NATIVE:
-        if not check_and_install_requirements(requirements_file) or not check_dictionary(args.language):
+        check_pkg = check_and_install_requirements(requirements_file)
+        if check_pkg:
+            check_dic = check_dictionary(args.language)
+            if not check_dic:
+                sys.exit(1)
+        else:
             sys.exit(1)
     
     from lib.functions import web_interface, convert_ebook
