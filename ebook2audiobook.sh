@@ -9,7 +9,7 @@ DOCKER_UTILS="docker_utils"
 FULL_DOCKER="full_docker"
 
 SCRIPT_MODE=""
-SCRIPT_DIR=$0
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 REQUIRED_PROGRAMS=("calibre" "ffmpeg")
 DOCKER_UTILS_IMG="utils"
