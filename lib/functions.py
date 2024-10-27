@@ -22,6 +22,8 @@ from bs4 import BeautifulSoup
 from pydub import AudioSegment
 from datetime import datetime
 from ebooklib import epub
+from spacy.util import is_package
+from spacy.cli import download as download_package
 from tqdm import tqdm
 from translate import Translator
 from TTS.api import TTS
@@ -125,7 +127,7 @@ def get_model_dir_from_url(custom_model_url):
     # Extract the last part of the custom_model_url as the model_dir
     parsed_url = urlparse(custom_model_url)
     model_dir_name = os.path.basename(parsed_url.path)
-    model_dir = f"./models/{model_dir_name}"
+    model_dir = os.path.join(".","models",model_dir_name)
     # Ensure the model directory exists
     os.makedirs(model_dir, exist_ok=True)
     return model_dir
@@ -186,6 +188,25 @@ def download_and_extract(path_or_url, extract_to=models_dir):
     
     except Exception as e:
         raise DependencyError(e)
+
+def load_spacy_model(language):
+    model_name = f"{language}_core_web_sm"
+    
+    try:
+        nltk.data.find('tokenizers/punkt_tab')
+    except LookupError:
+        print("Downloading NLTK punkt tokenizer...")
+        nltk.download('punkt_tab')
+
+    if not is_package(model_name):
+        try:
+            print(f"Downloading model: {model_name}")
+            download_package(model_name)  # Download the model if not installed
+        except Exception as e:
+            print(f"Error downloading model {model_name}: {e}")
+            return None
+
+    return spacy.load(model_name)
 
 def translate_pronouns(language):
     global ebook_pronouns
@@ -458,9 +479,9 @@ def concat_audio_chapters(metadatas, cover_file):
     concat_file = os.path.join(tmp_dir, ebook_title + '.' + final_format)
     if is_web_process:
         os.makedirs(audiobook_web_dir, exist_ok=True)
-        final_file = audiobook_web_dir + '/' + os.path.basename(concat_file);
+        final_file = os.path.join(audiobook_web_dir, os.path.basename(concat_file))
     else:
-        final_file = audiobooks_dir + '/' + os.path.basename(concat_file);
+        final_file = os.path.join(audiobooks_dir,os.path.basename(concat_file))
     
     if convert_wav(tmp_dir,combined_wav, metadata_file, cover_file, final_file):
         shutil.rmtree(tmp_dir)
@@ -850,7 +871,7 @@ def convert_ebook(args, ui_needed):
         ebook_pronouns = translate_pronouns(language)
         
     # Load spaCy model for language analysis (you can switch models based on language)
-    nlp = spacy.load(language + '_core_web_sm')
+    nlp = load_spacy_model(language)
 
     # Prepare tmp dir and properties
     if define_props(args.ebook) : 

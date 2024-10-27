@@ -4,6 +4,7 @@ import re
 import socket
 import subprocess
 import sys
+import unidic
 
 from lib.conf import *
 from lib.lang import language_options, default_language_code
@@ -13,9 +14,9 @@ script_mode = NATIVE
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
-        error = f"""{color_yellow_start}********** Error: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
+        error = f"""********** Error: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
         Please create a virtual python environment verrsion {min_python_version[0]}.{min_python_version[1]} or {max_python_version[0]}.{max_python_version[1]} 
-        with conda or python -v venv **********{color_yellow_end}"""
+        with conda or python -v venv **********"""
         print(error)
         return False
     else:
@@ -53,18 +54,18 @@ def check_and_install_requirements(file_path):
         
     return True
 
-def check_dictionary():
+def check_dictionary(language):
     import spacy.cli
-
+    
     version_obj = sys.version_info
     version = f"{version_obj.major}.{version_obj.minor}"
-    dictionary_path = f"{sys.prefix}/lib/python{version}/site-packages/unidic/dicdir"
-    required_model = f"{default_language_code}_core_web_sm"
 
-    if not os.path.isdir(dictionary_path):
+    required_model = f"{language}_core_web_sm"
+
+    if not os.path.isdir(unidic.DICDIR) and os.listdir(unidic.DICDIR):
         try:
-            print(f"{color_yellow_start}*** No default dictionary found! trying to download it... ***{color_yellow_end}")
-            subprocess.run(["python", "-m", "unidic", "download"], check=True)
+            print("*** No default dictionary found! Trying to download it... ***")
+            subprocess.run([sys.executable, "-m", "unidic", "download"], check=True)
             print("Successfully downloaded UniDic.")
             return True
         except subprocess.CalledProcessError as e:
@@ -74,16 +75,16 @@ def check_dictionary():
             print(f"Error during UniDic download: {e}")
             return False
 
+    # Check if the required model is already installed in spaCy
     info = spacy.cli.info()
     installed_models = info.get("pipelines", {}).keys()
-    if installed_models:
-        for model in installed_models:
-            if model == required_model:
-                return True
+    if required_model in installed_models:
+        return True
 
     try:
-        print(f"{color_yellow_start}*** default spacy model is missing! trying to download it... ***{color_yellow_end}")
-        subprocess.run(["python", "-m", "spacy", "download", required_model], check=True)
+        print("*** Default spaCy model is missing! Trying to download it... ***")
+        subprocess.run([sys.executable, "-m", "spacy", "download", required_model], check=True)
+        print("Successfully downloaded spaCy model.")
         return True
     except subprocess.CalledProcessError as e:
         print(f"Failed to download spaCy model: {e}")
@@ -109,9 +110,9 @@ def main():
 Example usage:    
 Windows:
     headless:
-    ./ebook2audiobook.cmd --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json
+    ebook2audiobook.cmd --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json
     Graphic Interface:
-    ./ebook2audiobook.cmd
+    ebook2audiobook.cmd
 Linux/Mac:
     headless:
     ./ebook2audiobook.sh --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json
@@ -120,7 +121,8 @@ Linux/Mac:
 """,
         formatter_class=argparse.RawTextHelpFormatter
     )
-    parser.add_argument('--script_mode', type=str, required=True, help=argparse.SUPPRESS)
+    parser.add_argument('--script_mode', type=str,
+                        help="Force the script to run in 'native' or 'docker_utils'")
     parser.add_argument("--share", action="store_true",
                         help="Enable a public shareable Gradio link. Defaults to False.")
     parser.add_argument("--headless", nargs='?', const=True, default=False,
@@ -169,13 +171,13 @@ Linux/Mac:
 
     # Check if the port is already in use to prevent multiple launches
     if not args.headless and is_port_in_use(web_interface_port):
-        print(f"{color_yellow_start}Error: Port {web_interface_port} is already in use. The web interface may already be running.{color_yellow_end}")
+        print(f"Error: Port {web_interface_port} is already in use. The web interface may already be running.")
         sys.exit(1)
     
     script_mode = args.script_mode if args.script_mode else script_mode
     
     if script_mode == NATIVE:
-        if not check_and_install_requirements(requirements_file) or not check_dictionary():
+        if not check_and_install_requirements(requirements_file) or not check_dictionary(args.language):
             sys.exit(1)
     
     from lib.functions import web_interface, convert_ebook
