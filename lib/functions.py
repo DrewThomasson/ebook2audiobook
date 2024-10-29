@@ -2,7 +2,6 @@ import argparse
 import csv
 import ebooklib
 import gradio as gr
-import nltk
 import os
 import re
 import shutil
@@ -10,6 +9,7 @@ import socket
 import spacy
 import subprocess
 import sys
+import nltk
 import time
 import torch
 import torchaudio
@@ -857,9 +857,7 @@ def convert_ebook(args, ui_needed):
         if not bool:
             raise DependencyError(e)
                     
-    if not is_web_process:
-        ebook_id = str(uuid.uuid4())
-
+    ebook_id = str(uuid.uuid4())
     tmp_dir = os.path.join(processes_dir, f"ebook-{ebook_id}")
     ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
     ebook_chapters_audio_dir = os.path.join(ebook_chapters_dir, "audio")
@@ -1171,14 +1169,4 @@ def web_interface(mode, share, ui_needed):
             outputs=[download_files]
         )
 
-    hostname = socket.gethostname()
-    
-    try:
-        local_ip = socket.gethostbyname(hostname)
-    except socket.gaierror:
-        local_ip = '127.0.0.1'
-    
-    if local_ip != "127.0.0.1":
-        print(f"* Running on local URL:  http://127.0.0.1:{web_interface_port}")
-        
     demo.launch(server_name="0.0.0.0", server_port=web_interface_port, share=share)

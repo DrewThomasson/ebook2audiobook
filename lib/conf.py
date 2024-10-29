@@ -8,7 +8,7 @@ version = "2.0.0"
 min_python_version = (3, 10)
 max_python_version = (3, 11)
 
-requirements_file = "./requirements.txt"
+requirements_file = os.path.abspath("./requirements.txt")
 
 docker_utils_image = 'utils'
 web_interface_port = 7860

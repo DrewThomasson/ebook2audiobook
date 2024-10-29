@@ -4,7 +4,6 @@ import re
 import socket
 import subprocess
 import sys
-import unidic
 
 from lib.conf import *
 from lib.lang import language_options, default_language_code
@@ -55,6 +54,7 @@ def check_and_install_requirements(file_path):
     return True
 
 def check_dictionary(language):
+    import unidic
     import spacy.cli
     
     version_obj = sys.version_info
@@ -62,18 +62,20 @@ def check_dictionary(language):
 
     required_model = f"{language}_core_web_sm"
 
-    if not os.path.isdir(unidic.DICDIR) and os.listdir(unidic.DICDIR):
-        try:
-            print("*** No default dictionary found! Trying to download it... ***")
-            subprocess.run([sys.executable, "-m", "unidic", "download"], check=True)
-            print("Successfully downloaded UniDic.")
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"Failed to download UniDic: {e}")
-            return False
-        except Exception as e:
-            print(f"Error during UniDic download: {e}")
-            return False
+    if not os.path.isdir(unidic.DICDIR):
+        if not os.listdir(unidic.DICDIR):
+            try:
+                print("*** No default dictionary found! Trying to download it... ***")
+                subprocess.run([sys.executable, "-m", "unidic", "download"], check=True)
+                print("Successfully downloaded UniDic.")
+                return True
+            except subprocess.CalledProcessError as e:
+                print(f"Failed to download UniDic: {e}")
+                return False
+            except Exception as e:
+                print(f"Error during UniDic download: {e}")
+                return False
+        fi
 
     # Check if the required model is already installed in spaCy
     info = spacy.cli.info()
@@ -195,7 +197,7 @@ Linux/Mac:
             sys.exit(1)
 
         # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
-        if args.ebooks_dir is not None:
+        if args.ebooks_dir:
             if args.ebooks_dir == "default":
                 print(f"Using the default ebooks_dir: {ebooks_dir}")
                 ebooks_dir =  os.path.abspath(ebooks_dir)
@@ -218,12 +220,11 @@ Linux/Mac:
             else:
                 print(f"Error: The directory {ebooks_dir} does not exist.")
                 sys.exit(1)
-        # Condition 2: If --ebooks_dir does not exist, --ebook must exist
-        elif not args.ebook:
-            print("Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.")
-            sys.exit(1)
-        else:
+        elif args.ebook:
             convert_ebook(args, False)
+        else:
+            print("Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.")
+            sys.exit(1)       
     else:
         passed_arguments = sys.argv[1:]
         allowed_arguments = {'--share', '--script_mode'}

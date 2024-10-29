@@ -4,6 +4,31 @@ PYTHON_VERSION="3.11"
 
 ARGS="$@"
 
+# Declare an associative array
+declare -A arguments
+
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --*)
+            key="${1/--/}" # Remove leading '--'
+            if [[ -n "$2" && ! "$2" =~ ^-- ]]; then
+                # If the next argument is a value (not another option)
+                arguments[$key]="$2"
+                shift # Move past the value
+            else
+                # Set to true for flags without values
+                arguments[$key]=true
+            fi
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+    shift # Move to the next argument
+done
+
 NATIVE="native"
 DOCKER_UTILS="docker_utils"
 FULL_DOCKER="full_docker"
@@ -15,6 +40,7 @@ WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("calibre" "ffmpeg")
 DOCKER_UTILS_IMG="utils"
 PYTHON_ENV="python_env"
+CURRENT_ENV=""
 
 if [[ "$OSTYPE" = "darwin"* ]]; then
     CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
@@ -28,12 +54,40 @@ CONDA_ENV=~/miniconda3/etc/profile.d/conda.sh
 CONFIG_FILE="$HOME/.bashrc"
 PATH="$CONDA_PATH:$PATH"
 
+declare -a programs_missing
+
 # Check if the current script is run inside a docker container
 if [[ -n "$container" || -f /.dockerenv ]]; then
 	SCRIPT_MODE="$FULL_DOCKER"
+else
+	if [[ -n "${arguments['script_mode']+exists}" ]]; then
+		if [ "${arguments['script_mode']}" = "$NATIVE" ] || [ "${arguments['script_mode']}" = "$DOCKER_UTILS" ]; then
+			SCRIPT_MODE="${arguments['script_mode']}"
+		fi
+	fi
 fi
 
-declare -a programs_missing
+# Check if running in a Conda or Python virtual environment
+if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
+    CURRENT_ENV="$CONDA_PREFIX"
+elif [[ -n "$VIRTUAL_ENV" ]]; then
+    CURRENT_ENV="$VIRTUAL_ENV"
+fi
+
+# If neither environment variable is set, check Python path
+if [[ -z "$CURRENT_ENV" ]]; then
+    PYTHON_PATH=$(which python 2>/dev/null)
+    if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" == "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" == "$VIRTUAL_ENV/bin/python" ) ]]; then
+        CURRENT_ENV="${CONDA_PREFIX:-$VIRTUAL_ENV}"
+    fi
+fi
+
+# Output result if a virtual environment is detected
+if [[ -n "$CURRENT_ENV" ]]; then
+    echo -e "Current python virtual environment detected: $CURRENT_ENV."
+    echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
+    exit 1
+fi
 
 function required_programs_check {
 	local programs=("$@")
@@ -135,7 +189,7 @@ function conda_check {
 		wget -O "$CONDA_INSTALLER" "$CONDA_URL"
 		if [[ -f "$CONDA_INSTALLER" ]]; then
 			echo -e "\e[33mInstalling Miniconda...\e[0m"
-			bash "$CONDA_INSTALLER" -b -p "$CONDA_INSTALL_DIR"
+			bash "$CONDA_INSTALLER" -u -b -p "$CONDA_INSTALL_DIR"
 			rm -f "$CONDA_INSTALLER"
 			if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
 				echo -e "\e[33Miniconda installed successfully!\e[0m"
@@ -151,6 +205,14 @@ function conda_check {
 	fi
 	if [[ ! -d $SCRIPT_DIR/$PYTHON_ENV ]]; then
 		conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y
+		source $CONDA_ENV
+		conda activate $SCRIPT_DIR/$PYTHON_ENV
+		python -m pip install --upgrade pip
+		python -m pip install pydub beautifulsoup4 ebooklib translate coqui-tts tqdm mecab mecab-python3 docker unidic "nltk>=3.8.2" "gradio>=4.44.0"
+		python -m unidic download
+		python -m spacy download en_core_web_sm
+		python -m nltk.downloader punkt_tab
+		conda deactivate
 	fi
 	return 0
 }
@@ -161,7 +223,11 @@ function docker_check {
 		return 1
 	else
 		# Check if Docker service is running
-		if ! docker info >/dev/null 2>&1; then
+		if docker info >/dev/null 2>&1; then
+			if [[ "$(docker images -q $DOCKER_UTILS_IMG 2> /dev/null)" = "" ]]; then
+				docker_build
+			fi
+		else
 			echo -e "\e[33mDocker is not running\e[0m"
 			return 1
 		fi
@@ -171,50 +237,43 @@ function docker_check {
 
 function docker_build {
 	echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Trying to build it...\e[0m"
-	python -m pip install --upgrade pip
-	pip install pydub beautifulsoup4 ebooklib translate coqui-tts tqdm mecab mecab-python3 docker unidic nltk>=3.8.2 gradio>=4.44.0
-	python -m unidic download
-	python -m spacy download en_core_web_sm
-	python -m nltk.downloader punkt
-	python -m nltk.downloader punkt_tab
 	pip install -e .
 	docker build -f DockerfileUtils -t utils .
 }
 
-if [ "$SCRIPT_MODE" == "$NATIVE" ]; then
+if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
+	echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
+	python app.py --script_mode $SCRIPT_MODE $ARGS
+elif [[ "$SCRIPT_MODE" == "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 	pass=true
-	if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
-		if ! install_programs; then
-			pass=false
+	if [ "$SCRIPT_MODE" == "$NATIVE" ]; then
+		echo -e "\e[33mRunning in $NATIVE mode\e[0m"
+		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
+			if ! install_programs; then
+				pass=false
+			fi
+		fi
+	else
+		echo -e "\e[33mRunning in $DOCKER_UTILS mode\e[0m"
+		if conda_check; then
+			if docker_check; then
+				source $CONDA_ENV
+				conda activate $SCRIPT_DIR/$PYTHON_ENV
+				python app.py --script_mode $DOCKER_UTILS $ARGS
+				conda deactivate
+			fi
 		fi
 	fi
 	if [ $pass = true ]; then
 		if conda_check; then
-			echo -e "\e[33mRunning in $NATIVE mode\e[0m"
 			source $CONDA_ENV
 			conda activate $SCRIPT_DIR/$PYTHON_ENV
 			python app.py --script_mode $SCRIPT_MODE $ARGS
 			conda deactivate
 		fi
 	fi
-elif [ "$SCRIPT_MODE" = "$DOCKER_UTILS" ]; then
-	echo -e "\e[33mRunning in $DOCKER_UTILS mode\e[0m"
-	if conda_check; then
-		if docker_check; then
-			source $CONDA_ENV
-			conda activate $SCRIPT_DIR/$PYTHON_ENV
-			if [[ "$(docker images -q $DOCKER_UTILS_IMG 2> /dev/null)" = "" ]]; then
-				docker_build
-			fi
-			python app.py --script_mode $DOCKER_UTILS $ARGS
-			conda deactivate
-		fi
-	fi
-elif [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
-	echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
-	python app.py --script_mode $SCRIPT_MODE $ARGS
 else
-	echo -e "\e[33mebook2audiobook is not correctly installed.\e[0m"
+	echo -e "\e[33mebook2audiobook is not correctly installed or run.\e[0m"
 fi
 
 exit 0
