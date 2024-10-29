@@ -415,7 +415,7 @@ def concat_audio_chapters(metadatas, cover_file):
                 if cover_file is not None:
                     ffmpeg_cover = f'/files/{docker_dir}/' + os.path.basename(cover_file)
                 
-            util_app = shutil.which("ffmpeg")
+            util_app = "ffmpeg"
             ffmpeg_cmd = [util_app, '-i', ffmpeg_combined_wav, '-i', ffmpeg_metadata_file]
             
             if ffmpeg_cover is not None:
