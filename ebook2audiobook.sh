@@ -232,6 +232,7 @@ function docker_check {
 			rm -f get-docker.sh
 		fi
 		echo -e "\e[32m===============>>> docker is installed! <<===============\e[0m"
+		docker_build
 	else
 		# Check if Docker service is running
 		if docker info >/dev/null 2>&1; then
@@ -248,8 +249,11 @@ function docker_check {
 
 function docker_build {
 	echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Trying to build it...\e[0m"
-	pip install -e .
-	docker build -f DockerfileUtils -t utils .
+	source $CONDA_ENV
+	conda activate $SCRIPT_DIR/$PYTHON_ENV
+		pip install -e .
+		docker build -f DockerfileUtils -t utils .
+	conda deactivate
 }
 
 if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
