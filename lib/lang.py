@@ -46,4 +46,4 @@ language_mapping = {
 }
 
 default_language_code = "en"
-default_target_voice_file = os.path.abspath(f"./voices/adult/female/{default_language_code}/default_voice.wav")
+default_target_voice_file = os.path.abspath(os.path.join(".","voices","adult","female",default_language_code,"default_voice.wav"))
