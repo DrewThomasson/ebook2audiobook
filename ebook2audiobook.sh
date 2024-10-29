@@ -163,14 +163,14 @@ function install_programs {
 				$WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sh /dev/stdin
 			fi
 			if command -v calibre >/dev/null 2>&1; then
-				echo -e "\e[33mCalibre installed successfully!\e[0m"
+				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
 			else
 				echo "Calibre installation failed."
 			fi
 		else
 			eval "$PACK_MGR $program $PKG_MGR_OPTIONS"				
 			if command -v $program >/dev/null 2>&1; then
-				echo -e "\e[33m$program installed successfully!\e[0m"
+				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 			else
 				echo "$program installation failed."
 			fi
@@ -192,9 +192,9 @@ function conda_check {
 			bash "$CONDA_INSTALLER" -u -b -p "$CONDA_INSTALL_DIR"
 			rm -f "$CONDA_INSTALLER"
 			if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
-				echo -e "\e[33Miniconda installed successfully!\e[0m"
+				echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 			else
-				echo -e "\e[31mMiniconda installation failed.\e[0m"		
+				echo -e "\e[31mconda installation failed.\e[0m"		
 				return 1
 			fi
 		else
@@ -219,8 +219,19 @@ function conda_check {
 
 function docker_check {
 	if ! command -v docker &> /dev/null; then
-		echo -e "\e[33mDocker is not installed.\e[0m"
-		return 1
+		echo -e "\e[33m docker is missing! trying to install it... \e[0m"
+		if [[ "$OSTYPE" == "darwin"* ]]; then
+			echo "Installing Docker using Homebrew..."
+			$PACK_MGR --cask docker $PACK_MGR_OPTIONS
+		else
+			$WGET -qO get-docker.sh https://get.docker.com && \
+			sudo sh get-docker.sh
+			sudo systemctl start docker
+			sudo systemctl enable docker
+			docker run hello-world
+			rm -f get-docker.sh
+		fi
+		echo -e "\e[32m===============>>> docker is installed! <<===============\e[0m"
 	else
 		# Check if Docker service is running
 		if docker info >/dev/null 2>&1; then
