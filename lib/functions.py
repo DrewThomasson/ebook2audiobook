@@ -273,7 +273,7 @@ def extract_metadata_and_cover(ebook_filename_noext):
                 stdout=True,
                 stderr=True
             )      
-            print(container.decode('utf-8'))
+            print(metadata_result.decode('utf-8'))
             metadata_lines = metadata_result.decode('utf-8').split('\n')[1:]  # This omits the first line
             metadata_result_omitted = '\n'.join(metadata_lines)  # Rejoin the remaining lines
             metadatas = parse_metadata(metadata_result_omitted)
