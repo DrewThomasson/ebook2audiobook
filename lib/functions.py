@@ -241,22 +241,8 @@ def extract_metadata_and_cover(ebook_filename_noext):
         return None, None
     if not os.path.exists(tmp_dir):
         os.makedirs(tmp_dir, exist_ok=True)
-        
-    util_app = "ebook-meta"
 
-    if script_mode == FULL_DOCKER or script_mode == NATIVE:
-        try:
-            subprocess.run([util_app, ebook_file, '--get-cover', cover_file], env={}, check=True)
-            metadata_result = subprocess.check_output([util_app, ebook_file], universal_newlines=True)
-            metadatas = parse_metadata(metadata_result)
-            if os.path.exists(cover_file):
-                return metadatas, cover_file
-            else:
-                return metadatas, None
-        except subprocess.CalledProcessError as e:
-            remove_conflict_pkg("lxml")           
-            raise DependencyError(e)
-    else:
+    if script_mode == DOCKER_UTILS:
         try:
             import docker
             source_dir = os.path.abspath(os.path.dirname(ebook_file))
@@ -266,7 +252,7 @@ def extract_metadata_and_cover(ebook_filename_noext):
             client = docker.from_env()
             metadata_result = client.containers.run(
                 docker_utils_image,
-                command=f"{util_app} /files/{docker_dir}/{docker_file_in} --get-cover /files/{docker_dir}/{docker_file_out}",
+                command=f"ebook-meta /files/{docker_dir}/{docker_file_in} --get-cover /files/{docker_dir}/{docker_file_out}",
                 volumes={source_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                 remove=True,
                 detach=False,
@@ -286,6 +272,19 @@ def extract_metadata_and_cover(ebook_filename_noext):
         except docker.errors.ImageNotFound as e:
             raise DependencyError(e)
         except docker.errors.APIError as e:
+            raise DependencyError(e)
+    else:
+        try:
+            util_app = shutil.which("ebook-meta")
+            subprocess.run([util_app, ebook_file, '--get-cover', cover_file], env={}, check=True)
+            metadata_result = subprocess.check_output([util_app, ebook_file], universal_newlines=True)
+            metadatas = parse_metadata(metadata_result)
+            if os.path.exists(cover_file):
+                return metadatas, cover_file
+            else:
+                return metadatas, None
+        except subprocess.CalledProcessError as e:
+            remove_conflict_pkg("lxml")           
             raise DependencyError(e)
 
 def concat_audio_chapters(metadatas, cover_file):
@@ -400,13 +399,7 @@ def concat_audio_chapters(metadatas, cover_file):
     def convert_wav(tmp_dir,combined_wav, metadata_file, cover_file, final_file):
         try:
             ffmpeg_cover = None
-            if script_mode == FULL_DOCKER or script_mode == NATIVE:
-                ffmpeg_combined_wav = combined_wav
-                ffmpeg_metadata_file = metadata_file
-                ffmpeg_final_file = final_file
-                if cover_file is not None:
-                    ffmpeg_cover = cover_file
-            else:
+            if script_mode == DOCKER_UTILS:
                 import docker
                 docker_dir = os.path.basename(tmp_dir)
                 ffmpeg_combined_wav = f'/files/{docker_dir}/' + os.path.basename(combined_wav)
@@ -414,10 +407,17 @@ def concat_audio_chapters(metadatas, cover_file):
                 ffmpeg_final_file = f'/files/{docker_dir}/' + os.path.basename(final_file)           
                 if cover_file is not None:
                     ffmpeg_cover = f'/files/{docker_dir}/' + os.path.basename(cover_file)
-                
-            util_app = "ffmpeg"
-            ffmpeg_cmd = [util_app, '-i', ffmpeg_combined_wav, '-i', ffmpeg_metadata_file]
-            
+                    
+                ffmpeg_cmd = ["ffmpeg", '-i', ffmpeg_combined_wav, '-i', ffmpeg_metadata_file]
+            else:
+                ffmpeg_combined_wav = combined_wav
+                ffmpeg_metadata_file = metadata_file
+                ffmpeg_final_file = final_file
+                if cover_file is not None:
+                    ffmpeg_cover = cover_file
+                    
+                ffmpeg_cmd = [shutil.which("ffmpeg"), '-i', ffmpeg_combined_wav, '-i', ffmpeg_metadata_file]
+
             if ffmpeg_cover is not None:
                 ffmpeg_cmd += ['-i', ffmpeg_cover, '-map', '0:a', '-map', '2:v']
             else:
@@ -435,14 +435,8 @@ def concat_audio_chapters(metadatas, cover_file):
                 ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
                 
             ffmpeg_cmd += ['-movflags', '+faststart', '-y', ffmpeg_final_file]
-            
-            if script_mode == FULL_DOCKER or script_mode == NATIVE:
-                try:
-                    subprocess.run(ffmpeg_cmd, env={}, check=True)
-                    return True
-                except subprocess.CalledProcessError as e:
-                    raise DependencyError(e)
-            else:
+
+            if script_mode == DOCKER_UTILS:
                 try:
                     client = docker.from_env()
                     container = client.containers.run(
@@ -461,6 +455,12 @@ def concat_audio_chapters(metadatas, cover_file):
                 except docker.errors.ImageNotFound as e:
                     raise DependencyError(e)
                 except docker.errors.APIError as e:
+                    raise DependencyError(e)
+            else:
+                try:
+                    subprocess.run(ffmpeg_cmd, env={}, check=True)
+                    return True
+                except subprocess.CalledProcessError as e:
                     raise DependencyError(e)
  
         except Exception as e:
@@ -496,15 +496,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
         if os.path.basename(ebook_file) == os.path.basename(epub_path):
             return True
         else:
-            util_app = "ebook-convert"
-            if script_mode == FULL_DOCKER or script_mode == NATIVE:
-                try:
-                    subprocess.run([util_app, ebook_file, epub_path], env={}, check=True)
-                    return True
-                except subprocess.CalledProcessError as e:
-                    remove_conflict_pkg("lxml")
-                    raise DependencyError(e)
-            else:
+            if script_mode == DOCKER_UTILS:
                 try:
                     import docker
                     client = docker.from_env()
@@ -520,7 +512,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
                     # Convert the ebook to EPUB format using utils Docker image
                     container = client.containers.run(
                         docker_utils_image,
-                        command=f"{util_app} /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out}",
+                        command=f"ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out}",
                         volumes={tmp_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                         remove=True,
                         detach=False,
@@ -534,6 +526,13 @@ def create_chapter_labeled_book(ebook_filename_noext):
                 except docker.errors.ImageNotFound as e:
                     raise DependencyError(e)
                 except docker.errors.APIError as e:
+                    raise DependencyError(e)
+            else:
+                try:
+                    subprocess.run([shutil.which("ebook-convert"), ebook_file, epub_path], env={}, check=True)
+                    return True
+                except subprocess.CalledProcessError as e:
+                    remove_conflict_pkg("lxml")
                     raise DependencyError(e)
 
     def save_chapters_as_text(epub_path):
