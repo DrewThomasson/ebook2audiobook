@@ -159,7 +159,7 @@ def download_and_extract(path_or_url, extract_to=models_dir):
             files = zip_ref.namelist()
             with tqdm(total=len(files), unit="file", desc="Extracting Files") as t:
                 for file in files:
-                    if not file.endswith('/'):  # Skip directories
+                    if not os.path.isdir(file):
                         # Extract the file to the target directory
                         extracted_path = zip_ref.extract(file, extract_to)
                         # Move the file to the base directory
