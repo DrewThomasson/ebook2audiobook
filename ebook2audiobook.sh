@@ -249,11 +249,7 @@ function docker_check {
 
 function docker_build {
 	echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Trying to build it...\e[0m"
-	source $CONDA_ENV
-	conda activate $SCRIPT_DIR/$PYTHON_ENV
-		pip install -e .
-		docker build -f DockerfileUtils -t utils .
-	conda deactivate
+	docker build -f DockerfileUtils -t utils .
 }
 
 if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
