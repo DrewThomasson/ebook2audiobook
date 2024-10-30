@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 PYTHON_VERSION="3.11"
+export TTS_CACHE="./models"
 
 ARGS="$@"
 
@@ -248,8 +249,13 @@ function docker_check {
 }
 
 function docker_build {
-	echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Trying to build it...\e[0m"
-	docker build -f DockerfileUtils -t utils .
+# Check if the Docker socket is accessible
+	if [[ -e /var/run/docker.sock || -e /run/docker.sock ]]; then
+		echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Trying to build it...\e[0m"
+		docker build -f DockerfileUtils -t utils .
+	else
+		echo -e "\e[33mcannot connect to docker socket. Check if the docker socket is running.\e[0m"
+	fi
 }
 
 if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then

@@ -1,5 +1,6 @@
 import argparse
 import csv
+import docker
 import ebooklib
 import gradio as gr
 import os
@@ -49,6 +50,7 @@ script_mode = None
 is_web_process = False
 is_web_shared = False
 
+client = None
 ebook_id = None
 tmp_dir = None
 ebook_chapters_dir = None
@@ -93,16 +95,16 @@ def define_props(ebook_src):
     except Exception as e:
         raise DependencyError(e)
 
-def check_program_installed(program_name, command, options):
+def check_programs(prog_name, command, options):
     try:
         subprocess.run([command, options], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         return True, None
     except FileNotFoundError:
-        e = f"""{color_yellow_start}********** Error: {program_name} is not installed! if your OS calibre package version 
-        is not compatible you still can install ebook2audiobook via install.sh (linux/mac) or install.bat (windows) **********{color_yellow_end}"""
+        e = f"""********** Error: {prog_name} is not installed! if your OS calibre package version 
+        is not compatible you still can run ebook2audiobook.sh (linux/mac) or ebook2audiobook.cmd (windows) **********"""
         raise DependencyError(e)
     except subprocess.CalledProcessError:
-        e = f"Error: There was an issue running {program_name}."
+        e = f"Error: There was an issue running {prog_name}."
         raise DependencyError(e)
 
 def remove_conflict_pkg(pkg):
@@ -115,7 +117,7 @@ def remove_conflict_pkg(pkg):
                 break
         if package_location is not None:
             try:
-                print(f"{color_yellow_start}*** {pkg} is in conflict with an external OS python library, trying to solve it....***{color_yellow_end}")
+                print(f"*** {pkg} is in conflict with an external OS python library, trying to solve it....***")
                 result = subprocess.run(["pip", 'uninstall', pkg, '-y'], env={}, stdout=subprocess.PIPE, text=True, check=True)               
             except subprocess.CalledProcessError as e:
                 raise DependencyError(e)
@@ -222,7 +224,7 @@ def translate_pronouns(language):
     return translated_pronouns
         
 def extract_metadata_and_cover(ebook_filename_noext):
-    global ebook_file, tmp_dir
+    global client, ebook_file, tmp_dir
     metadatas = None
 
     def parse_metadata(metadata_str):
@@ -244,12 +246,10 @@ def extract_metadata_and_cover(ebook_filename_noext):
 
     if script_mode == DOCKER_UTILS:
         try:
-            import docker
             source_dir = os.path.abspath(os.path.dirname(ebook_file))
             docker_dir = os.path.basename(tmp_dir)
             docker_file_in = os.path.basename(ebook_file)
             docker_file_out = os.path.basename(cover_file)
-            client = docker.from_env()
             metadata_result = client.containers.run(
                 docker_utils_image,
                 command=f"ebook-meta /files/{docker_dir}/{docker_file_in} --get-cover /files/{docker_dir}/{docker_file_out}",
@@ -288,7 +288,7 @@ def extract_metadata_and_cover(ebook_filename_noext):
             raise DependencyError(e)
 
 def concat_audio_chapters(metadatas, cover_file):
-    global is_web_process, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global client, is_web_process, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
     
     # Function to sort chapters based on their numeric order
     def sort_key(chapter_file):
@@ -396,11 +396,10 @@ def concat_audio_chapters(metadatas, cover_file):
          
         return ebook_title
 
-    def convert_wav(tmp_dir,combined_wav, metadata_file, cover_file, final_file):
+    def convert_wav(tmp_dir, combined_wav, metadata_file, cover_file, concat_file, final_file):
         try:
             ffmpeg_cover = None
             if script_mode == DOCKER_UTILS:
-                import docker
                 docker_dir = os.path.basename(tmp_dir)
                 ffmpeg_combined_wav = f'/files/{docker_dir}/' + os.path.basename(combined_wav)
                 ffmpeg_metadata_file = f'/files/{docker_dir}/' + os.path.basename(metadata_file)
@@ -438,7 +437,6 @@ def concat_audio_chapters(metadatas, cover_file):
 
             if script_mode == DOCKER_UTILS:
                 try:
-                    client = docker.from_env()
                     container = client.containers.run(
                         docker_utils_image,
                         command=ffmpeg_cmd,
@@ -449,7 +447,9 @@ def concat_audio_chapters(metadatas, cover_file):
                         stderr=True
                     )
                     print(container.decode('utf-8'))
-                    return True
+                    if shutil.copy(concat_file, final_file):
+                        return True
+                    return False
                 except docker.errors.ContainerError as e:
                     raise DependencyError(e)
                 except docker.errors.ImageNotFound as e:
@@ -483,14 +483,14 @@ def concat_audio_chapters(metadatas, cover_file):
     else:
         final_file = os.path.join(audiobooks_dir,os.path.basename(concat_file))
     
-    if convert_wav(tmp_dir,combined_wav, metadata_file, cover_file, final_file):
+    if convert_wav(tmp_dir, combined_wav, metadata_file, cover_file, concat_file, final_file):
         shutil.rmtree(tmp_dir)
         return final_file
 
     return None
 
 def create_chapter_labeled_book(ebook_filename_noext):
-    global ebook_title, ebook_file, tmp_dir, ebook_chapters_dir
+    global client, ebook_title, ebook_file, tmp_dir, ebook_chapters_dir
     
     def convert_to_epub(ebook_file, epub_path):
         if os.path.basename(ebook_file) == os.path.basename(epub_path):
@@ -498,8 +498,6 @@ def create_chapter_labeled_book(ebook_filename_noext):
         else:
             if script_mode == DOCKER_UTILS:
                 try:
-                    import docker
-                    client = docker.from_env()
                     docker_dir = os.path.basename(tmp_dir)
                     docker_file_in = os.path.basename(ebook_file)
                     docker_file_out = os.path.basename(epub_path)
@@ -529,7 +527,8 @@ def create_chapter_labeled_book(ebook_filename_noext):
                     raise DependencyError(e)
             else:
                 try:
-                    subprocess.run([shutil.which("ebook-convert"), ebook_file, epub_path], env={}, check=True)
+                    util_app = shutil.which("ebook-convert")
+                    subprocess.run([util_app, ebook_file, epub_path], env={}, check=True)
                     return True
                 except subprocess.CalledProcessError as e:
                     remove_conflict_pkg("lxml")
@@ -680,9 +679,9 @@ def split_long_sentence(sentence, language='en', max_pauses=10):
 
 def convert_chapters_to_audio(device, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_file=None, language="en", custom_model=None):
     global is_web_process, ebook_chapters_dir, ebook_chapters_audio_dir
-    
+
     progress_bar = None
-    
+
     # create gradio progress bar if process come from gradio interface
     if is_web_process == True:
         progress_bar = gr.Progress(track_tqdm=True)
@@ -823,7 +822,7 @@ def download_audiobooks():
     return files
 
 def convert_ebook(args, ui_needed):
-    global script_mode, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global client, script_mode, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
 
     script_mode = args.script_mode if args.script_mode else NATIVE
     is_web_process = ui_needed
@@ -843,19 +842,21 @@ def convert_ebook(args, ui_needed):
     speed = args.speed
     enable_text_splitting = args.enable_text_splitting
     custom_model_url = args.custom_model_url
-    
+
     if not os.path.splitext(ebook_file)[1]:
         raise ValueError("The selected ebook file has no extension. Please select a valid file.")
 
     if script_mode == NATIVE:
-        bool, e = check_program_installed("Calibre", "calibre", "--version")
+        bool, e = check_programs("Calibre", "calibre", "--version")
         if not bool:
             raise DependencyError(e)
             
-        bool, e = check_program_installed("FFmpeg", "ffmpeg", "-version")
+        bool, e = check_programs("FFmpeg", "ffmpeg", "-version")
         if not bool:
             raise DependencyError(e)
-                    
+    elif script_mode == DOCKER_UTILS:
+        client = docker.from_env()
+
     ebook_id = str(uuid.uuid4())
     tmp_dir = os.path.join(processes_dir, f"ebook-{ebook_id}")
     ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
@@ -904,7 +905,7 @@ def convert_ebook(args, ui_needed):
 
             create_chapter_labeled_book(ebook_filename_noext)
 
-            if torch.cuda.is_available() == False:
+            if not torch.cuda.is_available() or device == "cpu":
                 if device == "gpu":
                     print("GPU is not available on your device!")
                 device = "cpu"

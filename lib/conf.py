@@ -22,3 +22,12 @@ processes_dir = os.path.abspath(os.path.join(".","tmp"))
 
 supported_ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
 final_format = "m4b"
+
+os.environ["TTS_CACHE"] = models_dir
+os.environ["TORCH_HOME"] = models_dir
+os.environ["HUGGINGFACE_HUB_CACHE"] = models_dir
+os.environ["HF_HOME"] = models_dir
+os.environ["HF_DATASETS_CACHE"] = models_dir
+os.environ["XDG_CACHE_HOME"] = models_dir
+os.environ["HF_TOKEN_PATH"] = models_dir
+os.environ["HF_TOKEN_PATH"] = os.path.join(os.path.expanduser("~"), ".huggingface_token")

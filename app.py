@@ -123,52 +123,64 @@ Linux/Mac:
 """,
         formatter_class=argparse.RawTextHelpFormatter
     )
-    parser.add_argument('--script_mode', type=str,
+    options = [
+        "--script_mode", "--share", "--headless", "--ebook", "--ebooks_dir",
+        "--voice", "--language", "--device", "--use_custom_model", "--custom_model", 
+        "--custom_config", "--custom_vocab", "--custom_model_url", "--temperature",
+        "--length_penalty", "--repetition_penalty", "--top_k", "--top_p", "--speed",
+        "--enable_text_splitting", "--version"
+    ]
+    parser.add_argument(options[0], type=str,
                         help="Force the script to run in 'native' or 'docker_utils'")
-    parser.add_argument("--share", action="store_true",
+    parser.add_argument(options[1], action="store_true",
                         help="Enable a public shareable Gradio link. Defaults to False.")
-    parser.add_argument("--headless", nargs='?', const=True, default=False,
+    parser.add_argument(options[2], nargs='?', const=True, default=False,
                         help="Run in headless mode. Defaults to True if the flag is present without a value, False otherwise.")
-    parser.add_argument("--ebook", type=str,
+    parser.add_argument(options[3], type=str,
                         help="Path to the ebook file for conversion. Required in headless mode.")
-    parser.add_argument("--ebooks_dir", nargs='?', const="default", type=str,
+    parser.add_argument(options[4], nargs='?', const="default", type=str,
                         help=f"Path to the directory containing ebooks for batch conversion. Defaults to '{os.path.basename(ebooks_dir)}' if 'default' value is provided.")
-    parser.add_argument("--voice", type=str,
+    parser.add_argument(options[5], type=str,
                         help="Path to the target voice file for TTS. Optional, uses a default voice if not provided.")
-    parser.add_argument("--language", type=str, default="en",
+    parser.add_argument(options[6], type=str, default="en",
                         help=f"Language for the audiobook conversion. Options: {language_options_str}. Defaults to English (en).")
-    parser.add_argument("--device", type=str, default="cpu", choices=["cpu", "gpu"],
+    parser.add_argument(options[7], type=str, default="cpu", choices=["cpu", "gpu"],
                         help=f"Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.")
-    parser.add_argument("--use_custom_model", action="store_true",
+    parser.add_argument(options[8], action="store_true",
                         help="Use a custom TTS model. Defaults to False. Must be True to use custom models.")
-    parser.add_argument("--custom_model", type=str,
+    parser.add_argument(options[9], type=str,
                         help="Path to the custom model file (.pth). Required if using a custom model.")
-    parser.add_argument("--custom_config", type=str,
+    parser.add_argument(options[10], type=str,
                         help="Path to the custom config file (config.json). Required if using a custom model.")
-    parser.add_argument("--custom_vocab", type=str,
+    parser.add_argument(options[11], type=str,
                         help="Path to the custom vocab file (vocab.json). Required if using a custom model.")
-    parser.add_argument("--custom_model_url", type=str,
+    parser.add_argument(options[12], type=str,
                         help=("URL to download the custom model as a zip file. Optional, but will be used if provided. "
                               "Examples include David Attenborough's model: "
                               "'https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true'. "
                               "More XTTS fine-tunes can be found on my Hugging Face at 'https://huggingface.co/drewThomasson'."))
-    parser.add_argument("--temperature", type=float, default=0.65,
+    parser.add_argument(options[13], type=float, default=0.65,
                         help="Temperature for the model. Defaults to 0.65. Higher temperatures lead to more creative outputs.")
-    parser.add_argument("--length_penalty", type=float, default=1.0,
+    parser.add_argument(options[14], type=float, default=1.0,
                         help="A length penalty applied to the autoregressive decoder. Defaults to 1.0. Not applied to custom models.")
-    parser.add_argument("--repetition_penalty", type=float, default=2.0,
+    parser.add_argument(options[15], type=float, default=2.0,
                         help="A penalty that prevents the autoregressive decoder from repeating itself. Defaults to 2.0.")
-    parser.add_argument("--top_k", type=int, default=50,
+    parser.add_argument(options[16], type=int, default=50,
                         help="Top-k sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 50.")
-    parser.add_argument("--top_p", type=float, default=0.8,
+    parser.add_argument(options[17], type=float, default=0.8,
                         help="Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 0.8.")
-    parser.add_argument("--speed", type=float, default=1.0,
+    parser.add_argument(options[18], type=float, default=1.0,
                         help="Speed factor for the speech generation. Defaults to 1.0.")
-    parser.add_argument("--enable_text_splitting", action="store_true",
+    parser.add_argument(options[19], action="store_true",
                         help="Enable splitting text into sentences. Defaults to False.")
-    parser.add_argument("--version", action="version",version=f"ebook2audiobook version {version}",
+    parser.add_argument(options[20], action="version",version=f"ebook2audiobook version {version}",
                         help="Show the version of the script and exit")
 
+    for arg in sys.argv:
+        if arg.startswith("--") and arg not in options:
+            print(f"Error: Unrecognized option '{arg}'")
+            sys.exit(1)
+            
     args = parser.parse_args()
 
     # Check if the port is already in use to prevent multiple launches
@@ -204,16 +216,16 @@ Linux/Mac:
             else:
                 # Check if the directory exists
                 if os.path.exists(args.ebooks_dir):
-                    ebooks_dir = args.ebooks_dir  # Set ebooks_dir to the provided value
+                    ebooks_dir = os.path.abspath(args.ebooks_dir)
                 else:
                     print(f"Error: The provided --ebooks_dir '{args.ebooks_dir}' does not exist.")
                     sys.exit(1)
                     
             if os.path.exists(ebooks_dir):
-                for ebook_file in os.listdir(ebooks_dir):
+                for file in os.listdir(ebooks_dir):
                     # Process files with supported ebook formats
-                    if any(ebook_file.endswith(ext) for ext in supported_ebook_formats):
-                        full_path = os.path.join(ebooks_dir, ebook_file)
+                    if any(file.endswith(ext) for ext in supported_ebook_formats):
+                        full_path = os.path.join(ebooks_dir, file)
                         print(f"Processing eBook file: {full_path}")
                         args.ebook = full_path
                         convert_ebook(args, False)
