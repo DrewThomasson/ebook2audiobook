@@ -28,6 +28,4 @@ os.environ["TORCH_HOME"] = models_dir
 os.environ["HUGGINGFACE_HUB_CACHE"] = models_dir
 os.environ["HF_HOME"] = models_dir
 os.environ["HF_DATASETS_CACHE"] = models_dir
-os.environ["XDG_CACHE_HOME"] = models_dir
-os.environ["HF_TOKEN_PATH"] = models_dir
 os.environ["HF_TOKEN_PATH"] = os.path.join(os.path.expanduser("~"), ".huggingface_token")

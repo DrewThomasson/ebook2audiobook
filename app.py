@@ -101,6 +101,7 @@ def is_port_in_use(port):
 
 def main():
     global script_mode, ebooks_dir
+    print("*********************************",os.environ.get("TTS_CACHE"))
     
     # Convert the list of languages to a string to display in the help text
     language_options_str = ", ".join(language_options)

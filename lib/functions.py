@@ -701,6 +701,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
         print("Computing speaker latents...")
         gpt_cond_latent, speaker_embedding = model.get_conditioning_latents(audio_path=[target_voice_file])
     else:
+        os.environ["TTS_CACHE"] = models_dir
         selected_tts_model = "tts_models/multilingual/multi-dataset/xtts_v2"
         tts = TTS(selected_tts_model, progress_bar=False).to(device)
     

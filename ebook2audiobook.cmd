@@ -26,7 +26,6 @@ set "PATH=%CONDA_PATH%;%PATH%"
 set "PROGRAMS_CHECK=0"
 set "CONDA_CHECK_STATUS=0"
 set "DOCKER_CHECK_STATUS=0"
-set "DOCKER_RUN_STATUS=0"
 set "DOCKER_BUILD_STATUS=0"
 
 for %%A in (%*) do (
@@ -86,21 +85,7 @@ if %errorlevel% neq 0 (
         call :programs_check
     )
 )
-if "%PROGRAMS_CHECK%"=="0" (
-    if "%CONDA_CHECK_STATUS%"=="0" (
-        if "%DOCKER_CHECK_STATUS%"=="0" (
-			if "%DOCKER_RUN_STATUS%"=="0" (
-				if "%DOCKER_BUILD_STATUS%"=="0" (
-					goto main
-					exit /b
-				)
-            ) else (
-				goto failed
-			)
-        )
-    )
-)
-goto :install_components
+goto dispatch
 exit /b
 
 :programs_check
@@ -137,7 +122,7 @@ if %errorlevel% neq 0 (
 		)
 		if not defined docker_socket (
 			echo cannot connect to docker socket. Check if the docker socket is running.
-			set "DOCKER_RUN_STATUS=1"
+			goto failed
 		) else (
 			:: Check if the Docker image is available
 			call docker images -q %DOCKER_UTILS_IMG% >nul 2>&1
@@ -224,7 +209,23 @@ if %errorlevel% equ 0 (
     start "" /b cmd /c "%~f0" %*
     exit /b
 )
-goto main
+goto dispatch
+exit /b
+
+:dispatch
+if "%PROGRAMS_CHECK%"=="0" (
+    if "%CONDA_CHECK_STATUS%"=="0" (
+        if "%DOCKER_CHECK_STATUS%"=="0" (
+			if "%DOCKER_BUILD_STATUS%"=="0" (
+				goto main
+				exit /b
+			)
+		) else (
+			goto failed
+		)
+    )
+)
+goto install_components
 exit /b
 
 :main
