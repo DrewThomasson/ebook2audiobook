@@ -1,259 +1,296 @@
-@echo off
-setlocal enabledelayedexpansion
+#!/usr/bin/env bash
 
-:: Capture all arguments into ARGS
-set "ARGS=%*"
+PYTHON_VERSION="3.11"
+export TTS_CACHE="./models"
 
-set "NATIVE=native"
-set "DOCKER_UTILS=docker_utils"
-set "FULL_DOCKER=full_docker"
+ARGS="$@"
 
-set "SCRIPT_MODE=%NATIVE%"
-set "SCRIPT_DIR=%~dp0"
+# Declare an associative array
+declare -A arguments
 
-set "PYTHON_VERSION=3.11"
-set "DOCKER_UTILS_IMG=utils"
-set "PYTHON_ENV=python_env"
-set "CURRENT_ENV="
-set "PROGRAMS_LIST=calibre ffmpeg"
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case "$1" in
+        --*)
+            key="${1/--/}" # Remove leading '--'
+            if [[ -n "$2" && ! "$2" =~ ^-- ]]; then
+                # If the next argument is a value (not another option)
+                arguments[$key]="$2"
+                shift # Move past the value
+            else
+                # Set to true for flags without values
+                arguments[$key]=true
+            fi
+            ;;
+        *)
+            echo "Unknown option: $1"
+            exit 1
+            ;;
+    esac
+    shift # Move to the next argument
+done
 
-set "CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
-set "CONDA_INSTALLER=%TEMP%\Miniconda3-latest-Windows-x86_64.exe"
-set "CONDA_INSTALL_DIR=%USERPROFILE%\miniconda3"
-set "CONDA_PATH=%USERPROFILE%\miniconda3\bin"
-set "PATH=%CONDA_PATH%;%PATH%"
+NATIVE="native"
+DOCKER_UTILS="docker_utils"
+FULL_DOCKER="full_docker"
 
-set "PROGRAMS_CHECK=0"
-set "CONDA_CHECK_STATUS=0"
-set "DOCKER_CHECK_STATUS=0"
-set "DOCKER_BUILD_STATUS=0"
+SCRIPT_MODE="$NATIVE"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-for %%A in (%*) do (
-	if "%%A"=="%DOCKER_UTILS%" (
-		set "SCRIPT_MODE=%DOCKER_UTILS%"
-		break
-	)
-)
+WGET=$(which wget 2>/dev/null)
+REQUIRED_PROGRAMS=("calibre" "ffmpeg")
+DOCKER_UTILS_IMG="utils"
+PYTHON_ENV="python_env"
+CURRENT_ENV=""
 
-cd /d "%SCRIPT_DIR%"
+if [[ "$OSTYPE" = "darwin"* ]]; then
+    CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
+else
+	CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+fi
+CONDA_INSTALLER=/tmp/Miniconda3-latest.sh
+CONDA_INSTALL_DIR=$HOME/miniconda3
+CONDA_PATH=$HOME/miniconda3/bin
+CONDA_ENV=~/miniconda3/etc/profile.d/conda.sh
+CONFIG_FILE="$HOME/.bashrc"
+PATH="$CONDA_PATH:$PATH"
 
-:: Check if running inside Docker
-if defined CONTAINER (
-	echo Running in %FULL_DOCKER% mode
-	set "SCRIPT_MODE=%FULL_DOCKER%"
-	goto main
-)
+declare -a programs_missing
 
-echo Running in %SCRIPT_MODE% mode
+# Check if the current script is run inside a docker container
+if [[ -n "$container" || -f /.dockerenv ]]; then
+	SCRIPT_MODE="$FULL_DOCKER"
+else
+	if [[ -n "${arguments['script_mode']+exists}" ]]; then
+		if [ "${arguments['script_mode']}" = "$NATIVE" ] || [ "${arguments['script_mode']}" = "$DOCKER_UTILS" ]; then
+			SCRIPT_MODE="${arguments['script_mode']}"
+		fi
+	fi
+fi
 
-:: Check if running in a Conda environment
-if defined CONDA_DEFAULT_ENV (
-	set "CURRENT_ENV=%CONDA_PREFIX%"
-)
-:: Check if running in a Python virtual environment
-if defined VIRTUAL_ENV (
-    set "CURRENT_ENV=%VIRTUAL_ENV%"
-)
-for /f "delims=" %%i in ('where python') do (
-    if defined CONDA_PREFIX (
-        if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-            set "CURRENT_ENV=%CONDA_PREFIX%"
-			break
-        )
-    ) else if defined VIRTUAL_ENV (
-        if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-            set "CURRENT_ENV=%VIRTUAL_ENV%"
-			break
-        )
-    )
-)
-if not "%CURRENT_ENV%"=="" (
-	echo Current python virtual environment detected: %CURRENT_ENV%. 
-	echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-	goto failed
-)
-goto conda_check
+# Check if running in a Conda or Python virtual environment
+if [[ -n "$CONDA_DEFAULT_ENV" ]]; then
+    CURRENT_ENV="$CONDA_PREFIX"
+elif [[ -n "$VIRTUAL_ENV" ]]; then
+    CURRENT_ENV="$VIRTUAL_ENV"
+fi
 
-:conda_check
-where conda >nul 2>&1
-if %errorlevel% neq 0 (
-    set "CONDA_CHECK_STATUS=1"
-) else (
-    if "%SCRIPT_MODE%"=="%DOCKER_UTILS%" (
-        call :docker_check
-    ) else (
-        call :programs_check
-    )
-)
-goto dispatch
-exit /b
+# If neither environment variable is set, check Python path
+if [[ -z "$CURRENT_ENV" ]]; then
+    PYTHON_PATH=$(which python 2>/dev/null)
+    if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" == "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" == "$VIRTUAL_ENV/bin/python" ) ]]; then
+        CURRENT_ENV="${CONDA_PREFIX:-$VIRTUAL_ENV}"
+    fi
+fi
 
-:programs_check
-set "missing_prog_array="
-for %%p in (%PROGRAMS_LIST%) do (
-    set "FOUND="
-    for /f "delims=" %%i in ('where %%p 2^>nul') do (
-        set "FOUND=%%i"
-    )
-    if not defined FOUND (
-        echo %%p is not installed.
-        set "missing_prog_array=!missing_prog_array! %%p"
-    )
-)
-if not "%missing_prog_array%"=="" (
-	set "PROGRAMS_CHECK=1"
-)
-exit /b
+# Output result if a virtual environment is detected
+if [[ -n "$CURRENT_ENV" ]]; then
+    echo -e "Current python virtual environment detected: $CURRENT_ENV."
+    echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
+    exit 1
+fi
 
-:docker_check
-docker --version >nul 2>&1
-if %errorlevel% neq 0 (
-	set "DOCKER_CHECK_STATUS=1"
-) else (
-	:: Verify Docker is running
-	call docker info >nul 2>&1
-	if %errorlevel% neq 0 (
-		set "DOCKER_CHECK_STATUS=1"
-	) else (
-		:: Check if the Docker socket is running
-		set "docker_socket="
-		if exist \\.\pipe\docker_engine (
-			set "docker_socket=Windows"
-		)
-		if not defined docker_socket (
-			echo cannot connect to docker socket. Check if the docker socket is running.
-			goto failed
-		) else (
-			:: Check if the Docker image is available
-			call docker images -q %DOCKER_UTILS_IMG% >nul 2>&1
-			if %errorlevel% neq 0 (
-				echo Docker image '%DOCKER_UTILS_IMG%' not found. Installing it now...
-				set "DOCKER_BUILD_STATUS=1"
-			) else (
-				goto dispatch
-			)
-		)
-	)
-)
-goto install_components
-exit /b
+function required_programs_check {
+	local programs=("$@")
+	for program in "${programs[@]}"; do
+		if ! command -v "$program" >/dev/null 2>&1; then
+			echo -e "\e[33m$program is not installed.\e[0m"
+			programs_missing+=($program)
+		fi
+	done
+	local count=${#programs_missing[@]}
+	if [[ $count -eq 0 ]]; then
+		return 0
+	else
+		return 1
+	fi
+}
 
-:install_components
-:: Check if running as administrator
-net session >nul 2>&1
-if %errorlevel% neq 0 (
-	echo This script needs to be run as administrator.
-	echo Attempting to restart with administrator privileges...
-	if defined ARGS (
-		 call powershell -ExecutionPolicy Bypass -Command "Start-Process '%~f0' -ArgumentList '%ARGS%' -WorkingDirectory '%SCRIPT_DIR%' -Verb RunAs"
-	) else (
-		 call powershell -ExecutionPolicy Bypass -Command "Start-Process '%~f0' -WorkingDirectory '%SCRIPT_DIR%' -Verb RunAs"
-	)
-	exit /b
-)
-:: Install Chocolatey if not already installed
-choco -v >nul 2>&1
-if %errorlevel% neq 0 (
-	echo Chocolatey is not installed. Installing Chocolatey...
-	call powershell -ExecutionPolicy Bypass -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
-)
-:: Install Python if not already installed
-python --version >nul 2>&1
-if %errorlevel% neq 0 (
-	echo Python is not installed. Installing Python...
-	call choco install python -y
-)
-:: Install missing packages if any
-if not "%PROGRAMS_CHECK%"=="0" (
-	call choco install %missing_prog_array% -y --force
-	set "PROGRAMS_CHECK=0"
-	set "missing_prog_array="
-)
-:: Install Conda if not already installed
-if not "%CONDA_CHECK_STATUS%"=="0" (	
-	echo Installing Conda...
-	call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User'),'Process')"
-	echo Downloading Conda installer...
-	call bitsadmin /transfer "MinicondaDownload" %CONDA_URL% "%CONDA_INSTALLER%"
-	"%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /S /D=%CONDA_INSTALL_DIR%
-	if exist "%CONDA_INSTALL_DIR%\condabin\conda.bat" (
-		echo Conda installed successfully.
-		set "CONDA_CHECK_STATUS=0"
-	)
-)
-:: Install Docker if not already installed
-if not "%DOCKER_CHECK_STATUS%"=="0" (
-	echo Docker is not installed. Installing it now...
-	call choco install docker-cli docker-engine -y
-	call docker --version >nul 2>&1
-	if %errorlevel% equ 0 (
-		echo Starting Docker Engine...
-		net start com.docker.service >nul 2>&1
-		if %errorlevel% equ 0 (
-			echo Docker installed and started successfully.
-			set "DOCKER_CHECK_STATUS=0"
-		) 
-	)
-)
-:: Build Docker image if required
-if not "%DOCKER_BUILD_STATUS%"=="0" (
-	call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-	call python -m pip install -e .
-	call docker build -f DockerfileUtils -t utils .
-	call conda deactivate
-	call docker images -q %DOCKER_UTILS_IMG% >nul 2>&1
-	if %errorlevel% equ 0 (
-		set "DOCKER_BUILD_STATUS=0"
-	)
-)
-net session >nul 2>&1
-if %errorlevel% equ 0 (
-    echo Restarting in user mode...
-    start "" /b cmd /c "%~f0" %*
-    exit /b
-)
-goto dispatch
-exit /b
+function install_programs {
+	echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges or it will fail.\e[0m"
+	if [[ "$OSTYPE" = "darwin"* ]]; then
+		PACK_MGR="brew install"
+			if ! command -v brew &> /dev/null; then
+				echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
+				/usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+				echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
+				eval "$(/opt/homebrew/bin/brew shellenv)"
+			fi
+	else
+		if command -v emerge &> /dev/null; then
+			PACK_MGR="sudo emerge"
+		elif command -v dnf &> /dev/null; then
+			PACK_MGR="sudo dnf install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v yum &> /dev/null; then
+			PACK_MGR="sudo yum install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v zypper &> /dev/null; then
+			PACK_MGR="sudo zypper install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v pacman &> /dev/null; then
+			PACK_MGR="sudo pacman -Sy"
+		elif command -v apt-get &> /dev/null; then
+			sudo apt-get update
+			PACK_MGR="sudo apt-get install"
+			PACK_MGR_OPTIONS="-y"
+		elif command -v apk &> /dev/null; then
+			PACK_MGR="sudo apk add"
+		else
+			echo "Cannot recognize your applications package manager. Please install the required applications manually."
+			return 1
+		fi
+		
+	fi
+	if [ -z "$WGET" ]; then
+		echo -e "\e[33m wget is missing! trying to install it... \e[0m"
+		result=$(eval "$PACK_MGR wget $PACK_MGR_OPTIONS" 2>&1)
+		result_code=$?
+		if [ $result_code -eq 0 ]; then
+			WGET=$(which wget 2>/dev/null)
+		else
+			echo "Cannot 'wget'. Please install 'wget'  manually."
+			return 1
+		fi
+	fi
+	for program in "${programs_missing[@]}"; do
+		if [ "$program" = "calibre" ];then				
+			# avoid conflict with calibre builtin lxml
+			pip uninstall lxml -y 2>/dev/null
+			echo -e "\e[33mInstalling Calibre...\e[0m"
+			if [[ "$OSTYPE" = "darwin"* ]]; then
+				eval "$PACK_MGR --cask calibre"
+			else
+				$WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sh /dev/stdin
+			fi
+			if command -v calibre >/dev/null 2>&1; then
+				echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
+			else
+				echo "Calibre installation failed."
+			fi
+		else
+			eval "$PACK_MGR $program $PKG_MGR_OPTIONS"				
+			if command -v $program >/dev/null 2>&1; then
+				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+			else
+				echo "$program installation failed."
+			fi
+		fi
+	done
+	if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
+		echo -e "\e[33mYou can run 'ebook2audiobook.sh --script_mode docker_utils' to avoid to install $REQUIRED_PROGRAMS natively.\e[0m"
+		return 1
+	fi
+}
 
-:dispatch
-if "%PROGRAMS_CHECK%"=="0" (
-    if "%CONDA_CHECK_STATUS%"=="0" (
-        if "%DOCKER_CHECK_STATUS%"=="0" (
-			if "%DOCKER_BUILD_STATUS%"=="0" (
-				goto main
-				exit /b
-			)
-		) else (
-			goto failed
-		)
-    )
-)
-goto install_components
-exit /b
+function conda_check {
+	if ! command -v conda &> /dev/null; then
+		echo -e "\e[33mconda is not installed!\e[0m"
+		echo -e "\e[33mDownloading conda installer...\e[0m"
+		wget -O "$CONDA_INSTALLER" "$CONDA_URL"
+		if [[ -f "$CONDA_INSTALLER" ]]; then
+			echo -e "\e[33mInstalling Miniconda...\e[0m"
+			bash "$CONDA_INSTALLER" -u -b -p "$CONDA_INSTALL_DIR"
+			rm -f "$CONDA_INSTALLER"
+			if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
+				echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
+			else
+				echo -e "\e[31mconda installation failed.\e[0m"		
+				return 1
+			fi
+		else
+			echo -e "\e[31mFailed to download Miniconda installer.\e[0m"
+			echo -e "\e[33mI'ts better to use the install.sh to install everything needed.\e[0m"
+			return 1
+		fi
+	fi
+	if [[ ! -d $SCRIPT_DIR/$PYTHON_ENV ]]; then
+		conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y
+		source $CONDA_ENV
+		conda activate $SCRIPT_DIR/$PYTHON_ENV
+		python -m pip install --upgrade pip
+		python -m pip install beautifulsoup4 coqui-tts ebooklib deepspeed docker "gradio>=4.44.0" mecab mecab-python3 "nltk>=3.8.2" pydub translate tqdm unidic
+		python -m unidic download
+		python -m spacy download en_core_web_sm
+		python -m nltk.downloader punkt_tab
+		conda deactivate
+	fi
+	return 0
+}
 
-:main
-if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
-    python %SCRIPT_DIR%\app.py --script_mode %FULL_DOCKER% %ARGS%
-) else (
-	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
-		call conda create --prefix %SCRIPT_DIR%\%PYTHON_ENV% python=%PYTHON_VERSION% -y
-		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
-		call python -m pip install --upgrade pip
-		call python -m pip install beautifulsoup4 coqui-tts ebooklib deepspeed docker "gradio>=4.44.0" mecab mecab-python3 "nltk>=3.8.2" pydub translate tqdm unidic
-		call python -m unidic download
-		call python -m spacy download en_core_web_sm
-		call python -m nltk.downloader punkt_tab
-	) else (
-		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
-	)
-	python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
-	call conda deactivate
-)
-exit /b
+function docker_check {
+	if ! command -v docker &> /dev/null; then
+		echo -e "\e[33m docker is missing! trying to install it... \e[0m"
+		if [[ "$OSTYPE" == "darwin"* ]]; then
+			echo "Installing Docker using Homebrew..."
+			$PACK_MGR --cask docker $PACK_MGR_OPTIONS
+		else
+			$WGET -qO get-docker.sh https://get.docker.com && \
+			sudo sh get-docker.sh
+			sudo systemctl start docker
+			sudo systemctl enable docker
+			docker run hello-world
+			rm -f get-docker.sh
+		fi
+		echo -e "\e[32m===============>>> docker is installed! <<===============\e[0m"
+		docker_build
+	else
+		# Check if Docker service is running
+		if docker info >/dev/null 2>&1; then
+			if [[ "$(docker images -q $DOCKER_UTILS_IMG 2> /dev/null)" = "" ]]; then
+				docker_build
+			fi
+		else
+			echo -e "\e[33mDocker is not running\e[0m"
+			return 1
+		fi
+	fi
+	return 0
+}
 
-:failed
-echo ebook2audiobook is not correctly installed or run.
-exit /b
+function docker_build {
+# Check if the Docker socket is accessible
+	if [[ -e /var/run/docker.sock || -e /run/docker.sock ]]; then
+		echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Trying to build it...\e[0m"
+		docker build -f DockerfileUtils -t utils .
+	else
+		echo -e "\e[33mcannot connect to docker socket. Check if the docker socket is running.\e[0m"
+	fi
+}
 
-endlocal
-pause
+if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
+	echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
+	python app.py --script_mode $SCRIPT_MODE $ARGS
+elif [[ "$SCRIPT_MODE" == "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
+	pass=true
+	if [ "$SCRIPT_MODE" == "$NATIVE" ]; then
+		echo -e "\e[33mRunning in $NATIVE mode\e[0m"
+		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
+			if ! install_programs; then
+				pass=false
+			fi
+		fi
+	else
+		echo -e "\e[33mRunning in $DOCKER_UTILS mode\e[0m"
+		if conda_check; then
+			if docker_check; then
+				source $CONDA_ENV
+				conda activate $SCRIPT_DIR/$PYTHON_ENV
+				python app.py --script_mode $DOCKER_UTILS $ARGS
+				conda deactivate
+			fi
+		fi
+	fi
+	if [ $pass = true ]; then
+		if conda_check; then
+			source $CONDA_ENV
+			conda activate $SCRIPT_DIR/$PYTHON_ENV
+			python app.py --script_mode $SCRIPT_MODE $ARGS
+			conda deactivate
+		fi
+	fi
+else
+	echo -e "\e[33mebook2audiobook is not correctly installed or run.\e[0m"
+fi
+
+exit 0
