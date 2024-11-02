@@ -701,7 +701,6 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
         print("Computing speaker latents...")
         gpt_cond_latent, speaker_embedding = model.get_conditioning_latents(audio_path=[target_voice_file])
     else:
-        os.environ["TTS_CACHE"] = models_dir
         selected_tts_model = "tts_models/multilingual/multi-dataset/xtts_v2"
         tts = TTS(selected_tts_model, progress_bar=False).to(device)
     
@@ -825,6 +824,8 @@ def download_audiobooks():
 def convert_ebook(args, ui_needed):
     global client, script_mode, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
 
+    #ebook_id = args.uuid_input if args.uuid_input else str(uuid.uuid4())
+    ebook_id = str(uuid.uuid4())
     script_mode = args.script_mode if args.script_mode else NATIVE
     is_web_process = ui_needed
     ebook_file = args.ebook
@@ -858,7 +859,6 @@ def convert_ebook(args, ui_needed):
     elif script_mode == DOCKER_UTILS:
         client = docker.from_env()
 
-    ebook_id = str(uuid.uuid4())
     tmp_dir = os.path.join(processes_dir, f"ebook-{ebook_id}")
     ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
     ebook_chapters_audio_dir = os.path.join(ebook_chapters_dir, "audio")
@@ -1104,7 +1104,8 @@ def web_interface(mode, share, ui_needed):
 
             # Automatically initialize session and run other processes when the page loads
             demo.load(initialize_session, outputs=[session_status, session_id], inputs=[session_id_input])
-
+            
+        #uuid_input = gr.Textbox(visible=False)
         convert_btn = gr.Button("Convert to Audiobook", variant="primary")
         output = gr.Textbox(label="Conversion Status")
         audio_player = gr.Audio(label="Audiobook Player", type="filepath")
@@ -1123,6 +1124,7 @@ def web_interface(mode, share, ui_needed):
 
             # Call the convert_ebook function with the processed parameters
             args = argparse.Namespace(
+                #uuid_input=uuid_input,
                 script_mode=script_mode,
                 device=device,
                 ebook=ebook_file,

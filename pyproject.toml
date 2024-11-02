@@ -3,4 +3,31 @@ name = "ebook2audiobook"
 version = "2.0.0"
 requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "ebook2audiobook"
+version = "2.0.0"
+description = "Convert eBooks to audiobooks with chapters and metadata"
+authors = [
+    { name = "Drew Thomasson" }
+]
+dependencies = [
+    "beautifulsoup4",
+    "coqui-tts",
+    "ebooklib",
+    "docker",
+    "gradio>=4.44.0",
+    "mecab",
+    "mecab-python3",
+    "nltk>=3.8.2",
+    "pydub",
+    "translate",
+    "tqdm",
+    "unidic",
+]
+readme = "README.md"
 requires-python = ">=3.10,<3.12"
+
+[project.urls]
+"Homepage" = "https://github.com/DrewThomasson/ebook2audiobook"
+
