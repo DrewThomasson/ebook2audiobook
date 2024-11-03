@@ -18,6 +18,8 @@ python_env_dir = os.path.abspath(os.path.join(".","python_env"))
 models_dir = os.path.abspath(os.path.join(".","models"))
 ebooks_dir = os.path.abspath(os.path.join(".","ebooks"))
 audiobooks_dir = os.path.abspath(os.path.join(".","audiobooks"))
+audiobooks_web_dir = os.path.abspath(os.path.join(audiobooks_dir,"web"))
+audiobooks_local_dir = os.path.abspath(os.path.join(audiobooks_dir,"local"))
 processes_dir = os.path.abspath(os.path.join(".","tmp"))
 
 supported_ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']

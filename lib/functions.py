@@ -481,7 +481,7 @@ def concat_audio_chapters(metadatas, cover_file):
         os.makedirs(audiobook_web_dir, exist_ok=True)
         final_file = os.path.join(audiobook_web_dir, os.path.basename(concat_file))
     else:
-        final_file = os.path.join(audiobooks_dir,os.path.basename(concat_file))
+        final_file = os.path.join(audiobooks_local_dir,os.path.basename(concat_file))
     
     if convert_wav(tmp_dir, combined_wav, metadata_file, cover_file, concat_file, final_file):
         shutil.rmtree(tmp_dir)
@@ -861,7 +861,7 @@ def convert_ebook(args, ui_needed):
     tmp_dir = os.path.join(processes_dir, f"ebook-{ebook_id}")
     ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
     ebook_chapters_audio_dir = os.path.join(ebook_chapters_dir, "audio")
-    audiobook_web_dir = os.path.join(audiobooks_dir, f"web-{ebook_id}") if is_web_shared else audiobooks_dir
+    audiobook_web_dir = os.path.join(audiobooks_web_dir, f"web-{ebook_id}") if is_web_shared else audiobooks_dir
     
     delete_old_web_folders(audiobooks_dir)
             
