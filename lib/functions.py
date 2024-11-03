@@ -824,8 +824,7 @@ def download_audiobooks():
 def convert_ebook(args, ui_needed):
     global client, script_mode, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
 
-    #ebook_id = args.uuid_input if args.uuid_input else str(uuid.uuid4())
-    ebook_id = str(uuid.uuid4())
+    ebook_id = args.session_input if args.session_input else str(uuid.uuid4())
     script_mode = args.script_mode if args.script_mode else NATIVE
     is_web_process = ui_needed
     ebook_file = args.ebook
@@ -1070,10 +1069,9 @@ def web_interface(mode, share, ui_needed):
                     value=False,
                     info="Splits long texts into sentences to generate audio in chunks. Useful for very long inputs."
                 )
-                
+
             session_status = gr.Textbox(label="Session Status")
-            session_id = gr.State()  # Persistent session state stored in Gradio
-            session_id_input = gr.Textbox(visible=False, label="Session ID from localStorage")  # Hidden Textbox to hold session_id
+            session_input = gr.Textbox(visible=False, label="Session ID from localStorage")
 
             # Inject client-side JavaScript for handling localStorage
             session_js = gr.HTML('''
@@ -1084,14 +1082,14 @@ def web_interface(mode, share, ui_needed):
 
                     // If the session_id exists in localStorage, set it in the hidden input field
                     if (session_id) {
-                        document.querySelector("input[name='session_id_input']").value = session_id;
+                        document.querySelector("input[name='session_input']").value = session_id;
                     } else {
                         // Create a new session_id and store it in localStorage with a 24-hour expiration
                         session_id = Date.now() + '-' + Math.random().toString(36).substring(2);
                         localStorage.setItem("session_id", session_id);
 
                         // Set the new session_id in the hidden input field
-                        document.querySelector("input[name='session_id_input']").value = session_id;
+                        document.querySelector("input[name='session_input']").value = session_id;
                     }
                 });
 
@@ -1102,15 +1100,15 @@ def web_interface(mode, share, ui_needed):
             </script>
             ''')
 
-            # Automatically initialize session and run other processes when the page loads
-            demo.load(initialize_session, outputs=[session_status, session_id], inputs=[session_id_input])
-            
-        #uuid_input = gr.Textbox(visible=False)
         convert_btn = gr.Button("Convert to Audiobook", variant="primary")
         output = gr.Textbox(label="Conversion Status")
         audio_player = gr.Audio(label="Audiobook Player", type="filepath")
         download_btn = gr.Button("Download Audiobook Files")
         download_files = gr.File(label="Download Files", interactive=False)
+        
+        # Automatically initialize session and run other processes when the page loads
+        session_id = gr.State()
+        demo.load(initialize_session, outputs=[session_status, session_id], inputs=[session_input])
 
         def process_conversion(device, ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, custom_model_url):
             ebook_file = ebook_file.name if ebook_file else None
@@ -1118,13 +1116,12 @@ def web_interface(mode, share, ui_needed):
             custom_model_file = custom_model_file.name if custom_model_file else None
             custom_config_file = custom_config_file.name if custom_config_file else None
             custom_vocab_file = custom_vocab_file.name if custom_vocab_file else None
-
             if not ebook_file:
                 return "Error: eBook file is required.", None
 
             # Call the convert_ebook function with the processed parameters
             args = argparse.Namespace(
-                #uuid_input=uuid_input,
+                #session_input=session_input,
                 script_mode=script_mode,
                 device=device,
                 ebook=ebook_file,

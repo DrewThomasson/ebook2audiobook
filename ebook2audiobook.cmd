@@ -239,7 +239,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		call conda create --prefix %SCRIPT_DIR%\%PYTHON_ENV% python=%PYTHON_VERSION% -y
 		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
 		call python -m pip install --upgrade pip
-		call python -m pip install beautifulsoup4 coqui-tts ebooklib deepspeed docker "gradio>=4.44.0" mecab mecab-python3 "nltk>=3.8.2" pydub translate tqdm unidic
+		call python -m pip install beautifulsoup4 coqui-tts ebooklib docker "gradio>=4.44.0" mecab mecab-python3 "nltk>=3.8.2" pydub translate tqdm unidic
 		call python -m unidic download
 		call python -m spacy download en_core_web_sm
 		call python -m nltk.downloader punkt_tab
