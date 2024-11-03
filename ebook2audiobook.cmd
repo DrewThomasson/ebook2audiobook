@@ -28,6 +28,12 @@ set "CONDA_CHECK_STATUS=0"
 set "DOCKER_CHECK_STATUS=0"
 set "DOCKER_BUILD_STATUS=0"
 
+set "CALIBRE_TEMP_DIR=C:\Windows\Temp\Calibre"
+if not exist "%CALIBRE_TEMP_DIR%" (
+    mkdir "%CALIBRE_TEMP_DIR%"
+)
+icacls "%CALIBRE_TEMP_DIR%" /grant Users:(OI)(CI)F /T
+
 for %%A in (%*) do (
 	if "%%A"=="%DOCKER_UTILS%" (
 		set "SCRIPT_MODE=%DOCKER_UTILS%"
@@ -166,6 +172,7 @@ if %errorlevel% neq 0 (
 :: Install missing packages if any
 if not "%PROGRAMS_CHECK%"=="0" (
 	call choco install %missing_prog_array% -y --force
+	setx CALIBRE_TEMP_DIR "%CALIBRE_TEMP_DIR%" /M
 	set "PROGRAMS_CHECK=0"
 	set "missing_prog_array="
 )

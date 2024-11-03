@@ -52,10 +52,10 @@ is_web_shared = False
 
 client = None
 ebook_id = None
+audiobooks_dir = None
 tmp_dir = None
 ebook_chapters_dir = None
 ebook_chapters_audio_dir = None
-audiobook_web_dir = None
 ebook_file = None
 ebook_title = None
 
@@ -84,7 +84,7 @@ class DependencyError(Exception):
             sys.exit(1)
 
 def define_props(ebook_src):
-    global ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global ebook_file, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
     try:
         os.makedirs(tmp_dir, exist_ok=True)
         os.makedirs(ebook_chapters_dir, exist_ok=True)
@@ -276,7 +276,7 @@ def extract_metadata_and_cover(ebook_filename_noext):
     else:
         try:
             util_app = shutil.which("ebook-meta")
-            subprocess.run([util_app, ebook_file, '--get-cover', cover_file], env={}, check=True)
+            subprocess.run([util_app, ebook_file, '--get-cover', cover_file], check=True)
             metadata_result = subprocess.check_output([util_app, ebook_file], universal_newlines=True)
             metadatas = parse_metadata(metadata_result)
             if os.path.exists(cover_file):
@@ -288,7 +288,7 @@ def extract_metadata_and_cover(ebook_filename_noext):
             raise DependencyError(e)
 
 def concat_audio_chapters(metadatas, cover_file):
-    global client, is_web_process, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global client, is_web_process, ebook_title, ebook_file, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
     
     # Function to sort chapters based on their numeric order
     def sort_key(chapter_file):
@@ -477,11 +477,7 @@ def concat_audio_chapters(metadatas, cover_file):
         ebook_title = os.path.splitext(os.path.basename(ebook_file))[0]
 
     concat_file = os.path.join(tmp_dir, ebook_title + '.' + final_format)
-    if is_web_process:
-        os.makedirs(audiobook_web_dir, exist_ok=True)
-        final_file = os.path.join(audiobook_web_dir, os.path.basename(concat_file))
-    else:
-        final_file = os.path.join(audiobooks_local_dir,os.path.basename(concat_file))
+    final_file = os.path.join(audiobooks_dir, os.path.basename(concat_file))
     
     if convert_wav(tmp_dir, combined_wav, metadata_file, cover_file, concat_file, final_file):
         shutil.rmtree(tmp_dir)
@@ -528,7 +524,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
             else:
                 try:
                     util_app = shutil.which("ebook-convert")
-                    subprocess.run([util_app, ebook_file, epub_path], env={}, check=True)
+                    subprocess.run([util_app, ebook_file, epub_path], check=True)
                     return True
                 except subprocess.CalledProcessError as e:
                     remove_conflict_pkg("lxml")
@@ -811,18 +807,17 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
     return True
 
 def download_audiobooks():
-    global final_format, ebook_file, audiobook_web_dir
     files = []
     
-    if os.path.isdir(audiobook_web_dir):
-        for filename in os.listdir(audiobook_web_dir):
+    if os.path.isdir(audiobooks_dir):
+        for filename in os.listdir(audiobooks_dir):
             if filename.endswith('.'+final_format):
-                files.append(os.path.join(audiobook_web_dir, filename))
+                files.append(os.path.join(audiobooks_dir, filename))
 
     return files
 
 def convert_ebook(args, ui_needed):
-    global client, script_mode, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global client, script_mode, audiobooks_dir, is_web_process, ebook_id, ebook_title, ebook_file, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
 
     ebook_id = args.session_id if args.session_id else str(uuid.uuid4())
     script_mode = args.script_mode if args.script_mode else NATIVE
@@ -861,9 +856,11 @@ def convert_ebook(args, ui_needed):
     tmp_dir = os.path.join(processes_dir, f"ebook-{ebook_id}")
     ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
     ebook_chapters_audio_dir = os.path.join(ebook_chapters_dir, "audio")
-    audiobook_web_dir = os.path.join(audiobooks_web_dir, f"web-{ebook_id}") if is_web_shared else audiobooks_dir
-    
-    delete_old_web_folders(audiobooks_dir)
+    if is_web_shared:
+        audiobooks_dir = os.path.join(audiobooks_web_dir, f"web-{ebook_id}")
+        delete_old_web_folders(audiobooks_web_dir)
+    else:
+        audiobooks_dir = audiobooks_local_dir
             
     if language != "en":
         ebook_pronouns = translate_pronouns(language)
