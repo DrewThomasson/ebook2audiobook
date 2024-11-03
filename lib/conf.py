@@ -29,3 +29,6 @@ os.environ["HUGGINGFACE_HUB_CACHE"] = models_dir
 os.environ["HF_HOME"] = models_dir
 os.environ["HF_DATASETS_CACHE"] = models_dir
 os.environ["HF_TOKEN_PATH"] = os.path.join(os.path.expanduser("~"), ".huggingface_token")
+os.environ["CALIBRE_TEMP_DIR"] = models_dir
+os.environ["CALIBRE_CACHE_DIRECTORY"] = models_dir
+os.environ["CALIBRE_NO_NATIVE_FILEDIALOGS"] = "1"

@@ -824,7 +824,7 @@ def download_audiobooks():
 def convert_ebook(args, ui_needed):
     global client, script_mode, audiobooks_dir, is_web_process, ebook_id, ebook_title, final_format, ebook_file, tmp_dir, audiobook_web_dir, ebook_chapters_dir, ebook_chapters_audio_dir
 
-    ebook_id = args.session_input if args.session_input else str(uuid.uuid4())
+    ebook_id = args.session_id if args.session_id else str(uuid.uuid4())
     script_mode = args.script_mode if args.script_mode else NATIVE
     is_web_process = ui_needed
     ebook_file = args.ebook
@@ -957,12 +957,11 @@ def delete_old_web_folders(root_dir):
                 shutil.rmtree(folder_path)
   
 def initialize_session(session_id):
-    global ebook_id, is_web_shared
+    global is_web_shared
     
     if session_id == "":
         session_id = str(uuid.uuid4())
-    
-    ebook_id = session_id
+
     warning_text = str("")
     
     if is_web_shared:
@@ -970,7 +969,7 @@ def initialize_session(session_id):
     return f"Session: {session_id}.{warning_text}", session_id
 
 def web_interface(mode, share, ui_needed):
-    global script_mode, is_web_shared
+    global ebook_id, script_mode, is_web_shared
     
     script_mode = mode
     is_web_shared = share
@@ -1070,35 +1069,34 @@ def web_interface(mode, share, ui_needed):
                     info="Splits long texts into sentences to generate audio in chunks. Useful for very long inputs."
                 )
 
+            session_id = gr.State()  # Persistent session state
             session_status = gr.Textbox(label="Session Status")
-            session_input = gr.Textbox(visible=False, label="Session ID from localStorage")
+            session_id_input = gr.Textbox(visible=False, label="Session ID from localStorage")  # Hidden Textbox for session_id
 
-            # Inject client-side JavaScript for handling localStorage
+            # Inject JavaScript for handling localStorage
             session_js = gr.HTML('''
             <script>
-                // Ensure the page waits for the session_id to be retrieved from localStorage
                 document.addEventListener("DOMContentLoaded", function () {
                     let session_id = localStorage.getItem("session_id");
 
-                    // If the session_id exists in localStorage, set it in the hidden input field
-                    if (session_id) {
-                        document.querySelector("input[name='session_input']").value = session_id;
-                    } else {
-                        // Create a new session_id and store it in localStorage with a 24-hour expiration
+                    if (!session_id) {
+                        // Generate a new session_id if none exists
                         session_id = Date.now() + '-' + Math.random().toString(36).substring(2);
                         localStorage.setItem("session_id", session_id);
-
-                        // Set the new session_id in the hidden input field
-                        document.querySelector("input[name='session_input']").value = session_id;
                     }
+
+                    // Set the session ID in the hidden input field for Gradio to pick up
+                    document.querySelector("input[name='session_id_input']").value = session_id;
                 });
 
-                // Listen for session updates and store them in localStorage
                 function storeSessionInLocalStorage(new_session_id) {
                     localStorage.setItem("session_id", new_session_id);
                 }
             </script>
             ''')
+
+            # Initialize session using the session_id from localStorage on page load
+            demo.load(initialize_session, inputs=[session_id_input], outputs=[session_status, session_id])
 
         convert_btn = gr.Button("Convert to Audiobook", variant="primary")
         output = gr.Textbox(label="Conversion Status")
@@ -1107,21 +1105,22 @@ def web_interface(mode, share, ui_needed):
         download_files = gr.File(label="Download Files", interactive=False)
         
         # Automatically initialize session and run other processes when the page loads
-        session_id = gr.State()
-        demo.load(initialize_session, outputs=[session_status, session_id], inputs=[session_input])
+        session_input = gr.State()
+        demo.load(initialize_session, inputs=[session_input], outputs=[session_status, session_id])
 
-        def process_conversion(device, ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, custom_model_url):
+        def process_conversion(session_id, device, ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, custom_model_url):
             ebook_file = ebook_file.name if ebook_file else None
             target_voice_file = target_voice_file.name if target_voice_file else None
             custom_model_file = custom_model_file.name if custom_model_file else None
             custom_config_file = custom_config_file.name if custom_config_file else None
             custom_vocab_file = custom_vocab_file.name if custom_vocab_file else None
+
             if not ebook_file:
                 return "Error: eBook file is required.", None
 
             # Call the convert_ebook function with the processed parameters
             args = argparse.Namespace(
-                #session_input=session_input,
+                session_id=session_id,
                 script_mode=script_mode,
                 device=device,
                 ebook=ebook_file,
@@ -1140,7 +1139,9 @@ def web_interface(mode, share, ui_needed):
                 speed=float(speed),
                 enable_text_splitting=enable_text_splitting
             )
+
             status, audiobook_file = convert_ebook(args, ui_needed)
+
             if audiobook_file is not None:
                 return status, audiobook_file
             else:
@@ -1150,7 +1151,7 @@ def web_interface(mode, share, ui_needed):
         convert_btn.click(
             process_conversion,
             inputs=[
-                device, ebook_file, target_voice_file, language, 
+                session_id, device, ebook_file, target_voice_file, language, 
                 use_custom_model, custom_model_file, custom_config_file, 
                 custom_vocab_file, temperature, length_penalty, repetition_penalty, 
                 top_k, top_p, speed, enable_text_splitting, custom_model_url

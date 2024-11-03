@@ -62,7 +62,7 @@ def check_dictionary(language):
 
     required_model = f"{language}_core_web_sm"
 
-    if not os.path.isdir(unidic.DICDIR):
+    if os.path.isdir(unidic.DICDIR):
         if not os.listdir(unidic.DICDIR):
             try:
                 print("*** No default dictionary found! Trying to download it... ***")
@@ -75,7 +75,6 @@ def check_dictionary(language):
             except Exception as e:
                 print(f"Error during UniDic download: {e}")
                 return False
-        fi
 
     # Check if the required model is already installed in spaCy
     info = spacy.cli.info()
