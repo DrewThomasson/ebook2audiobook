@@ -806,7 +806,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
 
     return True
 
-def download_audiobooks():
+def show_converted():
     files = []
     
     if os.path.isdir(audiobooks_dir):
@@ -857,7 +857,7 @@ def convert_ebook(args, ui_needed):
     ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
     ebook_chapters_audio_dir = os.path.join(ebook_chapters_dir, "audio")
     if is_gui_process:
-        if is_gradio_shared
+        if is_gradio_shared:
             audiobooks_dir = os.path.join(audiobooks_gradio_dir, f"web-{ebook_id}")
             delete_old_web_folders(audiobooks_gradio_dir)
         else:
@@ -956,14 +956,13 @@ def delete_old_web_folders(root_dir):
             if folder_creation_time < age_limit:
                 shutil.rmtree(folder_path)
   
-def initialize_session(session_obj):
-    global is_gradio_shared
-    warning_text = str("")  
-    if "session_id" not in session_obj:
-        session_obj["session_id"] = str(uuid.uuid4())
-    if is_gradio_shared:
-        warning_text = str(f" Note: if the page is reloaded or closed all converted files will be lost. Access limit time: {gradio_shared_expire} hours")   
-    return f"Session: {session_obj["session_id"]}.{warning_text}", session_obj["session_id"]
+def change_session(session):
+    return {
+        'session': session,
+        'event': 'change_session'
+    }
+
+
 
 def web_interface(mode, share, ui_needed):
     global ebook_id, script_mode, is_gradio_shared
@@ -978,7 +977,10 @@ def web_interface(mode, share, ui_needed):
         text_size=gr.themes.sizes.text_md,
     )
     with gr.Blocks(theme=theme) as demo:
-        session_obj = gr.State({})
+        data = gr.State({})
+        write_data = gr.JSON(visible=False)
+        read_data = gr.JSON(visible=False)
+
         gr.Markdown(
         """
         # eBook to Audiobook Converter
@@ -1066,17 +1068,15 @@ def web_interface(mode, share, ui_needed):
                     value=False,
                     info="Splits long texts into sentences to generate audio in chunks. Useful for very long inputs."
                 )
+                
             session_status = gr.Textbox(label="Session Status")
             session = gr.Textbox(label="Session", visible=False)
 
         convert_btn = gr.Button("Convert to Audiobook", variant="primary")
         output = gr.Textbox(label="Conversion Status")
         audio_player = gr.Audio(label="Audiobook Player", type="filepath")
-        download_btn = gr.Button("Download Audiobook Files")
-        download_files = gr.File(label="Download Files", interactive=False)
-
-       # Initialize session using the session_id from localStorage on page load
-        demo.load(initialize_session, inputs=session_obj, outputs=[session_status, session])
+        converted_btn = gr.Button("Download Audiobook Files")
+        converted_files = gr.File(label="Download Files", interactive=False)
 
         def process_conversion(session, device, ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, custom_model_url):
             ebook_file = ebook_file.name if ebook_file else None
@@ -1117,7 +1117,6 @@ def web_interface(mode, share, ui_needed):
             else:
                 return "Conversion failed.", None
 
-        # Trigger the conversion process
         convert_btn.click(
             process_conversion,
             inputs=[
@@ -1128,16 +1127,36 @@ def web_interface(mode, share, ui_needed):
             ],
             outputs=[output, audio_player]
         )
-
         use_custom_model.change(
             lambda x: [gr.update(visible=x)] * 4,
             inputs=[use_custom_model],
             outputs=[custom_model_file, custom_config_file, custom_vocab_file, custom_model_url]
         )
-
-        download_btn.click(
-            download_audiobooks,
-            outputs=[download_files]
+        converted_btn.click(
+            show_converted,
+            outputs=[converted_files]
+        )
+        session.change(
+            change_session,
+            inputs=[session],
+            outputs=write_data
+        )
+     
+        demo.load(
+            None,
+            outputs=read_data,
+            js="""
+            () => {
+              const dataStr = window.localStorage.getItem('data')
+              if (dataStr) {
+                const obj = JSON.parse(dataStr)
+                obj.event = 'load'
+                console.log(obj)
+                return obj
+              }
+              return null
+            }
+            """
         )
 
-    demo.launch(server_name="0.0.0.0", server_port=web_interface_port, share=share)
+    demo.launch(server_name="0.0.0.0", server_port=gradio_interface_port, share=share)
