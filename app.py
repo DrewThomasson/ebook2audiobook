@@ -949,7 +949,7 @@ def run_gradio_interface():
         convert_btn = gr.Button("Convert to Audiobook", variant="primary")
         output = gr.Textbox(label="Conversion Status")
         audio_player = gr.Audio(label="Audiobook Player", type="filepath")
-        download_btn = gr.Button("Show Converted Files")
+        download_btn = gr.Button("Download Audiobook Files")
         download_files = gr.File(label="Download Files", interactive=False)
 
         convert_btn.click(
