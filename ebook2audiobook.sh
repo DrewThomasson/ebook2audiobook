@@ -206,6 +206,8 @@ function conda_check {
 		fi
 	fi
 	if [[ ! -d $SCRIPT_DIR/$PYTHON_ENV ]]; then
+		# Use this condition to chmod writable folders once
+		chmod -R 777 ./audiobooks ./tmp ./models
 		conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y
 		source $CONDA_ENV
 		conda activate $SCRIPT_DIR/$PYTHON_ENV
