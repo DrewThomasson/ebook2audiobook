@@ -193,6 +193,7 @@ function conda_check {
 			bash "$CONDA_INSTALLER" -u -b -p "$CONDA_INSTALL_DIR"
 			rm -f "$CONDA_INSTALLER"
 			if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
+				conda init
 				echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 			else
 				echo -e "\e[31mconda installation failed.\e[0m"		

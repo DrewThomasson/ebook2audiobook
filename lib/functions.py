@@ -50,6 +50,7 @@ script_mode = None
 is_gui_process = False
 is_gradio_shared = False
 
+interface = None
 client = None
 ebook_id = None
 audiobooks_dir = None
@@ -58,6 +59,7 @@ ebook_chapters_dir = None
 ebook_chapters_audio_dir = None
 ebook_file = None
 ebook_title = None
+converted_files = None
 
 # Base pronouns in English
 ebook_pronouns = {
@@ -84,9 +86,10 @@ class DependencyError(Exception):
             sys.exit(1)
 
 def define_props(ebook_src):
-    global ebook_file, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global ebook_file
     try:
         os.makedirs(tmp_dir, exist_ok=True)
+        os.makedirs(audiobooks_dir, exist_ok=True)
         os.makedirs(ebook_chapters_dir, exist_ok=True)
         os.makedirs(ebook_chapters_audio_dir, exist_ok=True)
         ebook_file = os.path.join(tmp_dir, os.path.basename(ebook_src))
@@ -224,7 +227,6 @@ def translate_pronouns(language):
     return translated_pronouns
         
 def extract_metadata_and_cover(ebook_filename_noext):
-    global client, ebook_file, tmp_dir
     metadatas = None
 
     def parse_metadata(metadata_str):
@@ -236,13 +238,6 @@ def extract_metadata_and_cover(ebook_filename_noext):
         return metadata
         
     cover_file = os.path.join(tmp_dir, ebook_filename_noext + '.jpg')
-
-    # Ensure the ebook file and directory exist
-    if not os.path.exists(ebook_file):
-        print(f"Error: eBook file {ebook_file} not found.")
-        return None, None
-    if not os.path.exists(tmp_dir):
-        os.makedirs(tmp_dir, exist_ok=True)
 
     if script_mode == DOCKER_UTILS:
         try:
@@ -288,14 +283,14 @@ def extract_metadata_and_cover(ebook_filename_noext):
             raise DependencyError(e)
 
 def concat_audio_chapters(metadatas, cover_file):
-    global client, is_gui_process, ebook_title, ebook_file, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global ebook_title
     
     # Function to sort chapters based on their numeric order
     def sort_key(chapter_file):
         numbers = re.findall(r'\d+', chapter_file)
         return int(numbers[0]) if numbers else 0
         
-    def combine_chapters(chapter_files, combined_wav):
+    def combine_chapters():
         # Initialize an empty audio segment
         combined_audio = AudioSegment.empty()
         batch_size = 256
@@ -316,9 +311,9 @@ def concat_audio_chapters(metadatas, cover_file):
         combined_audio.export(combined_wav, format='wav')
         print(f"Combined audio saved to {combined_wav}")
 
-    def generate_ffmpeg_metadata(chapter_files, metadata_file, metadatas):
+    def generate_ffmpeg_metadata():
         global ebook_title
-        
+         
         ffmpeg_metadata = ";FFMETADATA1\n"
         
         # Map metadatas to FFmpeg tags
@@ -393,10 +388,8 @@ def concat_audio_chapters(metadatas, cover_file):
         # Write the metadata to the file
         with open(metadata_file, 'w', encoding='utf-8') as file:
             file.write(ffmpeg_metadata)
-         
-        return ebook_title
 
-    def convert_wav(tmp_dir, combined_wav, metadata_file, cover_file, concat_file, final_file):
+    def convert_wav():
         try:
             ffmpeg_cover = None
             if script_mode == DOCKER_UTILS:
@@ -448,6 +441,7 @@ def concat_audio_chapters(metadatas, cover_file):
                     )
                     print(container.decode('utf-8'))
                     if shutil.copy(concat_file, final_file):
+                        interface.load(fn=show_converted, outputs=[converted_files])
                         return True
                     return False
                 except docker.errors.ContainerError as e:
@@ -470,8 +464,8 @@ def concat_audio_chapters(metadatas, cover_file):
     combined_wav = os.path.join(tmp_dir, 'combined.wav')
     metadata_file = os.path.join(tmp_dir, 'metadata.txt')
     
-    combine_chapters(chapter_files, combined_wav)
-    generate_ffmpeg_metadata(chapter_files, metadata_file, metadatas)
+    combine_chapters()
+    generate_ffmpeg_metadata()
     
     if ebook_title is None:
         ebook_title = os.path.splitext(os.path.basename(ebook_file))[0]
@@ -479,14 +473,14 @@ def concat_audio_chapters(metadatas, cover_file):
     concat_file = os.path.join(tmp_dir, ebook_title + '.' + final_format)
     final_file = os.path.join(audiobooks_dir, os.path.basename(concat_file))
     
-    if convert_wav(tmp_dir, combined_wav, metadata_file, cover_file, concat_file, final_file):
+    if convert_wav():
         shutil.rmtree(tmp_dir)
         return final_file
 
     return None
 
 def create_chapter_labeled_book(ebook_filename_noext):
-    global client, ebook_title, ebook_file, tmp_dir, ebook_chapters_dir
+    global ebook_file, ebook_chapters_dir
     
     def convert_to_epub(ebook_file, epub_path):
         if os.path.basename(ebook_file) == os.path.basename(epub_path):
@@ -563,7 +557,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
     if convert_to_epub(ebook_file, epub_path):
         save_chapters_as_text(epub_path)
 
-    def process_chapter_files(ebook_chapters_dir, output_csv):
+    def process_chapter_files():
         with open(output_csv, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.writer(csvfile)
             writer.writerow(['Text', 'Start Location', 'End Location', 'Is Quote', 'Speaker', 'Chapter'])
@@ -593,7 +587,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
 
     output_csv = os.path.join(tmp_dir, "chapters.csv")
     os.makedirs(os.path.dirname(output_csv), exist_ok=True)
-    process_chapter_files(ebook_chapters_dir, output_csv)
+    process_chapter_files()
 
 def check_vocab_file(dir):
     vocab_path = os.path.join(dir, 'vocab.json')
@@ -674,8 +668,6 @@ def split_long_sentence(sentence, language='en', max_pauses=10):
     return parts
 
 def convert_chapters_to_audio(device, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_file=None, language="en", custom_model=None):
-    global is_gui_process, ebook_chapters_dir, ebook_chapters_audio_dir
-
     progress_bar = None
 
     # create gradio progress bar if process come from gradio interface
@@ -817,7 +809,7 @@ def show_converted():
     return files
 
 def convert_ebook(args, ui_needed):
-    global client, script_mode, audiobooks_dir, is_gui_process, ebook_id, ebook_title, ebook_file, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global client, script_mode, audiobooks_dir, is_gui_process, ebook_id, ebook_file, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
 
     ebook_id = args.session if args.session else str(uuid.uuid4())
     script_mode = args.script_mode if args.script_mode else NATIVE
@@ -937,8 +929,6 @@ def convert_ebook(args, ui_needed):
     return None, None
     
 def delete_old_web_folders(root_dir):
-    global gradio_shared_expire
-    
     # Ensure the root_dir directory exists
     if not os.path.exists(root_dir):
         os.makedirs(root_dir)
@@ -956,16 +946,32 @@ def delete_old_web_folders(root_dir):
             if folder_creation_time < age_limit:
                 shutil.rmtree(folder_path)
   
-def change_session(session):
-    return {
-        'session': session,
-        'event': 'change_session'
-    }
+def change_data(data):
+    data["event"] = 'change_data'
+    return data
 
+def change_read_data(data):
+    warning_text_extra = ""
 
+    if is_gradio_shared:
+        warning_text_extra = f" Note: if the page is reloaded or closed, all converted files will be lost. Access limit time: {gradio_shared_expire} hours"
+
+    if not data:
+        data = {"session_id": str(uuid.uuid4())}
+        warning_text = f"Session: {data['session_id']}"
+        return [data, f"{warning_text}{warning_text_extra}", data["session_id"]]
+    else:
+        if "session_id" not in data:
+            data["session_id"] = str(uuid.uuid4())
+        warning_text = data["session_id"]
+        event = data.get('event', '')
+        if event != 'load':
+            return [gr.update(), gr.update(), gr.update()]
+
+    return [data, f"{warning_text}{warning_text_extra}", data["session_id"]]
 
 def web_interface(mode, share, ui_needed):
-    global ebook_id, script_mode, is_gradio_shared
+    global interface, script_mode, is_gradio_shared, converted_files
     
     script_mode = mode
     is_gradio_shared = share
@@ -974,12 +980,12 @@ def web_interface(mode, share, ui_needed):
         primary_hue="blue",
         secondary_hue="blue",
         neutral_hue="blue",
-        text_size=gr.themes.sizes.text_md,
+        text_size=gr.themes.sizes.text_md
     )
-    with gr.Blocks(theme=theme) as demo:
-        data = gr.State({})
+    with gr.Blocks(theme=theme) as interface:
         write_data = gr.JSON(visible=False)
         read_data = gr.JSON(visible=False)
+        data = gr.State({})
 
         gr.Markdown(
         """
@@ -1075,10 +1081,9 @@ def web_interface(mode, share, ui_needed):
         convert_btn = gr.Button("Convert to Audiobook", variant="primary")
         output = gr.Textbox(label="Conversion Status")
         audio_player = gr.Audio(label="Audiobook Player", type="filepath")
-        converted_btn = gr.Button("Download Audiobook Files")
         converted_files = gr.File(label="Download Files", interactive=False)
 
-        def process_conversion(session, device, ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, custom_model_url):
+        def process_conversion(session, device, ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, custom_model_url, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting):                             
             ebook_file = ebook_file.name if ebook_file else None
             target_voice_file = target_voice_file.name if target_voice_file else None
             custom_model_file = custom_model_file.name if custom_model_file else None
@@ -1122,8 +1127,8 @@ def web_interface(mode, share, ui_needed):
             inputs=[
                 session, device, ebook_file, target_voice_file, language, 
                 use_custom_model, custom_model_file, custom_config_file, 
-                custom_vocab_file, temperature, length_penalty, repetition_penalty, 
-                top_k, top_p, speed, enable_text_splitting, custom_model_url
+                custom_vocab_file, custom_model_url, temperature, length_penalty, repetition_penalty, 
+                top_k, top_p, speed, enable_text_splitting
             ],
             outputs=[output, audio_player]
         )
@@ -1132,31 +1137,43 @@ def web_interface(mode, share, ui_needed):
             inputs=[use_custom_model],
             outputs=[custom_model_file, custom_config_file, custom_vocab_file, custom_model_url]
         )
-        converted_btn.click(
-            show_converted,
-            outputs=[converted_files]
-        )
         session.change(
-            change_session,
-            inputs=[session],
+            change_data,
+            inputs=data,
             outputs=write_data
         )
-     
-        demo.load(
+        write_data.change(
             None,
-            outputs=read_data,
+            inputs=write_data,
             js="""
-            () => {
-              const dataStr = window.localStorage.getItem('data')
-              if (dataStr) {
-                const obj = JSON.parse(dataStr)
-                obj.event = 'load'
-                console.log(obj)
-                return obj
-              }
-              return null
+            (data) => {
+              localStorage.clear();
+              console.log(data);
+              window.localStorage.setItem('data', JSON.stringify(data));
             }
             """
+        )       
+        read_data.change(
+            change_read_data,
+            inputs=read_data,
+            outputs=[data, session_status, session]
+        )
+        interface.load(fn=show_converted, outputs=[converted_files])
+        interface.load(
+            None,
+            js="""
+            () => {
+              const dataStr = window.localStorage.getItem('data');
+              if (dataStr) {
+                const obj = JSON.parse(dataStr);
+                obj.event = 'load';
+                console.log(obj);
+                return obj;
+              }
+              return null;
+            }
+            """,
+            outputs=read_data
         )
 
-    demo.launch(server_name="0.0.0.0", server_port=gradio_interface_port, share=share)
+    interface.launch(server_name="0.0.0.0", server_port=gradio_interface_port, share=share)

@@ -25,6 +25,7 @@ set "PATH=%CONDA_PATH%;%PATH%"
 
 set "PROGRAMS_CHECK=0"
 set "CONDA_CHECK_STATUS=0"
+set "CONDA_RUN_INIT=0"
 set "DOCKER_CHECK_STATUS=0"
 set "DOCKER_BUILD_STATUS=0"
 
@@ -185,6 +186,7 @@ if not "%CONDA_CHECK_STATUS%"=="0" (
 	"%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /S /D=%CONDA_INSTALL_DIR%
 	if exist "%CONDA_INSTALL_DIR%\condabin\conda.bat" (
 		echo Conda installed successfully.
+		set "CONDA_RUN_INIT=1"
 		set "CONDA_CHECK_STATUS=0"
 	)
 )
@@ -242,6 +244,10 @@ exit /b
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
     python %SCRIPT_DIR%\app.py --script_mode %FULL_DOCKER% %ARGS%
 ) else (
+	if "%CONDA_RUN_INIT%"=="1" (
+		call conda init
+		set "CONDA_RUN_INIT=0"
+	)
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
 		call conda create --prefix %SCRIPT_DIR%\%PYTHON_ENV% python=%PYTHON_VERSION% -y
 		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
