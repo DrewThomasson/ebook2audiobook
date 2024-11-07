@@ -741,6 +741,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
     # Pre-calculate total segments (sentences + fragments per chapter)
     for chapter_file in sorted(os.listdir(ebook_chapters_dir)):
         if cancellation_requested.is_set():
+            stop_and_detach_tts(tts)
             raise ValueError("Cancel requested")
         if chapter_file.endswith('.txt'):
             with open(os.path.join(ebook_chapters_dir, chapter_file), 'r', encoding='utf-8') as file:
@@ -763,6 +764,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
     with tqdm(total=total_progress, desc="Processing 0.00%", bar_format='{desc}: {n_fmt}/{total_fmt} ', unit="step") as t:
         for chapter_file in sorted(os.listdir(ebook_chapters_dir)):
             if cancellation_requested.is_set():
+                stop_and_detach_tts(tts)
                 raise ValueError("Cancel requested")
             if chapter_file.endswith('.txt'):
                 match = re.search(r"chapter_(\d+).txt", chapter_file)
@@ -787,10 +789,12 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
                     
                     for sentence in sentences:
                         if cancellation_requested.is_set():
+                            stop_and_detach_tts(tts)
                             raise ValueError("Cancel requested")
                         fragments = split_long_sentence(sentence, language=language)
                         for fragment in fragments:
                             if cancellation_requested.is_set():
+                                stop_and_detach_tts(tts)
                                 raise ValueError("Cancel requested")
                             if fragment != "":
                                 print(f"Generating fragment: {fragment}...")
@@ -844,6 +848,32 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
                     progress_bar(current_progress / total_progress)
 
     return True
+    
+def stop_and_detach_tts(model):
+    # Move the model to CPU if on GPU
+    if next(model.parameters()).is_cuda:
+        model.to('cpu')
+    del model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
+def delete_old_web_folders(root_dir):
+    # Ensure the root_dir directory exists
+    if not os.path.exists(root_dir):
+        os.makedirs(root_dir)
+        print(f"Created missing directory: {root_dir}")
+
+    current_time = time.time()
+    age_limit = current_time - gradio_shared_expire * 60 * 60  # 24 hours in seconds
+
+    for folder_name in os.listdir(root_dir):
+        folder_path = os.path.join(root_dir, folder_name)
+
+        if os.path.isdir(folder_path) and folder_name.startswith("web-"):
+            folder_creation_time = os.path.getctime(folder_path)
+
+            if folder_creation_time < age_limit:
+                shutil.rmtree(folder_path)
 
 def convert_ebook(args):
     global is_converting, cancellation_requested, client, script_mode, audiobooks_dir, ebook_id, ebook_src, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
@@ -957,24 +987,6 @@ def convert_ebook(args):
 
     print(f"Temporary directory {tmp_dir} not removed due to failure.")
     return None, None
-    
-def delete_old_web_folders(root_dir):
-    # Ensure the root_dir directory exists
-    if not os.path.exists(root_dir):
-        os.makedirs(root_dir)
-        print(f"Created missing directory: {root_dir}")
-
-    current_time = time.time()
-    age_limit = current_time - gradio_shared_expire * 60 * 60  # 24 hours in seconds
-
-    for folder_name in os.listdir(root_dir):
-        folder_path = os.path.join(root_dir, folder_name)
-
-        if os.path.isdir(folder_path) and folder_name.startswith("web-"):
-            folder_creation_time = os.path.getctime(folder_path)
-
-            if folder_creation_time < age_limit:
-                shutil.rmtree(folder_path)
 
 def web_interface(mode, share):
     global is_converting, interface, cancellation_requested, is_gui_process, script_mode, is_gui_shared, audiobooks_ddn
@@ -1131,18 +1143,32 @@ def web_interface(mode, share):
                     border: 2px solid #FFA500;
                     color: white;
                     font-family: Arial, sans-serif;
-                }}
-                .modal-content h2 {{
-                    margin: 0;
-                    font-size: 1.5em;
+                    position: relative;
                 }}
                 .modal-content p {{
                     margin: 10px 0;
+                }}
+                
+                /* Spinner */
+                .spinner {{
+                    margin: 15px auto;
+                    border: 4px solid rgba(255, 255, 255, 0.2);
+                    border-top: 4px solid #FFA500;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    animation: spin 1s linear infinite;
+                }}
+                
+                @keyframes spin {{
+                    0% {{ transform: rotate(0deg); }}
+                    100% {{ transform: rotate(360deg); }}
                 }}
             </style>
             <div class="modal">
                 <div class="modal-content">
                     <p>{message}</p>
+                    <div class="spinner"></div> <!-- Spinner added here -->
                 </div>
             </div>
             """
@@ -1173,10 +1199,11 @@ def web_interface(mode, share):
                     cancellation_requested.set()
                     return gr.Button(interactive=False), show_modal("Cancelation requested, Please wait...")
                 else:
-                    return gr.Button(interactive=False), ""
+                    cancellation_requested.clear()
+                    return gr.Button(interactive=False), hide_modal()
             else:
                 cancellation_requested.clear()
-                return gr.Button(interactive=bool(f)), ""
+                return gr.Button(interactive=bool(f)), hide_modal()
 
         def change_data(data):
             data["event"] = 'change_data'
