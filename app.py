@@ -232,7 +232,7 @@ Linux/Mac:
                 print(f"Error: The directory {ebooks_dir} does not exist.")
                 sys.exit(1)
         elif args.ebook:
-            convert_ebook(args, False)
+            convert_ebook(args)
         else:
             print("Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.")
             sys.exit(1)       
