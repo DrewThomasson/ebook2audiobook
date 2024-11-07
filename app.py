@@ -202,11 +202,12 @@ Linux/Mac:
 
     # Conditions based on the --headless flag
     if args.headless:
-        args.session = None
         # Condition to stop if both --ebook and --ebooks_dir are provided
         if args.ebook and args.ebooks_dir:
             print("Error: You cannot specify both --ebook and --ebooks_dir in headless mode.")
             sys.exit(1)
+
+        args.session = None
 
         # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
         if args.ebooks_dir:
@@ -228,12 +229,18 @@ Linux/Mac:
                         full_path = os.path.join(ebooks_dir, file)
                         print(f"Processing eBook file: {full_path}")
                         args.ebook = full_path
-                        convert_ebook(args)
+                        progress_status, audiobook_file = convert_ebook(args)
+                        if audiobook_file is None:
+                            print(f"Conversion failed: {progress_status}")
+                            sys.exit(1)
             else:
                 print(f"Error: The directory {ebooks_dir} does not exist.")
                 sys.exit(1)
         elif args.ebook:
-            convert_ebook(args)
+            progress_status, audiobook_file = convert_ebook(args)
+            if audiobook_file is None:
+                print(f"Conversion failed: {progress_status}")
+                sys.exit(1)
         else:
             print("Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.")
             sys.exit(1)       

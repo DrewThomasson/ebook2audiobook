@@ -1007,6 +1007,7 @@ def web_interface(mode, share):
                 }
                 .block.svelte-5y6bt2.padded.hide-container {
                     height: auto !important;
+                    padding: 0 !important;
                 }
                 .svelte-i3tvor {
                     font-size: 14px !important;
