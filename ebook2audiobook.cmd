@@ -30,9 +30,11 @@ set "DOCKER_CHECK_STATUS=0"
 set "DOCKER_BUILD_STATUS=0"
 
 set "CALIBRE_TEMP_DIR=C:\Windows\Temp\Calibre"
+
 if not exist "%CALIBRE_TEMP_DIR%" (
     mkdir "%CALIBRE_TEMP_DIR%"
 )
+
 icacls "%CALIBRE_TEMP_DIR%" /grant Users:(OI)(CI)F /T
 
 for %%A in (%*) do (
@@ -57,10 +59,12 @@ echo Running in %SCRIPT_MODE% mode
 if defined CONDA_DEFAULT_ENV (
 	set "CURRENT_ENV=%CONDA_PREFIX%"
 )
+
 :: Check if running in a Python virtual environment
 if defined VIRTUAL_ENV (
     set "CURRENT_ENV=%VIRTUAL_ENV%"
 )
+
 for /f "delims=" %%i in ('where python') do (
     if defined CONDA_PREFIX (
         if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
@@ -74,11 +78,13 @@ for /f "delims=" %%i in ('where python') do (
         )
     )
 )
+
 if not "%CURRENT_ENV%"=="" (
 	echo Current python virtual environment detected: %CURRENT_ENV%. 
 	echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
 	goto failed
 )
+
 goto conda_check
 
 :conda_check
@@ -87,7 +93,8 @@ if %errorlevel% neq 0 (
     set "CONDA_CHECK_STATUS=1"
 ) else (
     if "%SCRIPT_MODE%"=="%DOCKER_UTILS%" (
-        call :docker_check
+        goto docker_check
+		exit /b
     ) else (
         call :programs_check
     )
@@ -128,8 +135,9 @@ if %errorlevel% neq 0 (
 			set "docker_socket=Windows"
 		)
 		if not defined docker_socket (
-			echo cannot connect to docker socket. Check if the docker socket is running.
+			echo Cannot connect to docker socket. Check if the docker socket is running.
 			goto failed
+			exit /b
 		) else (
 			:: Check if the Docker image is available
 			call docker images -q %DOCKER_UTILS_IMG% >nul 2>&1
@@ -138,6 +146,7 @@ if %errorlevel% neq 0 (
 				set "DOCKER_BUILD_STATUS=1"
 			) else (
 				goto dispatch
+				exit /b
 			)
 		)
 	)
@@ -234,6 +243,7 @@ if "%PROGRAMS_CHECK%"=="0" (
 			)
 		) else (
 			goto failed
+			exit /b
 		)
     )
 )
