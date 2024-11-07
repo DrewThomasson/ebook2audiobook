@@ -13,6 +13,7 @@ requirements_file = os.path.abspath(os.path.join(".","requirements.txt"))
 docker_utils_image = 'utils'
 gradio_interface_port = 7860
 gradio_shared_expire = 72 # hours
+concurrency_limit = 16 # or None for unlimited
 
 python_env_dir = os.path.abspath(os.path.join(".","python_env"))
 models_dir = os.path.abspath(os.path.join(".","models"))

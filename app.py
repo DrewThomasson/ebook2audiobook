@@ -227,7 +227,7 @@ Linux/Mac:
                         full_path = os.path.join(ebooks_dir, file)
                         print(f"Processing eBook file: {full_path}")
                         args.ebook = full_path
-                        convert_ebook(args, False)
+                        convert_ebook(args)
             else:
                 print(f"Error: The directory {ebooks_dir} does not exist.")
                 sys.exit(1)
@@ -241,7 +241,7 @@ Linux/Mac:
         allowed_arguments = {'--share', '--script_mode'}
         passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
         if passed_args_set.issubset(allowed_arguments):
-             web_interface(args.script_mode, args.share, True)
+             web_interface(args.script_mode, args.share)
         else:
             print("Error: In non-headless mode, no option or only '--share' can be passed")
             sys.exit(1)
