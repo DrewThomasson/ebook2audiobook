@@ -848,8 +848,8 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
 def convert_ebook(args):
     global is_converting, cancellation_requested, client, script_mode, audiobooks_dir, ebook_id, ebook_src, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
  
-    ebook_id = args.session if args.session else str(uuid.uuid4())
-    script_mode = args.script_mode if args.script_mode else NATIVE
+    ebook_id = args.session if args.session is not None else str(uuid.uuid4())
+    script_mode = args.script_mode if args.script_mode is not None else NATIVE
     ebook_src = args.ebook
     device = args.device
     target_voice_file = args.voice

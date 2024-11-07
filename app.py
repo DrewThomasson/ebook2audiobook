@@ -202,6 +202,7 @@ Linux/Mac:
 
     # Conditions based on the --headless flag
     if args.headless:
+        args.session = None
         # Condition to stop if both --ebook and --ebooks_dir are provided
         if args.ebook and args.ebooks_dir:
             print("Error: You cannot specify both --ebook and --ebooks_dir in headless mode.")
