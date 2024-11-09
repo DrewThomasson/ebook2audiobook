@@ -63,14 +63,6 @@ ebook_src = None
 ebook_title = None
 audiobooks_ddn = None
 
-gradio_theme = gr.themes.Origin(
-    primary_hue="amber",
-    secondary_hue="green",
-    neutral_hue="gray",
-    radius_size="lg",
-    font_mono=['IBM Plex Mono', 'ui-monospace', gr.themes.GoogleFont('Consolas'), 'monospace'],
-)
-
 # Base pronouns in English
 ebook_pronouns = {
     "male": ["he", "him", "his"],
@@ -81,12 +73,8 @@ ebook_pronouns = {
 cancellation_requested = threading.Event()
 
 class DependencyError(Exception):
-    global is_converting
     def __init__(self, message=None):
         super().__init__(message)
-       
-        is_converting = False
-
         # Automatically handle the exception when it's raised
         self.handle_exception()
 
@@ -181,7 +169,8 @@ def download_and_extract(path_or_url, extract_to=models_dir):
             with tqdm(total=len(files), unit="file", desc="Extracting Files") as t:
                 for file in files:
                     if cancellation_requested.is_set():
-                        raise ValueError("Cancel requested")
+                        msg = "Cancel requested"
+                        raise ValueError()
 
                     if not os.path.isdir(file):
                         # Extract the file to the target directory
@@ -317,7 +306,8 @@ def concat_audio_chapters(metadatas, cover_file):
         # Process the chapter files in batches
         for i in range(0, len(chapter_files), batch_size):
             if cancellation_requested.is_set():
-                raise ValueError("Cancel requested")
+                msg = "Cancel requested"
+                raise ValueError(msg)
 
             batch_files = chapter_files[i:i + batch_size]
             batch_audio = AudioSegment.empty()  # Initialize an empty AudioSegment for the batch
@@ -325,7 +315,8 @@ def concat_audio_chapters(metadatas, cover_file):
             # Sequentially append each file in the current batch to the batch_audio
             for chapter_file in batch_files:
                 if cancellation_requested.is_set():
-                    raise ValueError("Cancel requested")
+                    msg = "Cancel requested"
+                    raise ValueError(msg)
 
                 audio_segment = AudioSegment.from_wav(chapter_file)
                 batch_audio += audio_segment
@@ -408,7 +399,8 @@ def concat_audio_chapters(metadatas, cover_file):
         start_time = 0
         for index, chapter_file in enumerate(chapter_files):
             if cancellation_requested.is_set():
-                raise ValueError("Cancel requested")
+                msg = "Cancel requested"
+                raise ValueError(msg)
 
             duration_ms = len(AudioSegment.from_wav(chapter_file))
             ffmpeg_metadata += f"[CHAPTER]\nTIMEBASE=1/1000\nSTART={start_time}\n"
@@ -563,7 +555,8 @@ def create_chapter_labeled_book(ebook_filename_noext):
         # Iterate through the items in the EPUB file
         for item in ebook.get_items():
             if cancellation_requested.is_set():
-                raise ValueError("Cancel requested")
+                msg = "Cancel requested"
+                raise ValueError(msg)
 
             if item.get_type() == ebooklib.ITEM_DOCUMENT:
                 # Use BeautifulSoup to parse HTML content
@@ -597,7 +590,8 @@ def create_chapter_labeled_book(ebook_filename_noext):
             )
             for filename in chapter_files:
                 if cancellation_requested.is_set():
-                    raise ValueError("Cancel requested")
+                    msg = "Cancel requested"
+                    raise ValueError(msg)
 
                 chapter_number = int(filename.split('_')[1].split('.')[0])
                 file_path = os.path.join(ebook_chapters_dir, filename)
@@ -611,7 +605,8 @@ def create_chapter_labeled_book(ebook_filename_noext):
                         sentences = nltk.tokenize.sent_tokenize(text)
                         for sentence in sentences:
                             if cancellation_requested.is_set():
-                                raise ValueError("Cancel requested")
+                                msg = "Cancel requested"
+                                raise ValueError(msg)
                             start_location = text.find(sentence)
                             end_location = start_location + len(sentence)
                             writer.writerow([sentence, start_location, end_location, 'True', 'Narrator', chapter_number])
@@ -654,6 +649,9 @@ def combine_wav_files(chapters_dir_audio_fragments, ebook_chapters_audio_dir, ch
 
     # Sequentially append each file to the combined_audio
     for file in fragments_dir_ordered:
+        if cancellation_requested.is_set():
+            msg = "Cancel requested"
+            raise ValueError(msg)
         audio_segment = AudioSegment.from_wav(file)
         combined_audio += audio_segment
 
@@ -742,7 +740,8 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
     for chapter_file in sorted(os.listdir(ebook_chapters_dir)):
         if cancellation_requested.is_set():
             stop_and_detach_tts(tts)
-            raise ValueError("Cancel requested")
+            msg = "Cancel requested"
+            raise ValueError(msg)
         if chapter_file.endswith('.txt'):
             with open(os.path.join(ebook_chapters_dir, chapter_file), 'r', encoding='utf-8') as file:
                 chapter_text = file.read()
@@ -765,7 +764,8 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
         for chapter_file in sorted(os.listdir(ebook_chapters_dir)):
             if cancellation_requested.is_set():
                 stop_and_detach_tts(tts)
-                raise ValueError("Cancel requested")
+                msg = "Cancel requested"
+                raise ValueError(msg)
             if chapter_file.endswith('.txt'):
                 match = re.search(r"chapter_(\d+).txt", chapter_file)
                 if match:
@@ -790,12 +790,14 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
                     for sentence in sentences:
                         if cancellation_requested.is_set():
                             stop_and_detach_tts(tts)
-                            raise ValueError("Cancel requested")
+                            msg = "Cancel requested"
+                            raise ValueError(msg)
                         fragments = split_long_sentence(sentence, language=language)
                         for fragment in fragments:
                             if cancellation_requested.is_set():
                                 stop_and_detach_tts(tts)
-                                raise ValueError("Cancel requested")
+                                msg = "Cancel requested"
+                                raise ValueError(msg)
                             if fragment != "":
                                 print(f"Generating fragment: {fragment}...")
                                 fragment_file_path = os.path.join(chapters_dir_audio_fragments, f"{count_fragments}.wav")
@@ -837,6 +839,9 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
                 # Combine audio fragments
                 combine_wav_files(chapters_dir_audio_fragments, ebook_chapters_audio_dir, chapter_wav_file)
                 print(f"Converted chapter {chapter_num} to audio.")
+                if cancellation_requested.is_set():
+                    msg = "Cancel requested"
+                    raise ValueError(msg)
 
                 current_progress += 1
                 percentage = (current_progress / total_progress) * 100
@@ -876,7 +881,7 @@ def delete_old_web_folders(root_dir):
                 shutil.rmtree(folder_path)
 
 def convert_ebook(args):
-    global is_converting, cancellation_requested, client, script_mode, audiobooks_dir, ebook_id, ebook_src, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
+    global cancellation_requested, client, script_mode, audiobooks_dir, ebook_id, ebook_src, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
  
     ebook_id = args.session if args.session is not None else str(uuid.uuid4())
     script_mode = args.script_mode if args.script_mode is not None else NATIVE
@@ -970,9 +975,7 @@ def convert_ebook(args):
             metadatas, cover_file = extract_metadata_and_cover(ebook_filename_noext)
 
             if convert_chapters_to_audio( device, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_file, language, custom_model):
-                # Concatenate the audio chapters into a single file
-                output_file = concat_audio_chapters(metadatas, cover_file)
-                
+                output_file = concat_audio_chapters(metadatas, cover_file)               
                 if output_file is not None:
                     progress_status = f"Audiobook {os.path.basename(output_file)} created!"
                     print(f"Temporary directory {tmp_dir} removed successfully.")
@@ -994,8 +997,16 @@ def web_interface(mode, share):
     script_mode = mode
     is_gui_process = True
     is_gui_shared = share
+    
+    theme = gr.themes.Origin(
+        primary_hue="amber",
+        secondary_hue="green",
+        neutral_hue="gray",
+        radius_size="lg",
+        font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
+    )
 
-    with gr.Blocks(theme=gradio_theme) as interface:
+    with gr.Blocks(theme=theme) as interface:
         gr.Markdown(
             f"""
             # Ebook2Audiobook v{version}<br/>
@@ -1112,16 +1123,16 @@ def web_interface(mode, share):
         audio_player = gr.Audio(label="Listen", type="filepath")
         audiobooks_ddn = gr.Dropdown(choices=[], label="Audiobooks")
         audiobook_link = gr.File(label="Download")
-        modal_html = gr.HTML()
         write_data = gr.JSON(visible=False)
         read_data = gr.JSON(visible=False)
         data = gr.State({})
+        modal_html = gr.HTML()
         
         def show_modal(message):
             return f"""
             <style>
                 .modal {{
-                    display: block;
+                    display: none; /* Hidden by default */
                     position: fixed;
                     top: 0;
                     left: 0;
@@ -1148,7 +1159,6 @@ def web_interface(mode, share):
                 .modal-content p {{
                     margin: 10px 0;
                 }}
-                
                 /* Spinner */
                 .spinner {{
                     margin: 15px auto;
@@ -1159,13 +1169,12 @@ def web_interface(mode, share):
                     height: 30px;
                     animation: spin 1s linear infinite;
                 }}
-                
                 @keyframes spin {{
                     0% {{ transform: rotate(0deg); }}
                     100% {{ transform: rotate(360deg); }}
                 }}
             </style>
-            <div class="modal">
+            <div id="custom-modal" class="modal">
                 <div class="modal-content">
                     <p>{message}</p>
                     <div class="spinner"></div> <!-- Spinner added here -->
@@ -1182,6 +1191,12 @@ def web_interface(mode, share):
             files = [f for f in os.listdir(audiobooks_dir)]
             files.sort(key=lambda x: os.path.getmtime(os.path.join(audiobooks_dir, x)), reverse=True)
             return files
+            
+        def disable_convert_btn():
+            return gr.Button("Convert", variant="primary", interactive=False)
+
+        def enable_convert_btn():
+            return gr.Button("Convert", variant="primary", interactive=True)
 
         def update_audiobooks_ddn():
             files = refresh_audiobook_list()
@@ -1189,21 +1204,25 @@ def web_interface(mode, share):
  
         def update_audiobook_link(audiobook):
             if audiobook:
-                return os.path.join(audiobooks_dir, audiobook)
-            return None
+                link = os.path.join(audiobooks_dir, audiobook)
+                return link, link 
+            return None, None
+
+        def change_conversion_progress(message):
+            return message, hide_modal()
 
         def change_ebook_file(btn, f):
-            global cancellation_requested
+            global is_converting, cancellation_requested
             if f is None:
                 if is_converting:
                     cancellation_requested.set()
-                    return gr.Button(interactive=False), show_modal("Cancelation requested, Please wait...")
+                    yield gr.Button(interactive=False), show_modal("cancellation requested, Please wait...")
                 else:
                     cancellation_requested.clear()
-                    return gr.Button(interactive=False), hide_modal()
+                    yield gr.Button(interactive=False), hide_modal()
             else:
                 cancellation_requested.clear()
-                return gr.Button(interactive=bool(f)), hide_modal()
+                yield gr.Button(interactive=bool(f)), hide_modal()
 
         def change_data(data):
             data["event"] = 'change_data'
@@ -1244,13 +1263,15 @@ def web_interface(mode, share):
 
             is_converting = True
             progress_status, audiobook_file = convert_ebook(args)
-            is_converting = False
-            cancellation_requested.clear()
 
-            if audiobook_file is not None:
-                return progress_status, audiobook_file, update_audiobooks_ddn(), hide_modal()
+            if audiobook_file is None:
+                if is_converting:
+                    is_converting = False
+                    return "Conversion cancelled.", None
+                else:
+                    return "Conversion failed.", None
             else:
-                return "Conversion failed.", None, update_audiobooks_ddn(), hide_modal()
+                return progress_status, audiobook_file
 
         def init_data(data):
             global audiobooks_dir
@@ -1283,15 +1304,20 @@ def web_interface(mode, share):
             inputs=[use_custom_model],
             outputs=[custom_model_file, custom_config_file, custom_vocab_file, custom_model_url]
         )
+        conversion_progress.change(
+            fn=change_conversion_progress,
+            inputs=conversion_progress,
+            outputs=[conversion_progress, modal_html]
+        )
         ebook_file.change(
             fn=change_ebook_file,
             inputs=[convert_btn, ebook_file],
             outputs=[convert_btn, modal_html]
-        )  
+        )
         audiobooks_ddn.change(
             fn=update_audiobook_link,
             inputs=audiobooks_ddn,
-            outputs=audiobook_link
+            outputs=[audiobook_link, audio_player]
         )
         session.change(
             change_data,
@@ -1315,6 +1341,8 @@ def web_interface(mode, share):
             outputs=[data, session_status, session, audiobooks_ddn]
         )
         convert_btn.click(
+            disable_convert_btn, None, convert_btn
+        ).then(
             process_conversion,
             inputs=[
                 session, device, ebook_file, target_voice_file, language, 
@@ -1322,7 +1350,9 @@ def web_interface(mode, share):
                 custom_vocab_file, custom_model_url, temperature, length_penalty, repetition_penalty, 
                 top_k, top_p, speed, enable_text_splitting
             ],
-            outputs=[conversion_progress, audio_player, audiobooks_ddn, modal_html]
+            outputs=[conversion_progress, audio_player]           
+        ).then(
+            enable_convert_btn, None, convert_btn
         )
         interface.load(
             None,
@@ -1340,5 +1370,18 @@ def web_interface(mode, share):
             """,
             outputs=read_data
         )
-    interface.queue(default_concurrency_limit=concurrency_limit)
-    interface.launch(server_name="0.0.0.0", server_port=gradio_interface_port, share=share)
+    try:
+        interface.queue(default_concurrency_limit=concurrency_limit)
+        interface.launch(server_name="0.0.0.0", server_port=gradio_interface_port, share=share)
+    except OSError as e:
+        print(f"Connection error: {e}")
+        hide_modal()
+    except socket.error as e:
+        print(f"Socket error: {e}")
+        hide_modal()
+    except KeyboardInterrupt:
+        print("Server interrupted by user. Shutting down...")
+        hide_modal()
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+        hide_modal()
