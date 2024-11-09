@@ -1196,7 +1196,10 @@ def web_interface(mode, share):
             return gr.Button("Convert", variant="primary", interactive=False)
 
         def enable_convert_btn():
-            return gr.Button("Convert", variant="primary", interactive=True)
+            if ebook_src:
+                return gr.Button("Convert", variant="primary", interactive=False)
+            else:
+                return gr.Button("Convert", variant="primary", interactive=True)
 
         def update_audiobooks_ddn():
             files = refresh_audiobook_list()
@@ -1206,7 +1209,8 @@ def web_interface(mode, share):
             if audiobook:
                 link = os.path.join(audiobooks_dir, audiobook)
                 return link, link 
-            return None, None
+            else:
+                return None, None
 
         def change_conversion_progress(message):
             return message, hide_modal()
@@ -1214,6 +1218,7 @@ def web_interface(mode, share):
         def change_ebook_file(btn, f):
             global is_converting, cancellation_requested
             if f is None:
+                ebook_src = None
                 if is_converting:
                     cancellation_requested.set()
                     yield gr.Button(interactive=False), show_modal("cancellation requested, Please wait...")
