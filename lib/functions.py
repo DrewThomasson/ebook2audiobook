@@ -1134,7 +1134,7 @@ def web_interface(mode, share):
 
         conversion_progress = gr.Textbox(label="Progress")
         convert_btn = gr.Button("Convert", variant="primary", interactive=False)
-        audio_player = gr.Audio(label="Listen", type="filepath")
+        audio_player = gr.Audio(label="Listen", type="filepath", visible=False)
         audiobooks_ddn = gr.Dropdown(choices=[], label="Audiobooks")
         audiobook_link = gr.File(label="Download")
         write_data = gr.JSON(visible=False)
@@ -1211,9 +1211,9 @@ def web_interface(mode, share):
 
         def enable_convert_btn():
             if ebook_src:
-                return gr.Button("Convert", variant="primary", interactive=False)
+                return gr.Button("Convert", variant="primary", interactive=False), update_audiobooks_ddn()
             else:
-                return gr.Button("Convert", variant="primary", interactive=True)
+                return gr.Button("Convert", variant="primary", interactive=True), update_audiobooks_ddn()
 
         def update_audiobooks_ddn():
             files = refresh_audiobook_list()
@@ -1222,9 +1222,9 @@ def web_interface(mode, share):
         def update_audiobook_link(audiobook):
             if audiobook:
                 link = os.path.join(audiobooks_dir, audiobook)
-                return link, link 
+                return link, link, gr.update(visible=True)
             else:
-                return None, None
+                return None, None, gr.update(visible=False)
 
         def change_conversion_progress(message):
             return message, hide_modal()
@@ -1336,15 +1336,15 @@ def web_interface(mode, share):
         audiobooks_ddn.change(
             fn=update_audiobook_link,
             inputs=audiobooks_ddn,
-            outputs=[audiobook_link, audio_player]
+            outputs=[audiobook_link, audio_player, audio_player]
         )
         session.change(
-            change_data,
+            fn=change_data,
             inputs=data,
             outputs=write_data
         )
         write_data.change(
-            None,
+            fn=None,
             inputs=write_data,
             js="""
             (data) => {
@@ -1355,26 +1355,30 @@ def web_interface(mode, share):
             """
         )       
         read_data.change(
-            init_data,
+            fn=init_data,
             inputs=read_data,
             outputs=[data, session_status, session, audiobooks_ddn]
         )
         convert_btn.click(
-            disable_convert_btn, None, convert_btn
+           fn=disable_convert_btn,
+           inputs=None,
+           outputs=convert_btn
         ).then(
-            process_conversion,
+            fn=process_conversion,
             inputs=[
                 session, device, ebook_file, target_voice_file, language, 
                 use_custom_model, custom_model_file, custom_config_file, 
                 custom_vocab_file, custom_model_url, temperature, length_penalty, repetition_penalty, 
                 top_k, top_p, speed, enable_text_splitting
             ],
-            outputs=[conversion_progress, audio_player]           
+            outputs=[conversion_progress]           
         ).then(
-            enable_convert_btn, None, convert_btn
+            fn=enable_convert_btn, 
+            inputs=None, 
+            outputs=[convert_btn, audio_player, audiobooks_ddn]
         )
         interface.load(
-            None,
+            fn=None,
             js="""
             () => {
               const dataStr = window.localStorage.getItem('data');
