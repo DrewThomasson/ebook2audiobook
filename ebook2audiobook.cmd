@@ -247,10 +247,12 @@ if "%PROGRAMS_CHECK%"=="0" (
 		)
     )
 )
+echo Some check failed: (1 = failed)
 echo PROGRAMS_CHECK: %PROGRAMS_CHECK%
 echo CONDA_CHECK_STATUS: %CONDA_CHECK_STATUS%
 echo DOCKER_CHECK_STATUS: %DOCKER_CHECK_STATUS%
 echo DOCKER_BUILD_STATUS: %DOCKER_BUILD_STATUS%
+timeout /t 5 /nobreak >nul
 goto install_components
 exit /b
 
