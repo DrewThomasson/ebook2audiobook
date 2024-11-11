@@ -196,10 +196,10 @@ def download_and_extract(path_or_url, extract_to=models_dir):
         
         if not missing_files:
             print("All required files (model.pth, config.json, vocab.json_) found.")
+            return True
         else:
             print(f"Missing files: {', '.join(missing_files)}")
- 
-        return True
+            return False
     except Exception as e:
         raise DependencyError(e)
 
@@ -882,121 +882,125 @@ def delete_old_web_folders(root_dir):
 
 def convert_ebook(args):
     global cancellation_requested, client, script_mode, audiobooks_dir, ebook_id, ebook_src, tmp_dir, ebook_chapters_dir, ebook_chapters_audio_dir
- 
-    ebook_id = args.session if args.session is not None else str(uuid.uuid4())
-    script_mode = args.script_mode if args.script_mode is not None else NATIVE
-    ebook_src = args.ebook
-    device = args.device
-    target_voice_file = args.voice
-    language = args.language
-    use_custom_model = args.use_custom_model
-    custom_model_file = args.custom_model
-    custom_config_file = args.custom_config
-    custom_vocab_file = args.custom_vocab
-    temperature = args.temperature
-    length_penalty = args.length_penalty
-    repetition_penalty = args.repetition_penalty
-    top_k = args.top_k
-    top_p = args.top_p
-    speed = args.speed
-    enable_text_splitting = args.enable_text_splitting
-    custom_model_url = args.custom_model_url
+    try:
+        if cancellation_requested.is_set():
+            msg = "Cancel requested"
+            raise ValueError()
+        else:
+            ebook_id = args.session if args.session is not None else str(uuid.uuid4())
+            script_mode = args.script_mode if args.script_mode is not None else NATIVE
+            ebook_src = args.ebook
+            device = args.device.lower()
+            target_voice_file = args.voice
+            language = args.language
+            use_custom_model = args.use_custom_model
+            custom_model_file = args.custom_model
+            custom_config_file = args.custom_config
+            custom_vocab_file = args.custom_vocab
+            temperature = args.temperature
+            length_penalty = args.length_penalty
+            repetition_penalty = args.repetition_penalty
+            top_k = args.top_k
+            top_p = args.top_p
+            speed = args.speed
+            enable_text_splitting = args.enable_text_splitting
+            custom_model_url = args.custom_model_url
 
-    if not os.path.splitext(ebook_src)[1]:
-        raise ValueError("The selected ebook file has no extension. Please select a valid file.")
+            if not os.path.splitext(ebook_src)[1]:
+                raise ValueError("The selected ebook file has no extension. Please select a valid file.")
 
-    if script_mode == NATIVE:
-        bool, e = check_programs("Calibre", "calibre", "--version")
-        if not bool:
-            raise DependencyError(e)
-            
-        bool, e = check_programs("FFmpeg", "ffmpeg", "-version")
-        if not bool:
-            raise DependencyError(e)
-    elif script_mode == DOCKER_UTILS:
-        client = docker.from_env()
-
-    tmp_dir = os.path.join(processes_dir, f"ebook-{ebook_id}")
-    ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
-    ebook_chapters_audio_dir = os.path.join(ebook_chapters_dir, "audio")
-
-    if not is_gui_process:
-        audiobooks_dir = audiobooks_cli_dir
-            
-    if language != "en":
-        ebook_pronouns = translate_pronouns(language)
-        
-    # Load spaCy model for language analysis (you can switch models based on language)
-    nlp = load_spacy_model(language)
-
-    # Prepare tmp dir and properties
-    if prepare_dirs(args.ebook) : 
-        
-        # Get the name of the ebook file source without extension
-        ebook_filename_noext = os.path.splitext(os.path.basename(ebook_src))[0]
-
-        try:
-            cancellation_requested.clear()
-            # Handle custom model if the user chose to use one
-            custom_model = None
-            if use_custom_model and custom_model_file and custom_config_file and custom_vocab_file:
-                custom_model = {
-                    'model': custom_model_file,
-                    'config': custom_config_file,
-                    'vocab': custom_vocab_file
-                }
-
-            # If a custom model URL is provided, download and use it
-            if use_custom_model and custom_model_url:
-                print(f"Received custom model URL: {custom_model_url}")
-                model_dir = get_model_dir_from_url(custom_model_url)
-                if download_and_extract(custom_model_url, model_dir):
-                    # Check if vocab.json exists and rename it
-                    if check_vocab_file(model_dir):
-                        print("vocab.json file was found and renamed.")
+            if script_mode == NATIVE:
+                bool, e = check_programs("Calibre", "calibre", "--version")
+                if not bool:
+                    raise DependencyError(e)
                     
+                bool, e = check_programs("FFmpeg", "ffmpeg", "-version")
+                if not bool:
+                    raise DependencyError(e)
+            elif script_mode == DOCKER_UTILS:
+                client = docker.from_env()
+
+            tmp_dir = os.path.join(processes_dir, f"ebook-{ebook_id}")
+            ebook_chapters_dir = os.path.join(tmp_dir, "chapters")
+            ebook_chapters_audio_dir = os.path.join(ebook_chapters_dir, "audio")
+
+            if not is_gui_process:
+                audiobooks_dir = audiobooks_cli_dir
+                    
+            if language != "en":
+                ebook_pronouns = translate_pronouns(language)
+                
+            # Load spaCy model for language analysis (you can switch models based on language)
+            nlp = load_spacy_model(language)
+
+            # Prepare tmp dir and properties
+            if prepare_dirs(args.ebook) : 
+                
+                # Get the name of the ebook file source without extension
+                ebook_filename_noext = os.path.splitext(os.path.basename(ebook_src))[0]
+
+                # Handle custom model if the user chose to use one
+                custom_model = None
+                if use_custom_model and custom_model_file and custom_config_file and custom_vocab_file:
                     custom_model = {
-                        'model': os.path.join(model_dir, 'model.pth'),
-                        'config': os.path.join(model_dir, 'config.json'),
-                        'vocab': os.path.join(model_dir, 'vocab.json_')
+                        'model': custom_model_file,
+                        'config': custom_config_file,
+                        'vocab': custom_vocab_file
                     }
 
-            create_chapter_labeled_book(ebook_filename_noext)
+                # If a custom model URL is provided, download and use it
+                if use_custom_model and custom_model_url:
+                    print(f"Received custom model URL: {custom_model_url}")
+                    model_dir = get_model_dir_from_url(custom_model_url)
+                    if download_and_extract(custom_model_url, model_dir):
+                        # Check if vocab.json exists and rename it
+                        if check_vocab_file(model_dir):
+                            print("vocab.json file was found and renamed.")
+                        
+                        custom_model = {
+                            'model': os.path.join(model_dir, 'model.pth'),
+                            'config': os.path.join(model_dir, 'config.json'),
+                            'vocab': os.path.join(model_dir, 'vocab.json_')
+                        }
 
-            if not torch.cuda.is_available() or device == "cpu":
-                if device == "gpu":
-                    print("GPU is not available on your device!")
-                device = "cpu"
+                if create_chapter_labeled_book(ebook_filename_noext):
+                    if not torch.cuda.is_available() or device == "cpu":
+                        if device == "gpu":
+                            print("GPU is not available on your device!")
+                        device = "cpu"
+                            
+                    torch.device(device)
+                    print(f"Available Processor Unit: {device}")
                     
-            torch.device(device)
-            print(f"Available Processor Unit: {device}")
-            
-            print("Extract Metada and Cover")
-            metadatas, cover_file = extract_metadata_and_cover(ebook_filename_noext)
+                    print("Extract Metada and Cover")
+                    metadatas, cover_file = extract_metadata_and_cover(ebook_filename_noext)
 
-            if convert_chapters_to_audio( device, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_file, language, custom_model):
-                output_file = concat_audio_chapters(metadatas, cover_file)               
-                if output_file is not None:
-                    progress_status = f"Audiobook {os.path.basename(output_file)} created!"
-                    print(f"Temporary directory {tmp_dir} removed successfully.")
-                    return progress_status, output_file 
+                    if convert_chapters_to_audio( device, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_file, language, custom_model):
+                        output_file = concat_audio_chapters(metadatas, cover_file)               
+                        if output_file is not None:
+                            progress_status = f"Audiobook {os.path.basename(output_file)} created!"
+                            print(f"Temporary directory {tmp_dir} removed successfully.")
+                            return progress_status, output_file 
+                        else:
+                            raise DependencyError(f"{output_file} not created!")
+                    else:
+                        raise DependencyError("convert_chapters_to_audio() failed!")
                 else:
-                    raise DependencyError(f"{output_file} not created!")
+                    return None, None
             else:
-                raise DependencyError("convert_chapters_to_audio() failed!")
+                print(f"Temporary directory {tmp_dir} not removed due to failure.")
+                return None, None
 
-        except Exception as e:
-            return None, None
-
-    print(f"Temporary directory {tmp_dir} not removed due to failure.")
-    return None, None
+    except Exception as e:
+        return None, None
 
 def web_interface(mode, share):
-    global is_converting, interface, cancellation_requested, is_gui_process, script_mode, is_gui_shared, audiobooks_ddn
+    global ebook_src, is_converting, interface, cancellation_requested, is_gui_process, script_mode, is_gui_shared, audiobooks_ddn
     
     script_mode = mode
     is_gui_process = True
     is_gui_shared = share
+    audiobook_file = None
     
     theme = gr.themes.Origin(
         primary_hue="amber",
@@ -1059,7 +1063,7 @@ def web_interface(mode, share):
                         ebook_file = gr.File(label="eBook File")
                         target_voice_file = gr.File(label="Target Voice File (Optional)")
                         language = gr.Dropdown(label="Language", choices=language_options, value="en")
-                        device = gr.Radio(label="Processor Unit", choices=["cpu", "gpu"], value="cpu")
+                        device = gr.Radio(label="Processor Unit", choices=["CPU", "GPU"], value="CPU")
 
                     with gr.Column(scale=3):
                         use_custom_model = gr.Checkbox(label="Use Custom Model")
@@ -1141,7 +1145,7 @@ def web_interface(mode, share):
         read_data = gr.JSON(visible=False)
         data = gr.State({})
         modal_html = gr.HTML()
-        
+
         def show_modal(message):
             return f"""
             <style>
@@ -1199,6 +1203,12 @@ def web_interface(mode, share):
         def hide_modal():
             return ""
 
+        def update_interface():
+            global ebook_src, is_converting
+            ebook_src = None
+            is_converting = False
+            return gr.Button("Convert", variant="primary", interactive=False), None, audiobook_file, update_audiobooks_ddn()
+
         def refresh_audiobook_list():
             if not os.path.isdir(audiobooks_dir):
                 os.makedirs(audiobooks_dir, exist_ok=True)
@@ -1209,16 +1219,10 @@ def web_interface(mode, share):
         def disable_convert_btn():
             return gr.Button("Convert", variant="primary", interactive=False)
 
-        def enable_convert_btn():
-            if ebook_src:
-                return gr.Button("Convert", variant="primary", interactive=False), update_audiobooks_ddn()
-            else:
-                return gr.Button("Convert", variant="primary", interactive=True), update_audiobooks_ddn()
-
         def update_audiobooks_ddn():
             files = refresh_audiobook_list()
             return gr.Dropdown(choices=files, label="Audiobooks", value=files[0] if files else None)
- 
+
         def update_audiobook_link(audiobook):
             if audiobook:
                 link = os.path.join(audiobooks_dir, audiobook)
@@ -1226,11 +1230,8 @@ def web_interface(mode, share):
             else:
                 return None, None, gr.update(visible=False)
 
-        def change_conversion_progress(message):
-            return message, hide_modal()
-
         def change_ebook_file(btn, f):
-            global is_converting, cancellation_requested
+            global ebook_src, is_converting, cancellation_requested
             if f is None:
                 ebook_src = None
                 if is_converting:
@@ -1248,7 +1249,7 @@ def web_interface(mode, share):
             return data
 
         def process_conversion(session, device, ebook_file, target_voice_file, language, use_custom_model, custom_model_file, custom_config_file, custom_vocab_file, custom_model_url, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting):                             
-            global is_converting
+            global ebook_src, is_converting, audiobook_file
             ebook_src = ebook_file.name if ebook_file else None
             target_voice_file = target_voice_file.name if target_voice_file else None
             custom_model_file = custom_model_file.name if custom_model_file else None
@@ -1256,13 +1257,13 @@ def web_interface(mode, share):
             custom_vocab_file = custom_vocab_file.name if custom_vocab_file else None
 
             if not ebook_src:
-                return "Error: eBook file is required.", None, update_audiobooks_ddn()
+                return "Error: eBook file is required."
 
             # Call the convert_ebook function with the processed parameters
             args = argparse.Namespace(
                 session=session,
                 script_mode=script_mode,
-                device=device,
+                device=device.lower(),
                 ebook=ebook_src,
                 voice=target_voice_file,
                 language=language,
@@ -1286,11 +1287,11 @@ def web_interface(mode, share):
             if audiobook_file is None:
                 if is_converting:
                     is_converting = False
-                    return "Conversion cancelled.", None
+                    return "Conversion cancelled.", hide_modal()
                 else:
-                    return "Conversion failed.", None
+                    return "Conversion failed.", hide_modal()
             else:
-                return progress_status, audiobook_file
+                return progress_status, hide_modal()
 
         def init_data(data):
             global audiobooks_dir
@@ -1316,17 +1317,12 @@ def web_interface(mode, share):
             else:
                 audiobooks_dir = os.path.join(audiobooks_host_dir, f"web-{data['session_id']}")
 
-            return [data, f"{warning_text}{warning_text_extra}", data["session_id"], update_audiobooks_ddn()]    
- 
+            return [data, f"{warning_text}{warning_text_extra}", data["session_id"], update_audiobooks_ddn()]
+
         use_custom_model.change(
             lambda x: [gr.update(visible=x)] * 4,
             inputs=[use_custom_model],
             outputs=[custom_model_file, custom_config_file, custom_vocab_file, custom_model_url]
-        )
-        conversion_progress.change(
-            fn=change_conversion_progress,
-            inputs=conversion_progress,
-            outputs=[conversion_progress, modal_html]
         )
         ebook_file.change(
             fn=change_ebook_file,
@@ -1371,11 +1367,11 @@ def web_interface(mode, share):
                 custom_vocab_file, custom_model_url, temperature, length_penalty, repetition_penalty, 
                 top_k, top_p, speed, enable_text_splitting
             ],
-            outputs=[conversion_progress]           
+            outputs=[conversion_progress, modal_html]           
         ).then(
-            fn=enable_convert_btn, 
-            inputs=None, 
-            outputs=[convert_btn, audio_player, audiobooks_ddn]
+            fn=update_interface,
+            inputs=None,
+            outputs=[convert_btn, ebook_file, audio_player, audiobooks_ddn]
         )
         interface.load(
             fn=None,
@@ -1393,18 +1389,15 @@ def web_interface(mode, share):
             """,
             outputs=read_data
         )
+
     try:
         interface.queue(default_concurrency_limit=concurrency_limit)
         interface.launch(server_name="0.0.0.0", server_port=gradio_interface_port, share=share)
     except OSError as e:
         print(f"Connection error: {e}")
-        hide_modal()
     except socket.error as e:
         print(f"Socket error: {e}")
-        hide_modal()
     except KeyboardInterrupt:
         print("Server interrupted by user. Shutting down...")
-        hide_modal()
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
-        hide_modal()
