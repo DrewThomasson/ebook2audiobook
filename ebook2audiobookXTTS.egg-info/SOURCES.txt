@@ -1,0 +1,10 @@
+LICENSE
+README.md
+pyproject.toml
+setup.py
+ebook2audiobookXTTS.egg-info/PKG-INFO
+ebook2audiobookXTTS.egg-info/SOURCES.txt
+ebook2audiobookXTTS.egg-info/dependency_links.txt
+ebook2audiobookXTTS.egg-info/entry_points.txt
+ebook2audiobookXTTS.egg-info/requires.txt
+ebook2audiobookXTTS.egg-info/top_level.txt

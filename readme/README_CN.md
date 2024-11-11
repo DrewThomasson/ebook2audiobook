@@ -140,72 +140,60 @@ python app.py -h
 ```
 - 这将输出以下内容:
 ```bash
-usage: app.py [-h] [--share SHARE] [--headless HEADLESS] [--ebook EBOOK] [--voice VOICE]
-              [--language LANGUAGE] [--use_custom_model USE_CUSTOM_MODEL]
-              [--custom_model CUSTOM_MODEL] [--custom_config CUSTOM_CONFIG]
-              [--custom_vocab CUSTOM_VOCAB] [--custom_model_url CUSTOM_MODEL_URL]
-              [--temperature TEMPERATURE] [--length_penalty LENGTH_PENALTY]
+usage: app.py [-h] [--share] [--headless [HEADLESS]] [--ebook EBOOK]
+              [--ebooks_dir [EBOOKS_DIR]] [--voice VOICE] [--language LANGUAGE]
+              [--device {cpu,gpu}] [--use_custom_model] [--custom_model CUSTOM_MODEL]
+              [--custom_config CUSTOM_CONFIG] [--custom_vocab CUSTOM_VOCAB]
+              [--custom_model_url CUSTOM_MODEL_URL] [--temperature TEMPERATURE]
+              [--length_penalty LENGTH_PENALTY]
               [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K] [--top_p TOP_P]
-              [--speed SPEED] [--enable_text_splitting ENABLE_TEXT_SPLITTING]
+              [--speed SPEED] [--enable_text_splitting]
 
-Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the
-Gradio interface or run the script in headless mode for direct conversion.
+Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
 
 options:
   -h, --help            show this help message and exit
-  --share SHARE         Set to True to enable a public shareable Gradio link. Defaults
-                        to False.
-  --headless HEADLESS   Set to True to run in headless mode without the Gradio
-                        interface. Defaults to False.
-  --ebook EBOOK         Path to the ebook file for conversion. Required in headless
-                        mode.
-  --voice VOICE         Path to the target voice file for TTS. Optional, uses a default
-                        voice if not provided.
-  --language LANGUAGE   Language for the audiobook conversion. Options: en, es, fr, de,
-                        it, pt, pl, tr, ru, nl, cs, ar, zh-cn, ja, hu, ko. Defaults to
-                        English (en).
-  --use_custom_model USE_CUSTOM_MODEL
-                        Set to True to use a custom TTS model. Defaults to False. Must
-                        be True to use custom models, otherwise you'll get an error.
+  --share               Enable a public shareable Gradio link. Defaults to False.
+  --headless [HEADLESS]
+                        Run in headless mode. Defaults to True if the flag is present without a value, False otherwise.
+  --ebook EBOOK         Path to the ebook file for conversion. Required in headless mode.
+  --ebooks_dir [EBOOKS_DIR]
+                        Path to the directory containing ebooks for batch conversion. Defaults to './ebooks' if 'default' value is provided.
+  --voice VOICE         Path to the target voice file for TTS. Optional, uses a default voice if not provided.
+  --language LANGUAGE   Language for the audiobook conversion. Options: en, es, fr, de, it, pt, pl, tr, ru, nl, cs, ar, zh-cn, ja, hu, ko. Defaults to English (en).
+  --device {cpu,gpu}    Type of processor unit for the audiobook conversion. Defaults to cpu.
+  --use_custom_model    Use a custom TTS model. Defaults to False. Must be True to use custom models.
   --custom_model CUSTOM_MODEL
-                        Path to the custom model file (.pth). Required if using a custom
-                        model.
+                        Path to the custom model file (.pth). Required if using a custom model.
   --custom_config CUSTOM_CONFIG
-                        Path to the custom config file (config.json). Required if using
-                        a custom model.
+                        Path to the custom config file (config.json). Required if using a custom model.
   --custom_vocab CUSTOM_VOCAB
-                        Path to the custom vocab file (vocab.json). Required if using a
-                        custom model.
+                        Path to the custom vocab file (vocab.json). Required if using a custom model.
   --custom_model_url CUSTOM_MODEL_URL
-                        URL to download the custom model as a zip file. Optional, but
-                        will be used if provided. Examples include David Attenborough's
-                        model: 'https://huggingface.co/drewThomasson/xtts_David_Attenbor
-                        ough_fine_tune/resolve/main/Finished_model_files.zip?download=tr
-                        ue'. More XTTS fine-tunes can be found on my Hugging Face at
-                        'https://huggingface.co/drewThomasson'.
+                        URL to download the custom model as a zip file. Optional, but will be used if provided. Examples include David Attenborough's model: 'https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true'. More XTTS fine-tunes can be found on my Hugging Face at 'https://huggingface.co/drewThomasson'.
   --temperature TEMPERATURE
-                        Temperature for the model. Defaults to 0.65. Higher Tempatures
-                        will lead to more creative outputs IE: more Hallucinations.
-                        Lower Tempatures will be more monotone outputs IE: less
-                        Hallucinations.
+                        Temperature for the model. Defaults to 0.65. Higher temperatures lead to more creative outputs.
   --length_penalty LENGTH_PENALTY
-                        A length penalty applied to the autoregressive decoder. Defaults
-                        to 1.0. Not applied to custom models.
+                        A length penalty applied to the autoregressive decoder. Defaults to 1.0. Not applied to custom models.
   --repetition_penalty REPETITION_PENALTY
-                        A penalty that prevents the autoregressive decoder from
-                        repeating itself. Defaults to 2.0.
-  --top_k TOP_K         Top-k sampling. Lower values mean more likely outputs and
-                        increased audio generation speed. Defaults to 50.
-  --top_p TOP_P         Top-p sampling. Lower values mean more likely outputs and
-                        increased audio generation speed. Defaults to 0.8.
-  --speed SPEED         Speed factor for the speech generation. IE: How fast the
-                        Narrerator will speak. Defaults to 1.0.
-  --enable_text_splitting ENABLE_TEXT_SPLITTING
-                        Enable splitting text into sentences. Defaults to True.
+                        A penalty that prevents the autoregressive decoder from repeating itself. Defaults to 2.0.
+  --top_k TOP_K         Top-k sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 50.
+  --top_p TOP_P         Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 0.8.
+  --speed SPEED         Speed factor for the speech generation. Defaults to 1.0.
+  --enable_text_splitting
+                        Enable splitting text into sentences. Defaults to False.
 
-Example: python script.py --headless --ebook path_to_ebook --voice path_to_voice
---language en --use_custom_model True --custom_model model.pth --custom_config
-config.json --custom_vocab vocab.json
+Example usage:    
+Windows:
+    headless:
+    ./ebook2audiobook.cmd --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json
+    Graphic Interface:
+    ./ebook2audiobook.cmd
+Linux/Mac:
+    headless:
+    ./ebook2audiobook.sh --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json
+    Graphic Interface:
+    ./ebook2audiobook.sh
 ```
 
 <details>

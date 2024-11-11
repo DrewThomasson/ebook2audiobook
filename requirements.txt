@@ -1,0 +1,12 @@
+beautifulsoup4
+coqui-tts
+ebooklib
+docker
+gradio>=4.44.0
+mecab
+mecab-python3
+nltk>=3.8.2
+pydub
+translate
+tqdm
+unidic
