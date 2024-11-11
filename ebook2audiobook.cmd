@@ -197,6 +197,7 @@ if not "%CONDA_CHECK_STATUS%"=="0" (
 		echo Conda installed successfully.
 		set "CONDA_RUN_INIT=1"
 		set "CONDA_CHECK_STATUS=0"
+		set "PATH=%CONDA_INSTALL_DIR%\condabin;%PATH%"
 	)
 )
 :: Install Docker if not already installed
