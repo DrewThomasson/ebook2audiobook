@@ -7,6 +7,7 @@ import sys
 
 from lib.conf import *
 from lib.lang import language_options, default_language_code
+from lib.functions import check_files_in_folder, download_xttsv2_model
 
 script_mode = NATIVE
 
@@ -47,6 +48,15 @@ def check_and_install_requirements(file_path):
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install packages: {e}")
                 return False
+
+        # This will check if the base xtts model files exist, and if they don't or if any are missing then itll download them
+        xtts_base_model_existance_status, error_message, xtts_missing_files = check_files_in_folder(xttsv2_base_model_dir, xtts_base_model_files)
+        if xtts_base_model_existance_status:
+            print("All specified xtts base model files are present in the folder.")
+        else:
+          print("The following files are missing:", xtts_missing_files)
+          print("Downloading xtts files . . .")
+          download_xttsv2_model(xttsv2_base_model_dir, zip_link_to_xtts_model)
 
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -259,3 +269,4 @@ if __name__ == '__main__':
         sys.exit(1)
     else:
         main()
+
