@@ -87,6 +87,8 @@ fi
 if [[ -n "$CURRENT_ENV" ]]; then
     echo -e "Current python virtual environment detected: $CURRENT_ENV."
     echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
+    echo -e "If you are using miniconda then you would type in:"
+    echo -e "conda deactivate"
     exit 1
 fi
 
