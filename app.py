@@ -24,7 +24,7 @@ check_command_installed("ffmpeg", "-version", "ffmpeg")
 # Check if ebook-convert (Calibre) is installed
 check_command_installed("ebook-convert", "--version", "Calibre (ebook-convert)")
 # Check if mecab is installed 
-check_command_installed("mecab", "--version", "Mecab")
+#check_command_installed("mecab", "--version", "Mecab")
 
 try:
     # Check if the UniDic dictionary data directory exists and is not empty
