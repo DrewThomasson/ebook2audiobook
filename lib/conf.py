@@ -23,6 +23,7 @@ processes_dir = os.path.abspath(os.path.join(".","tmp"))
 audiobooks_gradio_dir = os.path.abspath(os.path.join(".","audiobooks","gui","gradio"))
 audiobooks_host_dir = os.path.abspath(os.path.join(".","audiobooks","gui","host"))
 audiobooks_cli_dir = os.path.abspath(os.path.join(".","audiobooks","cli"))
+unidic_path = os.path.abspath(os.path.join(".","resources","udict"))
 
 zip_link_to_xtts_model = "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/xtts_v2_default_model.zip?download=true"
 xtts_base_model_files = ["config.json", "model.pth", "vocab.json"]
