@@ -206,18 +206,18 @@ def download_and_extract(path_or_url, extract_to=models_dir):
     except Exception as e:
         raise DependencyError(e)
 
-def load_spacy_model(language):
-    lang_pack = language_mapping[language]["model"]
-    try:
-        nlp = spacy.load(lang_pack)
-    except OSError:
-        print("Spacy model not found. Tyring to download it...")
-        try:
-            subprocess.run(["python", "-m", "spacy", "download", lang_pack])
-            nlp = spacy.load(lang_pack)
-        except OSError:
-             raise ValueError(f"Spacy model does not exist for {language_mapping[language]['name']}...")
-    return nlp
+#def load_spacy_model(language):
+#    lang_pack = language_mapping[language]["model"]
+#    try:
+#        nlp = spacy.load(lang_pack)
+#    except OSError:
+#        print("Spacy model not found. Tyring to download it...")
+#        try:
+#            subprocess.run(["python", "-m", "spacy", "download", lang_pack])
+#            nlp = spacy.load(lang_pack)
+#        except OSError:
+#             raise ValueError(f"Spacy model does not exist for {language_mapping[language]['name']}...")
+#    return nlp
 
 def translate_pronouns(language):
     global ebook_pronouns  
@@ -722,7 +722,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
             target_voice_file = default_target_voice_file
         
         # Handle custom model or use standard TTS model
-        print("Loading TTS engine...")
+        print("Loading TTS ...")
         if custom_model:
             config_path = custom_model['config']
             model_path = custom_model['model']
@@ -735,7 +735,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
         else:
             #selected_tts_model = "tts_models/multilingual/multi-dataset/xtts_v2"
             #tts = TTS(selected_tts_model, progress_bar=False).to(device)
-            base_dir = os.path.join(models_dir,"tts_models--multilingual--multi-dataset--xtts_v2")
+            base_dir = os.path.join(models_dir,"XTTS-v2")
             config_path = os.path.join(base_dir,"config.json")
             config = XttsConfig()
             config.models_dir = models_dir
@@ -947,63 +947,63 @@ def convert_ebook(args):
                 ebook_pronouns = translate_pronouns(language)
                 
             # Load spaCy model for language analysis (you can switch models based on language)
-            if load_spacy_model(language):
-                # Prepare tmp dir and properties
-                if prepare_dirs(args.ebook) : 
-                    
-                    # Get the name of the ebook file source without extension
-                    ebook_filename_noext = os.path.splitext(os.path.basename(ebook_src))[0]
+            #if load_spacy_model(language):
+            # Prepare tmp dir and properties
+            if prepare_dirs(args.ebook) : 
+                
+                # Get the name of the ebook file source without extension
+                ebook_filename_noext = os.path.splitext(os.path.basename(ebook_src))[0]
 
-                    # Handle custom model if the user chose to use one
-                    custom_model = None
-                    if custom_model_file and custom_config_file and custom_vocab_file:
+                # Handle custom model if the user chose to use one
+                custom_model = None
+                if custom_model_file and custom_config_file and custom_vocab_file:
+                    custom_model = {
+                        'model': custom_model_file,
+                        'config': custom_config_file,
+                        'vocab': custom_vocab_file
+                    }
+
+                # If a custom model URL is provided, download and use it
+                if custom_model_url:
+                    print(f"Received custom model URL: {custom_model_url}")
+                    model_dir = get_model_dir_from_url(custom_model_url)
+                    if download_and_extract(custom_model_url, model_dir):
+                        # Check if vocab.json exists and rename it
+                        if check_vocab_file(model_dir):
+                            print("vocab.json file was found and renamed.")
+                        
                         custom_model = {
-                            'model': custom_model_file,
-                            'config': custom_config_file,
-                            'vocab': custom_vocab_file
+                            'model': os.path.join(model_dir, 'model.pth'),
+                            'config': os.path.join(model_dir, 'config.json'),
+                            'vocab': os.path.join(model_dir, 'vocab.json_')
                         }
 
-                    # If a custom model URL is provided, download and use it
-                    if custom_model_url:
-                        print(f"Received custom model URL: {custom_model_url}")
-                        model_dir = get_model_dir_from_url(custom_model_url)
-                        if download_and_extract(custom_model_url, model_dir):
-                            # Check if vocab.json exists and rename it
-                            if check_vocab_file(model_dir):
-                                print("vocab.json file was found and renamed.")
+                if create_chapter_labeled_book(ebook_filename_noext):
+                    if not torch.cuda.is_available() or device == "cpu":
+                        if device == "gpu":
+                            print("GPU is not available on your device!")
+                        device = "cpu"
                             
-                            custom_model = {
-                                'model': os.path.join(model_dir, 'model.pth'),
-                                'config': os.path.join(model_dir, 'config.json'),
-                                'vocab': os.path.join(model_dir, 'vocab.json_')
-                            }
+                    torch.device(device)
+                    print(f"Available Processor Unit: {device}")
+                    
+                    print("Extract Metada and Cover")
+                    metadatas, cover_file = extract_metadata_and_cover(ebook_filename_noext)
 
-                    if create_chapter_labeled_book(ebook_filename_noext):
-                        if not torch.cuda.is_available() or device == "cpu":
-                            if device == "gpu":
-                                print("GPU is not available on your device!")
-                            device = "cpu"
-                                
-                        torch.device(device)
-                        print(f"Available Processor Unit: {device}")
-                        
-                        print("Extract Metada and Cover")
-                        metadatas, cover_file = extract_metadata_and_cover(ebook_filename_noext)
-
-                        if convert_chapters_to_audio( device, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_file, language, custom_model):
-                            output_file = concat_audio_chapters(metadatas, cover_file)               
-                            if output_file is not None:
-                                progress_status = f"Audiobook {os.path.basename(output_file)} created!"
-                                print(f"Temporary directory {tmp_dir} removed successfully.")
-                                return progress_status, output_file 
-                            else:
-                                raise DependencyError(f"{output_file} not created!")
+                    if convert_chapters_to_audio( device, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_file, language, custom_model):
+                        output_file = concat_audio_chapters(metadatas, cover_file)               
+                        if output_file is not None:
+                            progress_status = f"Audiobook {os.path.basename(output_file)} created!"
+                            print(f"Temporary directory {tmp_dir} removed successfully.")
+                            return progress_status, output_file 
                         else:
-                            raise DependencyError("convert_chapters_to_audio() failed!")
+                            raise DependencyError(f"{output_file} not created!")
                     else:
-                        return None, None
+                        raise DependencyError("convert_chapters_to_audio() failed!")
                 else:
                     return None, None
+                #else:
+                #    return None, None
             else:
                 print(f"Temporary directory {tmp_dir} not removed due to failure.")
                 return None, None
