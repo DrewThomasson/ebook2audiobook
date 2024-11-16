@@ -16,3 +16,4 @@ sentencepiece
 translate
 tqdm
 unidic
+hangul-romanize

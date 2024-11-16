@@ -29,6 +29,7 @@ dependencies = [
 	"sentencepiece",
     "translate",
     "tqdm",
+    "hangul-romanize",
     "unidic",
 ]
 readme = "README.md"
