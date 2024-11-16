@@ -17,11 +17,15 @@ concurrency_limit = 16 # or None for unlimited
 
 python_env_dir = os.path.abspath(os.path.join(".","python_env"))
 models_dir = os.path.abspath(os.path.join(".","models"))
+xttsv2_base_model_dir = os.path.join(models_dir, "XTTS-v2")
 ebooks_dir = os.path.abspath(os.path.join(".","ebooks"))
 processes_dir = os.path.abspath(os.path.join(".","tmp"))
 audiobooks_gradio_dir = os.path.abspath(os.path.join(".","audiobooks","gui","gradio"))
 audiobooks_host_dir = os.path.abspath(os.path.join(".","audiobooks","gui","host"))
 audiobooks_cli_dir = os.path.abspath(os.path.join(".","audiobooks","cli"))
+
+zip_link_to_xtts_model = "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/xtts_v2_default_model.zip?download=true"
+xtts_base_model_files = ["config.json", "model.pth", "vocab.json"]
 
 supported_ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
 final_format = "m4b"
