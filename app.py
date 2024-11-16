@@ -10,20 +10,8 @@ from lib.lang import language_mapping, default_language_code
 
 import unidic
 
-def check_command_installed(command, version_flag, name):
-    try:
-        # Try to run the command with the appropriate version flag and check if it returns without an error
-        subprocess.run([command, version_flag], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-        print(f"{name} is installed.")
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        # If the command is not found or fails, notify the user
-        sys.exit(f"Error: {name} is not installed. Please install {name} to use this application.")
-# Check if ffmpeg is installed
-check_command_installed("ffmpeg", "-version", "ffmpeg")
-# Check if ebook-convert (Calibre) is installed
-check_command_installed("ebook-convert", "--version", "Calibre (ebook-convert)")
-# Check if mecab is installed 
-#check_command_installed("mecab", "--version", "Mecab")
+script_mode = NATIVE
+share = False
 
 try:
     # Check if the UniDic dictionary data directory exists and is not empty
@@ -35,9 +23,6 @@ try:
         print("UniDic dictionary already present. Skipping download.")
 except Exception as e:
     print(f"Error during UniDic check/download: {e}")
-
-script_mode = NATIVE
-share = False
 
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
