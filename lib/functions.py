@@ -111,13 +111,20 @@ def download_xttsv2_model(destination_dir, zip_link_to_xtts_model):
 
     zip_path = os.path.join(destination_dir, "xtts_v2_model.zip")
 
-    # Download the zip file to disk
+    # Start downloading the file with a loading bar
     print("Downloading the XTTS v2 model...")
-    response = requests.get(zip_link_to_xtts_model)
+    response = requests.get(zip_link_to_xtts_model, stream=True)
     response.raise_for_status()  # Raise an error for bad status codes
 
-    with open(zip_path, "wb") as file:
-        file.write(response.content)
+    total_size = int(response.headers.get('content-length', 0))
+    chunk_size = 1024  # Download in chunks of 1KB
+
+    with open(zip_path, "wb") as file, tqdm(
+        total=total_size, unit='B', unit_scale=True, desc="Downloading"
+    ) as progress_bar:
+        for chunk in response.iter_content(chunk_size=chunk_size):
+            file.write(chunk)
+            progress_bar.update(len(chunk))
 
     # Extract the contents of the zip file
     print("Extracting the model files...")
