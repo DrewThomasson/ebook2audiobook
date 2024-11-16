@@ -7,7 +7,6 @@ import sys
 
 from lib.conf import *
 from lib.lang import language_mapping, default_language_code
-from lib.functions import check_files_in_folder, download_xttsv2_model
 
 import unidic
 
@@ -79,6 +78,7 @@ def check_and_install_requirements(file_path):
                 return False
 
         # This will check if the base xtts model files exist, and if they don't or if any are missing then itll download them
+        from lib.functions import check_files_in_folder, download_xttsv2_model
         xtts_base_model_existance_status, error_message, xtts_missing_files = check_files_in_folder(xttsv2_base_model_dir, xtts_base_model_files)
         if xtts_base_model_existance_status:
             print("All specified xtts base model files are present in the folder.")
