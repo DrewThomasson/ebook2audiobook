@@ -16,11 +16,10 @@ with open('requirements.txt') as f:
 class PostInstallCommand(install):
     def run(self):
         install.run(self)
-        # This line has been redacted as when the app.py runs it'' automatically check if its downloaded and if not then it'll download it
-        #try:
-        #    subprocess.run([sys.executable, 'python -m', 'unidic', 'download'], check=True)
-        #except Exception:
-        #    print("unidic download failed during installation, but it will be re-attempted a diffrent way when the app itself runs.")
+        try:
+            subprocess.run([sys.executable, 'python -m', 'unidic', 'download'], check=True)
+        except Exception:
+            print("unidic download failed during installation, but it will be re-attempted a diffrent way when the app itself runs.")
 
 
 setup(
