@@ -212,7 +212,7 @@ function conda_check {
 		source $CONDA_ENV
 		conda activate $SCRIPT_DIR/$PYTHON_ENV
 		python -m pip install --upgrade pip
-		python -m pip install beautifulsoup4 coqui-tts ebooklib docker "gradio>=4.44.0" mecab mecab-python3 "nltk>=3.8.2" pydub translate tqdm unidic
+		python -m pip install --upgrade -r requirements.txt
 		python -m unidic download
 		python -m spacy download en_core_web_sm
 		python -m nltk.downloader punkt_tab

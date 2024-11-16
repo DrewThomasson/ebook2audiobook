@@ -37,7 +37,7 @@ if not exist "%CALIBRE_TEMP_DIR%" (
 
 icacls "%CALIBRE_TEMP_DIR%" /grant Users:(OI)(CI)F /T
 
-for %%A in (%*) do (
+for %%A in (%ARGS%) do (
 	if "%%A"=="%DOCKER_UTILS%" (
 		set "SCRIPT_MODE=%DOCKER_UTILS%"
 		break
@@ -228,7 +228,7 @@ if not "%DOCKER_BUILD_STATUS%"=="0" (
 net session >nul 2>&1
 if %errorlevel% equ 0 (
     echo Restarting in user mode...
-    start "" /b cmd /c "%~f0" %*
+    start "" /b cmd /c "%~f0" %ARGS%
     exit /b
 )
 goto dispatch
@@ -269,7 +269,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		call conda create --prefix %SCRIPT_DIR%\%PYTHON_ENV% python=%PYTHON_VERSION% -y
 		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
 		call python -m pip install --upgrade pip
-		call python -m pip install beautifulsoup4 coqui-tts ebooklib docker "gradio>=4.44.0" mecab mecab-python3 "nltk>=3.8.2" pydub translate tqdm unidic
+		call python -m pip install --upgrade -r requirements.txt
 		call python -m unidic download
 		call python -m spacy download en_core_web_sm
 		call python -m nltk.downloader punkt_tab

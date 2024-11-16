@@ -6,9 +6,10 @@ import subprocess
 import sys
 
 from lib.conf import *
-from lib.lang import language_options, default_language_code
+from lib.lang import language_mapping, default_language_code
 
 script_mode = NATIVE
+share = False
 
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
@@ -99,10 +100,10 @@ def is_port_in_use(port):
         return s.connect_ex(('0.0.0.0', port)) == 0
 
 def main():
-    global script_mode, ebooks_dir
+    global script_mode, share, ebooks_dir
     
     # Convert the list of languages to a string to display in the help text
-    language_options_str = ", ".join(language_options)
+    lang_list_str = ", ".join(list(language_mapping.keys()))
 
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
@@ -111,12 +112,12 @@ def main():
 Example usage:    
 Windows:
     headless:
-    ebook2audiobook.cmd --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json
+    ebook2audiobook.cmd --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --custom_model 'model.zip'
     Graphic Interface:
     ebook2audiobook.cmd
 Linux/Mac:
     headless:
-    ./ebook2audiobook.sh --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --use_custom_model --custom_model 'model.zip' --custom_config config.json --custom_vocab vocab.json
+    ./ebook2audiobook.sh --headless --ebook 'path_to_ebook' --voice 'path_to_voice' --language en --custom_model 'model.zip'
     Graphic Interface:
     ./ebook2audiobook.sh
 """,
@@ -124,8 +125,8 @@ Linux/Mac:
     )
     options = [
         "--script_mode", "--share", "--headless", "--ebook", "--ebooks_dir",
-        "--voice", "--language", "--device", "--use_custom_model", "--custom_model", 
-        "--custom_config", "--custom_vocab", "--custom_model_url", "--temperature",
+        "--voice", "--language", "--device", "--custom_model", 
+        "--custom_model_url", "--temperature",
         "--length_penalty", "--repetition_penalty", "--top_k", "--top_p", "--speed",
         "--enable_text_splitting", "--version"
     ]
@@ -142,37 +143,31 @@ Linux/Mac:
     parser.add_argument(options[5], type=str,
                         help="Path to the target voice file for TTS. Optional, uses a default voice if not provided.")
     parser.add_argument(options[6], type=str, default="en",
-                        help=f"Language for the audiobook conversion. Options: {language_options_str}. Defaults to English (en).")
+                        help=f"Language for the audiobook conversion. Options: {lang_list_str}. Defaults to English (en).")
     parser.add_argument(options[7], type=str, default="cpu", choices=["cpu", "gpu"],
                         help=f"Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.")
-    parser.add_argument(options[8], action="store_true",
-                        help="Use a custom TTS model. Defaults to False. Must be True to use custom models.")
-    parser.add_argument(options[9], type=str,
+    parser.add_argument(options[8], type=str,
                         help="Path to the custom model file (.pth). Required if using a custom model.")
-    parser.add_argument(options[10], type=str,
-                        help="Path to the custom config file (config.json). Required if using a custom model.")
-    parser.add_argument(options[11], type=str,
-                        help="Path to the custom vocab file (vocab.json). Required if using a custom model.")
-    parser.add_argument(options[12], type=str,
+    parser.add_argument(options[9], type=str,
                         help=("URL to download the custom model as a zip file. Optional, but will be used if provided. "
                               "Examples include David Attenborough's model: "
                               "'https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true'. "
                               "More XTTS fine-tunes can be found on my Hugging Face at 'https://huggingface.co/drewThomasson'."))
-    parser.add_argument(options[13], type=float, default=0.65,
+    parser.add_argument(options[10], type=float, default=0.65,
                         help="Temperature for the model. Defaults to 0.65. Higher temperatures lead to more creative outputs.")
-    parser.add_argument(options[14], type=float, default=1.0,
+    parser.add_argument(options[11], type=float, default=1.0,
                         help="A length penalty applied to the autoregressive decoder. Defaults to 1.0. Not applied to custom models.")
-    parser.add_argument(options[15], type=float, default=2.0,
+    parser.add_argument(options[12], type=float, default=2.0,
                         help="A penalty that prevents the autoregressive decoder from repeating itself. Defaults to 2.0.")
-    parser.add_argument(options[16], type=int, default=50,
+    parser.add_argument(options[13], type=int, default=50,
                         help="Top-k sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 50.")
-    parser.add_argument(options[17], type=float, default=0.8,
+    parser.add_argument(options[14], type=float, default=0.8,
                         help="Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 0.8.")
-    parser.add_argument(options[18], type=float, default=1.0,
+    parser.add_argument(options[15], type=float, default=1.0,
                         help="Speed factor for the speech generation. Defaults to 1.0.")
-    parser.add_argument(options[19], action="store_true",
+    parser.add_argument(options[16], action="store_true",
                         help="Enable splitting text into sentences. Defaults to False.")
-    parser.add_argument(options[20], action="version",version=f"ebook2audiobook version {version}",
+    parser.add_argument(options[17], action="version",version=f"ebook2audiobook version {version}",
                         help="Show the version of the script and exit")
 
     for arg in sys.argv:
@@ -188,6 +183,7 @@ Linux/Mac:
         sys.exit(1)
     
     script_mode = args.script_mode if args.script_mode else script_mode
+    share =  args.share if args.share else share
     
     if script_mode == NATIVE:
         check_pkg = check_and_install_requirements(requirements_file)
@@ -236,11 +232,13 @@ Linux/Mac:
             else:
                 print(f"Error: The directory {ebooks_dir} does not exist.")
                 sys.exit(1)
+
         elif args.ebook:
             progress_status, audiobook_file = convert_ebook(args)
             if audiobook_file is None:
                 print(f"Conversion failed: {progress_status}")
                 sys.exit(1)
+
         else:
             print("Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.")
             sys.exit(1)       
@@ -249,7 +247,7 @@ Linux/Mac:
         allowed_arguments = {'--share', '--script_mode'}
         passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
         if passed_args_set.issubset(allowed_arguments):
-             web_interface(args.script_mode, args.share)
+             web_interface(script_mode, share)
         else:
             print("Error: In non-headless mode, no option or only '--share' can be passed")
             sys.exit(1)
