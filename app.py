@@ -9,6 +9,34 @@ from lib.conf import *
 from lib.lang import language_mapping, default_language_code
 from lib.functions import check_files_in_folder, download_xttsv2_model
 
+import unidic
+
+def check_command_installed(command, version_flag, name):
+    try:
+        # Try to run the command with the appropriate version flag and check if it returns without an error
+        subprocess.run([command, version_flag], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+        print(f"{name} is installed.")
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        # If the command is not found or fails, notify the user
+        sys.exit(f"Error: {name} is not installed. Please install {name} to use this application.")
+# Check if ffmpeg is installed
+check_command_installed("ffmpeg", "-version", "ffmpeg")
+# Check if ebook-convert (Calibre) is installed
+check_command_installed("ebook-convert", "--version", "Calibre (ebook-convert)")
+# Check if mecab is installed 
+check_command_installed("mecab", "--version", "Mecab")
+
+try:
+    # Check if the UniDic dictionary data directory exists and is not empty
+    if not os.path.isdir(unidic.DICDIR) or not os.listdir(unidic.DICDIR):
+        print("*** No default UniDic dictionary found! Trying to download it... ***")
+        subprocess.run([sys.executable, "-m", "unidic", "download"], check=True)
+        print("Successfully downloaded UniDic.")
+    else:
+        print("UniDic dictionary already present. Skipping download.")
+except Exception as e:
+    print(f"Error during UniDic check/download: {e}")
+
 script_mode = NATIVE
 share = False
 
@@ -49,7 +77,7 @@ def check_and_install_requirements(file_path):
             except subprocess.CalledProcessError as e:
                 print(f"Failed to install packages: {e}")
                 return False
-                
+
         # This will check if the base xtts model files exist, and if they don't or if any are missing then itll download them
         xtts_base_model_existance_status, error_message, xtts_missing_files = check_files_in_folder(xttsv2_base_model_dir, xtts_base_model_files)
         if xtts_base_model_existance_status:

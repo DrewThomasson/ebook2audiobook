@@ -33,6 +33,12 @@ dependencies = [
 ]
 readme = "README.md"
 requires-python = ">=3.10,<3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+scripts = { "ebook2audiobook" = "app:main" }
 
 [project.urls]
 "Homepage" = "https://github.com/DrewThomasson/ebook2audiobook"

@@ -1,3 +1,5 @@
+import subprocess
+import sys
 from setuptools import setup, find_packages
 from setuptools.command.develop import develop
 from setuptools.command.install import install
@@ -14,7 +16,12 @@ with open('requirements.txt') as f:
 class PostInstallCommand(install):
     def run(self):
         install.run(self)
-        subprocess.run([sys.executable, 'python -m', 'unidic', 'download'], check=True)
+        # This line has been redacted as when the app.py runs it'' automatically check if its downloaded and if not then it'll download it
+        #try:
+        #    subprocess.run([sys.executable, 'python -m', 'unidic', 'download'], check=True)
+        #except Exception:
+        #    print("unidic download failed during installation, but it will be re-attempted a diffrent way when the app itself runs.")
+
 
 setup(
     name='ebook2audiobook',
