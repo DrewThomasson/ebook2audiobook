@@ -7,24 +7,11 @@ import sys
 
 from lib.conf import *
 from lib.lang import language_mapping, default_language_code
-from lib.functions import check_files_in_folder, download_xttsv2_model
 
 import unidic
 
-def check_command_installed(command, version_flag, name):
-    try:
-        # Try to run the command with the appropriate version flag and check if it returns without an error
-        subprocess.run([command, version_flag], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-        print(f"{name} is installed.")
-    except (FileNotFoundError, subprocess.CalledProcessError):
-        # If the command is not found or fails, notify the user
-        sys.exit(f"Error: {name} is not installed. Please install {name} to use this application.")
-# Check if ffmpeg is installed
-check_command_installed("ffmpeg", "-version", "ffmpeg")
-# Check if ebook-convert (Calibre) is installed
-check_command_installed("ebook-convert", "--version", "Calibre (ebook-convert)")
-# Check if mecab is installed 
-#check_command_installed("mecab", "--version", "Mecab")
+script_mode = NATIVE
+share = False
 
 try:
     # Check if the UniDic dictionary data directory exists and is not empty
@@ -36,9 +23,6 @@ try:
         print("UniDic dictionary already present. Skipping download.")
 except Exception as e:
     print(f"Error during UniDic check/download: {e}")
-
-script_mode = NATIVE
-share = False
 
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
@@ -79,13 +63,14 @@ def check_and_install_requirements(file_path):
                 return False
 
         # This will check if the base xtts model files exist, and if they don't or if any are missing then itll download them
+        from lib.functions import check_files_in_folder
         xtts_base_model_existance_status, error_message, xtts_missing_files = check_files_in_folder(xttsv2_base_model_dir, xtts_base_model_files)
         if xtts_base_model_existance_status:
             print("All specified xtts base model files are present in the folder.")
         else:
           print("The following files are missing:", xtts_missing_files)
           print("Downloading xtts files . . .")
-          download_xttsv2_model(xttsv2_base_model_dir, zip_link_to_xtts_model)
+          download_and_extract(xttsv2_base_model_dir, zip_link_to_xtts_model)
 
     except Exception as e:
         print(f"An error occurred: {e}")
