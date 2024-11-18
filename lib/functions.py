@@ -760,6 +760,8 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
         # Set default target voice path if not provided
         if target_voice_file is None:
             target_voice_file = default_target_voice_file
+        print("Loading fairseq TTS ...")
+        tts = TTS(model_name=f"tts_models/eng/fairseq/vits", progress_bar=True).to("cpu")
         
         # Handle custom model or use standard TTS model
         '''
@@ -863,7 +865,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
                                 if fragment != "":
                                     print(f"Generating fragment: {fragment}...")
                                     fragment_file_path = os.path.join(chapters_dir_audio_fragments, f"{count_fragments}.wav")
-                                    tts = TTS(model_name=f"tts_models/eng/fairseq/vits", progress_bar=True).to("cpu")
+                                    #tts = TTS(model_name=f"tts_models/eng/fairseq/vits", progress_bar=True).to("cpu")
                                     tts.tts_to_file(text=fragment, file_path=fragment_file_path, enable_text_splitting=True)
                                     
                                     #if custom_tts:
