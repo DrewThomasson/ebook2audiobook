@@ -815,7 +815,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
                     # Calculate total fragments for this chapter
                     for sentence in sentences:
                         #fragments = split_long_sentence(sentence, language=language)
-                        fragments = fragments
+                        fragments = sentences
                         total_segments += len(fragments)
 
         current_progress = 0
