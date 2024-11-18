@@ -762,6 +762,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
             target_voice_file = default_target_voice_file
         
         # Handle custom model or use standard TTS model
+        '''
         print("Loading TTS ...")
         if custom_model:
             config_path = custom_model['config']
@@ -786,6 +787,7 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
         tts.to(device)
         print("Computing speaker latents...")
         gpt_cond_latent, speaker_embedding = tts.get_conditioning_latents(audio_path=[target_voice_file])
+        '''
         
         chapters_dir_audio_fragments = os.path.join(ebook_chapters_audio_dir, "fragments")
         os.makedirs(chapters_dir_audio_fragments, exist_ok=True)
@@ -861,14 +863,20 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
                                 if fragment != "":
                                     print(f"Generating fragment: {fragment}...")
                                     fragment_file_path = os.path.join(chapters_dir_audio_fragments, f"{count_fragments}.wav")
+                                    tts = TTS(model_name=f"tts_models/eng/fairseq/vits", progress_bar=True).to("cpu")
+                                    tts.tts_to_file(text=fragment, file_path=fragment_file_path, enable_text_splitting=True)
                                     
                                     #if custom_tts:
+
+                                    '''
                                     out = tts.inference(
                                         fragment, language, gpt_cond_latent, speaker_embedding, 
                                         temperature=temperature, repetition_penalty=repetition_penalty, 
                                         top_k=top_k, top_p=top_p, speed=speed, enable_text_splitting=True
                                     )
                                     torchaudio.save(fragment_file_path, torch.tensor(out["wav"]).unsqueeze(0), 24000)
+                                    '''
+
                                     #else:
                                     #    speaker_wav_path = target_voice_file if target_voice_file else default_target_voice_file
                                     #    model.tts_to_file(
