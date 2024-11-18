@@ -34,11 +34,30 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 
 ## Free Google Colab [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobookXTTS/blob/main/Notebooks/colab_ebook2audiobookxtts.ipynb)
 
+## 🌐 Supported Languages
+
+- **Arabic (ar)**
+- **Chinese (zh-cn)**
+- **Czech (cs)**
+- **Dutch (nl)**
+- **English (en)**
+- **French (fr)**
+- **German (de)**
+- **Hindi (hi)**
+- **Hungarian (hu)**
+- **Italian (it)**
+- **Japanese (ja)**
+- **Korean (ko)**
+- **Polish (pl)**
+- **Portuguese (pt)**
+- **Russian (ru)**
+- **Spanish (es)**
+- **Turkish (tr)**
 
 ## 🛠️ Requirements
 
 - 4gb ram
-- Virtualization enabled if running on windows (for docker)
+- Virtualization enabled if running on windows (Docker only)
 
 ### 🔧 Installation Instructions
 
@@ -46,35 +65,6 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 ```bash
 git clone https://github.com/DrewThomasson/ebook2audiobookXTTS.git
 ```
-
-2. **Install ebook2audiobook**:
-   - **Linux/MacOS**:
-     ```bash
-     .\install.sh  # Run the .sh install file
-     ```
-   - **Windows**
-     ```bash
-     .\install.bat  # Run the .bat install file
-     ```
-
-## 🌐 Supported Languages
-
-- **English (en)**
-- **Spanish (es)**
-- **French (fr)**
-- **German (de)**
-- **Italian (it)**
-- **Portuguese (pt)**
-- **Polish (pl)**
-- **Turkish (tr)**
-- **Russian (ru)**
-- **Dutch (nl)**
-- **Czech (cs)**
-- **Arabic (ar)**
-- **Chinese (zh-cn)**
-- **Japanese (ja)**
-- **Hungarian (hu)**
-- **Korean (ko)**
 
 Specify the language code when running the script in headless mode.
 ## 🚀 Usage
