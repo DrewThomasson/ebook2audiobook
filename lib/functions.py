@@ -687,7 +687,7 @@ def combine_wav_files(chapters_dir_audio_sentences, ebook_chapters_audio_dir, ch
     except Exception as e:
         raise DependencyError(e)
 
-def get_sentences(sentence, language, max_pauses=10):
+def get_sentences(sentence, language, max_pauses=50):
     # Get the Max character length for the selected language -2 : with a default of 248 if no language is found
     char_limits = language_mapping[language]["char_limit"]
     punctuation = language_mapping[language]["punctuation"]
@@ -807,12 +807,6 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
                 # Combine audio sentences
                 combine_wav_files(chapters_dir_audio_sentences, ebook_chapters_audio_dir, chapter_wav_file)
                 print(f"Converted chapter {chapter_num} to audio.")
-                current_progress += 1
-                percentage = (current_progress / total_progress) * 100
-                t.set_description(f"Processing {percentage:.2f}%")
-                t.update(1)
-                if progress_bar is not None:
-                    progress_bar(current_progress / total_progress)
         return True
     except Exception as e:
         raise DependencyError(e)
@@ -1005,6 +999,9 @@ def web_interface(mode, share):
                     height: auto !important;
                     padding: 0 !important;
                 }
+                div.scroll{
+                    overflow: hidden !important;
+                }
                 .waveform-container.svelte-19usgod {
                     padding: 0 !important;
                     margin: 0 !important;
@@ -1016,8 +1013,8 @@ def web_interface(mode, share):
                     display: none !important;
                 }
                 .controls.svelte-ije4bl {
-                    padding: 0;
-                    margin: 0;
+                    padding: 0 !important;
+                    margin: 0 !important;
                 }
                 #component-8, #component-9, #component-34 {
                     height: 119px !important;
@@ -1211,6 +1208,13 @@ def web_interface(mode, share):
                 cancellation_requested.clear()
                 yield gr.Button(interactive=bool(f)), hide_modal()
 
+        def change_language(lang_sel):
+            if lang_sel == "zzzz":
+                index_sel = language.index(lang_sel)
+                next_option = language[index_sel + 1]
+                return next_option
+            return lang_sel
+
         def change_data(data):
             data["event"] = 'change_data'
             return data
@@ -1286,6 +1290,11 @@ def web_interface(mode, share):
             fn=change_ebook_file,
             inputs=[convert_btn, ebook_file],
             outputs=[convert_btn, modal_html]
+        )
+        language.change(
+            fn=change_language,
+            inputs=language,
+            outputs=language
         )
         audiobooks_ddn.change(
             fn=update_audiobook_link,
