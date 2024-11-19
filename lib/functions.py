@@ -10,7 +10,6 @@ import socket
 import spacy
 import subprocess
 import sys
-import nltk
 import threading
 import time
 import torch
@@ -63,12 +62,6 @@ ebook_chapters_audio_dir = None
 ebook_src = None
 ebook_title = None
 audiobooks_ddn = None
-
-# Base pronouns in English
-ebook_pronouns = {
-    "male": ["he", "him", "his"],
-    "female": ["she", "her", "hers"]
-}
 
 # Initialize a threading event to handle cancellation
 cancellation_requested = threading.Event()
@@ -259,16 +252,6 @@ def download_and_extract(path_or_url, extract_to=models_dir):
 #             raise ValueError(f"Spacy model does not exist for {language_mapping[language]['name']}...")
 #    return nlp
 
-def translate_pronouns(language):
-    global ebook_pronouns  
-    translator = Translator(to_lang=language)  
-    # Translate the pronouns to the target language
-    translated_pronouns = {
-        "male": [translator.translate(pronoun) for pronoun in ebook_pronouns["male"]],
-        "female": [translator.translate(pronoun) for pronoun in ebook_pronouns["female"]]
-    }
-    return translated_pronouns
-        
 def extract_metadata_and_cover(ebook_filename_noext):
     metadatas = None
     def parse_metadata(metadata_str):
@@ -588,7 +571,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
 
             previous_chapter_text = ''
             previous_filename = ''
-            chapter_counter = 0
+            chapter_counter = 1
 
             # Iterate through the items in the EPUB file
             for item in ebook.get_items():
@@ -641,6 +624,7 @@ def create_chapter_labeled_book(ebook_filename_noext):
                         # Insert "NEWCHAPTERABC" at the beginning of each chapter's text
                         if text:
                             text = "NEWCHAPTERABC" + text
+                        import nltk
                         sentences = nltk.tokenize.sent_tokenize(text)
                         for sentence in sentences:
                             if cancellation_requested.is_set():
@@ -675,7 +659,7 @@ def check_vocab_file(dir):
         print(f"Renamed {vocab_path} to {new_vocab_path}")
         return True
 
-def combine_wav_files(chapters_dir_audio_fragments, ebook_chapters_audio_dir, chapter_wav_file):
+def combine_wav_files(chapters_dir_audio_sentences, ebook_chapters_audio_dir, chapter_wav_file):
     try:
         # Specify the output file path
         output_file = os.path.join(ebook_chapters_audio_dir, chapter_wav_file)
@@ -684,13 +668,13 @@ def combine_wav_files(chapters_dir_audio_fragments, ebook_chapters_audio_dir, ch
         combined_audio = AudioSegment.empty()
 
         # Get a list of all .wav files in the specified input directory and sort them
-        fragments_dir_ordered = sorted(
-            [os.path.join(chapters_dir_audio_fragments, f) for f in os.listdir(chapters_dir_audio_fragments) if f.endswith(".wav")],
+        sentences_dir_ordered = sorted(
+            [os.path.join(chapters_dir_audio_sentences, f) for f in os.listdir(chapters_dir_audio_sentences) if f.endswith(".wav")],
             key=lambda f: int(''.join(filter(str.isdigit, f)))
         )
 
         # Sequentially append each file to the combined_audio
-        for file in fragments_dir_ordered:
+        for file in sentences_dir_ordered:
             if cancellation_requested.is_set():
                 msg = "Cancel requested"
                 raise ValueError(msg)
@@ -703,34 +687,11 @@ def combine_wav_files(chapters_dir_audio_fragments, ebook_chapters_audio_dir, ch
     except Exception as e:
         raise DependencyError(e)
 
-def split_long_sentence(sentence, language='en', max_pauses=10):
-    """
-    Splits a sentence into parts based on length or number of pauses without recursion.
-    
-    :param sentence: The sentence to split.
-    :param language: The language of the sentence (default is English).
-    :param max_pauses: Maximum allowed number of pauses in a sentence.
-    :return: A list of sentence parts that meet the criteria.
-    """
+def get_sentences(sentence, language, max_pauses=10):
     # Get the Max character length for the selected language -2 : with a default of 248 if no language is found
     char_limits = language_mapping[language]["char_limit"]
-    max_length = (char_limits - 2)
-
-    # Adjust the pause punctuation symbols based on language
-    if language == 'zh':
-        punctuation = ['，', '。', '；', '？', '！']  # Chinese-specific pause punctuation including sentence-ending marks
-    elif language == 'ja':
-        punctuation = ['、', '。', '；', '？', '！']  # Japanese-specific pause punctuation
-    elif language == 'ko':
-        punctuation = ['，', '。', '；', '？', '！']  # Korean-specific pause punctuation
-    elif language == 'ar':
-        punctuation = ['،', '؛', '؟', '!', '·', '؛', '.']  # Arabic-specific punctuation
-    elif language == 'en':
-        punctuation = [',', ';', '.']  # English-specific pause punctuation
-    else:
-        # Default pause punctuation for other languages (es, fr, de, it, pt, pl, cs, ru, nl, tr, hu)
-        punctuation = [',', '.', ';', ':', '?', '!']
-   
+    punctuation = language_mapping[language]["punctuation"]
+    max_length = (char_limits - 2)  
     parts = []
     while len(sentence) > max_length or sum(sentence.count(p) for p in punctuation) > max_pauses:
         possible_splits = [i for i, char in enumerate(sentence) if char in punctuation and i < max_length]
@@ -773,8 +734,6 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
             tts = Xtts.init_from_config(config)
             tts.load_checkpoint(config, checkpoint_dir=model_path, vocab_path=vocab_path)
         else:
-            #selected_tts_model = "tts_models/multilingual/multi-dataset/xtts_v2"
-            #tts = TTS(selected_tts_model, progress_bar=False).to(device)
             base_dir = os.path.join(models_dir,"XTTS-v2")
             config_path = os.path.join(base_dir,"config.json")
             config = XttsConfig()
@@ -787,130 +746,73 @@ def convert_chapters_to_audio(device, temperature, length_penalty, repetition_pe
         print("Computing speaker latents...")
         gpt_cond_latent, speaker_embedding = tts.get_conditioning_latents(audio_path=[target_voice_file])
         
-        chapters_dir_audio_fragments = os.path.join(ebook_chapters_audio_dir, "fragments")
-        os.makedirs(chapters_dir_audio_fragments, exist_ok=True)
-
-        # Calculate the total number of chapters and segments (fragments) to set progress bar correctly
-        total_segments = 0
-        total_chapters = len([f for f in os.listdir(ebook_chapters_dir) if f.endswith('.txt')])
+        chapters_dir_audio_sentences = os.path.join(ebook_chapters_audio_dir, "sentences")
+        os.makedirs(chapters_dir_audio_sentences, exist_ok=True)
         
-        # Check if the language is nltk compatible
-        nltk_language = language_mapping[language]["name"].lower() if language_mapping[language] else None
+        # Chapters array
+        chapters_mapping = {}
+        
+        # Calculate the total number of chapters and segments (sentences) to set progress bar correctly
+        chapters_file_array = sorted([f for f in os.listdir(ebook_chapters_dir) if f.endswith('.txt')])
+        total_chapters = len(chapters_file_array)
+        total_sentences = 0
 
-        # Pre-calculate total segments (sentences + fragments per chapter)
-        for chapter_file in sorted(os.listdir(ebook_chapters_dir)):
-            if cancellation_requested.is_set():
-                stop_and_detach_tts(tts)
-                msg = "Cancel requested"
-                raise ValueError(msg)
-            if chapter_file.endswith('.txt'):
-                with open(os.path.join(ebook_chapters_dir, chapter_file), 'r', encoding='utf-8') as file:
-                    chapter_text = file.read()
-                    #if nltk_language is not None:
-                        #sentences = nltk.tokenize.sent_tokenize(chapter_text, language=nltk_language)
-                        #sentences = nltk.tokenize.word_tokenize(chapter_text, language=nltk_language, preserve_line=False)
-                    #else:
-                    sentences = [chapter_text]
-
-                    # Calculate total fragments for this chapter
-                    for sentence in sentences:
-                        fragments = split_long_sentence(sentence, language=language)
-                        total_segments += len(fragments)
+        # Pre-calculate total segments (sentences + sentences per chapter)
+        for x in range(total_chapters):            
+            chapter_file = chapters_file_array[x]
+            with open(os.path.join(ebook_chapters_dir, chapter_file), 'r', encoding='utf-8') as file:
+                chapter_text = file.read()
+                sentences = get_sentences(chapter_text, language=language)
+                total_sentences += len(sentences)
+                chapters_mapping[x] = {"file": chapter_file, "sentences": sentences}
 
         current_progress = 0
-        total_progress = total_segments + total_chapters  # Total is chapters + segments/fragments
+        total_progress = total_sentences
 
         with tqdm(total=total_progress, desc="Processing 0.00%", bar_format='{desc}: {n_fmt}/{total_fmt} ', unit="step") as t:
-            for chapter_file in sorted(os.listdir(ebook_chapters_dir)):
+            for x in range(total_chapters):
                 if cancellation_requested.is_set():
                     stop_and_detach_tts(tts)
                     msg = "Cancel requested"
                     raise ValueError(msg)
-                if chapter_file.endswith('.txt'):
-                    match = re.search(r"chapter_(\d+).txt", chapter_file)
-                    if match:
-                        chapter_num = int(match.group(1))
-                    else:
-                        print(f"Skipping file {chapter_file} as it does not match the expected format.")
-                        continue
 
-                    chapter_file_path = os.path.join(ebook_chapters_dir, chapter_file)
-                    chapter_wav_file = f"chapter_{chapter_num}.wav"
-                    count_fragments = 0
+                chapter_file_path = os.path.join(ebook_chapters_dir, chapters_mapping[x]["file"])
+                chapter_num = (x + 1)
+                chapter_wav_file = f"chapter_{chapter_num}.wav"
+                current_sentence = 1
+                with open(chapter_file_path, 'r', encoding='utf-8') as file:
+                    chapter_text = file.read()
+                    sentences = chapters_mapping[x]["sentences"]
+                    for sentence in sentences:
+                        if cancellation_requested.is_set():
+                            stop_and_detach_tts(tts)
+                            msg = "Cancel requested"
+                            raise ValueError(msg)
+                        print(f"Generating sentence: {sentence}...")
+                        sentence_file_path = os.path.join(chapters_dir_audio_sentences, f"{current_sentence}.wav")
+                        output = tts.inference(
+                            sentence, language, gpt_cond_latent, speaker_embedding, 
+                            temperature=temperature, repetition_penalty=repetition_penalty, 
+                            top_k=top_k, top_p=top_p, speed=speed, enable_text_splitting=enable_text_splitting
+                        )
+                        torchaudio.save(sentence_file_path, torch.tensor(output["wav"]).unsqueeze(0), 24000)
+                        current_progress += 1
+                        percentage = (current_progress / total_progress) * 100
+                        t.set_description(f"Processing {percentage:.2f}%")
+                        t.update(1)
+                        if progress_bar is not None:
+                            progress_bar(current_progress / total_progress)
+                        current_sentence += 1
 
-                    with open(chapter_file_path, 'r', encoding='utf-8') as file:
-                        chapter_text = file.read()
-                        #if nltk_language is not None:
-                        #    sentences = nltk.tokenize.sent_tokenize(chapter_text, language=nltk_language)
-                            #sentences = nltk.tokenize.word_tokenize(chapter_text, language=nltk_language, preserve_line=False)
-                        #else:
-                        sentences = [chapter_text]
-                        
-                        for sentence in sentences:
-                            if cancellation_requested.is_set():
-                                stop_and_detach_tts(tts)
-                                msg = "Cancel requested"
-                                raise ValueError(msg)
-                            fragments = split_long_sentence(sentence, language=language)
-                            for fragment in fragments:
-                                if cancellation_requested.is_set():
-                                    stop_and_detach_tts(tts)
-                                    msg = "Cancel requested"
-                                    raise ValueError(msg)
-                                if fragment != "":
-                                    print(f"Generating fragment: {fragment}...")
-                                    fragment_file_path = os.path.join(chapters_dir_audio_fragments, f"{count_fragments}.wav")
-                                    
-                                    #if custom_tts:
-                                    out = tts.inference(
-                                        fragment, language, gpt_cond_latent, speaker_embedding, 
-                                        temperature=temperature, repetition_penalty=repetition_penalty, 
-                                        top_k=top_k, top_p=top_p, speed=speed, enable_text_splitting=enable_text_splitting
-                                    )
-                                    torchaudio.save(fragment_file_path, torch.tensor(out["wav"]).unsqueeze(0), 24000)
-                                    #else:
-                                    #    speaker_wav_path = target_voice_file if target_voice_file else default_target_voice_file
-                                    #    model.tts_to_file(
-                                    #        text=fragment, 
-                                    #        file_path=fragment_file_path, 
-                                    #        speaker_wav=speaker_wav_path, 
-                                    #        language=language, 
-                                    #        temperature=temperature, 
-                                    #        length_penalty=length_penalty, 
-                                    #        repetition_penalty=repetition_penalty, 
-                                    #        top_k=top_k, 
-                                    #        top_p=top_p, 
-                                    #        speed=speed, 
-                                    #        enable_text_splitting=enable_text_splitting
-                                    #    )
-                                    
-                                    count_fragments += 1
-                                    current_progress += 1
-
-                                    percentage = (current_progress / total_progress) * 100
-                                    t.set_description(f"Processing {percentage:.2f}%")
-                                    t.update(1)
-
-                                    # Update Gradio progress bar
-                                    if progress_bar is not None:
-                                        progress_bar(current_progress / total_progress)
-
-                    # Combine audio fragments
-                    combine_wav_files(chapters_dir_audio_fragments, ebook_chapters_audio_dir, chapter_wav_file)
-                    print(f"Converted chapter {chapter_num} to audio.")
-                    if cancellation_requested.is_set():
-                        msg = "Cancel requested"
-                        raise ValueError(msg)
-
-                    current_progress += 1
-                    percentage = (current_progress / total_progress) * 100
-                    t.set_description(f"Processing {percentage:.2f}%")
-                    t.update(1)
-
-                    # Update Gradio progress bar
-                    if progress_bar is not None:
-                        progress_bar(current_progress / total_progress)
-
+                # Combine audio sentences
+                combine_wav_files(chapters_dir_audio_sentences, ebook_chapters_audio_dir, chapter_wav_file)
+                print(f"Converted chapter {chapter_num} to audio.")
+                current_progress += 1
+                percentage = (current_progress / total_progress) * 100
+                t.set_description(f"Processing {percentage:.2f}%")
+                t.update(1)
+                if progress_bar is not None:
+                    progress_bar(current_progress / total_progress)
         return True
     except Exception as e:
         raise DependencyError(e)
@@ -982,10 +884,7 @@ def convert_ebook(args):
 
             if not is_gui_process:
                 audiobooks_dir = audiobooks_cli_dir
-                    
-            if language != "en":
-                ebook_pronouns = translate_pronouns(language)
-                
+ 
             # Load spaCy model for language analysis (you can switch models based on language)
             #if load_spacy_model(language):
             # Prepare tmp dir and properties
