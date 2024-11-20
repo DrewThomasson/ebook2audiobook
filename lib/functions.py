@@ -854,9 +854,9 @@ def convert_ebook(args):
             top_k = args.top_k
             top_p = args.top_p
             speed = args.speed
-            enable_text_splitting = args.enable_text_splitting
+            enable_text_splitting = args.enable_text_splitting if args.enable_text_splitting is not None else True
             custom_model_file = args.custom_model
-            custom_model_url = args.custom_model_url
+            custom_model_url = args.custom_model_url if custom_model_file is None else None
 
             if not os.path.splitext(ebook_src)[1]:
                 raise ValueError("The selected ebook file has no extension. Please select a valid file.")
@@ -952,8 +952,8 @@ def web_interface(mode, share):
     is_gui_process = True
     is_gui_shared = share
     audiobook_file = None
-    language_options = [details["native_name"] for details in language_mapping.values()]
-    default_language_native = language_mapping[default_language_code]["native_name"]
+    language_options = [details["name"] for details in language_mapping.values()]
+    default_language_name = language_mapping[default_language_code]["name"]
 
     theme = gr.themes.Origin(
         primary_hue="amber",
@@ -962,21 +962,10 @@ def web_interface(mode, share):
         radius_size="lg",
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
     )
-
     with gr.Blocks(theme=theme) as interface:
-        gr.Markdown(
-            f"""
-            # Ebook2Audiobook v{version}<br/>
-            https://github.com/DrewThomasson/ebook2audiobook<br/>
-            Convert eBooks into immersive audiobooks with realistic voice TTS models.
-            """
-        )
         gr.HTML(
             """
             <style>
-                input[type="checkbox"] {
-                    border-color: #fafafa !Important;
-                }
                 .svelte-1xyfx7i.center.boundedheight.flex{
                     height: 120px !important;
                 }
@@ -999,10 +988,9 @@ def web_interface(mode, share):
                     height: auto !important;
                     padding: 0 !important;
                 }
-                div.scroll{
-                    overflow: hidden !important;
-                }
                 .waveform-container.svelte-19usgod {
+                    height: 58px !important;
+                    overflow: hidden !important;
                     padding: 0 !important;
                     margin: 0 !important;
                 }
@@ -1016,10 +1004,17 @@ def web_interface(mode, share):
                     padding: 0 !important;
                     margin: 0 !important;
                 }
-                #component-8, #component-9, #component-34 {
-                    height: 119px !important;
+                #component-7, #component-13, #component-14 {
+                    height: 130px !important;
                 }
             </style>
+            """
+        )
+        gr.Markdown(
+            f"""
+            # Ebook2Audiobook v{version}<br/>
+            https://github.com/DrewThomasson/ebook2audiobook<br/>
+            Convert eBooks into immersive audiobooks with realistic voice TTS models.
             """
         )
         with gr.Tabs():
@@ -1028,13 +1023,13 @@ def web_interface(mode, share):
                     with gr.Column(scale=3):
                         ebook_file = gr.File(label="eBook File")
                         device = gr.Radio(label="Processor Unit", choices=["CPU", "GPU"], value="CPU")
-                        language = gr.Dropdown(label="Language", choices=language_options, value=default_language_native)  
+                        language = gr.Dropdown(label="Language", choices=language_options, value=default_language_name)  
                     with gr.Column(scale=3):
                         with gr.Group():
-                            target_voice_file = gr.File(label="Cloning Voice* (a .wav or .mp3 no more than 12sec)")
-                            custom_model_file = gr.File(label="Model* (a .zip containing config.json, vocab.json, model.pth)")
-                            custom_model_url = gr.Textbox(placeholder="https://www.example.com/model.zip", label="Model from URL*")
-                            gr.Markdown('<p>* Optional</p>')
+                            target_voice_file = gr.File(label="Cloning Voice* (a .wav or .mp3 no more than 12sec)", file_types=[".wav", ".mp3"])
+                            custom_model_file = gr.File(label="Model* (a .zip containing config.json, vocab.json, model.pth)", file_types=[".zip"], visible=True)
+                            custom_model_url = gr.Textbox(placeholder="https://www.example.com/model.zip", label="Model from URL*", visible=True)
+                            gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
             with gr.TabItem("Audio Generation Preferences"):
                 gr.Markdown(
                     """
@@ -1063,7 +1058,7 @@ def web_interface(mode, share):
                     minimum=1.0, 
                     maximum=10.0, 
                     step=0.1, 
-                    value=2.0, 
+                    value=3.0, 
                     info="Penalizes repeated phrases. Higher values reduce repetition."
                 )
                 top_k = gr.Slider(
@@ -1092,7 +1087,7 @@ def web_interface(mode, share):
                 )
                 enable_text_splitting = gr.Checkbox(
                     label="Enable Text Splitting", 
-                    value=False,
+                    value=True,
                     info="Splits long texts into sentences to generate audio in chunks. Useful for very long inputs."
                 )
                 
@@ -1100,7 +1095,7 @@ def web_interface(mode, share):
         session = gr.Textbox(label="Session", visible=False)
         conversion_progress = gr.Textbox(label="Progress")
         convert_btn = gr.Button("Convert", variant="primary", interactive=False)
-        audio_player = gr.Audio(label="Listen", type="filepath", visible=False)
+        audio_player = gr.Audio(label="Listen", type="filepath", show_download_button=False, container=True, visible=False)
         audiobooks_ddn = gr.Dropdown(choices=[], label="Audiobooks")
         audiobook_link = gr.File(label="Download")
         write_data = gr.JSON(visible=False)
@@ -1209,11 +1204,14 @@ def web_interface(mode, share):
                 yield gr.Button(interactive=bool(f)), hide_modal()
 
         def change_language(lang_sel):
-            if lang_sel == "zzzz":
-                index_sel = language.index(lang_sel)
-                next_option = language[index_sel + 1]
-                return next_option
-            return lang_sel
+            if lang_sel == "------------------ More languages (A to Z) ------------------------":
+                return gr.Dropdown(label="Language", choices=language_options, value=default_language_name)
+            return gr.Dropdown(label="Language", choices=language_options, value=lang_sel)
+
+        def change_custom_model_file(f):
+            if f is not None:
+                return gr.Textbox(placeholder="https://www.example.com/model.zip", label="Model from URL*", visible=False)
+            return gr.Textbox(placeholder="https://www.example.com/model.zip", label="Model from URL*", visible=True)
 
         def change_data(data):
             data["event"] = 'change_data'
@@ -1225,7 +1223,7 @@ def web_interface(mode, share):
             ebook_src = ebook_file.name if ebook_file else None
             target_voice_file = target_voice_file.name if target_voice_file else None
             custom_model_file = custom_model_file.name if custom_model_file else None
-            language = next((code for code, details in language_mapping.items() if details["native_name"] == language), None)
+            language = next((code for code, details in language_mapping.items() if details["name"] == language), None)
 
             if not ebook_src:
                 return "Error: eBook file is required."
@@ -1300,6 +1298,11 @@ def web_interface(mode, share):
             fn=update_audiobook_link,
             inputs=audiobooks_ddn,
             outputs=[audiobook_link, audio_player, audio_player]
+        )
+        custom_model_file.change(
+            fn=change_custom_model_file,
+            inputs=custom_model_file,
+            outputs=custom_model_url
         )
         session.change(
             fn=change_data,
