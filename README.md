@@ -1,7 +1,10 @@
 # 📚 ebook2audiobook
 
 Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui XTTS. Supports optional voice cloning and multiple languages!
-
+> [!IMPORTANT]
+**This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
+The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
+Use this tool responsibly and in accordance with all applicable laws.
 
 #### 🖥️ Web GUI Interface
 ![demo_web_gui](https://github.com/user-attachments/assets/85af88a7-05dd-4a29-91de-76a14cf5ef06)

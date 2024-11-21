@@ -1,6 +1,10 @@
 # 📚 ebook2audiobook
 
 使用Calibre和Coqui XTTS将电子书转换为包含章节和元数据的有声读物。支持可选的语音克隆和多种语言！
+> [!IMPORTANT]  
+**本工具仅适用于非DRM、合法获取的电子书。**  
+作者对软件的任何误用或由此产生的法律后果概不负责。  
+请负责任地使用本工具，并遵守所有适用法律。
 
 #### 🖥️ Web GUI界面
 ![demo_web_gui](https://github.com/user-attachments/assets/85af88a7-05dd-4a29-91de-76a14cf5ef06)
