@@ -3,7 +3,7 @@ print("starting...")
 import argparse
 
 language_options = [
-    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko"
+    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko", "hi", "vi"
 ]
 char_limits = {
     "en": 250,      # English
@@ -22,6 +22,8 @@ char_limits = {
     "ja": 71,       # Japanese
     "hu": 224,      # Hungarian
     "ko": 95,       # Korean
+    "hi": 95,       # Hindi
+    "vi": 95,       # Vietnamese
 }
 
 # Mapping of language codes to NLTK's supported language names
@@ -584,6 +586,8 @@ def split_long_sentence(sentence, language='en', max_pauses=10):
 if 'tts' not in locals():
     tts = TTS(selected_tts_model, progress_bar=True).to(device)
 """
+
+
 from tqdm import tqdm
 
 # Convert chapters to audio using XTTS
@@ -597,6 +601,11 @@ def convert_chapters_to_audio_custom_model(chapters_dir, output_audio_dir, tempe
         print("Loading custom model...")
         config = XttsConfig()
         config.load_json(custom_model['config'])
+        print("Original list of supported languages:", config.languages)
+        # Add 'vi' to the supported languages if not already included
+        config.languages.append("vi")
+        print("Vietnamese ('vi') added to supported languages.")
+        print("Updated list of supported languages:", config.languages)
         model = Xtts.init_from_config(config)
         model.load_checkpoint(config, checkpoint_path=custom_model['model'], vocab_path=custom_model['vocab'], use_deepspeed=False)
         model.to(device)
@@ -835,8 +844,8 @@ def download_audiobooks():
 # Gradio UI setup
 def run_gradio_interface():
     language_options = [
-        "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko"
-    ]
+    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko", "hi", "vi"
+]
 
     theme = gr.themes.Soft(
         primary_hue="blue",
@@ -848,8 +857,8 @@ def run_gradio_interface():
 # Gradio UI setup
 def run_gradio_interface():
     language_options = [
-        "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko"
-    ]
+    "en", "es", "fr", "de", "it", "pt", "pl", "tr", "ru", "nl", "cs", "ar", "zh-cn", "ja", "hu", "ko", "hi", "vi"
+]
 
     theme = gr.themes.Soft(
         primary_hue="blue",
