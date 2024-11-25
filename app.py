@@ -165,7 +165,7 @@ Linux/Mac:
     parser.add_argument(options[5], type=str,
                         help="Path to the target voice file for TTS. Optional, uses a default voice if not provided.")
     parser.add_argument(options[6], type=str, default=default_language_code,
-                        help=f"Language for the audiobook conversion. Options: {lang_list_str}. Defaults to English (en).")
+                        help=f"Language for the audiobook conversion. Options: {lang_list_str}. Default to English (eng).")
     parser.add_argument(options[7], type=str, default="cpu", choices=["cpu", "gpu"],
                         help=f"Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.")
     parser.add_argument(options[8], type=str,
