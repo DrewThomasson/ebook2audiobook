@@ -87,7 +87,7 @@ Specify the language code when running the script in headless mode.
      ```
 
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
-3. **For Public Link**: Add `--share True` to the end of it like this: `python app.py --share True`
+3. **For Public Link**: Add `--share` to the end of it like this: `python app.py --share`
 - **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
 ### 📝 Basic Headless Usage
@@ -108,11 +108,11 @@ Specify the language code when running the script in headless mode.
 ### 🧩 Headless Custom XTTS Model Usage
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  --headless --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+     .\ebook2audiobook.sh  --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  --headless --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+     .\ebook2audiobook.cmd  --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
      ```
 
 - **<ebook_file_path>**: Path to your eBook file.
@@ -127,11 +127,11 @@ Specify the language code when running the script in headless mode.
 ### 🧩 Headless Custom XTTS Model Usage With Zip link to XTTS Fine-Tune Model 🌐
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  --headless --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
+     .\ebook2audiobook.sh  --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  --headless --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
+     .\ebook2audiobook.cmd  --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
      ```
 
 - **<ebook_file_path>**: Path to your eBook file.
@@ -168,9 +168,9 @@ options:
   -h, --help            show this help message and exit
   --script_mode SCRIPT_MODE
                         Force the script to run in 'native' or 'docker_utils'
-  --share               Enable a public shareable Gradio link. Defaults to False.
+  --share               Enable a public shareable Gradio link.
   --headless [HEADLESS]
-                        Run in headless mode. Defaults to True if the flag is present without a value, False otherwise.
+                        Run in headless mode.
   --ebook EBOOK         Path to the ebook file for conversion. Required in headless mode.
   --ebooks_dir [EBOOKS_DIR]
                         Path to the directory containing ebooks for batch conversion. Defaults to 'ebooks' if 'default' value is provided.
@@ -190,8 +190,7 @@ options:
   --top_k TOP_K         Top-k sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 50.
   --top_p TOP_P         Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Defaults to 0.8.
   --speed SPEED         Speed factor for the speech generation. Defaults to 1.0.
-  --enable_text_splitting
-                        Enable splitting text into sentences. Defaults to False.
+  --enable_text_splitting  Enable splitting text into sentences automatically.
   --version             Show the version of the script and exit
 
 Example usage:    
@@ -315,8 +314,7 @@ and that will output this
 ```bash
 user/app/ebook2audiobook/input-folder -v $(pwd)/Audiobooks:/home/user/app/ebook2audiobook/Audiobooks --memory="4g" --network none --platform linux/amd64 athomasson2/ebook2audiobook:huggingface python app.py -h
 starting...
-usage: app.py [-h] [--share SHARE] [--headless HEADLESS] [--ebook EBOOK] [--voice VOICE]
-              [--language LANGUAGE] [--use_custom_model USE_CUSTOM_MODEL]
+usage: app.py [-h] [--share SHARE] [--headless HEADLESS] [--ebook EBOOK] [--voice VOICE] [--language LANGUAGE]
               [--custom_model CUSTOM_MODEL] [--custom_config CUSTOM_CONFIG]
               [--custom_vocab CUSTOM_VOCAB] [--custom_model_url CUSTOM_MODEL_URL]
               [--temperature TEMPERATURE] [--length_penalty LENGTH_PENALTY]
@@ -328,10 +326,8 @@ Gradio interface or run the script in headless mode for direct conversion.
 
 options:
   -h, --help            show this help message and exit
-  --share SHARE         Set to True to enable a public shareable Gradio link. Defaults
-                        to False.
-  --headless HEADLESS   Set to True to run in headless mode without the Gradio
-                        interface. Defaults to False.
+  --share SHARE         Eenable a public shareable Gradio link.
+  --headless HEADLESS   Run in headless mode.
   --ebook EBOOK         Path to the ebook file for conversion. Required in headless
                         mode.
   --voice VOICE         Path to the target voice file for TTS. Optional, uses a default
@@ -339,9 +335,6 @@ options:
   --language LANGUAGE   Language for the audiobook conversion. Options: en, es, fr, de,
                         it, pt, pl, tr, ru, nl, cs, ar, zh-cn, ja, hu, ko. Defaults to
                         English (en).
-  --use_custom_model USE_CUSTOM_MODEL
-                        Set to True to use a custom TTS model. Defaults to False. Must
-                        be True to use custom models, otherwise you'll get an error.
   --custom_model CUSTOM_MODEL
                         Path to the custom model file (.pth). Required if using a custom
                         model.
@@ -375,11 +368,10 @@ options:
                         increased audio generation speed. Defaults to 0.8.
   --speed SPEED         Speed factor for the speech generation. IE: How fast the
                         Narrerator will speak. Defaults to 1.0.
-  --enable_text_splitting ENABLE_TEXT_SPLITTING
-                        Enable splitting text into sentences. Defaults to True.
+  --enable_text_splitting  Enable splitting text into sentences.
 
 Example: python script.py --headless --ebook path_to_ebook --voice path_to_voice
---language en --use_custom_model True --custom_model model.pth --custom_config
+--language eng --custom_model model.pth --custom_config
 config.json --custom_vocab vocab.json
 ```
 </details>
