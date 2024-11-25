@@ -150,7 +150,7 @@ Linux/Mac:
         "--voice", "--language", "--device", "--custom_model", 
         "--custom_model_url", "--temperature",
         "--length_penalty", "--repetition_penalty", "--top_k", "--top_p", "--speed",
-        "--enable_text_splitting", "--version"
+        "--enable_text_splitting", "--version", "--help"
     ]
     parser.add_argument(options[0], type=str,
                         help="Force the script to run in 'native' or 'docker_utils'")
