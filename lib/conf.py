@@ -24,7 +24,7 @@ audiobooks_host_dir = os.path.abspath(os.path.join(".","audiobooks","gui","host"
 audiobooks_cli_dir = os.path.abspath(os.path.join(".","audiobooks","cli"))
 unidic_path = os.path.abspath(os.path.join(".","resources","udict"))
 
-<<<<<<< HEAD
+# <<<<<<< HEAD
 os.environ["CALIBRE_TEMP_DIR"] = processes_dir
 os.environ["CALIBRE_CACHE_DIRECTORY"] = processes_dir
 os.environ["CALIBRE_NO_NATIVE_FILEDIALOGS"] = "1"
@@ -36,10 +36,10 @@ os.environ["HF_TOKEN_PATH"] = os.path.join(os.path.expanduser("~"), ".huggingfac
 os.environ["TTS_CACHE"] = models_dir
 os.environ["TORCH_HOME"] = models_dir
 os.environ["XDG_CACHE_HOME"] = models_dir
-=======
+# =======
 zip_link_to_xtts_model = "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/Viet_XTTS_v2.0.zip?download=true"
 xtts_base_model_files = ["config.json", "model.pth", "vocab.json"]
->>>>>>> ff7ef6f8dd81bdd0db6cd35ab6375bfdbbec1888
+# >>>>>>> ff7ef6f8dd81bdd0db6cd35ab6375bfdbbec1888
 
 models = {
     "xtts": {
