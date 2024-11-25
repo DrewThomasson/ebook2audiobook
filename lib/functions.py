@@ -96,7 +96,7 @@ def download_model(dest_dir, url):
     try:
         if not os.path.exists(dest_dir):
             os.makedirs(dest_dir)
-        zip_path = os.path.join(dest_dir, models["xtts"]["sip"])
+        zip_path = os.path.join(dest_dir, models["xtts"]["zip"])
         print("Downloading the XTTS v2 model...")
         response = requests.get(url, stream=True)
         response.raise_for_status()  # Raise an error for bad status codes
