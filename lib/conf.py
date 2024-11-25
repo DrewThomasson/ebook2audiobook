@@ -6,7 +6,7 @@ FULL_DOCKER = "full_docker"
 
 version = "2.0.0"
 min_python_version = (3, 10)
-max_python_version = (3, 11)
+max_python_version = (3, 12)
 
 requirements_file = os.path.abspath(os.path.join(".","requirements.txt"))
 
@@ -17,7 +17,6 @@ concurrency_limit = 16 # or None for unlimited
 
 python_env_dir = os.path.abspath(os.path.join(".","python_env"))
 models_dir = os.path.abspath(os.path.join(".","models"))
-xttsv2_base_model_dir = os.path.join(models_dir, "XTTS-v2")
 ebooks_dir = os.path.abspath(os.path.join(".","ebooks"))
 processes_dir = os.path.abspath(os.path.join(".","tmp"))
 audiobooks_gradio_dir = os.path.abspath(os.path.join(".","audiobooks","gui","gradio"))
@@ -25,11 +24,35 @@ audiobooks_host_dir = os.path.abspath(os.path.join(".","audiobooks","gui","host"
 audiobooks_cli_dir = os.path.abspath(os.path.join(".","audiobooks","cli"))
 unidic_path = os.path.abspath(os.path.join(".","resources","udict"))
 
-zip_link_to_xtts_model = "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/XTTS-v2.0.3.zip?download=true"
-xtts_base_model_files = ["config.json", "model.pth", "vocab.json"]
+os.environ["CALIBRE_TEMP_DIR"] = processes_dir
+os.environ["CALIBRE_CACHE_DIRECTORY"] = processes_dir
+os.environ["CALIBRE_NO_NATIVE_FILEDIALOGS"] = "1"
+os.environ["DO_NOT_TRACK"] = "true"
+os.environ["HUGGINGFACE_HUB_CACHE"] = models_dir
+os.environ["HF_HOME"] = models_dir
+os.environ["HF_DATASETS_CACHE"] = models_dir
+os.environ["HF_TOKEN_PATH"] = os.path.join(os.path.expanduser("~"), ".huggingface_token")
+os.environ["TTS_CACHE"] = models_dir
+os.environ["TORCH_HOME"] = models_dir
+os.environ["XDG_CACHE_HOME"] = models_dir
 
-supported_ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
-final_format = "m4b"
+models = {
+    "xtts": {
+        "url": "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/XTTS-v2.0.3.zip?download=true",
+        "local": os.path.join(models_dir, "XTTS-v2"),
+        "files": ["config.json", "model.pth", "vocab.json"],
+        "zip": "xtts_v2_model.zip"
+    },
+    "mms": {
+        "url": "",
+        "local": os.path.join(models_dir, "mms"),
+        "files": ["config.json", "G_100000.pth", "vocab.txt"],
+        "zip": "fairseq_model.zip"
+    }
+}
+
+ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
+audiobook_format = "m4b"
 
 xtts_fine_tuned_voice_actors = {
     "David Attenborough": {
@@ -92,14 +115,3 @@ need_to_find_sample_ref_file_xtts_fine_tuned_models = {
     }
 
 }
-
-
-os.environ["TTS_CACHE"] = models_dir
-os.environ["TORCH_HOME"] = models_dir
-os.environ["HUGGINGFACE_HUB_CACHE"] = models_dir
-os.environ["HF_HOME"] = models_dir
-os.environ["HF_DATASETS_CACHE"] = models_dir
-os.environ["HF_TOKEN_PATH"] = os.path.join(os.path.expanduser("~"), ".huggingface_token")
-os.environ["CALIBRE_TEMP_DIR"] = processes_dir
-os.environ["CALIBRE_CACHE_DIRECTORY"] = processes_dir
-os.environ["CALIBRE_NO_NATIVE_FILEDIALOGS"] = "1"

@@ -13,28 +13,25 @@ authors = [
 ]
 dependencies = [
     "beautifulsoup4",
-    "camel-tools",
     "coqui-tts",
     "cutlet",
     "docker",
     "ebooklib",
     "gensim",
-    "gradio>=4.44.0",
+    "gradio>=4.44",
+    "hangul-romanize",
     "indic-nlp-library",
+	"iso-639",
     "jieba",
-    "mecab",
-    "mecab-python3",
-    "nltk>=3.8.2",
     "pydub",
     "pypinyin",
-    "sentencepiece",
+	"ray",
+	"transformers",
     "translate",
-    "tqdm",
-    "hangul-romanize",
-    "unidic",
+    "tqdm"
 ]
 readme = "README.md"
-requires-python = ">=3.10,<3.12"
+requires-python = ">=3.10,<3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
@@ -44,4 +41,3 @@ scripts = { "ebook2audiobook" = "app:main" }
 
 [project.urls]
 "Homepage" = "https://github.com/DrewThomasson/ebook2audiobook"
-

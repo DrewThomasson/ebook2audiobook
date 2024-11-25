@@ -11,7 +11,7 @@ set "FULL_DOCKER=full_docker"
 set "SCRIPT_MODE=%NATIVE%"
 set "SCRIPT_DIR=%~dp0"
 
-set "PYTHON_VERSION=3.11"
+set "PYTHON_VERSION=3.12"
 set "DOCKER_UTILS_IMG=utils"
 set "PYTHON_ENV=python_env"
 set "CURRENT_ENV="
@@ -248,7 +248,6 @@ if "%PROGRAMS_CHECK%"=="0" (
 		)
     )
 )
-echo Some check failed: (1 = failed)
 echo PROGRAMS_CHECK: %PROGRAMS_CHECK%
 echo CONDA_CHECK_STATUS: %CONDA_CHECK_STATUS%
 echo DOCKER_CHECK_STATUS: %DOCKER_CHECK_STATUS%
@@ -269,10 +268,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		call conda create --prefix %SCRIPT_DIR%\%PYTHON_ENV% python=%PYTHON_VERSION% -y
 		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
 		call python -m pip install --upgrade pip
-		call python -m pip install --upgrade -r requirements.txt
-		call python -m unidic download
-		call python -m spacy download en_core_web_sm
-		call python -m nltk.downloader punkt_tab
+		call python -m pip install --upgrade -r requirements.txt --progress-bar=on
 	) else (
 		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
 	)
