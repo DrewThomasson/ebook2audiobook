@@ -87,7 +87,7 @@ Specify the language code when running the script in headless mode.
 
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
 3. **For Public Link**: Add `--share True` to the end of it like this: `python app.py --share True`
-- **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
+- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
 ### 📝 Basic Headless Usage
    - **Linux/MacOS**:
@@ -102,7 +102,7 @@ Specify the language code when running the script in headless mode.
 - **<path_to_ebook_file>**: Path to your eBook file.
 - **[path_to_voice_file]**: Optional for voice cloning.
 - **[language_code]**: Optional to specify ISO-639-3 3+ letters language code (default is eng). ISO-639-1 2 letters code is also supported
-- **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
+- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
 ### 🧩 Headless Custom XTTS Model Usage
    - **Linux/MacOS**:
@@ -120,7 +120,7 @@ Specify the language code when running the script in headless mode.
 - **<custom_model_path>**: Path to `model.pth`.
 - **<custom_config_path>**: Path to `config.json`.
 - **<custom_vocab_path>**: Path to `vocab.json`.
-- **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
+- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
 
 ### 🧩 Headless Custom XTTS Model Usage With Zip link to XTTS Fine-Tune Model 🌐
@@ -139,16 +139,16 @@ Specify the language code when running the script in headless mode.
 - **<custom_model_URL_ZIP_path>**: URL Path to zip of Model folder. For Example this for the [xtts_David_Attenborough_fine_tune](https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/tree/main) `https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true`
 - For a custom model a ref audio clip of the voice will also be needed:
 [ref audio clip of David Attenborough](https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/blob/main/ref.wav)
-- **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
+- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
 ### 🔍 For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  -h
+     .\ebook2audiobook.sh  --help
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  -h
+     .\ebook2audiobook.cmd  --help
      ```
 
 - This will output the following:
@@ -268,7 +268,7 @@ docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/e
 ```
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
-- For more options like running the docker in headless mode or making the gradio link public add the `-h` parameter after the `app.py` in the docker launch command
+- For more options like running the docker in headless mode or making the gradio link public add the `--help` parameter after the `app.py` in the docker launch command
 <details>
   <summary><strong>Example of using docker in headless mode or modifying anything with the extra parameters + Full guide</strong></summary>
    
@@ -306,7 +306,7 @@ docker run -it --rm \
 docker run -it --rm \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook:huggingface \
-    python app.py -h
+    python app.py --help
 
 ```
 
