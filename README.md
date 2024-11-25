@@ -92,26 +92,26 @@ Specify the language code when running the script in headless mode.
 ### 📝 Basic Headless Usage
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  --headless True --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     .\ebook2audiobook.sh  --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  --headless True --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     .\ebook2audiobook.cmd  --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
 
 - **<path_to_ebook_file>**: Path to your eBook file.
 - **[path_to_voice_file]**: Optional for voice cloning.
-- **[language_code]**: Optional to specify language.
+- **[language_code]**: Optional to specify ISO-639-3 3+ letters language code (default is eng). ISO-639-1 2 letters code is also supported
 - **[For More Parameters]**: use the `-h` parameter like this `python app.py -h`
 
 ### 🧩 Headless Custom XTTS Model Usage
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+     .\ebook2audiobook.sh  --headless --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+     .\ebook2audiobook.cmd  --headless --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
      ```
 
 - **<ebook_file_path>**: Path to your eBook file.
@@ -126,11 +126,11 @@ Specify the language code when running the script in headless mode.
 ### 🧩 Headless Custom XTTS Model Usage With Zip link to XTTS Fine-Tune Model 🌐
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
+     .\ebook2audiobook.sh  --headless --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
+     .\ebook2audiobook.cmd  --headless --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
      ```
 
 - **<ebook_file_path>**: Path to your eBook file.
@@ -234,7 +234,7 @@ python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_co
 
 - **<path_to_ebook_file>**: Path to your eBook file.
 - **[path_to_voice_file]**: Optional for voice cloning.
-- **[language_code]**: Optional to specify language.
+- **[language_code]**: Optional to specify ISO-639-3 3+ letters language code (default is eng). ISO-639-1 2 letters code is also supported
 
 ### 🧩 Custom XTTS Model
 
@@ -292,7 +292,7 @@ docker run -it --rm \
     -v $(pwd)/Audiobooks:/home/user/app/Audiobooks \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook:huggingface \
-    python app.py --headless True --ebook /home/user/app/input_folder/YOUR_INPUT_FILE.TXT
+    python app.py --headless --ebook /home/user/app/input_folder/YOUR_INPUT_FILE.TXT
 ```
 
 - And that should be it! 
