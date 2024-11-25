@@ -28,7 +28,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 - 📚 Splits eBook into chapters for organized audio.
 - 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms).
 - 🗣️ Optional voice cloning with your own voice file.
-- 🌍 Supports 1162 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/asr/mms1b_all_langs.html)
+- 🌍 Supports 1107 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 - 🖥️ Designed to run on 4GB RAM.
 
 ## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
@@ -56,7 +56,8 @@ Use this tool responsibly and in accordance with all applicable laws.
 - **Russian (ru)**
 - **Spanish (es)**
 - **Turkish (tr)**
-- [** + 1162 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/asr/mms1b_all_langs.html)
+- **Vietnamese (vi)**
+- [** + 1107 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 ## 🛠️ Requirements
 
