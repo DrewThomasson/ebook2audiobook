@@ -173,7 +173,7 @@ options:
   --ebooks_dir [EBOOKS_DIR]
                         Path to the directory containing ebooks for batch conversion. Defaults to './ebooks' if 'default' value is provided.
   --voice VOICE         Path to the target voice file for TTS. Optional, uses a default voice if not provided.
-  --language LANGUAGE   Language for the audiobook conversion. Options: en, es, fr, de, it, pt, pl, tr, ru, nl, cs, ar, zh-cn, ja, hu, ko. Defaults to English (en).
+  --language LANGUAGE   Language code (ISO-6390-1 or ISO-639-3) for the audiobook conversion. Options: en or eng, es or spa, fr or fra, de or deu, it or ita, pt or por, pl or pol etc.. Defaults to English (en or eng).
   --device {cpu,gpu}    Type of processor unit for the audiobook conversion. Defaults to cpu.
   --use_custom_model    Use a custom TTS model. Defaults to False. Must be True to use custom models.
   --custom_model CUSTOM_MODEL
