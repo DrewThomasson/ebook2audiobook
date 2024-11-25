@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-PYTHON_VERSION="3.11"
+PYTHON_VERSION="3.12"
 export TTS_CACHE="./models"
 
 ARGS="$@"
@@ -214,10 +214,7 @@ function conda_check {
 		source $CONDA_ENV
 		conda activate $SCRIPT_DIR/$PYTHON_ENV
 		python -m pip install --upgrade pip
-		python -m pip install --upgrade -r requirements.txt
-		python -m unidic download
-		python -m spacy download en_core_web_sm
-		python -m nltk.downloader punkt_tab
+		python -m pip install --upgrade -r requirements.txt --progress-bar=on
 		conda deactivate
 	fi
 	return 0

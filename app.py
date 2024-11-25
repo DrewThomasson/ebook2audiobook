@@ -8,11 +8,11 @@ import sys
 from lib.conf import *
 from lib.lang import language_mapping, default_language_code
 
-import unidic
+#import unidic
 
 script_mode = NATIVE
 share = False
-
+"""
 try:
     # Check if the UniDic dictionary data directory exists and is not empty
     if not os.path.isdir(unidic.DICDIR) or not os.listdir(unidic.DICDIR):
@@ -23,7 +23,7 @@ try:
         print("UniDic dictionary already present. Skipping download.")
 except Exception as e:
     print(f"Error during UniDic check/download: {e}")
-
+"""
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
@@ -62,29 +62,28 @@ def check_and_install_requirements(file_path):
                 print(f"Failed to install packages: {e}")
                 return False
 
-        # This will check if the base xtts model files exist, and if they don't or if any are missing then itll download them
-        from lib.functions import check_files_in_folder, download_xttsv2_model
-        xtts_base_model_existance_status, error_message, xtts_missing_files = check_files_in_folder(xttsv2_base_model_dir, xtts_base_model_files)
-        if xtts_base_model_existance_status:
-            print("All specified xtts base model files are present in the folder.")
-        else:
-          print("The following files are missing:", xtts_missing_files)
-          print("Downloading xtts files . . .")
-          download_xttsv2_model(xttsv2_base_model_dir, zip_link_to_xtts_model)
-
+        from lib.functions import check_missing_files, download_model
+        for mod in models.keys():
+            if mod == "xtts":
+                mod_exists, err, list = check_missing_files(models[mod]["local"], models[mod]["files"])
+                if mod_exists:
+                    print("All specified xtts base model files are present in the folder.")
+                else:
+                    print("The following files are missing:", list)
+                    print(f"Downloading {mod} files . . .")
+                    download_model(models[model]["local"], models[mod]["url"])
+        return True
     except Exception as e:
-        print(f"An error occurred: {e}")
-        
-    return True
-
-def check_dictionary(language):
+        print(f"An error occurred: {e}")  
+        return False
+"""
+def check_dictionary():
     import unidic
-    import spacy.cli
     
     version_obj = sys.version_info
     version = f"{version_obj.major}.{version_obj.minor}"
 
-    required_model = f"{language}_core_web_sm"
+    required_model = f"en_core_web_sm"
 
     if os.path.isdir(unidic.DICDIR):
         if not os.listdir(unidic.DICDIR):
@@ -117,7 +116,7 @@ def check_dictionary(language):
     except Exception as e:
         print(f"Error during spaCy model download: {e}")
         return False
-
+"""
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('0.0.0.0', port)) == 0
@@ -165,7 +164,7 @@ Linux/Mac:
                         help=f"Path to the directory containing ebooks for batch conversion. Defaults to '{os.path.basename(ebooks_dir)}' if 'default' value is provided.")
     parser.add_argument(options[5], type=str,
                         help="Path to the target voice file for TTS. Optional, uses a default voice if not provided.")
-    parser.add_argument(options[6], type=str, default="en",
+    parser.add_argument(options[6], type=str, default=default_language_code,
                         help=f"Language for the audiobook conversion. Options: {lang_list_str}. Defaults to English (en).")
     parser.add_argument(options[7], type=str, default="cpu", choices=["cpu", "gpu"],
                         help=f"Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.")
@@ -211,10 +210,13 @@ Linux/Mac:
     if script_mode == NATIVE:
         check_pkg = check_and_install_requirements(requirements_file)
         if check_pkg:
-            check_dic = check_dictionary(args.language)
-            if not check_dic:
-                sys.exit(1)
+            #check_dict = check_dictionary()
+            #f not check_dict:
+            #    print("Unidic Dictionary folder not found")
+            #    sys.exit(1)
+            print("Package requirements ok")
         else:
+            print("Some packages could not be installed")
             sys.exit(1)
     
     from lib.functions import web_interface, convert_ebook
@@ -244,7 +246,7 @@ Linux/Mac:
             if os.path.exists(ebooks_dir):
                 for file in os.listdir(ebooks_dir):
                     # Process files with supported ebook formats
-                    if any(file.endswith(ext) for ext in supported_ebook_formats):
+                    if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.join(ebooks_dir, file)
                         print(f"Processing eBook file: {full_path}")
                         args.ebook = full_path
