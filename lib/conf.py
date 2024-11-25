@@ -43,7 +43,7 @@ xtts_base_model_files = ["config.json", "model.pth", "vocab.json"]
 
 models = {
     "xtts": {
-        "url": "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/XTTS-v2.0.3.zip?download=true",
+        "url": "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/Viet_XTTS_v2.0.zip?download=true",
         "local": os.path.join(models_dir, "XTTS-v2"),
         "files": ["config.json", "model.pth", "vocab.json"],
         "zip": "xtts_v2_model.zip"
