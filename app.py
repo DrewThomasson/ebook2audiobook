@@ -8,22 +8,9 @@ import sys
 from lib.conf import *
 from lib.lang import language_mapping, default_language_code
 
-#import unidic
-
 script_mode = NATIVE
 share = False
-"""
-try:
-    # Check if the UniDic dictionary data directory exists and is not empty
-    if not os.path.isdir(unidic.DICDIR) or not os.listdir(unidic.DICDIR):
-        print("*** No default UniDic dictionary found! Trying to download it... ***")
-        subprocess.run([sys.executable, "-m", "unidic", "download"], check=True)
-        print("Successfully downloaded UniDic.")
-    else:
-        print("UniDic dictionary already present. Skipping download.")
-except Exception as e:
-    print(f"Error during UniDic check/download: {e}")
-"""
+
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
@@ -71,52 +58,12 @@ def check_and_install_requirements(file_path):
                 else:
                     print("The following files are missing:", list)
                     print(f"Downloading {mod} files . . .")
-                    download_model(models[model]["local"], models[mod]["url"])
+                    download_model(models[mod]["local"], models[mod]["url"])
         return True
     except Exception as e:
         print(f"An error occurred: {e}")  
         return False
-"""
-def check_dictionary():
-    import unidic
-    
-    version_obj = sys.version_info
-    version = f"{version_obj.major}.{version_obj.minor}"
 
-    required_model = f"en_core_web_sm"
-
-    if os.path.isdir(unidic.DICDIR):
-        if not os.listdir(unidic.DICDIR):
-            try:
-                print("*** No default dictionary found! Trying to download it... ***")
-                subprocess.run([sys.executable, "-m", "unidic", "download"], check=True)
-                print("Successfully downloaded UniDic.")
-                return True
-            except subprocess.CalledProcessError as e:
-                print(f"Failed to download UniDic: {e}")
-                return False
-            except Exception as e:
-                print(f"Error during UniDic download: {e}")
-                return False
-
-    # Check if the required model is already installed in spaCy
-    info = spacy.cli.info()
-    installed_models = info.get("pipelines", {}).keys()
-    if required_model in installed_models:
-        return True
-
-    try:
-        print("*** Default spaCy model is missing! Trying to download it... ***")
-        subprocess.run([sys.executable, "-m", "spacy", "download", required_model], check=True)
-        print("Successfully downloaded spaCy model.")
-        return True
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to download spaCy model: {e}")
-        return False
-    except Exception as e:
-        print(f"Error during spaCy model download: {e}")
-        return False
-"""
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('0.0.0.0', port)) == 0
@@ -165,7 +112,7 @@ Linux/Mac:
     parser.add_argument(options[5], type=str,
                         help="Path to the target voice file for TTS. Optional, uses a default voice if not provided.")
     parser.add_argument(options[6], type=str, default=default_language_code,
-                        help=f"Language for the audiobook conversion. Options: {lang_list_str}. Defaults to English (en).")
+                        help=f"Language for the audiobook conversion. Options: {lang_list_str}. Default to English (eng).")
     parser.add_argument(options[7], type=str, default="cpu", choices=["cpu", "gpu"],
                         help=f"Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.")
     parser.add_argument(options[8], type=str,

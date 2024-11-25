@@ -15,6 +15,7 @@ dependencies = [
     "beautifulsoup4",
     "coqui-tts",
     "cutlet",
+	"deep_translator",
     "docker",
     "ebooklib",
     "gensim",
