@@ -25,7 +25,7 @@ audiobooks_host_dir = os.path.abspath(os.path.join(".","audiobooks","gui","host"
 audiobooks_cli_dir = os.path.abspath(os.path.join(".","audiobooks","cli"))
 unidic_path = os.path.abspath(os.path.join(".","resources","udict"))
 
-zip_link_to_xtts_model = "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/XTTS-v2.0.3.zip?download=true"
+zip_link_to_xtts_model = "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/Viet_XTTS_v2.0.zip?download=true"
 xtts_base_model_files = ["config.json", "model.pth", "vocab.json"]
 
 supported_ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
