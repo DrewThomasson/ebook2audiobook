@@ -26,9 +26,9 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 - 📖 Converts eBooks to text format with Calibre.
 - 📚 Splits eBook into chapters for organized audio.
-- 🎙️ High-quality text-to-speech with Coqui XTTS.
+- 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms).
 - 🗣️ Optional voice cloning with your own voice file.
-- 🌍 Supports multiple languages (English by default).
+- 🌍 Supports 1162 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/asr/mms1b_all_langs.html)
 - 🖥️ Designed to run on 4GB RAM.
 
 ## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobookXTTS)
@@ -56,6 +56,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 - **Russian (ru)**
 - **Spanish (es)**
 - **Turkish (tr)**
+- [** + 1162 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/asr/mms1b_all_langs.html)
 
 ## 🛠️ Requirements
 
