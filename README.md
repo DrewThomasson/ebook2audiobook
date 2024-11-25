@@ -31,11 +31,11 @@ Use this tool responsibly and in accordance with all applicable laws.
 - 🌍 Supports 1162 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/asr/mms1b_all_langs.html)
 - 🖥️ Designed to run on 4GB RAM.
 
-## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobookXTTS)
+## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 - Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
 - Best to duplicate space or run locally.
 
-## Free Google Colab [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobookXTTS/blob/main/Notebooks/colab_ebook2audiobookxtts.ipynb)
+## Free Google Colab [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
 
 ## 🌐 Supported Languages
 
@@ -67,7 +67,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 1. **Clone repo**
 ```bash
-git clone https://github.com/DrewThomasson/ebook2audiobookXTTS.git
+git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ```
 
 Specify the language code when running the script in headless mode.
@@ -215,13 +215,13 @@ Linux/Mac:
    
 ## 🚀 Usage
 
-## Legacy files have been moved to `ebook2audiobookXTTS/legacy/`
+## Legacy files have been moved to `ebook2audiobook/legacy/`
 
 ### 🖥️ Gradio Web Interface
 
 1. **Run the Script**:
    ```bash
-   python custom_model_ebook2audiobookXTTS_gradio.py
+   python custom_model_ebook2audiobook_gradio.py
    ```
 
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
@@ -239,7 +239,7 @@ python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_co
 ### 🧩 Custom XTTS Model
 
 ```bash
-python custom_model_ebook2audiobookXTTS.py <ebook_file_path> <target_voice_file_path> <language> <custom_model_path> <custom_config_path> <custom_vocab_path>
+python custom_model_ebook2audiobook.py <ebook_file_path> <target_voice_file_path> <language> <custom_model_path> <custom_config_path> <custom_vocab_path>
 ```
 
 - **<ebook_file_path>**: Path to your eBook file.
@@ -260,11 +260,11 @@ To run the Docker container and start the Gradio interface, use the following co
 
  -Run with CPU only
 ```powershell
-docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
+docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook:huggingface python app.py
 ```
  -Run with GPU Speedup (Nvida graphics cards only)
 ```powershell
-docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
+docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook:huggingface python app.py
 ```
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
@@ -276,7 +276,7 @@ This command will start the Gradio interface on port 7860.(localhost:7860)
 
 first for a docker pull of the latest with
 ```bash 
-docker pull athomasson2/ebook2audiobookxtts:huggingface
+docker pull athomasson2/ebook2audiobook:huggingface
 ```
 
 - Before you do run this you need to create a dir named "input-folder" in your current dir which will be linked, This is where you can put your input files for the docker image to see
@@ -291,7 +291,7 @@ docker run -it --rm \
     -v $(pwd)/input-folder:/home/user/app/input_folder \
     -v $(pwd)/Audiobooks:/home/user/app/Audiobooks \
     --platform linux/amd64 \
-    athomasson2/ebook2audiobookxtts:huggingface \
+    athomasson2/ebook2audiobook:huggingface \
     python app.py --headless True --ebook /home/user/app/input_folder/YOUR_INPUT_FILE.TXT
 ```
 
@@ -305,7 +305,7 @@ docker run -it --rm \
 ```bash
 docker run -it --rm \
     --platform linux/amd64 \
-    athomasson2/ebook2audiobookxtts:huggingface \
+    athomasson2/ebook2audiobook:huggingface \
     python app.py -h
 
 ```
@@ -314,7 +314,7 @@ docker run -it --rm \
 and that will output this 
 
 ```bash
-user/app/ebook2audiobookXTTS/input-folder -v $(pwd)/Audiobooks:/home/user/app/ebook2audiobookXTTS/Audiobooks --memory="4g" --network none --platform linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py -h
+user/app/ebook2audiobook/input-folder -v $(pwd)/Audiobooks:/home/user/app/ebook2audiobook/Audiobooks --memory="4g" --network none --platform linux/amd64 athomasson2/ebook2audiobook:huggingface python app.py -h
 starting...
 usage: app.py [-h] [--share SHARE] [--headless HEADLESS] [--ebook EBOOK] [--voice VOICE]
               [--language LANGUAGE] [--use_custom_model USE_CUSTOM_MODEL]
@@ -407,7 +407,7 @@ For a custom model a ref audio clip of the voice will also be needed:
 
 
 
-More details can be found at the [Dockerfile Hub Page]([https://github.com/DrewThomasson/ebook2audiobookXTTS](https://hub.docker.com/repository/docker/athomasson2/ebook2audiobookxtts/general)).
+More details can be found at the [Dockerfile Hub Page]([https://github.com/DrewThomasson/ebook2audiobook](https://hub.docker.com/repository/docker/athomasson2/ebook2audiobook/general)).
 
 ## 🌐 Fine Tuned Xtts models
 
@@ -424,11 +424,11 @@ David Attenborough voice
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 
-## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobookXTTS)
+## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 - Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
 - Best to duplicate space or run locally.
 
-## Free Google Colab [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobookXTTS/blob/main/Notebooks/colab_ebook2audiobookxtts.ipynb)
+## Free Google Colab [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
 
 
 
@@ -443,13 +443,13 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - **Example Output**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
 ## 🛠️ Common Issues:
-- "It's slow!" - On CPU only this is very slow, and you can only get speedups though a NVIDIA GPU. [Discussion about this](https://github.com/DrewThomasson/ebook2audiobookXTTS/discussions/19#discussioncomment-10879846) For faster multilingual generation I would suggest my other [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead(It doesn't have zero-shot voice cloning though, and is siri quality voices, but it is much faster on cpu.)
+- "It's slow!" - On CPU only this is very slow, and you can only get speedups though a NVIDIA GPU. [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846) For faster multilingual generation I would suggest my other [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead(It doesn't have zero-shot voice cloning though, and is siri quality voices, but it is much faster on cpu.)
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode, add `-h` parameter after the `app.py` in the docker run command for more information.
 - "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS, I don't speak every language and I need advise from each person to fine tune my sentense splitting function on any other languages.😊
 - "The loading bar is stuck at 30% in the web gui!" - The web gui loading bar is extreamly basic as its just split between the three loading steps, refer to the terminal and what sentense it's on for a more accurate gauge on where is it progress wise.
 
 ## What I need help with! 🙌 
-## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/32)
+## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
 - Any help from people speaking any of the supported langues to help with proper sentence splitting methods
 - Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
 
@@ -459,5 +459,5 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 
-- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobookXTTS/issues/8) 
+- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
 
