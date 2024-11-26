@@ -327,52 +327,73 @@ def concat_audio_chapters():
 
     def generate_ffmpeg_metadata():
         try:
-            ffmpeg_metadata = ";FFMETADATA1\n"        
+            ffmpeg_metadata = ";FFMETADATA1\n"
+            
             if ebook["metadata"].get("title"):
-                ffmpeg_metadata += f"title={ebook["metadata"]["title"]}\n"              
+                ffmpeg_metadata += f"title={ebook['metadata']['title']}\n"
+            
             if ebook["metadata"].get("creator"):
-                ffmpeg_metadata += f"artist={ebook["metadata"]["creator"]}\n"
+                ffmpeg_metadata += f"artist={ebook['metadata']['creator']}\n"
+            
             if ebook["metadata"].get("language"):
-                ffmpeg_metadata += f"language={ebook["metadata"]["language"]}\n\n"
+                ffmpeg_metadata += f"language={ebook['metadata']['language']}\n\n"
+            
             if ebook["metadata"].get("publisher"):
-                ffmpeg_metadata += f"publisher={ebook["metadata"]["publisher"]}\n"              
+                ffmpeg_metadata += f"publisher={ebook['metadata']['publisher']}\n"
+            
             if ebook["metadata"].get("description"):
-                ffmpeg_metadata += f"description={ebook["metadata"]["description"]}\n"  # Description
+                ffmpeg_metadata += f"description={ebook['metadata']['description']}\n"
+            
+            # Handle publication year
             if ebook["metadata"].get("published"):
-                # Check if the timestamp contains fractional seconds
-                if '.' in ebook["metadata"]["published"]:
-                    # Parse with fractional seconds
-                    year = datetime.strptime(ebook["metadata"]["published"], "%Y-%m-%dT%H:%M:%S.%f%z").year
-                else:
-                    # Parse without fractional seconds
-                    year = datetime.strptime(ebook["metadata"]["published"], "%Y-%m-%dT%H:%M:%S%z").year
+                try:
+                    # Check if the timestamp contains fractional seconds
+                    if '.' in ebook["metadata"]["published"]:
+                        # Parse with fractional seconds
+                        year = datetime.strptime(ebook["metadata"]["published"], "%Y-%m-%dT%H:%M:%S.%f%z").year
+                    else:
+                        # Parse without fractional seconds
+                        year = datetime.strptime(ebook["metadata"]["published"], "%Y-%m-%dT%H:%M:%S%z").year
+                except ValueError:
+                    # If parsing fails, use the current year
+                    year = datetime.now().year
             else:
                 # If published is not provided, use the current year
                 year = datetime.now().year
+            
             ffmpeg_metadata += f"year={year}\n"
+            
+            # Handle identifiers
             if ebook["metadata"].get("identifiers") and isinstance(ebook["metadata"].get("identifiers"), dict):
-                isbn = ebook["metadata"]["identifiers"].get("isbn", None)
+                isbn = ebook["metadata"]["identifiers"].get("isbn")
                 if isbn:
-                    ffmpeg_metadata += f"isbn={isbn}\n"  # ISBN
-                mobi_asin = ebook["metadata"]["identifiers"].get("mobi-asin", None)
+                    ffmpeg_metadata += f"isbn={isbn}\n"
+                
+                mobi_asin = ebook["metadata"]["identifiers"].get("mobi-asin")
                 if mobi_asin:
-                    ffmpeg_metadata += f"asin={mobi_asin}\n"  # ASIN                   
-
+                    ffmpeg_metadata += f"asin={mobi_asin}\n"
+            
+            # Handle chapters
             start_time = 0
             for index, chapter_file in enumerate(chapter_files):
                 if cancellation_requested.is_set():
                     msg = "Cancel requested"
                     raise ValueError(msg)
-
+                
                 duration_ms = len(AudioSegment.from_wav(chapter_file))
-                ffmpeg_metadata += f"[CHAPTER]\nTIMEBASE=1/1000\nSTART={start_time}\n"
+                
+                # Escape the square brackets by using f"{{" and f"}}"
+                ffmpeg_metadata += f"{{CHAPTER}}\nTIMEBASE=1/1000\nSTART={start_time}\n"
                 ffmpeg_metadata += f"END={start_time + duration_ms}\ntitle=Chapter {index + 1}\n"
+                
                 start_time += duration_ms
-
+            
             # Write the metadata to the file
             with open(metadata_file, 'w', encoding='utf-8') as file:
                 file.write(ffmpeg_metadata)
+            
             return True
+        
         except Exception as e:
             raise DependencyError(e)
 
@@ -785,8 +806,8 @@ def convert_ebook(args):
                 pass
 
             if args.language is not None and args.language in language_mapping.keys():
-                ebook["src"] = args.ebook
-                ebook["id"] = args.session if args.session is not None else str(uuid.uuid4())
+                ebook['src'] = args.ebook
+                ebook['id'] = args.session if args.session is not None else str(uuid.uuid4())
                 script_mode = args.script_mode if args.script_mode is not None else NATIVE        
                 device = args.device.lower()
                 target_voice_file = args.voice
@@ -801,7 +822,7 @@ def convert_ebook(args):
                 custom_model_file = args.custom_model
                 custom_model_url = args.custom_model_url if custom_model_file is None else None
 
-                if not os.path.splitext(ebook["src"])[1]:
+                if not os.path.splitext(ebook['src'])[1]:
                     raise ValueError("The selected ebook file has no extension. Please select a valid file.")
 
                 if script_mode == NATIVE:
@@ -815,15 +836,16 @@ def convert_ebook(args):
                 elif script_mode == DOCKER_UTILS:
                     client = docker.from_env()
 
-                tmp_dir = os.path.join(processes_dir, f"ebook-{ebook["id"]}")
-                ebook["chapters_dir"] = os.path.join(tmp_dir, "chapters")
-                ebook["chapters_audio_dir"] = os.path.join(ebook["chapters_dir"], "audio")
+                # Use single quotes for dictionary access in f-strings
+                tmp_dir = os.path.join(processes_dir, f"ebook-{ebook['id']}")
+                ebook['chapters_dir'] = os.path.join(tmp_dir, "chapters")
+                ebook['chapters_audio_dir'] = os.path.join(ebook['chapters_dir'], "audio")
 
                 if not is_gui_process:
                     audiobooks_dir = audiobooks_cli_dir
 
-                if prepare_dirs(args.ebook) :             
-                    ebook["filename_noext"] = os.path.splitext(os.path.basename(ebook["src"]))[0]
+                if prepare_dirs(args.ebook):             
+                    ebook['filename_noext'] = os.path.splitext(os.path.basename(ebook['src']))[0]
                     custom_model = None
                     if custom_model_file and custom_config_file and custom_vocab_file:
                         custom_model = {
@@ -852,24 +874,24 @@ def convert_ebook(args):
                             
                     torch.device(device)
                     print(f"Available Processor Unit: {device}")   
-                    ebook["epub_path"] = os.path.join(tmp_dir, ebook["filename_noext"] + '.epub')
+                    ebook['epub_path'] = os.path.join(tmp_dir, ebook['filename_noext'] + '.epub')
                     if convert_to_epub():
-                        ebook["epub"] = epub.read_epub(ebook["epub_path"], {'ignore_ncx': False})
-                        ebook["metadata"] = {}
+                        ebook['epub'] = epub.read_epub(ebook['epub_path'], {'ignore_ncx': False})
+                        ebook['metadata'] = {}
                         for field in metadata_fields:
-                            data = ebook["epub"].get_metadata("DC", field)
+                            data = ebook['epub'].get_metadata("DC", field)
                             if data:
                                 for value, attributes in data:
-                                    ebook["metadata"][field] = value
+                                    ebook['metadata'][field] = value
                         language_iso1 = None      
                         language_array = languages.get(part3=language)
                         if language_array and language_array.part1:
                             language_iso1 = language_array.part1
-                        if ebook["metadata"]["language"] == language or ebook["metadata"]["language"] == language_iso1:
-                            ebook["metadata"]["creator"] = ", ".join(creator[0] for creator in ebook["metadata"]["creator"])
-                            ebook["cover"] = get_cover()
+                        if ebook['metadata']['language'] == language or ebook['metadata']['language'] == language_iso1:
+                            ebook['metadata']['creator'] = ", ".join(creator[0] for creator in ebook['metadata']['creator'])
+                            ebook['cover'] = get_cover()
                             if get_chapters(language):
-                                if convert_chapters_to_audio( device, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_file, language, custom_model):
+                                if convert_chapters_to_audio(device, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting, target_voice_file, language, custom_model):
                                     output_file = concat_audio_chapters()               
                                     if output_file is not None:
                                         progress_status = f"Audiobook {os.path.basename(output_file)} created!"

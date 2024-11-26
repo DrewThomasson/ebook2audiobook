@@ -1,0 +1,4 @@
+# Include all files in the directory recursively
+graft .
+global-exclude *.pyc __pycache__ .DS_Store
+

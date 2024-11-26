@@ -5,8 +5,17 @@ import socket
 import subprocess
 import sys
 
-from lib.conf import *
-from lib.lang import language_mapping, default_language_code
+#from lib.conf import *
+#from lib.lang import language_mapping, default_language_code
+import sys
+import os
+
+# Add the 'lib' directory to the Python path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'lib')))
+
+# Now you can import from lib
+from conf import *
+from lang import language_mapping, default_language_code
 
 script_mode = NATIVE
 share = False
