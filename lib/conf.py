@@ -5,8 +5,8 @@ DOCKER_UTILS = "docker_utils"
 FULL_DOCKER = "full_docker"
 
 version = "2.0.0"
-min_python_version = (3, 10)
-max_python_version = (3, 12)
+min_python_version = (3,10)
+max_python_version = (3,12)
 
 requirements_file = os.path.abspath(os.path.join(".","requirements.txt"))
 
@@ -22,7 +22,6 @@ processes_dir = os.path.abspath(os.path.join(".","tmp"))
 audiobooks_gradio_dir = os.path.abspath(os.path.join(".","audiobooks","gui","gradio"))
 audiobooks_host_dir = os.path.abspath(os.path.join(".","audiobooks","gui","host"))
 audiobooks_cli_dir = os.path.abspath(os.path.join(".","audiobooks","cli"))
-unidic_path = os.path.abspath(os.path.join(".","resources","udict"))
 
 # <<<<<<< HEAD
 os.environ["CALIBRE_TEMP_DIR"] = processes_dir
@@ -36,10 +35,6 @@ os.environ["HF_TOKEN_PATH"] = os.path.join(os.path.expanduser("~"), ".huggingfac
 os.environ["TTS_CACHE"] = models_dir
 os.environ["TORCH_HOME"] = models_dir
 os.environ["XDG_CACHE_HOME"] = models_dir
-# =======
-zip_link_to_xtts_model = "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/Viet_XTTS_v2.0.zip?download=true"
-xtts_base_model_files = ["config.json", "model.pth", "vocab.json"]
-# >>>>>>> ff7ef6f8dd81bdd0db6cd35ab6375bfdbbec1888
 
 models = {
     "xtts": {
@@ -52,12 +47,13 @@ models = {
         "url": "",
         "local": os.path.join(models_dir, "mms"),
         "files": ["config.json", "G_100000.pth", "vocab.txt"],
-        "zip": "fairseq_model.zip"
+        "zip": ""
     }
 }
 
 ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
 audiobook_format = "m4b"
+audio_proc_format = "wav" # only "wav" is valid for now
 
 xtts_fine_tuned_voice_actors = {
     "David Attenborough": {

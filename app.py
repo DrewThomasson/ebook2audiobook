@@ -1,9 +1,10 @@
 import argparse
 import os
-import re
+import regex as re
 import socket
 import subprocess
 import sys
+import unidic
 
 from lib.conf import *
 from lib.lang import language_mapping, default_language_code
@@ -40,6 +41,7 @@ def check_and_install_requirements(file_path):
             except PackageNotFoundError:
                 print(f"{package} is missing.")
                 missing_packages.append(package)
+                pass
 
         if missing_packages:
             print("\nInstalling missing packages...")
@@ -61,9 +63,19 @@ def check_and_install_requirements(file_path):
                     download_model(models[mod]["local"], models[mod]["url"])
         return True
     except Exception as e:
-        print(f"An error occurred: {e}")  
-        return False
-
+        raise(f"An error occurred: {e}")  
+        
+def check_dictionary():
+    unidic_path = unidic.DICDIR
+    dicrc = os.path.join(unidic_path, "dicrc")
+    if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
+        try:
+            print("UniDic dictionary not found or incomplete. Downloading now...")
+            subprocess.run(["python", "-m", "unidic", "download"], check=True)
+        except subprocess.CalledProcessError as e:
+            print(f"Failed to download UniDic dictionary. Error: {e}")
+            raise SystemExit("Unable to continue without UniDic. Exiting...")
+    return True
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('0.0.0.0', port)) == 0
@@ -157,11 +169,11 @@ Linux/Mac:
     if script_mode == NATIVE:
         check_pkg = check_and_install_requirements(requirements_file)
         if check_pkg:
-            #check_dict = check_dictionary()
-            #f not check_dict:
-            #    print("Unidic Dictionary folder not found")
-            #    sys.exit(1)
             print("Package requirements ok")
+            if check_dictionary():
+                print ("Dictionary ok")
+            else:
+                sys.exit(1)
         else:
             print("Some packages could not be installed")
             sys.exit(1)
