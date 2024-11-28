@@ -269,7 +269,6 @@ def get_cover():
         raise DependencyError(e)
 
 def combine_audio_chapters():
-    # Function to sort chapters based on their numeric order
     def sort_key(chapter_file):
         numbers = re.findall(r'\d+', chapter_file)
         return int(numbers[0]) if numbers else 0
@@ -295,8 +294,7 @@ def combine_audio_chapters():
 
                     audio_segment = AudioSegment.from_wav(chapter_file)
                     batch_audio += audio_segment
-        
-                # Combine the batch audio with the overall combined_audio
+
                 combined_audio += batch_audio
 
             combined_audio.export(assembled_audio, format=audio_proc_format)
@@ -480,6 +478,19 @@ def filter_chapter(doc, language):
     soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
     chapter_clean = re.sub(r'(\r\n|\r|\n){3,}', '\n\n', soup.get_text().strip())
     chapter_clean = replace_roman_numbers(chapter_clean)
+    # Step 1: Split the text into different components for different character types (e.g., Cyrillic, Latin, numbers)
+    parts = re.findall(r'\p{IsCyrillic}+|\p{IsLatin}+|\d+|[^\w\s]', chapter_clean, re.UNICODE)
+    # Step 2: Process each part to group numbers larger than thousands by groups of 4 digits
+    formatted_parts = []
+    for part in parts:
+        if part.isdigit() and len(part) > 4:
+            # Split number into groups of 4 digits from the end
+            formatted_number = re.sub(r'(?<=\d)(?=(\d{4})+$)', ' ', part)
+            formatted_parts.append(formatted_number)
+        else:
+            formatted_parts.append(part)
+    # Step 3: Combine the parts back into a string, ensuring they are space-separated
+    chapter_clean = ' '.join(formatted_parts)
     chapter_sentences = get_sentences(chapter_clean, language)
     return chapter_sentences
 
@@ -545,7 +556,7 @@ def convert_chapters_to_audio(params):
             config.load_json(config_path)
             params['tts'] = Xtts.init_from_config(config)
             params['tts'].to(params['device'])
-            params['tts'].load_checkpoint(config, checkpoint_dir=model_path, vocab_path=vocab_path)
+            params['tts'].load_checkpoint(config, checkpoint_dir=model_path, eval=True)
             print('Computing speaker latents...')
             params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['clone_voice_file']])
         else:

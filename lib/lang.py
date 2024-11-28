@@ -2,8 +2,8 @@ import os
 
 language_xtts = {"eng": "en", "spa": "es", "fra": "fr", "deu": "de", "ita": "it", "por": "pt", "pol": "pl", "tur": "tr", "rus": "ru", "nld": "nl", "ces": "cs", "ara": "ar", "zho": "zh-cn", "jpn": "ja", "hun": "hu", "kor": "ko", "hin": "hi", "vie": "vi"}
 
-default_language_code = "eng" # ISO-639-3
-default_clone_voice_file = os.path.abspath(os.path.join(".","voices",default_language_code,"adult","female","default_voice.wav"))
+default_language_code = 'eng' # ISO-639-3
+default_clone_voice_file = os.path.abspath(os.path.join('.','voices',default_language_code,'adult','female','default_voice.wav'))
 
 language_mapping = {
     "eng": {"name": "English", "native_name": "English", "char_limit": 96, "model": "en_core_web_md", "punctuation": [",", ".", ":", ";", "?", "!", "\"", "'", "(", ")", "[", "]", "{", "}", "—", "-", "...", "‘", "’", "“", "”", "/"]},
