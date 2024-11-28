@@ -10,9 +10,12 @@ hangul-romanize
 indic-nlp-library
 iso-639
 jieba
+mecab
+mecab-python3
 pydub
 pypinyin
 ray
 transformers
 translate
 tqdm
+unidic

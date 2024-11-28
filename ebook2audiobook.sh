@@ -179,7 +179,9 @@ function install_programs {
 			fi
 		fi
 	done
-	if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
+	if required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
+		return 0
+	else
 		echo -e "\e[33mYou can run 'ebook2audiobook.sh --script_mode docker_utils' to avoid to install $REQUIRED_PROGRAMS natively.\e[0m"
 		return 1
 	fi

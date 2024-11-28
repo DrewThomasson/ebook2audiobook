@@ -24,12 +24,15 @@ dependencies = [
     "indic-nlp-library",
 	"iso-639",
     "jieba",
+	"mecab",
+	"mecab-python3",
     "pydub",
     "pypinyin",
 	"ray",
 	"transformers",
     "translate",
-    "tqdm"
+    "tqdm",
+	"unidic"
 ]
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
