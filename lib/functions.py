@@ -302,25 +302,24 @@ def filter_pattern(doc_identifier):
 
 def filter_chapter(doc, language):
     soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
-    chapter_clean = re.sub(r'(\r\n|\r|\n){3,}', '\n\n', soup.get_text().strip())
-    chapter_clean = replace_roman_numbers(chapter_clean)
-    # Step 1: Split the text into different components for different character types (e.g., Cyrillic, Latin, numbers)
-    parts = re.findall(r'\p{IsCyrillic}+|\p{IsLatin}+|\d+|[^\w\s]', chapter_clean, re.UNICODE)
-    # Step 2: Process each part to group numbers larger than thousands by groups of 4 digits
-    formatted_parts = []
-    for part in parts:
-        if part.isdigit() and len(part) > 4:
-            # Split number into groups of 4 digits from the end
-            formatted_number = re.sub(r'(?<=\d)(?=(\d{4})+$)', ' ', part)
-            formatted_parts.append(formatted_number)
-        else:
-            formatted_parts.append(part)
-    # Step 3: Combine the parts back into a string, ensuring they are space-separated
-    chapter_clean = ' '.join(formatted_parts)
-    chapter_sentences = get_sentences(chapter_clean, language)
+    text = re.sub(r'(\r\n|\r|\n){3,}', '\n\n', soup.get_text().strip())
+    text = replace_roman_numbers(text)
+    # Step 1: Define regex pattern to handle script transitions, letters/numbers, and large numbers
+    pattern = (
+        r'(?<=[\p{L}])(?=\d)|'        # Add space between letters and numbers
+        r'(?<=\d)(?=[\p{L}])|'        # Add space between numbers and letters
+        r'(?<=[\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}])'
+        r'(?=[^\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}\d])|'
+        r'(?<=[^\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}\d])'
+        r'(?=[\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}\d])|'
+        r'(?<=\d{4})(?=\d)'           # Split large numbers every 4 digits
+    )
+    # Step 2: Use regex to add spaces
+    text = re.sub(pattern, " ", text)
+    chapter_sentences = get_sentences(text, language)
     return chapter_sentences
 
-def get_sentences(sentence, language, max_pauses=4):
+def get_sentences(sentence, language, max_pauses=10):
     max_length = language_mapping[language]['char_limit']
     punctuation = language_mapping[language]['punctuation']
     parts = []
@@ -448,7 +447,7 @@ def convert_sentence_to_audio(params):
                 temperature=params['temperature'], repetition_penalty=params['repetition_penalty'], top_k=params['top_k'], top_p=params['top_p'], 
                 speed=params['speed'], enable_text_splitting=params['enable_text_splitting'], prosody=None
             )
-            torchaudio.save(params['sentence_audio_file'], torch.tensor(output[audio_proc_format]).unsqueeze(0), 24000)
+            torchaudio.save(params['sentence_audio_file'], torch.tensor(output[audio_proc_format]).unsqueeze(0), 22050)
         else:
             params['tts'].tts_with_vc_to_file(
                 text=params['sentence'],
@@ -750,7 +749,6 @@ def convert_ebook(args):
                 pass
 
             if args.language is not None and args.language in language_mapping.keys():
-                ebook['resume'] = False
                 ebook['id'] = args.session if args.session is not None else str(uuid.uuid4())
                 script_mode = args.script_mode if args.script_mode is not None else NATIVE        
                 device = args.device.lower()
@@ -780,7 +778,7 @@ def convert_ebook(args):
                     client = docker.from_env()
 
                 tmp_dir = os.path.join(processes_dir, f"ebook-{ebook['id']}")
-                ebook['chapters_dir'] = os.path.join(tmp_dir, 'chapters')
+                ebook['chapters_dir'] = os.path.join(tmp_dir, f'chapters_{hashlib.md5(args.ebook.encode()).hexdigest()}')
                 ebook['chapters_dir_sentences'] = os.path.join(ebook['chapters_dir'], 'sentences')
 
                 if not is_gui_process:
