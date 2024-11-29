@@ -390,9 +390,6 @@ def convert_chapters_to_audio(params):
             print(f'Resuming from chapter {resume_chapter}')
         if existing_sentences:
             resume_sentence = len(existing_sentences)
-            # Remove the last file (possibly incomplete or corrupted)
-            last_resume_sentence_file = os.path.join(ebook['chapters_dir_sentences'], existing_sentences[resume_sentence])
-            os.remove(last_resume_sentence_file)
             print(f'Resuming from sentence {resume_sentence}')
 
         with tqdm(total=total_sentences, desc='Processing 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
