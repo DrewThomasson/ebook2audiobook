@@ -324,7 +324,7 @@ def get_sentences(sentence, language, max_pauses=10):
     punctuation = language_mapping[language]['punctuation']
     parts = []
     while len(sentence) > max_length or sum(sentence.count(p) for p in punctuation) > max_pauses:
-        possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char in punctuation]     
+        possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char in punctuation]      
         if possible_splits:
             split_at = possible_splits[-1] + 1
         else:
@@ -332,11 +332,12 @@ def get_sentences(sentence, language, max_pauses=10):
             if last_space != -1:
                 split_at = last_space + 1
             else:
-                split_at = max_length
-        parts.append(sentence[:split_at].strip())
-        sentence = sentence[split_at:].strip()
+                split_at = max_length      
+        parts.append(sentence[:split_at].strip() + "  ")
+        sentence = sentence[split_at:].strip()  
     if sentence:
-        parts.append(sentence)
+        # Append the remaining part with two spaces
+        parts.append(sentence + "  ")
     return parts
 
 def convert_chapters_to_audio(params):
@@ -389,7 +390,7 @@ def convert_chapters_to_audio(params):
             resume_chapter = len(existing_chapters)
             print(f'Resuming from chapter {resume_chapter}')
         if existing_sentences:
-            resume_sentence = len(existing_sentences)
+            resume_sentence = len(existing_sentences) - 1
             print(f'Resuming from sentence {resume_sentence}')
 
         with tqdm(total=total_sentences, desc='Processing 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
