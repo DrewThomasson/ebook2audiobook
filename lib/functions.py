@@ -389,7 +389,7 @@ def convert_chapters_to_audio(params):
             resume_chapter = len(existing_chapters)
             print(f'Resuming from chapter {resume_chapter}')
         if existing_sentences:
-            resume_sentence = len(existing_sentences) - 1
+            resume_sentence = len(existing_sentences)
             # Remove the last file (possibly incomplete or corrupted)
             last_resume_sentence_file = os.path.join(ebook['chapters_dir_sentences'], existing_sentences[resume_sentence])
             os.remove(last_resume_sentence_file)
