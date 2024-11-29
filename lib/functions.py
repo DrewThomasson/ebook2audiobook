@@ -268,8 +268,229 @@ def get_cover():
     except Exception as e:
         raise DependencyError(e)
 
+def get_chapters(language):
+    try:
+        all_docs = list(ebook['epub'].get_items_of_type(ebooklib.ITEM_DOCUMENT))
+        if all_docs:
+            all_docs = all_docs[1:]
+            doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
+            most_common_pattern = filter_doc(doc_patterns)
+            selected_docs = [doc for doc in all_docs if filter_pattern(str(doc)) == most_common_pattern]
+            chapters = [filter_chapter(doc, language) for doc in selected_docs]
+            return chapters
+        return False
+    except Exception as e:
+        raise DependencyError(f'Error extracting main content pages: {e}')
+
+def filter_doc(doc_patterns):
+    pattern_counter = Counter(doc_patterns)
+    # Returns a list with one tuple: [(pattern, count)] 
+    most_common = pattern_counter.most_common(1)
+    return most_common[0][0] if most_common else None
+
+def filter_pattern(doc_identifier):
+    parts = doc_identifier.split(':')
+    if len(parts) > 2:
+        segment = parts[1]
+        if re.search(r'[a-zA-Z]', segment) and re.search(r'\d', segment):
+            return ''.join([char for char in segment if char.isalpha()])
+        elif re.match(r'^[a-zA-Z]+$', segment):
+            return segment
+        elif re.match(r'^\d+$', segment):
+            return 'numbers'
+    return None
+
+def filter_chapter(doc, language):
+    soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
+    text = re.sub(r'(\r\n|\r|\n){3,}', '\n\n', soup.get_text().strip())
+    text = replace_roman_numbers(text)
+    # Step 1: Define regex pattern to handle script transitions, letters/numbers, and large numbers
+    pattern = (
+        r'(?<=[\p{L}])(?=\d)|'        # Add space between letters and numbers
+        r'(?<=\d)(?=[\p{L}])|'        # Add space between numbers and letters
+        r'(?<=[\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}])'
+        r'(?=[^\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}\d])|'
+        r'(?<=[^\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}\d])'
+        r'(?=[\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}\d])|'
+        r'(?<=\d{4})(?=\d)'           # Split large numbers every 4 digits
+    )
+    # Step 2: Use regex to add spaces
+    text = re.sub(pattern, " ", text)
+    chapter_sentences = get_sentences(text, language)
+    return chapter_sentences
+
+def get_sentences(sentence, language, max_pauses=10):
+    max_length = language_mapping[language]['char_limit']
+    punctuation = language_mapping[language]['punctuation']
+    parts = []
+    while len(sentence) > max_length or sum(sentence.count(p) for p in punctuation) > max_pauses:
+        possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char in punctuation]     
+        if possible_splits:
+            split_at = possible_splits[-1] + 1
+        else:
+            last_space = sentence.rfind(' ', 0, max_length)
+            if last_space != -1:
+                split_at = last_space + 1
+            else:
+                split_at = max_length
+        parts.append(sentence[:split_at].strip())
+        sentence = sentence[split_at:].strip()
+    if sentence:
+        parts.append(sentence)
+    return parts
+
+def convert_chapters_to_audio(params):
+    try:
+        progress_bar = None
+        if is_gui_process:
+            progress_bar = gr.Progress(track_tqdm=True)        
+        if params['clone_voice_file'] is None:
+            params['clone_voice_file'] = default_clone_voice_file
+        print('Loading the TTS model ...')
+        params['tts_model'] = None
+        if ebook['custom_model'] is not None or ebook['metadata']['language'] in language_xtts:
+            params['tts_model'] = 'xtts'
+            if ebook['custom_model'] is not None:              
+                model_path = ebook['custom_model']
+            else:
+                model_path = models['xtts']['local']
+
+            config_path = os.path.join(models[params['tts_model']]['local'],models[params['tts_model']]['files'][0])
+            vocab_path = os.path.join(models[params['tts_model']]['local'],models[params['tts_model']]['files'][2])
+            config = XttsConfig()
+            config.models_dir = models_dir
+            config.load_json(config_path)
+            params['tts'] = Xtts.init_from_config(config)
+            params['tts'].to(params['device'])
+            params['tts'].load_checkpoint(config, checkpoint_dir=model_path, eval=True)
+            print('Computing speaker latents...')
+            params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['clone_voice_file']])
+        else:
+            params['tts_model'] = 'mms'
+            mms_dir = os.path.join(models_dir,'mms')
+            local_model_path = os.path.join(mms_dir, f'tts_models/{ebook['metadata']['language']}/fairseq/vits')
+            if os.path.isdir(local_model_path):
+                params['tts'] = TTS(local_model_path)
+            else:
+                params['tts'] = TTS(f'tts_models/{ebook['metadata']['language']}/fairseq/vits')
+            params['tts'].to(params['device'])
+
+        total_chapters = len(ebook['chapters'])
+        total_sentences = sum(len(array) for array in ebook['chapters'])
+        resume_chapter = 0
+        resume_sentence = 0
+        current_sentence = 0
+
+        # Check existing files to resume the process if it was interrupted
+        existing_chapters = sorted([f for f in os.listdir(ebook['chapters_dir']) if f.endswith(f'.{audio_proc_format}')])
+        existing_sentences = sorted([f for f in os.listdir(ebook['chapters_dir_sentences']) if f.endswith(f'.{audio_proc_format}')])
+
+        if existing_chapters:
+            resume_chapter = len(existing_chapters)
+            print(f'Resuming from chapter {resume_chapter}')
+        if existing_sentences:
+            resume_sentence = len(existing_sentences) - 1
+            # Remove the last file (possibly incomplete or corrupted)
+            last_resume_sentence_file = os.path.join(ebook['chapters_dir_sentences'], existing_sentences[resume_sentence])
+            os.remove(last_resume_sentence_file)
+            print(f'Resuming from sentence {resume_sentence}')
+
+        with tqdm(total=total_sentences, desc='Processing 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
+            if ebook['metadata'].get('creator'):
+                if resume_sentence == 0:
+                    params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
+                    params['sentence'] = f"   {ebook['metadata']['creator']}, {ebook['metadata']['title']}.   "
+                    if convert_sentence_to_audio(params):
+                        current_sentence = 1
+                    else:
+                        print('convert_sentence_to_audio() Author and Title failed!')
+                        return False
+
+            for x in range(resume_chapter, total_chapters):
+                chapter_num = x + 1
+                chapter_audio_file = f'chapter_{chapter_num}.{audio_proc_format}'
+                sentences = ebook['chapters'][x]
+                start = current_sentence
+                for i, sentence in enumerate(sentences):
+                    if current_sentence >= resume_sentence:
+                        if cancellation_requested.is_set():
+                            stop_and_detach_tts(params['tts'])
+                            raise ValueError('Cancel requested')
+                        
+                        print(f'Sentence: {sentence}...')
+                        params['sentence'] = sentence
+                        params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
+                        
+                        if not convert_sentence_to_audio(params):
+                            print('convert_sentence_to_audio() failed!')
+                            return False
+                    
+                    percentage = (current_sentence / total_sentences) * 100
+                    t.set_description(f'Processing {percentage:.2f}%')
+                    t.update(1)
+                    if progress_bar is not None:
+                        progress_bar(current_sentence / total_sentences)
+                    current_sentence += 1
+                
+                end = current_sentence - 1
+                combine_audio_sentences(chapter_audio_file,start,end)
+                print(f'Converted chapter {chapter_num} to audio.')
+        return True
+    except Exception as e:
+        raise DependencyError(e)
+
+def convert_sentence_to_audio(params):
+    try:
+        if params['tts_model'] == 'xtts':
+            output = params['tts'].inference(
+                text=params['sentence'], language=ebook['metadata']['language_iso1'], gpt_cond_latent=params['gpt_cond_latent'], speaker_embedding=params['speaker_embedding'], 
+                temperature=params['temperature'], repetition_penalty=params['repetition_penalty'], top_k=params['top_k'], top_p=params['top_p'], 
+                speed=params['speed'], enable_text_splitting=params['enable_text_splitting'], prosody=None
+            )
+            torchaudio.save(params['sentence_audio_file'], torch.tensor(output[audio_proc_format]).unsqueeze(0), 22050)
+        else:
+            params['tts'].tts_with_vc_to_file(
+                text=params['sentence'],
+                #language=params['language'], # can be used only if multilingual model
+                speaker_wav=params['clone_voice_file'],
+                file_path=params['sentence_audio_file'],
+                split_sentences=params['enable_text_splitting']
+            )
+        return True
+    except Exception as e:
+        raise DependencyError(e)
+        
+def combine_audio_sentences(chapter_audio_file, start, end):
+    try:
+        chapter_audio_file = os.path.join(ebook['chapters_dir'], chapter_audio_file)
+        combined_audio = AudioSegment.empty()
+        
+        # Get all audio sentence files sorted by their numeric indices
+        sentences_dir_ordered = sorted(
+            [os.path.join(ebook['chapters_dir_sentences'], f) for f in os.listdir(ebook['chapters_dir_sentences']) if f.endswith(audio_proc_format)],
+            key=lambda f: int(''.join(filter(str.isdigit, os.path.basename(f))))
+        )
+        
+        # Filter the files in the range [start, end]
+        selected_files = [
+            file for file in sentences_dir_ordered 
+            if start <= int(''.join(filter(str.isdigit, os.path.basename(file)))) <= end
+        ]
+
+        for file in selected_files:
+            if cancellation_requested.is_set():
+                msg = 'Cancel requested'
+                raise ValueError(msg)
+            audio_segment = AudioSegment.from_file(file, format=audio_proc_format)
+            combined_audio += audio_segment
+
+        combined_audio.export(chapter_audio_file, format=audio_proc_format)
+        print(f'Combined audio saved to {chapter_audio_file}')
+    except Exception as e:
+        raise DependencyError(e)
+
+
 def combine_audio_chapters():
-    # Function to sort chapters based on their numeric order
     def sort_key(chapter_file):
         numbers = re.findall(r'\d+', chapter_file)
         return int(numbers[0]) if numbers else 0
@@ -295,8 +516,7 @@ def combine_audio_chapters():
 
                     audio_segment = AudioSegment.from_wav(chapter_file)
                     batch_audio += audio_segment
-        
-                # Combine the batch audio with the overall combined_audio
+
                 combined_audio += batch_audio
 
             combined_audio.export(assembled_audio, format=audio_proc_format)
@@ -442,205 +662,7 @@ def combine_audio_chapters():
                     return final_file
         return None
     except Exception as e:
-        raise DependencyError(e)
-
-def get_chapters(language):
-    try:
-        all_docs = list(ebook['epub'].get_items_of_type(ebooklib.ITEM_DOCUMENT))
-        if all_docs:
-            all_docs = all_docs[1:]
-            doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
-            most_common_pattern = filter_doc(doc_patterns)
-            selected_docs = [doc for doc in all_docs if filter_pattern(str(doc)) == most_common_pattern]
-            chapters = [filter_chapter(doc, language) for doc in selected_docs]
-            return chapters
-        return False
-    except Exception as e:
-        raise DependencyError(f'Error extracting main content pages: {e}')
-
-def filter_doc(doc_patterns):
-    pattern_counter = Counter(doc_patterns)
-    # Returns a list with one tuple: [(pattern, count)] 
-    most_common = pattern_counter.most_common(1)
-    return most_common[0][0] if most_common else None
-
-def filter_pattern(doc_identifier):
-    parts = doc_identifier.split(':')
-    if len(parts) > 2:
-        segment = parts[1]
-        if re.search(r'[a-zA-Z]', segment) and re.search(r'\d', segment):
-            return ''.join([char for char in segment if char.isalpha()])
-        elif re.match(r'^[a-zA-Z]+$', segment):
-            return segment
-        elif re.match(r'^\d+$', segment):
-            return 'numbers'
-    return None
-
-def filter_chapter(doc, language):
-    soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
-    chapter_clean = re.sub(r'(\r\n|\r|\n){3,}', '\n\n', soup.get_text().strip())
-    chapter_clean = replace_roman_numbers(chapter_clean)
-    chapter_sentences = get_sentences(chapter_clean, language)
-    return chapter_sentences
-
-def combine_audio_sentences(chapter_audio_file):
-    try:
-        output_file = os.path.join(ebook['chapters_dir'], chapter_audio_file)
-        combined_audio = AudioSegment.empty()
-        sentences_dir_ordered = sorted(
-            [os.path.join(ebook['chapters_dir_sentences'], f) for f in os.listdir(ebook['chapters_dir_sentences']) if f.endswith(audio_proc_format)],
-            key=lambda f: int(''.join(filter(str.isdigit, f)))
-        )
-        for file in sentences_dir_ordered:
-            if cancellation_requested.is_set():
-                msg = 'Cancel requested'
-                raise ValueError(msg)
-            audio_segment = AudioSegment.from_wav(file)
-            combined_audio += audio_segment
-        combined_audio.export(output_file, format=audio_proc_format)
-        print(f'Combined audio saved to {output_file}')
-    except Exception as e:
-        raise DependencyError(e)
-
-def get_sentences(sentence, language, max_pauses=4):
-    max_length = language_mapping[language]['char_limit']
-    punctuation = language_mapping[language]['punctuation']
-    parts = []
-    while len(sentence) > max_length or sum(sentence.count(p) for p in punctuation) > max_pauses:
-        possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char in punctuation]     
-        if possible_splits:
-            split_at = possible_splits[-1] + 1
-        else:
-            last_space = sentence.rfind(' ', 0, max_length)
-            if last_space != -1:
-                split_at = last_space + 1
-            else:
-                split_at = max_length
-        parts.append(sentence[:split_at].strip())
-        sentence = sentence[split_at:].strip()
-    if sentence:
-        parts.append(sentence)
-    return parts
-
-def convert_chapters_to_audio(params):
-    try:
-        progress_bar = None
-        if is_gui_process:
-            progress_bar = gr.Progress(track_tqdm=True)        
-        if params['clone_voice_file'] is None:
-            params['clone_voice_file'] = default_clone_voice_file
-        print('Loading the TTS model ...')
-        params['tts_model'] = None
-        if ebook['custom_model'] is not None or ebook['metadata']['language'] in language_xtts:
-            params['tts_model'] = 'xtts'
-            if ebook['custom_model'] is not None:              
-                model_path = ebook['custom_model']
-            else:
-                model_path = models['xtts']['local']
-
-            config_path = os.path.join(models[params['tts_model']]['local'],models[params['tts_model']]['files'][0])
-            vocab_path = os.path.join(models[params['tts_model']]['local'],models[params['tts_model']]['files'][2])
-            config = XttsConfig()
-            config.models_dir = models_dir
-            config.load_json(config_path)
-            params['tts'] = Xtts.init_from_config(config)
-            params['tts'].to(params['device'])
-            params['tts'].load_checkpoint(config, checkpoint_dir=model_path, vocab_path=vocab_path)
-            print('Computing speaker latents...')
-            params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['clone_voice_file']])
-        else:
-            params['tts_model'] = 'mms'
-            mms_dir = os.path.join(models_dir,'mms')
-            local_model_path = os.path.join(mms_dir, f'tts_models/{ebook['metadata']['language']}/fairseq/vits')
-            if os.path.isdir(local_model_path):
-                params['tts'] = TTS(local_model_path)
-            else:
-                params['tts'] = TTS(f'tts_models/{ebook['metadata']['language']}/fairseq/vits')
-            params['tts'].to(params['device'])
-
-        total_chapters = len(ebook['chapters'])
-        total_sentences = sum(len(array) for array in ebook['chapters'])
-        resume_chapter = 0
-        resume_sentence = 0
-        current_sentence = 0
-
-        # Check existing files to resume the process if it was interrupted
-        existing_chapters = sorted([f for f in os.listdir(ebook['chapters_dir']) if f.endswith(f'.{audio_proc_format}')])
-        existing_sentences = sorted([f for f in os.listdir(ebook['chapters_dir_sentences']) if f.endswith(f'.{audio_proc_format}')])
-
-        if existing_chapters:
-            resume_chapter = len(existing_chapters)
-            print(f'Resuming from chapter {resume_chapter}')
-        if existing_sentences:
-            resume_sentence = len(existing_sentences) - 1
-            # Remove the last file (possibly incomplete or corrupted)
-            last_resume_sentence_file = os.path.join(ebook['chapters_dir_sentences'], existing_sentences[resume_sentence])
-            os.remove(last_resume_sentence_file)
-            print(f'Resuming from sentence {resume_sentence}')
-
-        with tqdm(total=total_sentences, desc='Processing 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
-            if ebook['metadata'].get('creator'):
-                if resume_sentence == 0:
-                    params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
-                    params['sentence'] = f"   {ebook['metadata']['creator']}, {ebook['metadata']['title']}.   "
-                    if convert_sentence_to_audio(params):
-                        current_sentence = 1
-                    else:
-                        print('convert_sentence_to_audio() Author and Title failed!')
-                        return False
-
-            for x in range(resume_chapter, total_chapters):
-                chapter_num = x + 1
-                chapter_audio_file = f'chapter_{chapter_num}.{audio_proc_format}'
-                sentences = ebook['chapters'][x]
-                
-                for i, sentence in enumerate(sentences):
-                    if current_sentence >= resume_sentence:
-                        if cancellation_requested.is_set():
-                            stop_and_detach_tts(params['tts'])
-                            raise ValueError('Cancel requested')
-                        
-                        print(f'Sentence: {sentence}...')
-                        params['sentence'] = sentence
-                        params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
-                        
-                        if not convert_sentence_to_audio(params):
-                            print('convert_sentence_to_audio() failed!')
-                            return False
-                    
-                    percentage = (current_sentence / total_sentences) * 100
-                    t.set_description(f'Processing {percentage:.2f}%')
-                    t.update(1)
-                    if progress_bar is not None:
-                        progress_bar(current_sentence / total_sentences)
-                    current_sentence += 1
-
-                combine_audio_sentences(chapter_audio_file)
-                print(f'Converted chapter {chapter_num} to audio.')
-        return True
-    except Exception as e:
-        raise DependencyError(e)
-
-def convert_sentence_to_audio(params):
-    try:
-        if params['tts_model'] == 'xtts':
-            output = params['tts'].inference(
-                text=params['sentence'], language=ebook['metadata']['language_iso1'], gpt_cond_latent=params['gpt_cond_latent'], speaker_embedding=params['speaker_embedding'], 
-                temperature=params['temperature'], repetition_penalty=params['repetition_penalty'], top_k=params['top_k'], top_p=params['top_p'], 
-                speed=params['speed'], enable_text_splitting=params['enable_text_splitting'], prosody=None
-            )
-            torchaudio.save(params['sentence_audio_file'], torch.tensor(output[audio_proc_format]).unsqueeze(0), 24000)
-        else:
-            params['tts'].tts_with_vc_to_file(
-                text=params['sentence'],
-                #language=params['language'], # can be used only if multilingual model
-                speaker_wav=params['clone_voice_file'],
-                file_path=params['sentence_audio_file'],
-                split_sentences=params['enable_text_splitting']
-            )
-        return True
-    except Exception as e:
-        raise DependencyError(e)   
+        raise DependencyError(e)        
       
 def romanToInt(s):
     roman = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
@@ -727,7 +749,6 @@ def convert_ebook(args):
                 pass
 
             if args.language is not None and args.language in language_mapping.keys():
-                ebook['resume'] = False
                 ebook['id'] = args.session if args.session is not None else str(uuid.uuid4())
                 script_mode = args.script_mode if args.script_mode is not None else NATIVE        
                 device = args.device.lower()
@@ -757,7 +778,7 @@ def convert_ebook(args):
                     client = docker.from_env()
 
                 tmp_dir = os.path.join(processes_dir, f"ebook-{ebook['id']}")
-                ebook['chapters_dir'] = os.path.join(tmp_dir, 'chapters')
+                ebook['chapters_dir'] = os.path.join(tmp_dir, f'chapters_{hashlib.md5(args.ebook.encode()).hexdigest()}')
                 ebook['chapters_dir_sentences'] = os.path.join(ebook['chapters_dir'], 'sentences')
 
                 if not is_gui_process:
