@@ -387,52 +387,62 @@ def convert_chapters_to_audio(params):
         existing_sentences = sorted([f for f in os.listdir(ebook['chapters_dir_sentences']) if f.endswith(f'.{audio_proc_format}')])
 
         if existing_chapters:
-            resume_chapter = len(existing_chapters)
+            resume_chapter = len(existing_chapters) - 1
             print(f'Resuming from chapter {resume_chapter}')
         if existing_sentences:
             resume_sentence = len(existing_sentences) - 1
             print(f'Resuming from sentence {resume_sentence}')
 
-        with tqdm(total=total_sentences, desc='Processing 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
-            if ebook['metadata'].get('creator'):
-                if resume_sentence == 0:
-                    params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
-                    params['sentence'] = f"   {ebook['metadata']['creator']}, {ebook['metadata']['title']}.   "
-                    if convert_sentence_to_audio(params):
-                        current_sentence = 1
-                    else:
-                        print('convert_sentence_to_audio() Author and Title failed!')
-                        return False
+        if ebook['metadata'].get('creator'):
+            if resume_sentence == 0:
+                params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
+                params['sentence'] = f"   {ebook['metadata']['creator']}, {ebook['metadata']['title']}.   "
+                if convert_sentence_to_audio(params):
+                    current_sentence = 1
+                else:
+                    print('convert_sentence_to_audio() Author and Title failed!')
+                    return False
+
+        with tqdm(total=total_sentences, desc='Processing 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+            t.n = resume_sentence  # Initialize tqdm to match the current_sentence
+            t.refresh()  # Refresh tqdm to update the display
 
             for x in range(resume_chapter, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{audio_proc_format}'
                 sentences = ebook['chapters'][x]
-                start = current_sentence
+                start = current_sentence  # Mark the starting sentence of the chapter
+
                 for i, sentence in enumerate(sentences):
-                    if current_sentence >= resume_sentence:
+                    # Only process sentences after the resume point
+                    if current_sentence > resume_sentence:
                         if cancellation_requested.is_set():
                             stop_and_detach_tts(params['tts'])
                             raise ValueError('Cancel requested')
-                        
+
+                        params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
                         print(f'Sentence: {sentence}...')
                         params['sentence'] = sentence
-                        params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
-                        
+
                         if not convert_sentence_to_audio(params):
                             print('convert_sentence_to_audio() failed!')
                             return False
-                    
-                    percentage = (current_sentence / total_sentences) * 100
-                    t.set_description(f'Processing {percentage:.2f}%')
-                    t.update(1)
-                    if progress_bar is not None:
-                        progress_bar(current_sentence / total_sentences)
+
+                        # Update the progress bar and n_fmt
+                        t.update(1)  # Increment progress bar by 1
+                        percentage = (current_sentence / total_sentences) * 100
+                        t.set_description(f'Processing {percentage:.2f}%')
+                        t.refresh()  # Force refresh to show changes immediately
+
+                        if progress_bar is not None:
+                            progress_bar(current_sentence / total_sentences)
+
                     current_sentence += 1
-                
+
                 end = current_sentence - 1
-                combine_audio_sentences(chapter_audio_file,start,end)
+                combine_audio_sentences(chapter_audio_file, start, end)
                 print(f'Converted chapter {chapter_num} to audio.')
+
         return True
     except Exception as e:
         raise DependencyError(e)
