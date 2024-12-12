@@ -13,7 +13,7 @@ requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 docker_utils_image = 'utils'
 gradio_interface_port = 7860
 gradio_shared_expire = 72 # hours
-concurrency_limit = 16 # or None for unlimited
+concurrency_limit = 8 # or None for unlimited
 
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
 models_dir = os.path.abspath(os.path.join('.','models'))
@@ -24,11 +24,14 @@ audiobooks_host_dir = os.path.abspath(os.path.join('.','audiobooks','gui','host'
 audiobooks_cli_dir = os.path.abspath(os.path.join('.','audiobooks','cli'))
 
 # <<<<<<< HEAD
+# Automatically accept the non-commercial license
+os.environ['COQUI_TOS_AGREED'] = '1'
 os.environ['CALIBRE_TEMP_DIR'] = processes_dir
 os.environ['CALIBRE_CACHE_DIRECTORY'] = processes_dir
 os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
 os.environ['DO_NOT_TRACK'] = 'true'
 os.environ['HUGGINGFACE_HUB_CACHE'] = models_dir
+os.environ['TTS_HOME'] = models_dir
 os.environ['HF_HOME'] = models_dir
 os.environ['HF_DATASETS_CACHE'] = models_dir
 os.environ['HF_TOKEN_PATH'] = os.path.join(os.path.expanduser('~'), '.huggingface_token')
@@ -38,21 +41,23 @@ os.environ['XDG_CACHE_HOME'] = models_dir
 
 models = {
     "xtts": {
-        "url": "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/Viet_XTTS_v2.0.zip?download=true",
-        "local": os.path.join(models_dir, "XTTS-v2"),
+        "url": "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/xtts_v2_default_model.zip?download=true",
+        "api": "tts_models/multilingual/multi-dataset/xtts_v2",
+        "local": os.path.join(models_dir, "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
         "files": ["config.json", "model.pth", "vocab.json"],
         "zip": "xtts_v2_model.zip"
     },
     "mms": {
         "url": "",
-        "local": os.path.join(models_dir, "mms"),
+        "api": "tts_models/[lang]/fairseq/vits",
+        "local": os.path.join(models_dir, "tts", "tts_models--[lang]--fairseq--vits"),
         "files": ["config.json", "G_100000.pth", "vocab.txt"],
         "zip": ""
     }
 }
 
-ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', '.docx', '.html', '.odt', '.azw']
-audiobook_format = 'm4b'
+ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw']
+audiobook_format = 'm4b' # or 'mp3'
 audio_proc_format = 'wav' # only 'wav' is valid for now
 
 xtts_fine_tuned_voice_actors = {

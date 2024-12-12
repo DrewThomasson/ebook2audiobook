@@ -12,6 +12,10 @@ sys.path.append(parent_dir)
 # Your language mapping dictionary from lang.py
 from lib.lang import language_mapping
 
+env = os.environ.copy()
+env["PYTHONIOENCODING"] = "utf-8";
+env["LANG"] = "en_US.UTF-8"
+
 # Base text to be translated
 base_text = "This is a test from the result of text file to audiobook conversion."
 
@@ -60,11 +64,11 @@ for lang_code, lang_info in tqdm(language_mapping.items(), desc="Processing lang
             "--cover", base_cover_image,
             "--title", title,
             "--authors", authors,
-            "--language", language
+            "--language", language,
+            "--input-encoding", "utf-8"
         ]
 
-        # Run the ebook-convert command
-        subprocess.run(command)
+        result = subprocess.run(command, env=env, text=True, encoding="utf-8")
         print(f"Ebook generated for {lang_info['name']} at {azw3_filepath}\n")
 
     except Exception as e:

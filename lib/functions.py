@@ -22,23 +22,22 @@ import traceback
 
 from bs4 import BeautifulSoup
 from collections import Counter
+from collections.abc import MutableMapping
+from datetime import datetime
 from ebooklib import epub
 from glob import glob
 from iso639 import languages
+from multiprocessing import Manager, Event
 from pydub import AudioSegment
-from datetime import datetime
 from tqdm import tqdm
 from translate import Translator
-from TTS.api import TTS
+from TTS.api import TTS as XTTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 from urllib.parse import urlparse
 
 import lib.conf as conf
 import lib.lang as lang
-
-# Automatically accept the non-commercial license
-os.environ['COQUI_TOS_AGREED'] = '1'
 
 def inject_configs(target_namespace):
     # Extract variables from both modules and inject them into the target namespace
@@ -48,25 +47,77 @@ def inject_configs(target_namespace):
 # Inject configurations into the global namespace of this module
 inject_configs(globals())
 
-script_mode = None
+def recursive_proxy(data, manager=None):
+    """Recursively convert a nested dictionary into Manager.dict proxies."""
+    if manager is None:
+        manager = Manager()
+    if isinstance(data, dict):
+        proxy_dict = manager.dict()
+        for key, value in data.items():
+            proxy_dict[key] = recursive_proxy(value, manager)
+        return proxy_dict
+    elif isinstance(data, list):
+        proxy_list = manager.list()
+        for item in data:
+            proxy_list.append(recursive_proxy(item, manager))
+        return proxy_list
+    elif isinstance(data, (str, int, float, bool, type(None))):  # Scalars
+        return data
+    else:
+        raise TypeError(f"Unsupported data type: {type(data)}")
 
+class ConversionContext:
+    def __init__(self):
+        self.manager = Manager()
+        self.sessions = self.manager.dict()  # Store all session-specific contexts
+        self.cancellation_events = {}  # Store multiprocessing.Event for each session
+
+    def get_session(self, session_id):
+        """Retrieve or initialize session-specific context"""
+        if session_id not in self.sessions:
+            self.sessions[session_id] = recursive_proxy({
+                "script_mode": NATIVE,
+                "client": None,
+                "audiobooks_dir": None,
+                "tmp_dir": None,
+                "src": None,
+                "id": session_id,
+                "chapters_dir": None,
+                "chapters_dir_sentences": None,
+                "epub": None,
+                "epub_path": None,
+                "filename_noext": None,
+                "custom_clone_voice": None,
+                "custom_model": None,
+                "chapters": None,
+                "cover": None,
+                "metadata": {
+                    "title": None, 
+                    "creator": None,
+                    "contributor": None,
+                    "language": None,
+                    "language_iso1": None,
+                    "identifier": None,
+                    "publisher": None,
+                    "date": None,
+                    "description": None,
+                    "subject": None,
+                    "rights": None,
+                    "format": None,
+                    "type": None,
+                    "coverage": None,
+                    "relation": None,
+                    "Source": None,
+                    "Modified": None,
+                },
+                "status": "Idle",
+                "progress": 0,
+                "cancellation_requested": False
+            }, manager=self.manager)
+        return self.sessions[session_id]
+        
+context = None
 is_gui_process = False
-is_gui_shared = False
-is_converting = False
-
-interface = None
-client = None
-audiobooks_dir = None
-tmp_dir = None
-ebook = {}
-metadata_fields = [
-    'title', 'creator', 'contributor', 'language', 'identifier', 
-    'publisher', 'date', 'description', 'subject', 'rights', 
-    'format', 'type', 'coverage', 'relation', 'Source', 'Modified'
-]
-
-# Initialize a threading event to handle cancellation
-cancellation_requested = threading.Event()
 
 class DependencyError(Exception):
     def __init__(self, message=None):
@@ -118,20 +169,20 @@ def download_model(dest_dir, url):
     except Exception as e:
         raise DependencyError(e)
 
-def prepare_dirs(src):
+def prepare_dirs(src, session):
     try:
         resume = False
-        os.makedirs(tmp_dir, exist_ok=True)
-        os.makedirs(audiobooks_dir, exist_ok=True)
-        ebook['src'] = os.path.join(tmp_dir, os.path.basename(src))
-        if os.path.exists(ebook['src']):
-            if compare_files_by_hash(ebook['src'], src):
+        os.makedirs(session['tmp_dir'], exist_ok=True)
+        os.makedirs(session['audiobooks_dir'], exist_ok=True)
+        session['src'] = os.path.join(session['tmp_dir'], os.path.basename(src))
+        if os.path.exists(session['src']):
+            if compare_files_by_hash(session['src'], src):
                 resume = True
         if not resume:
-            shutil.rmtree(ebook['chapters_dir'], ignore_errors=True)
-        os.makedirs(ebook['chapters_dir'], exist_ok=True)
-        os.makedirs(ebook['chapters_dir_sentences'], exist_ok=True)
-        shutil.copy(src, ebook['src']) 
+            shutil.rmtree(session['chapters_dir'], ignore_errors=True)
+        os.makedirs(session['chapters_dir'], exist_ok=True)
+        os.makedirs(session['chapters_dir_sentences'], exist_ok=True)
+        shutil.copy(src, session['src']) 
         return True
     except Exception as e:
         raise DependencyError(e)
@@ -148,7 +199,7 @@ def check_programs(prog_name, command, options):
         e = f'Error: There was an issue running {prog_name}.'
         raise DependencyError(e)
 
-def download_custom_model(url, dest_dir):
+def download_custom_model(url, dest_dir, session):
     try:
         parsed_url = urlparse(url)
         fname = os.path.basename(parsed_url.path)
@@ -161,17 +212,17 @@ def download_custom_model(url, dest_dir):
             for chunk in response.iter_content(chunk_size=8192):
                 file.write(chunk)
         print(f'File saved at: {f_path}')
-        return extract_custom_model(f_path, dest_dir)
+        return extract_custom_model(f_path, dest_dir, session)
     except Exception as e:
         raise RuntimeError(f'Error while downloading the file: {e}')
         
-def extract_custom_model(f_path, dest_dir):
+def extract_custom_model(f_path, dest_dir, session):
     try:
         with zipfile.ZipFile(f_path, 'r') as zip_ref:
             files = zip_ref.namelist()
             with tqdm(total=len(files), unit='file', desc='Extracting Files') as t:
                 for file in files:
-                    if cancellation_requested.is_set():
+                    if session['cancellation_requested']:
                         msg = 'Cancel requested'
                         raise ValueError()
                     if os.path.isfile(file):
@@ -210,23 +261,26 @@ def has_metadata(f):
     except Exception as e:
         return False
 
-def convert_to_epub():
-    if script_mode == DOCKER_UTILS:
+def convert_to_epub(session):
+    if session['cancellation_requested']:
+        stop_and_detach_tts()
+        raise ValueError('Cancel requested')
+    if session['script_mode'] == DOCKER_UTILS:
         try:
-            docker_dir = os.path.basename(tmp_dir)
-            docker_file_in = os.path.basename(ebook['src'])
-            docker_file_out = os.path.basename(ebook['epub_path'])
+            docker_dir = os.path.basename(session['tmp_dir'])
+            docker_file_in = os.path.basename(session['src'])
+            docker_file_out = os.path.basename(session['epub_path'])
             
             # Check if the input file is already an EPUB
             if docker_file_in.lower().endswith('.epub'):
-                shutil.copy(ebook['src'], ebook['epub_path'])
+                shutil.copy(session['src'], session['epub_path'])
                 return True
 
             # Convert the ebook to EPUB format using utils Docker image
-            container = client.containers.run(
+            container = session['client'].containers.run(
                 docker_utils_image,
                 command=f'ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out}',
-                volumes={tmp_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
+                volumes={session['tmp_dir']: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                 remove=True,
                 detach=False,
                 stdout=True,
@@ -243,40 +297,46 @@ def convert_to_epub():
     else:
         try:
             util_app = shutil.which('ebook-convert')
-            subprocess.run([util_app, ebook['src'], ebook['epub_path']], check=True)
+            subprocess.run([util_app, session['src'], session['epub_path']], check=True)
             return True
         except subprocess.CalledProcessError as e:
             raise DependencyError(e)
 
-def get_cover():
+def get_cover(session):
     try:
-        cover_image = None
-        cover_path = os.path.join(tmp_dir, ebook['filename_noext'] + '.jpg')
-        cover_file = None
-        for item in ebook['epub'].get_items_of_type(ebooklib.ITEM_COVER):
+        cover_image = False
+        cover_path = os.path.join(session['tmp_dir'], session['filename_noext'] + '.jpg')
+        for item in session['epub'].get_items_of_type(ebooklib.ITEM_COVER):
             cover_image = item.get_content()
             break
-        if cover_image is None:
-            for item in ebook['epub'].get_items_of_type(ebooklib.ITEM_IMAGE):
+        if not cover_image:
+            for item in session['epub'].get_items_of_type(ebooklib.ITEM_IMAGE):
                 if 'cover' in item.file_name.lower() or 'cover' in item.get_id().lower():
                     cover_image = item.get_content()
                     break
         if cover_image:
             with open(cover_path, 'wb') as cover_file:
                 cover_file.write(cover_image)
-        return cover_path
+                return cover_path
+        return True
     except Exception as e:
         raise DependencyError(e)
 
-def get_chapters(language):
+def get_chapters(language, session):
     try:
-        all_docs = list(ebook['epub'].get_items_of_type(ebooklib.ITEM_DOCUMENT))
+        if session['cancellation_requested']:
+            stop_and_detach_tts()
+            raise ValueError('Cancel requested')
+        all_docs = list(session['epub'].get_items_of_type(ebooklib.ITEM_DOCUMENT))
         if all_docs:
             all_docs = all_docs[1:]
             doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
             most_common_pattern = filter_doc(doc_patterns)
             selected_docs = [doc for doc in all_docs if filter_pattern(str(doc)) == most_common_pattern]
-            chapters = [filter_chapter(doc, language) for doc in selected_docs]
+            chapters = [filter_chapter(doc, language, session) for doc in selected_docs]
+            if session['metadata'].get('creator'):
+                intro = f"{session['metadata']['creator']}, {session['metadata']['title']}. "
+                chapters[0].insert(0, intro)
             return chapters
         return False
     except Exception as e:
@@ -300,182 +360,206 @@ def filter_pattern(doc_identifier):
             return 'numbers'
     return None
 
-def filter_chapter(doc, language):
+def filter_chapter(doc, language, session):
+    if session['cancellation_requested']:
+        stop_and_detach_tts()
+        raise ValueError('Cancel requested')
+
     soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
-    text = re.sub(r'(\r\n|\r|\n){3,}', '\n\n', soup.get_text().strip())
+    # Remove scripts and styles
+    for script in soup(["script", "style"]):
+        script.decompose()
+
+    # Normalize lines and remove unnecessary spaces
+    text = re.sub(r'(\r\n|\r|\n){3,}', '\r\n', soup.get_text().strip())
     text = replace_roman_numbers(text)
-    # Step 1: Define regex pattern to handle script transitions, letters/numbers, and large numbers
-    pattern = (
-        r'(?<=[\p{L}])(?=\d)|'        # Add space between letters and numbers
-        r'(?<=\d)(?=[\p{L}])|'        # Add space between numbers and letters
-        r'(?<=[\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}])'
-        r'(?=[^\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}\d])|'
-        r'(?<=[^\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}\d])'
-        r'(?=[\p{IsLatin}\p{IsCyrillic}\p{IsHebrew}\p{IsHan}\p{IsArabic}\p{IsDevanagari}\d])|'
-        r'(?<=\d{4})(?=\d)'           # Split large numbers every 4 digits
-    )
-    # Step 2: Use regex to add spaces
-    text = re.sub(pattern, " ", text)
-    chapter_sentences = get_sentences(text, language)
+    lines = (line.strip() for line in text.splitlines())
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    text = '\n'.join(chunk for chunk in chunks if chunk)
+    text = text.replace('»', '"').replace('«', '"')
+
+    # Pattern 1: Add a space between UTF-8 characters and numbers
+    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+
+    # Pattern 2: Split numbers into groups of 4
+    text = re.sub(r'(\d{4})(?=\d)', r'\1 ', text)
+
+    chapter_sentences = get_sentences(text, language, session)
     return chapter_sentences
 
-def get_sentences(sentence, language, max_pauses=10):
+def get_sentences(sentence, language, session, max_pauses=9):
     max_length = language_mapping[language]['char_limit']
     punctuation = language_mapping[language]['punctuation']
     parts = []
     while len(sentence) > max_length or sum(sentence.count(p) for p in punctuation) > max_pauses:
-        possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char in punctuation]      
+        if session['cancellation_requested']:
+            stop_and_detach_tts()
+            raise ValueError('Cancel requested')
+        # Step 1: Look for the last period (.) within max_length
+        possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char == '.']    
+        # Step 2: If no periods, look for the last comma (,)
+        if not possible_splits:
+            possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char == ',']    
+        # Step 3: If still no splits, look for any other punctuation
+        if not possible_splits:
+            possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char in punctuation]    
+        # Step 4: Determine where to split the sentence
         if possible_splits:
-            split_at = possible_splits[-1] + 1
+            split_at = possible_splits[-1] + 1  # Split at the last occurrence of punctuation
         else:
+            # If no punctuation is found, split at the last space
             last_space = sentence.rfind(' ', 0, max_length)
             if last_space != -1:
                 split_at = last_space + 1
             else:
-                split_at = max_length      
-        parts.append(sentence[:split_at].strip() + "  ")
-        sentence = sentence[split_at:].strip()  
+                # If no space is found, force split at max_length
+                split_at = max_length   
+        # Add the split sentence to parts
+        parts.append(sentence[:split_at].strip() + ' ')
+        sentence = sentence[split_at:].strip()
+    # Add the remaining sentence if any
     if sentence:
-        # Append the remaining part with two spaces
-        parts.append(sentence + "  ")
+        parts.append(sentence.strip() + ' ')
     return parts
 
-def convert_chapters_to_audio(params):
+def convert_chapters_to_audio(session):
     try:
+        if session['cancellation_requested']:
+            stop_and_detach_tts()
+            raise ValueError('Cancel requested')
         progress_bar = None
+        params = {}
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
-        if params['clone_voice_file'] is None:
-            params['clone_voice_file'] = default_clone_voice_file
-        print('Loading the TTS model ...')
         params['tts_model'] = None
-        if ebook['custom_model'] is not None or ebook['metadata']['language'] in language_xtts:
-            params['tts_model'] = 'xtts'
-            if ebook['custom_model'] is not None:              
-                model_path = ebook['custom_model']
+        '''
+        # List available TTS models
+        print("Available Models:")
+        print("=================")
+        for index, model in enumerate(XTTS().list_models(), 1):
+            print(f"{index}. {model}")
+        '''
+        if session['metadata']['language'] in language_xtts:
+            params['tts_model'] = 'xtts'            
+            if session['custom_model'] is not None:
+                config_path = os.path.join(session['custom_model'],models[params['tts_model']]['files'][0])
+                model_path = session['custom_model']
             else:
-                model_path = models['xtts']['local']
-
-            config_path = os.path.join(models[params['tts_model']]['local'],models[params['tts_model']]['files'][0])
-            vocab_path = os.path.join(models[params['tts_model']]['local'],models[params['tts_model']]['files'][2])
+                if not os.path.exists(models[params['tts_model']]['local']):
+                    params['tts'] = XTTS(models['xtts']['api'])
+                config_path = os.path.join(models[params['tts_model']]['local'],models[params['tts_model']]['files'][0])
+                model_path = models[params['tts_model']]['local']
+            print(f"Loading TTS {params['tts_model']} model...")
             config = XttsConfig()
             config.models_dir = models_dir
             config.load_json(config_path)
             params['tts'] = Xtts.init_from_config(config)
-            params['tts'].to(params['device'])
             params['tts'].load_checkpoint(config, checkpoint_dir=model_path, eval=True)
+            params['tts'].to(session['device'])              
             print('Computing speaker latents...')
-            params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['clone_voice_file']])
+            params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[session['clone_voice_file']])
+            params['tts'].to(session['device'])
         else:
             params['tts_model'] = 'mms'
-            mms_dir = os.path.join(models_dir,'mms')
-            local_model_path = os.path.join(mms_dir, f'tts_models/{ebook['metadata']['language']}/fairseq/vits')
-            if os.path.isdir(local_model_path):
-                params['tts'] = TTS(local_model_path)
-            else:
-                params['tts'] = TTS(f'tts_models/{ebook['metadata']['language']}/fairseq/vits')
-            params['tts'].to(params['device'])
+            print(f"Loading TTS {params['tts_model']} model...")
+            mod = models[params['tts_model']]['api'].replace("[lang]", session['metadata']['language'])
+            params['tts'] = XTTS(mod)
+            params['tts'].to(session['device'])
 
-        total_chapters = len(ebook['chapters'])
-        total_sentences = sum(len(array) for array in ebook['chapters'])
         resume_chapter = 0
         resume_sentence = 0
-        current_sentence = 0
 
         # Check existing files to resume the process if it was interrupted
-        existing_chapters = sorted([f for f in os.listdir(ebook['chapters_dir']) if f.endswith(f'.{audio_proc_format}')])
-        existing_sentences = sorted([f for f in os.listdir(ebook['chapters_dir_sentences']) if f.endswith(f'.{audio_proc_format}')])
+        existing_chapters = sorted([f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{audio_proc_format}')])
+        existing_sentences = sorted([f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{audio_proc_format}')])
 
         if existing_chapters:
-            resume_chapter = len(existing_chapters) - 1
-            print(f'Resuming from chapter {resume_chapter}')
+            count_chapter_files = len(existing_chapters)
+            resume_chapter = count_chapter_files - 1 if count_chapter_files > 0 else 0
+            print(f'Resuming from chapter {count_chapter_files}')
         if existing_sentences:
-            resume_sentence = len(existing_sentences) - 1
+            resume_sentence = len(existing_sentences)
             print(f'Resuming from sentence {resume_sentence}')
 
-        if ebook['metadata'].get('creator'):
-            if resume_sentence == 0:
-                params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
-                params['sentence'] = f"   {ebook['metadata']['creator']}, {ebook['metadata']['title']}.   "
-                if convert_sentence_to_audio(params):
-                    current_sentence = 1
-                else:
-                    print('convert_sentence_to_audio() Author and Title failed!')
-                    return False
+        total_chapters = len(session['chapters'])
+        total_sentences = sum(len(array) for array in session['chapters'])
+        current_sentence = 0
 
         with tqdm(total=total_sentences, desc='Processing 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             t.n = resume_sentence  # Initialize tqdm to match the current_sentence
             t.refresh()  # Refresh tqdm to update the display
-
             for x in range(resume_chapter, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{audio_proc_format}'
-                sentences = ebook['chapters'][x]
+                sentences = session['chapters'][x]
                 start = current_sentence  # Mark the starting sentence of the chapter
-
+                print(f"\nChapter {chapter_num} containing {len(sentences)} sentences...")
                 for i, sentence in enumerate(sentences):
-                    # Only process sentences after the resume point
-                    if current_sentence > resume_sentence:
-                        if cancellation_requested.is_set():
+                    if current_sentence >= resume_sentence and resume_sentence > 0 or resume_sentence == 0:
+                        if session['cancellation_requested']:
                             stop_and_detach_tts(params['tts'])
                             raise ValueError('Cancel requested')
-
-                        params['sentence_audio_file'] = os.path.join(ebook['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')
-                        print(f'Sentence: {sentence}...')
+                        params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{current_sentence}.{audio_proc_format}')                       
                         params['sentence'] = sentence
-
-                        if not convert_sentence_to_audio(params):
+                        print(f'Sentence: {sentence}...')
+                        if convert_sentence_to_audio(params, session):
+                            t.update(1)  # Increment progress bar by 1
+                            percentage = (current_sentence / total_sentences) * 100
+                            t.set_description(f'Processing {percentage:.2f}%')
+                            t.refresh()
+                            if progress_bar is not None:
+                                progress_bar(current_sentence / total_sentences)
+                        else:
                             print('convert_sentence_to_audio() failed!')
                             return False
-
-                        # Update the progress bar and n_fmt
-                        t.update(1)  # Increment progress bar by 1
-                        percentage = (current_sentence / total_sentences) * 100
-                        t.set_description(f'Processing {percentage:.2f}%')
-                        t.refresh()  # Force refresh to show changes immediately
-
-                        if progress_bar is not None:
-                            progress_bar(current_sentence / total_sentences)
-
                     current_sentence += 1
-
                 end = current_sentence - 1
-                combine_audio_sentences(chapter_audio_file, start, end)
-                print(f'Converted chapter {chapter_num} to audio.')
-
+                combine_audio_sentences(chapter_audio_file, start, end, session)
+                print(f'Combining chapter {chapter_num} to audio, sentence {start} to {end}')
         return True
     except Exception as e:
         raise DependencyError(e)
 
-def convert_sentence_to_audio(params):
+def convert_sentence_to_audio(params, session):
     try:
         if params['tts_model'] == 'xtts':
             output = params['tts'].inference(
-                text=params['sentence'], language=ebook['metadata']['language_iso1'], gpt_cond_latent=params['gpt_cond_latent'], speaker_embedding=params['speaker_embedding'], 
-                temperature=params['temperature'], repetition_penalty=params['repetition_penalty'], top_k=params['top_k'], top_p=params['top_p'], 
-                speed=params['speed'], enable_text_splitting=params['enable_text_splitting'], prosody=None
+                text=params['sentence'],
+                language=session['metadata']['language_iso1'],
+                gpt_cond_latent=params['gpt_cond_latent'],
+                speaker_embedding=params['speaker_embedding'], 
+                temperature=session['temperature'],
+                length_penalty=session["length_penalty"],
+                repetition_penalty=session['repetition_penalty'],
+                num_beams=int(session['length_penalty']) + 1 if session["length_penalty"] > 1 else 1,
+                top_k=session['top_k'], top_p=session['top_p'], 
+                speed=session['speed'],
+                enable_text_splitting=session['enable_text_splitting']
             )
-            torchaudio.save(params['sentence_audio_file'], torch.tensor(output[audio_proc_format]).unsqueeze(0), 22050)
-        else:
+            torchaudio.save(params['sentence_audio_file'], torch.tensor(output[audio_proc_format]).unsqueeze(0), 24000)
+        elif params['tts_model'] == 'mms':
             params['tts'].tts_with_vc_to_file(
                 text=params['sentence'],
-                #language=params['language'], # can be used only if multilingual model
-                speaker_wav=params['clone_voice_file'],
+                #language=session['language'], # can be used only if multilingual model
+                speaker_wav=session['clone_voice_file'].replace('_24khz','_22khz'),
                 file_path=params['sentence_audio_file'],
-                split_sentences=params['enable_text_splitting']
+                split_sentences=session['enable_text_splitting']
             )
-        return True
+        if os.path.exists(params['sentence_audio_file']):
+            return True
+        print(f"Cannot create {params['sentence_audio_file']}")
+        return False
     except Exception as e:
         raise DependencyError(e)
         
-def combine_audio_sentences(chapter_audio_file, start, end):
+def combine_audio_sentences(chapter_audio_file, start, end, session):
     try:
-        chapter_audio_file = os.path.join(ebook['chapters_dir'], chapter_audio_file)
+        chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         combined_audio = AudioSegment.empty()
         
         # Get all audio sentence files sorted by their numeric indices
         sentences_dir_ordered = sorted(
-            [os.path.join(ebook['chapters_dir_sentences'], f) for f in os.listdir(ebook['chapters_dir_sentences']) if f.endswith(audio_proc_format)],
+            [os.path.join(session['chapters_dir_sentences'], f) for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(audio_proc_format)],
             key=lambda f: int(''.join(filter(str.isdigit, os.path.basename(f))))
         )
         
@@ -486,7 +570,7 @@ def combine_audio_sentences(chapter_audio_file, start, end):
         ]
 
         for file in selected_files:
-            if cancellation_requested.is_set():
+            if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 raise ValueError(msg)
             audio_segment = AudioSegment.from_file(file, format=audio_proc_format)
@@ -498,7 +582,7 @@ def combine_audio_sentences(chapter_audio_file, start, end):
         raise DependencyError(e)
 
 
-def combine_audio_chapters():
+def combine_audio_chapters(session):
     def sort_key(chapter_file):
         numbers = re.findall(r'\d+', chapter_file)
         return int(numbers[0]) if numbers else 0
@@ -509,7 +593,7 @@ def combine_audio_chapters():
             batch_size = 256
             # Process the chapter files in batches
             for i in range(0, len(chapter_files), batch_size):
-                if cancellation_requested.is_set():
+                if session['cancellation_requested']:
                     msg = 'Cancel requested'
                     raise ValueError(msg)
 
@@ -518,7 +602,7 @@ def combine_audio_chapters():
 
                 # Sequentially append each file in the current batch to the batch_audio
                 for chapter_file in batch_files:
-                    if cancellation_requested.is_set():
+                    if session['cancellation_requested']:
                         msg = 'Cancel requested'
                         raise ValueError(msg)
 
@@ -536,39 +620,39 @@ def combine_audio_chapters():
     def generate_ffmpeg_metadata():
         try:
             ffmpeg_metadata = ';FFMETADATA1\n'        
-            if ebook['metadata'].get('title'):
-                ffmpeg_metadata += f"title={ebook['metadata']['title']}\n"            
-            if ebook['metadata'].get('creator'):
-                ffmpeg_metadata += f"artist={ebook['metadata']['creator']}\n"
-            if ebook['metadata'].get('language'):
-                ffmpeg_metadata += f"language={ebook['metadata']['language']}\n\n"
-            if ebook['metadata'].get('publisher'):
-                ffmpeg_metadata += f"publisher={ebook['metadata']['publisher']}\n"              
-            if ebook['metadata'].get('description'):
-                ffmpeg_metadata += f"description={ebook['metadata']['description']}\n"
-            if ebook['metadata'].get('published'):
+            if session['metadata'].get('title'):
+                ffmpeg_metadata += f"title={session['metadata']['title']}\n"            
+            if session['metadata'].get('creator'):
+                ffmpeg_metadata += f"artist={session['metadata']['creator']}\n"
+            if session['metadata'].get('language'):
+                ffmpeg_metadata += f"language={session['metadata']['language']}\n\n"
+            if session['metadata'].get('publisher'):
+                ffmpeg_metadata += f"publisher={session['metadata']['publisher']}\n"              
+            if session['metadata'].get('description'):
+                ffmpeg_metadata += f"description={session['metadata']['description']}\n"
+            if session['metadata'].get('published'):
                 # Check if the timestamp contains fractional seconds
-                if '.' in ebook['metadata']['published']:
+                if '.' in session['metadata']['published']:
                     # Parse with fractional seconds
-                    year = datetime.strptime(ebook['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
+                    year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
                 else:
                     # Parse without fractional seconds
-                    year = datetime.strptime(ebook['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
+                    year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
             else:
                 # If published is not provided, use the current year
                 year = datetime.now().year
             ffmpeg_metadata += f'year={year}\n'
-            if ebook['metadata'].get('identifiers') and isinstance(ebook['metadata'].get('identifiers'), dict):
-                isbn = ebook['metadata']['identifiers'].get('isbn', None)
+            if session['metadata'].get('identifiers') and isinstance(session['metadata'].get('identifiers'), dict):
+                isbn = session['metadata']['identifiers'].get('isbn', None)
                 if isbn:
                     ffmpeg_metadata += f'isbn={isbn}\n'  # ISBN
-                mobi_asin = ebook['metadata']['identifiers'].get('mobi-asin', None)
+                mobi_asin = session['metadata']['identifiers'].get('mobi-asin', None)
                 if mobi_asin:
                     ffmpeg_metadata += f'asin={mobi_asin}\n'  # ASIN                   
 
             start_time = 0
             for index, chapter_file in enumerate(chapter_files):
-                if cancellation_requested.is_set():
+                if session['cancellation_requested']:
                     msg = 'Cancel requested'
                     raise ValueError(msg)
 
@@ -587,21 +671,21 @@ def combine_audio_chapters():
     def export_audio():
         try:
             ffmpeg_cover = None
-            if script_mode == DOCKER_UTILS:
-                docker_dir = os.path.basename(tmp_dir)
+            if session['script_mode'] == DOCKER_UTILS:
+                docker_dir = os.path.basename(session['tmp_dir'])
                 ffmpeg_combined_audio = f'/files/{docker_dir}/' + os.path.basename(assembled_audio)
                 ffmpeg_metadata_file = f'/files/{docker_dir}/' + os.path.basename(metadata_file)
                 ffmpeg_final_file = f'/files/{docker_dir}/' + os.path.basename(docker_final_file)           
-                if ebook['cover'] is not None:
-                    ffmpeg_cover = f'/files/{docker_dir}/' + os.path.basename(ebook['cover'])
+                if session['cover'] is not None:
+                    ffmpeg_cover = f'/files/{docker_dir}/' + os.path.basename(session['cover'])
                     
                 ffmpeg_cmd = ['ffmpeg', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
             else:
                 ffmpeg_combined_audio = assembled_audio
                 ffmpeg_metadata_file = metadata_file
                 ffmpeg_final_file = final_file
-                if ebook['cover'] is not None:
-                    ffmpeg_cover = ebook['cover']
+                if session['cover'] is not None:
+                    ffmpeg_cover = session['cover']
                     
                 ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
 
@@ -623,12 +707,12 @@ def combine_audio_chapters():
                 
             ffmpeg_cmd += ['-movflags', '+faststart', '-y', ffmpeg_final_file]
 
-            if script_mode == DOCKER_UTILS:
+            if session['script_mode'] == DOCKER_UTILS:
                 try:
-                    container = client.containers.run(
+                    container = session['client'].containers.run(
                         docker_utils_image,
                         command=ffmpeg_cmd,
-                        volumes={tmp_dir: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
+                        volumes={session['tmp_dir']: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                         remove=True,
                         detach=False,
                         stdout=True,
@@ -656,59 +740,75 @@ def combine_audio_chapters():
             raise DependencyError(e)
 
     try:
-        chapter_files = sorted([os.path.join(ebook['chapters_dir'], f) for f in os.listdir(ebook['chapters_dir']) if f.endswith('.' + audio_proc_format)], key=sort_key)
-        assembled_audio = os.path.join(tmp_dir, 'assembled.'+audio_proc_format)
-        metadata_file = os.path.join(tmp_dir, 'metadata.txt')
+        chapter_files = sorted([os.path.join(session['chapters_dir'], f) for f in os.listdir(session['chapters_dir']) if f.endswith('.' + audio_proc_format)], key=sort_key)
+        assembled_audio = os.path.join(session['tmp_dir'], 'assembled.'+audio_proc_format)
+        metadata_file = os.path.join(session['tmp_dir'], 'metadata.txt')
 
         if assemble_audio():
             if generate_ffmpeg_metadata():
-                final_name = ebook['metadata']['title'] + '.' + audiobook_format
-                docker_final_file = os.path.join(tmp_dir, final_name)
-                final_file = os.path.join(audiobooks_dir, final_name)       
+                final_name = session['metadata']['title'] + '.' + audiobook_format
+                docker_final_file = os.path.join(session['tmp_dir'], final_name)
+                final_file = os.path.join(session['audiobooks_dir'], final_name)       
                 if export_audio():
-                    shutil.rmtree(tmp_dir)
+                    shutil.rmtree(session['tmp_dir'])
                     return final_file
         return None
     except Exception as e:
         raise DependencyError(e)        
-      
-def romanToInt(s):
-    roman = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
-             'IV': 4, 'IX': 9, 'XL': 40, 'XC': 90, 'CD': 400, 'CM': 900}   
-    i = 0
-    num = 0   
-    # Iterate over the string to calculate the integer value
-    while i < len(s):
-        # Check for two-character numerals (subtractive combinations)
-        if i + 1 < len(s) and s[i:i+2] in roman:
-            num += roman[s[i:i+2]]
-            i += 2
-        else:
-            # Add the value of the single character
-            num += roman[s[i]]
-            i += 1   
-    return num
 
 def replace_roman_numbers(text):
-    # Regular expression to match 'chapter xxx' (case insensitive)
-    roman_chapter_pattern = re.compile(r'\b(chapter|chapitre|capitolo|capítulo|Kapitel|глава|κεφάλαιο|capítulo|capitul|глава|poglavlje)\s(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|[IVXLCDM]+)\b', re.IGNORECASE)
-    def replace_match(match):
-        # Extract the Roman numeral part
+    def roman_to_int(s):
+        try:
+            roman = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
+                     'IV': 4, 'IX': 9, 'XL': 40, 'XC': 90, 'CD': 400, 'CM': 900}   
+            i = 0
+            num = 0   
+            # Iterate over the string to calculate the integer value
+            while i < len(s):
+                # Check for two-character numerals (subtractive combinations)
+                if i + 1 < len(s) and s[i:i+2] in roman:
+                    num += roman[s[i:i+2]]
+                    i += 2
+                else:
+                    # Add the value of the single character
+                    num += roman[s[i]]
+                    i += 1   
+            return num
+        except Exception as e:
+            return s
+
+    roman_chapter_pattern = re.compile(
+        r'\b(chapter|volume|chapitre|tome|capitolo|capítulo|volumen|Kapitel|глава|том|κεφάλαιο|τόμος|capitul|poglavlje)\s'
+        r'(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|[IVXLCDM]+)\b',
+        re.IGNORECASE
+    )
+
+    roman_numerals_with_period = re.compile(
+        r'^(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|[IVXLCDM])\.+'
+    )
+
+    def replace_chapter_match(match):
         chapter_word = match.group(1)
         roman_numeral = match.group(2)
-        # Convert to integer
-        integer_value = romanToInt(roman_numeral)
-        # Replace with 'chapter <integer>'
+        integer_value = roman_to_int(roman_numeral.upper())
         return f'{chapter_word.capitalize()} {integer_value}'
-    # Replace Roman numerals with their integer equivalents
-    return  roman_chapter_pattern.sub(replace_match, text)
+
+    def replace_numeral_with_period(match):
+        roman_numeral = match.group(1)
+        integer_value = roman_to_int(roman_numeral)
+        return f'{integer_value}.'
+
+    text = roman_chapter_pattern.sub(replace_chapter_match, text)
+    text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
+    return text
     
-def stop_and_detach_tts(tts):
-    if next(tts.parameters()).is_cuda:
-        tts.to('cpu')
-    del tts
-    if torch.cuda.is_available():
-        torch.cuda.empty_cache()
+def stop_and_detach_tts(tts=None):
+    if tts is not None:
+        if next(tts.parameters()).is_cuda:
+            tts.to('cpu')
+        del tts
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
 def delete_old_web_folders(root_dir):
     try:
@@ -733,114 +833,125 @@ def compare_file_metadata(f1, f2):
         return False
     return True
 
-def convert_ebook(args):
+def convert_ebook(args): 
+    global is_gui_process
     try:
-        global cancellation_requested, client, script_mode, audiobooks_dir, tmp_dir
-        if cancellation_requested.is_set():
-            msg = 'Cancel requested'
-            raise ValueError()
-        else:
-            error = None
-            try:
-                if len(args.language) == 2:
-                    lang_array = languages.get(alpha2=args.language)
-                    if lang_array and lang_array.part3:
-                        args.language = lang_array.part3
-                    else:
-                        args.language = None
+        global context
+        error = None
+        try:
+            if len(args.language) == 2:
+                lang_array = languages.get(alpha2=args.language)
+                if lang_array and lang_array.part3:
+                    args.language = lang_array.part3
                 else:
-                    lang_array = languages.get(part3=args.language)               
-                    if not lang_array:
-                        args.language = None
-            except Exception as e:
-                args.language = None
-                pass
+                    args.language = None
+            else:
+                lang_array = languages.get(part3=args.language)               
+                if not lang_array:
+                    args.language = None
+        except Exception as e:
+            args.language = None
+            pass
 
-            if args.language is not None and args.language in language_mapping.keys():
-                ebook['id'] = args.session if args.session is not None else str(uuid.uuid4())
-                script_mode = args.script_mode if args.script_mode is not None else NATIVE        
-                device = args.device.lower()
-                clone_voice_file = args.voice
-                language = args.language
-                temperature = args.temperature
-                length_penalty = args.length_penalty
-                repetition_penalty = args.repetition_penalty
-                top_k = args.top_k
-                top_p = args.top_p
-                speed = args.speed
-                enable_text_splitting = args.enable_text_splitting if args.enable_text_splitting is not None else True
-                custom_model_file = args.custom_model
-                custom_model_url = args.custom_model_url if custom_model_file is None else None
+        if args.language is not None and args.language in language_mapping.keys():
+            context = ConversionContext()
+            session_id = args.session if args.session is not None else str(uuid.uuid4())
+            session = context.get_session(session_id)
+            session['id'] = session_id
+            session['src'] = args.ebook
+            session['script_mode'] = args.script_mode if args.script_mode is not None else NATIVE       
+            session['audiobooks_dir'] = args.audiobooks_dir
+            is_gui_process = args.is_gui_process
+            device = args.device.lower()
+            clone_voice_file = args.voice if args.voice else default_clone_voice_file
+            language = args.language
+            temperature = args.temperature
+            length_penalty = args.length_penalty
+            repetition_penalty = args.repetition_penalty
+            top_k = args.top_k
+            top_p = args.top_p
+            speed = args.speed
+            enable_text_splitting = args.enable_text_splitting if args.enable_text_splitting is not None else True
+            custom_model_file = args.custom_model
+            custom_model_url = args.custom_model_url if custom_model_file is None else None
 
-                if not os.path.splitext(args.ebook)[1]:
-                    raise ValueError('The selected ebook file has no extension. Please select a valid file.')
+            if not os.path.splitext(args.ebook)[1]:
+                raise ValueError('The selected ebook file has no extension. Please select a valid file.')
 
-                if script_mode == NATIVE:
-                    bool, e = check_programs('Calibre', 'calibre', '--version')
-                    if not bool:
-                        raise DependencyError(e)
-                    bool, e = check_programs('FFmpeg', 'ffmpeg', '-version')
-                    if not bool:
-                        raise DependencyError(e)
-                elif script_mode == DOCKER_UTILS:
-                    client = docker.from_env()
+            if session['script_mode'] == NATIVE:
+                bool, e = check_programs('Calibre', 'calibre', '--version')
+                if not bool:
+                    raise DependencyError(e)
+                bool, e = check_programs('FFmpeg', 'ffmpeg', '-version')
+                if not bool:
+                    raise DependencyError(e)
+            elif session['script_mode'] == DOCKER_UTILS:
+                session['client'] = docker.from_env()
 
-                tmp_dir = os.path.join(processes_dir, f"ebook-{ebook['id']}")
-                ebook['chapters_dir'] = os.path.join(tmp_dir, f'chapters_{hashlib.md5(args.ebook.encode()).hexdigest()}')
-                ebook['chapters_dir_sentences'] = os.path.join(ebook['chapters_dir'], 'sentences')
+            session['tmp_dir'] = os.path.join(processes_dir, f"ebook-{session['id']}")
+            session['chapters_dir'] = os.path.join(session['tmp_dir'], f'chapters_{hashlib.md5(args.ebook.encode()).hexdigest()}')
+            session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')
 
-                if not is_gui_process:
-                    audiobooks_dir = audiobooks_cli_dir
+            if not is_gui_process:
+                print(f'*********** Session: {session_id}', '************* Store it in case of interruption or crash to resume your conversion')
 
-                if prepare_dirs(args.ebook) :             
-                    ebook['filename_noext'] = os.path.splitext(os.path.basename(ebook['src']))[0]
-                    ebook['custom_model'] = None
-                    if custom_model_file or custom_model_url:
-                        custom_model_dir = os.path.join(models_dir,'__sessions',f"model-{ebook['id']}")
-                        if os.isdir(custom_model_dir):
-                            shutil.rmtree(custom_model_dir)
-                        if custom_model_url:
-                            print(f'Get custom model: {custom_model_url}')
-                            ebook['custom_model'] = download_custom_model(custom_model_url, custom_model_dir)
-                        else:
-                            ebook['custom_model'] = extract_custom_model(custom_model_file, custom_model_dir)
-                    if not torch.cuda.is_available() or device == 'cpu':
-                        if device == 'gpu':
-                            print('GPU is not available on your device!')
-                        device = 'cpu'
-                            
-                    torch.device(device)
-                    print(f'Available Processor Unit: {device}')   
-                    ebook['epub_path'] = os.path.join(tmp_dir, '__' + ebook['filename_noext'] + '.epub')
-                    ebook['metadata'] = {}
-                    has_src_metadata = has_metadata(ebook['src'])
-                    if convert_to_epub():
-                        ebook['epub'] = epub.read_epub(ebook['epub_path'], {'ignore_ncx': True})
-                        for field in metadata_fields:
-                            data = ebook['epub'].get_metadata('DC', field)
-                            if data:
-                                for value, attributes in data:
-                                    if field == 'language' and not has_src_metadata:
-                                        ebook['metadata'][field] = language
-                                    else:
-                                        ebook['metadata'][field] = value  
-                        language_array = languages.get(part3=language)
-                        if language_array and language_array.part1:
-                            ebook['metadata']['language_iso1'] = language_array.part1
-                        if ebook['metadata']['language'] == language or ebook['metadata']['language_iso1'] and ebook['metadata']['language'] == ebook['metadata']['language_iso1']:
-                            ebook['metadata']['title'] = os.path.splitext(os.path.basename(ebook['src']))[0] if not ebook['metadata']['title'] else ebook['metadata']['title']
-                            ebook['metadata']['creator'] =  False if not ebook['metadata']['creator'] else ebook['metadata']['creator']
-                            ebook['cover'] = get_cover()
-                            ebook['chapters'] = get_chapters(language)
-                            if ebook['chapters']:
-                                params = {"device": device, "temperature": temperature, "length_penalty" : length_penalty, "repetition_penalty": repetition_penalty, 
-                                           "top_k" : top_k, "top_p": top_p, "speed": speed, "enable_text_splitting": enable_text_splitting, 
-                                           "clone_voice_file": clone_voice_file, "language": language}
-                                if convert_chapters_to_audio(params):
-                                    final_file = combine_audio_chapters()               
+            if prepare_dirs(args.ebook, session):
+                session['filename_noext'] = os.path.splitext(os.path.basename(session['src']))[0]
+                session['custom_model'] = None
+                if custom_model_file or custom_model_url:
+                    custom_model_dir = os.path.join(models_dir,'__sessions',f"model-{session['id']}")
+                    if os.isdir(custom_model_dir):
+                        shutil.rmtree(custom_model_dir)
+                    if custom_model_url:
+                        print(f'Get custom model: {custom_model_url}')
+                        session['custom_model'] = download_custom_model(custom_model_url, custom_model_dir, session)
+                    else:
+                        session['custom_model'] = extract_custom_model(custom_model_file, custom_model_dir, session)
+                if not torch.cuda.is_available() or device == 'cpu':
+                    if device == 'gpu':
+                        print('GPU is not available on your device!')
+                    device = 'cpu'
+                        
+                torch.device(device)
+                print(f'Available Processor Unit: {device}')   
+                session['epub_path'] = os.path.join(session['tmp_dir'], '__' + session['filename_noext'] + '.epub')
+                has_src_metadata = has_metadata(session['src'])
+                if convert_to_epub(session):
+                    session['epub'] = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
+                    metadata = dict(session['metadata'])
+                    for key, value in metadata.items():
+                        data = session['epub'].get_metadata('DC', key)
+                        if data:
+                            for value, attributes in data:
+                                if key == 'language' and not has_src_metadata:
+                                    session['metadata'][key] = language
+                                else:
+                                    session['metadata'][key] = value
+                    language_array = languages.get(part3=language)
+                    if language_array and language_array.part1:
+                        session['metadata']['language_iso1'] = language_array.part1
+                    if session['metadata']['language'] == language or session['metadata']['language_iso1'] and session['metadata']['language'] == session['metadata']['language_iso1']:
+                        session['metadata']['title'] = os.path.splitext(os.path.basename(session['src']))[0] if not session['metadata']['title'] else session['metadata']['title']
+                        session['metadata']['creator'] =  False if not session['metadata']['creator'] else session['metadata']['creator']
+                        session['cover'] = get_cover(session)
+                        if session['cover']:
+                            session['chapters'] = get_chapters(language, session)
+                            if session['chapters']:
+                                session["device"] = device
+                                session["temperature"] = temperature
+                                session["length_penalty"] = length_penalty
+                                session["repetition_penalty"] = repetition_penalty
+                                session["top_k"] = top_k
+                                session["top_p"] = top_p
+                                session["speed"] = speed
+                                session["enable_text_splitting"] = enable_text_splitting
+                                session["clone_voice_file"] = clone_voice_file
+                                session["language"] = language
+                                if convert_chapters_to_audio(session):
+                                    final_file = combine_audio_chapters(session)               
                                     if final_file is not None:
                                         progress_status = f'Audiobook {os.path.basename(final_file)} created!'
-                                        print(f'Temporary directory {tmp_dir} removed successfully.')
+                                        print(f'Temporary directory {session['tmp_dir']} removed successfully.')
                                         return progress_status, final_file 
                                     else:
                                         error = 'combine_audio_chapters() error: final_file not created!'
@@ -849,25 +960,28 @@ def convert_ebook(args):
                             else:
                                 error = 'get_chapters() failed!'
                         else:
-                            error = f"WARNING: Ebook language: {ebook['metadata']['language']}, language selected: {language}"
+                            error = 'get_cover() failed!'
                     else:
-                        error = 'get_chapters() failed!'
+                        error = f"WARNING: Ebook language: {session['metadata']['language']}, language selected: {language}"
                 else:
-                    error = f'Temporary directory {tmp_dir} not removed due to failure.'
+                    error = 'convert_to_epub() failed!'
             else:
-                error = f'Language {args.language} is not supported.'
-            print(error)
-            return error, None
+                error = f'Temporary directory {session['tmp_dir']} not removed due to failure.'
+        else:
+            error = f'Language {args.language} is not supported.'
+        print(error)
+        return error, None
     except Exception as e:
-        print(f'Exception: {e}')
+        print(f'convert_ebook() Exception: {e}')
         return e, None
 
-def web_interface(mode, share):
-    global is_converting, interface, cancellation_requested, is_gui_process, script_mode, is_gui_shared
-
-    script_mode = mode
-    is_gui_process = True
-    is_gui_shared = share
+def web_interface(args):
+    script_mode = args.script_mode
+    is_gui_process = args.is_gui_process
+    is_gui_shared = args.share
+    is_converting = False
+    audiobooks_dir = None
+    ebook_src = None
     audiobook_file = None
     language_options = [
         (
@@ -929,7 +1043,7 @@ def web_interface(mode, share):
                     margin: 0 !important;
                 }
                 #component-7, #component-13, #component-14 {
-                    height: 130px !important;
+                    height: 140px !important;
                 }
             </style>
             '''
@@ -945,14 +1059,14 @@ def web_interface(mode, share):
             with gr.TabItem('Input Options'):
                 with gr.Row():
                     with gr.Column(scale=3):
-                        gr_ebook_file = gr.File(label='eBook File')
+                        gr_ebook_file = gr.File(label='eBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)', file_types=['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw'])
                         gr_device = gr.Radio(label='Processor Unit', choices=['CPU', 'GPU'], value='CPU')
                         gr_language = gr.Dropdown(label='Language', choices=[name for name, _ in language_options], value=default_language_name)  
                     with gr.Column(scale=3):
                         with gr.Group():
-                            gr_clone_voice_file = gr.File(label='Cloning Voice* (a .wav or .mp3 no more than 12sec)', file_types=['.wav', '.mp3'])
-                            gr_custom_model_file = gr.File(label='Model* (a .zip containing config.json, vocab.json, model.pth)', file_types=['.zip'], visible=True)
-                            gr_custom_model_url = gr.Textbox(placeholder='https://www.example.com/model.zip', label='Model from URL*', visible=True)
+                            gr_custom_clone_voice_file = gr.File(label='Cloning Voice* (a .wav 24000hz for major language and 22050hz for others, no more than 6 sec)', file_types=['.wav'])
+                            gr_custom_model_file = gr.File(label='Model* (a .zip containing config.json, vocab.json, model.pth)', file_types=['.zip'], visible=False)
+                            gr_custom_model_url = gr.Textbox(placeholder='https://www.example.com/model.zip', label='Model from URL*', visible=False)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
             with gr.TabItem('Audio Generation Preferences'):
                 gr.Markdown(
@@ -982,7 +1096,7 @@ def web_interface(mode, share):
                     minimum=1.0, 
                     maximum=10.0, 
                     step=0.1, 
-                    value=3.0, 
+                    value=2.5, 
                     info='Penalizes repeated phrases. Higher values reduce repetition.'
                 )
                 gr_top_k = gr.Slider(
@@ -1015,6 +1129,7 @@ def web_interface(mode, share):
                     info='Splits long texts into sentences to generate audio in chunks. Useful for very long inputs.'
                 )
                 
+        gr_state = gr.State(value="")  # Initialize state for each user session
         gr_session_status = gr.Textbox(label='Session')
         gr_session = gr.Textbox(label='Session', visible=False)
         gr_conversion_progress = gr.Textbox(label='Progress')
@@ -1085,16 +1200,16 @@ def web_interface(mode, share):
             return ''
 
         def update_interface():
-            global is_converting
-            ebook['src'] = None
+            nonlocal is_converting
             is_converting = False
             return gr.Button('Convert', variant='primary', interactive=False), None, audiobook_file, update_audiobooks_ddn()
 
         def refresh_audiobook_list():
             files = []
             if audiobooks_dir is not None:
-                files = [f for f in os.listdir(audiobooks_dir)]
-                files.sort(key=lambda x: os.path.getmtime(os.path.join(audiobooks_dir, x)), reverse=True)
+                if os.path.exists(audiobooks_dir):
+                    files = [f for f in os.listdir(audiobooks_dir)]
+                    files.sort(key=lambda x: os.path.getmtime(os.path.join(audiobooks_dir, x)), reverse=True)
             return files
 
         def change_gr_audiobooks_ddn(audiobook):
@@ -1111,19 +1226,23 @@ def web_interface(mode, share):
             files = refresh_audiobook_list()
             return gr.Dropdown(choices=files, label='Audiobooks', value=files[0] if files else None)
 
-        def change_gr_ebook_file(btn, f):
-            global is_converting, cancellation_requested
-            if f is None:
-                ebook['src'] = None
-                if is_converting:
-                    cancellation_requested.set()
-                    yield gr.Button(interactive=False), show_modal('cancellation requested, Please wait...')
+        async def change_gr_ebook_file(btn, f, session_id):
+            nonlocal is_converting
+            if context and session_id:
+                session = context.get_session(session_id)
+                if f is None:
+                    if is_converting:
+                        session['cancellation_requested'] = True
+                        yield gr.update(interactive=False), show_modal('Cancellation requested, please wait...')
+                        return
+                    else:
+                        session['cancellation_requested'] = False
+                        yield gr.update(interactive=False), hide_modal()
+                        return
                 else:
-                    cancellation_requested.clear()
-                    yield gr.Button(interactive=False), hide_modal()
-            else:
-                cancellation_requested.clear()
-                yield gr.Button(interactive=bool(f)), hide_modal()
+                    session['cancellation_requested'] = False
+            yield gr.update(interactive=bool(f)), hide_modal()
+            return
         
         def change_gr_language(selected: str) -> str:
             if selected == 'zzzz':
@@ -1140,53 +1259,8 @@ def web_interface(mode, share):
             data['event'] = 'change_data'
             return data
 
-        def process_conversion(session, device, ebook_file, clone_voice_file, language, custom_model_file, custom_model_url, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting):                             
-            global is_converting, audiobook_file
-
-            ebook['src'] = ebook_file.name if ebook_file else None
-            clone_voice_file = clone_voice_file.name if clone_voice_file else None
-            custom_model_file = custom_model_file.name if custom_model_file else None
-            custom_model_url = custom_model_url if custom_model_file is None else None
-            language = next((key for name, key in language_options if name == language), None)
-
-            if not ebook['src']:
-                return 'Error: a file is required.'
-
-            args = argparse.Namespace(
-                session=session,
-                script_mode=script_mode,
-                device=device.lower(),
-                ebook=ebook['src'],
-                voice=clone_voice_file,
-                language=language,
-                custom_model=custom_model_file,
-                custom_model_url=custom_model_url,
-                temperature=float(temperature),
-                length_penalty=float(length_penalty),
-                repetition_penalty=float(repetition_penalty),
-                top_k=int(top_k),
-                top_p=float(top_p),
-                speed=float(speed),
-                enable_text_splitting=enable_text_splitting
-            )
-            
-            try:
-                is_converting = True
-                progress_status, audiobook_file = convert_ebook(args)
-
-                if audiobook_file is None:
-                    if is_converting:
-                        is_converting = False
-                        return 'Conversion cancelled.', hide_modal()
-                    else:
-                        return 'Conversion failed.', hide_modal()
-                else:
-                    return progress_status, hide_modal()
-            except Exception as e:
-                raise DependencyError(e)
-
         def change_gr_read_data(data):
-            global audiobooks_dir
+            nonlocal audiobooks_dir
             warning_text_extra = ''
             if is_gui_shared:
                 warning_text_extra = f' Note: access limit time: {gradio_shared_expire} hours'
@@ -1207,9 +1281,54 @@ def web_interface(mode, share):
                 audiobooks_dir = os.path.join(audiobooks_host_dir, f"web-{data['session_id']}")
             return [data, f'{warning_text}{warning_text_extra}', data['session_id'], update_audiobooks_ddn()]
 
+        def process_conversion(session, device, ebook_file, custom_clone_voice_file, language, custom_model_file, custom_model_url, temperature, length_penalty, repetition_penalty, top_k, top_p, speed, enable_text_splitting):                              
+            nonlocal is_converting
+            ebook_src = ebook_file.name if ebook_file else None
+            custom_clone_voice_file = custom_clone_voice_file.name if custom_clone_voice_file else None
+            custom_model_file = custom_model_file.name if custom_model_file else None
+            custom_model_url = custom_model_url if custom_model_file is None else None
+            language = next((key for name, key in language_options if name == language), None)
+            if ebook_src is None:
+                return 'Error: a file is required.', hide_modal()
+
+            args = argparse.Namespace(
+                is_gui_process=is_gui_process,
+                session=session,
+                script_mode=script_mode,
+                device=device.lower(),
+                ebook=ebook_src,
+                audiobooks_dir=audiobooks_dir,
+                voice=custom_clone_voice_file,
+                language=language,
+                custom_model=custom_model_file,
+                custom_model_url=custom_model_url,
+                temperature=float(temperature),
+                length_penalty=float(length_penalty),
+                repetition_penalty=float(repetition_penalty),
+                top_k=int(top_k),
+                top_p=float(top_p),
+                speed=float(speed),
+                enable_text_splitting=enable_text_splitting
+            )
+            
+            try:
+                is_converting = True
+                progress_status, audiobook_file = convert_ebook(args)
+                is_converting = False
+                if audiobook_file is None:
+                    if is_converting:
+                        return 'Conversion cancelled.', hide_modal()
+                    else:
+                        return 'Conversion failed.', hide_modal()
+                else:
+                    return progress_status, hide_modal()
+            except Exception as e:
+                is_converting = False
+                return DependencyError(e)
+
         gr_ebook_file.change(
             fn=change_gr_ebook_file,
-            inputs=[gr_convert_btn, gr_ebook_file],
+            inputs=[gr_convert_btn, gr_ebook_file, gr_session],
             outputs=[gr_convert_btn, gr_modal_html]
         )
         gr_language.change(
@@ -1255,7 +1374,7 @@ def web_interface(mode, share):
         ).then(
             fn=process_conversion,
             inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_clone_voice_file, gr_language, 
+                gr_session, gr_device, gr_ebook_file, gr_custom_clone_voice_file, gr_language, 
                 gr_custom_model_file, gr_custom_model_url, gr_temperature, gr_length_penalty,
                 gr_repetition_penalty, gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting
             ],
@@ -1283,8 +1402,7 @@ def web_interface(mode, share):
         )
 
     try:
-        interface.queue(default_concurrency_limit=concurrency_limit)
-        interface.launch(server_name='0.0.0.0', server_port=gradio_interface_port, share=share)
+        interface.queue(default_concurrency_limit=concurrency_limit).launch(server_name="0.0.0.0", server_port=gradio_interface_port, share=is_gui_shared)
     except OSError as e:
         print(f'Connection error: {e}')
     except socket.error as e:
