@@ -444,11 +444,10 @@ def convert_chapters_to_audio(session):
             if session['custom_model'] is not None:
                 config_path = os.path.join(session['custom_model'],models[params['tts_model']]['files'][0])
                 model_path = session['custom_model']
-            else:
-                if not os.path.exists(models[params['tts_model']]['local']):
-                    params['tts'] = XTTS(models['xtts']['api'])
-                config_path = os.path.join(models[params['tts_model']]['local'],models[params['tts_model']]['files'][0])
-                model_path = models[params['tts_model']]['local']
+            else:                
+                #config_path = os.path.join(models[params['tts_model']]['local'],models[params['tts_model']]['files'][0])
+                config_path = models['xtts']['api']+'/'+models[params['tts_model']]['files'][0]
+                params['tts'] = XTTS(models['xtts']['api'])
             print(f"Loading TTS {params['tts_model']} model...")
             config = XttsConfig()
             config.models_dir = models_dir

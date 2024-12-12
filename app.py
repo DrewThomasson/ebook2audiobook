@@ -106,10 +106,8 @@ Linux/Mac:
         '--script_mode', '--share', '--headless', 
         '--session', '--ebook', '--ebooks_dir',
         '--voice', '--language', '--device', 
-        '''
-        '--custom_model', 
-        '--custom_model_url', 
-        '''
+        #'--custom_model',
+        #'--custom_model_url',
         '--temperature',
         '--length_penalty', '--repetition_penalty', 
         '--top_k', '--top_p', '--speed',
@@ -133,17 +131,17 @@ Linux/Mac:
                         help=f'Language for the audiobook conversion. Options: {lang_list_str}. Default to English (eng).')
     parser.add_argument(options[8], type=str, default='cpu', choices=['cpu', 'gpu'],
                         help=f'Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.')
+    """
     parser.add_argument(options[9], type=str,
                         help='Path to the custom model file (.pth). Required if using a custom model.')
-    '''
     parser.add_argument(options[10], type=str,
                         help=("URL to download the custom model as a zip file. Optional, but will be used if provided. "
                               "Examples include David Attenborough's model: "
                               "'https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true'. "
                               "More XTTS fine-tunes can be found on my Hugging Face at 'https://huggingface.co/drewThomasson'."))
-    parser.add_argument(options[11], type=float, default=0.65,
+    """
+    parser.add_argument(options[9], type=float, default=0.65,
                         help='Temperature for the model. Default to 0.65. Higher temperatures lead to more creative outputs.')
-    '''
     parser.add_argument(options[10], type=float, default=1.0,
                         help='A length penalty applied to the autoregressive decoder. Default to 1.0. Not applied to custom models.')
     parser.add_argument(options[11], type=float, default=2.5,
