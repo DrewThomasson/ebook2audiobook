@@ -41,18 +41,10 @@ os.environ['XDG_CACHE_HOME'] = models_dir
 
 models = {
     "xtts": {
-        "url": "https://huggingface.co/drewThomasson/XTTS_v2_backup_model_files/resolve/main/xtts_v2_default_model.zip?download=true",
-        "api": "tts_models/multilingual/multi-dataset/xtts_v2",
-        "local": os.path.join(models_dir, "tts", "tts_models--multilingual--multi-dataset--xtts_v2"),
-        "files": ["config.json", "model.pth", "vocab.json"],
-        "zip": "xtts_v2_model.zip"
+        "api": "tts_models/multilingual/multi-dataset/xtts_v2"
     },
     "mms": {
-        "url": "",
-        "api": "tts_models/[lang]/fairseq/vits",
-        "local": os.path.join(models_dir, "tts", "tts_models--[lang]--fairseq--vits"),
-        "files": ["config.json", "G_100000.pth", "vocab.txt"],
-        "zip": ""
+        "api": "tts_models/[lang]/fairseq/vits"
     }
 }
 
