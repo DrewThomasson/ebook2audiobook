@@ -1,4 +1,5 @@
 import os
+from lib.lang import default_voice_file
 
 NATIVE = 'native'
 DOCKER_UTILS = 'docker_utils'
@@ -39,19 +40,33 @@ os.environ['TTS_CACHE'] = models_dir
 os.environ['TORCH_HOME'] = models_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
 
-models = {
-    "xtts": {
-        "api": "tts_models/multilingual/multi-dataset/xtts_v2"
-    },
-    "mms": {
-        "api": "tts_models/[lang]/fairseq/vits"
-    }
-}
-
 ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw']
 audiobook_format = 'm4b' # or 'mp3'
 audio_proc_format = 'wav' # only 'wav' is valid for now
 
+models = {
+    "xtts": {
+        "std": {
+            "folder": "tts_models--multilingual--multi-dataset--xtts_v2",
+            "api": "tts_models/multilingual/multi-dataset/xtts_v2",
+            "voice": default_voice_file
+        },
+        "DavidAttenborough": {
+            "folder": "tts_models--multilingual--multi-dataset--",
+            "api": "drewThomasson/fineTunedTTSModels/xtts-v2/eng/DavidAttenborough",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "elder", "male", "DavidAttenborough_24khz.wav"))
+        }
+    },
+    "mms": {
+        "std": {
+            "folder": "tts_models--[lang]--fairseq--vits",
+            "api": "tts_models/[lang]/fairseq/vits",
+            "voice": default_voice_file
+        }
+    }
+}
+
+'''
 xtts_fine_tuned_voice_actors = {
     "David Attenborough": {
         "zip_file": "https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true",
@@ -113,3 +128,4 @@ need_to_find_sample_ref_file_xtts_fine_tuned_models = {
     }
 
 }
+'''

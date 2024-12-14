@@ -125,7 +125,7 @@ Linux/Mac:
                         help='Path to the ebook file for conversion. Required in headless mode.')
     parser.add_argument(options[5], nargs='?', const='default', type=str,
                         help=f'Path to the directory containing ebooks for batch conversion. Default to "{os.path.basename(ebooks_dir)}" if "default" is provided.')
-    parser.add_argument(options[6], type=str,
+    parser.add_argument(options[6], type=str, default=None,
                         help='Path to the target voice file for TTS. Optional, uses a default voice if not provided.')
     parser.add_argument(options[7], type=str, default=default_language_code,
                         help=f'Language for the audiobook conversion. Options: {lang_list_str}. Default to English (eng).')
