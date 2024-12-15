@@ -44,6 +44,9 @@ ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.
 audiobook_format = 'm4b' # or 'mp3'
 audio_proc_format = 'wav' # only 'wav' is valid for now
 
+default_tts_engine = 'xtts'
+default_fine_tuned = 'std'
+
 models = {
     "xtts": {
         "std": {
@@ -65,67 +68,3 @@ models = {
         }
     }
 }
-
-'''
-xtts_fine_tuned_voice_actors = {
-    "David Attenborough": {
-        "zip_file": "https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/ref.wav?download=true"
-    },
-    "HeadSpace Dude (Without rain)": {
-        "zip_file": "https://huggingface.co/drewThomasson/Headspace_dude/resolve/main/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/Headspace_dude/resolve/main/ref_without_background_rain.wav?download=true"
-    },
-    "HeadSpace Dude (With background rain sounds)": {
-        "zip_file": "https://huggingface.co/drewThomasson/Headspace_dude/resolve/main/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/Headspace_dude/resolve/main/ref_with_background_rain.wav?download=true"
-    },
-    "Blaidd Elden Ring": {
-        "zip_file": "https://huggingface.co/drewThomasson/Blaidd_Elden_Ring_xtts_fineTune/resolve/main/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/Blaidd_Elden_Ring_xtts_fineTune/resolve/main/ref.wav?download=true"
-    },
-    "Bob Odenkirk": {
-        "zip_file": "https://huggingface.co/drewThomasson/xtts-finetune-Bob-Odenkirk/resolve/main/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/xtts-finetune-Bob-Odenkirk/resolve/main/ref.wav?download=true"
-    },
-    "Bryan Cranston": {
-        "zip_file": "https://huggingface.co/drewThomasson/Xtts-Finetune-Bryan-Cranston/resolve/main/V2_Xtts-Finetune-Bryan-Cranston/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/Xtts-Finetune-Bryan-Cranston/resolve/main/V2_Xtts-Finetune-Bryan-Cranston/ref_audio_for_v2.wav?download=true"
-    },
-    "John Butler ASMR": {
-        "zip_file": "https://huggingface.co/drewThomasson/xtts-finetune-John-Butler-Author-ASMR-voice/resolve/main/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/xtts-finetune-John-Butler-Author-ASMR-voice/resolve/main/ref%20(2).wav?download=true"
-    },
-    "Death from Puss and Boots": {
-        "zip_file": "https://huggingface.co/drewThomasson/death_from_puss_and_boots_xtts/resolve/main/V2_Denoised_BEST/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/death_from_puss_and_boots_xtts/resolve/main/V2_Denoised_BEST/ref.wav?download=true"
-    },
-    "Bob Ross": {
-        "zip_file": "https://huggingface.co/drewThomasson/Xtts-FineTune-Bob-Ross/resolve/main/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/Xtts-FineTune-Bob-Ross/resolve/main/ref.wav?download=true"
-    },
-    "John Mulaney": {
-        "zip_file": "https://huggingface.co/drewThomasson/xtts_finetune_John_Mulaney/resolve/main/V2_10_epoches_BEST/Finished_model_files.zip?download=true",
-        "ref_audio": "https://huggingface.co/drewThomasson/xtts_finetune_John_Mulaney/resolve/main/V2_10_epoches_BEST/ref.wav?download=true"
-    }
-}
-need_to_find_sample_ref_file_xtts_fine_tuned_models = {
-    "French ASMR": {
-        "zip_file": "https://huggingface.co/drewThomasson/French_ASMR/resolve/main/French%20ASMR.zip?download=true",
-        "ref_audio": "INSIDE ZIP?????"
-    },
-    "Ai explained": {
-        "zip_file": "https://huggingface.co/drewThomasson/ai_explained_xtts_model/resolve/main/ai_explained.zip?download=true",
-        "ref_audio": "INSIDE ZIP?????"
-    },
-    "Morgan Freeman": {
-        "zip_file": "https://huggingface.co/drewThomasson/Morgan_freeman_xtts_model/resolve/main/Morgan%20freeman.zip?download=true",
-        "ref_audio": "INSIDE THE ZIP????"
-    },
-    "Ghost MW2": {
-        "zip_file": "https://huggingface.co/drewThomasson/xtts_ghost_MW2_fine_tune/resolve/main/Finished_model_files.zip?download=true",
-        "ref_audio": "INSIDE THE ZIP????"
-    }
-
-}
-'''

@@ -74,6 +74,7 @@ def check_dictionary():
             print(f'Failed to download UniDic dictionary. Error: {e}')
             raise SystemExit('Unable to continue without UniDic. Exiting...')
     return True
+
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('0.0.0.0', port)) == 0
@@ -111,7 +112,8 @@ Linux/Mac:
         '--temperature',
         '--length_penalty', '--repetition_penalty', 
         '--top_k', '--top_p', '--speed',
-        '--enable_text_splitting', '--version', '--help'
+        '--enable_text_splitting', '--fine_tuned',
+        '--version', '--help'
     ]
     parser.add_argument(options[0], type=str,
                         help='Force the script to run in NATIVE or DOCKER_UTILS')
@@ -152,9 +154,11 @@ Linux/Mac:
                         help='Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Default to 0.8')
     parser.add_argument(options[14], type=float, default=1.0,
                         help='Speed factor for the speech generation. Default to 1.0')
-    parser.add_argument(options[15], action='store_true',
+    parser.add_argument(options[15], type=str, default=default_fine_tuned,
+                        help='Name of the fine tuned model. Optional, uses the standard model according to the TTS engine and language.')
+    parser.add_argument(options[16], action='store_true',
                         help='Enable splitting text into sentences. Default to False.')
-    parser.add_argument(options[16], action='version',version=f'ebook2audiobook version {version}',
+    parser.add_argument(options[17], action='version',version=f'ebook2audiobook version {version}',
                         help='Show the version of the script and exit')
 
     for arg in sys.argv:
