@@ -1286,8 +1286,8 @@ def web_interface(args):
             else:
                 new_language_name, new_language_key = next(((name, key) for name, key in language_options if key == selected), (None, None))
 
-            tts_engine_value = 'XTTS' if language_xtts.get(new_language_key, False) else 'MMS'
-            fine_tuned_options = list(models.get(tts_engine_value, {}).keys())
+            tts_engine_value = 'xtts' if language_xtts.get(new_language_key, False) else 'mms'
+            fine_tuned_options = list(models.get(tts_engine_value,{}).keys())
             return (
                 gr.update(value=new_language_name),
                 gr.update(value=f'&nbsp;&nbsp;&nbsp;&nbsp;tts base: {tts_engine_value.upper()}'),
