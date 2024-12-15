@@ -208,7 +208,7 @@ def check_fine_tuned(fine_tuned, language):
                 if language_xtts.get(language):
                     tts = 'xtts'
                 else:
-                    tts = 'mms'
+                    tts = 'fairseq'
                 if parent == tts:
                     return parent
         return False
@@ -462,14 +462,15 @@ def convert_chapters_to_audio(session):
                 config_path = os.path.join(session['custom_model'],'config.json')
             else:
                 tts_load = XTTS(models[params['tts_model']]['std']['api'])
-                if session['fine_tuned'] is not None:
-                    model_path = os.path.join(models_dir, 'tts', models[params['tts_model']]['DavidAttenborough']['folder']+os.path.normpath(models[params['tts_model']]['DavidAttenborough']['api']))
+                if session['fine_tuned'] == 'std':
+                    model_path = os.path.join(models_dir, 'tts', models[params['tts_model']][session['fine_tuned']]['folder'])
                 else:
-                    model_path = os.path.join(models_dir, 'tts', models[params['tts_model']]['std']['folder'])
+                    model_path = os.path.join(models_dir, 'tts', models[params['tts_model']][session['fine_tuned']]['folder']+os.path.normpath(models[params['tts_model']]['DavidAttenborough']['api']))
                 config_path = os.path.join( model_path,'config.json')
             print(f"Loading TTS {params['tts_model']} model...")
             config = XttsConfig()
             config.models_dir = models_dir
+            """
             start_time = time.time()     
             timeout = 120
             while not os.path.isdir(model_path):
@@ -477,16 +478,16 @@ def convert_chapters_to_audio(session):
                     print(f"Timeout reached: {model_path} does not exist.")
                     return False
                 time.sleep(1)
+            """
             config.load_json(config_path)
             params['tts'] = Xtts.init_from_config(config)
             params['tts'].load_checkpoint(config, checkpoint_dir=model_path, eval=True)
             params['tts'].to(session['device'])
             print('Computing speaker latents...')
-            params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']]['std']['voice']
+            params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
-            params['tts'].to(session['device'])
         else:
-            params['tts_model'] = 'mms'
+            params['tts_model'] = 'fairseq'
             print(f"Loading TTS {params['tts_model']} model...")
             model_api = models[params['tts_model']]['std']['api'].replace("[lang]", session['metadata']['language'])
             params['tts'] = XTTS(model_api)
@@ -509,12 +510,12 @@ def convert_chapters_to_audio(session):
             print(f'Resuming from sentence {resume_sentence}')
 
         total_chapters = len(session['chapters'])
-        total_sentences = sum(len(array) for array in session['chapters'])
+        total_sentences = sum(len(array) for array in session['chapters']) + 1
         current_sentence = 0
 
-        with tqdm(total=total_sentences, desc='Processing 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
-            t.n = resume_sentence  # Initialize tqdm to match the current_sentence
-            t.refresh()  # Refresh tqdm to update the display
+        with tqdm(total=total_sentences, desc='generate_ffmpeg_metadata 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+            t.n = resume_sentence
+            t.refresh()
             for x in range(resume_chapter, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{audio_proc_format}'
@@ -564,7 +565,7 @@ def convert_sentence_to_audio(params, session):
                 enable_text_splitting=session['enable_text_splitting']
             )
             torchaudio.save(params['sentence_audio_file'], torch.tensor(output[audio_proc_format]).unsqueeze(0), 24000)
-        elif params['tts_model'] == 'mms':
+        elif params['tts_model'] == 'fairseq':
             params['tts'].tts_with_vc_to_file(
                 text=params['sentence'],
                 #language=session['language'], # can be used only if multilingual model
@@ -681,7 +682,7 @@ def combine_audio_chapters(session):
                     msg = 'Cancel requested'
                     raise ValueError(msg)
 
-                duration_ms = len(AudioSegment.from_wav(chapter_file))
+                duration_ms = len(AudioSegment.from_wav(os.path.join(session['chapters_dir'],chapter_file)))
                 ffmpeg_metadata += f'[CHAPTER]\nTIMEBASE=1/1000\nSTART={start_time}\n'
                 ffmpeg_metadata += f'END={start_time + duration_ms}\ntitle=Chapter {index + 1}\n'
                 start_time += duration_ms
@@ -1286,12 +1287,21 @@ def web_interface(args):
             else:
                 new_language_name, new_language_key = next(((name, key) for name, key in language_options if key == selected), (None, None))
 
-            tts_engine_value = 'xtts' if language_xtts.get(new_language_key, False) else 'mms'
-            fine_tuned_options = list(models.get(tts_engine_value,{}).keys())
+            # Determine the TTS engine to use
+            tts_engine_value = 'xtts' if language_xtts.get(new_language_key, False) else 'fairseq'
+
+            # Get fine-tuned options filtered by language
+            fine_tuned_options = [
+                model_name
+                for model_name, model_details in models.get(tts_engine_value, {}).items()
+                if model_details.get('lang') == 'multi' or model_details.get('lang') == new_language_key
+            ]
+
+            # Update the dropdown and other elements
             return (
-                gr.update(value=new_language_name),
-                gr.update(value=f'&nbsp;&nbsp;&nbsp;&nbsp;tts base: {tts_engine_value.upper()}'),
-                gr.update(choices=fine_tuned_options, value=fine_tuned_options[0] if fine_tuned_options else None)
+                gr.update(value=new_language_name),  # Update the language dropdown
+                gr.update(value=f'&nbsp;&nbsp;&nbsp;&nbsp;tts base: {tts_engine_value.upper()}'),  # Update the TTS engine display
+                gr.update(choices=fine_tuned_options, value=fine_tuned_options[0] if fine_tuned_options else None)  # Update fine-tuned options
             )
 
         def change_gr_custom_model_file(f):
