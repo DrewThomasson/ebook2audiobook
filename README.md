@@ -7,7 +7,7 @@ The authors are not responsible for any misuse of this software or any resulting
 Use this tool responsibly and in accordance with all applicable laws.
 
 #### 🖥️ Web GUI Interface
-![demo_web_gui](https://github.com/user-attachments/assets/85af88a7-05dd-4a29-91de-76a14cf5ef06)
+![demo_web_gui](demo_web_gui.gif)
 
 <details>
   <summary>Click to see images of Web GUI</summary>
@@ -377,7 +377,7 @@ config.json --custom_vocab vocab.json
 </details>
 
 #### 🖥️ Docker GUI 
-![demo_web_gui](https://github.com/user-attachments/assets/85af88a7-05dd-4a29-91de-76a14cf5ef06)
+![demo_web_gui](demo_web_gui.gif)
 
 <details>
   <summary>Click to see images of Web GUI</summary>
