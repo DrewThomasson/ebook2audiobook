@@ -435,13 +435,14 @@ def convert_chapters_to_audio(session):
                 model_path = os.path.join(session['custom_model'], 'model.pth')
                 config_path = os.path.join(session['custom_model'],'config.json')
                 vocab_path = os.path.join(session['custom_model'],'vocab.json')
+                voice_path = os.path.join(session['custom_model'],'ref.wav')
                 config = XttsConfig()
                 config.models_dir = models_dir
                 config.load_json(config_path)
                 params['tts'] = Xtts.init_from_config(config)
                 params['tts'].load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
                 print('Computing speaker latents...')
-                params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['voice_file'] = voice_path
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
             else:
                 params['tts'] = XTTS(models[params['tts_model']][session['fine_tuned']]['repo'])
@@ -1085,7 +1086,7 @@ def web_interface(args):
                             gr_voice_file = gr.File(label='*Cloning Voice (a .wav 24000hz for major language and 22050hz for others, no more than 6 sec)', file_types=['.wav'])
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
-                            gr_custom_model_file = gr.File(label='*XTTS Model (a .zip containing config.json, vocab.json, model.pth)', file_types=['.zip'], visible=True)
+                            gr_custom_model_file = gr.File(label='*XTTS Model (a .zip containing config.json, vocab.json, model.pth, ref.wav)', file_types=['.zip'], visible=True)
                             gr_custom_model_url = gr.Textbox(placeholder='https://www.example.com/model.zip', label='Model from URL*', visible=False)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
