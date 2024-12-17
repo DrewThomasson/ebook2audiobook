@@ -224,7 +224,7 @@ def extract_custom_model(f_path, dest_dir, session):
 
 def check_model_files(model_dir):
     existing_files = ['config.json', 'model.pth', 'vocab.json', 'ref.wav']
-    missing_files = [file for file in listdir(model_dir) if not file in existing_files]
+    missing_files = [file for file in os.listdir(model_dir) if not file in existing_files]
     if missing_files:
         return False
     return model_dir
@@ -442,7 +442,7 @@ def convert_chapters_to_audio(session):
                 params['tts'] = Xtts.init_from_config(config)
                 params['tts'].load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
                 print('Computing speaker latents...')
-                params['voice_file'] = voice_path
+                params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else voice_path
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
             else:
                 params['tts'] = XTTS(models[params['tts_model']][session['fine_tuned']]['repo'])
