@@ -51,22 +51,20 @@ models = {
     "xtts": {
         "std": {
             "lang": "multi",
-            "folder": "tts_models--multilingual--multi-dataset--xtts_v2",
-            "api": "tts_models/multilingual/multi-dataset/xtts_v2",
+            "folder": "",
+            "repo": "tts_models/multilingual/multi-dataset/xtts_v2",
             "voice": default_voice_file
         },
         "DavidAttenborough": {
             "lang": "eng",
-            "folder": "tts_models--multilingual--multi-dataset--",
-            "api": "drewThomasson/fineTunedTTSModels/xtts-v2/eng/DavidAttenborough",
+            "repo": "drewThomasson/fineTunedTTSModels/xtts-v2/eng/DavidAttenborough",
             "voice": os.path.abspath(os.path.join("voices", "eng", "elder", "male", "DavidAttenborough_24khz.wav"))
         }
     },
     "fairseq": {
         "std": {
             "lang": "multi",
-            "folder": "tts_models--[lang]--fairseq--vits",
-            "api": "tts_models/[lang]/fairseq/vits",
+            "repo": "tts_models/[lang]/fairseq/vits",
             "voice": default_voice_file
         }
     }

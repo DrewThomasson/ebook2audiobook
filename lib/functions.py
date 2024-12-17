@@ -27,6 +27,7 @@ from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
 from glob import glob
+from huggingface_hub import hf_hub_download
 from iso639 import languages
 from multiprocessing import Manager, Event
 from pydub import AudioSegment
@@ -91,6 +92,7 @@ class ConversionContext:
                 "fine_tuned": None,
                 "voice_file": None,
                 "custom_model": None,
+                "custom_model_dir": None,
                 "chapters": None,
                 "cover": None,
                 "metadata": {
@@ -138,43 +140,11 @@ class DependencyError(Exception):
         if not is_gui_process:
             sys.exit(1)
 
-def check_missing_files(dir_path, f_list):
-    if not os.path.exists(dir_path):
-        return False, 'Folder does not exist', f_list
-    existing_files = os.listdir(dir_path)
-    missing_files = [file for file in f_list if file not in existing_files]
-    if missing_files:
-        return False, 'Some files are missing', missing_files
-    return True, 'All files are present', []
-
-def download_model(dest_dir, url):
-    try:
-        if not os.path.exists(dest_dir):
-            os.makedirs(dest_dir)
-        zip_path = os.path.join(dest_dir, models['xtts']['zip'])
-        print('Downloading the XTTS v2 model...')
-        response = requests.get(url, stream=True)
-        response.raise_for_status()  # Raise an error for bad status codes
-        total_size = int(response.headers.get('content-length', 0))
-        chunk_size = 1024  # Download in chunks of 1KB
-        with open(zip_path, 'wb') as file, tqdm(
-            total=total_size, unit='B', unit_scale=True, desc='Downloading'
-        ) as progress_bar:
-            for chunk in response.iter_content(chunk_size=chunk_size):
-                file.write(chunk)
-                progress_bar.update(len(chunk))
-        print('Extracting the model files...')
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(dest_dir)
-        os.remove(zip_path)
-        print('Model downloaded, extracted, and zip file removed successfully.')
-    except Exception as e:
-        raise DependencyError(e)
-
 def prepare_dirs(src, session):
     try:
         resume = False
         os.makedirs(session['tmp_dir'], exist_ok=True)
+        os.makedirs(session['custom_model_dir'], exist_ok=True)
         os.makedirs(session['audiobooks_dir'], exist_ok=True)
         session['src'] = os.path.join(session['tmp_dir'], os.path.basename(src))
         if os.path.exists(session['src']):
@@ -234,6 +204,8 @@ def download_custom_model(url, dest_dir, session):
         
 def extract_custom_model(f_path, dest_dir, session):
     try:
+        model_dir = os.path.join(dest_dir, f_path.replace('.zip',''))
+        os.makedirs(model_dir, exist_ok=True)
         with zipfile.ZipFile(f_path, 'r') as zip_ref:
             files = zip_ref.namelist()
             with tqdm(total=len(files), unit='file', desc='Extracting Files') as t:
@@ -242,19 +214,20 @@ def extract_custom_model(f_path, dest_dir, session):
                         msg = 'Cancel requested'
                         raise ValueError()
                     if os.path.isfile(file):
-                        extracted_path = zip_ref.extract(file, dest_dir)
+                        extract = zip_ref.extract(file, model_dir)
                     t.update(1)
         os.remove(f_path)
-        print(f'Extracted files to {dest_dir}')
-        missing_files = [file for file in models['xtts']['files'] if not os.path.exists(os.path.join(dest_dir, file))]       
-        if not missing_files:
-            print('All required model files found.')
-            return dest_dir
-        else:
-            print(f'Missing files: {missing_files}')
-            return False
+        print(f'Extracted files to {model_dir}')
+        return check_model_files(model_dir)
     except Exception as e:
         raise DependencyError(e)
+
+def check_model_files(model_dir):
+    existing_files = ['config.json', 'model.pth', 'vocab.json']
+    missing_files = [file for file in model_dir if file not in existing_files]
+    if missing_files:
+        return False
+    return model_dir
 
 def calculate_hash(filepath, hash_algorithm='sha256'):
     hash_func = hashlib.new(hash_algorithm)
@@ -449,7 +422,7 @@ def convert_chapters_to_audio(session):
             progress_bar = gr.Progress(track_tqdm=True)        
         params['tts_model'] = None
         '''
-        # List available TTS models
+        # List available TTS base models
         print("Available Models:")
         print("=================")
         for index, model in enumerate(XTTS().list_models(), 1):
@@ -457,41 +430,29 @@ def convert_chapters_to_audio(session):
         '''
         if session['metadata']['language'] in language_xtts:
             params['tts_model'] = 'xtts'
-            if session['custom_model'] is not None:
-                model_path = session['custom_model']
-                config_path = os.path.join(session['custom_model'],'config.json')
-            else:
-                tts_load = XTTS(models[params['tts_model']]['std']['api'])
-                if session['fine_tuned'] == 'std':
-                    model_path = os.path.join(models_dir, 'tts', models[params['tts_model']][session['fine_tuned']]['folder'])
-                else:
-                    model_path = os.path.join(models_dir, 'tts', models[params['tts_model']][session['fine_tuned']]['folder']+os.path.normpath(models[params['tts_model']]['DavidAttenborough']['api']))
-                config_path = os.path.join( model_path,'config.json')
             print(f"Loading TTS {params['tts_model']} model...")
-            config = XttsConfig()
-            config.models_dir = models_dir
-            """
-            start_time = time.time()     
-            timeout = 120
-            while not os.path.isdir(model_path):
-                if timeout and (time.time() - start_time) > timeout:
-                    print(f"Timeout reached: {model_path} does not exist.")
-                    return False
-                time.sleep(1)
-            """
-            config.load_json(config_path)
-            params['tts'] = Xtts.init_from_config(config)
-            params['tts'].load_checkpoint(config, checkpoint_dir=model_path, eval=True)
+            if session['custom_model'] is not None:
+                model_path = os.path.join(session['custom_model'], 'model.pth')
+                config_path = os.path.join(session['custom_model'],'config.json')
+                vocab_path = os.path.join(session['custom_model'],'vocab.json')
+                config = XttsConfig()
+                config.models_dir = models_dir
+                config.load_json(config_path)
+                params['tts'] = Xtts.init_from_config(config)
+                params['tts'].load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
+                print('Computing speaker latents...')
+                params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
+            else:
+                params['tts'] = XTTS(models[params['tts_model']][session['fine_tuned']]['repo'])
+                params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
-            print('Computing speaker latents...')
-            params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
-            params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
         else:
             params['tts_model'] = 'fairseq'
             print(f"Loading TTS {params['tts_model']} model...")
-            model_api = models[params['tts_model']]['std']['api'].replace("[lang]", session['metadata']['language'])
-            params['tts'] = XTTS(model_api)
-            params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']]['std']['voice']
+            model_repo = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['metadata']['language'])
+            params['tts'] = XTTS(model_repo)
+            params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
 
         resume_chapter = 0
@@ -550,27 +511,44 @@ def convert_chapters_to_audio(session):
 
 def convert_sentence_to_audio(params, session):
     try:
+        generation_params = {
+            "temperature": session['temperature'],
+            "length_penalty": session["length_penalty"],
+            "repetition_penalty": session['repetition_penalty'],
+            "num_beams": int(session['length_penalty']) + 1 if session["length_penalty"] > 1 else 1,
+            "top_k": session['top_k'],
+            "top_p": session['top_p'],
+            "speed": session['speed'],
+            "enable_text_splitting": session['enable_text_splitting']
+        }
         if params['tts_model'] == 'xtts':
-            output = params['tts'].inference(
-                text=params['sentence'],
-                language=session['metadata']['language_iso1'],
-                gpt_cond_latent=params['gpt_cond_latent'],
-                speaker_embedding=params['speaker_embedding'], 
-                temperature=session['temperature'],
-                length_penalty=session["length_penalty"],
-                repetition_penalty=session['repetition_penalty'],
-                num_beams=int(session['length_penalty']) + 1 if session["length_penalty"] > 1 else 1,
-                top_k=session['top_k'], top_p=session['top_p'], 
-                speed=session['speed'],
-                enable_text_splitting=session['enable_text_splitting']
-            )
-            torchaudio.save(params['sentence_audio_file'], torch.tensor(output[audio_proc_format]).unsqueeze(0), 24000)
+            if session['custom_model'] is not None:
+                output = params['tts'].inference(
+                    text=params['sentence'],
+                    language=session['metadata']['language_iso1'],
+                    gpt_cond_latent=params['gpt_cond_latent'],
+                    speaker_embedding=params['speaker_embedding'],
+                    **generation_params
+                )
+                torchaudio.save(
+                    params['sentence_audio_file'], 
+                    torch.tensor(output[audio_proc_format]).unsqueeze(0), 
+                    sample_rate=24000
+                )
+            else:
+                params['tts'].tts_to_file(
+                    text=params['sentence'],
+                    language=session['metadata']['language_iso1'],
+                    file_path=params['sentence_audio_file'],
+                    speaker_wav=params['voice_file'],
+                    **generation_params
+                )
         elif params['tts_model'] == 'fairseq':
             params['tts'].tts_with_vc_to_file(
                 text=params['sentence'],
+                file_path=params['sentence_audio_file'],
                 #language=session['language'], # can be used only if multilingual model
                 speaker_wav=params['voice_file'].replace('_24khz','_22khz'),
-                file_path=params['sentence_audio_file'],
                 split_sentences=session['enable_text_splitting']
             )
         if os.path.exists(params['sentence_audio_file']):
@@ -921,6 +899,7 @@ def convert_ebook(args):
             session['tmp_dir'] = os.path.join(processes_dir, f"ebook-{session['id']}")
             session['chapters_dir'] = os.path.join(session['tmp_dir'], f'chapters_{hashlib.md5(args['ebook'].encode()).hexdigest()}')
             session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')
+            session['custom_model_dir'] = os.path.join(models_dir,'__sessions',f"model-{session['id']}")
 
             if not is_gui_process:
                 print(f'*********** Session: {session_id}', '************* Store it in case of interruption or crash you can resume the conversion')
@@ -929,14 +908,13 @@ def convert_ebook(args):
                 session['filename_noext'] = os.path.splitext(os.path.basename(session['src']))[0]
                 session['custom_model'] = None
                 if custom_model_file or custom_model_url:
-                    custom_model_dir = os.path.join(models_dir,'__sessions',f"model-{session['id']}")
-                    if os.isdir(custom_model_dir):
-                        shutil.rmtree(custom_model_dir)
                     if custom_model_url:
                         print(f'Get custom model: {custom_model_url}')
-                        session['custom_model'] = download_custom_model(custom_model_url, custom_model_dir, session)
+                        session['custom_model'] = download_custom_model(custom_model_url, session['custom_model_dir'], session)
                     else:
-                        session['custom_model'] = extract_custom_model(custom_model_file, custom_model_dir, session)
+                        session['custom_model'] = extract_custom_model(custom_model_file, session['custom_model_dir'], session)
+                    if not session['custom_model']:
+                        raise ValueError(f'{custom_model_file} could not be extracted or mandatory files are missing')
                 if not torch.cuda.is_available() or device == 'cpu':
                     if device == 'gpu':
                         print('GPU is not available on your device!')
@@ -1075,8 +1053,11 @@ def web_interface(args):
                     padding: 0 !important;
                     margin: 0 !important;
                 }
-                #component-7, #component-13, #component-14 {
+                #component-7, #component-19, #component-21 {
                     height: 140px !important;
+                }
+                #component-44 {
+                    height: 100px !important;
                 }
             </style>
             '''
@@ -1092,17 +1073,23 @@ def web_interface(args):
             with gr.TabItem('Input Options'):
                 with gr.Row():
                     with gr.Column(scale=3):
-                        gr_ebook_file = gr.File(label='eBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)', file_types=['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw'])
+                        with gr.Group():
+                            gr_ebook_file = gr.File(label='EBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)', file_types=['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw'])
                         gr_device = gr.Radio(label='Processor Unit', choices=['CPU', 'GPU'], value='CPU')
-                        gr_language = gr.Dropdown(label='Language', choices=[name for name, _ in language_options], value=default_language_name)
+                        with gr.Group():
+                            gr_session_status = gr.Textbox(label='Session')
+                        with gr.Group():
+                            gr_language = gr.Dropdown(label='Language', choices=[name for name, _ in language_options], value=default_language_name)
                     with gr.Column(scale=3):
                         with gr.Group():
-                            gr_voice_file = gr.File(label='Cloning Voice* (a .wav 24000hz for major language and 22050hz for others, no more than 6 sec)', file_types=['.wav'])
-                            gr_custom_model_file = gr.File(label='Model* (a .zip containing config.json, vocab.json, model.pth)', file_types=['.zip'], visible=False)
+                            gr_voice_file = gr.File(label='*Cloning Voice (a .wav 24000hz for major language and 22050hz for others, no more than 6 sec)', file_types=['.wav'])
+                            gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
+                        with gr.Group():
+                            gr_custom_model_file = gr.File(label='*XTTS Model (a .zip containing config.json, vocab.json, model.pth)', file_types=['.zip'], visible=True)
                             gr_custom_model_url = gr.Textbox(placeholder='https://www.example.com/model.zip', label='Model from URL*', visible=False)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
-                            gr_tts_engine = gr.Markdown(f'&nbsp;&nbsp;&nbsp;&nbsp;tts base: {default_tts_engine.upper()}')
+                            gr_tts_engine = gr.Markdown(f'&nbsp;&nbsp;&nbsp;&nbsp;TTS Base:&nbsp;&nbsp;{default_tts_engine.upper()}')
                             gr_fine_tuned = gr.Dropdown(label='Fine Tuned Models', choices=fine_tuned_options, value=default_fine_tuned, interactive=True)
             with gr.TabItem('Audio Generation Preferences'):
                 gr.Markdown(
@@ -1166,7 +1153,6 @@ def web_interface(args):
                 )
                 
         gr_state = gr.State(value="")  # Initialize state for each user session
-        gr_session_status = gr.Textbox(label='Session')
         gr_session = gr.Textbox(label='Session', visible=False)
         gr_conversion_progress = gr.Textbox(label='Progress')
         gr_convert_btn = gr.Button('Convert', variant='primary', interactive=False)
@@ -1255,8 +1241,11 @@ def web_interface(args):
                     return link, link, gr.update(visible=True)
             return None, None, gr.update(visible=False)
             
-        def disable_convert_btn():
-            return gr.update('Convert', variant='primary', interactive=False)
+        def disable_convert_btn(f):
+            if not hasattr(f, 'name') or f.name == "":
+                return "File is still uploading. Please wait."
+            else:
+                return gr.update('Convert', variant='primary', interactive=False)
 
         def update_audiobooks_ddn():
             files = refresh_audiobook_list()
@@ -1397,11 +1386,12 @@ def web_interface(args):
             inputs=gr_audiobooks_ddn,
             outputs=[gr_audiobook_link, gr_audio_player, gr_audio_player]
         )
+        """
         gr_custom_model_file.change(
             fn=change_gr_custom_model_file,
             inputs=gr_custom_model_file,
             outputs=gr_custom_model_url
-        )
+        """        
         gr_session.change(
             fn=change_gr_data,
             inputs=gr_data,
@@ -1425,7 +1415,7 @@ def web_interface(args):
         )       
         gr_convert_btn.click(
             fn=disable_convert_btn,
-            inputs=None,
+            inputs=gr_custom_model_file,
             outputs=gr_convert_btn
         ).then(
             fn=process_conversion,
