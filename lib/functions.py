@@ -223,8 +223,8 @@ def extract_custom_model(f_path, dest_dir, session):
         raise DependencyError(e)
 
 def check_model_files(model_dir):
-    existing_files = ['config.json', 'model.pth', 'vocab.json']
-    missing_files = [file for file in model_dir if file not in existing_files]
+    existing_files = ['config.json', 'model.pth', 'vocab.json', 'ref.wav']
+    missing_files = [file for file in listdir(model_dir) if not file in existing_files]
     if missing_files:
         return False
     return model_dir
