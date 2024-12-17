@@ -47,18 +47,7 @@ def check_and_install_requirements(file_path):
             except subprocess.CalledProcessError as e:
                 print(f'Failed to install packages: {e}')
                 return False
-        '''
-        from lib.functions import check_missing_files, download_model
-        for mod in models.keys():
-            if mod == 'xtts':
-                mod_exists, err, list = check_missing_files(models[mod]['local'], models[mod]['files'])
-                if mod_exists:
-                    print('All specified xtts base model files are present in the folder.')
-                else:
-                    print('The following files are missing:', list)
-                    print(f'Downloading {mod} files . . .')
-                    download_model(models[mod]['local'], models[mod]['url'])
-        '''
+
         return True
     except Exception as e:
         raise(f'An error occurred: {e}')  
