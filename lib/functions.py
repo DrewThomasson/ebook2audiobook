@@ -1054,10 +1054,10 @@ def web_interface(args):
                     padding: 0 !important;
                     margin: 0 !important;
                 }
-                #component-7, #component-19, #component-21 {
+                #component-7, #component-19, #component-22 {
                     height: 140px !important;
                 }
-                #component-44 {
+                #component-46 {
                     height: 100px !important;
                 }
             </style>
