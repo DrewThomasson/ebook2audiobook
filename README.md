@@ -436,7 +436,6 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - "It's slow!" - On CPU only this is very slow, and you can only get speedups though a NVIDIA GPU. [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846) For faster multilingual generation I would suggest my other [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead(It doesn't have zero-shot voice cloning though, and is siri quality voices, but it is much faster on cpu.)
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode, add `-h` parameter after the `app.py` in the docker run command for more information.
 - "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS, I don't speak every language and I need advise from each person to fine tune my sentense splitting function on any other languages.😊
-- "The loading bar is stuck at 30% in the web gui!" - The web gui loading bar is extreamly basic as its just split between the three loading steps, refer to the terminal and what sentense it's on for a more accurate gauge on where is it progress wise.
 
 ## What I need help with! 🙌 
 ## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
