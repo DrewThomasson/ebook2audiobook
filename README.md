@@ -93,11 +93,11 @@ Specify the language code when running the script in headless mode.
 ### 📝 Basic Headless Usage
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     .\ebook2audiobook.sh --headless --ebook <path_to_ebook_file>
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     .\ebook2audiobook.cmd --headless --ebook <path_to_ebook_file>
      ```
 
 - **<path_to_ebook_file>**: Path to your eBook file.
