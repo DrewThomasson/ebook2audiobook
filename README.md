@@ -205,47 +205,10 @@ Linux/Mac:
 
 
 ```
+### [Legacy V1.0](legacy/v1.0)
 
+You can view the code [here](legacy/v1.0).
 
-<details>
-  <summary>⚠️ Legacy-Depricated Old Use Instructions</summary>
-   
-## 🚀 Usage
-
-## Legacy files have been moved to `ebook2audiobook/legacy/`
-
-### 🖥️ Gradio Web Interface
-
-1. **Run the Script**:
-   ```bash
-   python custom_model_ebook2audiobook_gradio.py
-   ```
-
-2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
-
-### 📝 Basic Usage
-
-```bash
-python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_code]
-```
-
-- **<path_to_ebook_file>**: Path to your eBook file.
-- **[path_to_voice_file]**: Optional for voice cloning.
-- **[language_code]**: Optional to specify ISO-639-3 3+ letters language code (default is eng). ISO-639-1 2 letters code is also supported
-
-### 🧩 Custom XTTS Model
-
-```bash
-python custom_model_ebook2audiobook.py <ebook_file_path> <target_voice_file_path> <language> <custom_model_path> <custom_config_path> <custom_vocab_path>
-```
-
-- **<ebook_file_path>**: Path to your eBook file.
-- **<target_voice_file_path>**: Optional for voice cloning.
-- **<language>**: Optional to specify language.
-- **<custom_model_path>**: Path to `model.pth`.
-- **<custom_config_path>**: Path to `config.json`.
-- **<custom_vocab_path>**: Path to `vocab.json`.
-</details>
 
 ### 🐳 Using Docker
 
@@ -375,15 +338,16 @@ config.json --custom_vocab vocab.json
 ```
 </details>
 
-#### 🖥️ Docker GUI 
-![demo_web_gui](demo_web_gui.gif)
+#### 🖥️ New v2.0 Docker Web GUI Interface!
+![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
   <summary>Click to see images of Web GUI</summary>
-<img width="1728" alt="image" src="https://github.com/user-attachments/assets/b36c71cf-8e06-484c-a252-934e6b1d0c2f">
-<img width="1728" alt="image" src="https://github.com/user-attachments/assets/c0dab57a-d2d4-4658-bff9-3842ec90cb40">
-<img width="1728" alt="image" src="https://github.com/user-attachments/assets/0a99eeac-c521-4b21-8656-e064c1adc528">
+  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
+
 ### 🛠️ For Custom Xtts Models
 
 Models built to be better at a specific voice. Check out my Hugging Face page [here](https://huggingface.co/drewThomasson).
