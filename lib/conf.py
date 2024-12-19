@@ -12,9 +12,15 @@ max_python_version = (3,12)
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 
 docker_utils_image = 'utils'
-gradio_interface_port = 7860
-gradio_shared_expire = 72 # hours
-concurrency_limit = 8 # or None for unlimited
+interface_port = 7860
+interface_shared_expire = 72 # hours
+interface_concurrency_limit = 8 # or None for unlimited
+interface_component_options = {
+    "gr_tab_preferences": True,
+    "gr_voice_file": True,
+    "gr_custom_model_file": True,
+    "gr_custom_model_url": True
+}
 
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
 models_dir = os.path.abspath(os.path.join('.','models'))

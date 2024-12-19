@@ -158,8 +158,8 @@ Linux/Mac:
     args = parser.parse_args()
 
     # Check if the port is already in use to prevent multiple launches
-    if not args.headless and is_port_in_use(gradio_interface_port):
-        print(f'Error: Port {gradio_interface_port} is already in use. The web interface may already be running.')
+    if not args.headless and is_port_in_use(interface_port):
+        print(f'Error: Port {interface_port} is already in use. The web interface may already be running.')
         sys.exit(1)
     
     args.script_mode = args.script_mode if args.script_mode else NATIVE
