@@ -12,20 +12,23 @@ max_python_version = (3,12)
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 
 docker_utils_image = 'utils'
+
+interface_host = '0.0.0.0'
 interface_port = 7860
 interface_shared_expire = 72 # hours
 interface_concurrency_limit = 8 # or None for unlimited
 interface_component_options = {
     "gr_tab_preferences": True,
     "gr_voice_file": True,
-    "gr_custom_model_file": True,
-    "gr_custom_model_url": True
+    "gr_group_custom_model": True
 }
 
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
+
 models_dir = os.path.abspath(os.path.join('.','models'))
 ebooks_dir = os.path.abspath(os.path.join('.','ebooks'))
 processes_dir = os.path.abspath(os.path.join('.','tmp'))
+
 audiobooks_gradio_dir = os.path.abspath(os.path.join('.','audiobooks','gui','gradio'))
 audiobooks_host_dir = os.path.abspath(os.path.join('.','audiobooks','gui','host'))
 audiobooks_cli_dir = os.path.abspath(os.path.join('.','audiobooks','cli'))
@@ -52,6 +55,7 @@ audio_proc_format = 'wav' # only 'wav' is valid for now
 
 default_tts_engine = 'xtts'
 default_fine_tuned = 'std'
+default_model_files = ['config.json', 'vocab.json', 'model.pth', 'ref.wav']
 
 models = {
     "xtts": {
