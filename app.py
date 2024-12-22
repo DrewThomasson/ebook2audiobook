@@ -133,10 +133,10 @@ Linux/Mac:
                         help='Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Default to 0.8')
     parser.add_argument(options[15], type=float, default=1.0,
                         help='Speed factor for the speech generation. Default to 1.0')
-    parser.add_argument(options[16], type=str, default=default_fine_tuned,
+    parser.add_argument(options[16], action='store_true',
+                        help='Enable splitting text into sentences. Default to False.')                     
+    parser.add_argument(options[17], type=str, default=default_fine_tuned,
                         help='Name of the fine tuned model. Optional, uses the standard model according to the TTS engine and language.')
-    parser.add_argument(options[17], action='store_true',
-                        help='Enable splitting text into sentences. Default to False.')
     parser.add_argument(options[18], action='version',version=f'ebook2audiobook version {version}',
                         help='Show the version of the script and exit')
 

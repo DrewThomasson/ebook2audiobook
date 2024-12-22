@@ -497,8 +497,8 @@ def convert_chapters_to_audio(session):
         '''
         if session['metadata']['language'] in language_xtts:
             params['tts_model'] = 'xtts'
-            print(f"Loading TTS {params['tts_model']} model...")
             if session['custom_model'] is not None:
+                print(f"Loading TTS {params['tts_model']} model from {session['custom_model']}...")
                 model_path = os.path.join(session['custom_model'], 'model.pth')
                 config_path = os.path.join(session['custom_model'],'config.json')
                 vocab_path = os.path.join(session['custom_model'],'vocab.json')
@@ -512,13 +512,14 @@ def convert_chapters_to_audio(session):
                 params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else voice_path
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
             else:
+                print(f"Loading TTS {params['tts_model']} model from {models[params['tts_model']][session['fine_tuned']]['repo']}...")
                 params['tts'] = XTTS(models[params['tts_model']][session['fine_tuned']]['repo'])
                 params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
         else:
             params['tts_model'] = 'fairseq'
-            print(f"Loading TTS {params['tts_model']} model...")
             model_repo = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['metadata']['language'])
+            print(f"Loading TTS {model_repo} model from {model_repo}...")
             params['tts'] = XTTS(model_repo)
             params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
@@ -1397,6 +1398,12 @@ def web_interface(args):
                 yield gr.update(), gr.update(), gr.update(value=f'Error: {str(e)}')
                 return
 
+        def change_gr_fine_tuned(fine_tuned):
+            visible = False
+            if fine_tuned == 'std':
+                visible = True
+            return gr.update(visible=visible)
+
         def change_gr_data(data):
             data['event'] = 'change_data'
             return data
@@ -1492,15 +1499,20 @@ def web_interface(args):
             inputs=gr_audiobooks_ddn,
             outputs=[gr_audiobook_link, gr_audio_player, gr_audio_player]
         )
-        gr_custom_model_list.change(
-            fn=change_gr_custom_model_list,
-            inputs=[gr_custom_model_list],
-            outputs=[gr_fine_tuned]
-        )
         gr_custom_model_file.change(
             fn=change_gr_custom_model_file,
             inputs=[gr_custom_model_file, gr_session],
             outputs=[gr_fine_tuned, gr_custom_model_list, gr_conversion_progress]
+        )
+        gr_custom_model_list.change(
+            fn=change_gr_custom_model_list,
+            inputs=gr_custom_model_list,
+            outputs=gr_fine_tuned
+        )
+        gr_fine_tuned.change(
+            fn=change_gr_fine_tuned,
+            inputs=gr_fine_tuned,
+            outputs=gr_group_custom_model
         )
         gr_session.change(
             fn=change_gr_data,
