@@ -65,15 +65,65 @@ models = {
             "repo": "tts_models/multilingual/multi-dataset/xtts_v2",
             "voice": default_voice_file
         },
-        "DavidAttenborough": {
+        "AiExplained": {
             "lang": "eng",
-            "repo": "drewThomasson/fineTunedTTSModels/xtts-v2/eng/DavidAttenborough",
-            "voice": os.path.abspath(os.path.join("voices", "eng", "elder", "male", "DavidAttenborough_24khz.wav"))
+            "repo": "drewThomasson/AiExplained",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "AiExplained_24khz.wav"))
+        },
+        "BobOdenkirk": {
+            "lang": "eng",
+            "repo": "drewThomasson/BobOdenkirk",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "BobOdenkirk_24khz.wav"))
         },
         "BobRoss": {
             "lang": "eng",
-            "repo": "drewThomasson/fineTunedTTSModels/xtts-v2/eng/BobRoss",
+            "repo": "drewThomasson/BobRoss",
             "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "BobRoss_24khz.wav"))
+        },
+        "BryanCranston": {
+            "lang": "eng",
+            "repo": "drewThomasson/BryanCranston",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "BryanCranston_24khz.wav"))
+        },
+        "DavidAttenborough": {
+            "lang": "eng",
+            "repo": "drewThomasson/DavidAttenborough",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "elder", "male", "DavidAttenborough_24khz.wav"))
+        },
+        "DeathPuss&Boots": {
+            "lang": "eng",
+            "repo": "drewThomasson/DeathPuss&Boots",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "DeathPuss&Boots_24khz.wav"))
+        },
+        "GhostMW2": {
+            "lang": "eng",
+            "repo": "drewThomasson/GhostMW2",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "GhostMW2_24khz.wav"))
+        },
+        "JhonButlerASMR": {
+            "lang": "eng",
+            "repo": "drewThomasson/JhonButlerASMR",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "elder", "male", "JhonButlerASMR_24khz.wav"))
+        },
+        "JhonMulaney": {
+            "lang": "eng",
+            "repo": "drewThomasson/JhonMulaney",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "JhonMulaney_24khz.wav"))
+        },
+        "MorganFreeman": {
+            "lang": "eng",
+            "repo": "drewThomasson/MorganFreeman",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "MorganFreeman_24khz.wav"))
+        },
+        "RainyDayHeadSpace": {
+            "lang": "eng",
+            "repo": "drewThomasson/RainyDayHeadSpace",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "elder", "male", "RainyDayHeadSpace_24khz.wav"))
+        },
+        "WhisperSalemASMR": {
+            "lang": "eng",
+            "repo": "drewThomasson/WhisperSalemASMR",
+            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "WhisperSalemASMR_24khz.wav"))
         }
     },
     "fairseq": {
