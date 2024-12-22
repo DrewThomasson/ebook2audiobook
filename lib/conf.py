@@ -73,7 +73,7 @@ models = {
         "BobRoss": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels/xtts-v2/eng/BobRoss",
-            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "BobRoss.wav"))
+            "voice": os.path.abspath(os.path.join("voices", "eng", "adult", "male", "BobRoss_24khz.wav"))
         }
     },
     "fairseq": {
