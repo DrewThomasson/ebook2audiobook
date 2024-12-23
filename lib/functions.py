@@ -145,6 +145,7 @@ class DependencyError(Exception):
 def prepare_dirs(src, session):
     try:
         resume = False
+        os.makedirs(os.path.join(models_dir,'tts'), exist_ok=True)
         os.makedirs(session['tmp_dir'], exist_ok=True)
         os.makedirs(session['custom_model_dir'], exist_ok=True)
         os.makedirs(session['audiobooks_dir'], exist_ok=True)
@@ -504,16 +505,32 @@ def convert_chapters_to_audio(session):
                 vocab_path = os.path.join(session['custom_model'],'vocab.json')
                 voice_path = os.path.join(session['custom_model'],'ref.wav')
                 config = XttsConfig()
-                config.models_dir = models_dir
+                config.models_dir = os.path.join(models_dir,'tts')
                 config.load_json(config_path)
                 params['tts'] = Xtts.init_from_config(config)
                 params['tts'].load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
                 print('Computing speaker latents...')
                 params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else voice_path
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
+            elif session['fine_tuned'] != 'std':
+                print(f"Loading TTS {params['tts_model']} model from {session['fine_tuned']}...")
+                hf_repo = models[params['tts_model']][session['fine_tuned']]['repo']
+                hf_sub = models[params['tts_model']][session['fine_tuned']]['sub']
+                cache_dir = os.path.join(models_dir,'tts')
+                model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/model.pth", cache_dir=cache_dir)
+                config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/config.json", cache_dir=cache_dir)
+                vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/vocab.json", cache_dir=cache_dir)             
+                config = XttsConfig()
+                config.models_dir = cache_dir
+                config.load_json(config_path)
+                params['tts'] = Xtts.init_from_config(config)
+                params['tts'].load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
+                print('Computing speaker latents...')
+                params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
             else:
                 print(f"Loading TTS {params['tts_model']} model from {models[params['tts_model']][session['fine_tuned']]['repo']}...")
-                params['tts'] = XTTS(models[params['tts_model']][session['fine_tuned']]['repo'])
+                params['tts'] = XTTS(model_name=models[params['tts_model']][session['fine_tuned']]['repo'])
                 params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
         else:
@@ -591,7 +608,7 @@ def convert_sentence_to_audio(params, session):
             "enable_text_splitting": session['enable_text_splitting']
         }
         if params['tts_model'] == 'xtts':
-            if session['custom_model'] is not None:
+            if session['custom_model'] is not None or session['fine_tuned'] != 'std':
                 output = params['tts'].inference(
                     text=params['sentence'],
                     language=session['metadata']['language_iso1'],
@@ -616,7 +633,7 @@ def convert_sentence_to_audio(params, session):
             params['tts'].tts_with_vc_to_file(
                 text=params['sentence'],
                 file_path=params['sentence_audio_file'],
-                speaker_wav=params['voice_file'].replace('_24khz','_22khz'),
+                speaker_wav=params['voice_file'].replace('_24khz','_16khz'),
                 split_sentences=session['enable_text_splitting']
             )
         if os.path.exists(params['sentence_audio_file']):
@@ -776,7 +793,8 @@ def combine_audio_chapters(session):
                     
             if ffmpeg_cover is not None and ffmpeg_cover.endswith('.png'):
                 ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
-                
+            
+            ffmpeg_cmd += ['-af', 'agate=threshold=-30dB:ratio=2:attack=5:release=100,acompressor=threshold=-20dB:ratio=3:attack=50:release=200:makeup=0dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true']
             ffmpeg_cmd += ['-movflags', '+faststart', '-y', ffmpeg_final_file]
 
             if session['script_mode'] == DOCKER_UTILS:
@@ -943,8 +961,8 @@ def convert_ebook(args):
             top_p = args['top_p']
             speed = args['speed']
             enable_text_splitting = args['enable_text_splitting'] if args['enable_text_splitting'] is not None else True
-            custom_model_file = args['custom_model']
-            fine_tuned = args['fine_tuned'] if check_fine_tuned(args['fine_tuned'], args['language']) else False
+            custom_model_file = args['custom_model'] if args['custom_model'] != 'none'  and args['custom_model'] is not None else None
+            fine_tuned = args['fine_tuned'] if check_fine_tuned(args['fine_tuned'], args['language']) else None
             
             if not fine_tuned:
                 raise ValueError('The fine tuned model does not exist.')
@@ -1118,7 +1136,7 @@ def web_interface(args):
                 #component-7, #component-10, #component-20 {
                     height: 140px !important;
                 }
-                #component-47 {
+                #component-47, #component-51 {
                     height: 100px !important;
                 }
             </style>
@@ -1128,7 +1146,8 @@ def web_interface(args):
             f'''
             # Ebook2Audiobook v{version}<br/>
             https://github.com/DrewThomasson/ebook2audiobook<br/>
-            Convert eBooks into immersive audiobooks with realistic voice TTS models.
+            Convert eBooks into immersive audiobooks with realistic voice TTS models.<br/>
+            Multiuser, multiprocessing, multithread on a geo cluster to share the conversion to the Grid.
             '''
         )
         with gr.Tabs():
@@ -1139,7 +1158,7 @@ def web_interface(args):
                         with gr.Group():
                             gr_ebook_file = gr.File(label='EBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)', file_types=['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw'])
                         with gr.Group():
-                            gr_voice_file = gr.File(label='*Cloning Voice (a .wav 24000hz for XTTS base model and 22050hz for FAIRSEQ base model, no more than 6 sec)', file_types=['.wav'], visible=interface_component_options['gr_voice_file'])
+                            gr_voice_file = gr.File(label='*Cloning Voice (a .wav 24000hz for XTTS base model and 16000hz for FAIRSEQ base model, no more than 6 sec)', file_types=['.wav'], visible=interface_component_options['gr_voice_file'])
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
                             gr_device = gr.Radio(label='Processor Unit', choices=['CPU', 'GPU'], value='CPU')
@@ -1154,7 +1173,7 @@ def web_interface(args):
                         with gr.Group():
                             gr_session_status = gr.Textbox(label='Session')
                         with gr.Group():
-                            gr_tts_engine = gr.Markdown(f'&nbsp;&nbsp;&nbsp;&nbsp;TTS Base:&nbsp;&nbsp;{default_tts_engine.upper()}')
+                            gr_tts_engine = gr.Dropdown(label='TTS Base', choices=[default_tts_engine], value=default_tts_engine, interactive=True)
                             gr_fine_tuned = gr.Dropdown(label='Fine Tuned Models', choices=fine_tuned_options, value=default_fine_tuned, interactive=True)
             gr_tab_preferences = gr.TabItem('Audio Generation Preferences', visible=interface_component_options['gr_tab_preferences'])
             with gr_tab_preferences:
@@ -1339,10 +1358,10 @@ def web_interface(args):
                 new_language_key = default_language_code
             else:
                 new_language_name, new_language_key = next(((name, key) for name, key in language_options if key == selected), (None, None))
-            tts_engine_value = 'xtts' if language_xtts.get(new_language_key, False) else 'fairseq'
+            tts_engine_options = ['xtts'] if language_xtts.get(new_language_key, False) else ['fairseq']
             fine_tuned_options = [
                 model_name
-                for model_name, model_details in models.get(tts_engine_value, {}).items()
+                for model_name, model_details in models.get(tts_engine_options[0], {}).items()
                 if model_details.get('lang') == 'multi' or model_details.get('lang') == new_language_key
             ]
             custom_model_options = ['none']
@@ -1355,7 +1374,7 @@ def web_interface(args):
                     custom_model_options += os.listdir(custom_model_tts_dir)
             return (
                 gr.update(value=new_language_name),
-                gr.update(value=f'&nbsp;&nbsp;&nbsp;&nbsp;tts base: {tts_engine_value.upper()}'),
+                gr.update(choices=tts_engine_options, value=tts_engine_options[0]),
                 gr.update(choices=fine_tuned_options, value=fine_tuned_options[0] if fine_tuned_options else 'none'),
                 gr.update(choices=custom_model_options, value=custom_model_options[0])
             )
