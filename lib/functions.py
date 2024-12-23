@@ -794,7 +794,7 @@ def combine_audio_chapters(session):
             if ffmpeg_cover is not None and ffmpeg_cover.endswith('.png'):
                 ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
             
-            ffmpeg_cmd += ['-af', 'agate=threshold=-30dB:ratio=2:attack=5:release=100,acompressor=threshold=-20dB:ratio=3:attack=50:release=200:makeup=0dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true']
+            ffmpeg_cmd += ['-af', 'agate=threshold=-33dB:ratio=2:attack=5:release=100,acompressor=threshold=-20dB:ratio=2.5:attack=50:release=200:makeup=0dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true']
             ffmpeg_cmd += ['-movflags', '+faststart', '-y', ffmpeg_final_file]
 
             if session['script_mode'] == DOCKER_UTILS:
