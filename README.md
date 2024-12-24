@@ -144,7 +144,7 @@ Specify the language code when running the script in headless mode.
 ### 🔍 For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  --help
+     ./ebook2audiobook.sh  --help
      ```
    - **Windows**
      ```bash
