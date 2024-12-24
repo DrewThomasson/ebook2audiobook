@@ -28,7 +28,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 - 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms).
 - 🗣️ Optional voice cloning with your own voice file.
 - 🌍 Supports 1107 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
-- 🖥️ Designed to run on 4GB RAM.
+- 🖥️ Designed to run on 4GB RAM, CPU OR GPU
 
 ## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 - Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
