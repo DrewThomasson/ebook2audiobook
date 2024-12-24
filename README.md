@@ -78,7 +78,7 @@ Specify the language code when running the script in headless mode.
 1. **Run ebook2audiobook**:
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  # Run Launch script
+     ./ebook2audiobook.sh  # Run Launch script
      ```
    - **Windows**
      ```bash
@@ -92,7 +92,7 @@ Specify the language code when running the script in headless mode.
 ### 📝 Basic Headless Usage
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     ./ebook2audiobook.sh  --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
    - **Windows**
      ```bash
@@ -107,7 +107,7 @@ Specify the language code when running the script in headless mode.
 ### 🧩 Headless Custom XTTS Model Usage
    - **Linux/MacOS**:
      ```bash
-     .\ebook2audiobook.sh  --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+     ./ebook2audiobook.sh  --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
      ```
    - **Windows**
      ```bash
