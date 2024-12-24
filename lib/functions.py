@@ -936,7 +936,8 @@ def convert_ebook(args):
                 session['client'] = docker.from_env()
 
             session['tmp_dir'] = os.path.join(processes_dir, f"ebook-{session['id']}")
-            session['chapters_dir'] = os.path.join(session['tmp_dir'], f'chapters_{hashlib.md5(args['ebook'].encode()).hexdigest()}')
+            session['chapters_dir'] = os.path.join(session['tmp_dir'], f"chapters_{hashlib.md5(args['ebook'].encode()).hexdigest()}")
+
             session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')
 
             if not is_gui_process:
@@ -1009,7 +1010,8 @@ def convert_ebook(args):
                 else:
                     error = 'convert_to_epub() failed!'
             else:
-                error = f'Temporary directory {session['tmp_dir']} not removed due to failure.'
+                error = f"Temporary directory {session['tmp_dir']} not removed due to failure."
+
         else:
             error = f"Language {args['language']} is not supported."
         if session['cancellation_requested']:
@@ -1021,9 +1023,9 @@ def convert_ebook(args):
         return e, None
 
 def web_interface(args):
-    script_mode = args.script_mode
-    is_gui_process = args.is_gui_process
-    is_gui_shared = args.share
+    script_mode = args['script_mode']
+    is_gui_process = args['is_gui_process']
+    is_gui_shared = args['share']
     is_converting = False
     audiobooks_dir = None
     ebook_src = None
