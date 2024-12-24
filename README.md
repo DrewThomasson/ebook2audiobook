@@ -139,7 +139,6 @@ Specify the language code when running the script in headless mode.
 - **<custom_model_URL_ZIP_path>**: URL Path to zip of Model folder. For Example this for the [xtts_David_Attenborough_fine_tune](https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/tree/main) `https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true`
 - For a custom model a ref audio clip of the voice will also be needed:
 [ref audio clip of David Attenborough](https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/blob/main/ref.wav)
-- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
 ### 🔍 For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**:
