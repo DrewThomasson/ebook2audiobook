@@ -145,17 +145,17 @@ Linux/Mac:
             print(f'Error: Unrecognized option "{arg}"')
             sys.exit(1)
             
-    args = parser.parse_args()
+    args = vars(parser.parse_args())
 
     # Check if the port is already in use to prevent multiple launches
-    if not args.headless and is_port_in_use(interface_port):
+    if not args['headless'] and is_port_in_use(interface_port):
         print(f'Error: Port {interface_port} is already in use. The web interface may already be running.')
         sys.exit(1)
     
-    args.script_mode = args.script_mode if args.script_mode else NATIVE
-    args.share =  args.share if args.share else False
+    args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
+    args['share'] =  args['share'] if args['share'] else False
     
-    if args.script_mode == NATIVE:
+    if args['script_mode'] == NATIVE:
         check_pkg = check_and_install_requirements(requirements_file)
         if check_pkg:
             print('Package requirements ok')
@@ -170,27 +170,27 @@ Linux/Mac:
     from lib.functions import web_interface, convert_ebook
 
     # Conditions based on the --headless flag
-    if args.headless:
-        args.is_gui_process = False
-        args.audiobooks_dir = audiobooks_cli_dir
+    if args['headless']:
+        args['is_gui_process'] = False
+        args['audiobooks_dir'] = audiobooks_cli_dir
 
         # Condition to stop if both --ebook and --ebooks_dir are provided
-        if args.ebook and args.ebooks_dir:
+        if args['ebook'] and args['ebooks_dir']:
             print('Error: You cannot specify both --ebook and --ebooks_dir in headless mode.')
             sys.exit(1)
 
         # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
-        if args.ebooks_dir:
+        if args['ebooks_dir']:
             new_ebooks_dir = None
-            if args.ebooks_dir == 'default':
+            if args['ebooks_dir'] == 'default':
                 print(f'Using the default ebooks_dir: {ebooks_dir}')
                 new_ebooks_dir =  os.path.abspath(ebooks_dir)
             else:
                 # Check if the directory exists
-                if os.path.exists(args.ebooks_dir):
-                    new_ebooks_dir = os.path.abspath(args.ebooks_dir)
+                if os.path.exists(args['ebooks_dir']):
+                    new_ebooks_dir = os.path.abspath(args['ebooks_dir'])
                 else:
-                    print(f'Error: The provided --ebooks_dir "{args.ebooks_dir}" does not exist.')
+                    print(f'Error: The provided --ebooks_dir "{args['ebooks_dir']}" does not exist.')
                     sys.exit(1)
                     
             if os.path.exists(new_ebooks_dir):
@@ -199,7 +199,7 @@ Linux/Mac:
                     if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.join(new_ebooks_dir, file)
                         print(f'Processing eBook file: {full_path}')
-                        args.ebook = full_path
+                        args['ebook'] = full_path
                         progress_status, audiobook_file = convert_ebook(args)
                         if audiobook_file is None:
                             print(f'Conversion failed: {progress_status}')
@@ -208,7 +208,7 @@ Linux/Mac:
                 print(f'Error: The directory {new_ebooks_dir} does not exist.')
                 sys.exit(1)
 
-        elif args.ebook:
+        elif args['ebook']:
             progress_status, audiobook_file = convert_ebook(args)
             if audiobook_file is None:
                 print(f'Conversion failed: {progress_status}')
@@ -218,7 +218,7 @@ Linux/Mac:
             print('Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.')
             sys.exit(1)       
     else:
-        args.is_gui_process = True
+        args['is_gui_process'] = True
         passed_arguments = sys.argv[1:]
         allowed_arguments = {'--share', '--script_mode'}
         passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
