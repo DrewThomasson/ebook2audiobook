@@ -387,7 +387,7 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 ## 🙏 Special Thanks
 
-- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/coqui-ai/TTS)
+- **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 
