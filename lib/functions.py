@@ -1013,7 +1013,7 @@ def convert_ebook(args):
                                                 os.remove(session['cover'])
                                         else:
                                             if os.path.exists(session['tmp_dir']):
-                                                shutil.rmtree(session['tmp_dir'])0
+                                                shutil.rmtree(session['tmp_dir'])
                                         progress_status = f'Audiobook {os.path.basename(final_file)} created!'
                                         return progress_status, final_file 
                                     else:
