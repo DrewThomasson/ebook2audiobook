@@ -10,6 +10,7 @@ hangul-romanize
 indic-nlp-library
 iso-639
 jieba
+m4b-util
 mecab
 mecab-python3
 pydub
