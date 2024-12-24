@@ -30,8 +30,8 @@ RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -
 # Set PATH to include conda
 ENV PATH=/opt/conda/bin:$PATH
 
-# Create a conda environment with Python 3.10
-RUN conda create -n ebookenv python=3.10 -y
+# Create a conda environment with Python 3.12
+RUN conda create -n ebookenv python=3.12 -y
 
 # Activate the conda environment
 SHELL ["conda", "run", "-n", "ebookenv", "/bin/bash", "-c"]

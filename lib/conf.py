@@ -51,7 +51,7 @@ os.environ['XDG_CACHE_HOME'] = models_dir
 
 ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw']
 audiobook_format = 'm4b' # or 'mp3'
-audio_proc_format = 'wav' # only 'wav' is valid for now
+audioproc_format = 'wav' # only 'wav' is valid for now
 
 default_tts_engine = 'xtts'
 default_fine_tuned = 'std'
