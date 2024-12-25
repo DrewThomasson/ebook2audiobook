@@ -802,7 +802,6 @@ def combine_audio_chapters(session):
                 docker_final_file = os.path.join(session['tmp_dir'], final_name)
                 final_file = os.path.join(session['audiobooks_dir'], final_name)       
                 if export_audio():
-                    shutil.rmtree(session['tmp_dir'])
                     return final_file
         return None
     except Exception as e:
