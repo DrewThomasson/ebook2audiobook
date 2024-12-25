@@ -6,7 +6,7 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
 Use this tool responsibly and in accordance with all applicable laws.
 
-#### 🖥️ New v2.0 Web GUI Interface!
+#### New v2.0 Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
