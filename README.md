@@ -6,7 +6,7 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
 Use this tool responsibly and in accordance with all applicable laws.
 
-#### 🖥️ New v2.0 Web GUI Interface!
+#### New v2.0 Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
@@ -22,29 +22,30 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ## Table of Contents
 
-- [📚 ebook2audiobook](#📚-ebook2audiobook)
-- [🌟 Features](#🌟-features)
-- [🖥️ New v2.0 Web GUI Interface](#🖥️-new-v20-web-gui-interface)
-- [🤗 Huggingface Space Demo](#🤗-huggingface-space-demo)
+- [ebook2audiobook](#ebook2audiobook)
+- [Features](#features)
+- [New v2.0 Web GUI Interface](#new-v20-web-gui-interface)
+- [Huggingface Space Demo](#huggingface-space-demo)
 - [Free Google Colab](#free-google-colab)
-- [🌐 Supported Languages](#🌐-supported-languages)
-- [🛠️ Requirements](#🛠️-requirements)
-- [🔧 Installation Instructions](#🔧-installation-instructions)
-- [🚀 Usage](#🚀-usage)
-  - [🖥️ Launching Gradio Web Interface](#🖥️-launching-gradio-web-interface)
-  - [📝 Basic Headless Usage](#📝-basic-headless-usage)
-  - [🧩 Headless Custom XTTS Model Usage](#🧩-headless-custom-xtts-model-usage)
-- [🛠️ For Custom XTTS Models](#🛠️-for-custom-xtts-models)
-- [🐳 Using Docker](#🐳-using-docker)
-- [📚 Supported eBook Formats](#📚-supported-ebook-formats)
-- [📂 Output](#📂-output)
-- [🛠️ Common Issues](#🛠️-common-issues)
-- [🙏 Special Thanks](#🙏-special-thanks)
-- [📖 Glossary of Sections](#📖-glossary-of-sections)
+- [Supported Languages](#supported-languages)
+- [Requirements](#requirements)
+- [Installation Instructions](#installation-instructions)
+- [Usage](#usage)
+  - [Launching Gradio Web Interface](#launching-gradio-web-interface)
+  - [Basic Headless Usage](#basic-headless-usage)
+  - [Headless Custom XTTS Model Usage](#headless-custom-xtts-model-usage)
+- [For Custom XTTS Models](#for-custom-xtts-models)
+- [Using Docker](#using-docker)
+- [Supported eBook Formats](#supported-ebook-formats)
+- [Output](#output)
+- [Common Issues](#common-issues)
+- [Special Thanks](#special-thanks)
+- [Glossary of Sections](#glossary-of-sections)
 
 
 
-## 🌟 Features
+
+## Features
 
 - 📖 Converts eBooks to text format with Calibre.
 - 📚 Splits eBook into chapters for organized audio.
@@ -53,7 +54,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 - 🌍 Supports 1107 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 - 🖥️ Designed to run on 4GB RAM.
 
-## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
+## [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 - Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
 - Best to duplicate space or run locally.
 
@@ -81,12 +82,12 @@ Use this tool responsibly and in accordance with all applicable laws.
 - **Vietnamese (vi)**
 - [** + 1107 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
-## 🛠️ Requirements
+## Requirements
 
 - 4gb ram
 - Virtualization enabled if running on windows (Docker only)
 
-### 🔧 Installation Instructions
+### Installation Instructions
 
 1. **Clone repo**
 ```bash
@@ -94,9 +95,9 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ```
 
 Specify the language code when running the script in headless mode.
-## 🚀 Usage
+## Usage
 
-### 🖥️ Launching Gradio Web Interface
+### Launching Gradio Web Interface
 
 1. **Run ebook2audiobook**:
    - **Linux/MacOS**:
@@ -112,7 +113,7 @@ Specify the language code when running the script in headless mode.
 3. **For Public Link**: Add `--share` to the end of it like this: `python app.py --share`
 - **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
-### 📝 Basic Headless Usage
+### Basic Headless Usage
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.sh  --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
@@ -127,7 +128,7 @@ Specify the language code when running the script in headless mode.
 - **[language_code]**: Optional to specify ISO-639-3 3+ letters language code (default is eng). ISO-639-1 2 letters code is also supported
 - **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
-### 🧩 Headless Custom XTTS Model Usage
+### Headless Custom XTTS Model Usage
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.sh  --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
@@ -146,7 +147,7 @@ Specify the language code when running the script in headless mode.
 - **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
 
-### 🔍 For Detailed Guide with list of all Parameters to use
+### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.sh  --help
@@ -219,11 +220,11 @@ Linux/Mac:
 You can view the code [here](legacy/v1.0).
 
 
-### 🐳 Using Docker
+### Using Docker
 
 You can also use Docker to run the eBook to Audiobook converter. This method ensures consistency across different environments and simplifies setup.
 
-#### 🚀 Running the Docker Container
+#### Running the Docker Container
 
 To run the Docker container and start the Gradio interface, use the following command:
 
@@ -340,7 +341,7 @@ Linux/Mac:
 ```
 </details>
 
-#### 🖥️ New v2.0 Docker Web GUI Interface!
+#### New v2.0 Docker Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
@@ -350,7 +351,7 @@ Linux/Mac:
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
-### 🛠️ For Custom Xtts Models
+### For Custom Xtts Models
 
 Models built to be better at a specific voice. Check out my Hugging Face page [here](https://huggingface.co/drewThomasson).
 
@@ -365,11 +366,11 @@ For a custom model a ref audio clip of the voice will also be needed:
 
 More details can be found at the [Dockerfile Hub Page]([https://github.com/DrewThomasson/ebook2audiobook](https://hub.docker.com/repository/docker/athomasson2/ebook2audiobook/general)).
 
-## 🌐 Fine Tuned Xtts models
+## Fine Tuned Xtts models
 
 To find already fine-tuned XTTS models, visit [this Hugging Face link](https://huggingface.co/drewThomasson) 🌐. Search for models that include "xtts fine tune" in their names.
 
-## 🎥 Demos
+## Demos
 
 Rainy day voice
 
@@ -380,7 +381,7 @@ David Attenborough voice
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 
-## 🤗 [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
+## [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 - Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
 - Best to duplicate space or run locally.
 
@@ -388,17 +389,17 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 
 
-## 📚 Supported eBook Formats
+## Supported eBook Formats
 
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
-## 📂 Output
+## Output
 
 - Creates an `.m4b` file with metadata and chapters.
 - **Example Output**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
-## 🛠️ Common Issues:
+## Common Issues:
 - "It's slow!" - On CPU only this is very slow, and you can only get speedups though a NVIDIA GPU. [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846) For faster multilingual generation I would suggest my other [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead(It doesn't have zero-shot voice cloning though, and is siri quality voices, but it is much faster on cpu.)
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode, add `-h` parameter after the `app.py` in the docker run command for more information.
 - "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS, I don't speak every language and I need advise from each person to fine tune my sentense splitting function on any other languages.😊
@@ -408,7 +409,7 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - Any help from people speaking any of the supported langues to help with proper sentence splitting methods
 - Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
 
-## 🙏 Special Thanks
+## Special Thanks
 
 - **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
