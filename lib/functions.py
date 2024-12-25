@@ -288,7 +288,7 @@ def has_metadata(f):
 
 def convert_to_epub(session):
     if session['cancellation_requested']:
-        stop_and_detach_tts()
+        #stop_and_detach_tts()
         print('Cancel requested')
         return False
     if session['script_mode'] == DOCKER_UTILS:
@@ -331,7 +331,7 @@ def convert_to_epub(session):
 def get_cover(session):
     try:
         if session['cancellation_requested']:
-            stop_and_detach_tts()
+            #stop_and_detach_tts()
             print('Cancel requested')
             return False
         cover_image = False
@@ -355,7 +355,7 @@ def get_cover(session):
 def get_chapters(language, session):
     try:
         if session['cancellation_requested']:
-            stop_and_detach_tts()
+            #stop_and_detach_tts()
             print('Cancel requested')
             return False
         all_docs = list(session['epub'].get_items_of_type(ebooklib.ITEM_DOCUMENT))
@@ -446,7 +446,7 @@ def get_sentences(sentence, language, max_pauses=9):
 def convert_chapters_to_audio(session):
     try:
         if session['cancellation_requested']:
-            stop_and_detach_tts()
+            #stop_and_detach_tts()
             print('Cancel requested')
             return False
         progress_bar = None
@@ -565,7 +565,7 @@ def convert_chapters_to_audio(session):
 def convert_sentence_to_audio(params, session):
     try:
         if session['cancellation_requested']:
-            stop_and_detach_tts(params['tts'])
+            #stop_and_detach_tts(params['tts'])
             print('Cancel requested')
             return False
         generation_params = {
@@ -628,7 +628,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         ]
         for file in selected_files:
             if session['cancellation_requested']:
-                stop_and_detach_tts(params['tts'])
+                #stop_and_detach_tts(params['tts'])
                 print('Cancel requested')
                 return False
             if session['cancellation_requested']:
@@ -852,7 +852,7 @@ def replace_roman_numbers(text):
     text = roman_chapter_pattern.sub(replace_chapter_match, text)
     text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
     return text
-    
+'''
 def stop_and_detach_tts(tts=None):
     if tts is not None:
         if next(tts.parameters()).is_cuda:
@@ -860,7 +860,7 @@ def stop_and_detach_tts(tts=None):
         del tts
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-
+'''
 def delete_old_web_folders(root_dir):
     try:
         if not os.path.exists(root_dir):
@@ -1285,7 +1285,7 @@ def web_interface(args):
         def update_interface():
             nonlocal is_converting
             is_converting = False
-            return gr.update('Convert', variant='primary', interactive=False), gr.update(), gr.update(value=audiobook_file), update_audiobooks_ddn(), hide_modal()
+            return gr.update('Convert', variant='primary', interactive=False), gr.update(value=None), gr.update(value=None), gr.update(value=audiobook_file), update_audiobooks_ddn(), hide_modal()
 
         def refresh_audiobook_list():
             files = []
@@ -1469,6 +1469,7 @@ def web_interface(args):
 
             if args["ebook"] is None:
                 yield gr.update(value='Error: a file is required.')
+                return
 
             try:
                 is_converting = True
@@ -1476,13 +1477,16 @@ def web_interface(args):
                 if audiobook_file is None:
                     if is_converting:
                         yield gr.update(value='Conversion cancelled.')
+                        return
                     else:
                         yield gr.update(value='Conversion failed.')
+                        return
                 else:
                     yield progress_status
+                    return
             except Exception as e:
                 yield DependencyError(e)
-            return
+                return
 
         gr_ebook_file.change(
             fn=update_convert_btn,
@@ -1559,7 +1563,7 @@ def web_interface(args):
         ).then(
             fn=update_interface,
             inputs=None,
-            outputs=[gr_convert_btn, gr_ebook_file, gr_audio_player, gr_audiobooks_ddn, gr_modal_html]
+            outputs=[gr_convert_btn, gr_ebook_file, gr_voice_file, gr_audio_player, gr_audiobooks_ddn, gr_modal_html]
         )
         interface.load(
             fn=None,
