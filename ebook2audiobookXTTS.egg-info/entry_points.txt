@@ -1,0 +1,2 @@
+[console_scripts]
+ebook2audiobook = app:main

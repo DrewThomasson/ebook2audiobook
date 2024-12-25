@@ -1,0 +1,53 @@
+# Use a minimal Debian-based image with GNU libc 2.35 or later
+FROM debian:bookworm-slim
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV LC_ALL=C.UTF-8
+ENV LANG=C.UTF-8
+ENV LANGUAGE=C.UTF-8
+ENV QTWEBENGINE_CHROMIUM_FLAGS="--no-sandbox"
+
+# Install required dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    wget \
+    xz-utils \
+    python3 \
+    python3-pip \
+    ffmpeg \
+    libegl1 \
+    libopengl0 \
+    libgl1-mesa-glx \
+    libxcb-cursor0 \
+    libxkbcommon0 \
+    libxkbfile1 \
+    libnss3 \
+    libx11-6 \
+    libxext6 \
+    libxrender1 \
+    libxtst6 \
+    libxrandr2 \
+    libxcomposite1 \
+    qtbase5-dev \
+    libqt5webenginecore5 \
+    libqt5webenginewidgets5 \
+    libqt5webchannel5 \
+    libqt5websockets5 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install Calibre (specifically for CLI use like ebook-convert)
+RUN wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sh /dev/stdin
+
+# Add Calibre's CLI tools to PATH
+ENV PATH="/opt/calibre:${PATH}"
+
+# Default working directory
+WORKDIR /app
+
+# Modified ENTRYPOINT to print the command and its arguments
+ENTRYPOINT ["/bin/sh", "-c", "echo 'Running command: $0 $@'; exec \"$0\" \"$@\""]
+
+# CMD to pass arguments dynamically
+CMD ["sh", "-c"]
+
