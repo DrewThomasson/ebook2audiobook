@@ -757,7 +757,7 @@ def combine_audio_chapters(session):
                 ffmpeg_cmd += ['-pix_fmt', 'yuv420p']            
             ffmpeg_cmd += [
                 '-af', 
-                'agate=threshold=-35dB:ratio=1.5:attack=10:release=200,acompressor=threshold=-20dB:ratio=3:attack=50:release=200:makeup=0dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true,afftdn=nf=-30,equalizer=f=12000:t=q:w=2:g=3',
+                'agate=threshold=-35dB:ratio=1.5:attack=10:release=200,acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true,afftdn=nf=-50,equalizer=f=150:t=q:w=2:g=2,equalizer=f=250:t=q:w=2:g=-2,equalizer=f=12000:t=q:w=2:g=2',
                 '-movflags', '+faststart', '-y', ffmpeg_final_file
             ]
             if session['script_mode'] == DOCKER_UTILS:
