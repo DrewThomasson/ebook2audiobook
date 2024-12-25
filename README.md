@@ -6,6 +6,9 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
 Use this tool responsibly and in accordance with all applicable laws.
 
+
+[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bg5Kx43c6w)
+
 #### 🖥️ New v2.0 Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -394,7 +397,5 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
 
 ## Join Our Discord Server!
-
-Click the badge below to join the [Ebook2audiobook Discord Server](https://discord.gg/zk8AAd4T)!
 
 [![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bg5Kx43c6w)
