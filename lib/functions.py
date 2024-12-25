@@ -757,7 +757,7 @@ def combine_audio_chapters(session):
                 ffmpeg_cmd += ['-pix_fmt', 'yuv420p']            
             ffmpeg_cmd += [
                 '-af', 
-                'agate=threshold=-35dB:ratio=1.5:attack=10:release=200,acompressor=threshold=-20dB:ratio=3:attack=50:release=200:makeup=0dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true,afftdn=nf=-30,equalizer=f=3000:t=q:w=2:g=3,equalizer=f=100:t=q:w=2:g=-6',
+                'agate=threshold=-35dB:ratio=1.5:attack=10:release=200,acompressor=threshold=-20dB:ratio=3:attack=50:release=200:makeup=0dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true,afftdn=nf=-30,equalizer=f=12000:t=q:w=2:g=3',
                 '-movflags', '+faststart', '-y', ffmpeg_final_file
             ]
             if session['script_mode'] == DOCKER_UTILS:
@@ -1302,13 +1302,17 @@ def web_interface(args):
                     return link, link, gr.update(visible=True)
             return None, None, gr.update(visible=False)
             
-        def update_convert_btn(upload_file, custom_model_file, session_id):
-            session = context.get_session(session_id)
-            if hasattr(upload_file, 'name') and not hasattr(custom_model_file, 'name'):
-                yield gr.update(variant='primary', interactive=True)
+        def update_convert_btn(upload_file=None, custom_model_file=None, session_id=None):
+            if session_id is None:
+                yield gr.update(variant='primary', interactive=False)
+                return
             else:
-                yield gr.update(variant='primary', interactive=False)   
-            return
+                session = context.get_session(session_id)
+                if hasattr(upload_file, 'name') and not hasattr(custom_model_file, 'name'):
+                    yield gr.update(variant='primary', interactive=True)
+                else:
+                    yield gr.update(variant='primary', interactive=False)   
+                return
 
         def update_audiobooks_ddn():
             files = refresh_audiobook_list()
@@ -1393,6 +1397,12 @@ def web_interface(args):
                 yield gr.update(), gr.update(), gr.update(value=f'Error: {str(e)}')
                 return
 
+        def change_gr_tts_engine(engine):
+            if engine == 'xtts':
+                return gr.update(visible=True)
+            else:
+                return gr.update(visible=False)
+            
         def change_gr_fine_tuned(fine_tuned):
             visible = False
             if fine_tuned == 'std':
@@ -1503,6 +1513,11 @@ def web_interface(args):
             inputs=gr_custom_model_list,
             outputs=gr_fine_tuned
         )
+        gr_tts_engine.change(
+            fn=change_gr_tts_engine,
+            inputs=gr_tts_engine,
+            outputs=gr_tab_preferences
+        )
         gr_fine_tuned.change(
             fn=change_gr_fine_tuned,
             inputs=gr_fine_tuned,
@@ -1530,6 +1545,10 @@ def web_interface(args):
             outputs=[gr_data, gr_session_status, gr_session, gr_audiobooks_ddn, gr_custom_model_list]
         )       
         gr_convert_btn.click(
+            fn=update_convert_btn,
+            inputs=None,
+            outputs=gr_convert_btn
+        ).then(
             fn=submit_convert_btn,
             inputs=[
                 gr_session, gr_device, gr_ebook_file, gr_voice_file, gr_language, 
