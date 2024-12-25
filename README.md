@@ -16,7 +16,6 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 ## README.md
 - en [English](README.md)
 - zh_CN [简体中文](readme/README_CN.md)
-- ru [Русский](readme/README_RU.md)
 
 
 ## 🌟 Features
