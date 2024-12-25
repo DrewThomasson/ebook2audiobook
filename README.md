@@ -397,4 +397,4 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 Click the badge below to join the [Ebook2audiobook Discord Server](https://discord.gg/zk8AAd4T)!
 
-[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/zk8AAd4T)
+[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bg5Kx43c6w)
