@@ -1042,9 +1042,9 @@ def convert_ebook(args):
         return e, None
 
 def web_interface(args):
-    script_mode = args.script_mode
-    is_gui_process = args.is_gui_process
-    is_gui_shared = args.share
+    script_mode = args['script_mode']
+    is_gui_process = args['is_gui_process']
+    is_gui_shared = args['share']
     is_converting = False
     audiobooks_dir = None
     ebook_src = None
@@ -1459,20 +1459,21 @@ def web_interface(args):
             }
 
             if args["ebook"] is None:
-                return gr.update(value='Error: a file is required.')
+                yield gr.update(value='Error: a file is required.')
 
             try:
                 is_converting = True
                 progress_status, audiobook_file = convert_ebook(args)
                 if audiobook_file is None:
                     if is_converting:
-                        return gr.update(value='Conversion cancelled.')
+                        yield gr.update(value='Conversion cancelled.')
                     else:
-                        return gr.update(value='Conversion failed.')
+                        yield gr.update(value='Conversion failed.')
                 else:
-                    return progress_status
+                    yield progress_status
             except Exception as e:
-                return DependencyError(e)
+                yield DependencyError(e)
+            return
 
         gr_ebook_file.change(
             fn=update_convert_btn,
