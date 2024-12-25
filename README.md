@@ -40,6 +40,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 - [Output](#output)
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
+- [Join Our Discord Server!](#join-our-discord-server)
 - [Glossary of Sections](#glossary-of-sections)
 
 
