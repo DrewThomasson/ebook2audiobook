@@ -20,6 +20,28 @@ Use this tool responsibly and in accordance with all applicable laws.
 ## README.md
 - en [English](README.md)
 
+## Table of Contents
+
+- [📚 ebook2audiobook](#-📚-ebook2audiobook)
+- [🌟 Features](#-🌟-features)
+- [🖥️ New v2.0 Web GUI Interface](#-🖥️-new-v20-web-gui-interface)
+- [🤗 Huggingface Space Demo](#-🤗-huggingface-space-demo)
+- [Free Google Colab](#free-google-colab)
+- [🌐 Supported Languages](#-🌐-supported-languages)
+- [🛠️ Requirements](#-🛠️-requirements)
+- [🔧 Installation Instructions](#-🔧-installation-instructions)
+- [🚀 Usage](#-🚀-usage)
+  - [🖥️ Launching Gradio Web Interface](#-🖥️-launching-gradio-web-interface)
+  - [📝 Basic Headless Usage](#-📝-basic-headless-usage)
+  - [🧩 Headless Custom XTTS Model Usage](#-🧩-headless-custom-xtts-model-usage)
+- [🛠️ For Custom XTTS Models](#-🛠️-for-custom-xtts-models)
+- [🐳 Using Docker](#-🐳-using-docker)
+- [📚 Supported eBook Formats](#-📚-supported-ebook-formats)
+- [📂 Output](#-📂-output)
+- [🛠️ Common Issues](#-🛠️-common-issues)
+- [🙏 Special Thanks](#-🙏-special-thanks)
+- [📖 Glossary of Sections](#-📖-glossary-of-sections)
+
 
 ## 🌟 Features
 
