@@ -2,6 +2,7 @@ import argparse
 import csv
 import docker
 import ebooklib
+import fnmatch
 import gradio as gr
 import hashlib
 import json
@@ -531,10 +532,11 @@ def convert_chapters_to_audio(session):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{audioproc_format}'
                 sentences = session['chapters'][x]
+                sentences_count = len(sentences)
                 start = current_sentence  # Mark the starting sentence of the chapter
-                print(f"\nChapter {chapter_num} containing {len(sentences)} sentences...")
+                print(f"\nChapter {chapter_num} containing {sentences_count} sentences...")
                 for i, sentence in enumerate(sentences):
-                    if current_sentence >= resume_sentence and resume_sentence > 0 or resume_sentence == 0:
+                    if current_sentence >= resume_sentence:
                         params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{current_sentence}.{audioproc_format}')                       
                         params['sentence'] = sentence
                         if convert_sentence_to_audio(params, session):
@@ -549,11 +551,13 @@ def convert_chapters_to_audio(session):
                             return False
                     current_sentence += 1
                 end = current_sentence - 1
-                if combine_audio_sentences(chapter_audio_file, start, end, session):
-                    print(f'Combining chapter {chapter_num} to audio, sentence {start} to {end}')
-                else:
-                    print('combine_audio_sentences() failed!')
-                    return False
+                print(f"\nEnd of Chapter {chapter_num}")
+                if start >= resume_sentence:
+                    if combine_audio_sentences(chapter_audio_file, start, end, session):
+                        print(f'Combining chapter {chapter_num} to audio, sentence {start} to {end}')
+                    else:
+                        print('combine_audio_sentences() failed!')
+                        return False
         return True
     except Exception as e:
         raise DependencyError(e)
@@ -751,8 +755,11 @@ def combine_audio_chapters(session):
                     ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)                    
             if ffmpeg_cover is not None and ffmpeg_cover.endswith('.png'):
                 ffmpeg_cmd += ['-pix_fmt', 'yuv420p']            
-            ffmpeg_cmd += ['-af', 'agate=threshold=-33dB:ratio=2:attack=5:release=100,acompressor=threshold=-20dB:ratio=2.5:attack=50:release=200:makeup=0dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true']
-            ffmpeg_cmd += ['-movflags', '+faststart', '-y', ffmpeg_final_file]
+            ffmpeg_cmd += [
+                '-af', 
+                'agate=threshold=-35dB:ratio=1.5:attack=10:release=200,acompressor=threshold=-20dB:ratio=3:attack=50:release=200:makeup=0dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true,afftdn=nf=-30,equalizer=f=3000:t=q:w=2:g=3,equalizer=f=100:t=q:w=2:g=-6',
+                '-movflags', '+faststart', '-y', ffmpeg_final_file
+            ]
             if session['script_mode'] == DOCKER_UTILS:
                 try:
                     container = session['client'].containers.run(
@@ -994,6 +1001,20 @@ def convert_ebook(args):
                                 if convert_chapters_to_audio(session):
                                     final_file = combine_audio_chapters(session)               
                                     if final_file is not None:
+                                        chapters_dirs = [
+                                            dir_name for dir_name in os.listdir(session['tmp_dir'])
+                                            if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['tmp_dir'], dir_name))
+                                        ]
+                                        if len(chapters_dirs) > 1:
+                                            if os.path.exists(session['chapters_dir']):
+                                                shutil.rmtree(session['chapters_dir'])
+                                            if os.path.exists(session['epub_path']):
+                                                os.remove(session['epub_path'])
+                                            if os.path.exists(session['cover']):
+                                                os.remove(session['cover'])
+                                        else:
+                                            if os.path.exists(session['tmp_dir']):
+                                                shutil.rmtree(session['tmp_dir'])
                                         progress_status = f'Audiobook {os.path.basename(final_file)} created!'
                                         return progress_status, final_file 
                                     else:
@@ -1021,9 +1042,9 @@ def convert_ebook(args):
         return e, None
 
 def web_interface(args):
-    script_mode = args.script_mode
-    is_gui_process = args.is_gui_process
-    is_gui_shared = args.share
+    script_mode = args['script_mode']
+    is_gui_process = args['is_gui_process']
+    is_gui_shared = args['share']
     is_converting = False
     audiobooks_dir = None
     ebook_src = None
@@ -1114,7 +1135,7 @@ def web_interface(args):
                         with gr.Group():
                             gr_ebook_file = gr.File(label='EBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)', file_types=['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw'])
                         with gr.Group():
-                            gr_voice_file = gr.File(label='*Cloning Voice (a .wav 24000hz for XTTS base model and 16000hz for FAIRSEQ base model, no more than 6 sec)', file_types=['.wav'], visible=interface_component_options['gr_voice_file'])
+                            gr_voice_file = gr.File(label='*Cloning Voice (a .wav 24khz for XTTS base model and 16khz for FAIRSEQ base model, no more than 6 sec)', file_types=['.wav'], visible=interface_component_options['gr_voice_file'])
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
                             gr_device = gr.Radio(label='Processor Unit', choices=['CPU', 'GPU'], value='CPU')
@@ -1438,20 +1459,21 @@ def web_interface(args):
             }
 
             if args["ebook"] is None:
-                return gr.update(value='Error: a file is required.')
+                yield gr.update(value='Error: a file is required.')
 
             try:
                 is_converting = True
                 progress_status, audiobook_file = convert_ebook(args)
                 if audiobook_file is None:
                     if is_converting:
-                        return gr.update(value='Conversion cancelled.')
+                        yield gr.update(value='Conversion cancelled.')
                     else:
-                        return gr.update(value='Conversion failed.')
+                        yield gr.update(value='Conversion failed.')
                 else:
-                    return progress_status
+                    yield progress_status
             except Exception as e:
-                return DependencyError(e)
+                yield DependencyError(e)
+            return
 
         gr_ebook_file.change(
             fn=update_convert_btn,
