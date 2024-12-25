@@ -187,7 +187,7 @@ Linux/Mac:
                 if os.path.exists(args['ebooks_dir']):
                     new_ebooks_dir = os.path.abspath(args['ebooks_dir'])
                 else:
-                    print(f'Error: The provided --ebooks_dir "{args['ebooks_dir']}" does not exist.')
+                    print(f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.')
                     sys.exit(1)
                     
             if os.path.exists(new_ebooks_dir):
