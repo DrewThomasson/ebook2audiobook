@@ -60,7 +60,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ## Free Google Colab [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
 
-## 🌐 Supported Languages
+## Supported Languages
 
 - **Arabic (ar)**
 - **Chinese (zh-cn)**
