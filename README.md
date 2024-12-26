@@ -6,6 +6,9 @@ Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui 
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
 Use this tool responsibly and in accordance with all applicable laws.
 
+
+[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bg5Kx43c6w)
+
 #### 🖥️ New v2.0 Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -206,11 +209,11 @@ To run the Docker container and start the Gradio interface, use the following co
 
  -Run with CPU only
 ```powershell
-docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook:huggingface python app.py
+docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
 ```
  -Run with GPU Speedup (Nvida graphics cards only)
 ```powershell
-docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook:huggingface python app.py
+docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
 ```
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
@@ -395,6 +398,4 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 ## Join Our Discord Server!
 
-Click the badge below to join the [Ebook2audiobook Discord Server](https://discord.gg/zk8AAd4T)!
-
-[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/zk8AAd4T)
+[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bg5Kx43c6w)
