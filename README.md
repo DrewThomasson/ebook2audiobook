@@ -368,17 +368,6 @@ David Attenborough voice
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 
-## [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
-
-- Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
-- Best to duplicate space or run locally.
-
-## Free Google Colab 
-[![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
-
-
-
 ## Supported eBook Formats
 
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
