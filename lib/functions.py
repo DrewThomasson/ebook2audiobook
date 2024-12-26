@@ -462,12 +462,12 @@ def normalize_audio_file(voice_file, session):
     ]
     try:
         # Run FFmpeg command
-        print(f"Processing file: {input_file}")
+        print(f"Processing file: {voice_file}")
         subprocess.run(ffmpeg_cmd, check=True)
         print(f"Processed file saved to: {output_file}")
         return output_file
     except subprocess.CalledProcessError as e:
-        print(f"Error processing file {input_file}: {e}")
+        print(f"Error processing file {voice_file}: {e}")
         return None
     except Exception as e:
         print(f"Unexpected error: {e}")
