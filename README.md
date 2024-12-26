@@ -63,25 +63,26 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ## Supported Languages
 
-- **Arabic (ar)**
-- **Chinese (zh-cn)**
-- **Czech (cs)**
-- **Dutch (nl)**
-- **English (en)**
-- **French (fr)**
-- **German (de)**
-- **Hindi (hi)**
-- **Hungarian (hu)**
-- **Italian (it)**
-- **Japanese (ja)**
-- **Korean (ko)**
-- **Polish (pl)**
-- **Portuguese (pt)**
-- **Russian (ru)**
-- **Spanish (es)**
-- **Turkish (tr)**
-- **Vietnamese (vi)**
+- **Arabic (ara)**
+- **Chinese (zho)**
+- **Czech (ces)**
+- **Dutch (nld)**
+- **English (eng)**
+- **French (fra)**
+- **German (deu)**
+- **Hindi (hin)**
+- **Hungarian (hun)**
+- **Italian (ita)**
+- **Japanese (jpn)**
+- **Korean (kor)**
+- **Polish (pol)**
+- **Portuguese (por)**
+- **Russian (rus)**
+- **Spanish (spa)**
+- **Turkish (tur)**
+- **Vietnamese (vie)**
 - [** + 1107 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+
 
 ##  Requirements
 
