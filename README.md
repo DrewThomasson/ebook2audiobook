@@ -37,7 +37,7 @@ Use this tool responsibly and in accordance with all applicable laws.
   - [Launching Gradio Web Interface](#launching-gradio-web-interface)
   - [Basic Headless Usage](#basic-headless-usage)
   - [Headless Custom XTTS Model Usage](#headless-custom-xtts-model-usage)
-- [For Custom XTTS Models](#for-custom-xtts-models)
+- [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-models)
 - [Using Docker](#using-docker)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output](#output)
@@ -352,24 +352,10 @@ Linux/Mac:
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
-### For Custom Xtts Models
+## Fine Tuned TTS models
 
-Models built to be better at a specific voice. Check out my Hugging Face page [here](https://huggingface.co/drewThomasson).
-
-To use a custom model, paste the link of the `Finished_model_files.zip` file like this:
-
-[David Attenborough fine tuned Finished_model_files.zip](https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true)
-
-For a custom model a ref audio clip of the voice will also be needed:
-[ref audio clip of David Attenborough](https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/blob/main/ref.wav)
-
-
-
-More details can be found at the [Dockerfile Hub Page]([https://github.com/DrewThomasson/ebook2audiobook](https://hub.docker.com/repository/docker/athomasson2/ebook2audiobook/general)).
-
-## Fine Tuned Xtts models
-
-To find already fine-tuned XTTS models, visit [this Hugging Face link](https://huggingface.co/drewThomasson) 🌐. Search for models that include "xtts fine tune" in their names.
+To find our collection of already fine-tuned TTS models, visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
+For an XTTS custom model a ref audio clip of the voice will also be needed:
 
 ## Demos
 
