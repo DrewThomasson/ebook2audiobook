@@ -445,7 +445,8 @@ def get_sentences(sentence, language, max_pauses=9):
     
 def normalize_audio_file(voice_file, session):
     filename = os.path.basename(voice_file)
-    output_file = os.path.join(session['tmp_dir'], session['filename_noext'].replace('&', 'And').replace(' ', '_') + '_voice.wav')
+    output_file = session['filename_noext'].replace('&', 'And').replace(' ', '_') 
+    output_file = os.path.join(session['tmp_dir'], output_file) + '_voice.wav'
     ffmpeg_cmd = [
         'ffmpeg', '-i', input_file,
         '-af', 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
