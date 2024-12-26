@@ -209,11 +209,11 @@ To run the Docker container and start the Gradio interface, use the following co
 
  -Run with CPU only
 ```powershell
-docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook:huggingface python app.py
+docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
 ```
  -Run with GPU Speedup (Nvida graphics cards only)
 ```powershell
-docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook:huggingface python app.py
+docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
 ```
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
