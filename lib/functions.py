@@ -444,11 +444,10 @@ def get_sentences(sentence, language, max_pauses=9):
     return parts
     
 def normalize_audio_file(voice_file, session):
-    filename = os.path.basename(voice_file)
     output_file = session['filename_noext'].replace('&', 'And').replace(' ', '_') 
     output_file = os.path.join(session['tmp_dir'], output_file) + '_voice.wav'
     ffmpeg_cmd = [
-        'ffmpeg', '-i', input_file,
+        'ffmpeg', '-i', voice_file,
         '-af', 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
                'afftdn=nf=-70,'
                'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
