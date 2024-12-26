@@ -946,7 +946,6 @@ def convert_ebook(args):
             session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')
 
             if not is_gui_process:
-                print(f'*********** Session: {session_id}', '************* Store it in case of interruption or crash you can resume the conversion')
                 session['custom_model_dir'] = os.path.join(models_dir,'__sessions',f"model-{session['id']}")
                 if custom_model_file:
                     session['custom_model'], progression_status = extract_custom_model(custom_model_file, session['custom_model_dir'])
@@ -1015,6 +1014,8 @@ def convert_ebook(args):
                                             if os.path.exists(session['tmp_dir']):
                                                 shutil.rmtree(session['tmp_dir'])
                                         progress_status = f'Audiobook {os.path.basename(final_file)} created!'
+                                        if not is_gui_process:
+                                            print(f'*********** Session: {session_id}', '************* Store it in case of interruption or crash you can resume the conversion')
                                         return progress_status, final_file 
                                     else:
                                         error = 'combine_audio_chapters() error: final_file not created!'
