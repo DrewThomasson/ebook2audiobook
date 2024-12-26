@@ -1,6 +1,7 @@
 # 📚 ebook2audiobook
 
-Convert eBooks to audiobooks with chapters and metadata using Calibre and Coqui XTTS. Supports optional voice cloning and multiple languages!
+CPU/GPU Converter from eBooks to audiobooks with chapters and metadata using Calibre XTTSv2, Fairseq (and more).
+Supports  voice cloning and 1124 languages!
 > [!IMPORTANT]
 **This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
