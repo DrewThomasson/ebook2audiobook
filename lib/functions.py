@@ -442,6 +442,36 @@ def get_sentences(sentence, language, max_pauses=9):
     if sentence:
         parts.append(sentence.strip() + ' ')
     return parts
+    
+def normalize_audio_file(voice_file, session):
+    output_file = session['filename_noext'].replace('&', 'And').replace(' ', '_') 
+    output_file = os.path.join(session['tmp_dir'], output_file) + '_voice.wav'
+    ffmpeg_cmd = [
+        'ffmpeg', '-i', voice_file,
+        '-af', 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
+               'afftdn=nf=-70,'
+               'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
+               'loudnorm=I=-16:TP=-3:LRA=7:linear=true,'
+               'equalizer=f=250:t=q:w=2:g=-3,'
+               'equalizer=f=150:t=q:w=2:g=2,'
+               'equalizer=f=3000:t=q:w=2:g=3,'
+               'equalizer=f=5500:t=q:w=2:g=-4,'
+               'equalizer=f=9000:t=q:w=2:g=-2,'
+               'highpass=f=63',
+        '-y', output_file
+    ]
+    try:
+        # Run FFmpeg command
+        print(f"Processing file: {input_file}")
+        subprocess.run(ffmpeg_cmd, check=True)
+        print(f"Processed file saved to: {output_file}")
+        return output_file
+    except subprocess.CalledProcessError as e:
+        print(f"Error processing file {input_file}: {e}")
+        return None
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return None
 
 def convert_chapters_to_audio(session):
     try:
@@ -476,6 +506,10 @@ def convert_chapters_to_audio(session):
                 params['tts'].load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
                 print('Computing speaker latents...')
                 params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else voice_path
+                params['voice_file'] = normalize_audio_file(params['voice_file'], session)
+                if params['voice_file'] is None:
+                    print('Voice file cannot be normalized!')
+                    return False
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
             elif session['fine_tuned'] != 'std':
                 print(f"Loading TTS {params['tts_model']} model from {session['fine_tuned']}...")
@@ -492,11 +526,19 @@ def convert_chapters_to_audio(session):
                 params['tts'].load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
                 print('Computing speaker latents...')
                 params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['voice_file'] = normalize_audio_file(params['voice_file'], session)
+                if params['voice_file'] is None:
+                    print('Voice file cannot be normalized!')
+                    return False
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_file']])
             else:
                 print(f"Loading TTS {params['tts_model']} model from {models[params['tts_model']][session['fine_tuned']]['repo']}...")
                 params['tts'] = XTTS(model_name=models[params['tts_model']][session['fine_tuned']]['repo'])
                 params['voice_file'] = session['voice_file'] if session['voice_file'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['voice_file'] = normalize_audio_file(params['voice_file'], session)
+                if params['voice_file'] is None:
+                    print('Voice file cannot be normalized!')
+                    return False
             params['tts'].to(session['device'])
         else:
             params['tts_model'] = 'fairseq'
@@ -755,11 +797,7 @@ def combine_audio_chapters(session):
                     ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)                    
             if ffmpeg_cover is not None and ffmpeg_cover.endswith('.png'):
                 ffmpeg_cmd += ['-pix_fmt', 'yuv420p']            
-            ffmpeg_cmd += [
-                '-af', 
-                'agate=threshold=-35dB:ratio=1.5:attack=10:release=200,acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,loudnorm=I=-19:TP=-3:LRA=7:linear=true,afftdn=nf=-50,equalizer=f=150:t=q:w=2:g=2,equalizer=f=250:t=q:w=2:g=-2,equalizer=f=12000:t=q:w=2:g=2',
-                '-movflags', '+faststart', '-y', ffmpeg_final_file
-            ]
+            ffmpeg_cmd += ['-movflags', '+faststart', '-y', ffmpeg_final_file]
             if session['script_mode'] == DOCKER_UTILS:
                 try:
                     container = session['client'].containers.run(
@@ -946,7 +984,6 @@ def convert_ebook(args):
             session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')
 
             if not is_gui_process:
-                print(f'*********** Session: {session_id}', '************* Store it in case of interruption or crash you can resume the conversion')
                 session['custom_model_dir'] = os.path.join(models_dir,'__sessions',f"model-{session['id']}")
                 if custom_model_file:
                     session['custom_model'], progression_status = extract_custom_model(custom_model_file, session['custom_model_dir'])
@@ -1015,6 +1052,8 @@ def convert_ebook(args):
                                             if os.path.exists(session['tmp_dir']):
                                                 shutil.rmtree(session['tmp_dir'])
                                         progress_status = f'Audiobook {os.path.basename(final_file)} created!'
+                                        if not is_gui_process:
+                                            print(f'*********** Session: {session_id}', '************* Store it in case of interruption or crash you can resume the conversion')
                                         return progress_status, final_file 
                                     else:
                                         error = 'combine_audio_chapters() error: final_file not created!'
