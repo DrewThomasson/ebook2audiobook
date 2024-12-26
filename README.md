@@ -220,10 +220,6 @@ Linux/Mac:
 
 
 ```
-### [Legacy V1.0](legacy/v1.0)
-
-You can view the code [here](legacy/v1.0).
-
 
 ### Using Docker
 
@@ -424,6 +420,10 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 
 - [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+
+### [Legacy V1.0](legacy/v1.0)
+
+You can view the code [here](legacy/v1.0).
 
 ## Join Our Discord Server!
 
