@@ -16,6 +16,7 @@ mecab-python3
 pydub
 pypinyin
 ray
+regex
 transformers
 translate
 tqdm
