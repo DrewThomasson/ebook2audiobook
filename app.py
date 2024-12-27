@@ -1,6 +1,6 @@
 import argparse
 import os
-import regex as re
+import re
 import socket
 import subprocess
 import sys
