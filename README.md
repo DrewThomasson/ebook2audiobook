@@ -411,7 +411,7 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 ## What I need help with! 🙌 
 ## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
-- Any help from people speaking any of the supported langues to help with proper sentence splitting methods
+- Any help from people speaking any of the supported languages to help with proper sentence splitting methods
 - Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
 
 ## Special Thanks
