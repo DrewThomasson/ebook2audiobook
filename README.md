@@ -31,6 +31,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 - [New v2.0 Web GUI Interface](#new-v20-web-gui-interface)
 - [Huggingface Space Demo](#huggingface-space-demo)
 - [Free Google Colab](#free-google-colab)
+- [Pre-made Audio Demos](#demos)
 - [Supported Languages](#supported-languages)
 - [Requirements](#requirements)
 - [Installation Instructions](#installation-instructions)
