@@ -1,0 +1,23 @@
+x-gpu-enabled: &gpu-enabled
+  devices:
+    - driver: nvidia
+      count: all
+      capabilities:
+        - gpu
+
+x-gpu-disabled: &gpu-disabled
+  devices: []               
+
+services:
+  ebook2audiobookxtts:
+    image: athomasson2/ebook2audiobookxtts:huggingface
+    platform: linux/amd64
+    tty: true
+    stdin_open: true
+    ports:
+      - 7860:7860
+    command: python app.py
+    deploy:
+      resources:
+        reservations:
+          <<: *gpu-disabled # change this to gpu-enabled if you have an NVIDIA gpu

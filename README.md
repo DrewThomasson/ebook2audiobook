@@ -41,6 +41,7 @@ Use this tool responsibly and in accordance with all applicable laws.
   - [Headless Custom XTTS Model Usage](#headless-custom-xtts-model-usage)
 - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-models)
 - [Using Docker](#using-docker)
+  - [Docker Compose](#docker-compose)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output](#output)
 - [Common Issues](#common-issues)
@@ -343,6 +344,29 @@ Linux/Mac:
     ./ebook2audiobook.sh
 ```
 </details>
+
+### Docker Compose
+
+This project uses Docker Compose to run locally. You can enable or disable GPU support by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
+
+#### Steps to Run
+
+1. **Clone the Repository** (if you haven't already):
+   ```bash
+   git clone https://github.com/DrewThomasson/ebook2audiobook.git
+   cd ebook2audiobook
+   ```
+
+2. **Set GPU Support (disabled by default)**
+  To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
+
+3. **Start the service:**
+    ```bash
+    docker-compose up -d
+    ```
+
+4. **Access the service:**
+  The service will be available at http://localhost:7860.
 
 #### New v2.0 Docker Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
