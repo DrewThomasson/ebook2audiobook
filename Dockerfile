@@ -37,7 +37,7 @@ ENV PATH=/opt/conda/bin:$PATH
 RUN conda create -n ebookenv python=3.12 -y
 
 # Clone the ebook2audiobookXTTS repository
-RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git .
+RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git
 
 # Set the working directory in the container
 WORKDIR /ebook2audiobook
@@ -57,3 +57,6 @@ EXPOSE 7860
 
 # Set the command to run your GUI application using the conda environment
 CMD ["conda", "run", "--no-capture-output", "-n", "ebookenv", "python", "app.py"]
+
+# Build with this command 
+# docker build --no-cache --platform linux/amd64 -t ebook2audiobook .
