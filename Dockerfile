@@ -1,11 +1,14 @@
-# Use NVIDIA CUDA base image
+# Use NVIDIA CUDA base image with Python 3.12 (ensure the correct version)
 FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
 
 # Prevent interactive prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies
+# Install Python 3.12 and dependencies
 RUN apt-get update && apt-get install -y \
+    python3.12 \
+    python3.12-distutils \
+    python3.12-dev \
     python3-pip \
     wget \
     git \
@@ -18,8 +21,11 @@ RUN apt-get update && apt-get install -y \
     mecab-ipadic-utf8 \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade setuptools to avoid version conflict
-RUN pip install --upgrade setuptools
+# Update alternatives to use Python 3.12 as the default python3 version
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+
+# Upgrade pip and setuptools for Python 3.12
+RUN python3 -m pip install --upgrade pip setuptools
 
 # Install Calibre using the official installer
 RUN wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sh /dev/stdin
