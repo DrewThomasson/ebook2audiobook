@@ -10,14 +10,14 @@ Verwenden Sie dieses Tool verantwortungsbewusst und in Übereinstimmung mit alle
 
 [![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bg5Kx43c6w)
 
-#### Neue v2.0 Weboberfläche!
-![demo_web_gui](assets/demo_web_gui.gif)
+#### Neue v2.0 Weboberfläche
+![demo_web_gui](../assets/demo_web_gui.gif)
 
 <details>
   <summary>Klicken Sie hier, um Bilder der Weboberfläche zu sehen!</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="../assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="../assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="../assets/gui_3.png">
 </details>
 
 ## README.md
@@ -26,26 +26,26 @@ Verwenden Sie dieses Tool verantwortungsbewusst und in Übereinstimmung mit alle
 ## Inhaltsverzeichnis
 
 - [ebook2audiobook](#ebook2audiobook)
-- [Features](#features)
-- [Neue v2.0 Weboberfläche!](#new-v20-web-gui-interface)
+- [Funktionen](#funktionen)
+- [Neue v2.0 Weboberfläche!](#neue-v2.0-weboberfläche)
 - [Huggingface Space Demo](#huggingface-space-demo)
-- [Kostenloses Google Colab](#free-google-colab)
-- [Vorgefertigte Audio-Beispiele](#demos)
-- [Unterstützte Sprachen](#supported-languages)
-- [Systemanforderungen](#requirements)
-- [Installationsanleitung](#installation-instructions)
-- [Verwendung](#usage)
-  - [Gradio Weboberfläche starten](#launching-gradio-web-interface)
-  - [Alternative Verwendung in der Konsole](#basic-headless-usage)
-  - [Verwendung von besonderen XTTS Modellen](#headless-custom-xtts-model-usage)
-- [Sammlung von Fine-Tuned TTS Models](#fine-tuned-tts-models)
-- [Benutzung mit Docker](#using-docker)
-- [Unterstützte eBook Formate](#supported-ebook-formats)
-- [Ausgabeformate](#output)
-- [Häufige Probleme](#common-issues)
-- [Besonderer Dank](#special-thanks)
-- [Treten SIe unserem Discord Server bei!](#join-our-discord-server)
-- [Glossar der Abschnitte](#glossary-of-sections)
+- [Kostenloses Google Colab](#kostenloses-google-colab)
+- [Vorgefertigte Audio-Beispiele](#vorgefertigte-audio-beispiele)
+- [Unterstützte Sprachen](#unterstützte-sprachen)
+- [Systemanforderungen](#systemanforderungen)
+- [Installationsanleitung](#installationsanleitung)
+- [Verwendung](#verwendung)
+  - [Gradio Weboberfläche starten](#gradio-weboberfläche-starten)
+  - [Grundlegende Verwendung in der Konsole](#grundlegende-verwendung-in-der-konsole)
+  - [Verwendung von besonderen XTTS Modellen](#verwendung-von-besonderen-xtts-modellen)
+- [Sammlung von Fine-Tuned TTS Modellen](#sammlung-von-fine-tuned-tts-modellen)
+- [Benutzung mit Docker](#benutzung-mit-docker)
+- [Unterstützte eBook Formate](#unterstützte-ebook-formate)
+- [Ausgabeformate](#ausgabeformate)
+- [Häufige Probleme](#häufige-probleme)
+- [Besonderer Dank](#besonderer-dank)
+- [Trete unserem Discord Server bei](#trete-unserem-discord-server-bei)
+
 
 ## Funktionen
 
@@ -87,12 +87,12 @@ Verwenden Sie dieses Tool verantwortungsbewusst und in Übereinstimmung mit alle
 - **Vietnamesisch (vie)**
 - [** + 1107 Sprachen über Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
-## Anforderungen
+## Systemanforderungen
 
 - 4 GB RAM
 - Virtualisierung aktiviert, wenn unter Windows ausgeführt (nur Docker)
 
-### Installationsanweisungen
+### Installationsanleitung
 
 1. **Klone das Git-Repository**
 ```bash
@@ -220,7 +220,7 @@ Linux/Mac:
 
 ```
 
-### Verwenden von Docker
+### Benutzung mit Docker
 
 Sie können Docker auch verwenden, um den eBook-zu-Hörbuch-Konverter auszuführen. Diese Methode gewährleistet Konsistenz in verschiedenen Umgebungen und vereinfacht die Einrichtung.
 
@@ -341,21 +341,21 @@ Linux/Mac:
 </details>
 
 #### Neue v2.0 Docker Weboberfäche!
-![demo_web_gui](assets/demo_web_gui.gif)
+![demo_web_gui](../assets/demo_web_gui.gif)
 
 <details>
 <summary>Klicken Sie, um Bilder der Weboberfläche anzuzeigen.</summary>
-<img width="1728" alt="GUI-Bildschirm 1" src="assets/gui_1.png">
-<img width="1728" alt="GUI-Bildschirm 2" src="assets/gui_2.png">
-<img width="1728" alt="GUI-Bildschirm 3" src="assets/gui_3.png">
+<img width="1728" alt="GUI-Bildschirm 1" src="../assets/gui_1.png">
+<img width="1728" alt="GUI-Bildschirm 2" src="../assets/gui_2.png">
+<img width="1728" alt="GUI-Bildschirm 3" src="../assets/gui_3.png">
 </details>
 
-## Fine-Tuned TTS-Modelle
+## Sammlung von Fine-Tuned TTS Modellen
 
 Um unsere Sammlung bereits fein abgestimmter TTS-Modelle zu finden, besuchen Sie [diesen Hugging Face-Link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 Für ein benutzerdefiniertes XTTS-Modell wird außerdem ein Referenz-Audioclip der Stimme benötigt:
 
-## Demos
+## Vorgefertigte Audio-Beispiele
 
 Rainy day Stimme
 
@@ -365,7 +365,7 @@ David Attenborough Stimme
 
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
-## Unterstützte eBook-Formate
+## Unterstützte eBook Formate
 
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Beste Ergebnisse**: `.epub` oder `.mobi` für automatische Kapitelerkennung
@@ -397,6 +397,6 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 Sie können den Code [hier](legacy/v1.0) ansehen.
 
-## Treten Sie unserem Discord-Server bei!
+## Trete unserem Discord Server bei
 
 [![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bg5Kx43c6w)
