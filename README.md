@@ -39,7 +39,8 @@ Use this tool responsibly and in accordance with all applicable laws.
   - [Launching Gradio Web Interface](#launching-gradio-web-interface)
   - [Basic Headless Usage](#basic-headless-usage)
   - [Headless Custom XTTS Model Usage](#headless-custom-xtts-model-usage)
-- [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-models)
+- [Fine Tuned TTS models](#fine-tuned-tts-models)
+  - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
 - [Using Docker](#using-docker)
   - [Docker Compose](#docker-compose)
 - [Supported eBook Formats](#supported-ebook-formats)
@@ -379,6 +380,17 @@ This project uses Docker Compose to run locally. You can enable or disable GPU s
 </details>
 
 ## Fine Tuned TTS models
+
+You can fine-tune your own xtts model easily with this repo
+[xtts-finetune-webui](https://github.com/daswer123/xtts-finetune-webui)
+
+If you want to rent a GPU easily you can also duplicate this huggingface
+[xtts-finetune-webui-space](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu)
+
+A space you can use to de-noise the training data easily also
+[denoise-huggingface-space](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit)
+
+### Fine Tuned TTS Collection
 
 To find our collection of already fine-tuned TTS models, visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 For an XTTS custom model a ref audio clip of the voice will also be needed:
