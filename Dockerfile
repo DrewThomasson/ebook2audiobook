@@ -18,6 +18,9 @@ RUN apt-get update && apt-get install -y \
     mecab-ipadic-utf8 \
     && rm -rf /var/lib/apt/lists/*
 
+# Upgrade setuptools to avoid version conflict
+RUN pip install --upgrade setuptools
+
 # Install Calibre using the official installer
 RUN wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sh /dev/stdin
 
