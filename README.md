@@ -234,11 +234,11 @@ To run the Docker container and start the Gradio interface, use the following co
 
  -Run with CPU only
 ```powershell
-docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
+docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
  -Run with GPU Speedup (Nvida graphics cards only)
 ```powershell
-docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
+docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
@@ -250,7 +250,7 @@ This command will start the Gradio interface on port 7860.(localhost:7860)
 
 first for a docker pull of the latest with
 ```bash 
-docker pull athomasson2/ebook2audiobook:huggingface
+docker pull athomasson2/ebook2audiobook
 ```
 
 - Before you do run this you need to create a dir named "input-folder" in your current dir which will be linked, This is where you can put your input files for the docker image to see
@@ -265,7 +265,7 @@ docker run -it --rm \
     -v $(pwd)/input-folder:/home/user/app/input_folder \
     -v $(pwd)/Audiobooks:/home/user/app/Audiobooks \
     --platform linux/amd64 \
-    athomasson2/ebook2audiobook:huggingface \
+    athomasson2/ebook2audiobook \
     python app.py --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
 ```
 
@@ -279,7 +279,7 @@ docker run -it --rm \
 ```bash
 docker run -it --rm \
     --platform linux/amd64 \
-    athomasson2/ebook2audiobook:huggingface \
+    athomasson2/ebook2audiobook \
     python app.py --help
 
 ```
