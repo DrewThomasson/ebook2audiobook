@@ -1,50 +1,59 @@
-# Use NVIDIA CUDA base image with Python 3.12 (ensure the correct version)
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+# Use an official NVIDIA CUDA image with cudnn8 and Ubuntu 20.04 as the base
+FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
 
-# Prevent interactive prompts during installation
+# Set non-interactive installation to avoid timezone and other prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install Python 3.12 and dependencies
-RUN apt-get update && apt-get install -y \
-    python3.12 \
-    python3.12-distutils \
-    python3.12-dev \
-    python3-pip \
+# Install necessary packages including Miniconda
+RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     git \
+    espeak \
+    espeak-ng \
     ffmpeg \
+    tk \
+    mecab \
+    libmecab-dev \
     libegl1 \
     libopengl0 \
     libxcb-cursor0 \
-    mecab \
-    libmecab-dev \
     mecab-ipadic-utf8 \
+    build-essential \
+    calibre \
     && rm -rf /var/lib/apt/lists/*
 
-# Update alternatives to use Python 3.12 as the default python3 version
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1
+RUN ebook-convert --version
 
-# Upgrade pip and setuptools for Python 3.12
-RUN python3 -m pip install --upgrade pip setuptools
+# Install Miniconda
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    bash ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh
 
-# Install Calibre using the official installer
-RUN wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sh /dev/stdin
 
-# Create and set working directory
-WORKDIR /app
+# Set PATH to include conda
+ENV PATH=/opt/conda/bin:$PATH
 
-# Clone the repository (fixed mv command)
-RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git temp_repo && \
-    mv temp_repo/* ./ 2>/dev/null || true && \
-    mv temp_repo/.[!.]* ./ 2>/dev/null || true && \
-    rm -rf temp_repo
+# Create a conda environment with Python 3.12
+RUN conda create -n ebookenv python=3.12 -y
 
-# Install Python dependencies
-RUN pip install mecab-python3
-RUN pip install -r requirements.txt
+# Clone the ebook2audiobookXTTS repository
+RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git .
+
+# Set the working directory in the container
+WORKDIR /ebook2audiobook
+
+# Activate the conda environment
+SHELL ["conda", "run", "-n", "ebookenv", "/bin/bash", "-c"]
+
+# Install Python dependencies using conda and pip
+RUN conda install -n ebookenv -c conda-forge \
+    pydub \
+    nltk \
+    mecab-python3 \
+    && pip install --no-cache-dir -r requirements.txt
 
 # Expose the Gradio port
 EXPOSE 7860
 
-# Start the app with GPU support and public sharing
-CMD ["python3", "app.py", "--share"]
+# Set the command to run your GUI application using the conda environment
+CMD ["conda", "run", "--no-capture-output", "-n", "ebookenv", "python", "app.py"]
