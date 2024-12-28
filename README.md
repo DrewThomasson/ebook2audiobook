@@ -39,6 +39,7 @@ Use this tool responsibly and in accordance with all applicable laws.
   - [Launching Gradio Web Interface](#launching-gradio-web-interface)
   - [Basic Headless Usage](#basic-headless-usage)
   - [Headless Custom XTTS Model Usage](#headless-custom-xtts-model-usage)
+  - [Renting a GPU](#renting-a-gpu)
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
 - [Using Docker](#using-docker)
@@ -104,7 +105,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ```
 
 Specify the language code when running the script in headless mode.
-## Usage
+
 
 ### Launching Gradio Web Interface
 
@@ -378,6 +379,16 @@ This project uses Docker Compose to run locally. You can enable or disable GPU s
   <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
+
+## Renting a GPU
+Don't have the hardware to run it or you want to rent a GPU?
+#### You can duplicate the hugginface space and rent a gpu for around $0.40 an hour
+[Huggingface Space Demo](#huggingface-space-demo)
+
+#### Or you can try using the google colab for free!
+(Be aware it will time out after a bit of your not messing with the google colab)
+[Free Google Colab](#free-google-colab)
+
 
 ## Fine Tuned TTS models
 
