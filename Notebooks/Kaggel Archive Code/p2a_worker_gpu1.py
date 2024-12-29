@@ -149,11 +149,11 @@ def create_m4b_from_chapters(input_dir, ebook_file, output_dir):
 #this code right here isnt the book grabbing thing but its before to refrence in ordero to create the sepecial chapter labeled book thing with calibre idk some systems cant seem to get it so just in case but the next bit of code after this is the book grabbing code with booknlp 
 #import os
 #import subprocess
-#import ebooklib
-#from ebooklib import epub
-#from bs4 import BeautifulSoup
+import ebooklib
+from ebooklib import epub
+from bs4 import BeautifulSoup
 #import re
-#import csv
+import csv
 #import nltk
 
 # Only run the main script if Value is True
