@@ -8,7 +8,8 @@ The authors are not responsible for any misuse of this software or any resulting
 Use this tool responsibly and in accordance with all applicable laws.
 
 
-[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bg5Kx43c6w)
+[![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
+
 
 #### New v2.0 Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
@@ -451,4 +452,4 @@ You can view the code [here](legacy/v1.0).
 
 ## Join Our Discord Server!
 
-[![Discord](https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/bg5Kx43c6w)
+[![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
