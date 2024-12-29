@@ -1,11 +1,11 @@
 print("starting...")
 
 #import os
-#import shutil
+import shutil
 #import subprocess
 import re
 #from pydub import AudioSegment
-#import tempfile
+import tempfile
 #from pydub import AudioSegment
 #import os
 import nltk
