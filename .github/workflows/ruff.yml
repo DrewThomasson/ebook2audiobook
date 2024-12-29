@@ -1,0 +1,16 @@
+# https://docs.astral.sh/ruff/linter
+name: ruff
+on:
+  push:
+    branches: 
+      - 'main'
+  pull_request:
+    branches: 
+      - 'main'
+jobs:
+  ruff:
+    name: ruff
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/ruff-action@v2
