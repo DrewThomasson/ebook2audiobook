@@ -21,3 +21,5 @@ services:
       resources:
         reservations:
           <<: *gpu-disabled # change this to gpu-enabled if you have an NVIDIA gpu
+    volumes:
+      - ./:/home/user/app
