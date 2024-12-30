@@ -21,6 +21,5 @@ services:
       resources:
         reservations:
           <<: *gpu-disabled # change this to gpu-enabled if you have an NVIDIA gpu
-    volumes:
-      # - ./:/home/user/app
-      # You can activate this line if you want its storage to link to the repo
+    volumes: []
+    # - ./:/home/user/app  # You can activate this line if you want its storage to link to the repo
