@@ -45,6 +45,8 @@ Use this tool responsibly and in accordance with all applicable laws.
   - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
 - [Using Docker](#using-docker)
   - [Docker Compose](#docker-compose)
+  - [Docker headless guide](#example-of-using-docker-in-headless-mode)
+  - [Docker container file locations](docker-container-file-locations)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output](#output)
 - [Common Issues](#common-issues)
@@ -248,6 +250,14 @@ This command will start the Gradio interface on port 7860.(localhost:7860)
 - For more options like running the docker in headless mode or making the gradio link public add the `--help` parameter after the `app.py` in the docker launch command
 <details>
   <summary><strong>Example of using docker in headless mode or modifying anything with the extra parameters + Full guide</strong></summary>
+
+
+## Docker container file locations
+All ebook2audiobooks will have the base dir of `/home/user/app/`
+For example:
+`tmp` = `/home/user/app/tmp`
+`audiobooks` = `/home/user/app/audiobooks`
+
    
 ## Example of using docker in headless mode
 
@@ -266,7 +276,7 @@ mkdir input-folder && mkdir Audiobooks
 ```bash
 docker run -it --rm \
     -v $(pwd)/input-folder:/home/user/app/input_folder \
-    -v $(pwd)/Audiobooks:/home/user/app/Audiobooks \
+    -v $(pwd)/audiobooks:/home/user/app/audiobooks \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook \
     python app.py --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
