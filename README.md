@@ -53,6 +53,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
 - [Join Our Discord Server!](#join-our-discord-server)
+- [Legacy](#legacy-v10)
 - [Glossary of Sections](#glossary-of-sections)
 
 ## Features
