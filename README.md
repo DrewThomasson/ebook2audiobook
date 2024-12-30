@@ -45,8 +45,8 @@ Use this tool responsibly and in accordance with all applicable laws.
   - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
 - [Using Docker](#using-docker)
   - [Docker Compose](#docker-compose)
-  - [Docker headless guide](#example-of-using-docker-in-headless-mode)
-  - [Docker container file locations](docker-container-file-locations)
+  - [Docker headless guide](#docker-headless-guide)
+  - [Docker container file locations](#docker-container-file-locations)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output](#output)
 - [Common Issues](#common-issues)
@@ -107,7 +107,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ```
 
-Specify the language code when running the script in headless mode.
+Specify the language code when running the script in  mode.
 
 
 ### Launching Gradio Web Interface
@@ -126,14 +126,14 @@ Specify the language code when running the script in headless mode.
 3. **For Public Link**: Add `--share` to the end of it like this: `python app.py --share`
 - **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
-### Basic Headless Usage
+### Basic  Usage
    - **Linux/MacOS**:
      ```bash
-     ./ebook2audiobook.sh  --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     ./ebook2audiobook.sh  -- --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     .\ebook2audiobook.cmd  -- --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
 
 - **<path_to_ebook_file>**: Path to your eBook file.
@@ -141,14 +141,14 @@ Specify the language code when running the script in headless mode.
 - **[language_code]**: Optional to specify ISO-639-3 3+ letters language code (default is eng). ISO-639-1 2 letters code is also supported
 - **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
-### Headless Custom XTTS Model Usage
+###  Custom XTTS Model Usage
    - **Linux/MacOS**:
      ```bash
-     ./ebook2audiobook.sh  --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+     ./ebook2audiobook.sh  -- --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
+     .\ebook2audiobook.cmd  -- --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
      ```
 
 - **<ebook_file_path>**: Path to your eBook file.
@@ -172,7 +172,7 @@ Specify the language code when running the script in headless mode.
 
 - This will output the following:
 ```bash
-usage: app.py [-h] [--script_mode SCRIPT_MODE] [--share] [--headless [HEADLESS]]
+usage: app.py [-h] [--script_mode SCRIPT_MODE] [--share] [-- []]
               [--session SESSION] [--ebook EBOOK] [--ebooks_dir [EBOOKS_DIR]]
               [--voice VOICE] [--language LANGUAGE] [--device {cpu,gpu}]
               [--custom_model CUSTOM_MODEL] [--temperature TEMPERATURE]
@@ -181,17 +181,17 @@ usage: app.py [-h] [--script_mode SCRIPT_MODE] [--share] [--headless [HEADLESS]]
               [--speed SPEED] [--enable_text_splitting] [--fine_tuned FINE_TUNED]
               [--version]
 
-Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
+Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in  mode for direct conversion.
 
 options:
   -h, --help            show this help message and exit
   --script_mode SCRIPT_MODE
                         Force the script to run in NATIVE or DOCKER_UTILS
   --share               Enable a public shareable Gradio link. Default to False.
-  --headless [HEADLESS]
-                        Run in headless mode. Default to True if the flag is present without a value, False otherwise.
-  --session SESSION     Session to reconnect in case of interruption (headless mode only)
-  --ebook EBOOK         Path to the ebook file for conversion. Required in headless mode.
+  -- []
+                        Run in  mode. Default to True if the flag is present without a value, False otherwise.
+  --session SESSION     Session to reconnect in case of interruption ( mode only)
+  --ebook EBOOK         Path to the ebook file for conversion. Required in  mode.
   --ebooks_dir [EBOOKS_DIR]
                         Path to the directory containing ebooks for batch conversion. Default to "ebooks" if "default" is provided.
   --voice VOICE         Path to the target voice file for TTS. Optional, must be 24khz for XTTS and 16khz for fairseq models, uses a default voice if not provided.
@@ -216,13 +216,13 @@ options:
 
 Example usage:    
 Windows:
-    headless:
-    ebook2audiobook.cmd --headless --ebook 'path_to_ebook'
+    :
+    ebook2audiobook.cmd -- --ebook 'path_to_ebook'
     Graphic Interface:
     ebook2audiobook.cmd
 Linux/Mac:
-    headless:
-    ./ebook2audiobook.sh --headless --ebook 'path_to_ebook'
+    :
+    ./ebook2audiobook.sh -- --ebook 'path_to_ebook'
     Graphic Interface:
     ./ebook2audiobook.sh
 
@@ -247,9 +247,9 @@ docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/e
 ```
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
-- For more options like running the docker in headless mode or making the gradio link public add the `--help` parameter after the `app.py` in the docker launch command
+- For more options like running the docker in  mode or making the gradio link public add the `--help` parameter after the `app.py` in the docker launch command
 <details>
-  <summary><strong>Example of using docker in headless mode or modifying anything with the extra parameters + Full guide</strong></summary>
+  <summary><strong>Example of using docker in  mode or modifying anything with the extra parameters + Full guide</strong></summary>
 
 
 ## Docker container file locations
@@ -259,7 +259,7 @@ For example:
 `audiobooks` = `/home/user/app/audiobooks`
 
    
-## Example of using docker in headless mode
+## Docker headless guide
 
 first for a docker pull of the latest with
 ```bash 
