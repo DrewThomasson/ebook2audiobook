@@ -10,7 +10,7 @@ x-gpu-disabled: &gpu-disabled
 
 services:
   ebook2audiobookxtts:
-    image: athomasson2/ebook2audiobookxtts:huggingface
+    image: athomasson2/ebook2audiobook
     platform: linux/amd64
     tty: true
     stdin_open: true
