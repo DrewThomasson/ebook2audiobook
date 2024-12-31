@@ -1,62 +1,37 @@
-# Use an official NVIDIA CUDA image with cudnn8 and Ubuntu 20.04 as the base
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
+# Read the doc: https://huggingface.co/docs/hub/spaces-sdks-docker
+# you will also find guides on how best to write your Dockerfile
 
-# Set non-interactive installation to avoid timezone and other prompts
-ENV DEBIAN_FRONTEND=noninteractive
+FROM python:3.10
 
-# Install necessary packages including Miniconda
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
-    git \
-    espeak \
-    espeak-ng \
-    ffmpeg \
-    tk \
-    mecab \
-    libmecab-dev \
-    libegl1 \
-    libopengl0 \
-    libxcb-cursor0 \
-    mecab-ipadic-utf8 \
-    build-essential \
-    calibre \
-    && rm -rf /var/lib/apt/lists/*
+# Create and switch to a non-root user
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
 
-RUN ebook-convert --version
+# Set a working directory for temporary operations
+WORKDIR /app
 
-# Install Miniconda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    bash ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh
+# Install system packages
+USER root
+RUN apt-get update && \
+    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
+# Clone the GitHub repository and set it as the working directory
+USER root
+RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
+USER user
+RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git /home/user/ebook2audiobook
 
-# Set PATH to include conda
-ENV PATH=/opt/conda/bin:$PATH
+# Set the cloned repository as the base working directory
+WORKDIR /home/user/ebook2audiobook
 
-# Create a conda environment with Python 3.12
-RUN conda create -n ebookenv python=3.12 -y
+#Install Python dependences from the ebook2audiobook repo
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# Clone the ebook2audiobookXTTS repository
-RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git
-
-# Set the working directory in the container
-WORKDIR /ebook2audiobook
-
-# Activate the conda environment
-SHELL ["conda", "run", "-n", "ebookenv", "/bin/bash", "-c"]
-
-# Install Python dependencies using conda and pip
-RUN conda install -n ebookenv -c conda-forge \
-    pydub \
-    nltk \
-    mecab-python3 \
-    && pip install --no-cache-dir -r requirements.txt
-
-# Expose the Gradio port
+# Expose the required port
 EXPOSE 7860
 
-# Set the command to run your GUI application using the conda environment
-CMD ["conda", "run", "--no-capture-output", "-n", "ebookenv", "python", "app.py"]
-
-# Build with this command 
-# docker build --no-cache --platform linux/amd64 -t ebook2audiobook .
+# Start the Gradio app from the repository
+CMD ["python", "app.py"]
