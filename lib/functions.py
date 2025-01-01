@@ -1354,7 +1354,7 @@ def web_interface(args):
             print("Demo check:", demo_space_check(conf.demo_huggingface))
             print(f"Demo check: {conf.demo_huggingface}")
             if demo_space_check(conf.demo_huggingface):
-                raise gradio.Error("⚠️ This is a GUI Demo, please duplicate this space or run it locally for full functionality, more info on github.", duration=5)
+                raise gr.Error("⚠️ This is a GUI Demo, please duplicate this space or run it locally for full functionality, more info on github.", duration=5)
                 return
             elif session_id is None:
                 yield gr.update(variant='primary', interactive=False)
