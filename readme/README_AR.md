@@ -399,11 +399,12 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 
-- [@shakenbake15 لتحسين طريقة حفظ الفصول](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+- [@shakenbake15 لتحسين طريقة حفظ الفصول](https://github.com/DrewThomasson/ebook2audiobook/issues/8)
+- [@wesam-1110111 إلى اللغة العربية README لترجمة ملف](https://github.com/Wesam-1110111)
 
-### [الإصدار القديم v1.0](legacy/v1.0/..)
+### [الإصدار القديم v1.0](../legacy/v1.0)
 
-يمكنك مشاهدة الكود [هنا](legacy/v1.0/..).
+يمكنك مشاهدة الكود [هنا](../legacy/v1.0).
 
 ## انضم إلى خادم Discord الخاص بنا!
 
