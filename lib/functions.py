@@ -189,6 +189,15 @@ def check_fine_tuned(fine_tuned, language):
     except Exception as e:
         raise RuntimeError(e)
 
+def demo_space_check(target_string):
+    try:
+        space_author_name = os.getenv("SPACE_AUTHOR_NAME", "Unknown")
+        space_repo_name = os.getenv("SPACE_REPO_NAME", "Unknown")
+        current_space_name = f"{space_author_name}/{space_repo_name}"
+        return current_space_name == target_string
+    except Exception:
+        return False
+        
 def analyze_uploaded_file(zip_path, required_files=None):
     if required_files is None:
         required_files = default_model_files
@@ -1342,7 +1351,10 @@ def web_interface(args):
             return None, None, gr.update(visible=False)
             
         def update_convert_btn(upload_file=None, custom_model_file=None, session_id=None):
-            if session_id is None:
+            if demo_space_check(conf.demo_huggingface):
+                raise gradio.Error("⚠️ This is a GUI Demo, please duplicate this space or run it locally for full functionality, more info on github.", duration=5)
+                return
+            elif session_id is None:
                 yield gr.update(variant='primary', interactive=False)
                 return
             else:
