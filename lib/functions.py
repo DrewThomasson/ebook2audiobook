@@ -147,7 +147,7 @@ def get_markdown_for_space(get_markdown_for_space(is_demo)):
     if is_demo:
         return f'''
         # Ebook2Audiobook v{version}<br/>
-        ⚠️ **This is a demo space.**  
+        🤨👉⚠️ **This is a demo space.**  
         Please [duplicate this space](https://huggingface.co/spaces/DrewThomasson/ebook2audiobook?duplicate=true), run it locally, or use the free Google Colab for full functionality.<br/>
 
         ### Helpful Links:
