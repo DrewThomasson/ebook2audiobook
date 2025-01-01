@@ -6,7 +6,7 @@ x-gpu-enabled: &gpu-enabled
         - gpu
 
 x-gpu-disabled: &gpu-disabled
-  devices: []               
+  devices: []
 
 services:
   ebook2audiobookxtts:
@@ -20,6 +20,14 @@ services:
     deploy:
       resources:
         reservations:
-          <<: *gpu-disabled # change this to gpu-enabled if you have an NVIDIA gpu
+          <<: *gpu-disabled # change this to gpu-enabled if you have an NVIDIA GPU
+          # memory: 4g   # Uncomment to limit RAM reservation to 4GB
+          # devices:     # Uncomment to limit GPU VRAM (requires GPU-enabled above)
+          #   - driver: nvidia
+          #     count: 1
+          #     capabilities:
+          #       - gpu
+        limits:
+          # memory: 4g   # Uncomment to limit RAM usage to 4GB
     volumes: []
     # - ./:/home/user/app  # You can activate this line if you want its storage to link to the repo
