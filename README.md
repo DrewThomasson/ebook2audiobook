@@ -23,6 +23,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 
 ## README.md
+- ar [العربية](./readme/README_AR.md)
 - en [English](README.md)
 
 ## Table of Contents
