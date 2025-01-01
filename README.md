@@ -24,10 +24,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ## README.md
 - ar [العربية](./readme/README_AR.md)
-- cn-zh [中文](./readme/README_CN.md)
 - en [English](README.md)
-- ge-de [Deutsch](./readme/README_GER.md)
-- ru [Русский](./readme/README_RU.md)
 
 ## Table of Contents
 
