@@ -142,8 +142,17 @@ class DependencyError(Exception):
         # Exit the script if it's not a web process
         if not is_gui_process:
             sys.exit(1)
+            
+def demo_space_check(target_string):
+    try:
+        space_author_name = os.getenv("SPACE_AUTHOR_NAME", "Unknown")
+        space_repo_name = os.getenv("SPACE_REPO_NAME", "Unknown")
+        current_space_name = f"{space_author_name}/{space_repo_name}"
+        return current_space_name == target_string
+    except Exception:
+        return False
 
-def get_markdown_for_space(get_markdown_for_space(is_demo)):
+def get_markdown_for_space(is_demo):
     if is_demo:
         return f'''
         # Ebook2Audiobook v{version}<br/>
@@ -208,15 +217,6 @@ def check_fine_tuned(fine_tuned, language):
         return False
     except Exception as e:
         raise RuntimeError(e)
-
-def demo_space_check(target_string):
-    try:
-        space_author_name = os.getenv("SPACE_AUTHOR_NAME", "Unknown")
-        space_repo_name = os.getenv("SPACE_REPO_NAME", "Unknown")
-        current_space_name = f"{space_author_name}/{space_repo_name}"
-        return current_space_name == target_string
-    except Exception:
-        return False
         
 def analyze_uploaded_file(zip_path, required_files=None):
     if required_files is None:
