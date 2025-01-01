@@ -1351,6 +1351,8 @@ def web_interface(args):
             return None, None, gr.update(visible=False)
             
         def update_convert_btn(upload_file=None, custom_model_file=None, session_id=None):
+            print("Demo check:", demo_space_check(conf.demo_huggingface))
+            print(f"Demo check: {conf.demo_huggingface}")
             if demo_space_check(conf.demo_huggingface):
                 raise gradio.Error("⚠️ This is a GUI Demo, please duplicate this space or run it locally for full functionality, more info on github.", duration=5)
                 return
