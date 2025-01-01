@@ -20,10 +20,7 @@
 </details>
 
 ## لغات أخرى README.md
-- الصينية [中文](./readme/README_CN.md)
 - الإنجليزية [English](README.md)
-- الألمانية [Deutsch](./readme/README_GER.md)
-- الروسية [Русский](./readme/README_RU.md)
 
 ## جدول المحتويات
 
