@@ -1,6 +1,9 @@
 # Read the doc: https://huggingface.co/docs/hub/spaces-sdks-docker
 # you will also find guides on how best to write your Dockerfile
 
+# Build with the command: 
+# docker build --platform linux/amd64 -t ebook2audiobook . 
+
 FROM python:3.10
 
 # Create and switch to a non-root user
@@ -29,6 +32,11 @@ WORKDIR /home/user/ebook2audiobook
 
 #Install Python dependences from the ebook2audiobook repo
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
+
+# Do a test run to make sure that the base models are pre-downloaded and baked into the image
+# RUN echo "This is a test sentence." > test.txt 
+# RUN python app.py --headless --ebook test.txt
+# RUN rm test.txt
 
 # Expose the required port
 EXPOSE 7860
