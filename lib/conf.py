@@ -9,7 +9,7 @@ version = '2.0.0'
 min_python_version = (3,10)
 max_python_version = (3,12)
 
-demo_huggingface = "drewThomasson/ebook2audiobook_demo"
+demo_huggingface = "drewThomasson/ebook2audiobook"
 
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 
