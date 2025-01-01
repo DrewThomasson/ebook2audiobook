@@ -4,7 +4,7 @@
 # Build with the command: 
 # docker build --platform linux/amd64 -t ebook2audiobook . 
 
-FROM python:3.10
+FROM python:3.12
 
 # Create and switch to a non-root user
 RUN useradd -m -u 1000 user
