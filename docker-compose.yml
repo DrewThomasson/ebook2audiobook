@@ -3,10 +3,10 @@ x-gpu-enabled: &gpu-enabled
     - driver: nvidia
       count: all
       capabilities:
-        - gpu
+        - gpu # Enables GPU access for the container.
 
 x-gpu-disabled: &gpu-disabled
-  devices: []
+  devices: [] # Disables GPU access (default for systems without an NVIDIA GPU).
 
 services:
   ebook2audiobookxtts:
@@ -15,19 +15,29 @@ services:
     tty: true
     stdin_open: true
     ports:
-      - 7860:7860
+      - 7860:7860 # Maps container's port 7860 to the host's port 7860.
     command: python app.py
     deploy:
       resources:
         reservations:
-          <<: *gpu-disabled # change this to gpu-enabled if you have an NVIDIA GPU
-          # memory: 4g   # Uncomment to limit RAM reservation to 4GB
-          # devices:     # Uncomment to limit GPU VRAM (requires GPU-enabled above)
+          <<: *gpu-disabled # Use *gpu-enabled if you have an NVIDIA GPU.
+          # --- CPU Memory (RAM) Reservation ---
+          # memory: 4g   # Uncomment to reserve 4GB of system RAM (minimum required by the container).
+          # --- GPU VRAM (Indirect Control) ---
+          # devices:     # Uncomment and configure to limit GPU VRAM (requires GPU-enabled above).
           #   - driver: nvidia
-          #     count: 1
+          #     count: 1 # Use fractional GPU count (e.g., 0.5) to indirectly limit VRAM.
           #     capabilities:
           #       - gpu
         limits:
-          # memory: 4g   # Uncomment to limit RAM usage to 4GB
+          # --- CPU Memory (RAM) Limit ---
+          # memory: 4g   # Uncomment to set a 4GB upper limit on system RAM usage by the container.
     volumes: []
-    # - ./:/home/user/app  # You can activate this line if you want its storage to link to the repo
+    # - ./:/home/user/app  # Uncomment to map the local directory to the container.
+
+# Additional Notes:
+# - "CPU Memory (RAM)" refers to the system RAM used by the container.
+# - "GPU VRAM" refers to the graphics memory allocated to the container's GPU tasks.
+# - To enable GPU VRAM limits, ensure the NVIDIA Docker runtime is installed and active.
+# - The `memory` options (RAM) use units like 'm' (megabytes) or 'g' (gigabytes).
+# - The `count` parameter for GPU limits controls how much of the GPU (and indirectly VRAM) is accessible.
