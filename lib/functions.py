@@ -157,7 +157,7 @@ def get_markdown_for_space(is_demo):
         return f'''
         # Ebook2Audiobook v{version}<br/>
         ### 🤨👉⚠️ **This is a demo space.**  
-        ### Please [![Duplicate this Space](https://huggingface.co/datasets/huggingface/badges/resolve/main/duplicate-this-space-md-dark.svg)](https://huggingface.co/spaces/DrewThomasson/ebook2audiobook?duplicate=true), run it locally, or use the free Google Colab for full functionality.<br/>
+        ### Please [![Duplicate this Space](https://huggingface.co/datasets/huggingface/badges/resolve/main/duplicate-this-space-md-dark.svg)](https://huggingface.co/spaces/DrewThomasson/ebook2audiobook?duplicate=true)Run it locally, or use the free Google Colab for full functionality.<br/>
 
         ### Helpful Links:
         [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)  
