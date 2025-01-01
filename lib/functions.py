@@ -143,6 +143,26 @@ class DependencyError(Exception):
         if not is_gui_process:
             sys.exit(1)
 
+def get_markdown_for_space(get_markdown_for_space(is_demo)):
+    if is_demo:
+        return f'''
+        # Ebook2Audiobook v{version}<br/>
+        ⚠️ **This is a demo space.**  
+        Please [duplicate this space](https://huggingface.co/spaces/DrewThomasson/ebook2audiobook?duplicate=true), run it locally, or use the free Google Colab for full functionality.<br/>
+
+        ### Helpful Links:
+        [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)  
+        [![GitHub](https://img.shields.io/badge/github-%23121011.svg?style=for-the-badge&logo=github&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook)  
+        [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
+        '''
+    else:
+        return f'''
+        # Ebook2Audiobook v{version}<br/>
+        https://github.com/DrewThomasson/ebook2audiobook<br/>
+        Convert eBooks into immersive audiobooks with realistic voice TTS models.<br/>
+        Multiuser, multiprocessing, multithread on a geo cluster to share the conversion to the Grid.
+        '''
+
 def prepare_dirs(src, session):
     try:
         resume = False
@@ -1166,14 +1186,7 @@ def web_interface(args):
             </style>
             '''
         )
-        gr.Markdown(
-            f'''
-            # Ebook2Audiobook v{version}<br/>
-            https://github.com/DrewThomasson/ebook2audiobook<br/>
-            Convert eBooks into immersive audiobooks with realistic voice TTS models.<br/>
-            Multiuser, multiprocessing, multithread on a geo cluster to share the conversion to the Grid.
-            '''
-        )
+        gr.Markdown(get_markdown_for_space(demo_space_check(conf.demo_huggingface)))
         with gr.Tabs():
             gr_tab_main = gr.TabItem('Input Options')
             with gr_tab_main:
