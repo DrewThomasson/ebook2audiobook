@@ -25,10 +25,10 @@ RUN apt-get update && \
 USER root
 RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
 USER user
-RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git /home/user/ebook2audiobook
+RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git /home/user/app
 
 # Set the cloned repository as the base working directory
-WORKDIR /home/user/ebook2audiobook
+WORKDIR /home/user/app
 
 #Install Python dependences from the ebook2audiobook repo
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
