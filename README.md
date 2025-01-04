@@ -26,6 +26,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 - ara [العربية (Arabic)](./readme/README_AR.md)
 - zho [中文 (Chinese)](./readme/README_CN.md)
 - eng [English](README.md)
+- swe [Svenska (Swedish)](./readme/README_SWE.md)
 
 ## Table of Contents
 
