@@ -52,6 +52,7 @@ Use this tool responsibly and in accordance with all applicable laws.
   - [Docker Compose](#docker-compose)
   - [Docker headless guide](#docker-headless-guide)
   - [Docker container file locations](#docker-container-file-locations)
+  - [Common Docker issues](#common-docker-issues)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output](#output)
 - [Common Issues](#common-issues)
@@ -353,6 +354,17 @@ Don't have the hardware to run it or you want to rent a GPU?
 #### Or you can try using the google colab for free!
 (Be aware it will time out after a bit of your not messing with the google colab)
 [Free Google Colab](#free-google-colab)
+
+## Common Docker Issues
+- Docker gets stuck downloading Fine-Tuned models. (This does not happen for every computer but some appear to run into this issue)
+Disabling the progress bar appears to fix the issue, as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
+Example of adding this fix in the `docker run` command
+```Dockerfile
+docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
+```
+
+
+
 
 
 ## Fine Tuned TTS models
