@@ -120,6 +120,7 @@ function install_programs {
 			fi
 		mecab_extra="mecab-ipadic"
 	else
+		PACK_MGR_OPTIONS=""
 		if command -v emerge &> /dev/null; then
 			PACK_MGR="sudo emerge"
 			mecab_extra="app-text/mecab app-text/mecab-ipadic"
@@ -180,9 +181,9 @@ function install_programs {
 			fi
 		elif [ "$program" = "mecab" ];then
 			if command -v emerge &> /dev/null; then
-				eval "$PACK_MGR $mecab_extra $PKG_MGR_OPTIONS"
+				eval "$PACK_MGR $mecab_extra $PACK_MGR_OPTIONS"
 			else
-				eval "$PACK_MGR $program $mecab_extra $PKG_MGR_OPTIONS"
+				eval "$PACK_MGR $program $mecab_extra $PACK_MGR_OPTIONS"
 			fi
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
@@ -190,7 +191,7 @@ function install_programs {
 				echo "$program installation failed."
 			fi			
 		else
-			eval "$PACK_MGR $program $PKG_MGR_OPTIONS"				
+			eval "$PACK_MGR $program $PACK_MGR_OPTIONS"				
 			if command -v $program >/dev/null 2>&1; then
 				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 			else
@@ -229,6 +230,7 @@ function conda_check {
 		fi
 	fi
 	if [[ ! -d $SCRIPT_DIR/$PYTHON_ENV ]]; then
+		pip cache purge
 		# Use this condition to chmod writable folders once
 		chmod -R 777 ./audiobooks ./tmp ./models
 		conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y

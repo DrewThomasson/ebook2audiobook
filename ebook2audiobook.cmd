@@ -265,6 +265,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		set "CONDA_RUN_INIT=0"
 	)
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
+		call pip cache purge
 		call conda create --prefix %SCRIPT_DIR%\%PYTHON_ENV% python=%PYTHON_VERSION% -y
 		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
 		call python -m pip install --upgrade pip
