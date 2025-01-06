@@ -60,6 +60,23 @@ def inject_configs(target_namespace):
 # Inject configurations into the global namespace of this module
 inject_configs(globals())
 
+class DependencyError(Exception):
+    def __init__(self, message=None):
+        super().__init__(message)
+        # Automatically handle the exception when it's raised
+        self.handle_exception()
+
+    def handle_exception(self):
+        # Print the full traceback of the exception
+        traceback.print_exc()
+        
+        # Print the exception message
+        print(f'Caught DependencyError: {self}')
+        
+        # Exit the script if it's not a web process
+        if not is_gui_process:
+            sys.exit(1)
+
 def recursive_proxy(data, manager=None):
     """Recursively convert a nested dictionary into Manager.dict proxies."""
     if manager is None:
@@ -149,22 +166,6 @@ context = ConversionContext()
 lock = Lock()
 is_gui_process = False
 
-class DependencyError(Exception):
-    def __init__(self, message=None):
-        super().__init__(message)
-        # Automatically handle the exception when it's raised
-        self.handle_exception()
-
-    def handle_exception(self):
-        # Print the full traceback of the exception
-        traceback.print_exc()
-        
-        # Print the exception message
-        print(f'Caught DependencyError: {self}')
-        
-        # Exit the script if it's not a web process
-        if not is_gui_process:
-            sys.exit(1)
 
 def prepare_dirs(src, session):
     try:
