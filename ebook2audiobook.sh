@@ -43,11 +43,35 @@ DOCKER_UTILS_IMG="utils"
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
 
-if [[ "$OSTYPE" = "darwin"* ]]; then
-    CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
-else
-	CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+if [[ "$OSTYPE" != "linux"* && "$OSTYPE" != "darwin"* ]]; then
+	echo "Error: OS $OSTYPE unsupported."
+	exit 1;
 fi
+
+ARCH=$(arch)
+
+if [[ "$OSTYPE" == "linux"* ]]; then
+	if [[ "$ARCH" == "x86_64" ]]; then
+		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
+	elif [[ "$ARCH" == "aarch64" ]]; then
+		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh"
+	else
+		echo "Error: Unsupported architecture for Linux: $ARCH."
+		exit 1
+	fi
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+	if [[ "$ARCH" == "x86_64" ]]; then
+		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
+	elif [[ "$ARCH" == "arm64" ]]; then
+		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh"
+	else
+		echo "Error: Unsupported architecture for MacOS: $ARCH. Are you possibly using Rosetta?"
+		exit 1
+	fi
+fi
+echo $CONDA_URL
+exit 1
+
 CONDA_INSTALLER=/tmp/Miniconda3-latest.sh
 CONDA_INSTALL_DIR=$HOME/miniconda3
 CONDA_PATH=$HOME/miniconda3/bin
