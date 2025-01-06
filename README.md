@@ -127,9 +127,8 @@ Specify the language code when running the script in  mode.
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  # Run launch script
+     .\ebook2audiobook.cmd  # Run launch script or double click on it
      ```
-
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
 3. **For Public Link**: Add `--share` to the end of it like this: `python app.py --share`
 - **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
