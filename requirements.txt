@@ -5,7 +5,7 @@ deep_translator
 docker
 ebooklib
 gensim
-gradio>=4.44
+gradio
 hangul-romanize
 indic-nlp-library
 iso-639
@@ -16,6 +16,7 @@ mecab-python3
 pydub
 pypinyin
 ray
+regex
 transformers
 translate
 tqdm

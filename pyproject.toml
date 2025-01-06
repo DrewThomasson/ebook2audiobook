@@ -30,6 +30,7 @@ dependencies = [
     "pydub",
     "pypinyin",
 	"ray",
+	"regex",
 	"transformers",
     "translate",
     "tqdm",

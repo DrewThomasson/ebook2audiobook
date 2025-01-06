@@ -8,6 +8,7 @@ import unidic
 
 from lib.conf import *
 from lib.lang import language_mapping, default_language_code
+from lib.models import default_xtts_files, default_fine_tuned
 
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
@@ -98,7 +99,7 @@ Linux/Mac:
         '--voice', '--language', '--device', '--custom_model',
         '--temperature', '--length_penalty', '--repetition_penalty', 
         '--top_k', '--top_p', '--speed',
-        '--enable_text_splitting', '--fine_tuned',
+        '--enable_text_splitting', '--fine_tuned', '--output_dir',
         '--version', '--help'
     ]
     parser.add_argument(options[0], type=str,
@@ -114,30 +115,32 @@ Linux/Mac:
     parser.add_argument(options[5], nargs='?', const='default', type=str,
                         help=f'Path to the directory containing ebooks for batch conversion. Default to "{os.path.basename(ebooks_dir)}" if "default" is provided.')
     parser.add_argument(options[6], type=str, default=None,
-                        help='Path to the target voice file for TTS. Optional, must be 24khz for XTTS and 16khz for fairseq models, uses a default voice if not provided.')
+                        help='Path to the target voice file for TTS. Optional, must be 24khz for XTTS and 16khz for fairseq models. Uses the default voice if not provided.')
     parser.add_argument(options[7], type=str, default=default_language_code,
                         help=f'Language for the audiobook conversion. Options: {lang_list_str}. Default to English (eng).')
-    parser.add_argument(options[8], type=str, default='cpu', choices=['cpu', 'gpu'],
+    parser.add_argument(options[8], type=str, default=default_device, choices=['cpu', 'gpu', 'mps'],
                         help=f'Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.')
-    parser.add_argument(options[9], type=str,
-                        help=f'Path to the custom model (.zip file containing {default_model_files}). Required if using a custom model.')
-    parser.add_argument(options[10], type=float, default=0.65,
+    parser.add_argument(options[9], type=str, default=None,
+                        help=f'Path to the custom model (.zip file containing {default_xtts_files}). Required if using a custom model.')
+    parser.add_argument(options[10], type=float, default=tts_default_settings['temperature'],
                         help='Temperature for the model. Default to 0.65. Higher temperatures lead to more creative outputs.')
-    parser.add_argument(options[11], type=float, default=1.0,
+    parser.add_argument(options[11], type=float, default=tts_default_settings['length_penalty'],
                         help='A length penalty applied to the autoregressive decoder. Default to 1.0. Not applied to custom models.')
-    parser.add_argument(options[12], type=float, default=2.5,
+    parser.add_argument(options[12], type=float, default=tts_default_settings['repetition_penalty'],
                         help='A penalty that prevents the autoregressive decoder from repeating itself. Default to 2.5')
-    parser.add_argument(options[13], type=int, default=50,
+    parser.add_argument(options[13], type=int, default=tts_default_settings['top_k'],
                         help='Top-k sampling. Lower values mean more likely outputs and increased audio generation speed. Default to 50')
-    parser.add_argument(options[14], type=float, default=0.8,
+    parser.add_argument(options[14], type=float, default=tts_default_settings['top_p'],
                         help='Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Default to 0.8')
-    parser.add_argument(options[15], type=float, default=1.0,
+    parser.add_argument(options[15], type=float, default=tts_default_settings['speed'],
                         help='Speed factor for the speech generation. Default to 1.0')
     parser.add_argument(options[16], action='store_true',
                         help='Enable splitting text into sentences. Default to False.')                     
     parser.add_argument(options[17], type=str, default=default_fine_tuned,
                         help='Name of the fine tuned model. Optional, uses the standard model according to the TTS engine and language.')
-    parser.add_argument(options[18], action='version',version=f'ebook2audiobook version {version}',
+    parser.add_argument(options[18], type=str,
+                        help=f'Path to the output directory.')
+    parser.add_argument(options[19], action='version',version=f'ebook2audiobook version {version}',
                         help='Show the version of the script and exit')
 
     for arg in sys.argv:
@@ -169,7 +172,8 @@ Linux/Mac:
     # Conditions based on the --headless flag
     if args['headless']:
         args['is_gui_process'] = False
-        args['audiobooks_dir'] = audiobooks_cli_dir
+        args['audiobooks_dir'] = args['output_dir'] if args['headless'] else audiobooks_cli_dir
+        args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
 
         # Condition to stop if both --ebook and --ebooks_dir are provided
         if args['ebook'] and args['ebooks_dir']:

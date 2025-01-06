@@ -38,7 +38,7 @@ SCRIPT_MODE="$NATIVE"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("calibre" "ffmpeg")
+REQUIRED_PROGRAMS=("calibre" "ffmpeg" "mecab")
 DOCKER_UTILS_IMG="utils"
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
@@ -118,26 +118,34 @@ function install_programs {
 				echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile
 				eval "$(/opt/homebrew/bin/brew shellenv)"
 			fi
+		mecab_extra="mecab-ipadic"
 	else
 		if command -v emerge &> /dev/null; then
 			PACK_MGR="sudo emerge"
+			mecab_extra="app-text/mecab app-text/mecab-ipadic"
 		elif command -v dnf &> /dev/null; then
 			PACK_MGR="sudo dnf install"
 			PACK_MGR_OPTIONS="-y"
+			mecab_extra="mecab-devel mecab-ipadic"
 		elif command -v yum &> /dev/null; then
 			PACK_MGR="sudo yum install"
 			PACK_MGR_OPTIONS="-y"
+			mecab_extra="mecab-devel mecab-ipadic"
 		elif command -v zypper &> /dev/null; then
 			PACK_MGR="sudo zypper install"
 			PACK_MGR_OPTIONS="-y"
+			mecab_extra="mecab-devel mecab-ipadic"
 		elif command -v pacman &> /dev/null; then
 			PACK_MGR="sudo pacman -Sy"
+			mecab_extra="mecab-devel mecab-ipadic"
 		elif command -v apt-get &> /dev/null; then
 			sudo apt-get update
 			PACK_MGR="sudo apt-get install"
 			PACK_MGR_OPTIONS="-y"
+			mecab_extra="libmecab-dev mecab-ipadic-utf8"
 		elif command -v apk &> /dev/null; then
 			PACK_MGR="sudo apk add"
+			mecab_extra="mecab-dev mecab-ipadic"
 		else
 			echo "Cannot recognize your applications package manager. Please install the required applications manually."
 			return 1
@@ -170,6 +178,17 @@ function install_programs {
 			else
 				echo "Calibre installation failed."
 			fi
+		elif [ "$program" = "mecab" ];then
+			if command -v emerge &> /dev/null; then
+				eval "$PACK_MGR $mecab_extra $PKG_MGR_OPTIONS"
+			else
+				eval "$PACK_MGR $program $mecab_extra $PKG_MGR_OPTIONS"
+			fi
+			if command -v $program >/dev/null 2>&1; then
+				echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+			else
+				echo "$program installation failed."
+			fi			
 		else
 			eval "$PACK_MGR $program $PKG_MGR_OPTIONS"				
 			if command -v $program >/dev/null 2>&1; then

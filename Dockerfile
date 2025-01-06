@@ -38,19 +38,29 @@ SHELL ["conda", "run", "-n", "ebookenv", "/bin/bash", "-c"]
 
 # Install Python dependencies using conda and pip
 RUN conda install -n ebookenv -c conda-forge \
-    pydub \
-    nltk \
-    mecab-python3 \
-    && pip install --no-cache-dir \
-    bs4 \
-    beautifulsoup4 \
-    ebooklib \
-    translate \
-    tqdm \
-    tts==0.21.3 \
-    unidic \
-    gradio \
-    docker
+	beautifulsoup4 \
+	coqui-tts \
+	cutlet \
+	deep_translator \
+	docker \
+	ebooklib \
+	gensim \
+	gradio \
+	hangul-romanize \
+	indic-nlp-library \
+	iso-639 \
+	jieba \
+	m4b-util \
+	mecab \
+	mecab-python3 \
+	pydub \
+	pypinyin \
+	ray \
+	regex \
+	transformers \
+	translate \
+	tqdm \
+	unidic \
 
 # Download unidic
 RUN python -m unidic download
