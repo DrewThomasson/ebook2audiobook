@@ -1,41 +1,39 @@
-# Use an official NVIDIA CUDA image with cudnn8 and Ubuntu 20.04 as the base
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu20.04
+# Read the doc: https://huggingface.co/docs/hub/spaces-sdks-docker
+# you will also find guides on how best to write your Dockerfile
 
-# Set non-interactive installation to avoid timezone and other prompts
-ENV DEBIAN_FRONTEND=noninteractive
+# Build with the command: 
+# docker build --platform linux/amd64 -t ebook2audiobook . 
 
-# Install necessary packages including Miniconda
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget \
-    git \
-    espeak \
-    espeak-ng \
-    ffmpeg \
-    tk \
-    mecab \
-    libmecab-dev \
-    mecab-ipadic-utf8 \
-    build-essential \
-    calibre \
-    && rm -rf /var/lib/apt/lists/*
+FROM python:3.12
 
-RUN ebook-convert --version
+# Create and switch to a non-root user
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
 
-# Install Miniconda
-RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
-    bash ~/miniconda.sh -b -p /opt/conda && \
-    rm ~/miniconda.sh
+# Set a working directory for temporary operations
+WORKDIR /app
 
+# Install system packages
+USER root
+RUN apt-get update && \
+    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Set PATH to include conda
-ENV PATH=/opt/conda/bin:$PATH
+# Clone the GitHub repository and set it as the working directory
+USER root
+RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
+USER user
+RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git /home/user/app
 
-# Create a conda environment with Python 3.12
-RUN conda create -n ebookenv python=3.12 -y
+# Set the cloned repository as the base working directory
+WORKDIR /home/user/app
 
-# Activate the conda environment
-SHELL ["conda", "run", "-n", "ebookenv", "/bin/bash", "-c"]
+#Install Python dependences from the ebook2audiobook repo
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
+<<<<<<< HEAD
 # Install Python dependencies using conda and pip
 RUN conda install -n ebookenv -c conda-forge \
 	beautifulsoup4 \
@@ -61,47 +59,15 @@ RUN conda install -n ebookenv -c conda-forge \
 	translate \
 	tqdm \
 	unidic \
+=======
+# Do a test run to make sure that the base models are pre-downloaded and baked into the image
+# RUN echo "This is a test sentence." > test.txt 
+# RUN python app.py --headless --ebook test.txt
+# RUN rm test.txt
+>>>>>>> 946a174887063b8f67eb34c7fbf4858998c8a105
 
-# Download unidic
-RUN python -m unidic download
+# Expose the required port
+EXPOSE 7860
 
-# Download spacy NLP
-RUN python -m spacy download en_core_web_sm
-
-# Set the working directory in the container
-WORKDIR /ebook2audiobookXTTS
-
-# Clone the ebook2audiobookXTTS repository
-RUN git clone https://github.com/DrewThomasson/ebook2audiobookXTTS.git .
-
-# Copy test audio file
-COPY ./voices/adult/female/en/default_voice.wav /ebook2audiobookXTTS/
-
-# Run a test to set up XTTS
-RUN echo "import torch" > /tmp/script1.py && \
-    echo "from TTS.api import TTS" >> /tmp/script1.py && \
-    echo "device = 'cuda' if torch.cuda.is_available() else 'cpu'" >> /tmp/script1.py && \
-    echo "print(TTS().list_models())" >> /tmp/script1.py && \
-    echo "tts = TTS('tts_models/multilingual/multi-dataset/xtts_v2').to(device)" >> /tmp/script1.py && \
-    echo "wav = tts.tts(text='Hello world!', speaker_wav='default_voice.wav', language='en')" >> /tmp/script1.py && \
-    echo "tts.tts_to_file(text='Hello world!', speaker_wav='default_voice.wav', language='en', file_path='output.wav')" >> /tmp/script1.py && \
-    yes | python /tmp/script1.py
-
-# Remove the test audio file
-RUN rm -f /ebook2audiobookXTTS/output.wav
-
-# Verify that the script exists and has the correct permissions
-RUN ls -la /ebook2audiobookXTTS/
-
-# Check if the script exists and log its presence
-RUN if [ -f /ebook2audiobookXTTS/custom_model_ebook2audiobookXTTS_with_link_gradio.py ]; then echo "Script found."; else echo "Script not found."; exit 1; fi
-
-# Modify the Python script to set share=True
-RUN sed -i 's/demo.launch(share=False)/demo.launch(share=True)/' /ebook2audiobookXTTS/custom_model_ebook2audiobookXTTS_with_link_gradio.py
-
-# Download the punkt package for nltk
-RUN python -m nltk.downloader punkt
-
-# Set the command to run your GUI application using the conda environment
-CMD ["conda", "run", "--no-capture-output", "-n", "ebookenv", "python", "/ebook2audiobookXTTS/custom_model_ebook2audiobookXTTS_with_link_gradio.py"]
-
+# Start the Gradio app from the repository
+CMD ["python", "app.py"]
