@@ -39,6 +39,7 @@ from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
 from pathlib import Path
 from pydub import AudioSegment
+from threading import Lock
 from tqdm import tqdm
 from translate import Translator
 from TTS.api import TTS as XTTS
@@ -104,7 +105,7 @@ class ConversionContext:
                 "epub_path": None,
                 "filename_noext": None,
                 "tts_engine": default_tts_engine,
-                "fine_tuned": default_fine_tuned,
+                "fine_tuned": None,
                 "voice": None,
                 "voice_dir": None,
                 "custom_model": None,
@@ -145,6 +146,7 @@ class ConversionContext:
         return self.sessions[id]
         
 context = ConversionContext()
+lock = Lock()
 is_gui_process = False
 
 class DependencyError(Exception):
@@ -617,7 +619,9 @@ def normalize_voice_file(f, session):
 
 @lru_cache(maxsize=None)  # Cache based on unique arguments
 def load_tts_api_cached(model_path):
-    return XTTS(model_path)
+    with lock:
+        tts = XTTS(model_path)
+    return tts
         
 @lru_cache(maxsize=None)  # Cache based on unique arguments
 def load_tts_custom_cached(model_path, config_path, vocab_path):
@@ -625,7 +629,8 @@ def load_tts_custom_cached(model_path, config_path, vocab_path):
     config.models_dir = os.path.join(models_dir,'tts')
     config.load_json(config_path)
     tts = Xtts.init_from_config(config)
-    tts.load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
+    with lock:
+        tts.load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
     return tts
 
 def convert_chapters_to_audio(session):
@@ -646,14 +651,14 @@ def convert_chapters_to_audio(session):
         for index, model in enumerate(XTTS().list_models(), 1):
             print(f"{index}. {model}")
         '''
-        if session['metadata']['language'] in language_xtts:
+        if session['language'] in language_xtts:
             params['tts_model'] = 'xtts'
             if session['custom_model'] is not None:
                 print(f"Loading TTS {params['tts_model']} model from {session['custom_model']}...")
-                model_path = os.path.join(session['custom_model_dir'], 'model.pth')
-                config_path = os.path.join(session['custom_model_dir'],'config.json')
-                vocab_path = os.path.join(session['custom_model_dir'],'vocab.json')
-                voice_path = os.path.join(session['custom_model_dir'],'ref.wav')
+                model_path = os.path.join(session['custom_model'], 'model.pth')
+                config_path = os.path.join(session['custom_model'],'config.json')
+                vocab_path = os.path.join(session['custom_model'],'vocab.json')
+                voice_path = os.path.join(session['custom_model'],'ref.wav')
                 params['tts'] = load_tts_custom_cached(model_path, config_path, vocab_path)
                 print('Computing speaker latents...')
                 params['voice_path'] = session['voice'] if session['voice'] is not None else voice_path
@@ -678,7 +683,7 @@ def convert_chapters_to_audio(session):
             params['tts'].to(session['device'])
         else:
             params['tts_model'] = 'fairseq'
-            model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['metadata']['language'])
+            model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
             print(f"Loading TTS {model_path} model from {model_path}...")
             params['tts'] = load_tts_api_cached(model_path)
             params['voice_path'] = session['voice'] if session['voice'] is not  None else models[params['tts_model']][session['fine_tuned']]['voice']
@@ -1088,18 +1093,15 @@ def convert_ebook(args):
         error = None
         try:
             if len(args['language']) == 2:
-                lang_array = languages.get(alpha2=args['language'])
-                if lang_array and lang_array.part3:
-                    args['language'] = lang_array.part3
-                else:
-                    args['language'] = None
+                lang_array = languages.get(part1=args['language']) 
+                args['language'] = lang_array.part3
+                args['language_iso1'] = lang_array.part1
             else:
-                lang_array = languages.get(part3=args['language'])               
-                if not lang_array:
-                    args['language'] = None
+                lang_array = languages.get(part3=args['language'])     
+                args['language'] = lang_array.part3
+                args['language_iso1'] = lang_array.part1                
         except Exception as e:
-            args['language'] = None
-            pass
+            raise DependencyError(e)
 
         if args['language'] is not None and args['language'] in language_mapping.keys():
             is_gui_process = args['is_gui_process']
@@ -1176,7 +1178,11 @@ def convert_ebook(args):
                                 data = epubBook.get_metadata('DC', key)
                                 if data:
                                     for value, attributes in data:
-                                        session['metadata'][key] = value
+                                        metadata[key] = value
+                            metadata['language'] = session['language']
+                            metadata['title'] = os.path.splitext(os.path.basename(session['src']))[0].replace('_',' ') if not metadata['title'] else metadata['title']
+                            metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                            session['metadata'] = metadata
                             if len(session['metadata']['language']) == 2:
                                 language_array = languages.get(part1=session['metadata']['language'])
                                 session['metadata']['language'] = language_array.part3
@@ -1184,9 +1190,6 @@ def convert_ebook(args):
                                 error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
                                 print(error)
                             session['language_iso1'] = languages.get(part3=session['language']).part1
-                            session['metadata']['language'] = session['language']
-                            session['metadata']['title'] = os.path.splitext(os.path.basename(session['src']))[0] if not session['metadata']['title'] else session['metadata']['title']
-                            session['metadata']['creator'] =  False if not session['metadata']['creator'] else session['metadata']['creator']
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['chapters'] = get_chapters(epubBook, session)
@@ -1635,11 +1638,14 @@ def web_interface(args):
                 for dir in os.listdir(custom_model_tts_dir)
                 if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
             ]
+            custom_model = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
             tts_engine_options = ['xtts'] if language_xtts.get(session['language'], False) else ['fairseq']
+            tts_engine = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
             fine_tuned_options = [
                 name for name, details in models.get(tts_engine_options[0],{}).items()
                 if details.get('lang') == 'multi' or details.get('lang') == session['language']
             ]
+            fine_tuned = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
             voice_options = [
                 (os.path.splitext(f)[0], os.path.join(session['voice_dir'], f))
                 for f in os.listdir(session['voice_dir'])
@@ -1652,16 +1658,12 @@ def web_interface(args):
                 for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
             ]
             voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
-            session['voice'] = (
-                voice_options[0][1]
-                if session['voice'] not in [option[1] for option in voice_options]
-                else session['voice']
-            )
+            voice = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
             return[
-                gr.update(choices=voice_options, value=session['voice']),
-                gr.update(choices=custom_model_options, value=custom_model_options[0][1]),
-                gr.update(choices=tts_engine_options, value=tts_engine_options[0]),
-                gr.update(choices=fine_tuned_options, value=fine_tuned_options[0])
+                gr.update(choices=voice_options, value=voice),
+                gr.update(choices=custom_model_options, value=custom_model),
+                gr.update(choices=tts_engine_options, value=tts_engine),
+                gr.update(choices=fine_tuned_options, value=fine_tuned)
             ]
 
         def check_custom_model_tts(id):
@@ -1777,6 +1779,14 @@ def web_interface(args):
             except Exception as e:
                 return DependencyError(e)
 
+        def restore_session_from_data(data, session):
+            for key, value in data.items():
+                if key in session:  # Check if the key exists in session
+                    if isinstance(value, dict) and isinstance(session[key], dict):
+                        restore_session_from_data(value, session[key])
+                    else:
+                        session[key] = value
+
         def change_gr_read_data(data, state):
             nonlocal audiobooks_dir, custom_model_options, voice_options, tts_engine_options, fine_tuned_options, audiobook_options
             warning_text_extra = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
@@ -1786,6 +1796,7 @@ def web_interface(args):
                 else:
                     try:
                         session = context.get_session(data['id'])
+                        restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
                         if session['src'] is not None and not os.path.exists(session['src']):
                             session['src'] = None

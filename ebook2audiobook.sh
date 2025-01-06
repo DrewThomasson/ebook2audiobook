@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+current_shell=$(ps -p $$ -o comm=)
+
+if [[ "$current_shell" != "zsh" ]]; then
+    exec env zsh "$0" "$@"
+fi
+
 PYTHON_VERSION="3.12"
 export TTS_CACHE="./models"
 
@@ -50,19 +56,19 @@ fi
 
 ARCH=$(arch)
 
-if [[ "$OSTYPE" == "linux"* ]]; then
-	if [[ "$ARCH" == "x86_64" ]]; then
+if [[ "$OSTYPE" = "linux"* ]]; then
+	if [[ "$ARCH" = "x86_64" ]]; then
 		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
-	elif [[ "$ARCH" == "aarch64" ]]; then
+	elif [[ "$ARCH" = "aarch64" ]]; then
 		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh"
 	else
 		echo "Error: Unsupported architecture for Linux: $ARCH."
 		exit 1
 	fi
-elif [[ "$OSTYPE" == "darwin"* ]]; then
-	if [[ "$ARCH" == "x86_64" ]]; then
+elif [[ "$OSTYPE" = "darwin"* ]]; then
+	if [[ "$ARCH" = "x86_64" ]]; then
 		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
-	elif [[ "$ARCH" == "arm64" ]]; then
+	elif [[ "$ARCH" = "arm64" ]]; then
 		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh"
 	else
 		echo "Error: Unsupported architecture for MacOS: $ARCH. Are you possibly using Rosetta?"
@@ -100,7 +106,7 @@ fi
 # If neither environment variable is set, check Python path
 if [[ -z "$CURRENT_ENV" ]]; then
     PYTHON_PATH=$(which python 2>/dev/null)
-    if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" == "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" == "$VIRTUAL_ENV/bin/python" ) ]]; then
+    if [[ ( -n "$CONDA_PREFIX" && "$PYTHON_PATH" = "$CONDA_PREFIX/bin/python" ) || ( -n "$VIRTUAL_ENV" && "$PYTHON_PATH" = "$VIRTUAL_ENV/bin/python" ) ]]; then
         CURRENT_ENV="${CONDA_PREFIX:-$VIRTUAL_ENV}"
     fi
 fi
@@ -268,7 +274,7 @@ function conda_check {
 function docker_check {
 	if ! command -v docker &> /dev/null; then
 		echo -e "\e[33m docker is missing! trying to install it... \e[0m"
-		if [[ "$OSTYPE" == "darwin"* ]]; then
+		if [[ "$OSTYPE" = "darwin"* ]]; then
 			echo "Installing Docker using Homebrew..."
 			$PACK_MGR --cask docker $PACK_MGR_OPTIONS
 		else
@@ -308,9 +314,9 @@ function docker_build {
 if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 	echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
 	python app.py --script_mode $SCRIPT_MODE $ARGS
-elif [[ "$SCRIPT_MODE" == "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
+elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 	pass=true
-	if [ "$SCRIPT_MODE" == "$NATIVE" ]; then
+	if [ "$SCRIPT_MODE" = "$NATIVE" ]; then
 		echo -e "\e[33mRunning in $NATIVE mode\e[0m"
 		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
 			if ! install_programs; then
