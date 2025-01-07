@@ -2,6 +2,7 @@ import os
 from lib.conf import voices_dir
 from lib.lang import default_voice_file
 
+
 default_tts_engine = 'xtts'
 default_fine_tuned = 'std'
 default_xtts_files = ['config.json', 'vocab.json', 'model.pth', 'ref.wav']

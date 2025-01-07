@@ -509,7 +509,7 @@ def filter_chapter(doc, language):
 def get_sentences(sentence, language, max_pauses=5):
     max_length = language_mapping[language]['char_limit']
     punctuation = language_mapping[language]['punctuation']
-    sentence = sentence.replace(". ", " . \n")
+    sentence = re.sub(r"\.(\s|$)", r" .\n", sentence)
     replacements = {
         '„': ' " ',  # German, Polish, Czech opening
         '“': ' " ',  # German, Polish, Czech, etc. closing
@@ -658,7 +658,7 @@ def convert_chapters_to_audio(session):
         for index, model in enumerate(XTTS().list_models(), 1):
             print(f"{index}. {model}")
         '''
-        if session['language'] in language_xtts:
+        if session['tts_engine'] == 'xtts':
             params['tts_model'] = 'xtts'
             if session['custom_model'] is not None:
                 init_cache(load_tts_custom_cached)
@@ -691,14 +691,19 @@ def convert_chapters_to_audio(session):
                 params['tts'] = load_tts_api_cached(model_path)
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
-        else:
-            init_cache(load_tts_api_cached)
-            params['tts_model'] = 'fairseq'
-            model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
-            print(f"Loading TTS {model_path} model from {model_path}...")
-            params['tts'] = load_tts_api_cached(model_path)
-            params['voice_path'] = session['voice'] if session['voice'] is not  None else models[params['tts_model']][session['fine_tuned']]['voice']
-            params['tts'].to(session['device'])
+        elif session['tts_engine'] == 'fairseq':
+            if session['custom_model'] is not None:
+                print("TODO!")
+            else:
+                init_cache(load_tts_api_cached)
+                params['tts_model'] = 'fairseq'
+                model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
+                print(f"Loading TTS {model_path} model from {model_path}...")
+                params['tts'] = load_tts_api_cached(model_path)
+                params['voice_path'] = session['voice'] if session['voice'] is not  None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['tts'].to(session['device'])
+        elif session['tts_engine'] == 'yourtts':
+            print("TODO!")
 
         resume_chapter = 0
         resume_sentence = 0
@@ -1097,6 +1102,13 @@ def compare_file_metadata(f1, f2):
     if os.path.getmtime(f1) != os.path.getmtime(f2):
         return False
     return True
+    
+def get_compatible_tts_engines(language):
+    compatible_engines = [
+        engine_type for engine_type in models.keys()
+        if language in language_tts.get(engine_type, {})
+    ]
+    return compatible_engines
 
 def convert_ebook(args):
     try:
@@ -1248,6 +1260,16 @@ def convert_ebook(args):
         print(f'convert_ebook() Exception: {e}')
         return e, None
 
+def get_all_ip_addresses():
+    ip_addresses = []
+    for interface, addresses in psutil.net_if_addrs().items():
+        for address in addresses:
+            if address.family == socket.AF_INET:
+                ip_addresses.append(address.address)
+            elif address.family == socket.AF_INET6:
+                ip_addresses.append(address.address)  
+    return ip_addresses
+
 def web_interface(args):
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
@@ -1329,17 +1351,17 @@ def web_interface(args):
                 .svelte-1b742ao.center.boundedheight.flex {
                     height: 140px !important;
                 }
-                #component-8, #component-10, #component-22 {
+                #component-8, #component-13, #component-26 {
                     height: 140px !important;
                 }
-                #component-18 {
+                #component-10 {
                     height: 127px !important;
                 }
                 #component-51, #component-52, #component-53 {
                     height: 80px !important;
                 }
-                #component-11 span[data-testid="block-info"],
-                #component-23 span[data-testid="block-info"] {
+                #component-14 span[data-testid="block-info"],
+                #component-27 span[data-testid="block-info"] {
                     display: none;
                 }
             </style>
@@ -1378,18 +1400,23 @@ def web_interface(args):
                 with gr.Row():
                     with gr.Column(scale=3):
                         with gr.Group():
-                            gr_ebook_file = gr.Files(label='EBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)',
-                                                     file_types=['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw'],
-                                                     file_count="single") # TODO: switch to directory for ebook_dir option
+                            gr_ebook_file = gr.Files(
+                                label='EBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)',
+                                file_types=['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw'],
+                                file_count="single"
+                            )
+                        with gr.Group():
+                            gr_language = gr.Dropdown(label='Language', choices=language_options, value=default_language_code, type='value', interactive=True)
                         with gr.Group():
                             gr_voice_file = gr.File(label='*Cloning Voice (a .wav 24khz for XTTS base model and 16khz for FAIRSEQ base model, no more than 6 sec)', file_types=['.wav'], value=None, visible=interface_component_options['gr_voice_file'])
                             gr_voice_list = gr.Dropdown(label='', choices=voice_options, type='value', interactive=True)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
                             gr_device = gr.Radio(label='Processor Unit', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], value=default_device)
-                        with gr.Group():
-                            gr_language = gr.Dropdown(label='Language', choices=language_options, value=default_language_code, type='value', interactive=True)
                     with gr.Column(scale=3):
+                        with gr.Group():
+                            gr_tts_engine_list = gr.Dropdown(label='TTS Base', choices=tts_engine_options, type='value', interactive=True)
+                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models', choices=fine_tuned_options, type='value', interactive=True)
                         gr_group_custom_model = gr.Group(visible=interface_component_options['gr_group_custom_model'])
                         with gr_group_custom_model:
                             gr_custom_model_file = gr.File(label='*Custom XTTS Model (a .zip containing config.json, vocab.json, model.pth, ref.wav)', value=None, file_types=['.zip'])
@@ -1397,9 +1424,6 @@ def web_interface(args):
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
                             gr_session = gr.Textbox(label='Session')
-                        with gr.Group():
-                            gr_tts_engine_list = gr.Dropdown(label='TTS Base', choices=tts_engine_options, type='value', interactive=True)
-                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models', choices=fine_tuned_options, type='value', interactive=True)
                         gr_outpot_format_list = gr.Dropdown(label='Output format', choices=[('M4B','m4b'), ('MP3','mp3'), ('OPUS','opus')], type='value', interactive=True)
             gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', visible=interface_component_options['gr_tab_preferences'])
             with gr_tab_preferences:
@@ -1650,10 +1674,10 @@ def web_interface(args):
                 if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
             ]
             custom_model = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-            tts_engine_options = ['xtts'] if language_xtts.get(session['language'], False) else ['fairseq']
+            tts_engine_options = get_compatible_tts_engines(session['language'])
             tts_engine = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
             fine_tuned_options = [
-                name for name, details in models.get(tts_engine_options[0],{}).items()
+                name for name, details in models.get(tts_engine,{}).items()
                 if details.get('lang') == 'multi' or details.get('lang') == session['language']
             ]
             fine_tuned = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
@@ -1680,7 +1704,7 @@ def web_interface(args):
         def check_custom_model_tts(id):
             session = context.get_session(id)
             dir_name = 'xtts'
-            if not language_xtts.get(session['language']):
+            if not language_tts['xtts'].get(session['language']):
                 dir_name = 'fairseq'
             dir_path = os.path.join(session['custom_model_dir'], dir_name)
             if not os.path.isdir(dir_path):
@@ -1737,10 +1761,15 @@ def web_interface(args):
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
             session['tts_engine'] = engine
-            if engine == 'xtts':
-                return gr.update(visible=True)
+            fine_tuned_options = [
+                name for name, details in models.get(session['tts_engine'], {}).items()
+                if details.get('lang') == 'multi' or details.get('lang') == session['language']
+            ]
+            session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
+            if engine == 'xtts' and session['fine_tuned'] == 'std':
+                return gr.update(visible=True), gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
             else:
-                return gr.update(visible=False)
+                return gr.update(visible=False), gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
             
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
@@ -1839,10 +1868,10 @@ def web_interface(args):
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
                 session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-                tts_engine_options = ['xtts'] if language_xtts.get(session['language'], False) else ['fairseq']
+                tts_engine_options = get_compatible_tts_engines(session['language'])
                 session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
                 fine_tuned_options = [
-                    name for name, details in models.get(tts_engine_options[0],{}).items()
+                    name for name, details in models.get(session['tts_engine'], {}).items()
                     if details.get('lang') == 'multi' or details.get('lang') == session['language']
                 ]
                 session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
@@ -1973,7 +2002,7 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tab_preferences]
+            outputs=[gr_tab_preferences, gr_fine_tuned_list]
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
@@ -2093,6 +2122,9 @@ def web_interface(args):
             outputs=[gr_read_data]
         )
     try:
+        all_ips = get_all_ip_addresses()
+        print("Listening on the following IP:")
+        print(all_ips)
         interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(server_name=interface_host, server_port=interface_port, share=is_gui_shared)
     except OSError as e:
         print(f'Connection error: {e}')
