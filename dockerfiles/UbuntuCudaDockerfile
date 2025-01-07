@@ -1,0 +1,43 @@
+# Use an official CUDA base image
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04
+
+# Set up environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/opt/conda/bin:$PATH"
+
+# Install system packages and Miniconda
+RUN apt-get update && apt-get install -y \
+    wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic \
+    && apt-get clean && rm -rf /var/lib/apt/lists/* && \
+    wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh && \
+    bash miniconda.sh -b -p /opt/conda && \
+    rm miniconda.sh && \
+    /opt/conda/bin/conda clean --all --yes
+
+# Create and activate the Python 3.12 environment
+RUN conda create -y -n py312 python=3.12 && \
+    conda clean -a
+
+# Create and switch to a non-root user
+RUN useradd -m -u 1000 user
+USER user
+
+# Activate the Conda environment
+SHELL ["conda", "run", "-n", "py312", "/bin/bash", "-c"]
+
+# Clone the GitHub repository
+RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git /home/user/app
+
+# Set the working directory
+WORKDIR /home/user/app
+
+# Install Python dependencies using requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Expose the application port
+EXPOSE 7860
+
+# Start the Gradio app
+CMD ["conda", "run", "-n", "py312", "python", "app.py"]
