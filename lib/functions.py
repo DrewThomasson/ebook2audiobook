@@ -1657,13 +1657,13 @@ def web_interface(args):
                 if details.get('lang') == 'multi' or details.get('lang') == session['language']
             ]
             fine_tuned = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
+            voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
+            voice_file_pattern = '*_16khz.wav' if session['tts_engine'] == 'fairseq' else '*_24khz.wav'
             voice_options = [
                 (os.path.splitext(f)[0], os.path.join(session['voice_dir'], f))
                 for f in os.listdir(session['voice_dir'])
                 if f.endswith('.wav')
             ]
-            voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-            voice_file_pattern = '*_16khz.wav' if session['tts_engine'] == 'fairseq' else '*_24khz.wav'
             voice_options += [
                 (os.path.splitext(f.name)[0].replace('_16khz', '').replace('_24khz', ''), str(f))
                 for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
@@ -1807,7 +1807,7 @@ def web_interface(args):
                     session = context.get_session(str(uuid.uuid4()))
                 else:
                     try:
-                        if id not in data:
+                        if 'id' not in data:
                             data['id'] = str(uuid.uuid4())
                         session = context.get_session(data['id'])
                         restore_session_from_data(data, session)
@@ -1831,35 +1831,34 @@ def web_interface(args):
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}")
                 os.makedirs(session['custom_model_dir'], exist_ok=True)
-                os.makedirs(session['voice_dir'], exist_ok=True)
-                voice_options = [
-                    (os.path.splitext(f)[0], os.path.join(session['voice_dir'], f))
-                    for f in os.listdir(session['voice_dir'])
-                    if f.endswith('.wav')
-                ]
-                voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                voice_file_pattern = '*_16khz.wav' if session['tts_engine'] == 'fairseq' else '*_24khz.wav'
-                voice_options += [
-                    (os.path.splitext(f.name)[0].replace('_16khz', '').replace('_24khz', ''), str(f))
-                    for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
-                ]
-                voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
-                session['voice'] = (
-                    voice_options[0][1]
-                    if session['voice'] not in [option[1] for option in voice_options]
-                    else session['voice']
-                )
-                tts_engine_options = ['xtts'] if language_xtts.get(session['language'], False) else ['fairseq']
-                fine_tuned_options = [
-                    name for name, details in models.get(tts_engine_options[0],{}).items()
-                    if details.get('lang') == 'multi' or details.get('lang') == session['language']
-                ]
+                os.makedirs(session['voice_dir'], exist_ok=True)             
                 custom_model_tts_dir = check_custom_model_tts(session['id'])
                 custom_model_options = [('None', None)] + [
                     (os.path.basename(os.path.join(custom_model_tts_dir, dir)), os.path.join(custom_model_tts_dir, dir))
                     for dir in os.listdir(custom_model_tts_dir)
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
+                session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
+                tts_engine_options = ['xtts'] if language_xtts.get(session['language'], False) else ['fairseq']
+                session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
+                fine_tuned_options = [
+                    name for name, details in models.get(tts_engine_options[0],{}).items()
+                    if details.get('lang') == 'multi' or details.get('lang') == session['language']
+                ]
+                session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
+                voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
+                voice_file_pattern = '*_16khz.wav' if session['tts_engine'] == 'fairseq' else '*_24khz.wav'
+                voice_options = [
+                    (os.path.splitext(f)[0], os.path.join(session['voice_dir'], f))
+                    for f in os.listdir(session['voice_dir'])
+                    if f.endswith('.wav')
+                ]
+                voice_options += [
+                    (os.path.splitext(f.name)[0].replace('_16khz', '').replace('_24khz', ''), str(f))
+                    for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
+                ]
+                voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
+                session['voice'] = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
                 if is_gui_shared:
                     warning_text_extra = f' Note: access limit time: {interface_shared_tmp_expire} days'
                     audiobooks_dir = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
@@ -1880,6 +1879,7 @@ def web_interface(args):
                     key=lambda x: os.path.getmtime(x[1]),
                     reverse=True
                 )
+                session['audiobook'] = session['audiobook'] if session['audiobook'] in [option[1] for option in audiobook_options] else None
                 if len(audiobook_options) > 0:
                     if not session['audiobook']:
                         session['audiobook'] = audiobook_options[0][1]

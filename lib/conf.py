@@ -14,7 +14,7 @@ python_env_dir = os.path.abspath(os.path.join('.','python_env'))
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 docker_utils_image = 'utils'
 
-interface_host = '127.0.0.1'
+interface_host = '0.0.0.0'
 interface_port = 7860
 interface_shared_tmp_expire = 3 # days
 interface_concurrency_limit = 8 # or None for unlimited

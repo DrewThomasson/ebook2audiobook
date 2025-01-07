@@ -1,6 +1,7 @@
 import os
 
 language_xtts = {"eng": "en", "spa": "es", "fra": "fr", "deu": "de", "ita": "it", "por": "pt", "pol": "pl", "tur": "tr", "rus": "ru", "nld": "nl", "ces": "cs", "ara": "ar", "zho": "zh-cn", "jpn": "ja", "hun": "hu", "kor": "ko", "hin": "hi"}
+language_yourtts = {"eng": "en", "fra": "fr", "por": "pt", "bra": "br"}
 
 default_language_code = 'eng' # ISO-639-3
 default_voice_file = os.path.abspath(os.path.join('.','voices',default_language_code,'adult','female','Jennifer_24khz.wav')) # or 'male','Curt_24khz.wav'

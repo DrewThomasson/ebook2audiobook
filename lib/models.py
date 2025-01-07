@@ -5,7 +5,24 @@ from lib.lang import default_voice_file
 default_tts_engine = 'xtts'
 default_fine_tuned = 'std'
 default_xtts_files = ['config.json', 'vocab.json', 'model.pth', 'ref.wav']
-default_fairseq_file = ['config.json', 'vocab.json', 'G_100000.pth']
+default_fairseq_files = ['config.json', 'vocab.json', 'G_100000.pth']
+default_yourtts_files = ['config.json', 'model_file.pth']
+default_bark_files = ['coarse_2.pt']
+default_libri_files = ['config.json', 'model_file.pth']
+default_openvoice2_files = ['config.json', 'checkpoint.pth']
+default_freevc24_files = ['config.json', 'model.pth']
+
+builtin_xtts_voices = [
+    'Claribel Dervla', 'Daisy Studious', 'Gracie Wise', 'Tammie Ema', 'Alison Dietlinde', 'Ana Florence', 'Annmarie Nele', 'Asya Anara', 
+    'Brenda Stern', 'Gitta Nikolina', 'Henriette Usha', 'Sofia Hellen', 'Tammy Grit', 'Tanja Adelina', 'Vjollca Johnnie', 'Andrew Chipper', 
+    'Badr Odhiambo', 'Dionisio Schuyler', 'Royston Min', 'Viktor Eka', 'Abrahan Mack', 'Adde Michal', 'Baldur Sanjin', 'Craig Gutsy', 
+    'Damien Black', 'Gilberto Mathias', 'Ilkin Urbano', 'Kazuhiko Atallah', 'Ludvig Milivoj', 'Suad Qasim', 'Torcull Diarmuid', 
+    'Viktor Menelaos', 'Zacharie Aimilios', 'Nova Hogarth', 'Maja Ruoho', 'Uta Obando', 'Lidiya Szekeres', 'Chandra MacFarland', 
+    'Szofi Granger', 'Camilla Holmström', 'Lilya Stainthorpe', 'Zofija Kendrick', 'Narelle Moon', 'Barbora MacLean', 
+    'Alexandra Hisakawa', 'Alma María', 'Rosemary Okafor', 'Ige Behringer', 'Filip Traverse', 'Damjan Chapman', 
+    'Wulf Carlevaro', 'Aaron Dreschner', 'Kumar Dahl', 'Eugenio Mataracı', 'Ferran Simen', 'Xavier Hayasaka', 'Luis Moray', 'Marcos Rudaski'
+]
+builtin_yourtts_voices = ['female-en-5', 'female-en-5\n', 'female-pt-4\n', 'male-en-2', 'male-en-2\n', 'male-pt-3\n']
 
 models = {
     "xtts": {
@@ -107,7 +124,7 @@ models = {
             "repo": "tts_models/[lang]/fairseq/vits",
             "sub": "",
             "voice": default_voice_file,
-            "files": default_fairseq_file
+            "files": default_fairseq_files
         }
     }
 }
