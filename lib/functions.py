@@ -635,6 +635,11 @@ def load_tts_custom_cached(model_path, config_path, vocab_path):
         tts.load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
     return tts
 
+def init_cache(func, memory_threshold_mb=1024):
+    available_memory_mb = psutil.virtual_memory().available // (1024 * 1024)
+    if available_memory_mb < memory_threshold_mb:
+        func.cache_clear()
+
 def convert_chapters_to_audio(session):
     try:
         if session['cancellation_requested']:
@@ -656,6 +661,7 @@ def convert_chapters_to_audio(session):
         if session['language'] in language_xtts:
             params['tts_model'] = 'xtts'
             if session['custom_model'] is not None:
+                init_cache(load_tts_custom_cached)
                 print(f"Loading TTS {params['tts_model']} model from {session['custom_model']}...")
                 model_path = os.path.join(session['custom_model'], 'model.pth')
                 config_path = os.path.join(session['custom_model'],'config.json')
@@ -666,6 +672,7 @@ def convert_chapters_to_audio(session):
                 params['voice_path'] = session['voice'] if session['voice'] is not None else voice_path
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             elif session['fine_tuned'] != 'std':
+                init_cache(load_tts_custom_cached)
                 print(f"Loading TTS {params['tts_model']} model from {session['fine_tuned']}...")
                 hf_repo = models[params['tts_model']][session['fine_tuned']]['repo']
                 hf_sub = models[params['tts_model']][session['fine_tuned']]['sub']
@@ -678,12 +685,14 @@ def convert_chapters_to_audio(session):
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             else:
+                init_cache(load_tts_api_cached)
                 print(f"Loading TTS {params['tts_model']} model from {models[params['tts_model']][session['fine_tuned']]['repo']}...")
                 model_path = models[params['tts_model']][session['fine_tuned']]['repo']
                 params['tts'] = load_tts_api_cached(model_path)
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
         else:
+            init_cache(load_tts_api_cached)
             params['tts_model'] = 'fairseq'
             model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
             print(f"Loading TTS {model_path} model from {model_path}...")
@@ -1852,7 +1861,7 @@ def web_interface(args):
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
                 if is_gui_shared:
-                    warning_text_extra = f' Note: access limit time: {interface_shared_expire} days'
+                    warning_text_extra = f' Note: access limit time: {interface_shared_tmp_expire} days'
                     audiobooks_dir = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
                     session['audiobooks_dir'] = audiobooks_dir
                     delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session)
