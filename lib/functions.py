@@ -122,7 +122,7 @@ class ConversionContext:
                 "epub_path": None,
                 "filename_noext": None,
                 "tts_engine": default_tts_engine,
-                "fine_tuned": None,
+                "fine_tuned": default_fine_tuned,
                 "voice": None,
                 "voice_dir": None,
                 "custom_model": None,
