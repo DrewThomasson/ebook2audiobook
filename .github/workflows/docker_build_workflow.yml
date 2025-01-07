@@ -28,11 +28,11 @@ jobs:
       - name: Build Docker image
         run: |
           GIT_HASH=$(git rev-parse --short=9 HEAD)
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/my-image-name:latest -t ${{ secrets.DOCKER_USERNAME }}/my-image-name:$GIT_HASH .
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH .
 
       # Push the Docker image to the registry
       - name: Push Docker image
         run: |
           GIT_HASH=$(git rev-parse --short=9 HEAD)
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-image-name:latest
-          docker push ${{ secrets.DOCKER_USERNAME }}/my-image-name:$GIT_HASH
+          docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH
