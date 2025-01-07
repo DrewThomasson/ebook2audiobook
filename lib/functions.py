@@ -1796,6 +1796,8 @@ def web_interface(args):
                     session = context.get_session(str(uuid.uuid4()))
                 else:
                     try:
+                        if id not in data:
+                            data['id'] = str(uuid.uuid4())
                         session = context.get_session(data['id'])
                         restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
