@@ -1,0 +1,38 @@
+name: Build and Push Docker Image
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      # Log in to Docker Hub or GitHub Container Registry
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build the Docker image with multiple tags
+      - name: Build Docker image
+        run: |
+          GIT_HASH=$(git rev-parse --short=9 HEAD)
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/my-image-name:latest -t ${{ secrets.DOCKER_USERNAME }}/my-image-name:$GIT_HASH .
+
+      # Push the Docker image to the registry
+      - name: Push Docker image
+        run: |
+          GIT_HASH=$(git rev-parse --short=9 HEAD)
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-image-name:latest
+          docker push ${{ secrets.DOCKER_USERNAME }}/my-image-name:$GIT_HASH
