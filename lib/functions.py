@@ -1786,7 +1786,8 @@ def web_interface(args):
                     if isinstance(value, dict) and isinstance(session[key], dict):
                         restore_session_from_data(value, session[key])
                     else:
-                        session[key] = value
+                        if value is not None:
+                            session[key] = value
 
         def change_gr_read_data(data, state):
             nonlocal audiobooks_dir, custom_model_options, voice_options, tts_engine_options, fine_tuned_options, audiobook_options
