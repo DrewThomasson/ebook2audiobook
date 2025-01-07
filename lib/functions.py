@@ -10,6 +10,7 @@ import hashlib
 import json
 import numpy as np
 import os
+import psutil
 import random
 import regex as re
 import requests

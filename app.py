@@ -172,7 +172,7 @@ Linux/Mac:
     # Conditions based on the --headless flag
     if args['headless']:
         args['is_gui_process'] = False
-        args['audiobooks_dir'] = args['output_dir'] if args['headless'] else audiobooks_cli_dir
+        args['audiobooks_dir'] = args['output_dir'] if args['output_dir'] else audiobooks_cli_dir
         args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
 
         # Condition to stop if both --ebook and --ebooks_dir are provided
