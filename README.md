@@ -10,7 +10,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
 
-Thanks to support ebbok2audiobook developers!<br>
+Thanks to support ebook2audiobook developers!<br>
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
 
