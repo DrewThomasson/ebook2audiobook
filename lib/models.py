@@ -2,6 +2,7 @@ import os
 from lib.conf import voices_dir
 from lib.lang import default_voice_file
 
+tts_engines = {"xtts": "XTTS", "fairseq": "FAIRSEQ"}
 
 default_tts_engine = 'xtts'
 default_fine_tuned = 'std'

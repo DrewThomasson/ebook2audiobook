@@ -10,6 +10,7 @@ import hashlib
 import json
 import numpy as np
 import os
+import platform
 import psutil
 import random
 import regex as re
@@ -42,7 +43,7 @@ from pathlib import Path
 from pydub import AudioSegment
 from threading import Lock
 from tqdm import tqdm
-from translate import Translator
+from transformers import AutoTokenizer
 from TTS.api import TTS as XTTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
@@ -111,6 +112,7 @@ class ConversionContext:
                 "id": id,
                 "process_id": None,
                 "device": default_device,
+                "system": None,
                 "client": None,
                 "language": default_language_code,
                 "language_iso1": None,
@@ -166,7 +168,7 @@ class ConversionContext:
 context = ConversionContext()
 lock = Lock()
 is_gui_process = False
-
+tokenizer = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
 
 def prepare_dirs(src, session):
     try:
@@ -434,8 +436,7 @@ def get_chapters(epubBook, session):
         return False
     except Exception as e:
         raise DependencyError(f'Error extracting main content pages: {e}')
-'''
-
+        
 def get_chapters(epubBook, session):
     try:
         if session['cancellation_requested']:
@@ -451,20 +452,57 @@ def get_chapters(epubBook, session):
         most_common_pattern = filter_doc(doc_patterns)
         selected_docs = [doc for doc in all_docs if filter_pattern(str(doc)) == most_common_pattern]       
         # Step 3: Calculate average character length of selected docs
-        char_lengths = [len(filter_chapter(doc, session['language'])) for doc in selected_docs]
-        average_char_length = sum(char_lengths) / len(char_lengths) if char_lengths else 0
+        char_length = [len(filter_chapter(doc, session['language'], session['system'])) for doc in selected_docs]
+        average_char_length = sum(char_length) / len(char_length) if char_length else 0
         # Step 4: Filter docs based on average character length or repetitive pattern
         final_selected_docs = []
         for doc in all_docs:
             doc_pattern = filter_pattern(str(doc))
-            doc_content = filter_chapter(doc, session['language'])
+            doc_content = filter_chapter(doc, session['language'], session['system'])
             if len(doc_content) >= average_char_length or doc_pattern == most_common_pattern:
                 final_selected_docs.append(doc)
         # Step 5: Extract chapters from the final selected docs
-        chapters = [filter_chapter(doc, session['language']) for doc in final_selected_docs]
+        chapters = [filter_chapter(doc, session['language'], session['system']) for doc in final_selected_docs]
         if session['metadata'].get('creator'):
             intro = f"{session['metadata']['creator']}\n\n{session['metadata']['title']}\n\n"
             chapters[0].insert(0, intro)
+        return chapters
+    except Exception as e:
+        raise DependencyError(f'Error extracting main content pages: {e}')
+'''
+
+def get_chapters(epubBook, session):
+    try:
+        if session['cancellation_requested']:
+            print('Cancel requested')
+            return False
+        # Step 1: Get all documents and their patterns
+        all_docs = list(epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT))
+        if not all_docs:
+            return False
+        all_docs = all_docs[1:]  # Exclude the first document if needed
+        # Cache filtered chapters to avoid redundant calls
+        doc_cache = {}
+        for doc in all_docs:
+            doc_cache[doc] = filter_chapter(doc, session['language'], session['system'])
+        # Step 2: Determine the most common pattern
+        doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
+        most_common_pattern = filter_doc(doc_patterns)
+        # Step 3: Calculate average character length of selected docs
+        char_length = [len(content) for content in doc_cache.values()]
+        average_char_length = sum(char_length) / len(char_length) if char_length else 0
+        # Step 4: Filter docs based on average character length or repetitive pattern
+        final_selected_docs = [
+            doc for doc in all_docs
+            if len(doc_cache[doc]) >= average_char_length or filter_pattern(str(doc)) == most_common_pattern
+        ]
+        # Step 5: Extract chapters from the final selected docs
+        chapters = [doc_cache[doc] for doc in final_selected_docs]
+        # Add introductory metadata if available
+        if session['metadata'].get('creator'):
+            intro = f"{session['metadata']['creator']}\n\n{session['metadata']['title']}\n\n"
+            if chapters:
+                chapters[0] = [intro] + chapters[0]
         return chapters
     except Exception as e:
         raise DependencyError(f'Error extracting main content pages: {e}')
@@ -487,7 +525,7 @@ def filter_pattern(doc_identifier):
             return 'numbers'
     return None
 
-def filter_chapter(doc, language):
+def filter_chapter(doc, language, system):
     soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
     # Remove scripts and styles
     for script in soup(["script", "style"]):
@@ -503,56 +541,78 @@ def filter_chapter(doc, language):
     text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
     # Pattern 2: Split numbers into groups of 4
     text = re.sub(r'(\d{4})(?=\d)', r'\1 ', text)
-    chapter_sentences = get_sentences(text, language)
+    max_tokens = language_mapping[language]['max_tokens'] if system != 'windows-10' else language_mapping[language]['max_tokens'] / 2
+    chapter_sentences = get_sentences(text, language, max_tokens)
     return chapter_sentences
 
-def get_sentences(sentence, language, max_pauses=5):
-    max_length = language_mapping[language]['char_limit']
+def get_sentences(sentence, language, max_tokens, max_pauses=6):
     punctuation = language_mapping[language]['punctuation']
-    sentence = re.sub(r"\.(\s|$)", r" .\n", sentence)
+    # Replace problematic characters
     replacements = {
-        '„': ' " ',  # German, Polish, Czech opening
-        '“': ' " ',  # German, Polish, Czech, etc. closing
-        '«': ' " ',  # French, Russian opening
-        '»': ' " ',  # French, Russian closing
-        '「': ' " ',  # Japanese opening
-        '」': ' " ',  # Japanese closing
-        '”': ' " ',   # Chinese, Korean closing
+        "’": "'",
+        '، ': ' ، ',
+        '„': ' " ',
+        '“': ' " ',
+        '«': ' " ',
+        '»': ' " ',
+        '「': ' " ',
+        '」': ' " ',
+        '”': ' " ',
         '…': ' ... ',
         '–': ' - ',
         '—': ' - ',
         ':': ' : ',
+        '?': ' ? ',
+        '!': ' ! ',
         '\xa0': ' '  # Non-breaking space
     }
     for old, new in replacements.items():
         sentence = sentence.replace(old, new)
     parts = []
-    while len(sentence) > max_length or sum(sentence.count(p) for p in punctuation) > max_pauses:
-        # Step 1: Look for the last period (.) within max_length
-        possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char == ";\n"]
-        # Step 2: If no periods, look for the last comma (,)
-        if not possible_splits:
-            possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char == ',']    
-        # Step 3: If still no splits, look for any other punctuation
-        if not possible_splits:
-            possible_splits = [i for i, char in enumerate(sentence[:max_length]) if char in punctuation]    
-        # Step 4: Determine where to split the sentence
-        if possible_splits:
-            split_at = possible_splits[-1] + 1  # Split at the last occurrence of punctuation
+    while sentence:
+        # Step 1: Prioritize splitting at ellipses "..." or "…"
+        ellipsis_split = None
+        if '...' in sentence:
+            ellipsis_split = sentence.split('...', 1)
+        elif '…' in sentence:
+            ellipsis_split = sentence.split('…', 1)
+        if ellipsis_split:
+            current_part = ellipsis_split[0].strip() + ('...' if '...' in sentence else '…')
+            remaining_sentence = ellipsis_split[1].strip()
         else:
-            # If no punctuation is found, split at the last space
-            last_space = sentence.rfind(' ', 0, max_length)
-            if last_space != -1:
-                split_at = last_space + 1
+            current_part = sentence.strip()
+            remaining_sentence = ""
+        # Tokenize the current part
+        tokens = tokenizer.tokenize(current_part)
+        # Step 2: Check if tokens exceed max_tokens
+        if len(tokens) > max_tokens:
+            # Step 3: Find the last period (.) before max_tokens
+            period_split = current_part.rsplit('.', 1)
+            if len(period_split) > 1 and len(tokenizer.tokenize(period_split[0])) <= max_tokens:
+                parts.append(period_split[0].strip() + '.')
+                sentence = period_split[1].strip() + ' ' + remaining_sentence
+                continue
+            # Step 4: If no period, find the last space before max_tokens
+            split_at = current_part.rfind(' ', 0, max_tokens)
+            if split_at == -1:
+                # Step 5: If no space, use punctuation marks
+                split_at = max((current_part.rfind(p, 0, max_tokens) for p in punctuation), default=-1)
+            # Split at the determined position
+            if split_at != -1:
+                parts.append(current_part[:split_at + 1].strip())
+                sentence = current_part[split_at + 1:].strip() + ' ' + remaining_sentence
             else:
-                # If no space is found, force split at max_length
-                split_at = max_length   
-        # Add the split sentence to parts
-        parts.append(sentence[:split_at].strip() + ' ')
-        sentence = sentence[split_at:].strip()
-    # Add the remaining sentence if any
-    if sentence:
-        parts.append(sentence.strip() + ' ')
+                # If no valid space or punctuation, force split at max_tokens
+                split_tokens = tokens[:max_tokens]
+                split_text = tokenizer.convert_tokens_to_string(split_tokens)
+                parts.append(split_text.strip())
+                sentence = tokenizer.convert_tokens_to_string(tokens[max_tokens:]).strip() + ' ' + remaining_sentence
+        else:
+            # If tokens are within the limit, add the current part
+            parts.append(current_part.strip())
+            sentence = remaining_sentence.strip()
+        # Log the token count for the current part
+        print(f"Sentence: {parts[-1]} | Tokens: {len(tokenizer.tokenize(parts[-1]))}")
     return parts
 
 def normalize_voice_file(f, session):
@@ -636,7 +696,7 @@ def load_tts_custom_cached(model_path, config_path, vocab_path):
         tts.load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
     return tts
 
-def init_cache(func, memory_threshold_mb=1024):
+def init_cache(func, memory_threshold_mb=512):
     available_memory_mb = psutil.virtual_memory().available // (1024 * 1024)
     if available_memory_mb < memory_threshold_mb:
         func.cache_clear()
@@ -1158,6 +1218,12 @@ def convert_ebook(args):
                 raise ValueError('The selected ebook file has no extension. Please select a valid file.')
 
             if not is_gui_process:
+                if session['tts_engine'] is None:
+                    session['tts_engine'] = get_compatible_tts_engines(session['language'])[0]
+                else:
+                    check_tts = get_compatible_tts_engines(session['language'])
+                    if session['tts_engine'] not in check_tts:
+                        raise ValueError('The TTS engine is not valid for this language.')
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions',f"voice-{session['id']}")            
                 session['voice'] = args['voice']
                 if session['voice'] is not None:
@@ -1796,12 +1862,13 @@ def web_interface(args):
             session = context.get_session(id)
             session[key] = val           
 
-        def submit_convert_btn(id, device, ebook_file, voice, language, custom_model, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting, fine_tuned):
+        def submit_convert_btn(id, device, ebook_file, tts_engine, voice, language, custom_model, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting, fine_tuned):
             args = {
                 "is_gui_process": is_gui_process,
                 "session": id,
                 "script_mode": script_mode,
                 "device": device.lower(),
+                "tts_engine": tts_engine,
                 "ebook": ebook_file.name if ebook_file else None,
                 "audiobooks_dir": audiobooks_dir,
                 "voice": voice,
@@ -1870,6 +1937,7 @@ def web_interface(args):
                     except Exception as e:
                         raise DependencyError(e)
                         return gr.update(), gr.update(), gr.update(), gr.update(value=e)
+                session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}")
                 os.makedirs(session['custom_model_dir'], exist_ok=True)
@@ -2076,7 +2144,7 @@ def web_interface(args):
         ).then(
             fn=submit_convert_btn,
             inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_voice_list, gr_language, 
+                gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_voice_list, gr_language, 
                 gr_custom_model_list, gr_temperature, gr_length_penalty,
                 gr_repetition_penalty, gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting, gr_fine_tuned_list
             ],

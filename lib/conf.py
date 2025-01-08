@@ -49,7 +49,7 @@ tts_default_settings = {
     "top_k": 50,
     "top_p": 0.8,
     "speed": 1.0,
-    "enable_text_splitting": True
+    "enable_text_splitting": False
 }
 
 os.environ['COQUI_TOS_AGREED'] = '1'
