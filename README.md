@@ -168,6 +168,8 @@ Specify the language code when running the script in  mode.
 - **<custom_vocab_path>**: Path to `vocab.json`.
 - **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
 
+> [!IMPORTANT]
+**Before to post an install or bug issue search carefully to the opened and closed issues TAB to be sure your issue does not exist already.** <br>.
 
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**:
