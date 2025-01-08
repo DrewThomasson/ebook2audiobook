@@ -521,6 +521,7 @@ def get_sentences(sentence, language, max_pauses=5):
         '…': ' ... ',
         '–': ' - ',
         '—': ' - ',
+        ':': ' : ',
         '\xa0': ' '  # Non-breaking space
     }
     for old, new in replacements.items():
@@ -1114,19 +1115,25 @@ def convert_ebook(args):
     try:
         global is_gui_process, context        
         error = None
-        try:
-            if len(args['language']) == 2:
-                lang_array = languages.get(part1=args['language']) 
-                args['language'] = lang_array.part3
-                args['language_iso1'] = lang_array.part1
-            else:
-                lang_array = languages.get(part3=args['language'])     
-                args['language'] = lang_array.part3
-                args['language_iso1'] = lang_array.part1                
-        except Exception as e:
-            raise DependencyError(e)
 
         if args['language'] is not None and args['language'] in language_mapping.keys():
+            
+            try:
+                if len(args['language']) == 2:
+                    lang_array = languages.get(part1=args['language'])
+                    if lang_array:
+                        args['language'] = lang_array.part3
+                        args['language_iso1'] = lang_array.part1
+                elif len(args['language']) == 3:
+                    lang_array = languages.get(part3=args['language'])
+                    if lang_array:
+                        args['language'] = lang_array.part3
+                        args['language_iso1'] = lang_array.part1 
+                else:
+                    args['language_iso1'] = None
+            except Exception as e:
+                pass
+            
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
             session = context.get_session(id)
@@ -1134,6 +1141,7 @@ def convert_ebook(args):
             session['src'] = args['ebook']
             session['device'] = args['device']
             session['language'] = args['language']
+            session['language_iso1'] = args['language_iso1']
             session['custom_model'] = args['custom_model'] if not is_gui_process or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
             session['fine_tuned'] = args['fine_tuned']
             session['temperature'] =  args['temperature']
@@ -1206,13 +1214,18 @@ def convert_ebook(args):
                             metadata['title'] = os.path.splitext(os.path.basename(session['src']))[0].replace('_',' ') if not metadata['title'] else metadata['title']
                             metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                             session['metadata'] = metadata
-                            if len(session['metadata']['language']) == 2:
-                                language_array = languages.get(part1=session['metadata']['language'])
-                                session['metadata']['language'] = language_array.part3
+                            
+                            try:
+                                if len(session['metadata']['language']) == 2:
+                                    lang_array = languages.get(part1=session['language'])
+                                    if lang_array:
+                                        session['metadata']['language'] = lang_array.part3     
+                            except Exception as e:
+                                pass
+                           
                             if session['metadata']['language'] != session['language']:
                                 error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
                                 print(error)
-                            session['language_iso1'] = languages.get(part3=session['language']).part1
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['chapters'] = get_chapters(epubBook, session)
