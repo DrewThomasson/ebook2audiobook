@@ -80,7 +80,6 @@ class DependencyError(Exception):
             sys.exit(1)
 
 def recursive_proxy(data, manager=None):
-    """Recursively convert a nested dictionary into Manager.dict proxies."""
     if manager is None:
         manager = Manager()
     if isinstance(data, dict):
@@ -105,7 +104,6 @@ class ConversionContext:
         self.cancellation_events = {}  # Store multiprocessing.Event for each session
 
     def get_session(self, id):
-        """Retrieve or initialize session-specific context"""
         if id not in self.sessions:
             self.sessions[id] = recursive_proxy({
                 "script_mode": NATIVE,
@@ -337,19 +335,6 @@ def proxy_to_dict(proxy_obj):
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
 
-'''
-def has_metadata(f):
-    try:
-        b = epub.read_epub(f)
-        metadata = b.get_metadata('DC', '')
-        if metadata:
-            return True
-        else:
-            return False
-    except Exception as e:
-        return False
-'''
-
 def convert_to_epub(session):
     if session['cancellation_requested']:
         #stop_and_detach_tts()
@@ -415,61 +400,6 @@ def get_cover(epubBook, session):
         return True
     except Exception as e:
         raise DependencyError(e)
-'''
-def get_chapters(epubBook, session):
-    try:
-        if session['cancellation_requested']:
-            #stop_and_detach_tts()
-            print('Cancel requested')
-            return False
-        all_docs = list(epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT))
-        if all_docs:
-            all_docs = all_docs[1:]
-            doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
-            most_common_pattern = filter_doc(doc_patterns)
-            selected_docs = [doc for doc in all_docs if filter_pattern(str(doc)) == most_common_pattern]
-            chapters = [filter_chapter(doc, session['language']) for doc in selected_docs]
-            if session['metadata'].get('creator'):
-                intro = f"{session['metadata']['creator']}\n\n{session['metadata']['title']}\n\n"
-                chapters[0].insert(0, intro)
-            return chapters
-        return False
-    except Exception as e:
-        raise DependencyError(f'Error extracting main content pages: {e}')
-        
-def get_chapters(epubBook, session):
-    try:
-        if session['cancellation_requested']:
-            print('Cancel requested')
-            return False      
-        # Step 1: Get all documents and their patterns
-        all_docs = list(epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT))
-        if not all_docs:
-            return False
-        all_docs = all_docs[1:]  # Exclude the first document if needed
-        doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]        
-        # Step 2: Determine the most common pattern
-        most_common_pattern = filter_doc(doc_patterns)
-        selected_docs = [doc for doc in all_docs if filter_pattern(str(doc)) == most_common_pattern]       
-        # Step 3: Calculate average character length of selected docs
-        char_length = [len(filter_chapter(doc, session['language'], session['system'])) for doc in selected_docs]
-        average_char_length = sum(char_length) / len(char_length) if char_length else 0
-        # Step 4: Filter docs based on average character length or repetitive pattern
-        final_selected_docs = []
-        for doc in all_docs:
-            doc_pattern = filter_pattern(str(doc))
-            doc_content = filter_chapter(doc, session['language'], session['system'])
-            if len(doc_content) >= average_char_length or doc_pattern == most_common_pattern:
-                final_selected_docs.append(doc)
-        # Step 5: Extract chapters from the final selected docs
-        chapters = [filter_chapter(doc, session['language'], session['system']) for doc in final_selected_docs]
-        if session['metadata'].get('creator'):
-            intro = f"{session['metadata']['creator']}\n\n{session['metadata']['title']}\n\n"
-            chapters[0].insert(0, intro)
-        return chapters
-    except Exception as e:
-        raise DependencyError(f'Error extracting main content pages: {e}')
-'''
 
 def get_chapters(epubBook, session):
     try:
