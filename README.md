@@ -10,6 +10,9 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
 
+Thanks to support ebook2audiobook developers!<br>
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+
 
 #### New v2.0 Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
@@ -108,6 +111,10 @@ Use this tool responsibly and in accordance with all applicable laws.
 - 4gb ram
 - Virtualization enabled if running on windows (Docker only)
 
+> [!IMPORTANT]
+**Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
+to be sure your issue does not exist already.**
+
 ### Installation Instructions
 
 1. **Clone repo**
@@ -165,7 +172,6 @@ Specify the language code when running the script in  mode.
 - **<custom_config_path>**: Path to `config.json`.
 - **<custom_vocab_path>**: Path to `vocab.json`.
 - **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
-
 
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**:
@@ -428,4 +434,4 @@ You can view the code [here](legacy/v1.0).
 
 ## Join Our Discord Server!
 
-[![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
+- Discord https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w
