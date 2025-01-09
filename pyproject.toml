@@ -1,12 +1,12 @@
 [build-system]
 name = "ebook2audiobook"
-version = "2.0.0"
+version = "2.1.0"
 requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ebook2audiobook"
-version = "2.0.0"
+version = "2.1.0"
 description = "Convert eBooks to audiobooks with chapters and metadata"
 authors = [
     { name = "Drew Thomasson" }
@@ -18,8 +18,9 @@ dependencies = [
 	"deep_translator",
     "docker",
     "ebooklib",
+	"fastapi",
     "gensim",
-    "gradio>=4.44",
+    "gradio",
     "hangul-romanize",
     "indic-nlp-library",
 	"iso-639",
@@ -37,7 +38,7 @@ dependencies = [
 	"unidic"
 ]
 readme = "README.md"
-requires-python = ">=3.10,<3.13"
+requires-python = ">=3.12,<3.13"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",

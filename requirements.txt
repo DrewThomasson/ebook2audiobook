@@ -4,6 +4,7 @@ cutlet
 deep_translator
 docker
 ebooklib
+fastapi
 gensim
 gradio
 hangul-romanize

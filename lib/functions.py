@@ -33,7 +33,7 @@ from collections.abc import Mapping
 from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
-from functools import lru_cache
+from fastapi import FastAPI
 from glob import glob
 from huggingface_hub import hf_hub_download
 from iso639 import languages
@@ -53,6 +53,8 @@ from urllib.parse import urlparse
 import lib.conf as conf
 import lib.lang as lang
 import lib.models as mod
+
+app = FastAPI()
 
 def inject_configs(target_namespace):
     # Extract variables from both modules and inject them into the target namespace
@@ -481,6 +483,8 @@ def get_sentences(sentence, language, max_tokens, max_pauses=6):
     replacements = language_math_phonemes[language] if language in language_math_phonemes else language_math_phonemes['eng']
     for symbol, phoneme in replacements.items():
         sentence = sentence.replace(symbol, phoneme)
+    # end of file period must be modified to avoid tts bugs
+    sentence = re.sub("*.$", ' . ', sentence)
     # Replace specials characters
     replacements = {
         "’": "'",
@@ -614,13 +618,13 @@ def normalize_voice_file(f, session):
         print(error)
         return None
 
-@lru_cache(maxsize=None)  # Cache based on unique arguments
+@app.post("/load_tts_api_cached/")
 def load_tts_api_cached(model_path):
     with lock:
         tts = XTTS(model_path)
     return tts
-        
-@lru_cache(maxsize=None)  # Cache based on unique arguments
+
+@app.post("/load_tts_custom_cached/")
 def load_tts_custom_cached(model_path, config_path, vocab_path):
     config = XttsConfig()
     config.models_dir = os.path.join(models_dir,'tts')
@@ -629,12 +633,12 @@ def load_tts_custom_cached(model_path, config_path, vocab_path):
     with lock:
         tts.load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
     return tts
-
+"""
 def init_cache(func, memory_threshold_mb=512):
     available_memory_mb = psutil.virtual_memory().available // (1024 * 1024)
     if available_memory_mb < memory_threshold_mb:
         func.cache_clear()
-
+"""
 def convert_chapters_to_audio(session):
     try:
         if session['cancellation_requested']:
@@ -656,7 +660,7 @@ def convert_chapters_to_audio(session):
         if session['tts_engine'] == 'xtts':
             params['tts_model'] = 'xtts'
             if session['custom_model'] is not None:
-                init_cache(load_tts_custom_cached)
+                #init_cache(load_tts_custom_cached)
                 print(f"Loading TTS {params['tts_model']} model from {session['custom_model']}...")
                 model_path = os.path.join(session['custom_model'], 'model.pth')
                 config_path = os.path.join(session['custom_model'],'config.json')
@@ -667,7 +671,7 @@ def convert_chapters_to_audio(session):
                 params['voice_path'] = session['voice'] if session['voice'] is not None else voice_path
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             elif session['fine_tuned'] != 'std':
-                init_cache(load_tts_custom_cached)
+                #init_cache(load_tts_custom_cached)
                 print(f"Loading TTS {params['tts_model']} model from {session['fine_tuned']}...")
                 hf_repo = models[params['tts_model']][session['fine_tuned']]['repo']
                 hf_sub = models[params['tts_model']][session['fine_tuned']]['sub']
@@ -680,7 +684,7 @@ def convert_chapters_to_audio(session):
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             else:
-                init_cache(load_tts_api_cached)
+                #init_cache(load_tts_api_cached)
                 print(f"Loading TTS {params['tts_model']} model from {models[params['tts_model']][session['fine_tuned']]['repo']}...")
                 model_path = models[params['tts_model']][session['fine_tuned']]['repo']
                 params['tts'] = load_tts_api_cached(model_path)
@@ -690,12 +694,12 @@ def convert_chapters_to_audio(session):
             if session['custom_model'] is not None:
                 print("TODO!")
             else:
-                init_cache(load_tts_api_cached)
+                #init_cache(load_tts_api_cached)
                 params['tts_model'] = 'fairseq'
                 model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
                 print(f"Loading TTS {model_path} model from {model_path}...")
                 params['tts'] = load_tts_api_cached(model_path)
-                params['voice_path'] = session['voice'] if session['voice'] is not  None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
                 params['tts'].to(session['device'])
         elif session['tts_engine'] == 'yourtts':
             print("TODO!")
@@ -1109,9 +1113,9 @@ def convert_ebook(args):
     try:
         global is_gui_process, context        
         error = None
-
+        id = None
+        info_session = None
         if args['language'] is not None and args['language'] in language_mapping.keys():
-            
             try:
                 if len(args['language']) == 2:
                     lang_array = languages.get(part1=args['language'])
@@ -1126,8 +1130,7 @@ def convert_ebook(args):
                 else:
                     args['language_iso1'] = None
             except Exception as e:
-                pass
-            
+                pass          
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
             session = context.get_session(id)
@@ -1148,6 +1151,8 @@ def convert_ebook(args):
             session['enable_text_splitting'] = args['enable_text_splitting']
             session['audiobooks_dir'] = args['audiobooks_dir']
             session['voice'] = args['voice']
+            
+            info_session = f"\n*********** Session: {id} '*************\nStore it in case of interruption or crash\nyou can resume the conversion with --session option"
 
             if not os.path.splitext(args['ebook'])[1]:
                 raise ValueError('The selected ebook file has no extension. Please select a valid file.')
@@ -1235,19 +1240,28 @@ def convert_ebook(args):
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
                                             ]
-                                            if len(chapters_dirs) > 1:
-                                                if os.path.exists(session['chapters_dir']):
-                                                    shutil.rmtree(session['chapters_dir'])
-                                                if os.path.exists(session['epub_path']):
-                                                    os.remove(session['epub_path'])
-                                                if os.path.exists(session['cover']):
-                                                    os.remove(session['cover'])
+                                            if is_gui_process:
+                                                if len(chapters_dirs) > 1:
+                                                    if os.path.exists(session['chapters_dir']):
+                                                        shutil.rmtree(session['chapters_dir'])
+                                                    if os.path.exists(session['epub_path']):
+                                                        os.remove(session['epub_path'])
+                                                    if os.path.exists(session['cover']):
+                                                        os.remove(session['cover'])
+                                                else:
+                                                    if os.path.exists(session['process_dir']):
+                                                        shutil.rmtree(session['process_dir'])
                                             else:
-                                                if os.path.exists(session['process_dir']):
-                                                    shutil.rmtree(session['process_dir'])
+                                                if os.path.exists(session['voice_dir']):
+                                                    if not any(os.scandir(session['voice_dir'])):
+                                                        shutil.rmtree(session['voice_dir'])
+                                                if os.path.exists(session['custom_model_dir']):
+                                                    if not any(os.scandir(session['custom_model_dir'])):
+                                                        shutil.rmtree(session['custom_model_dir'])
+                                                if os.path.exists(session['session_dir']):
+                                                    shutil.rmtree(session['session_dir'])
                                             progress_status = f'Audiobook {os.path.basename(final_file)} created!'
-                                            if not is_gui_process:
-                                                print(f'*********** Session: {id}', '*************\nStore it in case of interruption or crash\nyou can resume the conversion with --session option')
+                                            print(info_session)
                                             return progress_status, final_file 
                                         else:
                                             error = 'combine_audio_chapters() error: final_file not created!'
@@ -1265,6 +1279,9 @@ def convert_ebook(args):
             error = f"Language {args['language']} is not supported."
         if session['cancellation_requested']:
             error = 'Cancelled'
+        else:
+            if not is_gui_process and id is not None:
+                error += info_session
         print(error)
         return error, None
     except Exception as e:
