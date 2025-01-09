@@ -1136,6 +1136,7 @@ def convert_ebook(args):
             session['device'] = args['device']
             session['language'] = args['language']
             session['language_iso1'] = args['language_iso1']
+            session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
             session['custom_model'] = args['custom_model'] if not is_gui_process or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
             session['fine_tuned'] = args['fine_tuned']
             session['temperature'] =  args['temperature']
@@ -1152,12 +1153,9 @@ def convert_ebook(args):
                 raise ValueError('The selected ebook file has no extension. Please select a valid file.')
 
             if not is_gui_process:
-                if session['tts_engine'] is None:
-                    session['tts_engine'] = get_compatible_tts_engines(session['language'])[0]
-                else:
-                    check_tts = get_compatible_tts_engines(session['language'])
-                    if session['tts_engine'] not in check_tts:
-                        raise ValueError('The TTS engine is not valid for this language.')
+                check_tts = get_compatible_tts_engines(session['language'])
+                if session['tts_engine'] not in check_tts:
+                    raise ValueError('The TTS engine is not valid for this language.')
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions',f"voice-{session['id']}")            
                 session['voice'] = args['voice']
                 if session['voice'] is not None:
@@ -1249,7 +1247,7 @@ def convert_ebook(args):
                                                     shutil.rmtree(session['process_dir'])
                                             progress_status = f'Audiobook {os.path.basename(final_file)} created!'
                                             if not is_gui_process:
-                                                print(f'*********** Session: {id}', '************* Store it in case of interruption or crash you can resume the conversion')
+                                                print(f'*********** Session: {id}', '*************\nStore it in case of interruption or crash\nyou can resume the conversion with --session option')
                                             return progress_status, final_file 
                                         else:
                                             error = 'combine_audio_chapters() error: final_file not created!'

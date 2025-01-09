@@ -34,7 +34,6 @@ language_math_phonemes = {
     "yor": {"+": "àfikún", "-": "iyọkúrò", "×": "ìṣakòpọ̀", "÷": "pín", "=": "dáa si", ">": "tóbi ju", "<": "kéré ju", "π": "pi", "√": "gbongbo méjì", "^": "àkójọpọ̀", "ϕ": "fi", "α": "alfa", "Ω": "omega"}
 }
 
-
 language_mapping = {
     "ara": {"name": "Arabic", "native_name": "العربية", "max_tokens": 51, "model": "ara.tar.gz", "punctuation": ["، ", ". ", "؟", "! ", "«", "»", "(", ")", "-", "؛", "... "," "]},
     "ben": {"name": "Bengali", "native_name": "বাংলা", "max_tokens": 51, "model": "ben.tar.gz", "punctuation": ["।", ", ", "! ", "? ", "…"," "]},
