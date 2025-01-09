@@ -434,4 +434,4 @@ You can view the code [here](legacy/v1.0).
 
 ## Join Our Discord Server!
 
-[![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
+- Discord https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w
