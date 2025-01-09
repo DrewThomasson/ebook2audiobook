@@ -477,7 +477,11 @@ def filter_chapter(doc, language, system):
 
 def get_sentences(sentence, language, max_tokens, max_pauses=6):
     punctuation = language_mapping[language]['punctuation']
-    # Replace problematic characters
+    # Replace math symbols in the sentence
+    replacements = language_math_phonemes[language] if language in language_math_phonemes else language_math_phonemes['eng']
+    for symbol, phoneme in replacements.items():
+        sentence = sentence.replace(symbol, phoneme)
+    # Replace specials characters
     replacements = {
         "’": "'",
         '، ': ' ، ',
@@ -542,7 +546,7 @@ def get_sentences(sentence, language, max_tokens, max_pauses=6):
             parts.append(current_part.strip())
             sentence = remaining_sentence.strip()
         # Log the token count for the current part
-        print(f"Sentence: {parts[-1]} | Tokens: {len(tokenizer.tokenize(parts[-1]))}")
+        #print(f"Sentence: {parts[-1]} | Tokens: {len(tokenizer.tokenize(parts[-1]))}")
     return parts
 
 def normalize_voice_file(f, session):
