@@ -484,11 +484,10 @@ def get_sentences(sentence, language, max_tokens, max_pauses=6):
     for symbol, phoneme in replacements.items():
         sentence = sentence.replace(symbol, phoneme)
     # end of file period must be modified to avoid tts bugs
-    sentence = re.sub("*.$", ' . ', sentence)
+    sentence = re.sub(r'\.(?=\s|$)', ' .', sentence)
     # Replace specials characters
     replacements = {
         "’": "'",
-        '، ': ' ، ',
         '„': ' " ',
         '“': ' " ',
         '«': ' " ',
@@ -507,6 +506,7 @@ def get_sentences(sentence, language, max_tokens, max_pauses=6):
     for old, new in replacements.items():
         sentence = sentence.replace(old, new)
     parts = []
+    over_length = False
     while sentence:
         # Step 1: Prioritize splitting at ellipses "..." or "…"
         ellipsis_split = None
@@ -522,8 +522,12 @@ def get_sentences(sentence, language, max_tokens, max_pauses=6):
             remaining_sentence = ""
         # Tokenize the current part
         tokens = tokenizer.tokenize(current_part)
+        tokens_length = len(tokens) 
         # Step 2: Check if tokens exceed max_tokens
         if len(tokens) > max_tokens:
+            if over_length == False:
+                over_length = True
+                print(f'Splitting the sentence to reach tokens length to {max_tokens} max')
             # Step 3: Find the last period (.) before max_tokens
             period_split = current_part.rsplit('.', 1)
             if len(period_split) > 1 and len(tokenizer.tokenize(period_split[0])) <= max_tokens:
