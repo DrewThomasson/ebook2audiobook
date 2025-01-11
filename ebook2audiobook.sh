@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
-current_shell=$(ps -p $$ -o comm=)
-
-if [[ "$current_shell" != "zsh" ]]; then
+if [[ "$SHELL" = */bin/zsh ]]; then
     exec env zsh "$0" "$@"
 fi
 
@@ -262,10 +260,10 @@ function conda_check {
 		pip cache purge
 		# Use this condition to chmod writable folders once
 		chmod -R 777 ./audiobooks ./tmp ./models
-		conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y
 		conda init
 		source $CONDA_ENV
-		source activate ./$PYTHON_ENV
+		conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y
+		source activate $SCRIPT_DIR/$PYTHON_ENV
 		python -m pip install --upgrade pip
 		python -m pip install --upgrade -r requirements.txt --progress-bar=on
 		conda deactivate
@@ -329,6 +327,8 @@ elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 		echo -e "\e[33mRunning in $DOCKER_UTILS mode\e[0m"
 		if conda_check; then
 			if docker_check; then
+				conda deactivate
+				conda init
 				source $CONDA_ENV
 				conda activate $SCRIPT_DIR/$PYTHON_ENV
 				python app.py --script_mode $DOCKER_UTILS $ARGS
@@ -338,6 +338,8 @@ elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 	fi
 	if [ $pass = true ]; then
 		if conda_check; then
+			conda deactivate
+			conda init
 			source $CONDA_ENV
 			conda activate $SCRIPT_DIR/$PYTHON_ENV
 			python app.py --script_mode $SCRIPT_MODE $ARGS
