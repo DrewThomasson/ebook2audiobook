@@ -72,7 +72,7 @@ language_mapping = {
     "tur": {"name": "Turkish", "native_name": "Türkçe", "max_tokens": 51, "model": "tr_core_news_md", "punctuation": [", ", ". ", ": ", "; ", "? ", "! ", "\"", "(", ")", "[", "]", "{", "}", "—", "-", "... ", "“", "”", "/"," "]},
     "yor": {"name": "Yoruba", "native_name": "Èdè Yorùbá", "max_tokens": 31, "model": "yor.tar.gz", "punctuation": [", ", ". ", ": ", "; ", "? ", "! ", "\"", "(", ")", "[", "]", "{", "}", "—", "-", "... ", "“", "”", "/"," "]},
     
-    "zzzz": {"name": "------------------ More languages (A to Z) ------------------", "native_name": "------------------ More languages (A to Z) ------------------", "max_tokens": 51, "model": "", "punctuation": []},
+    "zzz": {"name": "------------------ More languages (A to Z) ------------------", "native_name": "------------------ More languages (A to Z) ------------------", "max_tokens": 51, "model": "", "punctuation": []},
     
     "abi": {"name": "Abidji", "native_name": "Abidji", "max_tokens": 31, "model": "abi.tar.gz", "punctuation": [", ", ". ", ": ", "; ", "? ", "! ", "\"", "(", ")", "[", "]", "{", "}", "—", "-", "... ", "“", "”", "/"," "]},
     "ace": {"name": "Aceh", "native_name": "Acèh", "max_tokens": 31, "model": "ace.tar.gz", "punctuation": [", ", ". ", ": ", "; ", "? ", "! ", "\"", "(", ")", "[", "]", "{", "}", "—", "-", "... ", "“", "”", "/"," "]},

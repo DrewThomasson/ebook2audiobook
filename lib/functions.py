@@ -1740,7 +1740,7 @@ def web_interface(args):
         def change_gr_language(selected, id):
             nonlocal custom_model_options, tts_engine_options, fine_tuned_options
             session = context.get_session(id)
-            if selected == 'zzzz':
+            if selected == 'zzz':
                 new_language_code = default_language_code
             else:
                 new_language_code = selected
@@ -1773,6 +1773,7 @@ def web_interface(args):
             voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
             voice = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
             return[
+                gr.update(value=session['language']),
                 gr.update(choices=voice_options, value=voice),
                 gr.update(choices=custom_model_options, value=custom_model),
                 gr.update(choices=tts_engine_options, value=tts_engine),
@@ -1791,12 +1792,12 @@ def web_interface(args):
             
         def change_gr_custom_model_file(f):
             if f is None:
-                return gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update()
             if len(custom_model_options) > max_custom_model:
                 error = f'You are allowed to upload a max of {max_custom_models} models'    
-                return gr.update(value=error)
+                return gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(value=error)
             else:
-                return gr.update()
+                return gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update()
 
         def save_gr_custom_model_file(f, id):
             nonlocal custom_model_options
@@ -1804,11 +1805,11 @@ def web_interface(args):
             try:
                 session = context.get_session(id)
                 if f is None:
-                    return gr.update(), gr.update(), gr.update(), gr.update(value='')
+                    return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value='')
                 if analyze_uploaded_file(f):
                     model = extract_custom_model(f, session)
                     if model is None:
-                        return gr.update(), gr.update(), gr.update(), gr.update(value=f'Cannot extract custom model zip file {os.path.basename(f)}')
+                        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value=f'Cannot extract custom model zip file {os.path.basename(f)}')
                     session['custom_model'] = model
                     custom_model_tts_dir = check_custom_model_tts(id)
                     custom_model_options = [('None', None)] + [
@@ -1819,14 +1820,16 @@ def web_interface(args):
                     return[
                         gr.update(value=None),
                         gr.update(choices=custom_model_options, value=session['custom_model']),
-                        gr.update(visible=False),
+                        gr.update(interactive=True),
+                        gr.update(interactive=True),
+                        gr.update(interactive=True),
                         gr.update(value=f"{model} added to the custom models list")
                     ]
                 else:
                     return gr.update(), gr.update(), gr.update(), gr.update(value=f'{os.path.basename(f)} is not a valid model or some required files are missing')
             except Exception as e:
                 error = f'Error: {str(e)}'
-                return gr.update(value=None), gr.update(), gr.update(), gr.update(value=error)
+                return gr.update(value=None), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value=error)
 
         def change_gr_custom_model_list(selected, id):
             session = context.get_session(id)
@@ -1844,10 +1847,10 @@ def web_interface(args):
                 if details.get('lang') == 'multi' or details.get('lang') == session['language']
             ]
             session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
-            if engine == 'xtts' and session['fine_tuned'] == 'std':
-                return gr.update(visible=True), gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
+            if session['tts_engine'] == 'xtts' and session['fine_tuned'] == 'std':
+                return gr.update(visible=True), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(visible=True)
             else:
-                return gr.update(visible=False), gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
+                return gr.update(visible=False), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(visible=False)
             
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
@@ -2058,7 +2061,7 @@ def web_interface(args):
         gr_language.change(
             fn=change_gr_language,
             inputs=[gr_language, gr_session],
-            outputs=[gr_voice_list, gr_custom_model_list, gr_tts_engine_list, gr_fine_tuned_list]
+            outputs=[gr_language, gr_voice_list, gr_custom_model_list, gr_tts_engine_list, gr_fine_tuned_list]
         )
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
@@ -2068,11 +2071,11 @@ def web_interface(args):
         gr_custom_model_file.change(
             fn=change_gr_custom_model_file,
             inputs=[gr_custom_model_file],
-            outputs=[gr_conversion_progress]
+            outputs=[gr_tts_engine_list, gr_fine_tuned_list, gr_language, gr_conversion_progress]
         ).then(
             fn=save_gr_custom_model_file,
             inputs=[gr_custom_model_file, gr_session],
-            outputs=[gr_custom_model_file, gr_custom_model_list, gr_fine_tuned_list, gr_conversion_progress]            
+            outputs=[gr_custom_model_file, gr_custom_model_list, gr_tts_engine_list, gr_language, gr_fine_tuned_list, gr_conversion_progress]            
         )
         gr_custom_model_list.change(
             fn=change_gr_custom_model_list,
@@ -2082,7 +2085,7 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tab_preferences, gr_fine_tuned_list]
+            outputs=[gr_tab_preferences, gr_fine_tuned_list, gr_group_custom_model]
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
@@ -2205,7 +2208,7 @@ def web_interface(args):
         all_ips = get_all_ip_addresses()
         print("Listening on the following IP:")
         print(all_ips)
-        interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(server_name=interface_host, server_port=interface_port, share=is_gui_shared)
+        interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size='2GB')
     except OSError as e:
         print(f'Connection error: {e}')
     except socket.error as e:
