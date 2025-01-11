@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 
 if [[ -z "$SWITCHED_TO_ZSH" && "$SHELL" = */bin/zsh ]]; then
-    echo '********** SWITCH THE SCRIPT TO ZSH **************'
     SWITCHED_TO_ZSH=1 exec env zsh "$0" "$@"
 fi
 
 PYTHON_VERSION="3.12"
 export TTS_CACHE="./models"
 
-ARGS="$@"
+ARGS=("$@")
 
 # Declare an associative array
 declare -A arguments
@@ -314,7 +313,7 @@ function docker_build {
 
 if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 	echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
-	python app.py --script_mode $SCRIPT_MODE $ARGS
+	python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 	pass=true
 	if [ "$SCRIPT_MODE" = "$NATIVE" ]; then
@@ -332,7 +331,7 @@ elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 				source $CONDA_ENV
 				conda deactivate
 				conda activate $SCRIPT_DIR/$PYTHON_ENV
-				python app.py --script_mode $DOCKER_UTILS $ARGS
+				python app.py --script_mode "$DOCKER_UTILS" "${ARGS[@]}"
 				conda deactivate
 			fi
 		fi
@@ -343,7 +342,7 @@ elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 			source $CONDA_ENV
 			conda deactivate
 			conda activate $SCRIPT_DIR/$PYTHON_ENV
-			python app.py --script_mode $SCRIPT_MODE $ARGS
+			python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 			conda deactivate
 		fi
 	fi
