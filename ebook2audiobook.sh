@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-if [[ "$SHELL" = */bin/zsh ]]; then
-	echo '********** SWITCH THE SCRIPT TO ZSH **************'
-    exec env zsh "$0" "$@"
+if [[ -z "$SWITCHED_TO_ZSH" && "$SHELL" = */bin/zsh ]]; then
+    echo '********** SWITCH THE SCRIPT TO ZSH **************'
+    SWITCHED_TO_ZSH=1 exec env zsh "$0" "$@"
 fi
 
 PYTHON_VERSION="3.12"
