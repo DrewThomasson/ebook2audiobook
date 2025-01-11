@@ -246,6 +246,11 @@ function conda_check {
 			rm -f "$CONDA_INSTALLER"
 			if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
 				conda init
+				source $CONDA_ENV
+				if [[ -d $SCRIPT_DIR/$PYTHON_ENV ]]; then
+					source activate $SCRIPT_DIR/$PYTHON_ENV
+					conda deactivate
+				fi
 				echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 			else
 				echo -e "\e[31mconda installation failed.\e[0m"		
@@ -262,7 +267,10 @@ function conda_check {
 		# Use this condition to chmod writable folders once
 		chmod -R 777 ./audiobooks ./tmp ./models
 		conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y
+		conda init
 		source $CONDA_ENV
+		source activate $SCRIPT_DIR/$PYTHON_ENV
+		conda deactivate
 		conda activate $SCRIPT_DIR/$PYTHON_ENV
 		python -m pip install --upgrade pip
 		python -m pip install --upgrade -r requirements.txt --progress-bar=on

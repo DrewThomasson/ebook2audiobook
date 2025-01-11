@@ -19,6 +19,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import threading
 import time
 import torch
 import torchaudio
@@ -26,6 +27,10 @@ import urllib.request
 import uuid
 import zipfile
 import traceback
+
+import lib.conf as conf
+import lib.lang as lang
+import lib.models as mod
 
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -41,7 +46,7 @@ from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
 from pathlib import Path
 from pydub import AudioSegment
-from threading import Lock
+from queue import Queue, Empty
 from tqdm import tqdm
 from transformers import AutoTokenizer
 from TTS.api import TTS as XTTS
@@ -50,9 +55,8 @@ from TTS.tts.models.xtts import Xtts
 from types import MappingProxyType
 from urllib.parse import urlparse
 
-import lib.conf as conf
-import lib.lang as lang
-import lib.models as mod
+from lib.classes.redirect_console import RedirectConsole
+
 
 app = FastAPI()
 
@@ -99,7 +103,7 @@ def recursive_proxy(data, manager=None):
     else:
         raise TypeError(f"Unsupported data type: {type(data)}")
 
-class ConversionContext:
+class SessionContext:
     def __init__(self):
         self.manager = Manager()
         self.sessions = self.manager.dict()  # Store all session-specific contexts
@@ -165,8 +169,8 @@ class ConversionContext:
             }, manager=self.manager)
         return self.sessions[id]
         
-context = ConversionContext()
-lock = Lock()
+context = SessionContext()
+lock = threading.Lock()
 is_gui_process = False
 tokenizer = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
 
@@ -339,45 +343,72 @@ def proxy_to_dict(proxy_obj):
 
 def convert_to_epub(session):
     if session['cancellation_requested']:
-        #stop_and_detach_tts()
         print('Cancel requested')
         return False
+
     if session['script_mode'] == DOCKER_UTILS:
         try:
             docker_dir = os.path.basename(session['process_dir'])
             docker_file_in = os.path.basename(session['src'])
             docker_file_out = os.path.basename(session['epub_path'])
-            
+
             # Check if the input file is already an EPUB
             if docker_file_in.lower().endswith('.epub'):
                 shutil.copy(session['src'], session['epub_path'])
+                print("File is already in EPUB format. Copying directly.")
                 return True
 
-            # Convert the ebook to EPUB format using utils Docker image
-            container = session['client'].containers.run(
+            # Convert using Docker
+            print(f"Starting Docker container to convert {docker_file_in} to EPUB.")
+            container_logs = session['client'].containers.run(
                 docker_utils_image,
-                command=f'ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out}',
+                command=f'ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out} --verbose',
                 volumes={session['process_dir']: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                 remove=True,
                 detach=False,
                 stdout=True,
                 stderr=True
             )
-            print(container.decode('utf-8'))
+            print(container_logs.decode('utf-8'))
             return True
+
         except docker.errors.ContainerError as e:
+            print(f"Docker container error: {e}")
             raise DependencyError(e)
+            return False
         except docker.errors.ImageNotFound as e:
+            print(f"Docker image not found: {e}")
             raise DependencyError(e)
+            return False
         except docker.errors.APIError as e:
+            print(f"Docker API error: {e}")
             raise DependencyError(e)
+            return False
     else:
         try:
             util_app = shutil.which('ebook-convert')
-            subprocess.run([util_app, session['src'], session['epub_path']], check=True)
+            if not util_app:
+                raise FileNotFoundError("The 'ebook-convert' utility is not installed or not found.")
+
+            print(f"Running command: {util_app} {session['src']} {session['epub_path']} --verbose")
+            result = subprocess.run(
+                [util_app, session['src'], session['epub_path']],
+                check=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            print(result.stdout)
             return True
+
         except subprocess.CalledProcessError as e:
+            print(f"Subprocess error: {e.stderr}")
             raise DependencyError(e)
+            return False
+        except FileNotFoundError as e:
+            print(f"Utility not found: {e}")
+            raise DependencyError(e)
+            return False
 
 def get_cover(epubBook, session):
     try:

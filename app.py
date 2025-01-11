@@ -10,6 +10,14 @@ from lib.conf import *
 from lib.lang import language_mapping, default_language_code
 from lib.models import tts_engines, default_xtts_files, default_fine_tuned
 
+def is_virtual_env():
+    if str(sys.prefix) == str(os.path.abspath(os.path.join('.','python_env'))):
+        return True
+    error = f'*********** Error! ebook2audiobook must run in its own virtual environment! start with conda activate.... ******************'
+    print(error)
+    return False
+
+
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
@@ -232,7 +240,7 @@ Linux/Mac:
             sys.exit(1)
 
 if __name__ == '__main__':
-    if not check_python_version():
+    if not check_python_version() or not is_virtual_env():
         sys.exit(1)
     else:
         main()
