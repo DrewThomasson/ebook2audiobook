@@ -8,9 +8,9 @@ from lib.conf import *
 from lib.lang import install_info, language_mapping, default_language_code
 from lib.models import tts_engines, default_xtts_files, default_fine_tuned
 
-def is_virtual_env():
-    if str(sys.prefix) == str(os.path.abspath(os.path.join('.','python_env'))):
-        return True
+def is_virtual_env(script_mode):
+    if str(sys.prefix) == str(os.path.abspath(os.path.join('.','python_env'))) or script_mode == FULL_DOCKER:
+        return True  
     error = f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
 If the folder python_env does not exist in the ebook2audiobook root folder,
@@ -169,6 +169,12 @@ Linux/Mac:
 
     args = vars(parser.parse_args())
 
+    if not is_virtual_env(args['script_mode']):
+        sys.exit(1)
+
+    if not check_python_version():
+        sys.exit(1)
+
     # Check if the port is already in use to prevent multiple launches
     if not args['headless'] and is_port_in_use(interface_port):
         print(f'Error: Port {interface_port} is already in use. The web interface may already be running.')
@@ -249,7 +255,4 @@ Linux/Mac:
             sys.exit(1)
 
 if __name__ == '__main__':
-    if not check_python_version() or not is_virtual_env():
-        sys.exit(1)
-    else:
-        main()
+    main()
