@@ -8,7 +8,7 @@ from lib.conf import *
 from lib.lang import install_info, language_mapping, default_language_code
 from lib.models import tts_engines, default_xtts_files, default_fine_tuned
 
-def is_virtual_env(script_mode):
+def check_virtual_env(script_mode):
     if str(sys.prefix) == str(os.path.abspath(os.path.join('.','python_env'))) or script_mode == FULL_DOCKER:
         return True  
     error = f'''***********
@@ -169,7 +169,7 @@ Linux/Mac:
 
     args = vars(parser.parse_args())
 
-    if not is_virtual_env(args['script_mode']):
+    if not check_virtual_env(args['script_mode']):
         sys.exit(1)
 
     if not check_python_version():
