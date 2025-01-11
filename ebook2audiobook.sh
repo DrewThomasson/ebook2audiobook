@@ -244,7 +244,7 @@ function conda_check {
 			bash "$CONDA_INSTALLER" -u -b -p "$CONDA_INSTALL_DIR"
 			rm -f "$CONDA_INSTALLER"
 			if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
-				conda init
+				conda init > /dev/null 2>&1
 				source $CONDA_ENV
 				echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 			else
@@ -261,7 +261,7 @@ function conda_check {
 		pip cache purge
 		# Use this condition to chmod writable folders once
 		chmod -R 777 ./audiobooks ./tmp ./models
-		conda init
+		conda init > /dev/null 2>&1
 		source $CONDA_ENV
 		conda create --prefix $SCRIPT_DIR/$PYTHON_ENV python=$PYTHON_VERSION -y
 		source activate $SCRIPT_DIR/$PYTHON_ENV
@@ -328,7 +328,7 @@ elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 		echo -e "\e[33mRunning in $DOCKER_UTILS mode\e[0m"
 		if conda_check; then
 			if docker_check; then
-				conda init						
+				conda init > /dev/null 2>&1						
 				source $CONDA_ENV
 				conda deactivate
 				conda activate $SCRIPT_DIR/$PYTHON_ENV
@@ -339,7 +339,7 @@ elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 	fi
 	if [ $pass = true ]; then
 		if conda_check; then
-			conda init
+			conda init > /dev/null 2>&1
 			source $CONDA_ENV
 			conda deactivate
 			conda activate $SCRIPT_DIR/$PYTHON_ENV
