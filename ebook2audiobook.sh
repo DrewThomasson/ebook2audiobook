@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 if [[ "$SHELL" = */bin/zsh ]]; then
+	echo '********** SWITCH THE SCRIPT TO ZSH **************'
     exec env zsh "$0" "$@"
 fi
 
