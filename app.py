@@ -1,10 +1,8 @@
 import argparse
 import os
-import regex as re
 import socket
 import subprocess
 import sys
-import unidic
 
 from lib.conf import *
 from lib.lang import language_mapping, default_language_code
@@ -41,6 +39,7 @@ def check_and_install_requirements(file_path):
         missing_packages = []
         for package in packages:
             # Extract package name without version specifier
+            import regex as re
             pkg_name = re.split(r'[<>=]', package)[0].strip()
             try:
                 installed_version = version(pkg_name)
@@ -62,6 +61,7 @@ def check_and_install_requirements(file_path):
         raise(f'An error occurred: {e}')  
         
 def check_dictionary():
+    import unidic
     unidic_path = unidic.DICDIR
     dicrc = os.path.join(unidic_path, 'dicrc')
     if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
