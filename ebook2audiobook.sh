@@ -327,9 +327,9 @@ elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 		echo -e "\e[33mRunning in $DOCKER_UTILS mode\e[0m"
 		if conda_check; then
 			if docker_check; then
-				conda init
-				conda deactivate			
+				conda init						
 				source $CONDA_ENV
+				conda deactivate
 				conda activate $SCRIPT_DIR/$PYTHON_ENV
 				python app.py --script_mode $DOCKER_UTILS $ARGS
 				conda deactivate
@@ -339,8 +339,8 @@ elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
 	if [ $pass = true ]; then
 		if conda_check; then
 			conda init
-			conda deactivate
 			source $CONDA_ENV
+			conda deactivate
 			conda activate $SCRIPT_DIR/$PYTHON_ENV
 			python app.py --script_mode $SCRIPT_MODE $ARGS
 			conda deactivate
