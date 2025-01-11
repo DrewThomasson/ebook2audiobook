@@ -76,6 +76,7 @@ def check_dictionary():
     if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
         try:
             print('UniDic dictionary not found or incomplete. Downloading now...')
+            subprocess.run(['python', '-m', 'pip', 'cache', 'purge'], check=True)
             subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
         except subprocess.CalledProcessError as e:
             print(f'Failed to download UniDic dictionary. Error: {e}')

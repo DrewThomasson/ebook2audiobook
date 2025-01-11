@@ -7,7 +7,7 @@ ebook2audiobook.[sh|cmd] [options]
 ----------------------------------
 or
 ----------------------------------
-conda activate [./|.\]python_env
+conda activate [./|.\\]python_env
 python app.py [options]
 conda deactivate
 ----------------------------------

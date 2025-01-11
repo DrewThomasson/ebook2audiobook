@@ -412,7 +412,6 @@ def convert_to_epub(session):
 def get_cover(epubBook, session):
     try:
         if session['cancellation_requested']:
-            #stop_and_detach_tts()
             print('Cancel requested')
             return False
         cover_image = False
@@ -681,16 +680,10 @@ def load_tts_custom_cached(model_path, config_path, vocab_path):
     with lock:
         tts.load_checkpoint(config, checkpoint_path=model_path, vocab_path=vocab_path, eval=True)
     return tts
-"""
-def init_cache(func, memory_threshold_mb=512):
-    available_memory_mb = psutil.virtual_memory().available // (1024 * 1024)
-    if available_memory_mb < memory_threshold_mb:
-        func.cache_clear()
-"""
+
 def convert_chapters_to_audio(session):
     try:
         if session['cancellation_requested']:
-            #stop_and_detach_tts()
             print('Cancel requested')
             return False
         progress_bar = None
@@ -698,17 +691,9 @@ def convert_chapters_to_audio(session):
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
         params['tts_model'] = None
-        '''
-        # List available TTS base models
-        print("Available Models:")
-        print("=================")
-        for index, model in enumerate(XTTS().list_models(), 1):
-            print(f"{index}. {model}")
-        '''
         if session['tts_engine'] == 'xtts':
             params['tts_model'] = 'xtts'
             if session['custom_model'] is not None:
-                #init_cache(load_tts_custom_cached)
                 print(f"Loading TTS {params['tts_model']} model from {session['custom_model']}...")
                 model_path = os.path.join(session['custom_model'], 'model.pth')
                 config_path = os.path.join(session['custom_model'],'config.json')
@@ -719,7 +704,6 @@ def convert_chapters_to_audio(session):
                 params['voice_path'] = session['voice'] if session['voice'] is not None else voice_path
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             elif session['fine_tuned'] != 'std':
-                #init_cache(load_tts_custom_cached)
                 print(f"Loading TTS {params['tts_model']} model from {session['fine_tuned']}...")
                 hf_repo = models[params['tts_model']][session['fine_tuned']]['repo']
                 hf_sub = models[params['tts_model']][session['fine_tuned']]['sub']
@@ -732,7 +716,6 @@ def convert_chapters_to_audio(session):
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             else:
-                #init_cache(load_tts_api_cached)
                 print(f"Loading TTS {params['tts_model']} model from {models[params['tts_model']][session['fine_tuned']]['repo']}...")
                 model_path = models[params['tts_model']][session['fine_tuned']]['repo']
                 params['tts'] = load_tts_api_cached(model_path)
@@ -742,7 +725,6 @@ def convert_chapters_to_audio(session):
             if session['custom_model'] is not None:
                 print("TODO!")
             else:
-                #init_cache(load_tts_api_cached)
                 params['tts_model'] = 'fairseq'
                 model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
                 print(f"Loading TTS {model_path} model from {model_path}...")
@@ -809,7 +791,6 @@ def convert_chapters_to_audio(session):
 def convert_sentence_to_audio(params, session):
     try:
         if session['cancellation_requested']:
-            #stop_and_detach_tts(params['tts'])
             print('Cancel requested')
             return False
         generation_params = {
@@ -879,7 +860,6 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         ]
         for f in selected_files:
             if session['cancellation_requested']:
-                #stop_and_detach_tts(params['tts'])
                 print('Cancel requested')
                 return False
             if session['cancellation_requested']:
@@ -1113,16 +1093,6 @@ def replace_roman_numbers(text):
     text = roman_chapter_pattern.sub(replace_chapter_match, text)
     text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
     return text
-
-'''
-def stop_and_detach_tts(tts=None):
-    if tts is not None:
-        if next(tts.parameters()).is_cuda:
-            tts.to('cpu')
-        del tts
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-'''
 
 def delete_unused_tmp_dirs(web_dir, days, session):
     dir_array = [
