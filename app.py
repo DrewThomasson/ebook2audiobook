@@ -11,9 +11,12 @@ from lib.models import tts_engines, default_xtts_files, default_fine_tuned
 def is_virtual_env():
     if str(sys.prefix) == str(os.path.abspath(os.path.join('.','python_env'))):
         return True
-    error = f'''*********** Error! ebook2audiobook must run in its own virtual environment! 
-            If the folder python_env does not exist in the ebook2audiobook root folder 
-            run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows ******************'''
+    error = f'''***********
+Wrong launch! ebook2audiobook must run in its own virtual environment!
+If the folder python_env does not exist in the ebook2audiobook root folder
+run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
+Available comand options, ebook2audiobook.[sh|cmd] --help
+***********'''
     print(error)
     return False
 
@@ -21,9 +24,13 @@ def is_virtual_env():
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
-        error = f'''********** Error: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
-        Please create a virtual python environment verrsion {min_python_version[0]}.{min_python_version[1]} or {max_python_version[0]}.{max_python_version[1]} 
-        with conda or python -v venv **********'''
+        error = f'''***********
+Wrong launch: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
+In order to install and/or use ebook2audiobook correctly you must run 
+"./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
+Once installed, you are free to run this script or "python app.py" for your command.
+Available comand options, ebook2audiobook.[sh|cmd] --help
+***********'''
         print(error)
         return False
     else:
