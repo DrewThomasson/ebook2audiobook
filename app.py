@@ -11,7 +11,9 @@ from lib.models import tts_engines, default_xtts_files, default_fine_tuned
 def is_virtual_env():
     if str(sys.prefix) == str(os.path.abspath(os.path.join('.','python_env'))):
         return True
-    error = f'*********** Error! ebook2audiobook must run in its own virtual environment! start with conda activate.... ******************'
+    error = f'''*********** Error! ebook2audiobook must run in its own virtual environment! 
+            If the folder python_env does not exist in the ebook2audiobook root folder 
+            run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows ******************'''
     print(error)
     return False
 
