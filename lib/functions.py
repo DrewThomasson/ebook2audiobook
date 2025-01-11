@@ -641,16 +641,22 @@ def normalize_voice_file(f, session):
         return None
     else:
         try:
-            result = subprocess.run(
+            process = subprocess.Popen(
                 ffmpeg_cmd,
                 env={},
-                check=True,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True
+                stderr=subprocess.STDOUT,
+                text=True,
+                universal_newlines=True
             )
-            print(result.stdout)
-            return final_file
+            for line in process.stdout:
+                print(line, end="")  # Print each line of stdout
+            process.wait()
+            if process.returncode == 0:
+                return final_file
+            else:
+                error = process.returncode
+                raise subprocess.CalledProcessError(error, ffmpeg_cmd)
         except subprocess.CalledProcessError as e:
             error = f"normalize_voice_file() error: {e}"
             raise DependencyError(e)
@@ -1024,16 +1030,22 @@ def combine_audio_chapters(session):
                     raise DependencyError(e)
             else:
                 try:
-                    result = subprocess.run(
+                    process = subprocess.Popen(
                         ffmpeg_cmd,
                         env={},
-                        check=True,
                         stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        text=True
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        universal_newlines=True
                     )
-                    print(result.stdout)
-                    return True
+                    for line in process.stdout:
+                        print(line, end="")  # Print each line of stdout
+                    process.wait()
+                    if process.returncode == 0:
+                        return True
+                    else:
+                        error = process.returncode
+                        raise subprocess.CalledProcessError(error, ffmpeg_cmd)
                 except subprocess.CalledProcessError as e:
                     raise DependencyError(e)
  
