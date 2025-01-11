@@ -5,7 +5,7 @@ import subprocess
 import sys
 
 from lib.conf import *
-from lib.lang import language_mapping, default_language_code
+from lib.lang import install_info, language_mapping, default_language_code
 from lib.models import tts_engines, default_xtts_files, default_fine_tuned
 
 def is_virtual_env():
@@ -13,9 +13,10 @@ def is_virtual_env():
         return True
     error = f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
-If the folder python_env does not exist in the ebook2audiobook root folder
-run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
-Available comand options, ebook2audiobook.[sh|cmd] --help
+If the folder python_env does not exist in the ebook2audiobook root folder,
+run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+to install it all automatically.
+{install_info}
 ***********'''
     print(error)
     return False
@@ -28,8 +29,7 @@ def check_python_version():
 Wrong launch: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
 In order to install and/or use ebook2audiobook correctly you must run 
 "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
-Once installed, you are free to run this script or "python app.py" for your command.
-Available comand options, ebook2audiobook.[sh|cmd] --help
+{install_info}
 ***********'''
         print(error)
         return False

@@ -1,5 +1,19 @@
 import os
 
+install_info = '''
+After the first run, you are free to use your command line with:
+----------------------------------
+ebook2audiobook.[sh|cmd] [options]
+----------------------------------
+or
+----------------------------------
+conda activate [./|.\]python_env
+python app.py [options]
+conda deactivate
+----------------------------------
+Available command options, ebook2audiobook.[sh|cmd] --help
+'''
+
 default_language_code = 'eng' # ISO-639-3
 default_voice_file = os.path.abspath(os.path.join('.','voices',default_language_code,'adult','female','Jennifer_24khz.wav')) # or 'male','Curt_24khz.wav'
 
