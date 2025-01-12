@@ -1,5 +1,6 @@
 import argparse
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -9,10 +10,12 @@ from lib.lang import install_info, language_mapping, default_language_code
 from lib.models import tts_engines, default_xtts_files, default_fine_tuned
 
 def check_virtual_env(script_mode):
-    if str(sys.prefix) == str(os.path.abspath(os.path.join('.','python_env'))) or script_mode == FULL_DOCKER:
+    if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER:
         return True  
     error = f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
+NOTE: If you are running a Docker so you are probably using an old version of ebook2audiobook.
+To solve this issue go to download the new version at https://github.com/DrewThomasson/ebook2audiobook
 If the folder python_env does not exist in the ebook2audiobook root folder,
 run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows
 to install it all automatically.
@@ -20,7 +23,6 @@ to install it all automatically.
 ***********'''
     print(error)
     return False
-
 
 def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
@@ -48,7 +50,6 @@ def check_and_install_requirements(file_path):
         missing_packages = []
         for package in packages:
             # Extract package name without version specifier
-            import regex as re
             pkg_name = re.split(r'[<>=]', package)[0].strip()
             try:
                 installed_version = version(pkg_name)
@@ -67,7 +68,7 @@ def check_and_install_requirements(file_path):
 
         return True
     except Exception as e:
-        raise(f'An error occurred: {e}')  
+        raise SystemExit(f'An error occurred: {e}')  
         
 def check_dictionary():
     import unidic
@@ -170,90 +171,91 @@ Linux/Mac:
 
     args = vars(parser.parse_args())
 
-    if not check_virtual_env(args['script_mode']):
-        sys.exit(1)
-
-    if not check_python_version():
-        sys.exit(1)
-
-    # Check if the port is already in use to prevent multiple launches
-    if not args['headless'] and is_port_in_use(interface_port):
-        print(f'Error: Port {interface_port} is already in use. The web interface may already be running.')
-        sys.exit(1)
-
-    args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
-    args['share'] =  args['share'] if args['share'] else False
-
-    if args['script_mode'] == NATIVE:
-        check_pkg = check_and_install_requirements(requirements_file)
-        if check_pkg:
-            if not check_dictionary():
-                sys.exit(1)
-        else:
-            print('Some packages could not be installed')
-            sys.exit(1)
-    
-    from lib.functions import web_interface, convert_ebook
-
-    # Conditions based on the --headless flag
-    if args['headless']:
-        args['is_gui_process'] = False
-        args['audiobooks_dir'] = args['output_dir'] if args['output_dir'] else audiobooks_cli_dir
-        args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
-
-        # Condition to stop if both --ebook and --ebooks_dir are provided
-        if args['ebook'] and args['ebooks_dir']:
-            print('Error: You cannot specify both --ebook and --ebooks_dir in headless mode.')
+    if not 'help' in args:
+        if not check_virtual_env(args['script_mode']):
             sys.exit(1)
 
-        # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
-        if args['ebooks_dir']:
-            new_ebooks_dir = None
-            if args['ebooks_dir'] == 'default':
-                print(f'Using the default ebooks_dir: {ebooks_dir}')
-                new_ebooks_dir =  os.path.abspath(ebooks_dir)
-            else:
-                # Check if the directory exists
-                if os.path.exists(args['ebooks_dir']):
-                    new_ebooks_dir = os.path.abspath(args['ebooks_dir'])
-                else:
-                    print(f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.')
+        if not check_python_version():
+            sys.exit(1)
+
+        # Check if the port is already in use to prevent multiple launches
+        if not args['headless'] and is_port_in_use(interface_port):
+            print(f'Error: Port {interface_port} is already in use. The web interface may already be running.')
+            sys.exit(1)
+
+        args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
+        args['share'] =  args['share'] if args['share'] else False
+
+        if args['script_mode'] == NATIVE:
+            check_pkg = check_and_install_requirements(requirements_file)
+            if check_pkg:
+                if not check_dictionary():
                     sys.exit(1)
-                    
-            if os.path.exists(new_ebooks_dir):
-                for file in os.listdir(new_ebooks_dir):
-                    # Process files with supported ebook formats
-                    if any(file.endswith(ext) for ext in ebook_formats):
-                        full_path = os.path.join(new_ebooks_dir, file)
-                        print(f'Processing eBook file: {full_path}')
-                        args['ebook'] = full_path
-                        progress_status, audiobook_file = convert_ebook(args)
-                        if audiobook_file is None:
-                            print(f'Conversion failed: {progress_status}')
-                            sys.exit(1)
             else:
-                print(f'Error: The directory {new_ebooks_dir} does not exist.')
+                print('Some packages could not be installed')
                 sys.exit(1)
 
-        elif args['ebook']:
-            progress_status, audiobook_file = convert_ebook(args)
-            if audiobook_file is None:
-                print(f'Conversion failed: {progress_status}')
+        from lib.functions import web_interface, convert_ebook
+
+        # Conditions based on the --headless flag
+        if args['headless']:
+            args['is_gui_process'] = False
+            args['audiobooks_dir'] = args['output_dir'] if args['output_dir'] else audiobooks_cli_dir
+            args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
+
+            # Condition to stop if both --ebook and --ebooks_dir are provided
+            if args['ebook'] and args['ebooks_dir']:
+                print('Error: You cannot specify both --ebook and --ebooks_dir in headless mode.')
                 sys.exit(1)
 
+            # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
+            if args['ebooks_dir']:
+                new_ebooks_dir = None
+                if args['ebooks_dir'] == 'default':
+                    print(f'Using the default ebooks_dir: {ebooks_dir}')
+                    new_ebooks_dir =  os.path.abspath(ebooks_dir)
+                else:
+                    # Check if the directory exists
+                    if os.path.exists(args['ebooks_dir']):
+                        new_ebooks_dir = os.path.abspath(args['ebooks_dir'])
+                    else:
+                        print(f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.')
+                        sys.exit(1)
+
+                if os.path.exists(new_ebooks_dir):
+                    for file in os.listdir(new_ebooks_dir):
+                        # Process files with supported ebook formats
+                        if any(file.endswith(ext) for ext in ebook_formats):
+                            full_path = os.path.join(new_ebooks_dir, file)
+                            print(f'Processing eBook file: {full_path}')
+                            args['ebook'] = full_path
+                            progress_status, audiobook_file = convert_ebook(args)
+                            if audiobook_file is None:
+                                print(f'Conversion failed: {progress_status}')
+                                sys.exit(1)
+                else:
+                    print(f'Error: The directory {new_ebooks_dir} does not exist.')
+                    sys.exit(1)
+
+            elif args['ebook']:
+                progress_status, audiobook_file = convert_ebook(args)
+                if audiobook_file is None:
+                    print(f'Conversion failed: {progress_status}')
+                    sys.exit(1)
+
+            else:
+                print('Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.')
+                sys.exit(1)       
         else:
-            print('Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.')
-            sys.exit(1)       
-    else:
-        args['is_gui_process'] = True
-        passed_arguments = sys.argv[1:]
-        allowed_arguments = {'--share', '--script_mode'}
-        passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
-        if passed_args_set.issubset(allowed_arguments):
-             web_interface(args)
-        else:
-            print('Error: In non-headless mode, no option or only --share can be passed')
-            sys.exit(1)
+            args['is_gui_process'] = True
+            passed_arguments = sys.argv[1:]
+            allowed_arguments = {'--share', '--script_mode'}
+            passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
+            if passed_args_set.issubset(allowed_arguments):
+                 web_interface(args)
+            else:
+                print('Error: In non-headless mode, no option or only --share can be passed')
+                sys.exit(1)
 
 if __name__ == '__main__':
     main()
