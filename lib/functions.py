@@ -1745,15 +1745,15 @@ def web_interface(args):
             else:
                 new_language_code = selected
             session['language'] = new_language_code
-            custom_model_tts_dir = check_custom_model_tts(id)
+            custom_model = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
+            tts_engine_options = get_compatible_tts_engines(session['language'])
+            tts_engine = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
+            custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], tts_engine)
             custom_model_options = [('None', None)] + [
                 (os.path.basename(os.path.join(custom_model_tts_dir, dir)), os.path.join(custom_model_tts_dir, dir))
                 for dir in os.listdir(custom_model_tts_dir)
                 if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
             ]
-            custom_model = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-            tts_engine_options = get_compatible_tts_engines(session['language'])
-            tts_engine = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
             fine_tuned_options = [
                 name for name, details in models.get(tts_engine,{}).items()
                 if details.get('lang') == 'multi' or details.get('lang') == session['language']
@@ -1780,56 +1780,49 @@ def web_interface(args):
                 gr.update(choices=fine_tuned_options, value=fine_tuned)
             ]
 
-        def check_custom_model_tts(id):
-            session = context.get_session(id)
-            dir_name = 'xtts'
-            if not language_tts['xtts'].get(session['language']):
-                dir_name = 'fairseq'
-            dir_path = os.path.join(session['custom_model_dir'], dir_name)
+        def check_custom_model_tts(custom_model_dir, tts_engine):
+            dir_path = os.path.join(custom_model_dir, tts_engine)
             if not os.path.isdir(dir_path):
                 os.makedirs(dir_path, exist_ok=True)
             return dir_path
-            
-        def change_gr_custom_model_file(f):
+
+        def change_gr_custom_model_file(f, id):
+            nonlocal custom_model_options
             if f is None:
-                return gr.update(), gr.update(), gr.update(), gr.update()
+                return gr.update(value=None), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
             if len(custom_model_options) > max_custom_model:
                 error = f'You are allowed to upload a max of {max_custom_models} models'    
-                return gr.update(interactive=True), gr.update(interactive=True), gr.update(interactive=True), gr.update(value=error)
-            else:
-                return gr.update(interactive=False), gr.update(interactive=False), gr.update(interactive=False), gr.update()
-
-        def save_gr_custom_model_file(f, id):
-            nonlocal custom_model_options
-            error = ''
-            try:
-                session = context.get_session(id)
-                if f is None:
-                    return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value='')
-                if analyze_uploaded_file(f):
-                    model = extract_custom_model(f, session)
-                    if model is None:
-                        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value=f'Cannot extract custom model zip file {os.path.basename(f)}')
-                    session['custom_model'] = model
-                    custom_model_tts_dir = check_custom_model_tts(id)
-                    custom_model_options = [('None', None)] + [
-                        (os.path.basename(os.path.join(custom_model_tts_dir, dir)), os.path.join(custom_model_tts_dir, dir))
-                        for dir in os.listdir(custom_model_tts_dir)
-                        if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
-                    ]
-                    return[
-                        gr.update(value=None),
-                        gr.update(choices=custom_model_options, value=session['custom_model']),
-                        gr.update(interactive=True),
-                        gr.update(interactive=True),
-                        gr.update(interactive=True),
-                        gr.update(value=f"{model} added to the custom models list")
-                    ]
-                else:
-                    return gr.update(), gr.update(), gr.update(), gr.update(value=f'{os.path.basename(f)} is not a valid model or some required files are missing')
-            except Exception as e:
-                error = f'Error: {str(e)}'
                 return gr.update(value=None), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value=error)
+            else:             
+                error = ''
+                try:
+                    session = context.get_session(id)
+                    if f is None:
+                        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value='')
+                    if analyze_uploaded_file(f):
+                        model = extract_custom_model(f, session)
+                        if model is None:
+                            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value=f'Cannot extract custom model zip file {os.path.basename(f)}')
+                        session['custom_model'] = model
+                        custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
+                        custom_model_options = [('None', None)] + [
+                            (os.path.basename(os.path.join(custom_model_tts_dir, dir)), os.path.join(custom_model_tts_dir, dir))
+                            for dir in os.listdir(custom_model_tts_dir)
+                            if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
+                        ]
+                        return[
+                            gr.update(value=None),
+                            gr.update(choices=custom_model_options, value=session['custom_model']),
+                            gr.update(interactive=True),
+                            gr.update(interactive=True),
+                            gr.update(interactive=True),
+                            gr.update(value=f"{model} added to the custom models list")
+                        ]
+                    else:
+                        return gr.update(), gr.update(), gr.update(), gr.update(value=f'{os.path.basename(f)} is not a valid model or some required files are missing')
+                except Exception as e:
+                    error = f'Error: {str(e)}'
+                    return gr.update(value=None), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(value=error)
 
         def change_gr_custom_model_list(selected, id):
             session = context.get_session(id)
@@ -1944,15 +1937,15 @@ def web_interface(args):
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}")
                 os.makedirs(session['custom_model_dir'], exist_ok=True)
                 os.makedirs(session['voice_dir'], exist_ok=True)             
-                custom_model_tts_dir = check_custom_model_tts(session['id'])
+                tts_engine_options = get_compatible_tts_engines(session['language'])
+                session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
+                custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
                 custom_model_options = [('None', None)] + [
                     (os.path.basename(os.path.join(custom_model_tts_dir, dir)), os.path.join(custom_model_tts_dir, dir))
                     for dir in os.listdir(custom_model_tts_dir)
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
                 session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-                tts_engine_options = get_compatible_tts_engines(session['language'])
-                session['tts_engine'] = session['tts_engine'] if session['tts_engine'] in tts_engine_options else tts_engine_options[0]
                 fine_tuned_options = [
                     name for name, details in models.get(session['tts_engine'], {}).items()
                     if details.get('lang') == 'multi' or details.get('lang') == session['language']
@@ -2021,7 +2014,7 @@ def web_interface(args):
                                     state['hash'] = new_hash
                                     session_dict = proxy_to_dict(session)
                             return gr.update(value=json.dumps(session_dict, indent=4)), gr.update(value=state)
-                return gr.update()
+                return gr.update(), gr.update()
             except Exception as e:
                 return gr.update(), gr.update(value=e)
         
@@ -2070,12 +2063,8 @@ def web_interface(args):
         )
         gr_custom_model_file.change(
             fn=change_gr_custom_model_file,
-            inputs=[gr_custom_model_file],
-            outputs=[gr_tts_engine_list, gr_fine_tuned_list, gr_language, gr_conversion_progress]
-        ).then(
-            fn=save_gr_custom_model_file,
             inputs=[gr_custom_model_file, gr_session],
-            outputs=[gr_custom_model_file, gr_custom_model_list, gr_tts_engine_list, gr_language, gr_fine_tuned_list, gr_conversion_progress]            
+            outputs=[gr_custom_model_file, gr_custom_model_list, gr_tts_engine_list, gr_language, gr_fine_tuned_list, gr_conversion_progress]  
         )
         gr_custom_model_list.change(
             fn=change_gr_custom_model_list,
