@@ -17,9 +17,13 @@ WORKDIR /app
 # Install system packages
 USER root
 RUN apt-get update && \
-    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 && \
+    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+
 
 # Clone the GitHub repository and set it as the working directory
 USER root
