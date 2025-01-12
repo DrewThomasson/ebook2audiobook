@@ -17,7 +17,7 @@ WORKDIR /app
 # Install system packages
 USER root
 RUN apt-get update && \
-    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic && \
+    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -25,21 +25,29 @@ RUN apt-get update && \
 USER root
 RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
 USER user
-RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git /home/user/app
+RUN git clone https://github.com/ROBERT-MCDOWELL/ebook2audiobook.git /home/user/app
 
 # Set the cloned repository as the base working directory
 WORKDIR /home/user/app
 
-#Install Python dependences from the ebook2audiobook repo
+# Install Python dependencies
+# Install UniDic and its dependencies
+RUN pip install --no-cache-dir unidic-lite unidic
+RUN python3 -m unidic download  # Download UniDic
+RUN mkdir -p /home/user/.local/share/unidic && \
+    mv ~/.local/share/unidic/* /home/user/.local/share/unidic/ || true
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
+# Set environment variable to ensure MeCab can locate UniDic
+ENV UNIDIC_DIR=/home/user/.local/share/unidic
+
 # Do a test run to make sure that the base models are pre-downloaded and baked into the image
-# RUN echo "This is a test sentence." > test.txt 
-# RUN python app.py --headless --ebook test.txt
-# RUN rm test.txt
+RUN echo "This is a test sentence." > test.txt 
+RUN python app.py --headless --ebook test.txt --script_mode full_docker
+RUN rm test.txt
 
 # Expose the required port
 EXPOSE 7860
 
-# Start the Gradio app from the repository
-CMD ["python", "app.py"]
+# Start the Gradio app with the required flag
+CMD ["python", "app.py", "--script_mode", "full_docker"]
