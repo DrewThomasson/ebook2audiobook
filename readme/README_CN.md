@@ -1,80 +1,86 @@
 # 📚 ebook2audiobook
 
-CPU/GPU转换器，将电子书转换为包含章节和元数据的有声读物<br/>
+从eBooks到有章节和元数据的音频书籍的CPU/GPU转换器<br/>
 使用Calibre、ffmpeg、XTTSv2、Fairseq等。支持语音克隆和1124种语言！
 > [!IMPORTANT]
-**本工具仅适用于非DRM、合法获取的电子书。**
-作者对软件的任何误用或由此产生的法律后果概不负责。
-请负责任地使用本工具，并遵守所有适用法律。
+> **此工具仅适用于非DRM、合法获取的eBooks。** <br>
+> 作者不对任何滥用此软件或由此产生的法律后果负责。<br>
+> 请负责任地使用此工具，并遵守所有适用的法律。
+
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
 
-#### 新的v2.0 Web GUI界面！
-![demo_web_gui](assets/demo_web_gui.gif)
+感谢支持ebook2audiobook的开发者！<br>
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
+
+
+#### 新v2.0 Web GUI界面！
+![demo_web_gui](../assets/demo_web_gui.gif)
 
 <details>
   <summary>点击查看Web GUI的图片</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <img width="1728" alt="GUI Screen 1" src="../assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="../assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="../assets/gui_3.png">
 </details>
 
+
 ## README.md
-- ar [العربية](./readme/README_AR.md)
-- en [English](README.md)
+- ara [العربية (Arabic)](./readme/README_AR.md)
+- eng [English](README.md)
+- swe [Svenska (Swedish)](./readme/README_SWE.md)
 
 ## 目录
 
-- [ebook2audiobook](#ebook2audiobook)
-- [Features](#features)
-- [New v2.0 Web GUI Interface](#new-v20-web-gui-interface)
-- [Huggingface Space Demo](#huggingface-space-demo)
-- [Free Google Colab](#free-google-colab)
-- [Pre-made Audio Demos](#demos)
-- [Supported Languages](#supported-languages)
-- [Requirements](#requirements)
-- [Installation Instructions](#installation-instructions)
-- [Usage](#usage)
-  - [Launching Gradio Web Interface](#launching-gradio-web-interface)
-  - [Basic Headless Usage](#basic-headless-usage)
-  - [Headless Custom XTTS Model Usage](#headless-custom-xtts-model-usage)
-  - [Renting a GPU](#renting-a-gpu)
-  - [Help command output](#help-command-output)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
-  - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
-- [Using Docker](#using-docker)
-  - [Docker Run](#running-the-docker-container)
-  - [Docker Build](#building-the-docker-container)
+- [ebook2audiobook](#-ebook2audiobook)
+- [功能](#功能)
+- [Huggingface Space Demo](#hugging-face-space-演示)
+- [免费Google Colab](#免费google-colab)
+- [演示](#演示)
+- [支持的语言](#支持的语言)
+- [要求](#要求)
+- [安装说明](#安装说明)
+- [使用](#使用)
+  - [启动Gradio Web界面](#启动gradio-web界面)
+  - [基本用法](#基本用法)
+  - [使用自定义XTTS模型](#使用自定义xtts模型)
+  - [租用GPU](#租用gpu)
+  - [详细指南，列出所有参数](#详细指南列出所有参数)
+- [Fine Tuned TTS模型](#fine-tuned-tts模型)
+  - [Fine Tuned TTS模型集合](#fine-tuned-tts模型集合)
+- [使用Docker](#使用docker)
+  - [运行Docker容器](#运行docker容器)
+  - [构建Docker容器](#构建docker容器)
   - [Docker Compose](#docker-compose)
-  - [Docker headless guide](#docker-headless-guide)
-  - [Docker container file locations](#docker-container-file-locations)
-- [Supported eBook Formats](#supported-ebook-formats)
-- [Output](#output)
-- [Common Issues](#common-issues)
-- [Special Thanks](#special-thanks)
-- [Join Our Discord Server!](#join-our-discord-server)
+  - [Docker无头指南](#docker无头指南)
+  - [Docker容器文件位置](#docker容器文件位置)
+  - [常见Docker问题](#常见docker问题)
+- [支持的电子书格式](#支持的电子书格式)
+- [输出](#输出)
+- [常见问题](#常见问题)
+- [特别感谢](#特别感谢)
+- [加入我们的Discord服务器！](#加入我们的discord服务器)
 - [Legacy](#legacy-v10)
-- [Glossary of Sections](#glossary-of-sections)
 
-## 🌟 特征
+## 功能
 
-- 📖 使用Calibre将电子书转换为文本格式。
-- 📚 将电子书拆分为章节，以获得有组织的音频。
-- 🎙️ 使用[Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2)和[Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms)实现高质量的文本到语音转换。
-- 🗣️ 可选择使用您自己的语音文件进行语音克隆。
-- 🌍 支持1107种语言（默认为英语）。[支持的语言列表](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)。
-- 🖥️ 基于4GB RAM运行。
+- 📖 使用Calibre将eBooks转换为文本格式。
+- 📚 将eBooks拆分为章节，以组织音频。
+- 🎙️ 使用[Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2)和[Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms)的高质量文本转语音。
+- 🗣️ 可选的语音克隆，使用你自己的语音文件。
+- 🌍 支持1107种语言（默认是英语）。[支持的语言列表](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- 🖥️ 设计为在4GB RAM上运行。
 
-## [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
+## [Huggingface space演示](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 
-- Huggingface space运行在空闲cpu层上，所以预计会非常慢或超时，不要给它非常大的文件。
-- 最好复制空间或在本地运行。
+- Huggingface space在免费cpu层上运行，所以预计会很慢或超时，只需不要给它太大的文件。
+- 最好复制空间或本地运行。
 
-## 免费谷歌Colab
-[![免费谷歌Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
+## 免费Google Colab
+[![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
 
-## 🌐 支持的语言
+## 支持的语言
 
 - **Arabic (ara)**
 - **Chinese (zho)**
@@ -94,12 +100,17 @@ CPU/GPU转换器，将电子书转换为包含章节和元数据的有声读物<
 - **Spanish (spa)**
 - **Turkish (tur)**
 - **Vietnamese (vie)**
-- [** + 1107 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- **[ + 1107 languages via Fairseq](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)**
 
-##  必要条件
 
-- 4gb 内存
-- 如果在windows上运行，则启用虚拟化(仅限Docker)
+## 要求
+
+- 4gb ram
+- 如果运行在windows上，则启用虚拟化（仅限Docker）
+
+> [!IMPORTANT]
+> **在发布安装或错误问题之前，仔细搜索已打开和已关闭的问题选项卡<br>
+> 以确保你的问题不存在。**
 
 ### 安装说明
 
@@ -116,19 +127,18 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 1. **运行ebook2audiobook**:
    - **Linux/MacOS**:
      ```bash
-     ./ebook2audiobook.sh  # Run Launch script
+     ./ebook2audiobook.sh  # 运行启动脚本
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  # Run launch script
+     .\ebook2audiobook.cmd  # 运行启动脚本或双击它
      ```
-
-2. **打开web应用程序**: 点击终端中提供的URL访问web应用程序并转换电子书.
-3. **公共链接**: 在末尾添加“--share True”，如下所示：`python app.py--share True`
-- **[更多参数]**: 使用`-h`参数，如`python app.py-h`
+2. **打开Web App**: 点击终端中提供的URL访问Web App并转换eBooks。
+3. **公开链接**: 在末尾添加 `--share` 像这样: `python app.py --share`
+- **[更多参数]**: 使用 `--help` 参数像这样: `python app.py --help`
 
 ### 基本用法
-    - **Linux/MacOS**:
+   - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.sh  -- --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
@@ -137,12 +147,12 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      .\ebook2audiobook.cmd  -- --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
 
-- **<path_to_ebook_file>**: 电子书文件的路径。
+- **<path_to_ebook_file>**: 你的eBook文件路径。
 - **[path_to_voice_file]**: 指定转换的语音文件，可选。
-- **[language_code]**: 指定转换的语言，可选。
-- **[更多参数]**: 使用 `-h` 参数，如 `python app.py -h`
+- **[language_code]**: 可选指定ISO-639-3 3+字母语言代码（默认是eng）。ISO-639-1 2字母代码也支持
+- **[更多参数]**: 使用 `--help` 参数像这样: `python app.py --help`
 
-### 自定义XTTS模型用法
+### 使用自定义XTTS模型
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.sh  -- --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
@@ -152,28 +162,15 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      .\ebook2audiobook.cmd  -- --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
      ```
 
-- **<ebook_file_path>**: 电子书文件的路径。
+- **<ebook_file_path>**: 你的eBook文件路径。
 - **<target_voice_file_path>**: 指定转换的语音文件，可选。
-- **<language>**: 指定转换的语言，可选。
-- **<custom_model_path>**: `model.pth`的路径。
-- **<custom_config_path>**: `config.json`的路径。
-- **<custom_vocab_path>**: `vocab.json`的路径。
-- **[更多参数]**: 使用 `-h` 参数，如 `python app.py -h`
+- **<language>**: 指定语言，可选。
+- **<custom_model_path>**: 指定`model.pth`文件路径。
+- **<custom_config_path>**: 指定`config.json`文件路径。
+- **<custom_vocab_path>**: 指定`vocab.json`文件路径。
+- **[更多参数]**: 使用 `--help` 参数像这样: `python app.py --help`
 
-### 🧩 自定义XTTS Fine-Tune 模型的无头用法 🌐
-
-```bash
-python app.py --headless True --use_custom_model True --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model_url <custom_model_URL_ZIP_path>
-```
-
-- **<ebook_file_path>**: 电子书文件的路径。
-- **<target_voice_file_path>**: 指定转换的语音文件，可选。
-- **<language>**: 指定转换的语言，可选。
-- **<custom_model_URL_ZIP_path>**: 模型文件夹压缩包的URL路径。例如
- [xtts_David_Attenborough_fine_tune](https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/tree/main) `https://huggingface.co/drewThomasson/xtts_David_Attenborough_fine_tune/resolve/main/Finished_model_files.zip?download=true`
-- **[更多参数]**: 使用 `-h` 参数，如 `python app.py -h`
-
-### 详细指南，包括所有要使用的参数列表
+### 详细指南，列出所有参数
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.sh  --help
@@ -185,49 +182,49 @@ python app.py --headless True --use_custom_model True --ebook <ebook_file_path> 
 <a id="help-command-output"></a>
 - 这将输出以下内容:
 ```bash
-usage: app.py [-h] [--share] [--headless [HEADLESS]] [--ebook EBOOK]
-              [--ebooks_dir [EBOOKS_DIR]] [--voice VOICE] [--language LANGUAGE]
-              [--device {cpu,gpu}] [--use_custom_model] [--custom_model CUSTOM_MODEL]
-              [--custom_config CUSTOM_CONFIG] [--custom_vocab CUSTOM_VOCAB]
-              [--custom_model_url CUSTOM_MODEL_URL] [--temperature TEMPERATURE]
+usage: app.py [-h] [--script_mode SCRIPT_MODE] [--share] [-- []]
+              [--session SESSION] [--ebook EBOOK] [--ebooks_dir [EBOOKS_DIR]]
+              [--voice VOICE] [--language LANGUAGE] [--device {cpu,gpu}]
+              [--custom_model CUSTOM_MODEL] [--temperature TEMPERATURE]
               [--length_penalty LENGTH_PENALTY]
               [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K] [--top_p TOP_P]
-              [--speed SPEED] [--enable_text_splitting]
+              [--speed SPEED] [--enable_text_splitting] [--fine_tuned FINE_TUNED]
+              [--version]
 
-使用文本到语音模型将电子书转换为有声读物。您可以启动Gradio界面，也可以在命令行运行脚本进行直接转换。
+Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in  mode for direct conversion.
 
 options:
-  -h, --help            显示此帮助消息并退出
+  -h, --help            show this help message and exit
   --script_mode SCRIPT_MODE
-                        强制脚本在NATIVE或DOCKER_UTILS中运行
-  --share               启用可公开共享的Gradio链接。默认为False
+                        Force the script to run in NATIVE or DOCKER_UTILS
+  --share               Enable a public shareable Gradio link. Default to False.
   -- []
-                        以模式运行。如果标志不带值，则默认为True，否则为False
-  --session SESSION     中断时重新连接的会话（仅命令行模式）
-  --ebook EBOOK         转换电子书文件的路径。命令行中需要。
+                        Run in  mode. Default to True if the flag is present without a value, False otherwise.
+  --session SESSION     Session to reconnect in case of interruption ( mode only)
+  --ebook EBOOK         Path to the ebook file for conversion. Required in  mode.
   --ebooks_dir [EBOOKS_DIR]
-                        包含用于批量转换的电子书的目录的路径。如果提供“默认”，则默认为“电子书”。
-  --voice VOICE         TTS目标语音文件的路径。可选，XTTS必须为24khz，fairseq型号必须为16khz，如果没有提供，则使用默认语音。
-  --language LANGUAGE  有声读物转换的语言。 Options: eng, zho, spa, fra, por, rus, ind, hin, ben, yor, ara, jav, jpn, kor, deu, ita, fas, tam, tel, tur, pol, hun, nld, zzzz, abi, ace, aca, acn, acr, ach, acu, guq, ade, adj, agd, agx, agn, aha, aka, knj, ake, aeu, ahk, bss, alj, sqi, alt, alp, alz, kab, amk, mmg, amh, ami, azg, agg, boj, cko, any, arl, atq, luc, hyw, apr, aia, msy, cni, cjo, cpu, cpb, asm, asa, teo, ati, djk, ava, avn, avu, awb, kwi, awa, agr, agu, ayr, ayo, abp, blx, sgb, azj-script_cyrillic, azj-script_latin, azb, bba, bhz, bvc, bfy, bgq, bdq, bdh, bqi, bjw, blz, ban, bcc-script_latin, bcc-script_arabic, bam, ptu, bcw, bqj, bno, bbb, bfa, bjz, bak, eus, bsq, akb, btd, btx, bts, bbc, bvz, bjv, bep, bkv, bzj, bem, bng, bom, btt, bha, bgw, bht, beh, sne, ubl, bcl, bim, bkd, bjr, bfo, biv, bib, bis, bzi, bqp, bpr, bps, bwq, bdv, bqc, bus, bnp, bmq, bdg, boa, ksr, bor, bru, box, bzh, bgt, sab, bul, bwu, bmv, mya, tte, cjp, cbv, kaq, cot, cbc, car, cat, ceb, cme, cbi, ceg, cly, cya, che, hne, nya, dig, dug, bgr, cek, cfm, cnh, hlt, mwq, ctd, tcz, zyp, cco, cnl, cle, chz, cpa, cso, cnt, cuc, hak, nan, xnj, cap, cax, ctg, ctu, chf, cce, crt, crq, cac-dialect_sansebastiáncoatán, cac-dialect_sanmateoixtatán, ckt, ncu, cdj, chv, caa, asg, con, crn, cok, crk-script_latin, crk-script_syllabics, crh, hrv, cui, ces, dan, dsh, dbq, dga, dgi, dgk, dnj-dialect_gweetaawueast, dnj-dialect_blowowest, daa, dnt, dnw, dar, tcc, dwr, ded, mzw, ntr, ddn, des, dso, nfa, dhi, gud, did, mhu, dip, dik, tbz, dts, dos, dgo, mvp, jen, dzo, idd, eka, cto, emp, enx, sja, myv, mcq, ese, evn, eza, ewe, fal, fao, far, fij, fin, fon, frd, ful, flr, gau, gbk, gag-script_cyrillic, gag-script_latin, gbi, gmv, lug, pwg, gbm, cab, grt, krs, gso, nlg, gej, gri, kik, acd, glk, gof-script_latin, gog, gkn, wsg, gjn, gqr, gor, gux, gbo, ell, grc, guh, gub, grn, gyr, guo, gde, guj, gvl, guk, rub, dah, gwr, gwi, hat, hlb, amf, hag, hnn, bgc, had, hau, hwc, hvn, hay, xed, heb, heh, hil, hif, hns, hoc, hoy, hus-dialect_westernpotosino, hus-dialect_centralveracruz, huv, hui, hap, iba, isl, dbj, ifa, ifb, ifu, ifk, ife, ign, ikk, iqw, ilb, ilo, imo, inb, ipi, irk, icr, itv, itl, atg, ixl-dialect_sanjuancotzal, ixl-dialect_sangasparchajul, ixl-dialect_santamarianebaj, nca, izr, izz, jac, jam, jvn, kac, dyo, csk, adh, jun, jbu, dyu, bex, juy, gna, urb, kbp, cwa, dtp, kbr, cgc, kki, kzf, lew, cbr, kkj, keo, kqe, kak, kyb, knb, kmd, kml, ify, xal, kbq, kay, ktb, hig, gam, cbu, xnr, kmu, kne, kan, kby, pam, cak-dialect_santamaríadejesús, cak-dialect_southcentral, cak-dialect_yepocapa, cak-dialect_western, cak-dialect_santodomingoxenacoj, cak-dialect_central, xrb, krc, kaa, krl, pww, xsm, cbs, pss, kxf, kyz, kyu, txu, kaz, ndp, kbo, kyq, ken, ker, xte, kyg, kjh, kca, khm, kxm, kjg, nyf, kij, kia, kqr, kqp, krj, zga, kin, pkb, geb, gil, kje, kss, thk, klu, kyo, kog, kfb, kpv, bbo, xon, kma, kno, kxc, ozm, kqy, coe, kpq, kpy, kyf, kff-script_telugu, kri, rop, ktj, ted, krr, kdt, kez, cul, kle, kdi, kue, kum, kvn, cuk, kdn, xuo, key, kpz, knk, kmr-script_latin, kmr-script_arabic, kmr-script_cyrillic, xua, kru, kus, kub, kdc, kxv, blh, cwt, kwd, tnk, kwf, cwe, kyc, tye, kir, quc-dialect_north, quc-dialect_east, quc-dialect_central, lac, lsi, lbj, lhu, las, lam, lns, ljp, laj, lao, lat, lav, law, lcp, lzz, lln, lef, acf, lww, mhx, eip, lia, lif, onb, lis, loq, lob, yaz, lok, llg, ycl, lom, ngl, lon, lex, lgg, ruf, dop, lnd, ndy, lwo, lee, mev, mfz, jmc, myy, mbc, mda, mad, mag, ayz, mai, mca, mcp, mak, vmw, mgh, kde, mlg, zlm, pse, mkn, xmm, mal, xdy, div, mdy, mup, mam-dialect_central, mam-dialect_northern, mam-dialect_southern, mam-dialect_western, mqj, mcu, mzk, maw, mjl, mnk, mge, mbh, knf, mjv, mbt, obo, mbb, mzj, sjm, mrw, mar, mpg, mhr, enb, mah, myx, klv, mfh, met, mcb, mop, yua, mfy, maz, vmy, maq, mzi, maj, maa-dialect_sanantonio, maa-dialect_sanjerónimo, mhy, mhi, zmz, myb, gai, mqb, mbu, med, men, mee, mwv, meq, zim, mgo, mej, mpp, min, gum, mpx, mco, mxq, pxm, mto, mim, xta, mbz, mip, mib, miy, mih, miz, xtd, mxt, xtm, mxv, xtn, mie, mil, mio, mdv, mza, mit, mxb, mpm, soy, cmo-script_latin, cmo-script_khmer, mfq, old, mfk, mif, mkl, mox, myl, mqf, mnw, mon, mog, mfe, mor, mqn, mgd, mtj, cmr, mtd, bmr, moz, mzm, mnb, mnf, unr, fmu, mur, tih, muv, muy, sur, moa, wmw, tnr, miq, mos, muh, nas, mbj, nfr, kfw, nst, nag, nch, nhe, ngu, azz, nhx, ncl, nhy, ncj, nsu, npl, nuz, nhw, nhi, nlc, nab, gld, nnb, npy, pbb, ntm, nmz, naw, nxq, ndj, ndz, ndv, new, nij, sba, gng, nga, nnq, ngp, gym, kdj, nia, nim, nin, nko, nog, lem, not, nhu, nob, bud, nus, yas, nnw, nwb, nyy, nyn, rim, lid, nuj, nyo, nzi, ann, ory, ojb-script_latin, ojb-script_syllabics, oku, bsc, bdu, orm, ury, oss, ote, otq, stn, sig, kfx, bfz, sey, pao, pau, pce, plw, pmf, pag, pap, prf, pab, pbi, pbc, pad, ata, pez, peg, pcm, pis, pny, pir, pjt, poy, pps, pls, poi, poh-dialect_eastern, poh-dialect_western, prt, pui, pan, tsz, suv, lme, quy, qvc, quz, qve, qub, qvh, qwh, qvw, quf, qvm, qul, qvn, qxn, qxh, qvs, quh, qxo, qxr, qvo, qvz, qxl, quw, kjb, kek, rah, rjs, rai, lje, rnl, rkt, rap, yea, raw, rej, rel, ril, iri, rgu, rhg, rmc-script_latin, rmc-script_cyrillic, rmo, rmy-script_latin, rmy-script_cyrillic, ron, rol, cla, rng, rug, run, lsm, spy, sck, saj, sch, sml, xsb, sbl, saq, sbd, smo, rav, sxn, sag, sbp, xsu, srm, sas, apb, sgw, tvw, lip, slu, snw, sea, sza, seh, crs, ksb, shn, sho, mcd, cbt, xsr, shk, shp, sna, cjs, jiv, snp, sya, sid, snn, sri, srx, sil, sld, akp, xog, som, bmu, khq, ses, mnx, srn, sxb, suc, tgo, suk, sun, suz, sgj, sus, swh, swe, syl, dyi, myk, spp, tap, tby, tna, shi, klw, tgl, tbk, tgj, blt, tbg, omw, tgk, tdj, tbc, tlj, tly, ttq-script_tifinagh, taj, taq, tpm, tgp, tnn, tac, rif-script_latin, rif-script_arabic, tat, tav, twb, tbl, kps, twe, ttc, kdh, tes, tex, tee, tpp, tpt, stp, tfr, twu, ter, tew, tha, nod, thl, tem, adx, bod, khg, tca, tir, txq, tik, dgr, tob, tmf, tng, tlb, ood, tpi, jic, lbw, txa, tom, toh, tnt, sda, tcs, toc, tos, neb, trn, trs, trc, tri, cof, tkr, kdl, cas, tso, tuo, iou, tmc, tuf, tuk-script_latin, tuk-script_arabic, bov, tue, kcg, tzh-dialect_bachajón, tzh-dialect_tenejapa, tzo-dialect_chenalhó, tzo-dialect_chamula, tzj-dialect_western, tzj-dialect_eastern, aoz, udm, udu, ukr, ppk, ubu, urk, ura, urt, urd-script_devanagari, urd-script_arabic, urd-script_latin, upv, usp, uig-script_arabic, uig-script_cyrillic, uzb-script_cyrillic, vag, bav, vid, vie, vif, vun, vut, prk, wwa, rro, bao, waw, lgl, wlx, cou, hub, gvc, mfi, wap, wba, war, way, guc, cym, kvw, tnp, hto, huu, wal-script_latin, wal-script_ethiopic, wlo, noa, wob, kao, xer, yad, yka, sah, yba, yli, nlk, yal, yam, yat, jmd, tao, yaa, ame, guu, yao, yre, yva, ybb, pib, byr, pil, ycn, ess, yuz, atb, zne, zaq, zpo, zad, zpc, zca, zpg, zai, zpl, zam, zaw, zpm, zac, zao, ztq, zar, zpt, zpi, zas, zaa, zpz, zab, zpu, zae, zty, zav, zza, zyb, ziw, zos, gnd. Default to English (eng).
-  --device {cpu,gpu}    有声读物转换的处理器单元类型。如果没有指定：首先检查gpu是否可用，如果没有选择cpu。
+                        Path to the directory containing ebooks for batch conversion. Default to "ebooks" if "default" is provided.
+  --voice VOICE         Path to the target voice file for TTS. Optional, must be 24khz for XTTS and 16khz for fairseq models, uses a default voice if not provided.
+  --language LANGUAGE   Language for the audiobook conversion. Options: eng, zho, spa, fra, por, rus, ind, hin, ben, yor, ara, jav, jpn, kor, deu, ita, fas, tam, tel, tur, pol, hun, nld, zzzz, abi, ace, aca, acn, acr, ach, acu, guq, ade, adj, agd, agx, agn, aha, aka, knj, ake, aeu, ahk, bss, alj, sqi, alt, alp, alz, kab, amk, mmg, amh, ami, azg, agg, boj, cko, any, arl, atq, luc, hyw, apr, aia, msy, cni, cjo, cpu, cpb, asm, asa, teo, ati, djk, ava, avn, avu, awb, kwi, awa, agr, agu, ayr, ayo, abp, blx, sgb, azj-script_cyrillic, azj-script_latin, azb, bba, bhz, bvc, bfy, bgq, bdq, bdh, bqi, bjw, blz, ban, bcc-script_latin, bcc-script_arabic, bam, ptu, bcw, bqj, bno, bbb, bfa, bjz, bak, eus, bsq, akb, btd, btx, bts, bbc, bvz, bjv, bep, bkv, bzj, bem, bng, bom, btt, bha, bgw, bht, beh, sne, ubl, bcl, bim, bkd, bjr, bfo, biv, bib, bis, bzi, bqp, bpr, bps, bwq, bdv, bqc, bus, bnp, bmq, bdg, boa, ksr, bor, bru, box, bzh, bgt, sab, bul, bwu, bmv, mya, tte, cjp, cbv, kaq, cot, cbc, car, cat, ceb, cme, cbi, ceg, cly, cya, che, hne, nya, dig, dug, bgr, cek, cfm, cnh, hlt, mwq, ctd, tcz, zyp, cco, cnl, cle, chz, cpa, cso, cnt, cuc, hak, nan, xnj, cap, cax, ctg, ctu, chf, cce, crt, crq, cac-dialect_sansebastiáncoatán, cac-dialect_sanmateoixtatán, ckt, ncu, cdj, chv, caa, asg, con, crn, cok, crk-script_latin, crk-script_syllabics, crh, hrv, cui, ces, dan, dsh, dbq, dga, dgi, dgk, dnj-dialect_gweetaawueast, dnj-dialect_blowowest, daa, dnt, dnw, dar, tcc, dwr, ded, mzw, ntr, ddn, des, dso, nfa, dhi, gud, did, mhu, dip, dik, tbz, dts, dos, dgo, mvp, jen, dzo, idd, eka, cto, emp, enx, sja, myv, mcq, ese, evn, eza, ewe, fal, fao, far, fij, fin, fon, frd, ful, flr, gau, gbk, gag-script_cyrillic, gag-script_latin, gbi, gmv, lug, pwg, gbm, cab, grt, krs, gso, nlg, gej, gri, kik, acd, glk, gof-script_latin, gog, gkn, wsg, gjn, gqr, gor, gux, gbo, ell, grc, guh, gub, grn, gyr, guo, gde, guj, gvl, guk, rub, dah, gwr, gwi, hat, hlb, amf, hag, hnn, bgc, had, hau, hwc, hvn, hay, xed, heb, heh, hil, hif, hns, hoc, hoy, hus-dialect_westernpotosino, hus-dialect_centralveracruz, huv, hui, hap, iba, isl, dbj, ifa, ifb, ifu, ifk, ife, ign, ikk, iqw, ilb, ilo, imo, inb, ipi, irk, icr, itv, itl, atg, ixl-dialect_sanjuancotzal, ixl-dialect_sangasparchajul, ixl-dialect_santamarianebaj, nca, izr, izz, jac, jam, jvn, kac, dyo, csk, adh, jun, jbu, dyu, bex, juy, gna, urb, kbp, cwa, dtp, kbr, cgc, kki, kzf, lew, cbr, kkj, keo, kqe, kak, kyb, knb, kmd, kml, ify, xal, kbq, kay, ktb, hig, gam, cbu, xnr, kmu, kne, kan, kby, pam, cak-dialect_santamaríadejesús, cak-dialect_southcentral, cak-dialect_yepocapa, cak-dialect_western, cak-dialect_santodomingoxenacoj, cak-dialect_central, xrb, krc, kaa, krl, pww, xsm, cbs, pss, kxf, kyz, kyu, txu, kaz, ndp, kbo, kyq, ken, ker, xte, kyg, kjh, kca, khm, kxm, kjg, nyf, kij, kia, kqr, kqp, krj, zga, kin, pkb, geb, gil, kje, kss, thk, klu, kyo, kog, kfb, kpv, bbo, xon, kma, kno, kxc, ozm, kqy, coe, kpq, kpy, kyf, kff-script_telugu, kri, rop, ktj, ted, krr, kdt, kez, cul, kle, kdi, kue, kum, kvn, cuk, kdn, xuo, key, kpz, knk, kmr-script_latin, kmr-script_arabic, kmr-script_cyrillic, xua, kru, kus, kub, kdc, kxv, blh, cwt, kwd, tnk, kwf, cwe, kyc, tye, kir, quc-dialect_north, quc-dialect_east, quc-dialect_central, lac, lsi, lbj, lhu, las, lam, lns, ljp, laj, lao, lat, lav, law, lcp, lzz, lln, lef, acf, lww, mhx, eip, lia, lif, onb, lis, loq, lob, yaz, lok, llg, ycl, lom, ngl, lon, lex, lgg, ruf, dop, lnd, ndy, lwo, lee, mev, mfz, jmc, myy, mbc, mda, mad, mag, ayz, mai, mca, mcp, mak, vmw, mgh, kde, mlg, zlm, pse, mkn, xmm, mal, xdy, div, mdy, mup, mam-dialect_central, mam-dialect_northern, mam-dialect_southern, mam-dialect_western, mqj, mcu, mzk, maw, mjl, mnk, mge, mbh, knf, mjv, mbt, obo, mbb, mzj, sjm, mrw, mar, mpg, mhr, enb, mah, myx, klv, mfh, met, mcb, mop, yua, mfy, maz, vmy, maq, mzi, maj, maa-dialect_sanantonio, maa-dialect_sanjerónimo, mhy, mhi, zmz, myb, gai, mqb, mbu, med, men, mee, mwv, meq, zim, mgo, mej, mpp, min, gum, mpx, mco, mxq, pxm, mto, mim, xta, mbz, mip, mib, miy, mih, miz, xtd, mxt, xtm, mxv, xtn, mie, mil, mio, mdv, mza, mit, mxb, mpm, soy, cmo-script_latin, cmo-script_khmer, mfq, old, mfk, mif, mkl, mox, myl, mqf, mnw, mon, mog, mfe, mor, mqn, mgd, mtj, cmr, mtd, bmr, moz, mzm, mnb, mnf, unr, fmu, mur, tih, muv, muy, sur, moa, wmw, tnr, miq, mos, muh, nas, mbj, nfr, kfw, nst, nag, nch, nhe, ngu, azz, nhx, ncl, nhy, ncj, nsu, npl, nuz, nhw, nhi, nlc, nab, gld, nnb, npy, pbb, ntm, nmz, naw, nxq, ndj, ndz, ndv, new, nij, sba, gng, nga, nnq, ngp, gym, kdj, nia, nim, nin, nko, nog, lem, not, nhu, nob, bud, nus, yas, nnw, nwb, nyy, nyn, rim, lid, nuj, nyo, nzi, ann, ory, ojb-script_latin, ojb-script_syllabics, oku, bsc, bdu, orm, ury, oss, ote, otq, stn, sig, kfx, bfz, sey, pao, pau, pce, plw, pmf, pag, pap, prf, pab, pbi, pbc, pad, ata, pez, peg, pcm, pis, pny, pir, pjt, poy, pps, pls, poi, poh-dialect_eastern, poh-dialect_western, prt, pui, pan, tsz, suv, lme, quy, qvc, quz, qve, qub, qvh, qwh, qvw, quf, qvm, qul, qvn, qxn, qxh, qvs, quh, qxo, qxr, qvo, qvz, qxl, quw, kjb, kek, rah, rjs, rai, lje, rnl, rkt, rap, yea, raw, rej, rel, ril, iri, rgu, rhg, rmc-script_latin, rmc-script_cyrillic, rmo, rmy-script_latin, rmy-script_cyrillic, ron, rol, cla, rng, rug, run, lsm, spy, sck, saj, sch, sml, xsb, sbl, saq, sbd, smo, rav, sxn, sag, sbp, xsu, srm, sas, apb, sgw, tvw, lip, slu, snw, sea, sza, seh, crs, ksb, shn, sho, mcd, cbt, xsr, shk, shp, sna, cjs, jiv, snp, sya, sid, snn, sri, srx, sil, sld, akp, xog, som, bmu, khq, ses, mnx, srn, sxb, suc, tgo, suk, sun, suz, sgj, sus, swh, swe, syl, dyi, myk, spp, tap, tby, tna, shi, klw, tgl, tbk, tgj, blt, tbg, omw, tgk, tdj, tbc, tlj, tly, ttq-script_tifinagh, taj, taq, tpm, tgp, tnn, tac, rif-script_latin, rif-script_arabic, tat, tav, twb, tbl, kps, twe, ttc, kdh, tes, tex, tee, tpp, tpt, stp, tfr, twu, ter, tew, tha, nod, thl, tem, adx, bod, khg, tca, tir, txq, tik, dgr, tob, tmf, tng, tlb, ood, tpi, jic, lbw, txa, tom, toh, tnt, sda, tcs, toc, tos, neb, trn, trs, trc, tri, cof, tkr, kdl, cas, tso, tuo, iou, tmc, tuf, tuk-script_latin, tuk-script_arabic, bov, tue, kcg, tzh-dialect_bachajón, tzh-dialect_tenejapa, tzo-dialect_chenalhó, tzo-dialect_chamula, tzj-dialect_western, tzj-dialect_eastern, aoz, udm, udu, ukr, ppk, ubu, urk, ura, urt, urd-script_devanagari, urd-script_arabic, urd-script_latin, upv, usp, uig-script_arabic, uig-script_cyrillic, uzb-script_cyrillic, vag, bav, vid, vie, vif, vun, vut, prk, wwa, rro, bao, waw, lgl, wlx, cou, hub, gvc, mfi, wap, wba, war, way, guc, cym, kvw, tnp, hto, huu, wal-script_latin, wal-script_ethiopic, wlo, noa, wob, kao, xer, yad, yka, sah, yba, yli, nlk, yal, yam, yat, jmd, tao, yaa, ame, guu, yao, yre, yva, ybb, pib, byr, pil, ycn, ess, yuz, atb, zne, zaq, zpo, zad, zpc, zca, zpg, zai, zpl, zam, zaw, zpm, zac, zao, ztq, zar, zpt, zpi, zas, zaa, zpz, zab, zpu, zae, zty, zav, zza, zyb, ziw, zos, gnd. Default to English (eng).
+  --device {cpu,gpu}    Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.
   --custom_model CUSTOM_MODEL
-                        自定义模型的路径（包含[“config.json”、“vocab.json”、“model.pth”、“ref.wav”]的.zip文件）。如果使用自定义模型，则需要。
+                        Path to the custom model (.zip file containing ['config.json', 'vocab.json', 'model.pth', 'ref.wav']). Required if using a custom model.
   --temperature TEMPERATURE
-                        模型的温度。默认值为0.65。更高的温度会带来更有创意的输出。
+                        Temperature for the model. Default to 0.65. Higher temperatures lead to more creative outputs.
   --length_penalty LENGTH_PENALTY
-                        应用于自回归解码器的长度惩罚。默认值为1.0。不适用于自定义模型。
+                        A length penalty applied to the autoregressive decoder. Default to 1.0. Not applied to custom models.
   --repetition_penalty REPETITION_PENALTY
-                        防止自回归解码器重复自身的惩罚。默认值为2.5
-  --top_k TOP_K         Top-k采样。较低的值意味着更可能的输出和更高的音频生成速度。默认值为50
-  --top_p TOP_P         Top-p采样。较低的值意味着更可能的输出和更高的音频生成速度。默认值为0.8
-  --speed SPEED         语音生成的速度因素。默认值为1.0
+                        A penalty that prevents the autoregressive decoder from repeating itself. Default to 2.5
+  --top_k TOP_K         Top-k sampling. Lower values mean more likely outputs and increased audio generation speed. Default to 50
+  --top_p TOP_P         Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Default to 0.8
+  --speed SPEED         Speed factor for the speech generation. Default to 1.0
   --enable_text_splitting
-                        允许将文本拆分为句子。默认为False
+                        Enable splitting text into sentences. Default to False.
   --fine_tuned FINE_TUNED
-                        微调模型的名称。可选，根据TTS引擎和语言使用标准型号。
-  --version             显示脚本版本并退出
+                        Name of the fine tuned model. Optional, uses the standard model according to the TTS engine and language.
+  --version             Show the version of the script and exit
 
-Example usage:
+Example usage:    
 Windows:
     :
     ebook2audiobook.cmd -- --ebook 'path_to_ebook'
@@ -242,106 +239,56 @@ Linux/Mac:
 
 ```
 
-### 使用 Docker
+### 使用Docker
 
-您还可以使用Docker运行电子书到有声读物的转换器。这种方法确保了不同环境之间的一致性，并简化了设置。
+你也可以使用Docker来运行电子书到有声读物的转换器。这种方法确保了不同环境之间的一致性，并简化了设置。
 
 #### 运行Docker容器
 
-要运行Docker容器并启动Gradio接口，请使用以下命令：
+要运行Docker容器并启动Gradio界面，请使用以下命令:
 
- -只用CPU运行
+ - 仅使用CPU
 ```powershell
 docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
- -使用GPU加速运行（仅限Nvida显卡）
+ - 使用GPU加速（仅限Nvidia显卡）
 ```powershell
 docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
 
 #### 构建Docker容器
 
-- 您可以使用以下命令构建docker镜像:
+- 你可以使用以下命令构建docker镜像:
 '''powershell
 docker build --platform linux/amd64 -t athomasson2/ebook2audiobook .
 '''
 
-此命令将启动端口7860上的Gradio接口。（localhost:7860）
-- 对于更多选项，如以模式运行docker或公开gradio链接，请在docker启动命令中的`app.py`后添加`--help`参数
-
-### 🖥️ Web界面
-
-1. **运行脚本**:
-   ```bash
-   python custom_model_ebook2audiobookXTTS_gradio.py
-   ```
-
-2. **打开web应用程序**: 单击终端中提供的URL以访问web应用程序并转换电子书。
-
-### 📝 基础用法
-
-```bash
-python ebook2audiobook.py <path_to_ebook_file> [path_to_voice_file] [language_code]
-```
-
-- **<path_to_ebook_file>**: 电子书文件的路径。
-- **[path_to_voice_file]**: 指定转换的语音文件，可选。
-- **[language_code]**: 指定转换的语言，可选。
-
-### 🧩 自定义XTTS模型
-
-```bash
-python custom_model_ebook2audiobookXTTS.py <ebook_file_path> <target_voice_file_path> <language> <custom_model_path> <custom_config_path> <custom_vocab_path>
-```
-
-- **<ebook_file_path>**: 电子书文件的路径。
-- **<target_voice_file_path>**: 指定转换的语音文件，可选。
-- **<language>**: 指定转换的语言，可选。
-- **<custom_model_path>**: `model.pth`的路径。
-- **<custom_config_path>**: `config.json`的路径。
-- **<custom_vocab_path>**: `vocab.json`的路径。
-</details>
-
-### 🐳 使用Docker
-
-您还可以使用Docker运行电子书到有声读物的转换器。这种方法确保了不同环境之间的一致性，并简化了设置。
-
-#### 🚀 运行Docker容器
-
-要运行Docker容器并启动Gradio接口，请使用以下命令：
-
- -仅使用CPU运行
+此命令将在端口7860上启动Gradio界面（localhost:7860）。
+- 要运行Docker容器，请使用以下命令:
 ```powershell
-docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
+docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
- -使用GPU加速运行（仅限Nvida显卡）
-```powershell
-docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobookxtts:huggingface python app.py
-```
-
-此命令将启动7860端口上的Gradio接口(localhost:7860)
-- 对于更多选项，如以无头模式运行docker或公开gradio链接，请在docker启动命令中的`app.py`后添加`-h`参数
-
 
 ## Docker容器文件位置
-所有ebook2audiobooks的基本目录为 `/home/user/app/`
-例如:
+所有ebook2audiobooks将具有基础目录`/home/user/app/`
+例如：
 `tmp` = `/home/user/app/tmp`
 `audiobooks` = `/home/user/app/audiobooks`
 
+   
 ## Docker无头指南
 
-首先是docker pull的最新版本
-```bash
+首先，使用以下命令拉取最新版本的Docker镜像:
+```bash 
 docker pull athomasson2/ebook2audiobook
 ```
 
-- 在运行此命令之前，您需要在当前目录中创建一个名为“input folder”的目录，该目录将被链接，您可以在此处放置docker镜像的输入文件
+- 在运行此命令之前，你需要在当前目录中创建一个名为"input-folder"的目录，该目录将被链接，这是你可以放置输入文件的地方，以便Docker镜像可以看到它们。
 ```bash
 mkdir input-folder && mkdir Audiobooks
 ```
 
-- 在下面的命令中将 **YOUR_INPUT_FILE.TXT** 替换为您的输入文件的名称
+- 在下面的命令中，将 **YOUR_INPUT_FILE.TXT** 替换为你的输入文件的名称
 
 ```bash
 docker run -it --rm \
@@ -352,11 +299,12 @@ docker run -it --rm \
     python app.py --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
 ```
 
-- 应该就是这样了!
+- 这样就可以了！
 
-- 输出Audiobooks将在Audiobook文件夹中找到，该文件夹也位于您运行此docker命令的本地目录中
+- 输出有声读物将位于Audiobook文件夹中，该文件夹也将位于你运行此Docker命令的本地目录中
 
-## 要获取此程序中其他参数的帮助命令，可以运行以下命令
+
+## 要获取此程序的其他参数的帮助命令，请运行此命令
 
 ```bash
 docker run -it --rm \
@@ -367,56 +315,67 @@ docker run -it --rm \
 ```
 
 
-这将输出以下内容
+这将输出此帮助命令  
 
-[帮助命令输出](#help-command-output)
+[Help command output](#help-command-output)
 
-### Docker编写
+### Docker Compose
 
-这个项目使用Docker Compose在本地运行。您可以通过在“docker-compose.yml”中设置“*GPU enabled”或“*gpudisabled”来启用或禁用GPU支持`
+此项目使用Docker Compose在本地运行。你可以通过设置`docker-compose.yml`中的`*gpu-enabled`或`*gpu-disabled`来启用或禁用GPU支持。
 
-#### 启动步骤
+#### 运行步骤
 
-1. **克隆存储库** (如果你还没有):
+1. **克隆仓库**（如果还没有克隆）:
    ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
    ```
 
 2. **设置GPU支持（默认禁用）**
-  要启用GPU支持，请修改“docker compose.yml”并将“*GPU disabled”更改为“*GPU-enabled”`
+  要启用GPU支持，修改`docker-compose.yml`并将`*gpu-disabled`改为`*gpu-enabled`
 
-3. **开启服务:**
+3. **启动服务:**
     ```bash
     docker-compose up -d
     ```
 
 4. **访问服务:**
-  该服务将在http://localhost:7860.
+  服务将通过'http://localhost:7860'访问。
 
-#### 新的2.0 Docker Web GUI界面！
-![demo_web_gui](assets/demo_web_gui.gif)
+#### 新v2.0 Docker Web GUI界面!
+![demo_web_gui](../assets/demo_web_gui.gif)
 
 <details>
-  <summary>点击查看Web GUI的图像</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
+  <summary>点击查看Web GUI的图片</summary>
+  <img width="1728" alt="GUI Screen 1" src="../assets/gui_1.png">
+  <img width="1728" alt="GUI Screen 2" src="../assets/gui_2.png">
+  <img width="1728" alt="GUI Screen 3" src="../assets/gui_3.png">
 </details>
 
 ## 租用GPU
-没有运行它的硬件，或者你想租一个GPU？
-#### 你可以复制hugginface空间，并以每小时约0.40美元的价格租用一台gpu
+没有硬件运行它或你想租用GPU？
+#### 你可以复制huggingface空间并租用一个GPU，每小时大约$0.40
 [Huggingface Space Demo](#huggingface-space-demo)
 
-#### 或者你可以尝试免费使用谷歌的colab！
-(请注意，在您不使用谷歌colab后，它将超时)
-[免费的Google Colab](#free-google-colab)
+#### 或者你可以尝试使用免费的Google Colab！
+（请注意，它会在一段时间后超时，如果你不处理Google Colab）
+[Free Google Colab](#free-google-colab)
+
+## 常见Docker问题
+- Docker卡在下载Fine-Tuned模型。（这并不发生在每台计算机上，但有些计算机似乎会遇到这个问题）
+禁用进度条似乎解决了这个问题，如[#191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)中所讨论
+在`docker run`命令中添加此修复的示例
+```Dockerfile
+docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
+```
 
 
-## 微调TTS型号
 
-您可以使用此仓库轻松微调自己的xtts模型
+
+
+## Fine Tuned TTS模型
+
+你可以轻松使用此仓库微调你的xtts模型
 [xtts-finetune-webui](https://github.com/daswer123/xtts-finetune-webui)
 
 如果你想轻松租用GPU，你也可以复制这个huggingface
@@ -425,40 +384,41 @@ docker run -it --rm \
 您还可以使用一个空间轻松地对训练数据进行去噪处理
 [denoise-huggingface-space](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit)
 
-### 微调TTS系列
+### Fine Tuned TTS模型集合
 
-要查找我们已经微调的TTS型号集合，请访问[这个Hugging Face链接](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
+要找到我们已微调的TTS模型集合，请访问[这个Hugging Face链接](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 对于XTTS自定义模型，还需要语音的参考音频片段：
 
-## Demos
+## 演示
 
-雨天的声音
+雨天声音
 
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
-大卫·爱登堡配音
+大卫·阿滕伯勒的声音
 
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
+
 
 ## 支持的电子书格式
 
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
--**最佳结果**：“.epub”或“.mobi”可以自动章节检测
+- **最佳结果**: `.epub` 或 `.mobi` 用于自动章节检测
 
 ## 输出
 
-- 创建一个包含元数据和章节的“.m4b”文件。
-- **输出示例**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+- 创建一个带有元数据和章节的`.m4b`文件。
+- **示例输出**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
 ## 常见问题:
--“太慢了！”-仅在CPU上，这非常慢，而且你只能通过NVIDIA GPU获得加速。[关于此的讨论](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846）为了更快地生成多语言，我建议我的另一个[使用piper-tts的项目](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)相反（它没有零样本语音克隆，而且是siri质量的语音，但在cpu上速度要快得多。）
--“我有依赖问题”-只需使用docker，它完全独立，有一个无头模式，在docker run命令中的`app.py`后添加`-h`参数以获取更多信息。
--“我遇到了一个截断的音频问题！”-请提出这个问题，我不会说每种语言，我需要每个人的建议来微调我在任何其他语言上的句子分割功能。😊
+- "它很慢！" - 在CPU上，这非常慢，您只能通过NVIDIA GPU获得加速。[关于此的讨论](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846) 对于更快的多语言生成，我建议使用我的其他[使用piper-tts的项目](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)（它没有零样本语音克隆，但它是Siri质量的语音，但在CPU上更快。）
+- "我遇到了依赖问题" - 只需使用Docker，它完全自包含，并且有headless模式，在docker run命令中添加`-h`参数以获取更多信息。
+- "我遇到了截断音频问题！" - 请创建一个issue，我并不知道每种语言，我需要从每个人那里获得建议，以在任何其他语言上微调我的句子分割函数。😊
 
-## 我需要帮助！ 🙌
-##[完整列表可以在这里找到](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
--说任何支持语言的人提供的帮助，以帮助正确的句子分割方法
--可能为多种语言创建自述指南（因为我只知道英语😔)
+## 我需要帮助！ 🙌 
+## [完整列表可以在这里找到](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
+- 任何来自说任何受支持语言的人的帮助，以帮助改进句子分割方法
+- 可能为多种语言创建readme指南（因为我只懂英语😔）
 
 ## 特别感谢
 
@@ -466,11 +426,11 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 
-- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8)
+- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
 
 ### [Legacy V1.0](legacy/v1.0)
 
-你能预览这个代码 [here](legacy/v1.0).
+你可以在这里查看代码 [here](legacy/v1.0).
 
 ## 加入我们的Discord服务器！
 
