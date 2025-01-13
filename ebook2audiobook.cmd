@@ -33,6 +33,10 @@ set "CALIBRE_TEMP_DIR=C:\Windows\Temp\Calibre"
 
 set "HELP_FOUND=%ARGS:--help=%"
 
+:: Refresh environment variables (append registry Path to current PATH)
+for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
+    set "PATH=%%B;%PATH%"
+)
 
 if not exist "%CALIBRE_TEMP_DIR%" (
 	mkdir "%CALIBRE_TEMP_DIR%"
@@ -58,43 +62,42 @@ if defined CONTAINER (
 
 echo Running in %SCRIPT_MODE% mode
 
-:: Check if running in a Conda environment
-if defined CONDA_DEFAULT_ENV (
-	set "CURRENT_ENV=%CONDA_PREFIX%"
-)
-
-:: Check if running in a Python virtual environment
-if defined VIRTUAL_ENV (
-	set "CURRENT_ENV=%VIRTUAL_ENV%"
-)
-
-for /f "delims=" %%i in ('where python') do (
-	if defined CONDA_PREFIX (
-		if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-			set "CURRENT_ENV=%CONDA_PREFIX%"
-			break
-		)
-	) else if defined VIRTUAL_ENV (
-		if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-			set "CURRENT_ENV=%VIRTUAL_ENV%"
-			break
-		)
-	)
-)
-
-if not "%CURRENT_ENV%"=="" (
-	echo Current python virtual environment detected: %CURRENT_ENV%. 
-	echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-	goto failed
-)
-
 goto conda_check
 
 :conda_check
-where conda >nul 2>&1
-if %errorlevel% neq 0 (
+set "conda_version="
+for /f "tokens=* delims=" %%i in ('conda --version 2^>nul') do (
+    set "conda_version=%%i"
+)
+if not defined conda_version (
 	set "CONDA_CHECK_STATUS=1"
 ) else (
+	:: Check if running in a Conda environment
+	if defined CONDA_DEFAULT_ENV (
+		set "CURRENT_ENV=%CONDA_PREFIX%"
+	)
+	:: Check if running in a Python virtual environment
+	if defined VIRTUAL_ENV (
+		set "CURRENT_ENV=%VIRTUAL_ENV%"
+	)
+	for /f "delims=" %%i in ('where python') do (
+		if defined CONDA_PREFIX (
+			if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
+				set "CURRENT_ENV=%CONDA_PREFIX%"
+				break
+			)
+		) else if defined VIRTUAL_ENV (
+			if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
+				set "CURRENT_ENV=%VIRTUAL_ENV%"
+				break
+			)
+		)
+	)
+	if not "%CURRENT_ENV%"=="" (
+		echo Current python virtual environment detected: %CURRENT_ENV%. 
+		echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+		goto failed
+	)
 	if "%SCRIPT_MODE%"=="%DOCKER_UTILS%" (
 		goto docker_check
 		exit /b
@@ -107,23 +110,21 @@ exit /b
 
 :programs_check
 set "missing_prog_array="
+set "alias_nodejs=node"
 for %%p in (%PROGRAMS_LIST%) do (
-	set "FOUND="
-	for /f "delims=" %%i in ('where %%p 2^>nul') do (
-		set "FOUND=%%i"
-	)
-	if not defined FOUND (
-		echo %%p is not installed.
-		set "missing_prog_array=!missing_prog_array! %%p"
-	)
+    set "FOUND="
+    set "CHECK_NAME=%%p"  
+    for %%a in (nodejs) do if "%%p"=="%%a" set "CHECK_NAME=!alias_%%a!"  
+    for /f "delims=" %%i in ('where !CHECK_NAME! 2^>nul') do (
+        set "FOUND=%%i"
+    )  
+    if not defined FOUND (
+        echo %%p is not installed.
+        set "missing_prog_array=!missing_prog_array! %%p"
+    )
 )
 if not "%missing_prog_array%"=="" (
-	set "PROGRAMS_CHECK=1"
-) else (
-	if "%HELP_FOUND%" neq "%ARGS%" (
-		python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
-		exit /b
-	)
+    set "PROGRAMS_CHECK=1"
 )
 exit /b
 
@@ -267,7 +268,7 @@ exit /b
 
 :main
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
-	python %SCRIPT_DIR%\app.py --script_mode %FULL_DOCKER% %ARGS%
+	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
 	if "%CONDA_RUN_INIT%"=="1" (
 		call conda init
@@ -282,7 +283,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 	) else (
 		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
 	)
-	python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
+	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 	call conda deactivate
 )
 exit /b
