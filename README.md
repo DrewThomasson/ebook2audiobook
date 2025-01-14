@@ -11,6 +11,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 Thanks to support ebook2audiobook developers!<br>
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
+
 #### New v2.0 Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -27,6 +28,7 @@ Thanks to support ebook2audiobook developers!<br>
 - zho [中文 (Chinese)](./readme/README_CN.md)
 - eng [English](README.md)
 - swe [Svenska (Swedish)](./readme/README_SWE.md)
+  
 
 ## Table of Contents
 - [ebook2audiobook](#ebook2audiobook)
@@ -61,6 +63,7 @@ Thanks to support ebook2audiobook developers!<br>
 - [Legacy](#legacy-v10)
 - [Glossary of Sections](#glossary-of-sections)
 
+
 ## Features
 - 📖 Converts eBooks to text format with Calibre.
 - 📚 Splits eBook into chapters for organized audio.
@@ -69,14 +72,16 @@ Thanks to support ebook2audiobook developers!<br>
 - 🌍 Supports +1110 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 - 🖥️ Designed to run on 4GB RAM.
 
+
 ## [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
-
 - Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
 - Best to duplicate space or run locally.
 
+
 ## Free Google Colab 
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
+
 
 ## Supported Languages
 - **Arabic (ara)**
@@ -106,16 +111,18 @@ Thanks to support ebook2audiobook developers!<br>
 - Virtualization enabled if running on windows (Docker only)
 - CPU compatible, GPU recommended
 
+
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
 to be sure your issue does not exist already.**
 
-### Installation Instructions
 
+### Installation Instructions
 1. **Clone repo**
 ```bash
 git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ```
+
 
 ### Launching Gradio Web Interface
 1. **Run ebook2audiobook**:
@@ -133,6 +140,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
    `./ebook2audiobook.sh --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
 
+
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
@@ -145,9 +153,10 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      
   - **[--ebook]**: Path to your eBook file.
   - **[--voice]**: Voice cloning file path (optional).
-  - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german...).
-    Default language is eng and --language is optional for default language set in ./lib/conf.py.
+  - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german...).<br>
+    Default language is eng and --language is optional for default language set in ./lib/conf.py.<br>
     The ISO-639-1 2 letters codes are also supported.
+
 
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTS: config.json, model.pth, vocab.json and ref.wav)
@@ -163,6 +172,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      ```
 - **<custom_model_path>**: Path to `model_name.zip` file,
       which must contain (according to the tts engine) all the mandatory files (see ./lib/models.py).
+
 
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**
@@ -230,9 +240,11 @@ Linux/Mac:
     ./ebook2audiobook.sh
 ```
 
+
 ### Using Docker
 You can also use Docker to run the eBook to Audiobook converter. 
 This method ensures consistency across different environments and simplifies setup.
+
 
 #### Running the Docker Container
 To run the Docker container and start the Gradio interface, use the following command:
@@ -246,6 +258,7 @@ docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiob
 docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
 
+
 #### Building the Docker Container
 - You can build the docker image with the command:
 '''powershell
@@ -254,11 +267,13 @@ docker build --platform linux/amd64 -t athomasson2/ebook2audiobook
 This command will start the Gradio interface on port 7860.(localhost:7860)
 - For more options add the parameter `--help`
 
+
 ## Docker container file locations
 All ebook2audiobooks will have the base dir of `/home/user/app/`
 For example:
 `tmp` = `/home/user/app/tmp`
 `audiobooks` = `/home/user/app/audiobooks`
+
 
 ## Docker headless guide
 first for a docker pull of the latest with
@@ -296,9 +311,11 @@ docker run -it --rm \
 and that will output this 
 [Help command output](#help-command-output)
 
+
 ### Docker Compose
 This project uses Docker Compose to run locally. You can enable or disable GPU support 
 by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
+
 
 #### Steps to Run
 1. **Clone the Repository** (if you haven't already):
@@ -315,6 +332,7 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
 4. **Access the service:**
   The service will be available at http://localhost:7860.
 
+
 #### New v2.0 Docker Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
@@ -325,6 +343,7 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+
 ## Renting a GPU
 Don't have the hardware to run it or you want to rent a GPU?
 #### You can duplicate the hugginface space and rent a gpu for around $0.40 an hour
@@ -333,6 +352,7 @@ Don't have the hardware to run it or you want to rent a GPU?
 #### Or you can try using the google colab for free!
 (Be aware it will time out after a bit of your not messing with the google colab)
 [Free Google Colab](#free-google-colab)
+
 
 ## Common Docker Issues
 - Docker gets stuck downloading Fine-Tuned models.
@@ -344,6 +364,7 @@ Don't have the hardware to run it or you want to rent a GPU?
 docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
     -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
+
 
 ## Fine Tuned TTS models
 You can fine-tune your own xtts model easily with this repo
@@ -360,6 +381,7 @@ To find our collection of already fine-tuned TTS models,
 visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 
+
 ## Demos
 Rainy day voice
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
@@ -367,16 +389,19 @@ https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 David Attenborough voice
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
+
 ## Supported eBook Formats
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
+
 ## Output
-- Creates an `.m4b` file with metadata and chapters.
+- Creates a `['m4b', 'mp4', 'mp3', 'flac', 'wav', 'ogg', 'aac', 'webm', 'mov']` (set in ./lib/conf.py) file with metadata and chapters.
 - **Example**
   ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+
 
 ## Common Issues:
 -  On CPU  this is slow (better on high CPU servers), and you can only get speedups though a NVIDIA GPU.
@@ -389,10 +414,12 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
    we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
 
+
 ## What I need help with! 🙌 
 ## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
 - Any help from people speaking any of the supported languages to help with proper sentence splitting methods
 - Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
+
 
 ## Special Thanks
 - **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
@@ -400,8 +427,10 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 - [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
 
+
 ### [Legacy V1.0](legacy/v1.0)
 You can view the code [here](legacy/v1.0).
+
 
 ## Join Our Discord Server!
 - Discord https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w
