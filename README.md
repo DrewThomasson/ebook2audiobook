@@ -1,5 +1,4 @@
 # 📚 ebook2audiobook
-
 CPU/GPU Converter from eBooks to audiobooks with chapters and metadata<br/>
 using Calibre, ffmpeg, XTTSv2, Fairseq and more. Supports voice cloning and +1110 languages!
 > [!IMPORTANT]
@@ -7,12 +6,10 @@ using Calibre, ffmpeg, XTTSv2, Fairseq and more. Supports voice cloning and +111
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
 Use this tool responsibly and in accordance with all applicable laws.
 
-
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
 
 Thanks to support ebook2audiobook developers!<br>
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
-
 
 #### New v2.0 Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
@@ -32,7 +29,6 @@ Thanks to support ebook2audiobook developers!<br>
 - swe [Svenska (Swedish)](./readme/README_SWE.md)
 
 ## Table of Contents
-
 - [ebook2audiobook](#ebook2audiobook)
 - [Features](#features)
 - [New v2.0 Web GUI Interface](#new-v20-web-gui-interface)
@@ -66,7 +62,6 @@ Thanks to support ebook2audiobook developers!<br>
 - [Glossary of Sections](#glossary-of-sections)
 
 ## Features
-
 - 📖 Converts eBooks to text format with Calibre.
 - 📚 Splits eBook into chapters for organized audio.
 - 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) (and more).
@@ -84,7 +79,6 @@ Thanks to support ebook2audiobook developers!<br>
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
 
 ## Supported Languages
-
 - **Arabic (ara)**
 - **Chinese (zho)**
 - **Czech (ces)**
@@ -107,8 +101,7 @@ Thanks to support ebook2audiobook developers!<br>
 - [** +1100 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
-##  Requirements
-
+##  Hardware Requirements
 - 4gb RAM minimum, 8GB recommended
 - Virtualization enabled if running on windows (Docker only)
 - CPU compatible, GPU recommended
@@ -149,16 +142,15 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      ```bash
      .\ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
-
-- **<ebook>**: Path to your eBook file.
-- **[voice]**: Voice cloning file path (optional).
-- **[language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german, etc...)
-  (Default language is eng, can be changed in ./lib/conf.py. The --language is optional for default language set in ./lib/conf.py).
-  The ISO-639-1 2 letters codes are also supported.
+     
+  **[--ebook]**: Path to your eBook file.
+  **[--voice]**: Voice cloning file path (optional).
+  **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german, etc...)
+      (Default language is eng, can be changed in ./lib/conf.py. The --language is optional for default language set in ./lib/conf.py).
+      The ISO-639-1 2 letters codes are also supported.
 
 ###  Example of Custom Model Zip Upload
-    (must be a .zip file containing the mandatory model files. 
-    Example for XTTS: config.json, model.pth, vocab.json and ref.wav)
+  (must be a .zip file containing the mandatory model files. Example for XTTS: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.sh --headless --ebook <ebook_file_path> \
@@ -169,7 +161,8 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      .\ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
          --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
      ```
-- **<custom_model_path>**: Path to `model_name.zip` file, which must contain (according to the tts engine) all the mandatory files (see ./lib/models.py).
+- **<custom_model_path>**: Path to `model_name.zip` file,
+      which must contain (according to the tts engine) all the mandatory files (see ./lib/models.py).
 
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**
