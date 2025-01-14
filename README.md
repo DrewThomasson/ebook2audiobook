@@ -126,7 +126,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 
 ### Launching Gradio Web Interface
 1. **Run ebook2audiobook**:
-   - **Linux/MacOS**:
+   - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.sh  # Run Launch script
      ```
@@ -151,17 +151,23 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      ```
 
 - **<path_to_ebook_file>**: Path to your eBook file.
-- **[path_to_voice_file]**: Optional for voice cloning.
-- **[language_code]**: Optional to specify ISO-639-3 3+ letters language code (default is eng). ISO-639-1 2 letters code is also supported
+- **[path_to_voice_file]**: Voice cloning file path (optional).
+- **[language_code]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german, etc...)
+  (Default language is eng, can be changed in ./lib/conf.py. The --language_code is optional for default language set).
+  The ISO-639-1 2 letters codes are also supported.
 
-###  Custom Model Upload (must be a .zip file containing the mandatory model files. example for XTTS: config.json, model.pth, vocab.json and ref.wav)
-   - **Linux/MacOS**:
+###  Custom Model Upload
+    (must be a .zip file containing the mandatory model files. 
+    Example for XTTS: config.json, model.pth, vocab.json and ref.wav)
+   - **Linux/MacOS**
      ```bash
-     ./ebook2audiobook.sh --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
+     ./ebook2audiobook.sh --headless --ebook <ebook_file_path> \
+         --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd --headless --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
+     .\ebook2audiobook.cmd --headless --ebook <ebook_file_path>
+         --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
      ```
 
 - **<ebook_file_path>**: Path to your eBook file.
@@ -203,7 +209,7 @@ options:
   --script_mode         SCRIPT_MODE Force the script to run in NATIVE or DOCKER_UTILS
 --headless [HEADLESS]   Run in headless mode. Default to True if the flag is present without a value, False otherwise.
   --share               Enable a public shareable Gradio link. Default to False.
-  *** THE FOLLOWING OPTIONS ARE FOR --headless MODE ONLY ***
+  *********** THE FOLLOWING OPTIONS ARE FOR --headless MODE ONLY ***********
   --session SESSION     Session to reconnect in case of interruption
   --ebook EBOOK         Path to the ebook file for conversion.
   --ebooks_dir [EBOOKS_DIR] Path to the directory containing ebooks for batch conversion. Default to "ebooks" if "default" is provided.
@@ -237,7 +243,8 @@ Linux/Mac:
 ```
 
 ### Using Docker
-You can also use Docker to run the eBook to Audiobook converter. This method ensures consistency across different environments and simplifies setup.
+You can also use Docker to run the eBook to Audiobook converter. 
+This method ensures consistency across different environments and simplifies setup.
 
 #### Running the Docker Container
 To run the Docker container and start the Gradio interface, use the following command:
@@ -254,7 +261,7 @@ docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/e
 #### Building the Docker Container
 - You can build the docker image with the command:
 '''powershell
-docker build --platform linux/amd64 -t athomasson2/ebook2audiobook .
+docker build --platform linux/amd64 -t athomasson2/ebook2audiobook
 '''
 This command will start the Gradio interface on port 7860.(localhost:7860)
 - For more options add the parameter `--help`
@@ -270,7 +277,8 @@ first for a docker pull of the latest with
 ```bash 
 docker pull athomasson2/ebook2audiobook
 ```
-- Before you do run this you need to create a dir named "input-folder" in your current dir which will be linked, This is where you can put your input files for the docker image to see
+- Before you do run this you need to create a dir named "input-folder" in your current dir
+  which will be linked, This is where you can put your input files for the docker image to see
 ```bash
 mkdir input-folder && mkdir Audiobooks
 ```
@@ -284,7 +292,8 @@ docker run -it --rm \
     python app.py --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
 ```
 - And that should be it! 
-- The output Audiobooks will be found in the Audiobook folder which will also be located in your local dir you ran this docker command in
+- The output Audiobooks will be found in the Audiobook folder which will also be located
+  in your local dir you ran this docker command in
 
 
 ## To get the help command for the other parameters this program has you can run this 
@@ -300,7 +309,8 @@ and that will output this
 [Help command output](#help-command-output)
 
 ### Docker Compose
-This project uses Docker Compose to run locally. You can enable or disable GPU support by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
+This project uses Docker Compose to run locally. You can enable or disable GPU support 
+by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
 
 #### Steps to Run
 1. **Clone the Repository** (if you haven't already):
@@ -337,11 +347,14 @@ Don't have the hardware to run it or you want to rent a GPU?
 [Free Google Colab](#free-google-colab)
 
 ## Common Docker Issues
-- Docker gets stuck downloading Fine-Tuned models. (This does not happen for every computer but some appear to run into this issue)
-Disabling the progress bar appears to fix the issue, as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
-Example of adding this fix in the `docker run` command
+- Docker gets stuck downloading Fine-Tuned models.
+  (This does not happen for every computer but some appear to run into this issue)
+  Disabling the progress bar appears to fix the issue,
+  as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
+  Example of adding this fix in the `docker run` command
 ```Dockerfile
-docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
+docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
+    -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
 
 ## Fine Tuned TTS models
@@ -355,7 +368,8 @@ A space you can use to de-noise the training data easily also
 [denoise-huggingface-space](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit)
 
 ### Fine Tuned TTS Collection
-To find our collection of already fine-tuned TTS models, visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
+To find our collection of already fine-tuned TTS models,
+visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 
 ## Demos
@@ -366,17 +380,26 @@ David Attenborough voice
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 ## Supported eBook Formats
-- `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
+- `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
+  `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
+  `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
 ## Output
 - Creates an `.m4b` file with metadata and chapters.
-- **Example Output**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+- **Example**
+  ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
 ## Common Issues:
-- "It's slow!" - On CPU only this is very slow, and you can only get speedups though a NVIDIA GPU. [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846) For faster multilingual generation I would suggest my other [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead(It doesn't have zero-shot voice cloning though, and is siri quality voices, but it is much faster on cpu.)
-- "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode, add `-h` parameter after the `app.py` in the docker run command for more information.
-- "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS, I don't speak every language and I need advise from each person to fine tune my sentense splitting function on any other languages.😊
+-  On CPU  this is slow (better on high CPU servers), and you can only get speedups though a NVIDIA GPU.
+   [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
+   For faster multilingual generation I would suggest my other
+   [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead
+   (It doesn't have zero-shot voice cloning though, and is Siri quality voices, but it is much faster on cpu).
+- "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode,
+   add `-h` parameter after the `app.py` in the docker run command for more information.
+- "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
+   we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
 
 ## What I need help with! 🙌 
 ## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
