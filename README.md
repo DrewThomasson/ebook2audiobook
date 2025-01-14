@@ -146,8 +146,8 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
   - **[--ebook]**: Path to your eBook file.
   - **[--voice]**: Voice cloning file path (optional).
   - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german...).
-      Default language is eng and --language is optional for default language set in ./lib/conf.py.
-      The ISO-639-1 2 letters codes are also supported.
+    Default language is eng and --language is optional for default language set in ./lib/conf.py.
+    The ISO-639-1 2 letters codes are also supported.
 
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTS: config.json, model.pth, vocab.json and ref.wav)
