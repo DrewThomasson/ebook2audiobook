@@ -150,13 +150,13 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      .\ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
 
-- **<path_to_ebook_file>**: Path to your eBook file.
-- **[path_to_voice_file]**: Voice cloning file path (optional).
-- **[language_code]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german, etc...)
-  (Default language is eng, can be changed in ./lib/conf.py. The --language_code is optional for default language set).
+- **<ebook>**: Path to your eBook file.
+- **[voice]**: Voice cloning file path (optional).
+- **[language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german, etc...)
+  (Default language is eng, can be changed in ./lib/conf.py. The --language is optional for default language set in ./lib/conf.py).
   The ISO-639-1 2 letters codes are also supported.
 
-###  Custom Model Upload
+###  Example of Custom Model Zip Upload
     (must be a .zip file containing the mandatory model files. 
     Example for XTTS: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
@@ -166,17 +166,13 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd --headless --ebook <ebook_file_path>
+     .\ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
          --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
      ```
-
-- **<ebook_file_path>**: Path to your eBook file.
-- **<target_voice_file_path>**: Optional for voice cloning.
-- **<language>**: Optional to specify language.
-- **<custom_model_path>**: Path to `model_name.zip`.
+- **<custom_model_path>**: Path to `model_name.zip` file, which must contain (according to the tts engine) all the mandatory files (see ./lib/models.py).
 
 ### For Detailed Guide with list of all Parameters to use
-   - **Linux/MacOS**:
+   - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.sh  --help
      ```
