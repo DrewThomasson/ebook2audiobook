@@ -281,7 +281,7 @@ Linux/Mac:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file'
 ```
 
-NOTE: in gradio/gui mode, to cancel a running conversion, just click on the ebook upload component [X] 
+NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
 
 ### Using Docker
 You can also use Docker to run the eBook to Audiobook converter. 
