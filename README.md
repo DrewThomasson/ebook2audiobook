@@ -111,7 +111,7 @@ Thanks to support ebook2audiobook developers!<br>
 
 - 4gb RAM minimum, 8GB recommended
 - Virtualization enabled if running on windows (Docker only)
-- CPU copmatible, GPU recommended
+- CPU compatible, GPU recommended
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
