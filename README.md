@@ -154,7 +154,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
   - **[--ebook]**: Path to your eBook file.
   - **[--voice]**: Voice cloning file path (optional).
   - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german...).<br>
-    Default language is eng and --language is optional for default language set in ./lib/conf.py.<br>
+    Default language is eng and --language is optional for default language set in ./lib/lang.py.<br>
     The ISO-639-1 2 letters codes are also supported.
 
 
