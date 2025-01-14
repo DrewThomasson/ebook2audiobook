@@ -441,7 +441,7 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 
 ## Output
-- Creates a `['m4b', 'mp4', 'mp3', 'flac', 'wav', 'ogg', 'aac', 'webm', 'mov']` (set in ./lib/conf.py) file with metadata and chapters.
+- Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
 - **Example**
   ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
