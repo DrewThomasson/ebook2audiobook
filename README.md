@@ -144,11 +144,13 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
-     ./ebook2audiobook.sh --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     ./ebook2audiobook.sh --headless --ebook <path_to_ebook_file> \
+         --voice [path_to_voice_file] --language [language_code]
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
+     .\ebook2audiobook.cmd --headless --ebook <path_to_ebook_file>
+         --voice [path_to_voice_file] --language [language_code]
      ```
      
   - **[--ebook]**: Path to your eBook file.
@@ -289,11 +291,13 @@ To run the Docker container and start the Gradio interface, use the following co
 
  -Run with CPU only
 ```powershell
-docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
+docker run -it --rm -p 7860:7860 --platform=linux/amd64 \
+    athomasson2/ebook2audiobook python app.py
 ```
  -Run with GPU Speedup (NVIDIA compatible only)
 ```powershell
-docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
+docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64
+    athomasson2/ebook2audiobook python app.py
 ```
 
 
