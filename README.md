@@ -281,6 +281,7 @@ Linux/Mac:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file'
 ```
 
+NOTE: in gradio/gui mode, to cancel a running conversion, just click on the ebook upload component [X] 
 
 ### Using Docker
 You can also use Docker to run the eBook to Audiobook converter. 
@@ -447,7 +448,7 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 
 ## Common Issues:
--  On CPU  this is slow (better on high CPU servers), and you can only get speedups though a NVIDIA GPU.
+-  CPU is slow (better on server smp CPU) while NVIDIA GPU can have almost real time conversion.
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    For faster multilingual generation I would suggest my other
    [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead
