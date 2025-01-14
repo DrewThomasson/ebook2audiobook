@@ -75,7 +75,7 @@ Thanks to support ebook2audiobook developers!<br>
 
 ## [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
-- Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
+- Huggingface space is running on free cpu tier so expect very slow or timeout lol, just do not give it giant files is all
 - Best to duplicate space or run locally.
 
 
@@ -212,7 +212,7 @@ options:
   --script_mode SCRIPT_MODE
                         Mode the script will run. Accepted values are "native", "docker_utils", "full_docker".
                         Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
-                        "full_docker" is only informative for the script as it's always "full_docker" with docker run command
+                        "full_docker" is only informative for the script as it is always "full_docker" with docker run command
                         and cannot be set for direct script run.
 
 **** The following option are for gradio/gui mode only:
