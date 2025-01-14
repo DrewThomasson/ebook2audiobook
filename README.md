@@ -191,55 +191,91 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 
 <a id="help-command-output"></a>
 ```bash
-usage: app.py [-h] [--script_mode SCRIPT_MODE] [--share] [--headless]
-              [--session SESSION] [--ebook EBOOK] [--ebooks_dir [EBOOKS_DIR]]
-              [--voice VOICE] [--language LANGUAGE] [--device {cpu,gpu}]
-              [--custom_model CUSTOM_MODEL] [--temperature TEMPERATURE]
-              [--length_penalty LENGTH_PENALTY]
-              [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K] [--top_p TOP_P]
-              [--speed SPEED] [--enable_text_splitting] [--fine_tuned FINE_TUNED]
-              [--output_dir]
-              [--version]
+usage: app.py [-h] [--script_mode SCRIPT_MODE] [--session SESSION] [--share] [--headless] [--ebook EBOOK]
+              [--ebooks_dir EBOOKS_DIR] [--language LANGUAGE] [--voice VOICE] [--device {cpu,gpu,mps}] [--tts_engine {xtts,fairseq}]
+              [--custom_model CUSTOM_MODEL] [--fine_tuned FINE_TUNED] [--output_format OUTPUT_FORMAT] [--temperature TEMPERATURE]
+              [--length_penalty LENGTH_PENALTY] [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K]
+              [--top_p TOP_P] [--speed SPEED] [--enable_text_splitting] [--output_dir OUTPUT_DIR] [--version]
 
 Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
 
 options:
   -h, --help            show this help message and exit
-  --script_mode         SCRIPT_MODE Force the script to run in NATIVE or DOCKER_UTILS
---headless [HEADLESS]   Run in headless mode. Default to True if the flag is present without a value, False otherwise.
-  --share               Enable a public shareable Gradio link. Default to False.
-  *********** THE FOLLOWING OPTIONS ARE FOR --headless MODE ONLY ***********
-  --session SESSION     Session to reconnect in case of interruption
-  --ebook EBOOK         Path to the ebook file for conversion.
-  --ebooks_dir [EBOOKS_DIR] Path to the directory containing ebooks for batch conversion. Default to "ebooks" if "default" is provided.
-  --voice VOICE         Path to the target voice file for TTS. Optional, must be 24khz for XTTS and 16khz for fairseq models, uses a default voice if not provided.
-  --language LANGUAGE   Language for the audiobook conversion. Options: eng, zho, spa, fra, por, rus, ind, hin, ben, yor, ara, jav, jpn, kor, deu, ita, fas, tam, tel, tur, pol, hun, nld, zzzz, abi, ace, aca, acn, acr, ach, acu, guq, ade, adj, agd, agx, agn, aha, aka, knj, ake, aeu, ahk, bss, alj, sqi, alt, alp, alz, kab, amk, mmg, amh, ami, azg, agg, boj, cko, any, arl, atq, luc, hyw, apr, aia, msy, cni, cjo, cpu, cpb, asm, asa, teo, ati, djk, ava, avn, avu, awb, kwi, awa, agr, agu, ayr, ayo, abp, blx, sgb, azj-script_cyrillic, azj-script_latin, azb, bba, bhz, bvc, bfy, bgq, bdq, bdh, bqi, bjw, blz, ban, bcc-script_latin, bcc-script_arabic, bam, ptu, bcw, bqj, bno, bbb, bfa, bjz, bak, eus, bsq, akb, btd, btx, bts, bbc, bvz, bjv, bep, bkv, bzj, bem, bng, bom, btt, bha, bgw, bht, beh, sne, ubl, bcl, bim, bkd, bjr, bfo, biv, bib, bis, bzi, bqp, bpr, bps, bwq, bdv, bqc, bus, bnp, bmq, bdg, boa, ksr, bor, bru, box, bzh, bgt, sab, bul, bwu, bmv, mya, tte, cjp, cbv, kaq, cot, cbc, car, cat, ceb, cme, cbi, ceg, cly, cya, che, hne, nya, dig, dug, bgr, cek, cfm, cnh, hlt, mwq, ctd, tcz, zyp, cco, cnl, cle, chz, cpa, cso, cnt, cuc, hak, nan, xnj, cap, cax, ctg, ctu, chf, cce, crt, crq, cac-dialect_sansebastiáncoatán, cac-dialect_sanmateoixtatán, ckt, ncu, cdj, chv, caa, asg, con, crn, cok, crk-script_latin, crk-script_syllabics, crh, hrv, cui, ces, dan, dsh, dbq, dga, dgi, dgk, dnj-dialect_gweetaawueast, dnj-dialect_blowowest, daa, dnt, dnw, dar, tcc, dwr, ded, mzw, ntr, ddn, des, dso, nfa, dhi, gud, did, mhu, dip, dik, tbz, dts, dos, dgo, mvp, jen, dzo, idd, eka, cto, emp, enx, sja, myv, mcq, ese, evn, eza, ewe, fal, fao, far, fij, fin, fon, frd, ful, flr, gau, gbk, gag-script_cyrillic, gag-script_latin, gbi, gmv, lug, pwg, gbm, cab, grt, krs, gso, nlg, gej, gri, kik, acd, glk, gof-script_latin, gog, gkn, wsg, gjn, gqr, gor, gux, gbo, ell, grc, guh, gub, grn, gyr, guo, gde, guj, gvl, guk, rub, dah, gwr, gwi, hat, hlb, amf, hag, hnn, bgc, had, hau, hwc, hvn, hay, xed, heb, heh, hil, hif, hns, hoc, hoy, hus-dialect_westernpotosino, hus-dialect_centralveracruz, huv, hui, hap, iba, isl, dbj, ifa, ifb, ifu, ifk, ife, ign, ikk, iqw, ilb, ilo, imo, inb, ipi, irk, icr, itv, itl, atg, ixl-dialect_sanjuancotzal, ixl-dialect_sangasparchajul, ixl-dialect_santamarianebaj, nca, izr, izz, jac, jam, jvn, kac, dyo, csk, adh, jun, jbu, dyu, bex, juy, gna, urb, kbp, cwa, dtp, kbr, cgc, kki, kzf, lew, cbr, kkj, keo, kqe, kak, kyb, knb, kmd, kml, ify, xal, kbq, kay, ktb, hig, gam, cbu, xnr, kmu, kne, kan, kby, pam, cak-dialect_santamaríadejesús, cak-dialect_southcentral, cak-dialect_yepocapa, cak-dialect_western, cak-dialect_santodomingoxenacoj, cak-dialect_central, xrb, krc, kaa, krl, pww, xsm, cbs, pss, kxf, kyz, kyu, txu, kaz, ndp, kbo, kyq, ken, ker, xte, kyg, kjh, kca, khm, kxm, kjg, nyf, kij, kia, kqr, kqp, krj, zga, kin, pkb, geb, gil, kje, kss, thk, klu, kyo, kog, kfb, kpv, bbo, xon, kma, kno, kxc, ozm, kqy, coe, kpq, kpy, kyf, kff-script_telugu, kri, rop, ktj, ted, krr, kdt, kez, cul, kle, kdi, kue, kum, kvn, cuk, kdn, xuo, key, kpz, knk, kmr-script_latin, kmr-script_arabic, kmr-script_cyrillic, xua, kru, kus, kub, kdc, kxv, blh, cwt, kwd, tnk, kwf, cwe, kyc, tye, kir, quc-dialect_north, quc-dialect_east, quc-dialect_central, lac, lsi, lbj, lhu, las, lam, lns, ljp, laj, lao, lat, lav, law, lcp, lzz, lln, lef, acf, lww, mhx, eip, lia, lif, onb, lis, loq, lob, yaz, lok, llg, ycl, lom, ngl, lon, lex, lgg, ruf, dop, lnd, ndy, lwo, lee, mev, mfz, jmc, myy, mbc, mda, mad, mag, ayz, mai, mca, mcp, mak, vmw, mgh, kde, mlg, zlm, pse, mkn, xmm, mal, xdy, div, mdy, mup, mam-dialect_central, mam-dialect_northern, mam-dialect_southern, mam-dialect_western, mqj, mcu, mzk, maw, mjl, mnk, mge, mbh, knf, mjv, mbt, obo, mbb, mzj, sjm, mrw, mar, mpg, mhr, enb, mah, myx, klv, mfh, met, mcb, mop, yua, mfy, maz, vmy, maq, mzi, maj, maa-dialect_sanantonio, maa-dialect_sanjerónimo, mhy, mhi, zmz, myb, gai, mqb, mbu, med, men, mee, mwv, meq, zim, mgo, mej, mpp, min, gum, mpx, mco, mxq, pxm, mto, mim, xta, mbz, mip, mib, miy, mih, miz, xtd, mxt, xtm, mxv, xtn, mie, mil, mio, mdv, mza, mit, mxb, mpm, soy, cmo-script_latin, cmo-script_khmer, mfq, old, mfk, mif, mkl, mox, myl, mqf, mnw, mon, mog, mfe, mor, mqn, mgd, mtj, cmr, mtd, bmr, moz, mzm, mnb, mnf, unr, fmu, mur, tih, muv, muy, sur, moa, wmw, tnr, miq, mos, muh, nas, mbj, nfr, kfw, nst, nag, nch, nhe, ngu, azz, nhx, ncl, nhy, ncj, nsu, npl, nuz, nhw, nhi, nlc, nab, gld, nnb, npy, pbb, ntm, nmz, naw, nxq, ndj, ndz, ndv, new, nij, sba, gng, nga, nnq, ngp, gym, kdj, nia, nim, nin, nko, nog, lem, not, nhu, nob, bud, nus, yas, nnw, nwb, nyy, nyn, rim, lid, nuj, nyo, nzi, ann, ory, ojb-script_latin, ojb-script_syllabics, oku, bsc, bdu, orm, ury, oss, ote, otq, stn, sig, kfx, bfz, sey, pao, pau, pce, plw, pmf, pag, pap, prf, pab, pbi, pbc, pad, ata, pez, peg, pcm, pis, pny, pir, pjt, poy, pps, pls, poi, poh-dialect_eastern, poh-dialect_western, prt, pui, pan, tsz, suv, lme, quy, qvc, quz, qve, qub, qvh, qwh, qvw, quf, qvm, qul, qvn, qxn, qxh, qvs, quh, qxo, qxr, qvo, qvz, qxl, quw, kjb, kek, rah, rjs, rai, lje, rnl, rkt, rap, yea, raw, rej, rel, ril, iri, rgu, rhg, rmc-script_latin, rmc-script_cyrillic, rmo, rmy-script_latin, rmy-script_cyrillic, ron, rol, cla, rng, rug, run, lsm, spy, sck, saj, sch, sml, xsb, sbl, saq, sbd, smo, rav, sxn, sag, sbp, xsu, srm, sas, apb, sgw, tvw, lip, slu, snw, sea, sza, seh, crs, ksb, shn, sho, mcd, cbt, xsr, shk, shp, sna, cjs, jiv, snp, sya, sid, snn, sri, srx, sil, sld, akp, xog, som, bmu, khq, ses, mnx, srn, sxb, suc, tgo, suk, sun, suz, sgj, sus, swh, swe, syl, dyi, myk, spp, tap, tby, tna, shi, klw, tgl, tbk, tgj, blt, tbg, omw, tgk, tdj, tbc, tlj, tly, ttq-script_tifinagh, taj, taq, tpm, tgp, tnn, tac, rif-script_latin, rif-script_arabic, tat, tav, twb, tbl, kps, twe, ttc, kdh, tes, tex, tee, tpp, tpt, stp, tfr, twu, ter, tew, tha, nod, thl, tem, adx, bod, khg, tca, tir, txq, tik, dgr, tob, tmf, tng, tlb, ood, tpi, jic, lbw, txa, tom, toh, tnt, sda, tcs, toc, tos, neb, trn, trs, trc, tri, cof, tkr, kdl, cas, tso, tuo, iou, tmc, tuf, tuk-script_latin, tuk-script_arabic, bov, tue, kcg, tzh-dialect_bachajón, tzh-dialect_tenejapa, tzo-dialect_chenalhó, tzo-dialect_chamula, tzj-dialect_western, tzj-dialect_eastern, aoz, udm, udu, ukr, ppk, ubu, urk, ura, urt, urd-script_devanagari, urd-script_arabic, urd-script_latin, upv, usp, uig-script_arabic, uig-script_cyrillic, uzb-script_cyrillic, vag, bav, vid, vie, vif, vun, vut, prk, wwa, rro, bao, waw, lgl, wlx, cou, hub, gvc, mfi, wap, wba, war, way, guc, cym, kvw, tnp, hto, huu, wal-script_latin, wal-script_ethiopic, wlo, noa, wob, kao, xer, yad, yka, sah, yba, yli, nlk, yal, yam, yat, jmd, tao, yaa, ame, guu, yao, yre, yva, ybb, pib, byr, pil, ycn, ess, yuz, atb, zne, zaq, zpo, zad, zpc, zca, zpg, zai, zpl, zam, zaw, zpm, zac, zao, ztq, zar, zpt, zpi, zas, zaa, zpz, zab, zpu, zae, zty, zav, zza, zyb, ziw, zos, gnd. Default to English (eng).
-  --tts_engine TTS_ENGINE     Preferred TTS engine (available are: xtts, fairseq. Default is depending the language compatibility.
-  --device {cpu,gpu}          Type of processor unit for the audiobook conversion. If not specified: check first if gpu available, if not cpu is selected.
-  --custom_model CUSTOM_MODEL Path to the custom model zip file (containing mandatory model files, example: ['config.json', 'model.pth', 'vocab.json', 'ref.wav'] for xtts, ['config.json', 'G_100000.pth', 'vocab.json'] for fairseq). Required if using a custom model.
-  --output_format OUTPUT_FORMAT Name of the fine tuned model. Optional, uses the standard model according to the TTS engine and language.
-  --fine_tuned FINE_TUNED  Name of the fine tuned model. Optional, uses the standard model according to the TTS engine and language.
-  --temperature TEMPERATURE   (xtts only) Temperature for the model. Default to 0.65. Higher temperatures lead to more creative outputs.
-  --length_penalty LENGTH_PENALTY   (xtts only) A length penalty applied to the autoregressive decoder. Default to 1.0. Not applied to custom models.
-  --repetition_penalty REPETITION_PENALTY   (xtts only) A penalty that prevents the autoregressive decoder from repeating itself. Default to 2.5
-  --top_k TOP_K         (xtts only) Top-k sampling. Lower values mean more likely outputs and increased audio generation speed. Default to 50
-  --top_p TOP_P         (xtts only) Top-p sampling. Lower values mean more likely outputs and increased audio generation speed. Default to 0.8
-  --speed SPEED         (xtts only) Speed factor for the speech generation. Default to 1.0
-  --enable_text_splitting  (xtts only) Enable splitting text into sentences. Default to False.
-  --output_dir          Path to the output directory.
+  --session SESSION     Session to resume the conversion in case of interruption, crash,
+                            or reuse of custom models and custom cloning voices.
+
+**** The following options are for all modes:
+  Optional
+
+  --script_mode SCRIPT_MODE
+                        Mode the script will run. Accepted values are "native", "docker_utils", "full_docker".
+                        Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
+                        "full_docker" cannot be used without a docker command.
+
+**** The following option are for gradio/gui mode only:
+  Optional
+
+  --share               Enable a public shareable Gradio link.
+
+**** The following options are for --headless mode only:
+  --headless            Run the script in headless mode
+  --ebook EBOOK         Path to the ebook file for conversion. Cannot be used when --ebooks_dir is present.
+  --ebooks_dir EBOOKS_DIR
+                        Path to the directory containing ebooks for batch conversion.
+                            Cannot be used when --ebook is present. Default to "ebooks" if this option is not present.
+  --language LANGUAGE   Language of the e-book. Default language is set
+                            in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py
+
+optional parameters:
+  --voice VOICE         (Optional) Path to the voice cloning file for TTS engine.
+                            Uses the default voice if not present.
+  --device {cpu,gpu,mps}
+                        (Optional) Pprocessor unit type for the conversion.
+                            Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.
+  --tts_engine {xtts,fairseq}
+                        (Optional) Preferred TTS engine (available are:['xtts', 'fairseq']).
+                            Default depends on the selected language. The tts engine should be compatible with the chosen language
+  --custom_model CUSTOM_MODEL
+                        (Optional) Path to the custom model zip file cntaining mandatory model files.
+                            Please refer to ./lib/models.py
+  --fine_tuned FINE_TUNED
+                        (Optional) Fine tuned model path. Default to "std" (builtin) if not present.
+  --output_format OUTPUT_FORMAT
+                        (Optional) Output audio format. Default is set in ./lib/conf.py
+  --temperature TEMPERATURE
+                        (xtts only, optional) Temperature for the model.
+                            Default to 0.65. Higher temperatures lead to more creative outputs.
+  --length_penalty LENGTH_PENALTY
+                        (xtts only, optional) A length penalty applied to the autoregressive decoder.
+                            Default to 1.0. Not applied to custom models.
+  --repetition_penalty REPETITION_PENALTY
+                        (xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself.
+                            Default to 2.5
+  --top_k TOP_K         (xtts only, optional) Top-k sampling.
+                            Lower values mean more likely outputs and increased audio generation speed.
+                            Default to 50
+  --top_p TOP_P         (xtts only, optional) Top-p sampling.
+                            Lower values mean more likely outputs and increased audio generation speed. Default to 0.8
+  --speed SPEED         (xtts only, optional) Speed factor for the speech generation.
+                            Default to 1.0
+  --enable_text_splitting
+                        (xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient.
+                            Default is set to False
+  --output_dir OUTPUT_DIR
+                        (Optional) Path to the output directory. Default is set in ./lib/conf.py
   --version             Show the version of the script and exit
 
-Example usage:    
+Example usage:
 Windows:
-    :
-    ebook2audiobook.cmd --headless --ebook 'path_to_ebook'
-    Graphic Interface:
+    Gradio/GUI:
     ebook2audiobook.cmd
+    Headless mode:
+    ebook2audiobook.cmd --headless --ebook '/path/to/file'
 Linux/Mac:
-    :
-    ./ebook2audiobook.sh --headless --ebook 'path_to_ebook'
-    Graphic Interface:
+    Gradio/GUI:
     ./ebook2audiobook.sh
+    Headless mode:
+    ./ebook2audiobook.sh --headless --ebook '/path/to/file'
 ```
 
 
