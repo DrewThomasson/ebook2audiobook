@@ -135,7 +135,10 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      .\ebook2audiobook.cmd  # Run launch script or double click on it (Bypass windows alerts)
      ```
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
-3. **For Public Link**: Add `--share` to the end of it like this: `python app.py --share` or `./ebook2audiobook.sh --share` or `ebook2audiobook.cmd --share`
+3. **For Public Link**:
+   `python app.py --share` (all OS)
+   `./ebook2audiobook.sh --share` (Linux/MacOS)
+   `ebook2audiobook.cmd --share` (Windows)
 
 ### Basic  Usage
    - **Linux/MacOS**:
@@ -231,36 +234,30 @@ Linux/Mac:
     ./ebook2audiobook.sh --headless --ebook 'path_to_ebook'
     Graphic Interface:
     ./ebook2audiobook.sh
-
-
 ```
 
 ### Using Docker
-
 You can also use Docker to run the eBook to Audiobook converter. This method ensures consistency across different environments and simplifies setup.
 
 #### Running the Docker Container
-
 To run the Docker container and start the Gradio interface, use the following command:
 
  -Run with CPU only
 ```powershell
 docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
- -Run with GPU Speedup (Nvida graphics cards only)
+ -Run with GPU Speedup (NVIDIA compatible only)
 ```powershell
 docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
 
 #### Building the Docker Container
-
 - You can build the docker image with the command:
 '''powershell
 docker build --platform linux/amd64 -t athomasson2/ebook2audiobook .
 '''
-
 This command will start the Gradio interface on port 7860.(localhost:7860)
-- For more options like running the docker in  mode or making the gradio link public add the `--help` parameter after the `app.py` in the docker launch command
+- For more options add the parameter `--help`
 
 ## Docker container file locations
 All ebook2audiobooks will have the base dir of `/home/user/app/`
@@ -268,21 +265,16 @@ For example:
 `tmp` = `/home/user/app/tmp`
 `audiobooks` = `/home/user/app/audiobooks`
 
-   
 ## Docker headless guide
-
 first for a docker pull of the latest with
 ```bash 
 docker pull athomasson2/ebook2audiobook
 ```
-
 - Before you do run this you need to create a dir named "input-folder" in your current dir which will be linked, This is where you can put your input files for the docker image to see
 ```bash
 mkdir input-folder && mkdir Audiobooks
 ```
-
 - In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
-
 ```bash
 docker run -it --rm \
     -v $(pwd)/input-folder:/home/user/app/input_folder \
@@ -291,9 +283,7 @@ docker run -it --rm \
     athomasson2/ebook2audiobook \
     python app.py --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
 ```
-
 - And that should be it! 
-
 - The output Audiobooks will be found in the Audiobook folder which will also be located in your local dir you ran this docker command in
 
 
@@ -306,31 +296,24 @@ docker run -it --rm \
     python app.py --help
 
 ```
-
 and that will output this 
-
 [Help command output](#help-command-output)
 
 ### Docker Compose
-
 This project uses Docker Compose to run locally. You can enable or disable GPU support by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
 
 #### Steps to Run
-
 1. **Clone the Repository** (if you haven't already):
    ```bash
    git clone https://github.com/DrewThomasson/ebook2audiobook.git
    cd ebook2audiobook
    ```
-
 2. **Set GPU Support (disabled by default)**
   To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
-
 3. **Start the service:**
     ```bash
     docker-compose up -d
     ```
-
 4. **Access the service:**
   The service will be available at http://localhost:7860.
 
@@ -361,12 +344,7 @@ Example of adding this fix in the `docker run` command
 docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
 
-
-
-
-
 ## Fine Tuned TTS models
-
 You can fine-tune your own xtts model easily with this repo
 [xtts-finetune-webui](https://github.com/daswer123/xtts-finetune-webui)
 
@@ -377,28 +355,21 @@ A space you can use to de-noise the training data easily also
 [denoise-huggingface-space](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit)
 
 ### Fine Tuned TTS Collection
-
 To find our collection of already fine-tuned TTS models, visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 
 ## Demos
-
 Rainy day voice
-
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
 David Attenborough voice
-
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
-
 ## Supported eBook Formats
-
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
 ## Output
-
 - Creates an `.m4b` file with metadata and chapters.
 - **Example Output**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
@@ -413,17 +384,13 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
 
 ## Special Thanks
-
 - **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
-
 - [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
 
 ### [Legacy V1.0](legacy/v1.0)
-
 You can view the code [here](legacy/v1.0).
 
 ## Join Our Discord Server!
-
 - Discord https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w
