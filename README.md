@@ -143,9 +143,9 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      .\ebook2audiobook.cmd --headless --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
      
-  **[--ebook]**: Path to your eBook file.
-  **[--voice]**: Voice cloning file path (optional).
-  **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german, etc...)
+  - **[--ebook]**: Path to your eBook file.
+  - **[--voice]**: Voice cloning file path (optional).
+  - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german, etc...)
       (Default language is eng, can be changed in ./lib/conf.py. The --language is optional for default language set in ./lib/conf.py).
       The ISO-639-1 2 letters codes are also supported.
 
@@ -179,7 +179,6 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
     ```
 
 <a id="help-command-output"></a>
-- This will output the following:
 ```bash
 usage: app.py [-h] [--script_mode SCRIPT_MODE] [--share] [--headless]
               [--session SESSION] [--ebook EBOOK] [--ebooks_dir [EBOOKS_DIR]]
