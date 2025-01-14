@@ -212,7 +212,8 @@ options:
   --script_mode SCRIPT_MODE
                         Mode the script will run. Accepted values are "native", "docker_utils", "full_docker".
                         Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
-                        "full_docker" cannot be used without a docker command.
+                        "full_docker" is only informative for the script as it's always "full_docker" with docker run command
+                        and cannot be set for direct script run.
 
 **** The following option are for gradio/gui mode only:
   Optional
