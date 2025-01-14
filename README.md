@@ -88,6 +88,7 @@ Thanks to support ebook2audiobook developers!<br>
 - **Arabic (ara)**
 - **Chinese (zho)**
 - **Czech (ces)**
+- **Croatian (hrv)**
 - **Dutch (nld)**
 - **English (eng)**
 - **French (fra)**
@@ -103,13 +104,14 @@ Thanks to support ebook2audiobook developers!<br>
 - **Spanish (spa)**
 - **Turkish (tur)**
 - **Vietnamese (vie)**
-- [** + 1100 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- [** +1100 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
 ##  Requirements
 
-- 4gb ram
+- 4gb RAM minimum, 8GB recommended
 - Virtualization enabled if running on windows (Docker only)
+- CPU copmatible, GPU recommended
 
 > [!IMPORTANT]
 **Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
@@ -130,7 +132,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  # Run launch script or double click on it
+     .\ebook2audiobook.cmd  # Run launch script or double click on it (Bypass windows alerts)
      ```
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
 3. **For Public Link**: Add `--share` to the end of it like this: `python app.py --share` or `./ebook2audiobook.sh --share` or `ebook2audiobook.cmd --share`
@@ -162,7 +164,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 - **<ebook_file_path>**: Path to your eBook file.
 - **<target_voice_file_path>**: Optional for voice cloning.
 - **<language>**: Optional to specify language.
-- **<custom_model_path>**: Path to `model.zip`.
+- **<custom_model_path>**: Path to `model_name.zip`.
 
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**:
@@ -173,7 +175,10 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      ```bash
      .\ebook2audiobook.cmd  --help
      ```
-   - or for both `python app.py --help`
+   - **Or for all OS**
+    ```python
+     app.py --help
+    ```
 
 <a id="help-command-output"></a>
 - This will output the following:
