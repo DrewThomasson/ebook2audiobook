@@ -180,11 +180,11 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**
      ```bash
-     ./ebook2audiobook.sh  --help
+     ./ebook2audiobook.sh --help
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd  --help
+     .\ebook2audiobook.cmd --help
      ```
    - **Or for all OS**
     ```python
