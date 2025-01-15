@@ -348,7 +348,7 @@ def convert_to_epub(session):
             print(f"Starting Docker container to convert {docker_file_in} to EPUB.")
             container_logs = session['client'].containers.run(
                 docker_utils_image,
-                command=f'ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out} --verbose',
+                command=f'ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out} --input-encoding=utf-8 --output-profile=generic_eink --verbose',
                 volumes={session['process_dir']: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
                 remove=True,
                 detach=False,
@@ -376,7 +376,7 @@ def convert_to_epub(session):
             if not util_app:
                 raise FileNotFoundError("The 'ebook-convert' utility is not installed or not found.")
 
-            print(f"Running command: {util_app} {session['src']} {session['epub_path']} --verbose")
+            print(f"Running command: {util_app} {session['src']} {session['epub_path']} --input-encoding=utf-8 --output-profile=generic_eink --verbose")
             result = subprocess.run(
                 [util_app, session['src'], session['epub_path']],
                 check=True,
