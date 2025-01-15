@@ -196,7 +196,15 @@ def prepare_dirs(src, session):
 
 def check_programs(prog_name, command, options):
     try:
-        subprocess.run([command, options], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        subprocess.run(
+            [command, options],
+            stdout=subprocess.PIPE, 
+            stderr=subprocess.PIPE,
+            check=True,
+            text=True,
+            universal_newlines=True,
+            encoding='utf-8'
+        )
         return True, None
     except FileNotFoundError:
         e = f'''********** Error: {prog_name} is not installed! if your OS calibre package version 
@@ -379,10 +387,12 @@ def convert_to_epub(session):
             print(f"Running command: {util_app} {session['src']} {session['epub_path']} --input-encoding=utf-8 --output-profile=generic_eink --verbose")
             result = subprocess.run(
                 [util_app, session['src'], session['epub_path'], '--input-encoding=utf-8', '--output-profile=generic_eink', '--verbose'],
-                check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                check=True,
+                universal_newlines=True,
+                encoding='utf-8'
             )
             print(result.stdout)
             return True
@@ -433,7 +443,7 @@ def get_chapters(epubBook, session):
         doc_cache = {}
         print('**** NOTE: You can safely ignore the log "Character xx not found in the vocabulary." ****')
         for doc in all_docs:
-            doc_cache[doc] = filter_chapter(doc, session['language'], session['system'])
+            doc_cache[doc] = filter_chapter(doc, session['language'], session['system'], session['tts_engine'])
         # Step 2: Determine the most common pattern
         doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
         most_common_pattern = filter_doc(doc_patterns)
@@ -455,6 +465,7 @@ def get_chapters(epubBook, session):
         return chapters
     except Exception as e:
         raise DependencyError(f'Error extracting main content pages: {e}')
+        return None
 
 def filter_doc(doc_patterns):
     pattern_counter = Counter(doc_patterns)
@@ -474,7 +485,7 @@ def filter_pattern(doc_identifier):
             return 'numbers'
     return None
 
-def filter_chapter(doc, language, system):
+def filter_chapter(doc, language, system, tts_engine):
     soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
 
     # Remove scripts and styles
@@ -495,8 +506,14 @@ def filter_chapter(doc, language, system):
 
     # Replace math symbols in the text
     replacements = language_math_phonemes[language] if language in language_math_phonemes else language_math_phonemes['eng']
-    for symbol, phoneme in replacements.items():
-        text = text.replace(symbol, phoneme)
+    if tts_engine == "xtts":
+        # xtts supports number so we need to remove digits from the list
+        math_replacements = {k: v for k, v in replacements.items() if not k.isdigit()}
+        for symbol, phoneme in math_replacements.items():
+            text = text.replace(symbol, phoneme)
+    elif tts_engine == "faiseq":
+        for symbol, phoneme in replacements.items():
+            text = text.replace(symbol, phoneme)
 
     # end of file period must be modified to avoid tts bugs
     text = re.sub(r'\.(?=\s|$)', ' .', text)
@@ -586,7 +603,7 @@ def normalize_voice_file(f, session):
                 stdout=True,
                 stderr=True
             )
-            print(container.decode('utf-8'))
+            print(container.decode('utf-8', errors='replace'))
             if shutil.copy(docker_final_file, final_file):
                 return final_file
             error = f'Could not copy from {docker_final_file} to {final_file}'
@@ -609,7 +626,9 @@ def normalize_voice_file(f, session):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                universal_newlines=True
+                check=True,
+                universal_newlines=True,
+                encoding='utf-8'
             )
             for line in process.stdout:
                 print(line, end="")  # Print each line of stdout
@@ -750,6 +769,7 @@ def convert_chapters_to_audio(session):
         return True
     except Exception as e:
         raise DependencyError(e)
+        return False
 
 def convert_sentence_to_audio(params, session):
     try:
@@ -988,7 +1008,7 @@ def combine_audio_chapters(session):
                         stdout=True,
                         stderr=True
                     )
-                    print(container.decode('utf-8'))
+                    print(container.decode('utf-8', errors='replace'))
                     if shutil.copy(docker_final_file, final_file):
                         return True
                     return False
@@ -1005,8 +1025,7 @@ def combine_audio_chapters(session):
                         env={},
                         stdout=subprocess.PIPE,
                         stderr=subprocess.STDOUT,
-                        text=True,
-                        universal_newlines=True
+                        encoding='utf-8'
                     )
                     for line in process.stdout:
                         print(line, end="")  # Print each line of stdout
@@ -1268,7 +1287,7 @@ def convert_ebook(args):
                                 session['cover'] = get_cover(epubBook, session)
                                 if session['cover']:
                                     session['chapters'] = get_chapters(epubBook, session)
-                                    if session['chapters']:
+                                    if session['chapters'] is not None:
                                         if convert_chapters_to_audio(session):
                                             final_file = combine_audio_chapters(session)               
                                             if final_file is not None:

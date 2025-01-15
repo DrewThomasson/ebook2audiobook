@@ -1,3 +1,5 @@
+version: '3.8'
+
 x-gpu-enabled: &gpu-enabled
   devices:
     - driver: nvidia
@@ -10,13 +12,13 @@ x-gpu-disabled: &gpu-disabled
 
 services:
   ebook2audiobookxtts:
-    image: athomasson2/ebook2audiobook
+    image: athomasson2/ebook2audiobook:latest
     platform: linux/amd64
     tty: true
     stdin_open: true
     ports:
       - 7860:7860 # Maps container's port 7860 to the host's port 7860.
-    command: python app.py
+    command: python app.py --script_mode full_docker
     deploy:
       resources:
         reservations:
@@ -29,11 +31,17 @@ services:
           #     count: 1 # Use fractional GPU count (e.g., 0.5) to indirectly limit VRAM.
           #     capabilities:
           #       - gpu
-        limits:
+        limits: {} # Keeps limits as an empty mapping to avoid errors. Uncomment and configure below.
           # --- CPU Memory (RAM) Limit ---
           # memory: 4g   # Uncomment to set a 4GB upper limit on system RAM usage by the container.
-    volumes: []
-    # - ./:/home/user/app  # Uncomment to map the local directory to the container.
+          # --- GPU Memory (VRAM) Limits ---
+          # devices:     # Uncomment and configure to limit GPU VRAM (requires GPU-enabled above).
+          #   - driver: nvidia
+          #     count: 1 # Use fractional GPU count (e.g., 0.5) to indirectly limit VRAM.
+          #     capabilities:
+          #       - gpu
+    volumes:
+      - ./:/home/user/app  # Maps the local directory to the container.
 
 # Additional Notes:
 # - "CPU Memory (RAM)" refers to the system RAM used by the container.

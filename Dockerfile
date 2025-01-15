@@ -2,7 +2,7 @@
 # you will also find guides on how best to write your Dockerfile
 
 # Build with the command: 
-# docker build --platform linux/amd64 -t ebook2audiobook . 
+# docker build --platform linux/amd64 -t athomasson2/ebook2audiobook:dev_2.1_small . 
 
 FROM python:3.12
 
@@ -17,9 +17,13 @@ WORKDIR /app
 # Install system packages
 USER root
 RUN apt-get update && \
-    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic && \
+    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 curl && \
+    curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+
 
 # Clone the GitHub repository and set it as the working directory
 USER root
@@ -30,44 +34,24 @@ RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git /home/user/ap
 # Set the cloned repository as the base working directory
 WORKDIR /home/user/app
 
-#Install Python dependences from the ebook2audiobook repo
+# Install Python dependencies
+# Install UniDic and its dependencies
+RUN pip install --no-cache-dir unidic-lite unidic
+RUN python3 -m unidic download  # Download UniDic
+RUN mkdir -p /home/user/.local/share/unidic && \
+    mv ~/.local/share/unidic/* /home/user/.local/share/unidic/ || true
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-<<<<<<< HEAD
-# Install Python dependencies using conda and pip
-RUN conda install -n ebookenv -c conda-forge \
-	beautifulsoup4 \
-	coqui-tts \
-	cutlet \
-	deep_translator \
-	docker \
-	ebooklib \
-	gensim \
-	gradio \
-	hangul-romanize \
-	indic-nlp-library \
-	iso-639 \
-	jieba \
-	m4b-util \
-	mecab \
-	mecab-python3 \
-	pydub \
-	pypinyin \
-	ray \
-	regex \
-	transformers \
-	translate \
-	tqdm \
-	unidic \
-=======
+# Set environment variable to ensure MeCab can locate UniDic
+ENV UNIDIC_DIR=/home/user/.local/share/unidic
+
 # Do a test run to make sure that the base models are pre-downloaded and baked into the image
-# RUN echo "This is a test sentence." > test.txt 
-# RUN python app.py --headless --ebook test.txt
-# RUN rm test.txt
->>>>>>> 946a174887063b8f67eb34c7fbf4858998c8a105
+#RUN echo "This is a test sentence." > test.txt 
+#RUN python app.py --headless --ebook test.txt --script_mode full_docker
+#RUN rm test.txt
 
 # Expose the required port
 EXPOSE 7860
 
-# Start the Gradio app from the repository
-CMD ["python", "app.py"]
+# Start the Gradio app with the required flag
+CMD ["python", "app.py", "--script_mode", "full_docker"]

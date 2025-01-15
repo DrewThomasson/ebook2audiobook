@@ -55,6 +55,7 @@ tts_default_settings = {
     "enable_text_splitting": False
 }
 
+os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['COQUI_TOS_AGREED'] = '1'
 os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
 os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir

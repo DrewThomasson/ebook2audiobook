@@ -15,7 +15,7 @@ Available command options, ebook2audiobook.[sh|cmd] --help
 '''
 
 default_language_code = 'eng' # ISO-639-3
-default_voice_file = os.path.abspath(os.path.join('.','voices',default_language_code,'adult','female','Jennifer_24000.wav')) # or 'male','Curt_24000.wav'
+default_voice_file = os.path.abspath(os.path.join('.','voices',default_language_code,'adult','male','Curt_24000.wav')) # or 'female','Jennifer_24000.wav'
 
 language_tts = {
     "xtts": {"eng": "en", "spa": "es", "fra": "fr", "deu": "de", "ita": "it", "por": "pt", "pol": "pl", "tur": "tr", "rus": "ru", "nld": "nl", "ces": "cs", "ara": "ar", "zho": "zh-cn", "jpn": "ja", "hun": "hu", "kor": "ko", "hin": "hi"},
