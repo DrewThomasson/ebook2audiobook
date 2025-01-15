@@ -8,6 +8,7 @@ NATIVE = 'native'
 DOCKER_UTILS = 'docker_utils'
 FULL_DOCKER = 'full_docker'
 
+device_list = ['cpu', 'gpu', 'mps']
 default_device = "cuda"
 
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
@@ -29,7 +30,7 @@ ebooks_dir = os.path.abspath(os.path.join('.','ebooks'))
 voices_dir = os.path.abspath(os.path.join('.','voices'))
 
 tmp_dir = os.path.abspath(os.path.join('.','tmp'))
-tmp_expire = 180 # days
+tmp_expire = 7 # days
 
 max_custom_model = 10
 max_custom_voices = 100
@@ -39,8 +40,10 @@ audiobooks_host_dir = os.path.abspath(os.path.join('.','audiobooks','gui','host'
 audiobooks_cli_dir = os.path.abspath(os.path.join('.','audiobooks','cli'))
 
 ebook_formats = ['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw']
-audiobook_format = 'm4b' # or 'mp3' 'opus'
-audioproc_format = 'wav' # only 'wav' is valid for now
+voice_formats = ['.mp4', '.m4b', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg', '.aiff', '.aif', '.wma', '.dsd', '.opus', '.pcmu', '.pcma', '.gsm']
+output_formats = ['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']
+default_audioproc_format = 'wav' # only 'wav' is valid for now
+default_output_format = 'm4b' # or 'mp3' 'opus' or any you wish
 
 tts_default_settings = {
     "temperature": 0.65,

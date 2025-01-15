@@ -48,7 +48,6 @@ from pathlib import Path
 from pydub import AudioSegment
 from queue import Queue, Empty
 from tqdm import tqdm
-from transformers import AutoTokenizer
 from TTS.api import TTS as XTTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
@@ -145,6 +144,7 @@ class SessionContext:
                 "speed": tts_default_settings['speed'],
                 "enable_text_splitting": tts_default_settings['enable_text_splitting'],
                 "event": None,
+                "output_format": default_output_format,
                 "metadata": {
                     "title": None, 
                     "creator": None,
@@ -168,7 +168,6 @@ class SessionContext:
 
 app = FastAPI()
 lock = threading.Lock()
-tokenizer = AutoTokenizer.from_pretrained("bert-base-multilingual-cased")
 context = SessionContext()
 
 is_gui_process = False
@@ -216,66 +215,54 @@ def analyze_uploaded_file(zip_path, required_files=None):
             raise FileNotFoundError(f"The file does not exist: {os.path.basename(zip_path)}")
         if required_files is None:
             required_files = default_xtts_files
-        executable_extensions = {'.exe', '.bat', '.cmd', '.bash', '.bin', '.sh', '.msi', '.dll', '.com'}
         files_in_zip = {}
-        executables_found = False
         empty_files = set()
         with zipfile.ZipFile(zip_path, 'r') as zf:
             for file_info in zf.infolist():
                 file_name = file_info.filename
                 if file_info.is_dir():
-                    continue  # Skip directories
+                    continue
                 base_name = os.path.basename(file_name)
                 files_in_zip[base_name.lower()] = file_info.file_size
-                _, ext = os.path.splitext(base_name.lower())
-                if ext in executable_extensions:
-                    executables_found = True
-                    break
                 if file_info.file_size == 0:
                     empty_files.add(base_name.lower())
         required_files = [file.lower() for file in required_files]
         missing_files = [f for f in required_files if f not in files_in_zip]
         required_empty_files = [f for f in required_files if f in empty_files]
-        if executables_found:
-            print("Executables found in the ZIP file.")
         if missing_files:
             print(f"Missing required files: {missing_files}")
         if required_empty_files:
             print(f"Required files with 0 KB: {required_empty_files}")
-        return not executables_found and not missing_files and not required_empty_files
+        return not missing_files and not required_empty_files
     except zipfile.BadZipFile:
         raise ValueError("The file is not a valid ZIP archive.")
+        return False
     except Exception as e:
         raise RuntimeError(f"An error occurred: {e}")
+        return False
 
 def extract_custom_model(file_src, session, required_files=None):
     try:
         if required_files is None:
-            required_files = default_xtts_files
-        model_dir = session['custom_model_dir']
-        dir_src = os.path.dirname(file_src)
-        checkpoint = os.path.basename(file_src).replace('.zip', '')
+            required_files = models[session['tts_engine']]['std']['files']
+        model_name = os.path.basename(file_src).replace('.zip', '')
         with zipfile.ZipFile(file_src, 'r') as zip_ref:
             files = zip_ref.namelist()
             files_length = len(files)
-            dir_tts = 'fairseq'
-            xtts_config = 'config.json'
-            config_data = {}
-            if xtts_config in zip_ref.namelist():
-                with zip_ref.open(xtts_config) as f:
-                    config_data = json.load(f)
-            if config_data.get('model') == 'xtts':
-                dir_tts = 'xtts'          
-            checkpoint_path = os.path.join(model_dir, dir_tts, checkpoint)
-            os.makedirs(checkpoint_path, exist_ok=True)
+            tts_dir = session['tts_engine']    
+            model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
+            if os.path.exists(model_path):
+                print(f'{model_path} already exists, bypassing files extraction')
+                return model_path
+            os.makedirs(model_path, exist_ok=True)
             with tqdm(total=files_length, unit="files") as t:
                 for f in files:
                     if f in required_files:
-                        zip_ref.extract(f, checkpoint_path)
+                        zip_ref.extract(f, model_path)
                     t.update(1)
         os.remove(file_src)
-        print(f'Extracted files to {checkpoint_path}')
-        return checkpoint_path
+        print(f'Extracted files to {model_path}')
+        return model_path
     except asyncio.exceptions.CancelledError:
         raise DependencyError(e)
         os.remove(file_src)
@@ -488,106 +475,83 @@ def filter_pattern(doc_identifier):
 
 def filter_chapter(doc, language, system):
     soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
+
     # Remove scripts and styles
     for script in soup(["script", "style"]):
         script.decompose()
+
     # Normalize lines and remove unnecessary spaces
-    text = re.sub(r'(\r\n|\r|\n){3,}', '\r\n', soup.get_text().strip())
+    text = normalize_newlines(soup.get_text().strip())
+    
+    # replace roman numbers by digits
     text = replace_roman_numbers(text)
-    lines = (line.strip() for line in text.splitlines())
-    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
-    text = '\n'.join(chunk for chunk in chunks if chunk)
-    text = text.replace('»', '"').replace('«', '"')
+
     # Pattern 1: Add a space between UTF-8 characters and numbers
     text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    # Pattern 2: Split numbers into groups of 4
-    text = re.sub(r'(\d{4})(?=\d)', r'\1 ', text)
-    max_tokens = language_mapping[language]['max_tokens'] if system != 'windows-10' else language_mapping[language]['max_tokens'] / 2
-    chapter_sentences = get_sentences(text, language, max_tokens)
-    return chapter_sentences
 
-def get_sentences(sentence, language, max_tokens, max_pauses=6):
-    punctuation = language_mapping[language]['punctuation']
-    # Replace math symbols in the sentence
+    # Pattern 2: Split big numbers into groups of 5
+    text = re.sub(r'(\d{4})(?=\d)', r'\1 ', text)
+
+    # Replace math symbols in the text
     replacements = language_math_phonemes[language] if language in language_math_phonemes else language_math_phonemes['eng']
     for symbol, phoneme in replacements.items():
-        sentence = sentence.replace(symbol, phoneme)
+        text = text.replace(symbol, phoneme)
+
     # end of file period must be modified to avoid tts bugs
-    sentence = re.sub(r'\.(?=\s|$)', ' .', sentence)
-    # Replace specials characters
-    replacements = {
-        "’": "'",
-        '„': ' " ',
-        '“': ' " ',
-        '«': ' " ',
-        '»': ' " ',
-        '「': ' " ',
-        '」': ' " ',
-        '”': ' " ',
-        '…': ' ... ',
-        '–': ' - ',
-        '—': ' - ',
-        ':': ' : ',
-        '?': ' ? ',
-        '!': ' ! ',
-        '\xa0': ' '  # Non-breaking space
-    }
-    for old, new in replacements.items():
-        sentence = sentence.replace(old, new)
-    parts = []
-    over_length = False
-    while sentence:
-        # Step 1: Prioritize splitting at ellipses "..." or "…"
-        ellipsis_split = None
-        if '...' in sentence:
-            ellipsis_split = sentence.split('...', 1)
-        elif '…' in sentence:
-            ellipsis_split = sentence.split('…', 1)
-        if ellipsis_split:
-            current_part = ellipsis_split[0].strip() + ('...' if '...' in sentence else '…')
-            remaining_sentence = ellipsis_split[1].strip()
+    text = re.sub(r'\.(?=\s|$)', ' .', text)
+
+    # Create regex pattern from punctuation list to split the parts
+    punctuation_pattern = r'(?<=[{}])'.format(re.escape(''.join(punctuation_list)))
+
+    # Split by punctuation marks while keeping the punctuation at the end of each part
+    parts = re.split(punctuation_pattern, text)
+    final_parts =  [part.strip() for part in parts if part.strip()]
+    
+    print('**** NOTE: You can safely ignore the log "Character xx not found in the vocabulary." ****')
+    
+    # get the final sentence array according to the max_tokens limitation
+    max_tokens = language_mapping[language]['max_tokens']
+    chapter_sentences = get_sentences(final_parts, max_tokens)
+    return chapter_sentences
+
+def get_sentences(parts, max_tokens):
+    sentences = []
+    current_sentence = ""
+    current_word_count = 0
+    for part in parts:
+        part_word_count = len(part.split())
+
+        # If adding this part exceeds max tokens, finalize the current sentence
+        if current_word_count + part_word_count > max_tokens:
+            sentences.append(current_sentence.strip())
+            current_sentence = part
+            current_word_count = part_word_count
         else:
-            current_part = sentence.strip()
-            remaining_sentence = ""
-        # Tokenize the current part
-        tokens = tokenizer.tokenize(current_part)
-        tokens_length = len(tokens) 
-        # Step 2: Check if tokens exceed max_tokens
-        if len(tokens) > max_tokens:
-            if over_length == False:
-                over_length = True
-                print(f'Splitting the sentence to reach tokens length to {max_tokens} max')
-            # Step 3: Find the last period (.) before max_tokens
-            period_split = current_part.rsplit('.', 1)
-            if len(period_split) > 1 and len(tokenizer.tokenize(period_split[0])) <= max_tokens:
-                parts.append(period_split[0].strip() + '.')
-                sentence = period_split[1].strip() + ' ' + remaining_sentence
-                continue
-            # Step 4: If no period, find the last space before max_tokens
-            split_at = current_part.rfind(' ', 0, max_tokens)
-            if split_at == -1:
-                # Step 5: If no space, use punctuation marks
-                split_at = max((current_part.rfind(p, 0, max_tokens) for p in punctuation), default=-1)
-            # Split at the determined position
-            if split_at != -1:
-                parts.append(current_part[:split_at + 1].strip())
-                sentence = current_part[split_at + 1:].strip() + ' ' + remaining_sentence
-            else:
-                # If no valid space or punctuation, force split at max_tokens
-                split_tokens = tokens[:max_tokens]
-                split_text = tokenizer.convert_tokens_to_string(split_tokens)
-                parts.append(split_text.strip())
-                sentence = tokenizer.convert_tokens_to_string(tokens[max_tokens:]).strip() + ' ' + remaining_sentence
-        else:
-            # If tokens are within the limit, add the current part
-            parts.append(current_part.strip())
-            sentence = remaining_sentence.strip()
-        # Log the token count for the current part
-        #print(f"Sentence: {parts[-1]} | Tokens: {len(tokenizer.tokenize(parts[-1]))}")
-    return parts
+            # Add the part to the current sentence
+            current_sentence += (" " if current_sentence else "") + part
+            current_word_count += part_word_count
+
+        # Handle overly long rows by splitting them in the middle
+        if current_word_count > max_tokens * 2:
+            words = current_sentence.split()
+            mid_point = len(words) // 2
+            sentences.append(" ".join(words[:mid_point]).strip())
+            current_sentence = " ".join(words[mid_point:]).strip()
+            current_word_count = len(current_sentence.split())
+
+    # Add the final sentence if any content remains
+    if current_sentence:
+        sentences.append(current_sentence.strip())
+    return sentences
+
+def normalize_newlines(text):
+    text = text.replace("\r\n", " ")
+    text = text.replace("\r", " ")
+    text = re.sub(r'\n', ' ', text)
+    return text
 
 def normalize_voice_file(f, session):
-    final_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_') + '.' + audioproc_format
+    final_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_') + '.' + default_audioproc_format
     final_file = os.path.join(session['voice_dir'], final_name)    
     if session['script_mode'] == DOCKER_UTILS:
         docker_dir = os.path.basename(session['voice_dir'])
@@ -606,7 +570,7 @@ def normalize_voice_file(f, session):
                'loudnorm=I=-16:TP=-3:LRA=7:linear=true,'
                'equalizer=f=150:t=q:w=2:g=1,'
                'equalizer=f=250:t=q:w=2:g=-3,'
-               'equalizer=f=3000:t=q:w=2:g=1,'
+               'equalizer=f=3000:t=q:w=2:g=2,'
                'equalizer=f=5500:t=q:w=2:g=-4,'
                'equalizer=f=9000:t=q:w=2:g=-2,'
                'highpass=f=63',
@@ -738,8 +702,8 @@ def convert_chapters_to_audio(session):
         resume_sentence = 0
 
         # Check existing files to resume the process if it was interrupted
-        existing_chapters = sorted([f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{audioproc_format}')])
-        existing_sentences = sorted([f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{audioproc_format}')])
+        existing_chapters = sorted([f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audioproc_format}')])
+        existing_sentences = sorted([f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audioproc_format}')])
 
         if existing_chapters:
             count_chapter_files = len(existing_chapters)
@@ -757,14 +721,14 @@ def convert_chapters_to_audio(session):
             t.n = resume_sentence
             for x in range(resume_chapter, total_chapters):
                 chapter_num = x + 1
-                chapter_audio_file = f'chapter_{chapter_num}.{audioproc_format}'
+                chapter_audio_file = f'chapter_{chapter_num}.{default_audioproc_format}'
                 sentences = session['chapters'][x]
                 sentences_count = len(sentences)
                 start = current_sentence  # Mark the starting sentence of the chapter
                 print(f"\nChapter {chapter_num} containing {sentences_count} sentences...")
                 for i, sentence in enumerate(sentences):
                     if current_sentence >= resume_sentence:
-                        params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{current_sentence}.{audioproc_format}')                       
+                        params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{current_sentence}.{default_audioproc_format}')                       
                         params['sentence'] = sentence
                         if convert_sentence_to_audio(params, session):                           
                             percentage = (current_sentence / total_sentences) * 100
@@ -815,8 +779,8 @@ def convert_sentence_to_audio(params, session):
                     )
                 torchaudio.save(
                     params['sentence_audio_file'], 
-                    torch.tensor(output[audioproc_format]).unsqueeze(0), 
-                    sample_rate=24000
+                    torch.tensor(output[default_audioproc_format]).unsqueeze(0), 
+                    sample_rate=models[session['tts_engine']][session['fine_tuned']]['samplerate']
                 )
                 del output
             else:
@@ -865,9 +829,9 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 raise ValueError(msg)
-            audio_segment = AudioSegment.from_file(os.path.join(session['chapters_dir_sentences'],f), format=audioproc_format)
+            audio_segment = AudioSegment.from_file(os.path.join(session['chapters_dir_sentences'],f), format=default_audioproc_format)
             combined_audio += audio_segment
-        combined_audio.export(chapter_audio_file, format=audioproc_format)
+        combined_audio.export(chapter_audio_file, format=default_audioproc_format)
         print(f'Combined audio saved to {chapter_audio_file}')
         return True
     except Exception as e:
@@ -895,7 +859,7 @@ def combine_audio_chapters(session):
                     audio_segment = AudioSegment.from_wav(os.path.join(session['chapters_dir'],chapter_file))
                     batch_audio += audio_segment
                 combined_audio += batch_audio
-            combined_audio.export(assembled_audio, format=audioproc_format)
+            combined_audio.export(assembled_audio, format=default_audioproc_format)
             print(f'Combined audio saved to {assembled_audio}')
             return True
         except Exception as e:
@@ -974,19 +938,46 @@ def combine_audio_chapters(session):
                 if session['cover'] is not None:
                     ffmpeg_cover = session['cover']                    
                 ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
-            if ffmpeg_cover is not None:
-                ffmpeg_cmd += ['-i', ffmpeg_cover, '-map', '0:a', '-map', '2:v']
+            if session['output_format'] == 'wav':
+                ffmpeg_cmd += ['-map', '0:a']
+            elif session['output_format'] ==  'aac':
+                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
             else:
-                ffmpeg_cmd += ['-map', '0:a'] 
-            ffmpeg_cmd += ['-map_metadata', '1', '-c:a', 'aac', '-b:a', '128k', '-ar', '44100']           
-            if ffmpeg_cover is not None:
-                if ffmpeg_cover.endswith('.png'):
-                    ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
+                if ffmpeg_cover is not None:
+                    if session['output_format'] == 'mp3' or session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4' or session['output_format'] == 'flac':
+                        ffmpeg_cmd += ['-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
+                        if ffmpeg_cover.endswith('.png'):
+                            ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
+                        else:
+                            ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
+                    elif session['output_format'] == 'mov':
+                        ffmpeg_cmd += ['-loop', '1', '-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
+                    elif session['output_format'] == 'webm':
+                        ffmpeg_cmd += ['-loop', '1', '-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v', '-shortest']   
+                    elif session['output_format'] == 'ogg':
+                       ffmpeg_cmd += ['-loop', '1', '-i', ffmpeg_cover]
+                       ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
+                    if ffmpeg_cover is not None:
+                        if ffmpeg_cover.endswith('.png'):
+                            ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
                 else:
-                    ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)                    
-            if ffmpeg_cover is not None and ffmpeg_cover.endswith('.png'):
-                ffmpeg_cmd += ['-pix_fmt', 'yuv420p']            
-            ffmpeg_cmd += ['-movflags', '+faststart', '-y', ffmpeg_final_file]
+                    ffmpeg_cmd += ['-map', '0:a']
+                if session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4':
+                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+                    ffmpeg_cmd += ['-movflags', '+faststart']
+                elif session['output_format'] == 'ogg':
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k']
+                elif session['output_format'] == 'flac':
+                    ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
+                elif session['output_format'] == 'mp3':
+                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
+                if session['output_format'] != 'mov' and session['output_format'] != 'ogg':
+                    ffmpeg_cmd += ['-af', 'afftdn=nf=-70']
+            ffmpeg_cmd += ['-map_metadata', '1']
+            ffmpeg_cmd += ['-y', ffmpeg_final_file]
             if session['script_mode'] == DOCKER_UTILS:
                 try:
                     container = session['client'].containers.run(
@@ -1035,11 +1026,11 @@ def combine_audio_chapters(session):
     try:
         chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(".wav")]
         chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
-        assembled_audio = os.path.join(session['process_dir'], session['metadata']['title'] + '.' + audioproc_format)
+        assembled_audio = os.path.join(session['process_dir'], session['metadata']['title'] + '.' + default_audioproc_format)
         metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
         if assemble_audio():
             if generate_ffmpeg_metadata():
-                final_name = session['metadata']['title'] + '.' + audiobook_format
+                final_name = session['metadata']['title'] + '.' + session['output_format']
                 docker_final_file = os.path.join(session['process_dir'], final_name)
                 final_file = os.path.join(session['audiobooks_dir'], final_name)       
                 if export_audio():
@@ -1136,8 +1127,8 @@ def compare_file_metadata(f1, f2):
     
 def get_compatible_tts_engines(language):
     compatible_engines = [
-        engine_type for engine_type in models.keys()
-        if language in language_tts.get(engine_type, {})
+        tts for tts in models.keys()
+        if language in language_tts.get(tts, {})
     ]
     return compatible_engines
 
@@ -1188,6 +1179,7 @@ def convert_ebook(args):
                 session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
                 session['custom_model'] = args['custom_model'] if not is_gui_process or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
                 session['fine_tuned'] = args['fine_tuned']
+                session['output_format'] = args['output_format']
                 session['temperature'] =  args['temperature']
                 session['length_penalty'] = args['length_penalty']
                 session['repetition_penalty'] = args['repetition_penalty']
@@ -1198,7 +1190,7 @@ def convert_ebook(args):
                 session['audiobooks_dir'] = args['audiobooks_dir']
                 session['voice'] = args['voice']
                 
-                info_session = f"\n*********** Session: {id} '*************\nStore it in case of interruption or crash\nyou can resume the conversion with --session option"
+                info_session = f"\n*********** Session: {id} '*************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
 
                 if not is_gui_process:
                     check_tts = get_compatible_tts_engines(session['language'])
@@ -1220,6 +1212,8 @@ def convert_ebook(args):
                                 session['custom_model'] = model
                             else:
                                 error = f"{model} could not be extracted or mandatory files are missing"
+                        else:
+                            error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                 if error is None:
                     if session['script_mode'] == NATIVE:
                         bool, e = check_programs('Calibre', 'calibre', '--version')
@@ -1486,7 +1480,7 @@ def web_interface(args):
                         with gr.Group():
                             gr_language = gr.Dropdown(label='Language', choices=language_options, value=default_language_code, type='value', interactive=True)
                         with gr.Group():
-                            gr_voice_file = gr.File(label='*Cloning Voice (a .wav 24khz for XTTS base model and 16khz for FAIRSEQ base model, no more than 6 sec)', file_types=['.wav'], value=None, visible=interface_component_options['gr_voice_file'])
+                            gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie (<= 6 seconds)', file_types=voice_formats, value=None, visible=interface_component_options['gr_voice_file'])
                             gr_voice_list = gr.Dropdown(label='', choices=voice_options, type='value', interactive=True)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
@@ -1497,12 +1491,12 @@ def web_interface(args):
                             gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models', choices=fine_tuned_options, type='value', interactive=True)
                         gr_group_custom_model = gr.Group(visible=interface_component_options['gr_group_custom_model'])
                         with gr_group_custom_model:
-                            gr_custom_model_file = gr.File(label='*Custom XTTS Model (a .zip containing config.json, vocab.json, model.pth, ref.wav)', value=None, file_types=['.zip'])
+                            gr_custom_model_file = gr.File(label=f"*Custom Model Zip File", value=None, file_types=['.zip'])
                             gr_custom_model_list = gr.Dropdown(label='', choices=custom_model_options, type='value', interactive=True)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
                             gr_session = gr.Textbox(label='Session')
-                        gr_outpot_format_list = gr.Dropdown(label='Output format', choices=[('M4B','m4b'), ('MP3','mp3'), ('OPUS','opus')], type='value', interactive=True)
+                        gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
             gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', visible=interface_component_options['gr_tab_preferences'])
             with gr_tab_preferences:
                 gr.Markdown(
@@ -1637,7 +1631,7 @@ def web_interface(args):
                 return (
                     gr.update(value=session['src']), gr.update(choices=voice_options, value=session['voice']), gr.update(value=session['device']), 
                     gr.update(value=session['language']), gr.update(choices=tts_engine_options, value=session['tts_engine']), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), 
-                    gr.update(choices=custom_model_options, value=session['custom_model']), gr.update(choices=audiobook_options, value=session['audiobook']), 
+                    gr.update(choices=custom_model_options, value=session['custom_model']), gr.update(value=session['output_format']), gr.update(choices=audiobook_options, value=session['audiobook']), 
                     gr.update(value=session['temperature']), gr.update(value=session['length_penalty']), gr.update(value=session['repetition_penalty']), 
                     gr.update(value=session['top_k']), gr.update(value=session['top_p']), gr.update(value=session['speed']), 
                     gr.update(value=session['enable_text_splitting']), gr.update(active=True)
@@ -1697,7 +1691,12 @@ def web_interface(args):
             if f is None:
                 return gr.update()
             if len(voice_options) > max_custom_voices:
-                error = f'You are allowed to upload a max of {max_custom_voices} voices'    
+                error = f'You are allowed to upload a max of {max_custom_voices} voices'  
+                print(error)
+                return gr.update(value=error)
+            elif f not in voice_formats:
+                error = f'The audio file format selected is not valid.'
+                print(error)
                 return gr.update(value=error)
             else:
                 return gr.update()
@@ -1713,9 +1712,11 @@ def web_interface(args):
                     error = 'Voice file cannot be normalized!'
                 else:
                     session['voice'] = normalized_file
-                    return gr.update(value=None), update_gr_voice_list(id), gr.update(value=f"Voice {os.path.basename(session['voice'])} added to the voices list")
+                    info = f"Voice {os.path.basename(session['voice'])} added to the voices list"
+                    return gr.update(value=None), update_gr_voice_list(id), gr.update(value=info)
             except Exception as e:
                 error = f'convert_gr_voice_file() error: {e}'
+            print(error)
             return gr.update(), gr.update(), gr.update(value=error)
 
         def change_gr_voice_list(selected, id):
@@ -1760,14 +1761,14 @@ def web_interface(args):
             ]
             fine_tuned = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
             voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-            voice_file_pattern = '*_16khz.wav' if session['tts_engine'] == 'fairseq' else '*_24khz.wav'
+            voice_file_pattern = f"*_{models[tts_engine][fine_tuned]['samplerate']}.wav"
             voice_options = [
                 (os.path.splitext(f)[0], os.path.join(session['voice_dir'], f))
                 for f in os.listdir(session['voice_dir'])
                 if f.endswith('.wav')
             ]
             voice_options += [
-                (os.path.splitext(f.name)[0].replace('_16khz', '').replace('_24khz', ''), str(f))
+                (os.path.splitext(f.name)[0].replace('_16000', '').replace('_24000', '').replace('_22050',''), str(f))
                 for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
             ]
             voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
@@ -1803,16 +1804,20 @@ def web_interface(args):
                     if analyze_uploaded_file(f):
                         model = extract_custom_model(f, session)
                         if model is None:
-                            return gr.update(), gr.update(value=f'Cannot extract custom model zip file {os.path.basename(f)}')
+                            error = f'Cannot extract custom model zip file {os.path.basename(f)}'
+                            print(error)
+                            return gr.update(), gr.update(value=error)
                         session['custom_model'] = model
-                        return[
-                            gr.update(value=None),
-                            gr.update(value=f"{model} added to the custom models list")
-                        ]
+                        info = f'{model} added to the custom models list'
+                        print(info)
+                        return gr.update(value=None), gr.update(value=info)
                     else:
-                        return gr.update(), gr.update(value=f'{os.path.basename(f)} is not a valid model or some required files are missing')
+                        error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                        print(error)
+                        return gr.update(value=None), gr.update(value=error)
                 except Exception as e:
                     error = f'Error: {str(e)}'
+                    print(error)
                     return gr.update(value=None), gr.update(value=error)
         
         def update_gr_custom_model_list(id):
@@ -1842,9 +1847,9 @@ def web_interface(args):
             ]
             session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
             if session['tts_engine'] == 'xtts' and session['fine_tuned'] == 'std':
-                return gr.update(visible=True), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(visible=True)
+                return gr.update(visible=True), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(label=f"*Custom Model Zip File (Mandatory files {models[session['tts_engine']]['std']['files']})"), gr.update(visible=True)
             else:
-                return gr.update(visible=False), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(visible=False)
+                return gr.update(visible=False), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(), gr.update(visible=False)
             
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
@@ -1858,7 +1863,7 @@ def web_interface(args):
             session = context.get_session(id)
             session[key] = val           
 
-        def submit_convert_btn(id, device, ebook_file, tts_engine, voice, language, custom_model, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting, fine_tuned):
+        def submit_convert_btn(id, device, ebook_file, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting):
             args = {
                 "is_gui_process": is_gui_process,
                 "session": id,
@@ -1870,6 +1875,7 @@ def web_interface(args):
                 "voice": voice,
                 "language": language,
                 "custom_model": custom_model,
+                "output_format": output_format,
                 "temperature": float(temperature),
                 "length_penalty": float(length_penalty),
                 "repetition_penalty": float(repetition_penalty),
@@ -1953,14 +1959,14 @@ def web_interface(args):
                 ]
                 session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
                 voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                voice_file_pattern = '*_16khz.wav' if session['tts_engine'] == 'fairseq' else '*_24khz.wav'
+                voice_file_pattern = f"*_{models[session['tts_engine']][session['fine_tuned']]['samplerate']}.wav"
                 voice_options = [
                     (os.path.splitext(f)[0], os.path.join(session['voice_dir'], f))
                     for f in os.listdir(session['voice_dir'])
                     if f.endswith('.wav')
                 ]
                 voice_options += [
-                    (os.path.splitext(f.name)[0].replace('_16khz', '').replace('_24khz', ''), str(f))
+                    (os.path.splitext(f.name)[0].replace('_16000', '').replace('_24000', '').replace('_22050',''), str(f))
                     for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
                 ]
                 voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
@@ -2079,7 +2085,7 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tab_preferences, gr_fine_tuned_list, gr_group_custom_model]
+            outputs=[gr_tab_preferences, gr_fine_tuned_list, gr_custom_model_file, gr_group_custom_model,]
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
@@ -2141,8 +2147,8 @@ def web_interface(args):
             fn=submit_convert_btn,
             inputs=[
                 gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_voice_list, gr_language, 
-                gr_custom_model_list, gr_temperature, gr_length_penalty,
-                gr_repetition_penalty, gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting, gr_fine_tuned_list
+                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_temperature, gr_length_penalty,
+                gr_repetition_penalty, gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting
             ],
             outputs=[gr_conversion_progress]
         ).then(
@@ -2174,7 +2180,7 @@ def web_interface(args):
             inputs=[gr_session],
             outputs=[
                 gr_ebook_file, gr_voice_list, gr_device, gr_language, 
-                gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_list,
+                gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_list, gr_output_format_list,
                 gr_audiobook_list, gr_temperature, gr_length_penalty, gr_repetition_penalty,
                 gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting, gr_timer
             ]

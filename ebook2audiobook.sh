@@ -205,7 +205,7 @@ else
                 pip uninstall lxml -y 2>/dev/null
                 echo -e "\e[33mInstalling Calibre...\e[0m"
                 if [[ "$OSTYPE" = "darwin"* ]]; then
-                    eval "sudo $PACK_MGR --cask calibre"
+                    eval "$PACK_MGR --cask calibre"
                 else
                     $WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
                 fi
