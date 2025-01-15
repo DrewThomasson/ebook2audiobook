@@ -378,7 +378,7 @@ def convert_to_epub(session):
 
             print(f"Running command: {util_app} {session['src']} {session['epub_path']} --input-encoding=utf-8 --output-profile=generic_eink --verbose")
             result = subprocess.run(
-                [util_app, session['src'], session['epub_path']],
+                [util_app, session['src'], session['epub_path'], '--input-encoding=utf-8', '--output-profile=generic_eink', '--verbose'],
                 check=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -431,6 +431,7 @@ def get_chapters(epubBook, session):
         all_docs = all_docs[1:]  # Exclude the first document if needed
         # Cache filtered chapters to avoid redundant calls
         doc_cache = {}
+        print('**** NOTE: You can safely ignore the log "Character xx not found in the vocabulary." ****')
         for doc in all_docs:
             doc_cache[doc] = filter_chapter(doc, session['language'], session['system'])
         # Step 2: Determine the most common pattern
@@ -506,8 +507,6 @@ def filter_chapter(doc, language, system):
     # Split by punctuation marks while keeping the punctuation at the end of each part
     parts = re.split(punctuation_pattern, text)
     final_parts =  [part.strip() for part in parts if part.strip()]
-    
-    print('**** NOTE: You can safely ignore the log "Character xx not found in the vocabulary." ****')
     
     # get the final sentence array according to the max_tokens limitation
     max_tokens = language_mapping[language]['max_tokens']
