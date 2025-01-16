@@ -3,7 +3,7 @@ nltk
 beautifulsoup4
 ebooklib
 translate
-coqui-tts
+coqui-tts<=0.25.1
 tqdm
 mecab
 mecab-python3
