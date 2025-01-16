@@ -44,11 +44,12 @@ from huggingface_hub import hf_hub_download
 from iso639 import languages
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
+from num2words import num2words
 from pathlib import Path
 from pydub import AudioSegment
 from queue import Queue, Empty
 from tqdm import tqdm
-from TTS.api import TTS as XTTS
+from TTS.api import TTS as TtsXTTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 from types import MappingProxyType
@@ -253,7 +254,7 @@ def extract_custom_model(file_src, session, required_files=None):
     try:
         if required_files is None:
             required_files = models[session['tts_engine']]['std']['files']
-        model_name = os.path.basename(file_src).replace('.zip', '')
+        model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
         with zipfile.ZipFile(file_src, 'r') as zip_ref:
             files = zip_ref.namelist()
             files_length = len(files)
@@ -334,6 +335,39 @@ def proxy_to_dict(proxy_obj):
         else:
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
+    
+def maths_to_words(text, lang, lang_iso1):
+    is_num2words_compat = False
+    def check_compat():
+        try:
+            num2words(int(9), lang=lang_iso1)
+            return True
+        except NotImplementedError:
+            return False
+    def rep_num(match):
+        number = match.group()
+        if '.' in number:
+            return num2words(float(number), lang=lang_iso1)
+        else:
+            return num2words(int(number), lang=lang_iso1)     
+    phonemes_list = language_math_phonemes[lang] if lang in language_math_phonemes else language_math_phonemes[default_language_code]
+    is_num2words_compat = check_compat()
+    if is_num2words_compat == True:
+        pattern = r'\b\d+\.?\d*\b'
+        text = re.sub(pattern, rep_num, text)
+        # Include only math symbols
+        replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit()}
+    else:
+        replacements = phonemes_list
+    pattern = re.compile("|".join(map(re.escape, replacements.keys())))
+    text = pattern.sub(lambda m: f" {replacements[m.group()]} ", text)
+    return text
+
+def normalize_newlines(text):
+    text = text.replace("\r\n", " ")
+    text = text.replace("\r", " ")
+    text = re.sub(r'\n', ' ', text)
+    return text
 
 def convert_to_epub(session):
     if session['cancellation_requested']:
@@ -443,7 +477,7 @@ def get_chapters(epubBook, session):
         doc_cache = {}
         print('**** NOTE: You can safely ignore the log "Character xx not found in the vocabulary." ****')
         for doc in all_docs:
-            doc_cache[doc] = filter_chapter(doc, session['language'], session['system'], session['tts_engine'])
+            doc_cache[doc] = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
         # Step 2: Determine the most common pattern
         doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
         most_common_pattern = filter_doc(doc_patterns)
@@ -466,26 +500,8 @@ def get_chapters(epubBook, session):
     except Exception as e:
         raise DependencyError(f'Error extracting main content pages: {e}')
         return None
-
-def filter_doc(doc_patterns):
-    pattern_counter = Counter(doc_patterns)
-    # Returns a list with one tuple: [(pattern, count)] 
-    most_common = pattern_counter.most_common(1)
-    return most_common[0][0] if most_common else None
-
-def filter_pattern(doc_identifier):
-    parts = doc_identifier.split(':')
-    if len(parts) > 2:
-        segment = parts[1]
-        if re.search(r'[a-zA-Z]', segment) and re.search(r'\d', segment):
-            return ''.join([char for char in segment if char.isalpha()])
-        elif re.match(r'^[a-zA-Z]+$', segment):
-            return segment
-        elif re.match(r'^\d+$', segment):
-            return 'numbers'
-    return None
-
-def filter_chapter(doc, language, system, tts_engine):
+        
+def filter_chapter(doc, lang, lang_iso1, tts_engine):
     soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
 
     # Remove scripts and styles
@@ -504,16 +520,8 @@ def filter_chapter(doc, language, system, tts_engine):
     # Pattern 2: Split big numbers into groups of 5
     text = re.sub(r'(\d{4})(?=\d)', r'\1 ', text)
 
-    # Replace math symbols in the text
-    replacements = language_math_phonemes[language] if language in language_math_phonemes else language_math_phonemes['eng']
-    if tts_engine == "xtts":
-        # xtts supports number so we need to remove digits from the list
-        math_replacements = {k: v for k, v in replacements.items() if not k.isdigit()}
-        for symbol, phoneme in math_replacements.items():
-            text = text.replace(symbol, phoneme)
-    elif tts_engine == "faiseq":
-        for symbol, phoneme in replacements.items():
-            text = text.replace(symbol, phoneme)
+    # Replace math symbols with words
+    text = maths_to_words(text, lang, lang_iso1)
 
     # end of file period must be modified to avoid tts bugs
     text = re.sub(r'\.(?=\s|$)', ' .', text)
@@ -526,9 +534,27 @@ def filter_chapter(doc, language, system, tts_engine):
     final_parts =  [part.strip() for part in parts if part.strip()]
     
     # get the final sentence array according to the max_tokens limitation
-    max_tokens = language_mapping[language]['max_tokens']
+    max_tokens = language_mapping[lang]['max_tokens']
     chapter_sentences = get_sentences(final_parts, max_tokens)
     return chapter_sentences
+
+def filter_doc(doc_patterns):
+    pattern_counter = Counter(doc_patterns)
+    # Returns a list with one tuple: [(pattern, count)] 
+    most_common = pattern_counter.most_common(1)
+    return most_common[0][0] if most_common else None
+
+def filter_pattern(doc_identifier):
+    parts = doc_identifier.split(':')
+    if len(parts) > 2:
+        segment = parts[1]
+        if re.search(r'[a-zA-Z]', segment) and re.search(r'\d', segment):
+            return ''.join([char for char in segment if char.isalpha()])
+        elif re.match(r'^[a-zA-Z]+$', segment):
+            return segment
+        elif re.match(r'^\d+$', segment):
+            return 'numbers'
+    return None
 
 def get_sentences(parts, max_tokens):
     sentences = []
@@ -559,12 +585,6 @@ def get_sentences(parts, max_tokens):
     if current_sentence:
         sentences.append(current_sentence.strip())
     return sentences
-
-def normalize_newlines(text):
-    text = text.replace("\r\n", " ")
-    text = text.replace("\r", " ")
-    text = re.sub(r'\n', ' ', text)
-    return text
 
 def normalize_voice_file(f, session):
     final_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_') + '.' + default_audioproc_format
@@ -648,9 +668,9 @@ def normalize_voice_file(f, session):
         return None
 
 @app.post("/load_tts_api_cached/")
-def load_tts_api_cached(model_path):
+def load_tts_api_cached(model_path, use_cuda):
     with lock:
-        tts = XTTS(model_path)
+        tts = TtsXTTS(model_path, gpu=use_cuda)
     return tts
 
 @app.post("/load_tts_custom_cached/")
@@ -673,8 +693,8 @@ def convert_chapters_to_audio(session):
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
         params['tts_model'] = None
-        if session['tts_engine'] == 'xtts':
-            params['tts_model'] = 'xtts'
+        if session['tts_engine'] == XTTSv2:
+            params['tts_model'] = XTTSv2
             if session['custom_model'] is not None:
                 print(f"Loading TTS {params['tts_model']} model from {session['custom_model']}...")
                 model_path = os.path.join(session['custom_model'], 'model.pth')
@@ -700,19 +720,20 @@ def convert_chapters_to_audio(session):
             else:
                 print(f"Loading TTS {params['tts_model']} model from {models[params['tts_model']][session['fine_tuned']]['repo']}...")
                 model_path = models[params['tts_model']][session['fine_tuned']]['repo']
-                params['tts'] = load_tts_api_cached(model_path)
+                params['tts'] = load_tts_api_cached(model_path, True if session['device'] == 'cuda' else False)
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
         elif session['tts_engine'] == 'fairseq':
             if session['custom_model'] is not None:
                 print("TODO!")
             else:
-                params['tts_model'] = 'fairseq'
+                params['tts_model'] = FAIRSEQ
                 model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
                 print(f"Loading TTS {model_path} model from {model_path}...")
-                params['tts'] = load_tts_api_cached(model_path)
+                params['tts'] = load_tts_api_cached(model_path, True if session['device'] == 'cuda' else False)
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
                 params['tts'].to(session['device'])
+            params['tts'].to(session['device'])
         elif session['tts_engine'] == 'yourtts':
             print("TODO!")
 
@@ -786,7 +807,7 @@ def convert_sentence_to_audio(params, session):
             "speed": session['speed'],
             "enable_text_splitting": session['enable_text_splitting']
         }
-        if params['tts_model'] == 'xtts':
+        if params['tts_model'] == XTTSv2:
             if session['custom_model'] is not None or session['fine_tuned'] != 'std':
                 with torch.no_grad():
                     output = params['tts'].inference(
@@ -988,7 +1009,7 @@ def combine_audio_chapters(session):
                     ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
                     ffmpeg_cmd += ['-movflags', '+faststart']
                 elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k']
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
                 elif session['output_format'] == 'flac':
                     ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
                 elif session['output_format'] == 'mp3':
@@ -996,7 +1017,7 @@ def combine_audio_chapters(session):
                 if session['output_format'] != 'mov' and session['output_format'] != 'ogg':
                     ffmpeg_cmd += ['-af', 'afftdn=nf=-70']
             ffmpeg_cmd += ['-map_metadata', '1']
-            ffmpeg_cmd += ['-y', ffmpeg_final_file]
+            ffmpeg_cmd += ['-threads', '4', '-y', ffmpeg_final_file]
             if session['script_mode'] == DOCKER_UTILS:
                 try:
                     container = session['client'].containers.run(
@@ -1316,6 +1337,7 @@ def convert_ebook(args):
                                                     if os.path.exists(session['session_dir']):
                                                         shutil.rmtree(session['session_dir'])
                                                 progress_status = f'Audiobook {os.path.basename(final_file)} created!'
+                                                reset_file_session(session)
                                                 print(info_session)
                                                 return progress_status, final_file 
                                             else:
@@ -1342,6 +1364,41 @@ def convert_ebook(args):
     except Exception as e:
         print(f'convert_ebook() Exception: {e}')
         return e, None
+        
+def reset_fie_session(session):
+    data = {
+        "src": None,
+        "chapters_dir": None,
+        "chapters_dir_sentences": None,
+        "epub_path": None,
+        "filename_noext": None,
+        "chapters": None,
+        "cover": None,
+        "status": None,
+        "progress": 0,
+        "time": None,
+        "cancellation_requested": False,
+        "event": None,
+        "metadata": {
+            "title": None, 
+            "creator": None,
+            "contributor": None,
+            "language": None,
+            "identifier": None,
+            "publisher": None,
+            "date": None,
+            "description": None,
+            "subject": None,
+            "rights": None,
+            "format": None,
+            "type": None,
+            "coverage": None,
+            "relation": None,
+            "Source": None,
+            "Modified": None
+        }
+    }
+    restore_session_from_data(data, session)
 
 def get_all_ip_addresses():
     ip_addresses = []
@@ -1864,7 +1921,7 @@ def web_interface(args):
                 if details.get('lang') == 'multi' or details.get('lang') == session['language']
             ]
             session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
-            if session['tts_engine'] == 'xtts' and session['fine_tuned'] == 'std':
+            if session['tts_engine'] == XTTSv2 and session['fine_tuned'] == 'std':
                 return gr.update(visible=True), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(label=f"*Custom Model Zip File (Mandatory files {models[session['tts_engine']]['std']['files']})"), gr.update(visible=True)
             else:
                 return gr.update(visible=False), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(), gr.update(visible=False)
