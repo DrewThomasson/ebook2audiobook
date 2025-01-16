@@ -183,6 +183,7 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
 
         args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
         args['share'] =  args['share'] if args['share'] else False
+        args['src_mode'] = 'single'
 
         if args['script_mode'] == NATIVE:
             check_pkg = check_and_install_requirements(requirements_file)
@@ -208,31 +209,33 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
 
             # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
             if args['ebooks_dir']:
-                new_ebooks_dir = None
+                custom_ebooks_dir = None
                 if args['ebooks_dir'] == 'default':
                     print(f'Using the default ebooks_dir: {ebooks_dir}')
-                    new_ebooks_dir =  os.path.abspath(ebooks_dir)
+                    custom_ebooks_dir =  os.path.abspath(ebooks_dir)
                 else:
                     # Check if the directory exists
                     if os.path.exists(args['ebooks_dir']):
-                        new_ebooks_dir = os.path.abspath(args['ebooks_dir'])
+                        custom_ebooks_dir = os.path.abspath(args['ebooks_dir'])
                     else:
                         print(f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.')
                         sys.exit(1)
 
-                if os.path.exists(new_ebooks_dir):
-                    for file in os.listdir(new_ebooks_dir):
-                        # Process files with supported ebook formats
+                if os.path.exists(custom_ebooks_dir):
+                    ebook_list = []
+                    for file in os.listdir(custom_ebooks_dir):
                         if any(file.endswith(ext) for ext in ebook_formats):
-                            full_path = os.path.join(new_ebooks_dir, file)
-                            print(f'Processing eBook file: {full_path}')
+                            full_path = os.path.join(custom_ebooks_dir, file)
+                            ebook_list.append(full_path)
                             args['ebook'] = full_path
-                            progress_status, audiobook_file = convert_ebook(args)
-                            if audiobook_file is None:
-                                print(f'Conversion failed: {progress_status}')
-                                sys.exit(1)
+                    args['src_mode'] = 'directory'
+                    args['ebook'] = ebook_list
+                    progress_status, audiobook_file = convert_ebook_batch(args)
+                    if audiobook_file is None:
+                        print(f'Conversion failed: {progress_status}')
+                        sys.exit(1)
                 else:
-                    print(f'Error: The directory {new_ebooks_dir} does not exist.')
+                    print(f'Error: The directory {custom_ebooks_dir} does not exist.')
                     sys.exit(1)
 
             elif args['ebook']:

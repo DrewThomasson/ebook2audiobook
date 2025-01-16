@@ -121,6 +121,7 @@ class SessionContext:
                 "audiobooks_dir": None,
                 "process_dir": None,
                 "src": None,
+                "src_mode": None,
                 "chapters_dir": None,
                 "chapters_dir_sentences": None,
                 "epub_path": None,
@@ -1171,6 +1172,18 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
+def convert_ebook_batch(args):
+    args_dup = copy(args)
+    ebook_list = args['ebook']
+    for file in ebook_list:
+        if any(file.endswith(ext) for ext in ebook_formats):
+            args_dup['ebook'] = file
+            print(f'Processing eBook file: {os.path.base_name(file)}')
+            progress_status, audiobook_file = convert_ebook(args_dup)
+            if audiobook_file is None:
+                print(f'Conversion failed: {progress_status}')
+                sys.exit(1)
+
 def convert_ebook(args):
     try:
         global is_gui_process, context        
@@ -1430,6 +1443,9 @@ def web_interface(args):
     fine_tuned_options = []
     audiobook_options = []
     
+    src_label_file = 'EBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)'
+    src_label_folder = 'Folder For Batch Processing'
+    
     # Buffer for real-time log streaming
     log_buffer = Queue()
     
@@ -1501,7 +1517,7 @@ def web_interface(args):
                 #component-8, #component-13, #component-26 {
                     height: 140px !important;
                 }
-                #component-52, #component-53, #component-54 {
+                #component-53, #component-54 {
                     height: 80px !important;
                 }
                 #component-9 span[data-testid="block-info"], #component-14 span[data-testid="block-info"],
@@ -1545,11 +1561,11 @@ def web_interface(args):
                     with gr.Column(scale=3):
                         with gr.Group():
                             gr_ebook_file = gr.Files(
-                                label='EBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)',
-                                file_types=['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw'],
+                                label=src_label_file,
+                                file_types=ebook_formats,
                                 file_count="single"
                             )
-                            gr_src_mode = gr.Radio(label='', choices=[('Single File','file'), ('Batch Folder','folder')], value='file', interactive=True)
+                            gr_ebook_file_mode = gr.Radio(label='', choices=[('Single File','file'), ('Batch Directory','directory')], value='file', interactive=True)
                         with gr.Group():
                             gr_language = gr.Dropdown(label='Language', choices=language_options, value=default_language_code, type='value', interactive=True)
                         with gr.Group():
@@ -1736,18 +1752,21 @@ def web_interface(args):
                     return gr.update(value=link), gr.update(value=link), gr.update(visible=True)
             return gr.update(), gr.update(), gr.update(visible=False)
             
-        def update_convert_btn(upload_file=None, custom_model_file=None, session=None):
+        def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             if session is None:
                 yield gr.update(variant='primary', interactive=False)
                 return
             else:
+                print(f'**************{upload_file}***************{upload_file_mode}*********')
                 if hasattr(upload_file, 'name') and not hasattr(custom_model_file, 'name'):
+                    yield gr.update(variant='primary', interactive=True)
+                elif isinstance(upload_file, list) and len(upload_file) > 0 and upload_file_mode == 'directory' and not hasattr(custom_model_file, 'name'):
                     yield gr.update(variant='primary', interactive=True)
                 else:
                     yield gr.update(variant='primary', interactive=False)   
                 return
 
-        async def change_gr_ebook_file(f, id):
+        def change_gr_ebook_file(f, id):
             session = context.get_session(id)
             if f is None:
                 if session['status'] == 'converting':
@@ -1757,8 +1776,15 @@ def web_interface(args):
                     return
             session['cancellation_requested'] = False
             session['src'] = f
-            yield hide_modal()
-            return
+            return hide_modal()
+            
+        def change_gr_ebook_file_mode(val, id):
+            session = context.get_session(id)
+            session['src_mode'] = val
+            if val == 'file':
+                return gr.update(label=src_label_file, value=None, file_count='single')
+            else:
+                return gr.update(label=src_label_folder, value=None, file_count='directory')
 
         def change_gr_voice_file(f):
             if f is None:
@@ -1943,7 +1969,7 @@ def web_interface(args):
                 "script_mode": script_mode,
                 "device": device.lower(),
                 "tts_engine": tts_engine,
-                "ebook": ebook_file.name if ebook_file else None,
+                "ebook": ebook_file if isinstance(ebook_file, list) else ebook_file.name if ebook_file else None,
                 "audiobooks_dir": audiobooks_dir,
                 "voice": voice,
                 "language": language,
@@ -1961,16 +1987,32 @@ def web_interface(args):
             if args["ebook"] is None:
                 return gr.update(value='Error: a file is required.')
             try:
-                session = context.get_session(id)
-                session['status'] = 'converting'
-                progress_status, audiobook_file = convert_ebook(args)
-                if audiobook_file is None:
-                    if session['status'] == 'converting':
-                        return gr.update(value='Conversion cancelled.')
-                    else:
-                        return gr.update(value='Conversion failed.')
+                if args['src_mode'] == 'directory':
+                    args_dup = copy(args)
+                    ebook_list = args['ebook']
+                    for file in ebook_list:
+                        if any(file.endswith(ext) for ext in ebook_formats):
+                            args_dup['ebook'] = file
+                            print(f'Processing eBook file: {os.path.base_name(file)}')
+                            progress_status, audiobook_file = convert_ebook(args_dup)
+                            if audiobook_file is None:
+                                if session['status'] == 'converting':
+                                    return gr.update(value='Conversion cancelled.')
+                                else:
+                                    return gr.update(value='Conversion failed.')
+                            else:
+                                return gr.update(value=progress_status)
                 else:
-                    return gr.update(value=progress_status)
+                    session = context.get_session(id)
+                    session['status'] = 'converting'
+                    progress_status, audiobook_file = convert_ebook(args)
+                    if audiobook_file is None:
+                        if session['status'] == 'converting':
+                            return gr.update(value='Conversion cancelled.')
+                        else:
+                            return gr.update(value='Conversion failed.')
+                    else:
+                        return gr.update(value=progress_status)
             except Exception as e:
                 return DependencyError(e)
 
@@ -2105,12 +2147,17 @@ def web_interface(args):
             
         gr_ebook_file.change(
             fn=update_convert_btn,
-            inputs=[gr_ebook_file, gr_custom_model_file, gr_session],
+            inputs=[gr_ebook_file, gr_ebook_file_mode, gr_custom_model_file, gr_session],
             outputs=[gr_convert_btn]
         ).then(
             fn=change_gr_ebook_file,
             inputs=[gr_ebook_file, gr_session],
             outputs=[gr_modal_html]
+        )
+        gr_ebook_file_mode.change(
+            fn=change_gr_ebook_file_mode,
+            inputs=[gr_ebook_file_mode, gr_session],
+            outputs=[gr_ebook_file]
         )
         gr_voice_file.change(
             fn=change_gr_voice_file,
