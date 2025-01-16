@@ -587,7 +587,7 @@ def get_sentences(parts, max_tokens):
     return sentences
 
 def normalize_voice_file(f, session):
-    final_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_') + '.' + default_audioproc_format
+    final_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_') + '.' + default_audio_tts_format
     final_file = os.path.join(session['voice_dir'], final_name)    
     if session['script_mode'] == DOCKER_UTILS:
         docker_dir = os.path.basename(session['voice_dir'])
@@ -741,8 +741,8 @@ def convert_chapters_to_audio(session):
         resume_sentence = 0
 
         # Check existing files to resume the process if it was interrupted
-        existing_chapters = sorted([f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audioproc_format}')])
-        existing_sentences = sorted([f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audioproc_format}')])
+        existing_chapters = sorted([f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')])
+        existing_sentences = sorted([f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')])
 
         if existing_chapters:
             count_chapter_files = len(existing_chapters)
@@ -760,14 +760,14 @@ def convert_chapters_to_audio(session):
             t.n = resume_sentence
             for x in range(resume_chapter, total_chapters):
                 chapter_num = x + 1
-                chapter_audio_file = f'chapter_{chapter_num}.{default_audioproc_format}'
+                chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
                 sentences = session['chapters'][x]
                 sentences_count = len(sentences)
                 start = current_sentence  # Mark the starting sentence of the chapter
                 print(f"\nChapter {chapter_num} containing {sentences_count} sentences...")
                 for i, sentence in enumerate(sentences):
                     if current_sentence >= resume_sentence:
-                        params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{current_sentence}.{default_audioproc_format}')                       
+                        params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{current_sentence}.{default_audio_proc_format}')                       
                         params['sentence'] = sentence
                         if convert_sentence_to_audio(params, session):                           
                             percentage = (current_sentence / total_sentences) * 100
@@ -819,7 +819,7 @@ def convert_sentence_to_audio(params, session):
                     )
                 torchaudio.save(
                     params['sentence_audio_file'], 
-                    torch.tensor(output[default_audioproc_format]).unsqueeze(0), 
+                    torch.tensor(output[default_audio_tts_format]).unsqueeze(0), 
                     sample_rate=models[session['tts_engine']][session['fine_tuned']]['samplerate']
                 )
                 del output
@@ -869,9 +869,9 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
             if session['cancellation_requested']:
                 msg = 'Cancel requested'
                 raise ValueError(msg)
-            audio_segment = AudioSegment.from_file(os.path.join(session['chapters_dir_sentences'],f), format=default_audioproc_format)
+            audio_segment = AudioSegment.from_file(os.path.join(session['chapters_dir_sentences'],f), format=default_audio_proc_format)
             combined_audio += audio_segment
-        combined_audio.export(chapter_audio_file, format=default_audioproc_format)
+        combined_audio.export(chapter_audio_file, format=default_audio_proc_format)
         print(f'Combined audio saved to {chapter_audio_file}')
         return True
     except Exception as e:
@@ -899,7 +899,7 @@ def combine_audio_chapters(session):
                     audio_segment = AudioSegment.from_wav(os.path.join(session['chapters_dir'],chapter_file))
                     batch_audio += audio_segment
                 combined_audio += batch_audio
-            combined_audio.export(assembled_audio, format=default_audioproc_format)
+            combined_audio.export(assembled_audio, format=default_audio_proc_format)
             print(f'Combined audio saved to {assembled_audio}')
             return True
         except Exception as e:
@@ -1065,7 +1065,7 @@ def combine_audio_chapters(session):
     try:
         chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(".wav")]
         chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
-        assembled_audio = os.path.join(session['process_dir'], session['metadata']['title'] + '.' + default_audioproc_format)
+        assembled_audio = os.path.join(session['process_dir'], session['metadata']['title'] + '.' + default_audio_proc_format)
         metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
         if assemble_audio():
             if generate_ffmpeg_metadata():
@@ -1337,7 +1337,7 @@ def convert_ebook(args):
                                                     if os.path.exists(session['session_dir']):
                                                         shutil.rmtree(session['session_dir'])
                                                 progress_status = f'Audiobook {os.path.basename(final_file)} created!'
-                                                reset_file_session(session)
+                                                reset_ebook_session(session)
                                                 print(info_session)
                                                 return progress_status, final_file 
                                             else:
@@ -1365,7 +1365,7 @@ def convert_ebook(args):
         print(f'convert_ebook() Exception: {e}')
         return e, None
         
-def reset_fie_session(session):
+def reset_ebook_session(session):
     data = {
         "src": None,
         "chapters_dir": None,
@@ -1501,13 +1501,10 @@ def web_interface(args):
                 #component-8, #component-13, #component-26 {
                     height: 140px !important;
                 }
-                #component-10 {
-                    height: 127px !important;
-                }
-                #component-51, #component-52, #component-53 {
+                #component-52, #component-53, #component-54 {
                     height: 80px !important;
                 }
-                #component-14 span[data-testid="block-info"],
+                #component-9 span[data-testid="block-info"], #component-14 span[data-testid="block-info"],
                 #component-27 span[data-testid="block-info"] {
                     display: none;
                 }
@@ -1552,6 +1549,7 @@ def web_interface(args):
                                 file_types=['.epub', '.mobi', '.azw3', 'fb2', 'lrf', 'rb', 'snb', 'tcr', '.pdf', '.txt', '.rtf', 'doc', '.docx', '.html', '.odt', '.azw'],
                                 file_count="single"
                             )
+                            gr_src_mode = gr.Radio(label='', choices=[('Single File','file'), ('Batch Folder','folder')], value='file', interactive=True)
                         with gr.Group():
                             gr_language = gr.Dropdown(label='Language', choices=language_options, value=default_language_code, type='value', interactive=True)
                         with gr.Group():
@@ -1883,7 +1881,7 @@ def web_interface(args):
                             print(error)
                             return gr.update(), gr.update(value=error)
                         session['custom_model'] = model
-                        info = f'{model} added to the custom models list'
+                        info = f'{os.path.basename(model)} added to the custom models list'
                         print(info)
                         return gr.update(value=None), gr.update(value=info)
                     else:

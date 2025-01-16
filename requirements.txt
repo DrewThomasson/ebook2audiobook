@@ -1,5 +1,5 @@
 beautifulsoup4
-coqui-tts<=0.25.1
+coqui-tts
 cutlet
 deep_translator
 docker
