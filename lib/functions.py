@@ -172,6 +172,7 @@ class SessionContext:
 app = FastAPI()
 lock = threading.Lock()
 context = SessionContext()
+loaded_tts = {}
 
 is_gui_process = False
 
@@ -698,16 +699,22 @@ def convert_chapters_to_audio(session):
         if session['tts_engine'] == XTTSv2:
             params['tts_model'] = XTTSv2
             if session['custom_model'] is not None:
+                model_name = os.path.basename(session['custom_model'])
                 print(f"Loading TTS {params['tts_model']} model from {session['custom_model']}...")
                 model_path = os.path.join(session['custom_model'], 'model.pth')
                 config_path = os.path.join(session['custom_model'],'config.json')
                 vocab_path = os.path.join(session['custom_model'],'vocab.json')
                 voice_path = os.path.join(session['custom_model'],'ref.wav')
-                params['tts'] = load_tts_custom_cached(model_path, config_path, vocab_path)
+                if model_name in loaded_tts.keys():
+                    params['tts'] = loaded_tts[model_name]
+                else:
+                    params['tts'] = load_tts_custom_cached(model_path, config_path, vocab_path)
+                    loaded_tts[model_name] = params['tts']
                 print('Computing speaker latents...')
                 params['voice_path'] = session['voice'] if session['voice'] is not None else voice_path
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             elif session['fine_tuned'] != 'std':
+                model_name = session['fine_tuned']
                 print(f"Loading TTS {params['tts_model']} model from {session['fine_tuned']}...")
                 hf_repo = models[params['tts_model']][session['fine_tuned']]['repo']
                 hf_sub = models[params['tts_model']][session['fine_tuned']]['sub']
@@ -715,24 +722,38 @@ def convert_chapters_to_audio(session):
                 model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/model.pth", cache_dir=cache_dir)
                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/config.json", cache_dir=cache_dir)
                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/vocab.json", cache_dir=cache_dir)    
-                params['tts'] = load_tts_custom_cached(model_path, config_path, vocab_path)
+                if model_name in loaded_tts.keys():
+                    params['tts'] = loaded_tts[model_name]
+                else:
+                    params['tts'] = load_tts_custom_cached(model_path, config_path, vocab_path)
+                    loaded_tts[model_name] = params['tts']
                 print('Computing speaker latents...')
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             else:
+                model_name = session['fine_tuned']
                 print(f"Loading TTS {params['tts_model']} model from {models[params['tts_model']][session['fine_tuned']]['repo']}...")
                 model_path = models[params['tts_model']][session['fine_tuned']]['repo']
-                params['tts'] = load_tts_api_cached(model_path, True if session['device'] == 'cuda' else False)
+                if model_name in loaded_tts.keys():
+                    params['tts'] = loaded_tts[model_name]
+                else:
+                    params['tts'] = load_tts_api_cached(model_path, True if session['device'] == 'cuda' else False)
+                    loaded_tts[model_name] = params['tts']
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
-        elif session['tts_engine'] == 'fairseq':
+        elif session['tts_engine'] == FAIRSEQ:
             if session['custom_model'] is not None:
                 print("TODO!")
             else:
                 params['tts_model'] = FAIRSEQ
+                model_name = session['fine_tuned']
                 model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
                 print(f"Loading TTS {model_path} model from {model_path}...")
-                params['tts'] = load_tts_api_cached(model_path, True if session['device'] == 'cuda' else False)
+                if model_name in loaded_tts.keys():
+                    params['tts'] = loaded_tts[model_name]
+                else:
+                    params['tts'] = load_tts_api_cached(model_path, True if session['device'] == 'cuda' else False)
+                    loaded_tts[model_name] = params['tts']
                 params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
                 params['tts'].to(session['device'])
             params['tts'].to(session['device'])
@@ -1255,8 +1276,8 @@ def convert_ebook(args):
                     session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
                     if session['custom_model'] is not None:
                         os.makedirs(session['custom_model_dir'], exist_ok=True)
-                        if analyze_uploaded_file(custom_model_file):
-                            model = extract_custom_model(custom_model_file, session)
+                        if analyze_uploaded_file(session['custom_model']):
+                            model = extract_custom_model(session['custom_model'], session)
                             if model is not None:
                                 session['custom_model'] = model
                             else:
