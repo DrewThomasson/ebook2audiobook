@@ -361,9 +361,9 @@ docker run -it --rm \
 [Free Google Colab](#free-google-colab)
 
 ## Common Docker Issues
-- Docker gets stuck downloading Fine-Tuned models. (This does not happen for every computer but some appear to run into this issue)
-Disabling the progress bar appears to fix the issue, as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
-Example of adding this fix in the `docker run` command
+- Docker در حین دانلود مدل‌های Fine-Tuned گیر می‌کند. (این مشکل برای هر کامپیوتری پیش نمی‌آید، اما برخی به این مشکل برخورد می‌کنند)  
+غیرفعال کردن نوار پیشرفت به نظر می‌رسد که این مشکل را حل می‌کند، همانطور که در [اینجا در #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191) بحث شده است.  
+مثالی از افزودن این اصلاح در دستور `docker run`
 ```Dockerfile
 docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
@@ -374,27 +374,25 @@ docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABL
 
 ## Fine Tuned TTS models
 
-You can fine-tune your own xtts model easily with this repo
+شما می‌توانید به راحتی مدل xtts خود را با این مخزن (repo) تنظیم دقیق کنید.
 [xtts-finetune-webui](https://github.com/daswer123/xtts-finetune-webui)
 
-If you want to rent a GPU easily you can also duplicate this huggingface
+اگر می‌خواهید به راحتی یک GPU اجاره کنید، می‌توانید این Hugging Face را نیز کپی کنید.
 [xtts-finetune-webui-space](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu)
-
-A space you can use to de-noise the training data easily also
+فضایی که می‌توانید برای کاهش نویز داده‌های آموزشی به راحتی استفاده کنید نیز وجود دارد.
 [denoise-huggingface-space](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit)
 
 ### Fine Tuned TTS Collection
 
-To find our collection of already fine-tuned TTS models, visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
-For an XTTS custom model a ref audio clip of the voice will also be needed:
-
+برای پیدا کردن مجموعه‌ای از مدل‌های TTS که قبلاً تنظیم دقیق شده‌اند، به [این لینک Hugging Face](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main) مراجعه کنید.  
+برای یک مدل XTTS سفارشی، همچنین به یک کلیپ صوتی مرجع از صدا نیاز خواهد بود:
 ## Demos
 
-Rainy day voice
+Rainy day صدای
 
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
-David Attenborough voice
+David Attenborough صدای
 
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
@@ -402,22 +400,21 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 ## Supported eBook Formats
 
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
-- **Best results**: `.epub` or `.mobi` for automatic chapter detection
+- **بهترین نتایج**: `.epub` یا `.mobi` برای تشخیص خودکار فصل‌ها
 
 ## Output
 
-- Creates an `.m4b` file with metadata and chapters.
-- **Example Output**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+- فایلی با فرمت `.m4b` با متادیتا و فصل‌ها ایجاد می‌کند.
+- **خروجی مثال**: ![مثال](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
 ## Common Issues:
-- "It's slow!" - On CPU only this is very slow, and you can only get speedups though a NVIDIA GPU. [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846) For faster multilingual generation I would suggest my other [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead(It doesn't have zero-shot voice cloning though, and is siri quality voices, but it is much faster on cpu.)
-- "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode, add `-h` parameter after the `app.py` in the docker run command for more information.
-- "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS, I don't speak every language and I need advise from each person to fine tune my sentense splitting function on any other languages.😊
-
+-"این کند است!" - فقط در CPU این بسیار کند است و تنها می‌توانید با یک GPU NVIDIA سرعت را افزایش دهید. [بحث در مورد این موضوع](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846) برای تولید چندزبانه سریع‌تر، من پروژه دیگری که از piper-tts استفاده می‌کند را پیشنهاد می‌کنم [این پروژه](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) به جای آن. (این پروژه قابلیت کلونینگ صدای بدون نمونه را ندارد، و صداها کیفیت سیری دارند، اما در CPU بسیار سریع‌تر است.)
+-"من با مشکلات وابستگی مواجه هستم" - فقط از Docker استفاده کنید، این کاملاً مستقل است و حالت بدون سر دارد. پارامتر `-h` را بعد از `app.py` در دستور اجرای Docker اضافه کنید برای اطلاعات بیشتر.
+- "من با مشکل صدای بریده شده مواجه هستم!" - لطفاً یک مشکل (Issue) در این مورد ایجاد کنید، من به هر زبانی صحبت نمی‌کنم و به مشاوره از هر شخص نیاز دارم تا تابع تقسیم جملات خود را در زبان‌های دیگر تنظیم دقیق کنم. 😊
 ## What I need help with! 🙌 
-## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
-- Any help from people speaking any of the supported languages to help with proper sentence splitting methods
-- Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
+## [فهرست کامل موارد را می‌توانید در اینجا پیدا کنید.](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
+- هر کمکی از افرادی که به یکی از زبان‌های پشتیبانی شده صحبت می‌کنند برای کمک به روش‌های صحیح تقسیم جملات مورد نیاز است.
+- امکان ایجاد راهنماهای README برای چندین زبان وجود دارد.
 
 ## Special Thanks
 
@@ -425,11 +422,11 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 
-- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+- [@shakenbake15 برای روش بهتر ذخیره‌سازی فصل‌ها](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
 
 ### [Legacy V1.0](legacy/v1.0)
 
-You can view the code [here](legacy/v1.0).
+شما می‌توانید کد را [اینجا](legacy/v1.0) مشاهده کنید.
 
 ## Join Our Discord Server!
 
