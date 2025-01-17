@@ -857,7 +857,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         combined_audio = AudioSegment.empty()  
         # Get all audio sentence files sorted by their numeric indices
-        sentence_files = [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(".wav")]
+        sentence_files = [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')]
         sentences_dir_ordered = sorted(sentence_files, key=lambda x: int(re.search(r'\d+', x).group()))
         # Filter the files in the range [start, end]
         selected_files = [
@@ -879,12 +879,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
     except Exception as e:
         raise DependencyError(e)
 
-
 def combine_audio_chapters(session):
-    def sort_key(chapter_file):
-        numbers = re.findall(r'\d+', chapter_file)
-        return int(numbers[0]) if numbers else 0
-        
     def assemble_audio():
         try:
             combined_audio = AudioSegment.empty()
@@ -898,7 +893,7 @@ def combine_audio_chapters(session):
                     if session['cancellation_requested']:
                         print('Cancel requested')
                         return False
-                    audio_segment = AudioSegment.from_wav(os.path.join(session['chapters_dir'],chapter_file))
+                    audio_segment = AudioSegment.from_wav(os.path.join(session['chapters_dir'], chapter_file))
                     batch_audio += audio_segment
                 combined_audio += batch_audio
             combined_audio.export(assembled_audio, format=default_audio_proc_format)
@@ -1065,7 +1060,7 @@ def combine_audio_chapters(session):
             raise DependencyError(e)
 
     try:
-        chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(".wav")]
+        chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
         chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
         assembled_audio = os.path.join(session['process_dir'], session['metadata']['title'] + '.' + default_audio_proc_format)
         metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
@@ -1184,6 +1179,7 @@ def convert_ebook_batch(args):
             if audiobook_file is None:
                 print(f'Conversion failed: {progress_status}')
                 sys.exit(1)
+    reset_ebook_session(args['session'])
 
 def convert_ebook(args):
     try:
@@ -1351,7 +1347,6 @@ def convert_ebook(args):
                                                     if os.path.exists(session['session_dir']):
                                                         shutil.rmtree(session['session_dir'])
                                                 progress_status = f'Audiobook {os.path.basename(final_file)} created!'
-                                                reset_ebook_session(session)
                                                 print(info_session)
                                                 return progress_status, final_file 
                                             else:
@@ -1388,7 +1383,8 @@ def restore_session_from_data(data, session):
                 if value is not None:
                     session[key] = value
 
-def reset_ebook_session(session):
+def reset_ebook_session(id):
+    session = context.get_session(id)
     data = {
         "src": None,
         "chapters_dir": None,
@@ -1837,7 +1833,7 @@ def web_interface(args):
             voice_options = [('None', None)] + [
                 (os.path.splitext(f)[0], os.path.join(session['voice_dir'], f))
                 for f in os.listdir(session['voice_dir'])
-                if f.endswith('.wav')
+                if f.endswith(f'.{default_audio_proc_format}')
             ]
             current_voice = session['voice']
             return gr.update(choices=voice_options, value=current_voice)
@@ -1869,11 +1865,11 @@ def web_interface(args):
             ]
             fine_tuned = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
             voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-            voice_file_pattern = f"*_{models[tts_engine][fine_tuned]['samplerate']}.wav"
+            voice_file_pattern = f"*_{models[tts_engine][fine_tuned]['samplerate']}.{default_audio_proc_format}"
             voice_options = [
                 (os.path.splitext(f)[0], os.path.join(session['voice_dir'], f))
                 for f in os.listdir(session['voice_dir'])
-                if f.endswith('.wav')
+                if f.endswith(f'.{default_audio_proc_format}')
             ]
             voice_options += [
                 (os.path.splitext(f.name)[0].replace('_16000', '').replace('_24000', '').replace('_22050',''), str(f))
@@ -2012,10 +2008,12 @@ def web_interface(args):
                                 else:
                                     return gr.update(value='Conversion failed.')
                             else:
+                                reset_ebook_session(args['session'])
                                 yield gr.update(value=progress_status)
                     return
                 else:
                     session['status'] = 'converting'
+                    print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                     progress_status, audiobook_file = convert_ebook(args)
                     if audiobook_file is None:
                         if session['status'] == 'converting':
@@ -2023,6 +2021,7 @@ def web_interface(args):
                         else:
                             return gr.update(value='Conversion failed.')
                     else:
+                        reset_ebook_session(args['session'])
                         return gr.update(value=progress_status)
             except Exception as e:
                 return DependencyError(e)
@@ -2076,11 +2075,11 @@ def web_interface(args):
                 ]
                 session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
                 voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                voice_file_pattern = f"*_{models[session['tts_engine']][session['fine_tuned']]['samplerate']}.wav"
+                voice_file_pattern = f"*_{models[session['tts_engine']][session['fine_tuned']]['samplerate']}.{default_audio_proc_format}"
                 voice_options = [
                     (os.path.splitext(f)[0], os.path.join(session['voice_dir'], f))
                     for f in os.listdir(session['voice_dir'])
-                    if f.endswith('.wav')
+                    if f.endswith(f'.{default_audio_proc_format}')
                 ]
                 voice_options += [
                     (os.path.splitext(f.name)[0].replace('_16000', '').replace('_24000', '').replace('_22050',''), str(f))
