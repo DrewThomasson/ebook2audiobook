@@ -1378,7 +1378,16 @@ def convert_ebook(args):
     except Exception as e:
         print(f'convert_ebook() Exception: {e}')
         return e, None
-        
+
+def restore_session_from_data(data, session):
+    for key, value in data.items():
+        if key in session:  # Check if the key exists in session
+            if isinstance(value, dict) and isinstance(session[key], dict):
+                restore_session_from_data(value, session[key])
+            else:
+                if value is not None:
+                    session[key] = value
+
 def reset_ebook_session(session):
     data = {
         "src": None,
@@ -1964,6 +1973,7 @@ def web_interface(args):
             session[key] = val           
 
         def submit_convert_btn(id, device, ebook_file, ebook_file_mode, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting):
+            print(f'**************{ebook_file}************')
             args = {
                 "is_gui_process": is_gui_process,
                 "session": id,
@@ -2017,15 +2027,6 @@ def web_interface(args):
                         return gr.update(value=progress_status)
             except Exception as e:
                 return DependencyError(e)
-
-        def restore_session_from_data(data, session):
-            for key, value in data.items():
-                if key in session:  # Check if the key exists in session
-                    if isinstance(value, dict) and isinstance(session[key], dict):
-                        restore_session_from_data(value, session[key])
-                    else:
-                        if value is not None:
-                            session[key] = value
 
         def change_gr_read_data(data, state):
             nonlocal audiobooks_dir, custom_model_options, voice_options, tts_engine_options, fine_tuned_options, audiobook_options
