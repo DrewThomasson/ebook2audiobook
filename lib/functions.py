@@ -1767,7 +1767,6 @@ def web_interface(args):
                 yield gr.update(variant='primary', interactive=False)
                 return
             else:
-                print(f'**************{upload_file}***************{upload_file_mode}*********')
                 if hasattr(upload_file, 'name') and not hasattr(custom_model_file, 'name'):
                     yield gr.update(variant='primary', interactive=True)
                 elif isinstance(upload_file, list) and len(upload_file) > 0 and upload_file_mode == 'directory' and not hasattr(custom_model_file, 'name'):
@@ -1973,7 +1972,6 @@ def web_interface(args):
             session[key] = val           
 
         def submit_convert_btn(id, device, ebook_file, ebook_file_mode, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting):
-            print(f'**************{ebook_file}************')
             args = {
                 "is_gui_process": is_gui_process,
                 "session": id,
@@ -2014,7 +2012,8 @@ def web_interface(args):
                                 else:
                                     return gr.update(value='Conversion failed.')
                             else:
-                                return gr.update(value=progress_status)
+                                yield gr.update(value=progress_status)
+                    return
                 else:
                     session['status'] = 'converting'
                     progress_status, audiobook_file = convert_ebook(args)
