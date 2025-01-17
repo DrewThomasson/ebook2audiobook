@@ -153,7 +153,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 - **<path_to_ebook_file>**: محل قرارگیری کتاب الکترونیک.
 - **[path_to_voice_file]**: همزاد سازی صدای خود‌(اختیاری).
 - **[language_code]**: اختیاری است که کد زبان سه حرفی ISO-639-3 را مشخص کنید (کد پیش‌فرض "eng" است). کد دو حرفی ISO-639-1 نیز پشتیبانی می‌شود.
-- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
+- **[For More Parameters]**:در صورت نیاز از `--help` استفاده کنید. مانند `python app.py --help`
 
 ###  Custom XTTS Model Usage
    - **Linux/MacOS**:
@@ -168,10 +168,10 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 - **<ebook_file_path>**: محل پرونده کتاب الکترونیک.
 - **<target_voice_file_path>**: همزاد سازی صدا (اختیاری).
 - **<language>**: مشخص کردن زبان‌(اختیاری).
-- **<custom_model_path>**: Path to `model.pth`.
-- **<custom_config_path>**: Path to `config.json`.
-- **<custom_vocab_path>**: Path to `vocab.json`.
-- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
+- **<custom_model_path>**: مسیر فایل`model.pth`.
+- **<custom_config_path>**: مسیر فایل `config.json`.
+- **<custom_vocab_path>**: مسیر فایل `vocab.json`.
+- **[For More Parame]**: use the `--help` parameter like this `python app.py --help`
 
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**:
@@ -244,51 +244,51 @@ Linux/Mac:
 
 ### Using Docker
 
-You can also use Docker to run the eBook to Audiobook converter. This method ensures consistency across different environments and simplifies setup.
+همچنین شما میتوانید از Docker برای اجرای ebook2audiobook استفاده کنید. این روش تضمین می‌کند که در محیط‌های مختلف ثبات وجود داشته باشد و راه‌اندازی را ساده‌تر می‌کند.
 
 #### Running the Docker Container
 
-To run the Docker container and start the Gradio interface, use the following command:
+برای اجرای کانتینر Docker و راه‌اندازی رابط Gradio، از دستور زیر استفاده کنید:
 
- -Run with CPU only
+ -اجرا فقط با استفاده از CPU
 ```powershell
 docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
- -Run with GPU Speedup (Nvida graphics cards only)
+ -اجرا با استفاده از GPU (فقط کارت گرافیک های Nvidia)
 ```powershell
 docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
 
 #### Building the Docker Container
 
-- You can build the docker image with the command:
+- شما میتوناید با استفاده از دستور زیر یک نگه دارنده docker بسازید:
 '''powershell
 docker build --platform linux/amd64 -t athomasson2/ebook2audiobook .
 '''
 
-This command will start the Gradio interface on port 7860.(localhost:7860)
-- For more options like running the docker in  mode or making the gradio link public add the `--help` parameter after the `app.py` in the docker launch command
+این دستور رابط کاربری Gradio  را در پورت 7860 اجرا می‌کند. (localhost:7860)
+- برای گزینه‌های بیشتر مانند اجرای Docker در حالت یا عمومی کردن لینک Gradio، پارامتر `--help` را بعد از `app.py` در دستور راه‌اندازی Docker اضافه کنید.
 
 ## Docker container file locations
-All ebook2audiobooks will have the base dir of `/home/user/app/`
-For example:
+   تمام فایل های ebook2audio در سر‌پوشه  `/home/user/app/` قرار دارند.
+برای مثال :
 `tmp` = `/home/user/app/tmp`
 `audiobooks` = `/home/user/app/audiobooks`
 
    
 ## Docker headless guide
 
-first for a docker pull of the latest with
+اول برای دریافت docker pull را وارد کنید.
 ```bash 
 docker pull athomasson2/ebook2audiobook
 ```
 
-- Before you do run this you need to create a dir named "input-folder" in your current dir which will be linked, This is where you can put your input files for the docker image to see
+- قبل از اینکه این را اجرا کنید، باید یک پوشه به نام "input-folder" در دایرکتوری فعلی خود ایجاد کنید که به آن لینک خواهد شد. اینجا جایی است که می‌توانید فایل‌های ورودی خود را برای مشاهده توسط تصویر Docker قرار دهید.
 ```bash
 mkdir input-folder && mkdir Audiobooks
 ```
 
-- In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
+- در دستور زیر **YOUR_INPUT_FILE.TXT** را با نام فایل ورودی خود جایگزین کنید. 
 
 ```bash
 docker run -it --rm \
@@ -299,12 +299,12 @@ docker run -it --rm \
     python app.py --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
 ```
 
-- And that should be it! 
+-و این باید تمامش باشد!
 
-- The output Audiobooks will be found in the Audiobook folder which will also be located in your local dir you ran this docker command in
+- خروجی کتاب‌های صوتی در پوشه Audiobook پیدا خواهد شد که همچنین در دایرکتوری محلی که این دستور Docker را در آن اجرا کردید، قرار دارد.
 
 
-## To get the help command for the other parameters this program has you can run this 
+## برای دریافت دستور کمک برای سایر پارامترهایی که این برنامه دارد، می‌توانید این را اجرا کنید.
 
 ```bash
 docker run -it --rm \
@@ -315,13 +315,12 @@ docker run -it --rm \
 ```
 
 
-and that will output this 
-
+و این خروجی زیر را تولید خواهد کرد.
 [Help command output](#help-command-output)
 
 ### Docker Compose
 
-This project uses Docker Compose to run locally. You can enable or disable GPU support by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
+این پروژه از Docker Compose برای اجرای محلی استفاده می‌کند. می‌توانید با تنظیم `*gpu-enabled` یا `*gpu-disabled` در `docker-compose.yml` از پشتیبانی GPU استفاده کنید یا آن را غیرفعال کنید.
 
 #### Steps to Run
 
@@ -332,7 +331,7 @@ This project uses Docker Compose to run locally. You can enable or disable GPU s
    ```
 
 2. **Set GPU Support (disabled by default)**
-  To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
+  برای فعال‌سازی پشتیبانی GPU، فایل `docker-compose.yml` را ویرایش کرده و `*gpu-disabled` را به `*gpu-enabled` تغییر دهید.
 
 3. **Start the service:**
     ```bash
@@ -340,25 +339,25 @@ This project uses Docker Compose to run locally. You can enable or disable GPU s
     ```
 
 4. **Access the service:**
-  The service will be available at http://localhost:7860.
+  این سرویس در آدرس http://localhost:7860 در دسترس خواهد بود.
 
 #### New v2.0 Docker Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
-  <summary>Click to see images of Web GUI</summary>
+  <summary>برای مشاهده تصاویر رابط کاربری وب کلیک کنید.</summary>
   <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
   <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
 ## Renting a GPU
-Don't have the hardware to run it or you want to rent a GPU?
-#### You can duplicate the hugginface space and rent a gpu for around $0.40 an hour
+آیا سخت‌افزار لازم برای اجرای آن را ندارید یا می‌خواهید یک GPU اجاره کنید؟
+#### شما می‌توانید فضای Hugging Face را کپی کنید و یک GPU را به قیمت حدود ۰.۴۰ دلار در ساعت اجاره کنید.
 [Huggingface Space Demo](#huggingface-space-demo)
 
-#### Or you can try using the google colab for free!
-(Be aware it will time out after a bit of your not messing with the google colab)
+#### یا می‌توانید از Google Colab به صورت رایگان استفاده کنید!
+(به یاد داشته باشید که اگر با Google Colab کاری نکنید، بعد از مدتی زمان آن به پایان می‌رسد.)
 [Free Google Colab](#free-google-colab)
 
 ## Common Docker Issues
