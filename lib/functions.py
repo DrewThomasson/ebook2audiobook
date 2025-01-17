@@ -1,7 +1,6 @@
 import argparse
 import asyncio
 import csv
-import copy
 import docker
 import ebooklib
 import fnmatch
@@ -1190,16 +1189,15 @@ def get_compatible_tts_engines(language):
     return compatible_engines
 
 def convert_ebook_batch(args):
-    args_dup = copy.deepcopy(args)
-    ebook_list = args['ebook']
-    for file in ebook_list:
+    for file in args['ebook'][:]: # Use a shallow copy
         if any(file.endswith(ext) for ext in ebook_formats):
-            args_dup['ebook'] = file
+            args['ebook'] = file
             print(f'Processing eBook file: {os.path.basename(file)}')
-            progress_status, audiobook_file = convert_ebook(args_dup)
+            progress_status, audiobook_file = convert_ebook(args)
             if audiobook_file is None:
                 print(f'Conversion failed: {progress_status}')
                 sys.exit(1)
+            args['ebook'].remove(file) 
     reset_ebook_session(args['session'])
 
 def convert_ebook(args):
@@ -2016,22 +2014,21 @@ def web_interface(args):
             try:
                 session = context.get_session(id)
                 if args['src_mode'] == 'directory':
-                    args_dup = copy.deepcopy(args)
-                    ebook_list = args['ebook']
-                    for file in ebook_list:
+                    for file in args['ebook'][:]: # Use a shallow copy
                         if any(file.endswith(ext) for ext in ebook_formats):
-                            args_dup['ebook'] = file
+                            args['ebook'] = file
                             print(f'Processing eBook file: {os.path.basename(file)}')
-                            progress_status, audiobook_file = convert_ebook(args_dup)
+                            progress_status, audiobook_file = convert_ebook(args)
                             if audiobook_file is None:
                                 if session['status'] == 'converting':
                                     return gr.update(value='Conversion cancelled.')
                                 else:
                                     return gr.update(value='Conversion failed.')
                             else:
-                                reset_ebook_session(args['session'])
+                                args['ebook'].remove(file)
                                 yield gr.update(value=progress_status)
-                    return
+                    reset_ebook_session(args['session'])
+                    return gr.update()
                 else:
                     session['status'] = 'converting'
                     print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
