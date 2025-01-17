@@ -1,6 +1,7 @@
 import argparse
 import asyncio
 import csv
+import copy
 import docker
 import ebooklib
 import fnmatch
@@ -1173,12 +1174,12 @@ def get_compatible_tts_engines(language):
     return compatible_engines
 
 def convert_ebook_batch(args):
-    args_dup = copy(args)
+    args_dup = copy.deepcopy(args)
     ebook_list = args['ebook']
     for file in ebook_list:
         if any(file.endswith(ext) for ext in ebook_formats):
             args_dup['ebook'] = file
-            print(f'Processing eBook file: {os.path.base_name(file)}')
+            print(f'Processing eBook file: {os.path.basename(file)}')
             progress_status, audiobook_file = convert_ebook(args_dup)
             if audiobook_file is None:
                 print(f'Conversion failed: {progress_status}')
@@ -1718,7 +1719,7 @@ def web_interface(args):
             try:
                 session = context.get_session(id)
                 return (
-                    gr.update(value=session['src']), gr.update(choices=voice_options, value=session['voice']), gr.update(value=session['device']), 
+                    gr.update(value=session['src']), gr.update(value=session['src_mode']), gr.update(choices=voice_options, value=session['voice']), gr.update(value=session['device']), 
                     gr.update(value=session['language']), gr.update(choices=tts_engine_options, value=session['tts_engine']), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), 
                     gr.update(choices=custom_model_options, value=session['custom_model']), gr.update(value=session['output_format']), gr.update(choices=audiobook_options, value=session['audiobook']), 
                     gr.update(value=session['temperature']), gr.update(value=session['length_penalty']), gr.update(value=session['repetition_penalty']), 
@@ -1752,7 +1753,7 @@ def web_interface(args):
                     return gr.update(value=link), gr.update(value=link), gr.update(visible=True)
             return gr.update(), gr.update(), gr.update(visible=False)
             
-        def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
+        async def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             if session is None:
                 yield gr.update(variant='primary', interactive=False)
                 return
@@ -1962,7 +1963,7 @@ def web_interface(args):
             session = context.get_session(id)
             session[key] = val           
 
-        def submit_convert_btn(id, device, ebook_file, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting):
+        def submit_convert_btn(id, device, ebook_file, ebook_file_mode, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting):
             args = {
                 "is_gui_process": is_gui_process,
                 "session": id,
@@ -1970,6 +1971,7 @@ def web_interface(args):
                 "device": device.lower(),
                 "tts_engine": tts_engine,
                 "ebook": ebook_file if isinstance(ebook_file, list) else ebook_file.name if ebook_file else None,
+                "src_mode": ebook_file_mode,
                 "audiobooks_dir": audiobooks_dir,
                 "voice": voice,
                 "language": language,
@@ -1987,13 +1989,14 @@ def web_interface(args):
             if args["ebook"] is None:
                 return gr.update(value='Error: a file is required.')
             try:
+                session = context.get_session(id)
                 if args['src_mode'] == 'directory':
-                    args_dup = copy(args)
+                    args_dup = copy.deepcopy(args)
                     ebook_list = args['ebook']
                     for file in ebook_list:
                         if any(file.endswith(ext) for ext in ebook_formats):
                             args_dup['ebook'] = file
-                            print(f'Processing eBook file: {os.path.base_name(file)}')
+                            print(f'Processing eBook file: {os.path.basename(file)}')
                             progress_status, audiobook_file = convert_ebook(args_dup)
                             if audiobook_file is None:
                                 if session['status'] == 'converting':
@@ -2003,7 +2006,6 @@ def web_interface(args):
                             else:
                                 return gr.update(value=progress_status)
                 else:
-                    session = context.get_session(id)
                     session['status'] = 'converting'
                     progress_status, audiobook_file = convert_ebook(args)
                     if audiobook_file is None:
@@ -2266,7 +2268,7 @@ def web_interface(args):
         ).then(
             fn=submit_convert_btn,
             inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_voice_list, gr_language, 
+                gr_session, gr_device, gr_ebook_file, gr_ebook_file_mode, gr_tts_engine_list, gr_voice_list, gr_language, 
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_temperature, gr_length_penalty,
                 gr_repetition_penalty, gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting
             ],
@@ -2299,7 +2301,7 @@ def web_interface(args):
             fn=restore_interface,
             inputs=[gr_session],
             outputs=[
-                gr_ebook_file, gr_voice_list, gr_device, gr_language, 
+                gr_ebook_file, gr_ebook_file_mode, gr_voice_list, gr_device, gr_language, 
                 gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_list, gr_output_format_list,
                 gr_audiobook_list, gr_temperature, gr_length_penalty, gr_repetition_penalty,
                 gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting, gr_timer
@@ -2328,7 +2330,7 @@ def web_interface(args):
         all_ips = get_all_ip_addresses()
         print("Listening on the following IP:")
         print(all_ips)
-        interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size='2GB')
+        interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
     except OSError as e:
         print(f'Connection error: {e}')
     except socket.error as e:
