@@ -1,24 +1,25 @@
 # 📚 ebook2audiobook
 
-CPU/GPU Converter from eBooks to audiobooks with chapters and metadata<br/>
-using Calibre, ffmpeg, XTTSv2, Fairseq and more. Supports voice cloning and 1124 languages!
+مبدل CPU/GPU برای تبدیل کتاب‌های الکترونیکی به کتاب‌های صوتی همراه با فصول و اطلاعات متاداده
+با استفاده از Calibre، ffmpeg، XTTSv2، Fairseq و دیگر ابزارها.
+پشتیبانی از کپی‌برداری صدا از ۱۱۲۴ زبان!
 > [!IMPORTANT]
-**This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
-The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
-Use this tool responsibly and in accordance with all applicable laws.
+**این ابزار فقط برای کتاب‌های الکترونیکی که غیر DRM هستند و به طور قانونی خریداری شده اند است.** <br>
+سازندگان هیچ مسئولیتی در قبال استفاده نادرست ندارند.<br>
+از این ابزار به طور مسئولانه و مطابق با تمام قوانین مربوطه استفاده کنید.
 
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
 
-Thanks to support ebook2audiobook developers!<br>
+از توسعه‌دهندگان ebook2audiobook حمایت کنید!<br>
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
 
-#### New v2.0 Web GUI Interface!
+#### رابط کاربری وب جدید نسخه 2.0!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
-  <summary>Click to see images of Web GUI</summary>
+  <summary>برای دیدن رابط کاربری جدید کلیک کنید</summary>
   <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
   <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
@@ -30,56 +31,56 @@ Thanks to support ebook2audiobook developers!<br>
 - zho [中文 (Chinese)](./readme/README_CN.md)
 - eng [English](README.md)
 - swe [Svenska (Swedish)](./readme/README_SWE.md)
-- fas [فارسی (Persian)](./readme/README_FA.md)
-
+- far [فارسی (persian)](./readme/README_FA.md)
 ## Table of Contents
 
-- [ebook2audiobook](#ebook2audiobook)
-- [Features](#features)
-- [New v2.0 Web GUI Interface](#new-v20-web-gui-interface)
-- [Huggingface Space Demo](#huggingface-space-demo)
-- [Free Google Colab](#free-google-colab)
-- [Pre-made Audio Demos](#demos)
-- [Supported Languages](#supported-languages)
-- [Requirements](#requirements)
-- [Installation Instructions](#installation-instructions)
-- [Usage](#usage)
-  - [Launching Gradio Web Interface](#launching-gradio-web-interface)
-  - [Basic Headless Usage](#basic-headless-usage)
-  - [Headless Custom XTTS Model Usage](#headless-custom-xtts-model-usage)
-  - [Renting a GPU](#renting-a-gpu)
-  - [Help command output](#help-command-output)
-- [Fine Tuned TTS models](#fine-tuned-tts-models)
-  - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
-- [Using Docker](#using-docker)
+- [اصلی](#ebook2audiobook)
+- [ویژگی ها](#features)
+- [رابط کاربری وب جدید نسخه 2.0](#new-v20-web-gui-interface)
+- [Huggingface فصای نمونه](#huggingface-space-demo)
+- [رایگان Google Colab](#free-google-colab)
+- [نمونه‌های صوتی ازپیش ایجاد شده](#demos)
+- [زبان های پشتیبانی شده](#supported-languages)
+- [پیشنیاز ها](#requirements)
+- [دستور‌العمل‌های نصب](#installation-instructions)
+- [استفاده](#usage)
+  - [راه‌اندازی رابط کاربری وب Gradio](#launching-gradio-web-interface)
+  - [استفاده بدون رابط گرافیکی](#basic-headless-usage)
+  - [استفاده از مدل سفارشی XTTS بدون رابط گرافیکی](#headless-custom-xtts-model-usage)
+  - [اجاره GPU](#renting-a-gpu)
+  - [خروجی دستور کمکی](#help-command-output)
+- [مدل های TTS به دقت تنظیم شده](#fine-tuned-tts-models)
+  - [برای مجموعه مدل‌های TTS به دقت تنظیم شده](#fine-tuned-tts-collection)
+- [استفاده از Docker](#using-docker)
   - [Docker Run](#running-the-docker-container)
   - [Docker Build](#building-the-docker-container)
   - [Docker Compose](#docker-compose)
   - [Docker headless guide](#docker-headless-guide)
   - [Docker container file locations](#docker-container-file-locations)
   - [Common Docker issues](#common-docker-issues)
-- [Supported eBook Formats](#supported-ebook-formats)
-- [Output](#output)
-- [Common Issues](#common-issues)
-- [Special Thanks](#special-thanks)
-- [Join Our Discord Server!](#join-our-discord-server)
-- [Legacy](#legacy-v10)
-- [Glossary of Sections](#glossary-of-sections)
+- [فرمت‌های پشتیبانی‌شده کتاب الکترونیکی](#supported-ebook-formats)
+- [خروجی](#output)
+- [مشکلات رایج](#common-issues)
+- [تشکرات ویژه](#special-thanks)
+- [ملحق شده به سرور دیسکورد !](#join-our-discord-server)
+- [میراث](#legacy-v10)
+- [واژه‌نامه بخش ها](#glossary-of-sections)
 
 ## Features
 
-- 📖 Converts eBooks to text format with Calibre.
-- 📚 Splits eBook into chapters for organized audio.
-- 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms).
-- 🗣️ Optional voice cloning with your own voice file.
-- 🌍 Supports 1107 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
-- 🖥️ Designed to run on 4GB RAM.
+- 📖 تبدیل کردن کتاب الکترونیک به متن با Calibre.
+- 📚 تقسیم کردن کتاب الکترونیک به فصل ها برای صدای سازمان یافته .
+- 🎙️ تبدیل گفتار به متن با کیفیت بالا همراه با [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) و [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms).
+- 🗣️ همزاد سازی صدای اختیاری همراه با صدای خودتان.
+- 🌍 پشتیبانی از 1124 زبان (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- 🖥️ طراحی شده تا اجرابشود با 4GB RAM.
 
 ## [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 
-- Huggingface space is running on free cpu tier so expect very slow or timeout lol, just don't give it giant files is all
-- Best to duplicate space or run locally.
+- فضای Huggingface بر روی لایه پردازنده رایگان اجرا می‌شود، بنابراین انتظار داشته باشید که بسیار کند یا با تایم‌اوت مواجه شوید، فقط کافی است که فایل‌های خیلی بزرگ ارسال نکنید!
+
+- بهترین کار این است که فضای مورد نظر را تکثیر کنید یا به صورت محلی اجرا کنید..
 
 ## Free Google Colab 
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
@@ -104,31 +105,30 @@ Thanks to support ebook2audiobook developers!<br>
 - **Spanish (spa)**
 - **Turkish (tur)**
 - **Vietnamese (vie)**
-- [** + 1107 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- [** + 1124 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
 ##  Requirements
 
-- 4gb ram
-- Virtualization enabled if running on windows (Docker only)
+- 4GB ram
+- مجازی‌سازی فعال است اگر بر روی ویندوز اجرا شود (فقط Docker).
 
 > [!IMPORTANT]
-**Before to post an install or bug issue search carefully to the opened and closed issues TAB<br>
-to be sure your issue does not exist already.**
+**قبل از ارسال مشکل نصب یا باگ، به دقت در تب مسائل باز و بسته شده جستجو کنید.<br>
+تا مطمئن شوید که این گزارش درحال حاضر وجود ندارد.**
 
 ### Installation Instructions
 
-1. **Clone repo**
+1. **همزاد سازی کردن مخزن**
 ```bash
 git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ```
 
-Specify the language code when running the script in  mode.
-
+کد زبان خود را در هنگام اجرای برنامه مشخص کنید.
 
 ### Launching Gradio Web Interface
 
-1. **Run ebook2audiobook**:
+1. **اجرای ebook2audiobook**:
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.sh  # Run Launch script
@@ -137,10 +137,9 @@ Specify the language code when running the script in  mode.
      ```bash
      .\ebook2audiobook.cmd  # Run launch script or double click on it
      ```
-2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
-3. **For Public Link**: Add `--share` to the end of it like this: `python app.py --share`
-- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
-
+2. **برنامه وب را باز کنید**: برای دسترسی به برنامه وب و تبدیل کتاب‌های الکترونیکی، روی آدرس URL ارائه‌شده در ترمینال کلیک کنید.
+3. **برای لینک عمومی**: `--share `را به انتهای آن اضافه کنید به این صورت: `python app.py --share`
+- **[برای پارامتر های بیشتر]**:از پارامتر `--help` به این صورت استفاده کنید: `python app.py --help`
 ### Basic  Usage
    - **Linux/MacOS**:
      ```bash
@@ -151,10 +150,10 @@ Specify the language code when running the script in  mode.
      .\ebook2audiobook.cmd  -- --ebook <path_to_ebook_file> --voice [path_to_voice_file] --language [language_code]
      ```
 
-- **<path_to_ebook_file>**: Path to your eBook file.
-- **[path_to_voice_file]**: Optional for voice cloning.
-- **[language_code]**: Optional to specify ISO-639-3 3+ letters language code (default is eng). ISO-639-1 2 letters code is also supported
-- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
+- **<path_to_ebook_file>**: محل قرارگیری کتاب الکترونیک.
+- **[path_to_voice_file]**: همزاد سازی صدای خود‌(اختیاری).
+- **[language_code]**: اختیاری است که کد زبان سه حرفی ISO-639-3 را مشخص کنید (کد پیش‌فرض "eng" است). کد دو حرفی ISO-639-1 نیز پشتیبانی می‌شود.
+- **[For More Parameters]**:در صورت نیاز از `--help` استفاده کنید. مانند `python app.py --help`
 
 ###  Custom XTTS Model Usage
    - **Linux/MacOS**:
@@ -166,13 +165,13 @@ Specify the language code when running the script in  mode.
      .\ebook2audiobook.cmd  -- --ebook <ebook_file_path> --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path> --custom_config <custom_config_path> --custom_vocab <custom_vocab_path>
      ```
 
-- **<ebook_file_path>**: Path to your eBook file.
-- **<target_voice_file_path>**: Optional for voice cloning.
-- **<language>**: Optional to specify language.
-- **<custom_model_path>**: Path to `model.pth`.
-- **<custom_config_path>**: Path to `config.json`.
-- **<custom_vocab_path>**: Path to `vocab.json`.
-- **[For More Parameters]**: use the `--help` parameter like this `python app.py --help`
+- **<ebook_file_path>**: محل پرونده کتاب الکترونیک.
+- **<target_voice_file_path>**: همزاد سازی صدا (اختیاری).
+- **<language>**: مشخص کردن زبان‌(اختیاری).
+- **<custom_model_path>**: مسیر فایل`model.pth`.
+- **<custom_config_path>**: مسیر فایل `config.json`.
+- **<custom_vocab_path>**: مسیر فایل `vocab.json`.
+- **[For More Parame]**: use the `--help` parameter like this `python app.py --help`
 
 ### For Detailed Guide with list of all Parameters to use
    - **Linux/MacOS**:
@@ -184,7 +183,7 @@ Specify the language code when running the script in  mode.
      .\ebook2audiobook.cmd  --help
      ```
 <a id="help-command-output"></a>
-- This will output the following:
+- این خروجی‌اش خواهد بود:
 ```bash
 usage: app.py [-h] [--script_mode SCRIPT_MODE] [--share] [-- []]
               [--session SESSION] [--ebook EBOOK] [--ebooks_dir [EBOOKS_DIR]]
@@ -245,51 +244,51 @@ Linux/Mac:
 
 ### Using Docker
 
-You can also use Docker to run the eBook to Audiobook converter. This method ensures consistency across different environments and simplifies setup.
+همچنین شما میتوانید از Docker برای اجرای ebook2audiobook استفاده کنید. این روش تضمین می‌کند که در محیط‌های مختلف ثبات وجود داشته باشد و راه‌اندازی را ساده‌تر می‌کند.
 
 #### Running the Docker Container
 
-To run the Docker container and start the Gradio interface, use the following command:
+برای اجرای کانتینر Docker و راه‌اندازی رابط Gradio، از دستور زیر استفاده کنید:
 
- -Run with CPU only
+ -اجرا فقط با استفاده از CPU
 ```powershell
 docker run -it --rm -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
- -Run with GPU Speedup (Nvida graphics cards only)
+ -اجرا با استفاده از GPU (فقط کارت گرافیک های Nvidia)
 ```powershell
 docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
 
 #### Building the Docker Container
 
-- You can build the docker image with the command:
+- شما میتوناید با استفاده از دستور زیر یک نگه دارنده docker بسازید:
 '''powershell
 docker build --platform linux/amd64 -t athomasson2/ebook2audiobook .
 '''
 
-This command will start the Gradio interface on port 7860.(localhost:7860)
-- For more options like running the docker in  mode or making the gradio link public add the `--help` parameter after the `app.py` in the docker launch command
+این دستور رابط کاربری Gradio  را در پورت 7860 اجرا می‌کند. (localhost:7860)
+- برای گزینه‌های بیشتر مانند اجرای Docker در حالت یا عمومی کردن لینک Gradio، پارامتر `--help` را بعد از `app.py` در دستور راه‌اندازی Docker اضافه کنید.
 
 ## Docker container file locations
-All ebook2audiobooks will have the base dir of `/home/user/app/`
-For example:
+   تمام فایل های ebook2audio در سر‌پوشه  `/home/user/app/` قرار دارند.
+برای مثال :
 `tmp` = `/home/user/app/tmp`
 `audiobooks` = `/home/user/app/audiobooks`
 
    
 ## Docker headless guide
 
-first for a docker pull of the latest with
+اول برای دریافت docker pull را وارد کنید.
 ```bash 
 docker pull athomasson2/ebook2audiobook
 ```
 
-- Before you do run this you need to create a dir named "input-folder" in your current dir which will be linked, This is where you can put your input files for the docker image to see
+- قبل از اینکه این را اجرا کنید، باید یک پوشه به نام "input-folder" در دایرکتوری فعلی خود ایجاد کنید که به آن لینک خواهد شد. اینجا جایی است که می‌توانید فایل‌های ورودی خود را برای مشاهده توسط تصویر Docker قرار دهید.
 ```bash
 mkdir input-folder && mkdir Audiobooks
 ```
 
-- In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
+- در دستور زیر **YOUR_INPUT_FILE.TXT** را با نام فایل ورودی خود جایگزین کنید. 
 
 ```bash
 docker run -it --rm \
@@ -300,12 +299,12 @@ docker run -it --rm \
     python app.py --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
 ```
 
-- And that should be it! 
+-و این باید تمامش باشد!
 
-- The output Audiobooks will be found in the Audiobook folder which will also be located in your local dir you ran this docker command in
+- خروجی کتاب‌های صوتی در پوشه Audiobook پیدا خواهد شد که همچنین در دایرکتوری محلی که این دستور Docker را در آن اجرا کردید، قرار دارد.
 
 
-## To get the help command for the other parameters this program has you can run this 
+## برای دریافت دستور کمک برای سایر پارامترهایی که این برنامه دارد، می‌توانید این را اجرا کنید.
 
 ```bash
 docker run -it --rm \
@@ -316,13 +315,12 @@ docker run -it --rm \
 ```
 
 
-and that will output this 
-
+و این خروجی زیر را تولید خواهد کرد.
 [Help command output](#help-command-output)
 
 ### Docker Compose
 
-This project uses Docker Compose to run locally. You can enable or disable GPU support by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
+این پروژه از Docker Compose برای اجرای محلی استفاده می‌کند. می‌توانید با تنظیم `*gpu-enabled` یا `*gpu-disabled` در `docker-compose.yml` از پشتیبانی GPU استفاده کنید یا آن را غیرفعال کنید.
 
 #### Steps to Run
 
@@ -333,7 +331,7 @@ This project uses Docker Compose to run locally. You can enable or disable GPU s
    ```
 
 2. **Set GPU Support (disabled by default)**
-  To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
+  برای فعال‌سازی پشتیبانی GPU، فایل `docker-compose.yml` را ویرایش کرده و `*gpu-disabled` را به `*gpu-enabled` تغییر دهید.
 
 3. **Start the service:**
     ```bash
@@ -341,31 +339,31 @@ This project uses Docker Compose to run locally. You can enable or disable GPU s
     ```
 
 4. **Access the service:**
-  The service will be available at http://localhost:7860.
+  این سرویس در آدرس http://localhost:7860 در دسترس خواهد بود.
 
 #### New v2.0 Docker Web GUI Interface!
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
-  <summary>Click to see images of Web GUI</summary>
+  <summary>برای مشاهده تصاویر رابط کاربری وب کلیک کنید.</summary>
   <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
   <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
 ## Renting a GPU
-Don't have the hardware to run it or you want to rent a GPU?
-#### You can duplicate the hugginface space and rent a gpu for around $0.40 an hour
+آیا سخت‌افزار لازم برای اجرای آن را ندارید یا می‌خواهید یک GPU اجاره کنید؟
+#### شما می‌توانید فضای Hugging Face را کپی کنید و یک GPU را به قیمت حدود ۰.۴۰ دلار در ساعت اجاره کنید.
 [Huggingface Space Demo](#huggingface-space-demo)
 
-#### Or you can try using the google colab for free!
-(Be aware it will time out after a bit of your not messing with the google colab)
+#### یا می‌توانید از Google Colab به صورت رایگان استفاده کنید!
+(به یاد داشته باشید که اگر با Google Colab کاری نکنید، بعد از مدتی زمان آن به پایان می‌رسد.)
 [Free Google Colab](#free-google-colab)
 
 ## Common Docker Issues
-- Docker gets stuck downloading Fine-Tuned models. (This does not happen for every computer but some appear to run into this issue)
-Disabling the progress bar appears to fix the issue, as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
-Example of adding this fix in the `docker run` command
+- Docker در حین دانلود مدل‌های Fine-Tuned گیر می‌کند. (این مشکل برای هر کامپیوتری پیش نمی‌آید، اما برخی به این مشکل برخورد می‌کنند)  
+غیرفعال کردن نوار پیشرفت به نظر می‌رسد که این مشکل را حل می‌کند، همانطور که در [اینجا در #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191) بحث شده است.  
+مثالی از افزودن این اصلاح در دستور `docker run`
 ```Dockerfile
 docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
 ```
@@ -376,27 +374,25 @@ docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABL
 
 ## Fine Tuned TTS models
 
-You can fine-tune your own xtts model easily with this repo
+شما می‌توانید به راحتی مدل xtts خود را با این مخزن (repo) تنظیم دقیق کنید.
 [xtts-finetune-webui](https://github.com/daswer123/xtts-finetune-webui)
 
-If you want to rent a GPU easily you can also duplicate this huggingface
+اگر می‌خواهید به راحتی یک GPU اجاره کنید، می‌توانید این Hugging Face را نیز کپی کنید.
 [xtts-finetune-webui-space](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu)
-
-A space you can use to de-noise the training data easily also
+فضایی که می‌توانید برای کاهش نویز داده‌های آموزشی به راحتی استفاده کنید نیز وجود دارد.
 [denoise-huggingface-space](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit)
 
 ### Fine Tuned TTS Collection
 
-To find our collection of already fine-tuned TTS models, visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
-For an XTTS custom model a ref audio clip of the voice will also be needed:
-
+برای پیدا کردن مجموعه‌ای از مدل‌های TTS که قبلاً تنظیم دقیق شده‌اند، به [این لینک Hugging Face](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main) مراجعه کنید.  
+برای یک مدل XTTS سفارشی، همچنین به یک کلیپ صوتی مرجع از صدا نیاز خواهد بود:
 ## Demos
 
-Rainy day voice
+Rainy day صدای
 
 https://github.com/user-attachments/assets/8486603c-38b1-43ce-9639-73757dfb1031
 
-David Attenborough voice
+David Attenborough صدای
 
 https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
@@ -404,22 +400,21 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 ## Supported eBook Formats
 
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`, `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`, `.snb`, `.cbc`, `.rb`, `.tcr`
-- **Best results**: `.epub` or `.mobi` for automatic chapter detection
+- **بهترین نتایج**: `.epub` یا `.mobi` برای تشخیص خودکار فصل‌ها
 
 ## Output
 
-- Creates an `.m4b` file with metadata and chapters.
-- **Example Output**: ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+- فایلی با فرمت `.m4b` با متادیتا و فصل‌ها ایجاد می‌کند.
+- **خروجی مثال**: ![مثال](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
 ## Common Issues:
-- "It's slow!" - On CPU only this is very slow, and you can only get speedups though a NVIDIA GPU. [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846) For faster multilingual generation I would suggest my other [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead(It doesn't have zero-shot voice cloning though, and is siri quality voices, but it is much faster on cpu.)
-- "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode, add `-h` parameter after the `app.py` in the docker run command for more information.
-- "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS, I don't speak every language and I need advise from each person to fine tune my sentense splitting function on any other languages.😊
-
+-"این کند است!" - فقط در CPU این بسیار کند است و تنها می‌توانید با یک GPU NVIDIA سرعت را افزایش دهید. [بحث در مورد این موضوع](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846) برای تولید چندزبانه سریع‌تر، من پروژه دیگری که از piper-tts استفاده می‌کند را پیشنهاد می‌کنم [این پروژه](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) به جای آن. (این پروژه قابلیت کلونینگ صدای بدون نمونه را ندارد، و صداها کیفیت سیری دارند، اما در CPU بسیار سریع‌تر است.)
+-"من با مشکلات وابستگی مواجه هستم" - فقط از Docker استفاده کنید، این کاملاً مستقل است و حالت بدون سر دارد. پارامتر `-h` را بعد از `app.py` در دستور اجرای Docker اضافه کنید برای اطلاعات بیشتر.
+- "من با مشکل صدای بریده شده مواجه هستم!" - لطفاً یک مشکل (Issue) در این مورد ایجاد کنید، من به هر زبانی صحبت نمی‌کنم و به مشاوره از هر شخص نیاز دارم تا تابع تقسیم جملات خود را در زبان‌های دیگر تنظیم دقیق کنم. 😊
 ## What I need help with! 🙌 
-## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
-- Any help from people speaking any of the supported languages to help with proper sentence splitting methods
-- Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
+## [فهرست کامل موارد را می‌توانید در اینجا پیدا کنید.](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
+- هر کمکی از افرادی که به یکی از زبان‌های پشتیبانی شده صحبت می‌کنند برای کمک به روش‌های صحیح تقسیم جملات مورد نیاز است.
+- امکان ایجاد راهنماهای README برای چندین زبان وجود دارد.
 
 ## Special Thanks
 
@@ -427,11 +422,11 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 
-- [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
+- [@shakenbake15 برای روش بهتر ذخیره‌سازی فصل‌ها](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
 
 ### [Legacy V1.0](legacy/v1.0)
 
-You can view the code [here](legacy/v1.0).
+شما می‌توانید کد را [اینجا](legacy/v1.0) مشاهده کنید.
 
 ## Join Our Discord Server!
 
