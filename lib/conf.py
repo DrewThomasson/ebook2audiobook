@@ -17,8 +17,9 @@ docker_utils_image = 'utils'
 
 interface_host = '0.0.0.0'
 interface_port = 7860
-interface_shared_tmp_expire = 3 # days
-interface_concurrency_limit = 8 # or None for unlimited
+interface_shared_tmp_expire = 3 # in days
+interface_concurrency_limit = 1 # or None for unlimited
+
 interface_component_options = {
     "gr_tab_preferences": True,
     "gr_group_voice_file": True,
@@ -32,6 +33,7 @@ voices_dir = os.path.abspath(os.path.join('.','voices'))
 tmp_dir = os.path.abspath(os.path.join('.','tmp'))
 tmp_expire = 7 # days
 
+max_tts_in_memory = 4 # TTS engines to keep in memory
 max_custom_model = 10
 max_custom_voices = 100
 max_upload_size = '6GB'
@@ -43,8 +45,8 @@ audiobooks_cli_dir = os.path.abspath(os.path.join('.','audiobooks','cli'))
 ebook_formats = ['.epub', '.mobi', '.azw3', '.fb2', '.lrf', '.rb', '.snb', '.tcr', '.pdf', '.txt', '.rtf', '.doc', '.docx', '.html', '.odt', '.azw']
 voice_formats = ['.mp4', '.m4b', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg', '.aiff', '.aif', '.wma', '.dsd', '.opus', '.pcmu', '.pcma', '.gsm']
 output_formats = ['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']
-default_audio_proc_format = 'wav'
-default_output_format = 'm4b' # or 'mp3' 'opus' or any you wish
+default_audio_proc_format = 'flac' # or 'wav', 'pcm', 'ieee', 'ogg', 'nist', 'mp3', 'aiff', 'aac', 'wma', 'mp4', 'm4a', 'm4b', 'amr', '3gp', 'webm', 'alac'
+default_output_format = 'm4b' # or 'wav', 'pcm', 'ieee', 'ogg', 'nist', 'mp3', 'aiff', 'aac', 'wma', 'mp4', 'm4a', 'flac', 'amr', '3gp', 'webm', 'alac'
 
 tts_default_settings = {
     "temperature": 0.65,

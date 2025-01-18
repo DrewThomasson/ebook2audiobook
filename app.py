@@ -40,7 +40,8 @@ In order to install and/or use ebook2audiobook correctly you must run
         
 def check_and_install_requirements(file_path):
     if not os.path.exists(file_path):
-        print(f'Warning: File {file_path} not found. Skipping package check.')
+        error = f'Warning: File {file_path} not found. Skipping package check.'
+        print(error)
     try:
         from importlib.metadata import version, PackageNotFoundError
         with open(file_path, 'r') as f:
@@ -54,21 +55,25 @@ def check_and_install_requirements(file_path):
             try:
                 installed_version = version(pkg_name)
             except PackageNotFoundError:
-                print(f'{package} is missing.')
+                error = f'{package} is missing.'
+                print(error)
                 missing_packages.append(package)
                 pass
 
         if missing_packages:
-            print('\nInstalling missing packages...')
+            msg = '\nInstalling missing packages...'
+            print(msg)
             try:
                 subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'] + missing_packages)
             except subprocess.CalledProcessError as e:
-                print(f'Failed to install packages: {e}')
+                error = f'Failed to install packages: {e}'
+                print(error)
                 return False
 
         return True
     except Exception as e:
-        raise SystemExit(f'An error occurred: {e}')  
+        raise SystemExit(f'An error occurred: {e}')
+        return False
         
 def check_dictionary():
     import unidic
@@ -76,12 +81,14 @@ def check_dictionary():
     dicrc = os.path.join(unidic_path, 'dicrc')
     if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
         try:
-            print('UniDic dictionary not found or incomplete. Downloading now...')
+            error = 'UniDic dictionary not found or incomplete. Downloading now...'
+            print(error)
             subprocess.run(['python', '-m', 'pip', 'cache', 'purge'], check=True)
             subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
         except subprocess.CalledProcessError as e:
-            print(f'Failed to download UniDic dictionary. Error: {e}')
-            raise SystemExit('Unable to continue without UniDic. Exiting...')
+            error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting...'
+            raise SystemExit(error)
+            return False
     return True
 
 def is_port_in_use(port):
@@ -164,7 +171,8 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
 
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:
-            print(f'Error: Unrecognized option "{arg}"')
+            error = f'Error: Unrecognized option "{arg}"'
+            print(error)
             sys.exit(1)
 
     args = vars(parser.parse_args())
@@ -178,7 +186,8 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
 
         # Check if the port is already in use to prevent multiple launches
         if not args['headless'] and is_port_in_use(interface_port):
-            print(f'Error: Port {interface_port} is already in use. The web interface may already be running.')
+            error = f'Error: Port {interface_port} is already in use. The web interface may already be running.'
+            print(error)
             sys.exit(1)
 
         args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
@@ -191,7 +200,8 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
                 if not check_dictionary():
                     sys.exit(1)
             else:
-                print('Some packages could not be installed')
+                error = 'Some packages could not be installed'
+                print(error)
                 sys.exit(1)
 
         from lib.functions import web_interface, convert_ebook_batch, convert_ebook
@@ -204,14 +214,16 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
 
             # Condition to stop if both --ebook and --ebooks_dir are provided
             if args['ebook'] and args['ebooks_dir']:
-                print('Error: You cannot specify both --ebook and --ebooks_dir in headless mode.')
+                error = 'Error: You cannot specify both --ebook and --ebooks_dir in headless mode.'
+                print(error)
                 sys.exit(1)
 
             # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
             if 'ebooks_dir' in args:
                 # Check if the directory exists
                 if not os.path.exists(args['ebooks_dir']):
-                    print(f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.')
+                    error = f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.'
+                    print(error)
                     sys.exit(1)                   
                 args['ebook_list'] = []
                 for file in os.listdir(args['ebooks_dir']):
@@ -220,16 +232,19 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
                         args['ebook_list'].append(full_path)
                 progress_status, audiobook_file = convert_ebook_batch(args)
                 if audiobook_file is None:
-                    print(f'Conversion failed: {progress_status}')
+                    error = f'Conversion failed: {progress_status}'
+                    print(error)
                     sys.exit(1)
             elif 'ebook' in args:
                 progress_status, audiobook_file = convert_ebook(args)
                 if audiobook_file is None:
-                    print(f'Conversion failed: {progress_status}')
+                    error = f'Conversion failed: {progress_status}'
+                    print(error)
                     sys.exit(1)
 
             else:
-                print('Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.')
+                error = 'Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.'
+                print(error)
                 sys.exit(1)       
         else:
             args['is_gui_process'] = True
@@ -239,7 +254,8 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
             if passed_args_set.issubset(allowed_arguments):
                  web_interface(args)
             else:
-                print('Error: In non-headless mode, no option or only --share can be passed')
+                error = 'Error: In non-headless mode, no option or only --share can be passed'
+                print(error)
                 sys.exit(1)
 
 if __name__ == '__main__':

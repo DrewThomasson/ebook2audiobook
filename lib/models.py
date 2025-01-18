@@ -20,7 +20,7 @@ default_openvoice2_files = ['config.json', 'checkpoint.pth']
 default_freevc24_files = ['config.json', 'model.pth']
 
 default_xtts_samplerate = 24000
-default_fairseq_samplerate = 16000
+default_fairseq_samplerate = 24000
 default_yourtts_samplerate = 22050
 default_bark_samplerate = 24000
 default_libri_samplerate = 24000
