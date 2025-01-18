@@ -28,7 +28,8 @@ Thanks to support ebook2audiobook developers!<br>
 - zho [中文 (Chinese)](./readme/README_CN.md)
 - eng [English](README.md)
 - swe [Svenska (Swedish)](./readme/README_SWE.md)
-  
+- fas [فارسی (Persian)](./readme/README_FA.md)
+
 
 ## Table of Contents
 - [ebook2audiobook](#ebook2audiobook)
