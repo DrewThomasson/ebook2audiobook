@@ -130,7 +130,7 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
     headless_group.add_argument(options[3], action='store_true', help='''Run the script in headless mode''')
     headless_group.add_argument(options[4], type=str, help='''Path to the ebook file for conversion. Cannot be used when --ebooks_dir is present.''')
     headless_group.add_argument(options[5], type=str, help=f'''Path to the directory containing ebooks for batch conversion. 
-    Cannot be used when --ebook is present. Default to "{os.path.basename(ebooks_dir)}" if this option is not present.''')
+    Cannot be used when --ebook is present. Default to "{os.path.basename(ebooks_dir)}" if not present.''')
     headless_group.add_argument(options[6], type=str, default=default_language_code, help=f'''Language of the e-book. Default language is set 
     in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py''')
     headless_optional_group = parser.add_argument_group('optional parameters')
@@ -183,7 +183,7 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
 
         args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
         args['share'] =  args['share'] if args['share'] else False
-        args['src_mode'] = 'single'
+        args['ebook_list'] = None
 
         if args['script_mode'] == NATIVE:
             check_pkg = check_and_install_requirements(requirements_file)
@@ -194,7 +194,7 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
                 print('Some packages could not be installed')
                 sys.exit(1)
 
-        from lib.functions import web_interface, convert_ebook
+        from lib.functions import web_interface, convert_ebook_batch, convert_ebook
 
         # Conditions based on the --headless flag
         if args['headless']:
@@ -208,37 +208,21 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
                 sys.exit(1)
 
             # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
-            if args['ebooks_dir']:
-                custom_ebooks_dir = None
-                if args['ebooks_dir'] == 'default':
-                    print(f'Using the default ebooks_dir: {ebooks_dir}')
-                    custom_ebooks_dir =  os.path.abspath(ebooks_dir)
-                else:
-                    # Check if the directory exists
-                    if os.path.exists(args['ebooks_dir']):
-                        custom_ebooks_dir = os.path.abspath(args['ebooks_dir'])
-                    else:
-                        print(f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.')
-                        sys.exit(1)
-
-                if os.path.exists(custom_ebooks_dir):
-                    ebook_list = []
-                    for file in os.listdir(custom_ebooks_dir):
-                        if any(file.endswith(ext) for ext in ebook_formats):
-                            full_path = os.path.join(custom_ebooks_dir, file)
-                            ebook_list.append(full_path)
-                            args['ebook'] = full_path
-                    args['src_mode'] = 'directory'
-                    args['ebook'] = ebook_list
-                    progress_status, audiobook_file = convert_ebook_batch(args)
-                    if audiobook_file is None:
-                        print(f'Conversion failed: {progress_status}')
-                        sys.exit(1)
-                else:
-                    print(f'Error: The directory {custom_ebooks_dir} does not exist.')
+            if 'ebooks_dir' in args:
+                # Check if the directory exists
+                if not os.path.exists(args['ebooks_dir']):
+                    print(f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.')
+                    sys.exit(1)                   
+                args['ebook_list'] = []
+                for file in os.listdir(args['ebooks_dir']):
+                    if any(file.endswith(ext) for ext in ebook_formats):
+                        full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
+                        args['ebook_list'].append(full_path)
+                progress_status, audiobook_file = convert_ebook_batch(args)
+                if audiobook_file is None:
+                    print(f'Conversion failed: {progress_status}')
                     sys.exit(1)
-
-            elif args['ebook']:
+            elif 'ebook' in args:
                 progress_status, audiobook_file = convert_ebook(args)
                 if audiobook_file is None:
                     print(f'Conversion failed: {progress_status}')

@@ -13,7 +13,6 @@ authors = [
 ]
 dependencies = [
     "beautifulsoup4",
-    "coqui-tts",
     "cutlet",
 	"deep_translator",
     "docker",
@@ -35,7 +34,8 @@ dependencies = [
 	"transformers",
     "translate",
     "tqdm",
-	"unidic"
+	"unidic",
+    "coqui-tts==0.25.3"
 ]
 readme = "README.md"
 requires-python = ">=3.12,<3.13"

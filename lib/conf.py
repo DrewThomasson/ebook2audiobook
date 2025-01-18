@@ -21,7 +21,7 @@ interface_shared_tmp_expire = 3 # days
 interface_concurrency_limit = 8 # or None for unlimited
 interface_component_options = {
     "gr_tab_preferences": True,
-    "gr_voice_file": True,
+    "gr_group_voice_file": True,
     "gr_group_custom_model": True
 }
 
@@ -43,7 +43,6 @@ audiobooks_cli_dir = os.path.abspath(os.path.join('.','audiobooks','cli'))
 ebook_formats = ['.epub', '.mobi', '.azw3', '.fb2', '.lrf', '.rb', '.snb', '.tcr', '.pdf', '.txt', '.rtf', '.doc', '.docx', '.html', '.odt', '.azw']
 voice_formats = ['.mp4', '.m4b', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg', '.aiff', '.aif', '.wma', '.dsd', '.opus', '.pcmu', '.pcma', '.gsm']
 output_formats = ['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']
-default_audio_tts_format = 'wav'
 default_audio_proc_format = 'wav'
 default_output_format = 'm4b' # or 'mp3' 'opus' or any you wish
 
@@ -57,8 +56,8 @@ tts_default_settings = {
     "enable_text_splitting": False
 }
 
-os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['COQUI_TOS_AGREED'] = '1'
+os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
 os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir
 os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'

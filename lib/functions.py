@@ -120,8 +120,9 @@ class SessionContext:
                 "audiobook": None,
                 "audiobooks_dir": None,
                 "process_dir": None,
-                "src": None,
-                "src_mode": None,
+                "ebook": None,
+                "ebook_list": None,
+                "src_mode": "file",
                 "chapters_dir": None,
                 "chapters_dir_sentences": None,
                 "epub_path": None,
@@ -184,15 +185,15 @@ def prepare_dirs(src, session):
         os.makedirs(session['custom_model_dir'], exist_ok=True)
         os.makedirs(session['voice_dir'], exist_ok=True)
         os.makedirs(session['audiobooks_dir'], exist_ok=True)
-        session['src'] = os.path.join(session['process_dir'], os.path.basename(src))
-        if os.path.exists(session['src']):
-            if compare_files_by_hash(session['src'], src):
+        session['ebook'] = os.path.join(session['process_dir'], os.path.basename(src))
+        if os.path.exists(session['ebook']):
+            if compare_files_by_hash(session['ebook'], src):
                 resume = True
         if not resume:
             shutil.rmtree(session['chapters_dir'], ignore_errors=True)
         os.makedirs(session['chapters_dir'], exist_ok=True)
         os.makedirs(session['chapters_dir_sentences'], exist_ok=True)
-        shutil.copy(src, session['src']) 
+        shutil.copy(src, session['ebook']) 
         return True
     except Exception as e:
         raise DependencyError(e)
@@ -379,12 +380,12 @@ def convert_to_epub(session):
     if session['script_mode'] == DOCKER_UTILS:
         try:
             docker_dir = os.path.basename(session['process_dir'])
-            docker_file_in = os.path.basename(session['src'])
+            docker_file_in = os.path.basename(session['ebook'])
             docker_file_out = os.path.basename(session['epub_path'])
 
             # Check if the input file is already an EPUB
             if docker_file_in.lower().endswith('.epub'):
-                shutil.copy(session['src'], session['epub_path'])
+                shutil.copy(session['ebook'], session['epub_path'])
                 print("File is already in EPUB format. Copying directly.")
                 return True
 
@@ -420,9 +421,9 @@ def convert_to_epub(session):
             if not util_app:
                 raise FileNotFoundError("The 'ebook-convert' utility is not installed or not found.")
 
-            print(f"Running command: {util_app} {session['src']} {session['epub_path']} --input-encoding=utf-8 --output-profile=generic_eink --verbose")
+            print(f"Running command: {util_app} {session['ebook']} {session['epub_path']} --input-encoding=utf-8 --output-profile=generic_eink --verbose")
             result = subprocess.run(
-                [util_app, session['src'], session['epub_path'], '--input-encoding=utf-8', '--output-profile=generic_eink', '--verbose'],
+                [util_app, session['ebook'], session['epub_path'], '--input-encoding=utf-8', '--output-profile=generic_eink', '--verbose'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -477,7 +478,7 @@ def get_chapters(epubBook, session):
         all_docs = all_docs[1:]  # Exclude the first document if needed
         # Cache filtered chapters to avoid redundant calls
         doc_cache = {}
-        print('**** NOTE: You can safely ignore the log "Character xx not found in the vocabulary." ****')
+        print('******* NOTE: YOU CAN SAFELY IGNORE "Character xx not found in the vocabulary." *******')
         for doc in all_docs:
             doc_cache[doc] = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
         # Step 2: Determine the most common pattern
@@ -589,7 +590,7 @@ def get_sentences(parts, max_tokens):
     return sentences
 
 def normalize_voice_file(f, session):
-    final_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_') + '.' + default_audio_tts_format
+    final_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_') + '.' + default_audio_proc_format
     final_file = os.path.join(session['voice_dir'], final_name)    
     if session['script_mode'] == DOCKER_UTILS:
         docker_dir = os.path.basename(session['voice_dir'])
@@ -694,12 +695,10 @@ def convert_chapters_to_audio(session):
         params = {}
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
-        params['tts_model'] = None
         if session['tts_engine'] == XTTSv2:
-            params['tts_model'] = XTTSv2
             if session['custom_model'] is not None:
                 model_name = os.path.basename(session['custom_model'])
-                print(f"Loading TTS {params['tts_model']} model from {session['custom_model']}...")
+                print(f"Loading TTS {session['tts_engine']} model from {session['custom_model']}...")
                 model_path = os.path.join(session['custom_model'], 'model.pth')
                 config_path = os.path.join(session['custom_model'],'config.json')
                 vocab_path = os.path.join(session['custom_model'],'vocab.json')
@@ -714,9 +713,9 @@ def convert_chapters_to_audio(session):
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             elif session['fine_tuned'] != 'std':
                 model_name = session['fine_tuned']
-                print(f"Loading TTS {params['tts_model']} model from {session['fine_tuned']}...")
-                hf_repo = models[params['tts_model']][session['fine_tuned']]['repo']
-                hf_sub = models[params['tts_model']][session['fine_tuned']]['sub']
+                print(f"Loading TTS {session['tts_engine']} model from {session['fine_tuned']}...")
+                hf_repo = models[session['tts_engine']][session['fine_tuned']]['repo']
+                hf_sub = models[session['tts_engine']][session['fine_tuned']]['sub']
                 cache_dir = os.path.join(models_dir,'tts')
                 model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/model.pth", cache_dir=cache_dir)
                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/config.json", cache_dir=cache_dir)
@@ -727,33 +726,32 @@ def convert_chapters_to_audio(session):
                     params['tts'] = load_tts_custom_cached(model_path, config_path, vocab_path)
                     loaded_tts[model_name] = params['tts']
                 print('Computing speaker latents...')
-                params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['voice_path'] = session['voice'] if session['voice'] is not None else models[session['tts_engine']][session['fine_tuned']]['voice']
                 params['gpt_cond_latent'], params['speaker_embedding'] = params['tts'].get_conditioning_latents(audio_path=[params['voice_path']])
             else:
                 model_name = session['fine_tuned']
-                print(f"Loading TTS {params['tts_model']} model from {models[params['tts_model']][session['fine_tuned']]['repo']}...")
-                model_path = models[params['tts_model']][session['fine_tuned']]['repo']
+                print(f"Loading TTS {session['tts_engine']} model from {models[session['tts_engine']][session['fine_tuned']]['repo']}...")
+                model_path = models[session['tts_engine']][session['fine_tuned']]['repo']
                 if model_name in loaded_tts.keys():
                     params['tts'] = loaded_tts[model_name]
                 else:
                     params['tts'] = load_tts_api_cached(model_path, True if session['device'] == 'cuda' else False)
                     loaded_tts[model_name] = params['tts']
-                params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['voice_path'] = session['voice'] if session['voice'] is not None else models[session['tts_engine']][session['fine_tuned']]['voice']
             params['tts'].to(session['device'])
         elif session['tts_engine'] == FAIRSEQ:
             if session['custom_model'] is not None:
                 print("TODO!")
             else:
-                params['tts_model'] = FAIRSEQ
                 model_name = session['fine_tuned']
-                model_path = models[params['tts_model']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
+                model_path = models[session['tts_engine']][session['fine_tuned']]['repo'].replace("[lang]", session['language'])
                 print(f"Loading TTS {model_path} model from {model_path}...")
                 if model_name in loaded_tts.keys():
                     params['tts'] = loaded_tts[model_name]
                 else:
                     params['tts'] = load_tts_api_cached(model_path, True if session['device'] == 'cuda' else False)
                     loaded_tts[model_name] = params['tts']
-                params['voice_path'] = session['voice'] if session['voice'] is not None else models[params['tts_model']][session['fine_tuned']]['voice']
+                params['voice_path'] = session['voice'] if session['voice'] is not None else models[session['tts_engine']][session['fine_tuned']]['voice']
                 params['tts'].to(session['device'])
             params['tts'].to(session['device'])
         elif session['tts_engine'] == 'yourtts':
@@ -829,7 +827,7 @@ def convert_sentence_to_audio(params, session):
             "speed": session['speed'],
             "enable_text_splitting": session['enable_text_splitting']
         }
-        if params['tts_model'] == XTTSv2:
+        if session['tts_engine'] == XTTSv2:
             if session['custom_model'] is not None or session['fine_tuned'] != 'std':
                 with torch.no_grad():
                     output = params['tts'].inference(
@@ -841,7 +839,7 @@ def convert_sentence_to_audio(params, session):
                     )
                 torchaudio.save(
                     params['sentence_audio_file'], 
-                    torch.tensor(output[default_audio_tts_format]).unsqueeze(0), 
+                    torch.tensor(output[default_audio_proc_format]).unsqueeze(0), 
                     sample_rate=models[session['tts_engine']][session['fine_tuned']]['samplerate']
                 )
                 del output
@@ -854,7 +852,7 @@ def convert_sentence_to_audio(params, session):
                         speaker_wav=params['voice_path'],
                         **generation_params
                     )
-        elif params['tts_model'] == 'fairseq':
+        elif session['tts_engine'] == 'fairseq':
             with torch.no_grad():
                 params['tts'].tts_with_vc_to_file(
                     text=params['sentence'],
@@ -1189,16 +1187,21 @@ def get_compatible_tts_engines(language):
     return compatible_engines
 
 def convert_ebook_batch(args):
-    for file in args['ebook'][:]: # Use a shallow copy
-        if any(file.endswith(ext) for ext in ebook_formats):
-            args['ebook'] = file
-            print(f'Processing eBook file: {os.path.basename(file)}')
-            progress_status, audiobook_file = convert_ebook(args)
-            if audiobook_file is None:
-                print(f'Conversion failed: {progress_status}')
-                sys.exit(1)
-            args['ebook'].remove(file) 
-    reset_ebook_session(args['session'])
+    if isinstance(args['ebook'], list):
+        ebook_list = args['ebook'][:]
+        for file in ebook_list: # Use a shallow copy
+            if any(file.endswith(ext) for ext in ebook_formats):
+                args['ebook'] = file
+                print(f'Processing eBook file: {os.path.basename(file)}')
+                progress_status, audiobook_file = convert_ebook(args)
+                if audiobook_file is None:
+                    print(f'Conversion failed: {progress_status}')
+                    sys.exit(1)
+                args['ebook_list'].remove(file) 
+        reset_ebook_session(args['session'])
+    else:
+        print(f'the ebooks source is not a list!')
+        sys.exit(1)       
 
 def convert_ebook(args):
     try:
@@ -1240,7 +1243,8 @@ def convert_ebook(args):
                 id = args['session'] if args['session'] is not None else str(uuid.uuid4())
                 session = context.get_session(id)
                 session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE   
-                session['src'] = args['ebook']
+                session['ebook'] = args['ebook']
+                session['ebook_list'] = args['ebook_list']
                 session['device'] = args['device']
                 session['language'] = args['language']
                 session['language_iso1'] = args['language_iso1']
@@ -1295,11 +1299,11 @@ def convert_ebook(args):
 
                     if error is None:
                         session['session_dir'] = os.path.join(tmp_dir, f"ebook-{session['id']}")
-                        session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['src'].encode()).hexdigest()}")
+                        session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['ebook'].encode()).hexdigest()}")
                         session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                         session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
                         if prepare_dirs(args['ebook'], session):
-                            session['filename_noext'] = os.path.splitext(os.path.basename(session['src']))[0]
+                            session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             if session['device'] == 'cuda':
                                 session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                                 if session['device'] == 'cpu':
@@ -1319,7 +1323,7 @@ def convert_ebook(args):
                                         for value, attributes in data:
                                             metadata[key] = value
                                 metadata['language'] = session['language']
-                                metadata['title'] = os.path.splitext(os.path.basename(session['src']))[0].replace('_',' ') if not metadata['title'] else metadata['title']
+                                metadata['title'] = os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ') if not metadata['title'] else metadata['title']
                                 metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                                 session['metadata'] = metadata
                                 
@@ -1405,7 +1409,7 @@ def restore_session_from_data(data, session):
 def reset_ebook_session(id):
     session = context.get_session(id)
     data = {
-        "src": None,
+        "ebook": None,
         "chapters_dir": None,
         "chapters_dir_sentences": None,
         "epub_path": None,
@@ -1471,6 +1475,10 @@ def web_interface(args):
     src_label_file = 'EBook File (.epub, .mobi, .azw3, fb2, lrf, rb, snb, tcr, .pdf, .txt, .rtf, doc, .docx, .html, .odt, .azw)'
     src_label_folder = 'Folder For Batch Processing'
     
+    visible_gr_tab_preferences = interface_component_options['gr_tab_preferences']
+    visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
+    visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
+    
     # Buffer for real-time log streaming
     log_buffer = Queue()
     
@@ -1485,7 +1493,7 @@ def web_interface(args):
         radius_size='lg',
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
     )
-
+    """
     def process_cleanup(state):
         try:
             print('***************PROCESS CLEANING REQUESTED*****************')
@@ -1493,7 +1501,7 @@ def web_interface(args):
                 del context.sessions[state['id']]
         except Exception as e:
             raise DependencyError(e)
-
+    """
     with gr.Blocks(theme=theme, delete_cache=(86400, 86400)) as interface:
         gr.HTML(
             '''
@@ -1590,11 +1598,12 @@ def web_interface(args):
                                 file_types=ebook_formats,
                                 file_count="single"
                             )
-                            gr_ebook_file_mode = gr.Radio(label='', choices=[('Single File','file'), ('Batch Directory','directory')], value='file', interactive=True)
+                            gr_src_mode = gr.Radio(label='', choices=[('Single File','file'), ('Batch Directory','directory')], value='file', interactive=True)
                         with gr.Group():
                             gr_language = gr.Dropdown(label='Language', choices=language_options, value=default_language_code, type='value', interactive=True)
-                        with gr.Group():
-                            gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie (<= 6 seconds)', file_types=voice_formats, value=None, visible=interface_component_options['gr_voice_file'])
+                        gr_group_voice_file = gr.Group(visible=visible_gr_group_voice_file)
+                        with gr_group_voice_file:
+                            gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie (<= 6 seconds)', file_types=voice_formats, value=None)
                             gr_voice_list = gr.Dropdown(label='', choices=voice_options, type='value', interactive=True)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
@@ -1603,7 +1612,7 @@ def web_interface(args):
                         with gr.Group():
                             gr_tts_engine_list = gr.Dropdown(label='TTS Base', choices=tts_engine_options, type='value', interactive=True)
                             gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models', choices=fine_tuned_options, type='value', interactive=True)
-                        gr_group_custom_model = gr.Group(visible=interface_component_options['gr_group_custom_model'])
+                        gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                         with gr_group_custom_model:
                             gr_custom_model_file = gr.File(label=f"*Custom Model Zip File", value=None, file_types=['.zip'])
                             gr_custom_model_list = gr.Dropdown(label='', choices=custom_model_options, type='value', interactive=True)
@@ -1611,7 +1620,7 @@ def web_interface(args):
                         with gr.Group():
                             gr_session = gr.Textbox(label='Session')
                         gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
-            gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', visible=interface_component_options['gr_tab_preferences'])
+            gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', visible=visible_gr_tab_preferences)
             with gr_tab_preferences:
                 gr.Markdown(
                     '''
@@ -1743,9 +1752,9 @@ def web_interface(args):
             try:
                 session = context.get_session(id)
                 return (
-                    gr.update(value=session['src']), gr.update(value=session['src_mode']), gr.update(choices=voice_options, value=session['voice']), gr.update(value=session['device']), 
-                    gr.update(value=session['language']), gr.update(choices=tts_engine_options, value=session['tts_engine']), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), 
-                    gr.update(choices=custom_model_options, value=session['custom_model']), gr.update(value=session['output_format']), gr.update(choices=audiobook_options, value=session['audiobook']), 
+                    gr.update(value=session['ebook']), gr.update(value=session['src_mode']), gr.update(choices=voice_options, value=session['voice']), gr.update(value=session['device']),
+                    gr.update(value=session['language']), gr.update(choices=tts_engine_options, value=session['tts_engine']), gr.update(choices=fine_tuned_options, value=session['fine_tuned']),
+                    gr.update(choices=custom_model_options, value=session['custom_model']), gr.update(value=session['output_format']), gr.update(choices=audiobook_options, value=session['audiobook']),
                     gr.update(value=session['temperature']), gr.update(value=session['length_penalty']), gr.update(value=session['repetition_penalty']), 
                     gr.update(value=session['top_k']), gr.update(value=session['top_p']), gr.update(value=session['speed']), 
                     gr.update(value=session['enable_text_splitting']), gr.update(active=True)
@@ -1790,19 +1799,22 @@ def web_interface(args):
                     yield gr.update(variant='primary', interactive=False)   
                 return
 
-        def change_gr_ebook_file(f, id):
+        async def change_gr_ebook_file(f, id):
             session = context.get_session(id)
+            session['ebook'] = None
+            session['ebook_list'] = None
             if f is None:
                 if session['status'] == 'converting':
                     session['cancellation_requested'] = True    
-                    session['src'] = None
-                    yield show_modal('Cancellation requested, please wait...')
-                    return
+                    return show_modal('Cancellation requested, please wait...')
             session['cancellation_requested'] = False
-            session['src'] = f
+            if isinstance(f, list):
+                session['ebook_list'] = f
+            else:
+                session['ebook'] = f
             return hide_modal()
             
-        def change_gr_ebook_file_mode(val, id):
+        def change_gr_src_mode(val, id):
             session = context.get_session(id)
             session['src_mode'] = val
             if val == 'file':
@@ -1942,7 +1954,28 @@ def web_interface(args):
                     error = f'Error: {str(e)}'
                     print(error)
                     return gr.update(value=None), gr.update(value=error)
-        
+
+        def change_gr_tts_engine_list(engine, id):
+            session = context.get_session(id)
+            session['tts_engine'] = engine
+            fine_tuned_options = [
+                name for name, details in models.get(session['tts_engine'], {}).items()
+                if details.get('lang') == 'multi' or details.get('lang') == session['language']
+            ]
+            session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
+            if session['tts_engine'] == XTTSv2 and session['fine_tuned'] == 'std':
+                return gr.update(visible=visible_gr_tab_preferences), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(label=f"*Custom Model Zip File (Mandatory files {models[session['tts_engine']]['std']['files']})"), gr.update(visible=visible_gr_group_custom_model)
+            else:
+                return gr.update(visible=False), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(), gr.update(visible=False)
+            
+        def change_gr_fine_tuned_list(selected, id):
+            session = context.get_session(id)
+            visible = False
+            if selected == 'std' and session['tts_engine'] == XTTSv2:
+                visible = visible_gr_group_custom_model
+            session['fine_tuned'] = selected
+            return gr.update(visible=visible)
+
         def update_gr_custom_model_list(id):
             session = context.get_session(id)
             custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
@@ -1960,41 +1993,26 @@ def web_interface(args):
             if session['custom_model'] is None:
                 visible = True
             return gr.update(visible=visible)
-
-        def change_gr_tts_engine_list(engine, id):
+        
+        def change_gr_output_format_list(val, id):
             session = context.get_session(id)
-            session['tts_engine'] = engine
-            fine_tuned_options = [
-                name for name, details in models.get(session['tts_engine'], {}).items()
-                if details.get('lang') == 'multi' or details.get('lang') == session['language']
-            ]
-            session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else fine_tuned_options[0]
-            if session['tts_engine'] == XTTSv2 and session['fine_tuned'] == 'std':
-                return gr.update(visible=True), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(label=f"*Custom Model Zip File (Mandatory files {models[session['tts_engine']]['std']['files']})"), gr.update(visible=True)
-            else:
-                return gr.update(visible=False), gr.update(choices=fine_tuned_options, value=session['fine_tuned']), gr.update(), gr.update(visible=False)
-            
-        def change_gr_fine_tuned_list(selected, id):
-            session = context.get_session(id)
-            visible = False
-            if selected == 'std':
-                visible = True
-            session['fine_tuned'] = selected
-            return gr.update(visible=visible)
+            session['output_format'] = val
+            return
 
         def change_param(key, val, id):
             session = context.get_session(id)
-            session[key] = val           
+            session[key] = val       
+            return
 
-        def submit_convert_btn(id, device, ebook_file, ebook_file_mode, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting):
+        def submit_convert_btn(id, device, ebook_file, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty,repetition_penalty, top_k, top_p, speed, enable_text_splitting):
             args = {
                 "is_gui_process": is_gui_process,
                 "session": id,
                 "script_mode": script_mode,
                 "device": device.lower(),
                 "tts_engine": tts_engine,
-                "ebook": ebook_file if isinstance(ebook_file, list) else ebook_file.name if ebook_file else None,
-                "src_mode": ebook_file_mode,
+                "ebook": ebook_file if isinstance(ebook_file, str) else None,
+                "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
                 "audiobooks_dir": audiobooks_dir,
                 "voice": voice,
                 "language": language,
@@ -2009,38 +2027,46 @@ def web_interface(args):
                 "enable_text_splitting": enable_text_splitting,
                 "fine_tuned": fine_tuned
             }
-            if args["ebook"] is None:
-                return gr.update(value='Error: a file is required.')
+            error = None
+            if args["ebook"] is None and args['ebook_list'] is None:
+                error = 'Error: a file or directory is required.'
+                return gr.update(value=error)
             try:
                 session = context.get_session(id)
-                if args['src_mode'] == 'directory':
-                    for file in args['ebook'][:]: # Use a shallow copy
+                session['status'] = 'converting'
+                if isinstance(args['ebook_list'], list):
+                    ebook_list = args['ebook_list'][:]
+                    for file in ebook_list:
                         if any(file.endswith(ext) for ext in ebook_formats):
+                            print(f'Processing eBook file: {os.path.basename(file)}')        
                             args['ebook'] = file
-                            print(f'Processing eBook file: {os.path.basename(file)}')
                             progress_status, audiobook_file = convert_ebook(args)
                             if audiobook_file is None:
                                 if session['status'] == 'converting':
-                                    return gr.update(value='Conversion cancelled.')
+                                    error = 'Conversion cancelled.'
+                                    break
                                 else:
-                                    return gr.update(value='Conversion failed.')
+                                    error = 'Conversion failed.'
+                                    break
                             else:
-                                args['ebook'].remove(file)
+                                args['ebook_list'].remove(file)
+                                reset_ebook_session(args['session'])
                                 yield gr.update(value=progress_status)
-                    reset_ebook_session(args['session'])
-                    return gr.update()
+                    session['status'] = None
+                    return gr.update(value=error)
                 else:
-                    session['status'] = 'converting'
                     print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                     progress_status, audiobook_file = convert_ebook(args)
                     if audiobook_file is None:
                         if session['status'] == 'converting':
-                            return gr.update(value='Conversion cancelled.')
+                            error = 'Conversion cancelled.'
                         else:
-                            return gr.update(value='Conversion failed.')
+                            error = 'Conversion failed.'
                     else:
                         reset_ebook_session(args['session'])
-                        return gr.update(value=progress_status)
+                        yield gr.update(value=progress_status)
+                    session['status'] = None
+                    return gr.update(value=error)
             except Exception as e:
                 return DependencyError(e)
 
@@ -2057,8 +2083,14 @@ def web_interface(args):
                         session = context.get_session(data['id'])
                         restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
-                        if session['src'] is not None and not os.path.exists(session['src']):
-                            session['src'] = None
+                        if isinstance(session['ebook'], str):
+                            if not os.path.exists(session['ebook']):
+                                session['ebook'] = None
+                        if isinstance(session['ebook_list'], list):
+                            for file_path in session['ebook_list']:
+                                if not os.path.exists(file_path):
+                                    session['ebook_list'] = None
+                                    break
                         if session['voice'] is not None:
                             if not os.path.exists(session['voice']):
                                 session['voice'] = None
@@ -2166,16 +2198,16 @@ def web_interface(args):
             
         gr_ebook_file.change(
             fn=update_convert_btn,
-            inputs=[gr_ebook_file, gr_ebook_file_mode, gr_custom_model_file, gr_session],
+            inputs=[gr_ebook_file, gr_src_mode, gr_custom_model_file, gr_session],
             outputs=[gr_convert_btn]
         ).then(
             fn=change_gr_ebook_file,
             inputs=[gr_ebook_file, gr_session],
             outputs=[gr_modal_html]
         )
-        gr_ebook_file_mode.change(
-            fn=change_gr_ebook_file_mode,
-            inputs=[gr_ebook_file_mode, gr_session],
+        gr_src_mode.change(
+            fn=change_gr_src_mode,
+            inputs=[gr_src_mode, gr_session],
             outputs=[gr_ebook_file]
         )
         gr_voice_file.change(
@@ -2202,10 +2234,15 @@ def web_interface(args):
             inputs=[gr_language, gr_session],
             outputs=[gr_language, gr_voice_list, gr_custom_model_list, gr_tts_engine_list, gr_fine_tuned_list]
         )
-        gr_audiobook_list.change(
-            fn=change_gr_audiobook_list,
-            inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_link, gr_audio_player, gr_audio_player]
+        gr_tts_engine_list.change(
+            fn=change_gr_tts_engine_list,
+            inputs=[gr_tts_engine_list, gr_session],
+            outputs=[gr_tab_preferences, gr_fine_tuned_list, gr_custom_model_file, gr_group_custom_model]
+        )
+        gr_fine_tuned_list.change(
+            fn=change_gr_fine_tuned_list,
+            inputs=[gr_fine_tuned_list, gr_session],
+            outputs=[gr_group_custom_model]
         )
         gr_custom_model_file.change(
             fn=change_gr_custom_model_file,
@@ -2221,15 +2258,15 @@ def web_interface(args):
             inputs=[gr_custom_model_list, gr_session],
             outputs=[gr_fine_tuned_list]
         )
-        gr_tts_engine_list.change(
-            fn=change_gr_tts_engine_list,
-            inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tab_preferences, gr_fine_tuned_list, gr_custom_model_file, gr_group_custom_model,]
+        gr_output_format_list.change(
+            fn=change_gr_output_format_list,
+            inputs=[gr_output_format_list, gr_session],
+            outputs=None
         )
-        gr_fine_tuned_list.change(
-            fn=change_gr_fine_tuned_list,
-            inputs=[gr_fine_tuned_list, gr_session],
-            outputs=[gr_group_custom_model]
+        gr_audiobook_list.change(
+            fn=change_gr_audiobook_list,
+            inputs=[gr_audiobook_list, gr_session],
+            outputs=[gr_audiobook_link, gr_audio_player, gr_audio_player]
         )
         ########## Parameters
         gr_temperature.change(
@@ -2285,7 +2322,7 @@ def web_interface(args):
         ).then(
             fn=submit_convert_btn,
             inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_ebook_file_mode, gr_tts_engine_list, gr_voice_list, gr_language, 
+                gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_voice_list, gr_language, 
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_temperature, gr_length_penalty,
                 gr_repetition_penalty, gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting
             ],
@@ -2318,9 +2355,9 @@ def web_interface(args):
             fn=restore_interface,
             inputs=[gr_session],
             outputs=[
-                gr_ebook_file, gr_ebook_file_mode, gr_voice_list, gr_device, gr_language, 
-                gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_list, gr_output_format_list,
-                gr_audiobook_list, gr_temperature, gr_length_penalty, gr_repetition_penalty,
+                gr_ebook_file, gr_src_mode, gr_voice_list, gr_device, gr_language, 
+                gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_list, 
+                gr_output_format_list, gr_audiobook_list, gr_temperature, gr_length_penalty, gr_repetition_penalty,
                 gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting, gr_timer
             ]
         )

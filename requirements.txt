@@ -1,5 +1,4 @@
 beautifulsoup4
-coqui-tts
 cutlet
 deep_translator
 docker
@@ -22,3 +21,4 @@ transformers
 translate
 tqdm
 unidic
+coqui-tts==0.25.3
