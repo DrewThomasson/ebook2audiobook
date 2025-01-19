@@ -595,7 +595,8 @@ def get_batch_size(list, session):
         try:
             total_size += os.path.getsize(os.path.join(session['chapters_dir'], file))
         except Exception as e:
-            print(f'********************* ERROR: {e}***************')
+            error = f'Something wrong trying to get the size of {file}'
+            print(error)
             pass
     avg_size = total_size / len(list) if list else 0
     if avg_size > 0:
@@ -1026,17 +1027,17 @@ def combine_audio_chapters(session):
                         else:
                             ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
                     elif session['output_format'] == 'mov':
-                        ffmpeg_cmd += ['-loop', '1', '-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
+                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v', '-shortest']
                     elif session['output_format'] == 'webm':
-                        ffmpeg_cmd += ['-loop', '1', '-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v', '-shortest']   
+                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
+                        ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k', '-c:v', 'libvpx-vp9', '-crf', '40', '-speed', '8', '-shortest']
                     elif session['output_format'] == 'ogg':
-                       ffmpeg_cmd += ['-loop', '1', '-i', ffmpeg_cover]
-                       ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
-                    if ffmpeg_cover is not None:
-                        if ffmpeg_cover.endswith('.png'):
-                            ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
+                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
+                    if ffmpeg_cover.endswith('.png'):
+                        ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
                 else:
                     ffmpeg_cmd += ['-map', '0:a']
                 if session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4':
@@ -1048,10 +1049,10 @@ def combine_audio_chapters(session):
                     ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
                 elif session['output_format'] == 'mp3':
                     ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
-                if session['output_format'] != 'mov' and session['output_format'] != 'ogg':
+                if session['output_format'] != 'ogg':
                     ffmpeg_cmd += ['-af', 'afftdn=nf=-70']
             ffmpeg_cmd += ['-map_metadata', '1']
-            ffmpeg_cmd += ['-threads', '4', '-y', ffmpeg_final_file]
+            ffmpeg_cmd += ['-threads', '8', '-y', ffmpeg_final_file]
             if session['script_mode'] == DOCKER_UTILS:
                 try:
                     container = session['client'].containers.run(
@@ -1577,17 +1578,24 @@ def web_interface(args):
                 .svelte-1b742ao.center.boundedheight.flex {
                     height: 140px !important;
                 }
+                .icon-btn {
+                    font-size: 24px !important;
+                }
+                .del-btn {
+                    font-size: 20px !important;
+                    width: 40px !important;
+                }
                 #component-8, #component-13, #component-26 {
                     height: 140px !important;
                 }
-                #component-24, #component-25 {
+                #component-26, #component-27 {
                     height: 95px !important;
                 }
-                #component-53, #component-54 {
+                #component-55, #component-56 {
                     height: 80px !important;
                 }
                 #component-9 span[data-testid="block-info"], #component-14 span[data-testid="block-info"],
-                #component-27 span[data-testid="block-info"] {
+                #component-31 span[data-testid="block-info"] {
                     display: none;
                 }
             </style>
@@ -1637,7 +1645,9 @@ def web_interface(args):
                         gr_group_voice_file = gr.Group(visible=visible_gr_group_voice_file)
                         with gr_group_voice_file:
                             gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie (<= 6 seconds)', file_types=voice_formats, value=None)
-                            gr_voice_list = gr.Dropdown(label='', choices=voice_options, type='value', interactive=True)
+                            with gr.Row():
+                                gr_voice_list = gr.Dropdown(label='', choices=voice_options, type='value', interactive=True)
+                                #gr_del_voice_btn = gr.Button('✖', elem_classes=['del-btn'], variant='secondary', interactive=False)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
                             gr_device = gr.Radio(label='Processor Unit', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], value=default_device)
@@ -1718,7 +1728,7 @@ def web_interface(args):
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
         gr_conversion_progress = gr.Textbox(label='Progress')
-        gr_convert_btn = gr.Button('Convert', variant='primary', interactive=False)
+        gr_convert_btn = gr.Button('⚡', elem_classes="icon-btn", variant='primary', interactive=False)
         gr_audio_player = gr.Audio(label='Listen', type='filepath', show_download_button=False, container=True, visible=False)
         gr_audiobook_list = gr.Dropdown(label='Audiobooks', choices=audiobook_options, type='value', interactive=True)
         gr_audiobook_link = gr.File(label='Download')
@@ -1809,7 +1819,7 @@ def web_interface(args):
             )
             if len(audiobook_options) > 0:
                 session['audiobook'] = audiobook_options[0][1]
-            return gr.update('Convert', variant='primary', interactive=False), gr.update(value=None), gr.update(value=session['audiobook']), gr.update(choices=audiobook_options, value=session['audiobook']), gr.update(value=session['audiobook'])
+            return gr.update('🛠', variant='primary', interactive=False), gr.update(value=None), gr.update(value=session['audiobook']), gr.update(choices=audiobook_options, value=session['audiobook']), gr.update(value=session['audiobook'])
 
         def change_gr_audiobook_list(audiobook, id):
             session = context.get_session(id)
