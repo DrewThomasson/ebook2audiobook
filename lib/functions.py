@@ -1539,7 +1539,7 @@ def web_interface(args):
             raise DependencyError(e)
     """
     with gr.Blocks(theme=theme, delete_cache=(86400, 86400)) as interface:
-        gr.HTML(
+        main_html = gr.HTML(
             '''
             <style>
                 .svelte-1xyfx7i.center.boundedheight.flex{
@@ -1606,6 +1606,22 @@ def web_interface(args):
                 #component-33 span[data-testid="block-info"], #component-62 span[data-testid="block-info"] {
                     display: none !important;
                 }
+                #voice_player {
+                    display: block !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                }
+                #voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
+                    display: none !important;
+                }
+                #voice_player .controls {
+                    display: block !important;
+                    position: absolute !important;
+                    left: 15px !important;
+                    top: 0 !important;
+                }
             </style>
             <script>
             setInterval(() => {
@@ -1626,7 +1642,7 @@ def web_interface(args):
             </script>
             '''
         )
-        gr.Markdown(
+        main_markdown = gr.Markdown(
             f'''
             <h1 style="line-height: 0.7">Ebook2Audiobook v{version}</h1>
             <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" style="line-height:0">https://github.com/DrewThomasson/ebook2audiobook</a>
@@ -1654,7 +1670,7 @@ def web_interface(args):
                         with gr_group_voice_file:
                             gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie (<= 6 seconds)', file_types=voice_formats, value=None)
                             with gr.Row():
-                                gr_play_voice_btn = gr.Button('▶', elem_classes=['small-btn'], variant='secondary', interactive=False, scale=0, min_width=60)
+                                gr_voice_player = gr.Audio(elem_id='voice_player', type='filepath', show_download_button=False, container=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=True), scale=0, min_width=60)
                                 gr_voice_list = gr.Dropdown(label='', choices=voice_options, type='value', interactive=True, scale=2)
                                 gr_del_voice_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=False, scale=0, min_width=60)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
@@ -1740,7 +1756,7 @@ def web_interface(args):
         gr_write_data = gr.JSON(visible=False)
         gr_conversion_progress = gr.Textbox(label='Progress')
         gr_convert_btn = gr.Button('📚', elem_classes="icon-btn", variant='primary', interactive=False)
-        gr_audio_player = gr.Audio(label='Audiobook', type='filepath', show_download_button=False, container=True, visible=False)
+        gr_audiobook_player = gr.Audio(label='Audiobook', type='filepath', show_download_button=False, container=True, visible=False)
         with gr.Group():
             with gr.Row():
                 gr_audiobook_btn = gr.Button('⏬', elem_classes=['small-btn'], variant='secondary', interactive=False, scale=0, min_width=60)
@@ -1748,7 +1764,6 @@ def web_interface(args):
                 gr_audiobook_list = gr.Dropdown(label='Audiobooks', choices=audiobook_options, type='value', interactive=True, scale=2)
                 gr_del_audiobook_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=False, scale=0, min_width=60)
         gr_modal_html = gr.HTML()
-
         def show_modal(message):
             return f'''
             <style>
@@ -1812,10 +1827,10 @@ def web_interface(args):
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
-                    ebook_data = session['ebook_list']
-                elif isinstance(session['ebook'], str) and file_count == 'single':
-                    #ebook_data = session['ebook'] # TODO: cannot set a list to value=
+                    #ebook_data = session['ebook_list']
                     ebook_data = None
+                elif isinstance(session['ebook'], str) and file_count == 'single':
+                    ebook_data = session['ebook']
                 else:
                     ebook_data = None
                 return (
@@ -1925,6 +1940,7 @@ def web_interface(args):
         def change_gr_voice_list(selected, id):
             session = context.get_session(id)
             session['voice'] = next((value for label, value in voice_options if value == selected), None)
+            return gr.update(value=session['voice'])
 
         def update_gr_voice_list(id):
             nonlocal voice_options
@@ -1936,7 +1952,7 @@ def web_interface(args):
             ]
             current_voice = session['voice']
             return gr.update(choices=voice_options, value=current_voice)
-        
+
         def change_gr_device(device, id):
             session = context.get_session(id)
             session['device'] = device
@@ -2023,6 +2039,16 @@ def web_interface(args):
                     print(error)
                     return gr.update(value=None), gr.update(value=error)
 
+        def update_gr_custom_model_list(id):
+            session = context.get_session(id)
+            custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
+            custom_model_options = [('None', None)] + [
+                (os.path.basename(os.path.join(custom_model_tts_dir, dir)), os.path.join(custom_model_tts_dir, dir))
+                for dir in os.listdir(custom_model_tts_dir)
+                if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
+            ]
+            return gr.update(choices=custom_model_options, value=session['custom_model'])
+
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
             session['tts_engine'] = engine
@@ -2043,16 +2069,6 @@ def web_interface(args):
                 visible = visible_gr_group_custom_model
             session['fine_tuned'] = selected
             return gr.update(visible=visible)
-
-        def update_gr_custom_model_list(id):
-            session = context.get_session(id)
-            custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
-            custom_model_options = [('None', None)] + [
-                (os.path.basename(os.path.join(custom_model_tts_dir, dir)), os.path.join(custom_model_tts_dir, dir))
-                for dir in os.listdir(custom_model_tts_dir)
-                if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
-            ]
-            return gr.update(choices=custom_model_options, value=session['custom_model'])
 
         def change_gr_custom_model_list(selected, id):
             session = context.get_session(id)
@@ -2304,7 +2320,7 @@ def web_interface(args):
         gr_voice_list.change(
             fn=change_gr_voice_list,
             inputs=[gr_voice_list, gr_session],
-            outputs=None
+            outputs=[gr_voice_player]
         )
         gr_device.change(
             fn=change_gr_device,
@@ -2348,7 +2364,7 @@ def web_interface(args):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_link_hidden, gr_audio_player, gr_audio_player]
+            outputs=[gr_audiobook_link_hidden, gr_audiobook_player, gr_audiobook_player]
         )
         gr_audiobook_btn.click(
             fn=None,
@@ -2417,7 +2433,7 @@ def web_interface(args):
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
-            outputs=[gr_convert_btn, gr_ebook_file, gr_audio_player, gr_audiobook_list, gr_modal_html]
+            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_player, gr_audiobook_list, gr_modal_html]
         )
         gr_write_data.change(
             fn=None,
