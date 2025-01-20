@@ -201,7 +201,10 @@ if not "%CONDA_CHECK_STATUS%"=="0" (
 	echo Installing Conda...
 	call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User'),'Process')"
 	echo Downloading Conda installer...
+	call reg delete "HKLM\Software\Policies\Microsoft\Windows\BITS" /f
+	call gpupdate /force
 	call bitsadmin /transfer "MinicondaDownload" %CONDA_URL% "%CONDA_INSTALLER%"
+	::call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
 	"%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /S /D=%CONDA_INSTALL_DIR%
 	if exist "%CONDA_INSTALL_DIR%\condabin\conda.bat" (
 		echo Conda installed successfully.
