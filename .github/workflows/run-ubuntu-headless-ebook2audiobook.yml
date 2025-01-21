@@ -59,8 +59,8 @@ jobs:
       - name: Default headless single test
         run: ./ebook2audiobook.sh --headless --ebook "workflow-testing/test1.txt"
 
-      - name: Default headless single test script_mode full_docker
-        run: ./ebook2audiobook.sh --headless --ebook "workflow-testing/test1.txt" --script_mode full_docker
+      - name: Default headless single test python app.py
+        run:  python app.py --headless --ebook "workflow-testing/test1.txt"
 
       - name: Default headless batch test
         run: ./ebook2audiobook.sh --headless --ebooks_dir "workflow-testing"
