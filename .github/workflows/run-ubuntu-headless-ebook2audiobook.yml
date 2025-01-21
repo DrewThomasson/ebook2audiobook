@@ -56,131 +56,48 @@ jobs:
 
 
 
+
       - name: Default headless single test
-        run: |
-          ./ebook2audiobook.sh --headless --ebook "workflow-testing/test1.txt" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --ebook "workflow-testing/test1.txt"
 
       - name: Default headless batch test
-        run: |
-          ./ebook2audiobook.sh --headless --ebooks_dir "workflow-testing" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --ebooks_dir "workflow-testing"
+
 
       - name: Default headless Custom-Voice single test
-        run: |
-          ./ebook2audiobook.sh --headless --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
 
       - name: Default headless Custom-Voice batch test
-        run: |
-          ./ebook2audiobook.sh --headless --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
+
+
+
 
       - name: English Fairseq headless single test
-        run: |
-          ./ebook2audiobook.sh --headless --language "eng" --ebook "workflow-testing/test1.txt" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --language "eng" --ebook "workflow-testing/test1.txt"
 
       - name: English Fairseq headless batch test
-        run: |
-          ./ebook2audiobook.sh --headless --language "eng" --ebooks_dir "workflow-testing" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --language "eng" --ebooks_dir "workflow-testing"
+
 
       - name: English Fairseq Custom-Voice headless single test
-        run: |
-          ./ebook2audiobook.sh --headless --language "eng" --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --language "eng" --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
 
       - name: English Fairseq Custom-Voice headless batch test
-        run: |
-          ./ebook2audiobook.sh --headless --language "eng" --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --language "eng" --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
+
+
+
 
       - name: Unusual Fairseq headless single test
-        run: |
-          ./ebook2audiobook.sh --headless --language "urd-script_devanagari" --ebook "workflow-testing/test1.txt" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --language "urd-script_devanagari" --ebook "workflow-testing/test1.txt"
 
       - name: Unusual Fairseq headless batch test
-        run: |
-          ./ebook2audiobook.sh --headless --language "urd-script_devanagari" --ebooks_dir "workflow-testing" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --language "urd-script_devanagari" --ebooks_dir "workflow-testing"
+
 
       - name: Unusual Fairseq Custom-Voice headless single test
-        run: |
-          ./ebook2audiobook.sh --headless --language "urd-script_devanagari" --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
+        run: ./ebook2audiobook.sh --headless --language "urd-script_devanagari" --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
 
-      - name: Unusual Fairseq Custom-Voice headless batch test
-        run: |
-          ./ebook2audiobook.sh --headless --language "urd-script_devanagari" --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav" > output.log 2>&1
-          if grep -q "Conversion failed" output.log; then
-            echo "conversion_failed=true" >> $GITHUB_ENV
-          else
-            echo "conversion_failed=false" >> $GITHUB_ENV
-          fi
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      - name: Unusual Fairseq  Custom-Voice headless batch test
+        run: ./ebook2audiobook.sh --headless --language "urd-script_devanagari" --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
