@@ -13,7 +13,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-        
+
       - name: Simulate failed test
         run: |
           echo "Conversion failed: something went wrong" > output.log
@@ -21,7 +21,9 @@ jobs:
             echo "conversion_failed=true" >> $GITHUB_ENV
           else
             echo "conversion_failed=false" >> $GITHUB_ENV
+            exit 1
           fi
+
 
 
       - name: Set up Python 3.12
