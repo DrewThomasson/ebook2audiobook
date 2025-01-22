@@ -15,7 +15,7 @@ set "PYTHON_VERSION=3.12"
 set "DOCKER_UTILS_IMG=utils"
 set "PYTHON_ENV=python_env"
 set "CURRENT_ENV="
-set "PROGRAMS_LIST=calibre ffmpeg"
+set "PROGRAMS_LIST=calibre ffmpeg nodejs"
 
 set "CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
 set "CONDA_INSTALLER=%TEMP%\Miniconda3-latest-Windows-x86_64.exe"
@@ -31,8 +31,15 @@ set "DOCKER_BUILD_STATUS=0"
 
 set "CALIBRE_TEMP_DIR=C:\Windows\Temp\Calibre"
 
+set "HELP_FOUND=%ARGS:--help=%"
+
+:: Refresh environment variables (append registry Path to current PATH)
+for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
+    set "PATH=%%B;%PATH%"
+)
+
 if not exist "%CALIBRE_TEMP_DIR%" (
-    mkdir "%CALIBRE_TEMP_DIR%"
+	mkdir "%CALIBRE_TEMP_DIR%"
 )
 
 icacls "%CALIBRE_TEMP_DIR%" /grant Users:(OI)(CI)F /T
@@ -55,67 +62,69 @@ if defined CONTAINER (
 
 echo Running in %SCRIPT_MODE% mode
 
-:: Check if running in a Conda environment
-if defined CONDA_DEFAULT_ENV (
-	set "CURRENT_ENV=%CONDA_PREFIX%"
-)
-
-:: Check if running in a Python virtual environment
-if defined VIRTUAL_ENV (
-    set "CURRENT_ENV=%VIRTUAL_ENV%"
-)
-
-for /f "delims=" %%i in ('where python') do (
-    if defined CONDA_PREFIX (
-        if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-            set "CURRENT_ENV=%CONDA_PREFIX%"
-			break
-        )
-    ) else if defined VIRTUAL_ENV (
-        if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-            set "CURRENT_ENV=%VIRTUAL_ENV%"
-			break
-        )
-    )
-)
-
-if not "%CURRENT_ENV%"=="" (
-	echo Current python virtual environment detected: %CURRENT_ENV%. 
-	echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-	goto failed
-)
-
 goto conda_check
 
 :conda_check
-where conda >nul 2>&1
-if %errorlevel% neq 0 (
-    set "CONDA_CHECK_STATUS=1"
+set "conda_version="
+for /f "tokens=* delims=" %%i in ('conda --version 2^>nul') do (
+    set "conda_version=%%i"
+)
+if not defined conda_version (
+	set "CONDA_CHECK_STATUS=1"
 ) else (
-    if "%SCRIPT_MODE%"=="%DOCKER_UTILS%" (
-        goto docker_check
+	:: Check if running in a Conda environment
+	if defined CONDA_DEFAULT_ENV (
+		set "CURRENT_ENV=%CONDA_PREFIX%"
+	)
+	:: Check if running in a Python virtual environment
+	if defined VIRTUAL_ENV (
+		set "CURRENT_ENV=%VIRTUAL_ENV%"
+	)
+	for /f "delims=" %%i in ('where python') do (
+		if defined CONDA_PREFIX (
+			if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
+				set "CURRENT_ENV=%CONDA_PREFIX%"
+				break
+			)
+		) else if defined VIRTUAL_ENV (
+			if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
+				set "CURRENT_ENV=%VIRTUAL_ENV%"
+				break
+			)
+		)
+	)
+	if not "%CURRENT_ENV%"=="" (
+		echo Current python virtual environment detected: %CURRENT_ENV%. 
+		echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+		goto failed
+	)
+	if "%SCRIPT_MODE%"=="%DOCKER_UTILS%" (
+		goto docker_check
 		exit /b
-    ) else (
-        call :programs_check
-    )
+	) else (
+		call :programs_check
+	)
 )
 goto dispatch
 exit /b
 
 :programs_check
 set "missing_prog_array="
+set "alias_nodejs=node"
 for %%p in (%PROGRAMS_LIST%) do (
     set "FOUND="
-    for /f "delims=" %%i in ('where %%p 2^>nul') do (
+    set "CHECK_NAME=%%p"  
+    for %%a in (nodejs) do if "%%p"=="%%a" set "CHECK_NAME=!alias_%%a!"  
+    for /f "delims=" %%i in ('where !CHECK_NAME! 2^>nul') do (
         set "FOUND=%%i"
-    )
+    )  
     if not defined FOUND (
         echo %%p is not installed.
         set "missing_prog_array=!missing_prog_array! %%p"
     )
 )
 if not "%missing_prog_array%"=="" (
-	set "PROGRAMS_CHECK=1"
+    set "PROGRAMS_CHECK=1"
 )
 exit /b
 
@@ -167,6 +176,7 @@ if %errorlevel% neq 0 (
 	)
 	exit /b
 )
+
 :: Install Chocolatey if not already installed
 choco -v >nul 2>&1
 if %errorlevel% neq 0 (
@@ -191,7 +201,10 @@ if not "%CONDA_CHECK_STATUS%"=="0" (
 	echo Installing Conda...
 	call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User'),'Process')"
 	echo Downloading Conda installer...
+	call reg delete "HKLM\Software\Policies\Microsoft\Windows\BITS" /f
+	call gpupdate /force
 	call bitsadmin /transfer "MinicondaDownload" %CONDA_URL% "%CONDA_INSTALLER%"
+	::call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
 	"%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /S /D=%CONDA_INSTALL_DIR%
 	if exist "%CONDA_INSTALL_DIR%\condabin\conda.bat" (
 		echo Conda installed successfully.
@@ -227,17 +240,17 @@ if not "%DOCKER_BUILD_STATUS%"=="0" (
 )
 net session >nul 2>&1
 if %errorlevel% equ 0 (
-    echo Restarting in user mode...
-    start "" /b cmd /c "%~f0" %ARGS%
-    exit /b
+	echo Restarting in user mode...
+	start "" /b cmd /c "%~f0" %ARGS%
+	exit /b
 )
 goto dispatch
 exit /b
 
 :dispatch
 if "%PROGRAMS_CHECK%"=="0" (
-    if "%CONDA_CHECK_STATUS%"=="0" (
-        if "%DOCKER_CHECK_STATUS%"=="0" (
+	if "%CONDA_CHECK_STATUS%"=="0" (
+		if "%DOCKER_CHECK_STATUS%"=="0" (
 			if "%DOCKER_BUILD_STATUS%"=="0" (
 				goto main
 				exit /b
@@ -246,7 +259,7 @@ if "%PROGRAMS_CHECK%"=="0" (
 			goto failed
 			exit /b
 		)
-    )
+	)
 )
 echo PROGRAMS_CHECK: %PROGRAMS_CHECK%
 echo CONDA_CHECK_STATUS: %CONDA_CHECK_STATUS%
@@ -258,7 +271,7 @@ exit /b
 
 :main
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
-    python %SCRIPT_DIR%\app.py --script_mode %FULL_DOCKER% %ARGS%
+	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
 	if "%CONDA_RUN_INIT%"=="1" (
 		call conda init
@@ -267,12 +280,13 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
 		call conda create --prefix %SCRIPT_DIR%\%PYTHON_ENV% python=%PYTHON_VERSION% -y
 		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
+		call python -m pip cache purge
 		call python -m pip install --upgrade pip
-		call python -m pip install --upgrade -r requirements.txt --progress-bar=on
+		call python -m pip install --upgrade --no-cache-dir -r requirements.txt --progress-bar on 
 	) else (
 		call conda activate %SCRIPT_DIR%\%PYTHON_ENV%
 	)
-	python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
+	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 	call conda deactivate
 )
 exit /b

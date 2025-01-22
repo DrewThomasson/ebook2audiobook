@@ -3,10 +3,10 @@ nltk
 beautifulsoup4
 ebooklib
 translate
-coqui-tts<=0.25.1
 tqdm
 mecab
 mecab-python3
 unidic
-gradio>=4.44.0
+gradio
 docker
+coqui-tts==0.25.3
