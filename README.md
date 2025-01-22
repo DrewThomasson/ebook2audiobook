@@ -125,10 +125,19 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 
 Specify the language code when running the script in  mode.
 
-
 ### Launching Gradio Web Interface
-
-1. **Run ebook2audiobook**:
+1. **Install dependencies**
+   - **Linux**:
+     ```bash
+      sudo apt-get update && sudo apt-get -y upgrade
+      sudo apt-get -y install libegl1 libopengl0 libxcb-cursor0 ffmpeg mecab libmecab-dev mecab-ipadic-utf8
+      ```
+2. **Install calibre if needed**
+    - **Linux**
+      ```bash
+      sudo -v && wget -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
+      ```
+3. **Run ebook2audiobook**:
    - **Linux/MacOS**:
      ```bash
      ./ebook2audiobook.sh  # Run Launch script
