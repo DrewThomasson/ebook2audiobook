@@ -8,7 +8,7 @@ The authors are not responsible for any misuse of this software or any resulting
 Use this tool responsibly and in accordance with all applicable laws.
 
 
-[![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
+[![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
 Thanks to support ebook2audiobook developers!<br>
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
@@ -62,7 +62,7 @@ Thanks to support ebook2audiobook developers!<br>
 - [Output](#output)
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
-- [Join Our Discord Server!](#join-our-discord-server)
+- [Join Our  Server!](#join-our--server)
 - [Legacy](#legacy-v10)
 - [Glossary of Sections](#glossary-of-sections)
 
@@ -433,6 +433,6 @@ https://github.com/user-attachments/assets/47c846a7-9e51-4eb9-844a-7460402a20a8
 
 You can view the code [here](legacy/v1.0).
 
-## Join Our Discord Server!
+## Join Our  Server!
 
-[![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/bg5Kx43c6w)](https://discord.gg/bg5Kx43c6w)
+[![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
