@@ -48,7 +48,7 @@ if [[ "$OSTYPE" != "linux"* && "$OSTYPE" != "darwin"* ]]; then
 	exit 1;
 fi
 
-ARCH=$(arch)
+ARCH=$(uname -m)
 
 if [[ "$OSTYPE" == "linux"* ]]; then
 	if [[ "$ARCH" == "x86_64" ]]; then
