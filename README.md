@@ -202,7 +202,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 usage: app.py [-h] [--script_mode SCRIPT_MODE] [--session SESSION] [--share] [--headless] [--ebook EBOOK]
               [--ebooks_dir EBOOKS_DIR] [--language LANGUAGE] [--voice VOICE] [--device {cpu,gpu,mps}] [--tts_engine {xtts,fairseq}]
               [--custom_model CUSTOM_MODEL] [--fine_tuned FINE_TUNED] [--output_format OUTPUT_FORMAT] [--temperature TEMPERATURE]
-              [--length_penalty LENGTH_PENALTY] [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K]
+              [--length_penalty LENGTH_PENALTY] [--num_beams NUM_BEAMS] [--repetition_penalty REPETITION_PENALTY] [--top_k TOP_K]
               [--top_p TOP_P] [--speed SPEED] [--enable_text_splitting] [--output_dir OUTPUT_DIR] [--version]
 
 Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
@@ -256,7 +256,10 @@ optional parameters:
                             Default to 0.65. Higher temperatures lead to more creative outputs.
   --length_penalty LENGTH_PENALTY
                         (xtts only, optional) A length penalty applied to the autoregressive decoder.
-                            Default to 1.0. Not applied to custom models.
+                            Default to 1.0.
+  --num_beams NUM_BEAMS
+                        (xtts only, optional) Controls how many alternative sequences the model explores.
+                            Default to 3.
   --repetition_penalty REPETITION_PENALTY
                         (xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself.
                             Default to 2.5
