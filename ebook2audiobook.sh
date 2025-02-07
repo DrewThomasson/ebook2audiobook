@@ -44,7 +44,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMPDIR=./.cache
 
 WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("calibre" "ffmpeg" "mecab" "nodejs" "espeak" "espeak-ng")
+REQUIRED_PROGRAMS=("calibre" "ffmpeg" "mecab" "nodejs" "espeak" "espeak-ng" "rustc" "cargo")
 DOCKER_UTILS_IMG="utils"
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
