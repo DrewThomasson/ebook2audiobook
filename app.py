@@ -1,13 +1,12 @@
 import argparse
 import os
-import re
 import socket
 import subprocess
 import sys
 
 from lib.conf import *
 from lib.lang import install_info, default_language_code
-from lib.models import tts_engines, default_fine_tuned
+from lib.models import models, default_fine_tuned
 
 def check_virtual_env(script_mode):
     if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER:
@@ -16,7 +15,7 @@ def check_virtual_env(script_mode):
 Wrong launch! ebook2audiobook must run in its own virtual environment!
 NOTE: If you are running a Docker so you are probably using an old version of ebook2audiobook.
 To solve this issue go to download the new version at https://github.com/DrewThomasson/ebook2audiobook
-If the folder python_env does not exist in the ebook2audiobook root folder,
+If the directory python_env does not exist in the ebook2audiobook root directory,
 run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows
 to install it all automatically.
 {install_info}
@@ -37,20 +36,21 @@ In order to install and/or use ebook2audiobook correctly you must run
         return False
     else:
         return True
-        
+
 def check_and_install_requirements(file_path):
     if not os.path.exists(file_path):
         error = f'Warning: File {file_path} not found. Skipping package check.'
         print(error)
+        return False
     try:
+        import regex as re
         from importlib.metadata import version, PackageNotFoundError
+        from tqdm import tqdm
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
             packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip()]
-
         missing_packages = []
         for package in packages:
-            # Extract package name without version specifier
             pkg_name = re.split(r'[<>=]', package)[0].strip()
             try:
                 installed_version = version(pkg_name)
@@ -59,22 +59,29 @@ def check_and_install_requirements(file_path):
                 print(error)
                 missing_packages.append(package)
                 pass
-
         if missing_packages:
-            msg = '\nInstalling missing packages...'
+            msg = '\nInstalling missing packages...\n'
             print(msg)
-            try:
-                subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'] + missing_packages)
-            except subprocess.CalledProcessError as e:
-                error = f'Failed to install packages: {e}'
-                print(error)
-                return False
-
+            os.environ['TMPDIR'] = tmp_dir
+            subprocess.check_call([sys.executable, '-m', 'pip', 'cache', 'purge'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
+            with tqdm(total=len(packages), desc='Installation 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
+                for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
+                    try:
+                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
+                        t.update(1)
+                    except subprocess.CalledProcessError as e:
+                        error = f'Failed to install {package}: {e}'
+                        print(error)
+                        return False
+            msg = '\nAll required packages are installed.'
+            print(msg)
         return True
     except Exception as e:
-        raise SystemExit(f'An error occurred: {e}')
+        error = f'❌ An error occurred: {e}'
+        raise SystemExit(error)
         return False
-        
+       
 def check_dictionary():
     import unidic
     unidic_path = unidic.DICDIR
@@ -120,7 +127,7 @@ Linux/Mac:
         '--script_mode', '--session', '--share', '--headless', 
         '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
         '--custom_model', '--fine_tuned', '--output_format',
-        '--temperature', '--length_penalty', '--repetition_penalty', 
+        '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty',
         '--top_k', '--top_p', '--speed', '--enable_text_splitting', 
         '--output_dir',
         '--version', '--help'
@@ -136,8 +143,8 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
     headless_group = parser.add_argument_group('**** The following options are for --headless mode only')
     headless_group.add_argument(options[3], action='store_true', help='''Run the script in headless mode''')
     headless_group.add_argument(options[4], type=str, help='''Path to the ebook file for conversion. Cannot be used when --ebooks_dir is present.''')
-    headless_group.add_argument(options[5], type=str, help=f'''Path to the directory containing ebooks for batch conversion. 
-    Cannot be used when --ebook is present. Default to "{os.path.basename(ebooks_dir)}" if not present.''')
+    headless_group.add_argument(options[5], type=str, help=f'''Relative or absolute path of the directory containing the files to convert. 
+    Cannot be used when --ebook is present.''')
     headless_group.add_argument(options[6], type=str, default=default_language_code, help=f'''Language of the e-book. Default language is set 
     in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py''')
     headless_optional_group = parser.add_argument_group('optional parameters')
@@ -145,29 +152,31 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
     Uses the default voice if not present.''')
     headless_optional_group.add_argument(options[8], type=str, default=default_device, choices=device_list, help=f'''(Optional) Pprocessor unit type for the conversion. 
     Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.''')
-    headless_optional_group.add_argument(options[9], type=str, default=None, choices=tts_engines, help=f'''(Optional) Preferred TTS engine (available are:{tts_engines}). 
+    headless_optional_group.add_argument(options[9], type=str, default=None, choices=list(models.keys()), help=f'''(Optional) Preferred TTS engine (available are: {list(models.keys())}.
     Default depends on the selected language. The tts engine should be compatible with the chosen language''')
     headless_optional_group.add_argument(options[10], type=str, default=None, help=f'''(Optional) Path to the custom model zip file cntaining mandatory model files. 
     Please refer to ./lib/models.py''')
-    headless_optional_group.add_argument(options[11], type=str, default=default_fine_tuned, help='''(Optional) Fine tuned model path. Default to "std" (builtin) if not present.''')
+    headless_optional_group.add_argument(options[11], type=str, default=default_fine_tuned, help='''(Optional) Fine tuned model path. Default is builtin model.''')
     headless_optional_group.add_argument(options[12], type=str, default=default_output_format, help=f'''(Optional) Output audio format. Default is set in ./lib/conf.py''')
     headless_optional_group.add_argument(options[13], type=float, default=tts_default_settings['temperature'], help=f"""(xtts only, optional) Temperature for the model. 
     Default to {tts_default_settings['temperature']}. Higher temperatures lead to more creative outputs.""")
     headless_optional_group.add_argument(options[14], type=float, default=tts_default_settings['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder. 
     Default to {tts_default_settings['length_penalty']}. Not applied to custom models.""")
-    headless_optional_group.add_argument(options[15], type=float, default=tts_default_settings['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
+    headless_optional_group.add_argument(options[15], type=int, default=tts_default_settings['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
+    Default to {tts_default_settings['num_beams']}""")
+    headless_optional_group.add_argument(options[16], type=float, default=tts_default_settings['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
     Default to {tts_default_settings['repetition_penalty']}""")
-    headless_optional_group.add_argument(options[16], type=int, default=tts_default_settings['top_k'], help=f"""(xtts only, optional) Top-k sampling. 
+    headless_optional_group.add_argument(options[17], type=int, default=tts_default_settings['top_k'], help=f"""(xtts only, optional) Top-k sampling. 
     Lower values mean more likely outputs and increased audio generation speed. 
     Default to {tts_default_settings['top_k']}""")
-    headless_optional_group.add_argument(options[17], type=float, default=tts_default_settings['top_p'], help=f"""(xtts only, optional) Top-p sampling. 
+    headless_optional_group.add_argument(options[18], type=float, default=tts_default_settings['top_p'], help=f"""(xtts only, optional) Top-p sampling. 
     Lower values mean more likely outputs and increased audio generation speed. Default to {tts_default_settings['top_p']}""")
-    headless_optional_group.add_argument(options[18], type=float, default=tts_default_settings['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation. 
+    headless_optional_group.add_argument(options[19], type=float, default=tts_default_settings['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation. 
     Default to {tts_default_settings['speed']}""")
-    headless_optional_group.add_argument(options[19], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
+    headless_optional_group.add_argument(options[20], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
     Default is set to {tts_default_settings['enable_text_splitting']}""")                     
-    headless_optional_group.add_argument(options[20], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[21], action='version',version=f'ebook2audiobook version {version}', help='''Show the version of the script and exit''')
+    headless_optional_group.add_argument(options[21], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
+    headless_optional_group.add_argument(options[22], action='version',version=f'ebook2audiobook version {version}', help='''Show the version of the script and exit''')
 
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:
@@ -211,16 +220,20 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
             args['is_gui_process'] = False
             args['audiobooks_dir'] = args['output_dir'] if args['output_dir'] else audiobooks_cli_dir
             args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
-
             # Condition to stop if both --ebook and --ebooks_dir are provided
             if args['ebook'] and args['ebooks_dir']:
                 error = 'Error: You cannot specify both --ebook and --ebooks_dir in headless mode.'
                 print(error)
                 sys.exit(1)
-
+            # convert in absolute path voice, custom_model if any
+            if args['voice']:
+                if os.path.exists(args['voice']):
+                    args['voice'] = os.path.abspath(args['voice'])
+            if args['custom_model']:
+                if os.path.exists(args['custom_model']):
+                    args['custom_model'] = os.path.abspath(args['custom_model'])
             # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
-            if 'ebooks_dir' in args:
-                # Check if the directory exists
+            if args['ebooks_dir']:
                 if not os.path.exists(args['ebooks_dir']):
                     error = f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.'
                     print(error)
@@ -235,13 +248,13 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
                     error = f'Conversion failed: {progress_status}'
                     print(error)
                     sys.exit(1)
-            elif 'ebook' in args:
+            elif args['ebook']:
+                args['ebook'] = os.path.abspath(args['ebook'])
                 progress_status, audiobook_file = convert_ebook(args)
                 if audiobook_file is None:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
                     sys.exit(1)
-
             else:
                 error = 'Error: In headless mode, you must specify either an ebook file using --ebook or an ebook directory using --ebooks_dir.'
                 print(error)
@@ -257,6 +270,5 @@ Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre.
                 error = 'Error: In non-headless mode, no option or only --share can be passed'
                 print(error)
                 sys.exit(1)
-
 if __name__ == '__main__':
     main()

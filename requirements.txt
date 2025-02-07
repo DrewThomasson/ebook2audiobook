@@ -1,9 +1,11 @@
 beautifulsoup4
 cutlet
 deep_translator
+demucs
 docker
 ebooklib
 fastapi
+ffmpeg-python
 gensim
 gradio
 hangul-romanize
@@ -17,6 +19,8 @@ pydub
 pypinyin
 ray
 regex
+sentencepiece
+torchvggish
 transformers
 translate
 tqdm

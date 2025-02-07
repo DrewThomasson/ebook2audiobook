@@ -1,51 +1,59 @@
 import os
 from lib.conf import voices_dir
-from lib.lang import default_voice_file
 
 XTTSv2 = 'xtts'
+BARK = 'bark'
+VITS = 'vits'
 FAIRSEQ = 'fairseq'
-
-tts_engines = [XTTSv2, FAIRSEQ]
+YOURTTS = 'yourtts'
 
 default_tts_engine = 'xtts'
-default_fine_tuned = 'std'
+default_fine_tuned = 'internal'
 
 # config file must always on first row
 default_xtts_files = ['config.json', 'model.pth', 'vocab.json', 'ref.wav']
-default_fairseq_files = ['config.json', 'G_100000.pth', 'vocab.json']
-default_yourtts_files = ['config.json', 'model_file.pth']
 default_bark_files = ['coarse_2.pt']
-default_libri_files = ['config.json', 'model_file.pth']
-default_openvoice2_files = ['config.json', 'checkpoint.pth']
-default_freevc24_files = ['config.json', 'model.pth']
+default_fairseq_files = ['config.json', 'G_100000.pth', 'vocab.json']
+default_vits_files = ['config.json', 'model_file.pth', 'language_ids.json']
+default_yourtts_files = ['config.json', 'model_file.pth']
 
 default_xtts_samplerate = 24000
-default_fairseq_samplerate = 24000
-default_yourtts_samplerate = 22050
 default_bark_samplerate = 24000
-default_libri_samplerate = 24000
-default_openvoice2_samplerate = 24000
-default_freevc24_samplerate = 24000
+default_vits_samplerate = 24000
+default_fairseq_samplerate = 16000
+default_yourtts_samplerate = 16000
 
-builtin_xtts_voices = [
-    'Claribel Dervla', 'Daisy Studious', 'Gracie Wise', 'Tammie Ema', 'Alison Dietlinde', 'Ana Florence', 'Annmarie Nele', 'Asya Anara', 
-    'Brenda Stern', 'Gitta Nikolina', 'Henriette Usha', 'Sofia Hellen', 'Tammy Grit', 'Tanja Adelina', 'Vjollca Johnnie', 'Andrew Chipper', 
-    'Badr Odhiambo', 'Dionisio Schuyler', 'Royston Min', 'Viktor Eka', 'Abrahan Mack', 'Adde Michal', 'Baldur Sanjin', 'Craig Gutsy', 
-    'Damien Black', 'Gilberto Mathias', 'Ilkin Urbano', 'Kazuhiko Atallah', 'Ludvig Milivoj', 'Suad Qasim', 'Torcull Diarmuid', 
-    'Viktor Menelaos', 'Zacharie Aimilios', 'Nova Hogarth', 'Maja Ruoho', 'Uta Obando', 'Lidiya Szekeres', 'Chandra MacFarland', 
-    'Szofi Granger', 'Camilla Holmström', 'Lilya Stainthorpe', 'Zofija Kendrick', 'Narelle Moon', 'Barbora MacLean', 
-    'Alexandra Hisakawa', 'Alma María', 'Rosemary Okafor', 'Ige Behringer', 'Filip Traverse', 'Damjan Chapman', 
-    'Wulf Carlevaro', 'Aaron Dreschner', 'Kumar Dahl', 'Eugenio Mataracı', 'Ferran Simen', 'Xavier Hayasaka', 'Luis Moray', 'Marcos Rudaski'
-]
-builtin_yourtts_voices = ['female-en-5', 'female-en-5\n', 'female-pt-4\n', 'male-en-2', 'male-en-2\n', 'male-pt-3\n']
+builtin_xtts_voices = {
+    'ClaribelDervla': 'Claribel Dervla', 'DaisyStudious': 'Daisy Studious', 'GracieWise': 'Gracie Wise',
+    'TammieEma': 'Tammie Ema', 'AlisonDietlinde': 'Alison Dietlinde', 'AnaFlorence': 'Ana Florence',
+    'AnnmarieNele': 'Annmarie Nele', 'AsyaAnara': 'Asya Anara', 'BrendaStern': 'Brenda Stern',
+    'GittaNikolina': 'Gitta Nikolina', 'HenrietteUsha': 'Henriette Usha', 'SofiaHellen': 'Sofia Hellen',
+    'TammyGrit': 'Tammy Grit', 'TanjaAdelina': 'Tanja Adelina', 'VjollcaJohnnie': 'Vjollca Johnnie',
+    'AndrewChipper': 'Andrew Chipper', 'BadrOdhiambo': 'Badr Odhiambo', 'DionisioSchuyler': 'Dionisio Schuyler',
+    'RoystonMin': 'Royston Min', 'ViktorEka': 'Viktor Eka', 'AbrahanMack': 'Abrahan Mack',
+    'AddeMichal': 'Adde Michal', 'BaldurSanjin': 'Baldur Sanjin', 'CraigGutsy': 'Craig Gutsy',
+    'DamienBlack': 'Damien Black', 'GilbertoMathias': 'Gilberto Mathias', 'IlkinUrbano': 'Ilkin Urbano',
+    'KazuhikoAtallah': 'Kazuhiko Atallah', 'LudvigMilivoj': 'Ludvig Milivoj', 'SuadQasim': 'Suad Qasim',
+    'TorcullDiarmuid': 'Torcull Diarmuid', 'ViktorMenelaos': 'Viktor Menelaos', 'ZacharieAimilios': 'Zacharie Aimilios',
+    'NovaHogarth': 'Nova Hogarth', 'MajaRuoho': 'Maja Ruoho', 'UtaObando': 'Uta Obando',
+    'LidiyaSzekeres': 'Lidiya Szekeres', 'ChandraMacFarland': 'Chandra MacFarland', 'SzofiGranger': 'Szofi Granger',
+    'CamillaHolmström': 'Camilla Holmström', 'LilyaStainthorpe': 'Lilya Stainthorpe', 'ZofijaKendrick': 'Zofija Kendrick',
+    'NarelleMoon': 'Narelle Moon', 'BarboraMacLean': 'Barbora MacLean', 'AlexandraHisakawa': 'Alexandra Hisakawa',
+    'AlmaMaría': 'Alma María', 'RosemaryOkafor': 'Rosemary Okafor', 'IgeBehringer': 'Ige Behringer',
+    'FilipTraverse': 'Filip Traverse', 'DamjanChapman': 'Damjan Chapman', 'WulfCarlevaro': 'Wulf Carlevaro',
+    'AaronDreschner': 'Aaron Dreschner', 'KumarDahl': 'Kumar Dahl', 'EugenioMataracı': 'Eugenio Mataracı',
+    'FerranSimen': 'Ferran Simen', 'XavierHayasaka': 'Xavier Hayasaka', 'LuisMoray': 'Luis Moray',
+    'MarcosRudaski': 'Marcos Rudaski'
+}
+builtin_yourtts_voices = {"MachinElla": "female-en-5", "ElectroMale": "male-en-2"}
 
 models = {
-    "xtts": {
-        "std": {
+    XTTSv2: {
+        "internal": {
             "lang": "multi",
             "repo": "tts_models/multilingual/multi-dataset/xtts_v2",
             "sub": "",
-            "voice": default_voice_file,
+            "voice": builtin_xtts_voices['KumarDahl'],
             "files": default_xtts_files,
             "samplerate": default_xtts_samplerate
         },
@@ -146,14 +154,44 @@ models = {
             "samplerate": default_xtts_samplerate
         }
     },
-    "fairseq": {
-        "std": {
+    BARK: {
+        "internal": {
+            "lang": "multi",
+            "repo": "tts_models/multilingual/multi-dataset/bark",
+            "sub": "",
+            "voice": None,
+            "files": default_bark_files,
+            "samplerate": default_bark_samplerate
+        }
+    },
+    VITS: {
+        "internal": {
+            "lang": "multi",
+            "repo": "tts_models/[lang_iso1]/[xxx]",
+            "sub": {"cv/vits":["bg","cs","da","et","ga","hr","lt","lv","mt","pt","ro","sk","sl","sv"], "css10/vits":["es","fr","nl","hu","fi","ru","el","ja","zh"], "ljspeech/vits": ["en"], "thorsten/tacotron2-DDC": ["de"]},
+            "voice": None,
+            "files": default_vits_files,
+            "samplerate": default_vits_samplerate
+        }
+    },
+    FAIRSEQ: {
+        "internal": {
             "lang": "multi",
             "repo": "tts_models/[lang]/fairseq/vits",
             "sub": "",
-            "voice": default_voice_file,
+            "voice": None,
             "files": default_fairseq_files,
             "samplerate": default_fairseq_samplerate
+        }
+    },
+    YOURTTS: {
+        "internal": {
+            "lang": "multi",
+            "repo": "tts_models/multilingual/multi-dataset/your_tts",
+            "sub": "",
+            "voice": builtin_yourtts_voices['ElectroMale'],
+            "files": default_yourtts_files,
+            "samplerate": default_yourtts_samplerate
         }
     }
 }

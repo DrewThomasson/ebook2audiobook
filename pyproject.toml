@@ -1,40 +1,44 @@
 [build-system]
 name = "ebook2audiobook"
-version = "2.1.0"
+version = "25.2.0"
 requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ebook2audiobook"
-version = "2.1.0"
-description = "Convert eBooks to audiobooks with chapters and metadata"
+version = "25.2.0"
+description = "Convert Ebook to Audiobook with chapters and metadata"
 authors = [
     { name = "Drew Thomasson" }
 ]
 dependencies = [
     "beautifulsoup4",
     "cutlet",
-	"deep_translator",
+    "deep_translator",
+    "demucs",
     "docker",
     "ebooklib",
-	"fastapi",
+    "fastapi",
+    "ffmpeg-python",
     "gensim",
     "gradio",
     "hangul-romanize",
     "indic-nlp-library",
-	"iso-639",
+    "iso-639",
     "jieba",
-	"m4b-util",
-	"mecab",
-	"mecab-python3",
+    "m4b-util",
+    "mecab",
+    "mecab-python3",
     "pydub",
     "pypinyin",
-	"ray",
-	"regex",
-	"transformers",
+    "ray",
+    "regex",
+    "sentencepiece",
+    "torchvggish",
+    "transformers",
     "translate",
     "tqdm",
-	"unidic",
+    "unidic",
     "coqui-tts==0.25.3"
 ]
 readme = "README.md"
