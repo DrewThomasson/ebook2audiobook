@@ -211,10 +211,15 @@ else
 				else
 					$WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
 				fi
-				if command -v calibre >/dev/null 2>&1; then
+				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
 				else
-					echo "Calibre installation failed."
+					eval "sudo $PACK_MGR $program $PACK_MGR_OPTIONS"				
+					if command -v $program >/dev/null 2>&1; then
+						echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+					else
+						echo "$program installation failed."
+					fi
 				fi
 			elif [ "$program" = "mecab" ];then
 				if command -v emerge &> /dev/null; then
