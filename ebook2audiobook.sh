@@ -146,8 +146,8 @@ else
 	}
 
 	function install_programs {
-		echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges or it will fail.\e[0m"
 		if [[ "$OSTYPE" = "darwin"* ]]; then
+			echo -e "\e[33mInstalling required programs...\e[0m"
 			PACK_MGR="brew install"
 				if ! command -v brew &> /dev/null; then
 					echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
@@ -157,6 +157,7 @@ else
 				fi
 			mecab_extra="mecab-ipadic"
 		else
+			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
 			PACK_MGR_OPTIONS=""
 			if command -v emerge &> /dev/null; then
 				PACK_MGR="sudo emerge"

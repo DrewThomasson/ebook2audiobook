@@ -23,8 +23,8 @@ set "CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86
 set "CONDA_INSTALLER=%TEMP%\Miniconda3-latest-Windows-x86_64.exe"
 set "CONDA_INSTALL_DIR=%USERPROFILE%\miniconda3"
 set "CONDA_PATH=%USERPROFILE%\miniconda3\bin"
-setx "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
-setx "PATH=%CONDA_PATH%;%CONDA_INSTALL_DIR%\condabin;%USERPROFILE%\scoop\shims;%PATH%"
+set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
+set "PATH=%PATH%;%CONDA_PATH%;%CONDA_INSTALL_DIR%\condabin;%USERPROFILE%\scoop\shims"
 
 set "PROGRAMS_CHECK=0"
 set "CONDA_CHECK_STATUS=0"
@@ -111,8 +111,8 @@ for %%p in (%PROGRAMS_LIST%) do (
     if "%%p"=="nodejs" set "prog=node"
     where !prog! >nul 2>&1
     if errorlevel 1 (
-        echo !prog! is not installed.
-        set "missing_prog_array=!missing_prog_array! !prog!"
+        echo %%p is not installed.
+        set "missing_prog_array=!missing_prog_array! %%p"
     )
 )
 if not "%missing_prog_array%"=="" (
