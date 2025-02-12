@@ -25,23 +25,20 @@ jobs:
       - name: Install the system packages
         run: |
           sudo apt-get update &&
-          sudo apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 curl &&
-          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - &&
-          sudo apt-get install -y nodejs &&
+          sudo apt-get install -y wget git calibre ffmpeg nodejs espeak espeak-ng rustc cargo libmecab-dev mecab mecab-ipadic-utf8 curl &&
           sudo apt-get clean &&
           sudo rm -rf /var/lib/apt/lists/*
-
       - name: Install the python requirements
-        run: pip install -r requirements.txt
+        run: |
+          python -m pip install --upgrade pip
+          pip cache purge
+          pip install -r requirements.txt
 
       - name: pip Install unict
         run: pip install unidic
 
       - name: Download the unict dictionary
         run: python -m unidic download
-
-
-
 
       - name: Help command python app.py
         run: python app.py --help
@@ -54,16 +51,11 @@ jobs:
           echo "This is test sentence 3." > workflow-testing/test3.txt
           echo "This is test sentence 4." > workflow-testing/test4.txt
           echo "This is test sentence 5." > workflow-testing/test5.txt
-
-
-
-
       - name: Default headless single test python app.py
         run: python app.py --headless --ebook "workflow-testing/test1.txt"
 
       - name: Default headless batch test python app.py
         run: python app.py --headless --ebooks_dir "workflow-testing"
-
 
       - name: Default headless Custom-Voice single test python app.py
         run: python app.py --headless --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
@@ -71,15 +63,11 @@ jobs:
       - name: Default headless Custom-Voice batch test python app.py
         run: python app.py --headless --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
 
-
-
-
       - name: English Fairseq headless single test python app.py
         run: python app.py --headless --language "eng" --ebook "workflow-testing/test1.txt"
 
       - name: English Fairseq headless batch test python app.py
         run: python app.py --headless --language "eng" --ebooks_dir "workflow-testing"
-
 
       - name: English Fairseq Custom-Voice headless single test python app.py
         run: python app.py --headless --language "eng" --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
@@ -87,15 +75,11 @@ jobs:
       - name: English Fairseq Custom-Voice headless batch test python app.py
         run: python app.py --headless --language "eng" --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"
 
-
-
-
       - name: Unusual Fairseq headless single test python app.py
         run: python app.py --headless --language "urd-script_devanagari" --ebook "workflow-testing/test1.txt"
 
       - name: Unusual Fairseq headless batch test python app.py
         run: python app.py --headless --language "urd-script_devanagari" --ebooks_dir "workflow-testing"
-
 
       - name: Unusual Fairseq Custom-Voice headless single test python app.py
         run: python app.py --headless --language "urd-script_devanagari" --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_16000.wav"

@@ -128,12 +128,12 @@ else
 		programs_missing=()
 		for program in "${programs[@]}"; do
 			if [ "$program" = "nodejs" ]; then
-				app="node"
+				bin="node"
 			else
-				app="$program"
+				bin="$program"
 			fi
-			if ! command -v "$program" >/dev/null 2>&1; then
-				echo -e "\e[33m$program is not installed.\e[0m"
+			if ! command -v "$bin" >/dev/null 2>&1; then
+				echo -e "\e[33m$bin is not installed.\e[0m"
 				programs_missing+=($program)
 			fi
 		done
