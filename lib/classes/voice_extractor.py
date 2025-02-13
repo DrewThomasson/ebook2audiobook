@@ -9,17 +9,18 @@ from pydub import AudioSegment
 from torchvggish import vggish, vggish_input
 
 from lib.conf import voice_formats
+from lib.models import models
 
 class VoiceExtractor:
 
     def __init__(self, session, models_dir, input_file, voice_name):
         self.wav_file = None
-        self.sample_rate = None
         self.session = session
         self.input_file = input_file
         self.voice_name = voice_name
         self.models_dir = models_dir
         self.voice_track = 'vocals.wav'
+        self.sample_rate = models[session['tts_engine']]['sample_rate']
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', os.path.splitext(os.path.basename(self.input_file))[0])
 
@@ -33,17 +34,18 @@ class VoiceExtractor:
 
     def _convert_to_wav(self):
         try:
-            if not self.input_file.lower().endswith('.wav'):
+            if not self.input_file.lower().endswith(f'_{self.sample_rate}.wav'):
                 self.wav_file = os.path.join(os.path.dirname(self.input_file), os.path.basename(self.input_file).replace(os.path.splitext(self.input_file)[1], '.wav'))
                 process = (
                     ffmpeg
                     .input(self.input_file)
-                    .output(self.wav_file, format='wav', ar=24000, ac=1)
+                    .output(self.wav_file, format='wav', ar=self.sample_rate, ac=1)
                     .run(overwrite_output=True)
                 )
+                msg = 'Conversion to .wav format for processing successful'
             else:
                 self.wav_file = self.input_file
-            msg = 'Conversion to .wav format for processing successful'
+                msg = 'File is already a .wav format'
             return True, msg
         except ffmpeg.Error as e:
             error = f'convert_to_wav fmpeg.Error: {e.stderr.decode()}'
@@ -148,12 +150,12 @@ class VoiceExtractor:
                 'equalizer=f=16000:t=q:w=2:g=3,'
                 'highpass=f=63,pan=mono|c0=0.5*FL+0.5*FR[audio]'
             )
-            for sample_rate in [16000, 24000]:
-                output_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_{sample_rate}.wav')
+            for rate in [16000, 24000]:
+                output_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_{rate}.wav')
                 try:
                     ffmpeg.input(self.voice_track).output(
                         output_file,
-                        acodec='pcm_s16le', ar=sample_rate, ac=1,
+                        acodec='pcm_s16le', ar=rate, ac=1,
                         af=filter_chain
                     ).run(overwrite_output=True)   
                 except ffmpeg.Error as e:
