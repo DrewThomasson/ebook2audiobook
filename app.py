@@ -9,7 +9,8 @@ from lib.lang import install_info, default_language_code
 from lib.models import models, default_fine_tuned
 
 def check_virtual_env(script_mode):
-    if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER:
+    current_version = sys.version_info[:2]  # (major, minor)
+    if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
         return True  
     error = f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
