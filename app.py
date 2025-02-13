@@ -134,9 +134,8 @@ Linux/Mac:
         '--version', '--help'
     ]
     all_group = parser.add_argument_group('**** The following options are for all modes', 'Optional')
-    all_group.add_argument(options[0], type=str, help='''Mode the script will run. Accepted values are "native", "docker_utils", "full_docker". 
-Default mode is "native". "docker_utils" use a docker for ffmpeg and calibre. 
-"full_docker" cannot be used without a docker command.''')
+    all_group.add_argument(options[0], type=str, help='''Mode the script will run. Accepted values are "native" and "full_docker". Default mode is "native". 
+    "full_docker" cannot be used without a docker command.''')
     parser.add_argument(options[1], type=str, help='''Session to resume the conversion in case of interruption, crash, 
     or reuse of custom models and custom cloning voices.''')
     gui_group = parser.add_argument_group('**** The following option are for gradio/gui mode only', 'Optional')

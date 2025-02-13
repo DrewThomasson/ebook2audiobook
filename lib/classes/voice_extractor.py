@@ -13,19 +13,19 @@ from lib.models import models
 
 class VoiceExtractor:
 
-    def __init__(self, session, models_dir, input_file, voice_name):
+    def __init__(self, session, models_dir, voice_file, voice_name):
         self.wav_file = None
         self.session = session
-        self.input_file = input_file
+        self.voice_file = voice_file
         self.voice_name = voice_name
         self.models_dir = models_dir
         self.voice_track = 'vocals.wav'
         self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.output_dir = self.session['voice_dir']
-        self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', os.path.splitext(os.path.basename(self.input_file))[0])
+        self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', os.path.splitext(os.path.basename(self.voice_file))[0])
 
     def _validate_format(self):
-        file_extension = os.path.splitext(self.input_file)[1].lower()
+        file_extension = os.path.splitext(self.voice_file)[1].lower()
         if file_extension in voice_formats:
             msg = 'Input file valid'
             return True, msg
@@ -34,18 +34,14 @@ class VoiceExtractor:
 
     def _convert_to_wav(self):
         try:
-            if not self.input_file.lower().endswith(f'_{self.samplerate}.wav'):
-                self.wav_file = os.path.join(os.path.dirname(self.input_file), os.path.basename(self.input_file).replace(os.path.splitext(self.input_file)[1], '.wav'))
-                process = (
-                    ffmpeg
-                    .input(self.input_file)
-                    .output(self.wav_file, format='wav', ar=self.samplerate, ac=1)
-                    .run(overwrite_output=True)
-                )
-                msg = 'Conversion to .wav format for processing successful'
-            else:
-                self.wav_file = self.input_file
-                msg = 'File is already a .wav format'
+            self.wav_file = os.path.join(self.session['voice_dir'], os.path.basename(self.voice_file).replace(os.path.splitext(self.voice_file)[1], '.wav'))
+            process = (
+                ffmpeg
+                .input(self.voice_file)
+                .output(self.wav_file, format='wav', ar=self.samplerate, ac=1)
+                .run(overwrite_output=True)
+            )
+            msg = 'Conversion to .wav format for processing successful'
             return True, msg
         except ffmpeg.Error as e:
             error = f'convert_to_wav fmpeg.Error: {e.stderr.decode()}'

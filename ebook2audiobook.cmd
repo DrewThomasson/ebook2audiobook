@@ -5,14 +5,12 @@ setlocal enabledelayedexpansion
 set "ARGS=%*"
 
 set "NATIVE=native"
-set "DOCKER_UTILS=docker_utils"
 set "FULL_DOCKER=full_docker"
 
 set "SCRIPT_MODE=%NATIVE%"
 set "SCRIPT_DIR=%~dp0"
 
 set "PYTHON_VERSION=3.12"
-set "DOCKER_UTILS_IMG=utils"
 set "PYTHON_ENV=python_env"
 set "CURRENT_ENV="
 set "PROGRAMS_LIST=calibre ffmpeg nodejs espeak-ng"
@@ -30,20 +28,12 @@ set "PROGRAMS_CHECK=0"
 set "CONDA_CHECK_STATUS=0"
 set "CONDA_RUN_INIT=0"
 set "DOCKER_CHECK_STATUS=0"
-set "DOCKER_BUILD_STATUS=0"
 
 set "HELP_FOUND=%ARGS:--help=%"
 
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
     set "PATH=%%B;%PATH%"
-)
-
-for %%A in (%ARGS%) do (
-	if "%%A"=="%DOCKER_UTILS%" (
-		set "SCRIPT_MODE=%DOCKER_UTILS%"
-		break
-	)
 )
 
 cd /d "%SCRIPT_DIR%"
@@ -93,13 +83,8 @@ if not defined conda_version (
 		echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
 		goto failed
 	)
-	if "%SCRIPT_MODE%"=="%DOCKER_UTILS%" (
-		goto docker_check
-		exit /b
-	) else (
-		call :programs_check
-		exit /b
-	)
+	call :programs_check
+	exit /b
 )
 goto dispatch
 exit /b
@@ -133,26 +118,8 @@ if %errorlevel% neq 0 (
 	if %errorlevel% neq 0 (
 		set "DOCKER_CHECK_STATUS=1"
 	) else (
-		:: Check if the Docker socket is running
-		set "docker_socket="
-		if exist \\.\pipe\docker_engine (
-			set "docker_socket=Windows"
-		)
-		if not defined docker_socket (
-			echo Cannot connect to docker socket. Check if the docker socket is running.
-			goto failed
-			exit /b
-		) else (
-			:: Check if the Docker image is available
-			call docker images -q %DOCKER_UTILS_IMG% >nul 2>&1
-			if %errorlevel% neq 0 (
-				echo Docker image '%DOCKER_UTILS_IMG%' not found. Installing it now...
-				set "DOCKER_BUILD_STATUS=1"
-			) else (
-				goto dispatch
-				exit /b
-			)
-		)
+		goto dispatch
+		exit /b
 	)
 )
 goto install_components
@@ -211,17 +178,6 @@ if not "%DOCKER_CHECK_STATUS%"=="0" (
 		) 
 	)
 )
-:: Build Docker image if required
-if not "%DOCKER_BUILD_STATUS%"=="0" (
-	call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
-	call python -m pip install -e .
-	call docker build -f DockerfileUtils -t utils .
-	call conda deactivate
-	call docker images -q %DOCKER_UTILS_IMG% >nul 2>&1
-	if %errorlevel% equ 0 (
-		set "DOCKER_BUILD_STATUS=0"
-	)
-)
 goto dispatch
 exit /b
 
@@ -229,10 +185,8 @@ exit /b
 if "%PROGRAMS_CHECK%"=="0" (
 	if "%CONDA_CHECK_STATUS%"=="0" (
 		if "%DOCKER_CHECK_STATUS%"=="0" (
-			if "%DOCKER_BUILD_STATUS%"=="0" (
-				goto main
-				exit /b
-			)
+			goto main
+			exit /b
 		) else (
 			goto failed
 			exit /b
@@ -242,7 +196,6 @@ if "%PROGRAMS_CHECK%"=="0" (
 echo PROGRAMS_CHECK: %PROGRAMS_CHECK%
 echo CONDA_CHECK_STATUS: %CONDA_CHECK_STATUS%
 echo DOCKER_CHECK_STATUS: %DOCKER_CHECK_STATUS%
-echo DOCKER_BUILD_STATUS: %DOCKER_BUILD_STATUS%
 timeout /t 5 /nobreak >nul
 goto install_components
 exit /b

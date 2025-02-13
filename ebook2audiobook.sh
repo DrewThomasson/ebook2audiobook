@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ -z "$SWITCHED_TO_ZSH" && "$SHELL" = */bin/zsh ]]; then
+if [[ -z "$SWITCHED_TO_ZSH" && "$SHELL" = */zsh ]]; then
 	SWITCHED_TO_ZSH=1 exec env zsh "$0" "$@"
 fi
 
@@ -35,7 +35,6 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 NATIVE="native"
-DOCKER_UTILS="docker_utils"
 FULL_DOCKER="full_docker"
 
 SCRIPT_MODE="$NATIVE"
@@ -45,7 +44,6 @@ TMPDIR=./.cache
 
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("calibre" "ffmpeg" "mecab" "nodejs" "espeak" "espeak-ng" "rustc" "cargo")
-DOCKER_UTILS_IMG="utils"
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
 
@@ -90,7 +88,7 @@ if [[ -n "$container" || -f /.dockerenv ]]; then
 	SCRIPT_MODE="$FULL_DOCKER"
 else
 	if [[ -n "${arguments['script_mode']+exists}" ]]; then
-		if [ "${arguments['script_mode']}" = "$NATIVE" ] || [ "${arguments['script_mode']}" = "$DOCKER_UTILS" ]; then
+		if [ "${arguments['script_mode']}" = "$NATIVE" ]; then
 			SCRIPT_MODE="${arguments['script_mode']}"
 		fi
 	fi
@@ -244,9 +242,6 @@ else
 		done
 		if required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
 			return 0
-		else
-			echo -e "\e[33mYou can run 'ebook2audiobook.sh --script_mode docker_utils' to avoid to install $REQUIRED_PROGRAMS natively.\e[0m"
-			return 1
 		fi
 	}
 
@@ -302,35 +297,14 @@ else
 				rm -f get-docker.sh
 			fi
 			echo -e "\e[32m===============>>> docker is installed! <<===============\e[0m"
-			docker_build
-		else
-			# Check if Docker service is running
-			if docker info >/dev/null 2>&1; then
-				if [[ "$(docker images -q $DOCKER_UTILS_IMG 2> /dev/null)" = "" ]]; then
-					docker_build
-				fi
-			else
-				echo -e "\e[33mDocker is not running\e[0m"
-				return 1
-			fi
 		fi
 		return 0
-	}
-
-	function docker_build {
-	# Check if the Docker socket is accessible
-		if [[ -e /var/run/docker.sock || -e /run/docker.sock ]]; then
-			echo -e "\e[33mDocker image '$DOCKER_UTILS_IMG' not found. Trying to build it...\e[0m"
-			docker build -f DockerfileUtils -t utils .
-		else
-			echo -e "\e[33mcannot connect to docker socket. Check if the docker socket is running.\e[0m"
-		fi
 	}
 
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
 		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
-	elif [[ "$SCRIPT_MODE" = "$NATIVE" || "$SCRIPT_MODE" = "$DOCKER_UTILS" ]]; then
+	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
 		pass=true
 		echo -e "\e[33mRunning in $SCRIPT_MODE mode\e[0m"
 		if [ "$SCRIPT_MODE" = "$NATIVE" ]; then		   

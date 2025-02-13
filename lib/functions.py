@@ -428,72 +428,32 @@ def convert_to_epub(session):
     if session['cancellation_requested']:
         print('Cancel requested')
         return False
-
-    if session['script_mode'] == DOCKER_UTILS:
-        try:
-            docker_dir = os.path.basename(session['process_dir'])
-            docker_file_in = os.path.basename(session['ebook'])
-            docker_file_out = os.path.basename(session['epub_path'])
-
-            # Check if the input file is already an EPUB
-            if docker_file_in.lower().endswith('.epub'):
-                shutil.copy(session['ebook'], session['epub_path'])
-                print("File is already in EPUB format. Copying directly.")
-                return True
-
-            # Convert using Docker
-            print(f"Starting Docker container to convert {docker_file_in} to EPUB.")
-            container_logs = session['client'].containers.run(
-                docker_utils_image,
-                command=f'ebook-convert /files/{docker_dir}/{docker_file_in} /files/{docker_dir}/{docker_file_out} --input-encoding=utf-8 --output-profile=generic_eink --verbose',
-                volumes={session['process_dir']: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
-                remove=True,
-                detach=False,
-                stdout=True,
-                stderr=True
-            )
-            print(container_logs.decode('utf-8'))
-            return True
-
-        except docker.errors.ContainerError as e:
-            print(f"Docker container error: {e}")
-            DependencyError(e)
+    try:
+        util_app = shutil.which('ebook-convert')
+        if not util_app:
+            error = "The 'ebook-convert' utility is not installed or not found."
+            print(error)
             return False
-        except docker.errors.ImageNotFound as e:
-            print(f"Docker image not found: {e}")
-            DependencyError(e)
-            return False
-        except docker.errors.APIError as e:
-            print(f"Docker API error: {e}")
-            DependencyError(e)
-            return False
-    else:
-        try:
-            util_app = shutil.which('ebook-convert')
-            if not util_app:
-                error = "The 'ebook-convert' utility is not installed or not found."
-                print(error)
-                return False
-            print(f"Running command: {util_app} {session['ebook']} {session['epub_path']} --input-encoding=utf-8 --output-profile=generic_eink --verbose")
-            result = subprocess.run(
-                [util_app, session['ebook'], session['epub_path'], '--input-encoding=utf-8', '--output-profile=generic_eink', '--verbose'],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                universal_newlines=True,
-                encoding='utf-8'
-            )
-            print(result.stdout)
-            return True
+        print(f"Running command: {util_app} {session['ebook']} {session['epub_path']} --input-encoding=utf-8 --output-profile=generic_eink --verbose")
+        result = subprocess.run(
+            [util_app, session['ebook'], session['epub_path'], '--input-encoding=utf-8', '--output-profile=generic_eink', '--verbose'],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            universal_newlines=True,
+            encoding='utf-8'
+        )
+        print(result.stdout)
+        return True
 
-        except subprocess.CalledProcessError as e:
-            print(f"Subprocess error: {e.stderr}")
-            DependencyError(e)
-            return False
-        except FileNotFoundError as e:
-            print(f"Utility not found: {e}")
-            DependencyError(e)
-            return False
+    except subprocess.CalledProcessError as e:
+        print(f"Subprocess error: {e.stderr}")
+        DependencyError(e)
+        return False
+    except FileNotFoundError as e:
+        print(f"Utility not found: {e}")
+        DependencyError(e)
+        return False
 
 def get_cover(epubBook, session):
     try:
@@ -654,101 +614,6 @@ def get_sanitized(str, replacement="_"):
     sanitized = re.sub(r'[<>:"/\\|?*]', replacement, sanitized)
     sanitized = sanitized.strip()
     return sanitized
-
-def normalize_voice_file(f, session):
-    if re.search(r'_(16000|24000)\.wav$', f):
-        return f
-    else:
-        final_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_') + '.wav'
-        final_name = get_sanitized(final_name)
-        final_file = os.path.join(session['voice_dir'], final_name)    
-        if session['script_mode'] == DOCKER_UTILS:
-            docker_dir = os.path.basename(session['voice_dir'])
-            ffmpeg_input_file = f'/files/{docker_dir}/' + os.path.basename(f)
-            ffmpeg_final_file = f'/files/{docker_dir}/' + os.path.basename(final_file)                           
-            ffmpeg_cmd = ['ffmpeg', '-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda', '-i', ffmpeg_input_file]
-        else:
-            ffmpeg_input_file = f
-            ffmpeg_final_file = final_file                  
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda', '-i', ffmpeg_input_file]
-        ffmpeg_cmd += [
-            '-strict', 'experimental',
-            '-filter_complex', '[0:a]'
-                               'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
-                               'afftdn=nf=-70,'
-                               'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
-                               'loudnorm=I=-14:TP=-3:LRA=7:linear=true,'
-                               'equalizer=f=150:t=q:w=2:g=1,'
-                               'equalizer=f=250:t=q:w=2:g=-3,'
-                               'equalizer=f=3000:t=q:w=2:g=2,'
-                               'equalizer=f=5500:t=q:w=2:g=-4,'
-                               'equalizer=f=9000:t=q:w=2:g=-2,'
-                               'highpass=f=63,'
-                               'pan=mono|c0=0.5*FL+0.5*FR[audio]',
-            '-map', '[audio]',
-            '-ar', '16000',
-            '-y', ffmpeg_final_file
-        ]
-        error = None
-        for rate in ['16000', '24000']:
-            ffmpeg_cmd[-3] = str(rate)
-            ffmpeg_cmd[-1] = final_file.replace('.wav', f'_{rate}.wav')
-            if session['script_mode'] == DOCKER_UTILS:
-                try:
-                    container = session['client'].containers.run(
-                        docker_utils_image,
-                        command=ffmpeg_cmd,
-                        volumes={session['voice_dir']: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
-                        remove=True,
-                        detach=False,
-                        stdout=True,
-                        stderr=True
-                    )
-                    print(container.decode('utf-8', errors='replace'))
-                    if not shutil.copy(docker_final_file, final_file):
-                        error = f'Could not copy from {docker_final_file} to {final_file}'
-                except docker.errors.ContainerError as e:
-                    error = f"normalize_voice_file() error: {e}"
-                    pass
-                    break
-                except docker.errors.ImageNotFound as e:
-                    error = f"normalize_voice_file() error: {e}"
-                    pass
-                    break
-                except docker.errors.APIError as e:
-                    error = f"normalize_voice_file() error: {e}"
-                    pass
-                    break
-            else:
-                try:
-                    process = subprocess.Popen(
-                        ffmpeg_cmd,
-                        env={},
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        text=True,
-                        universal_newlines=True,
-                        encoding='utf-8'
-                    )
-                    for line in process.stdout:
-                        print(line, end='')  # Print each line of stdout
-                    process.wait()
-                    if process.returncode != 0:
-                        error = f'normalize_voice_file(): process.returncode: {process.returncode}'
-                        break
-                except subprocess.CalledProcessError as e:
-                    error = f"normalize_voice_file() error: {e}"
-                    pass
-                    break
-                except Exception as e:
-                    error = f"normalize_voice_file() error: {e}"
-                    pass
-                    break
-        if error is not None:
-            print(error)
-            return None
-        else:
-            return final_file.replace('.wav','_24000.wav')
 
 def convert_chapters_to_audio(session):
     try:
@@ -940,21 +805,12 @@ def combine_audio_chapters(session):
                 print('Cancel requested')
                 return False
             ffmpeg_cover = None
-            if session['script_mode'] == DOCKER_UTILS:
-                docker_dir = os.path.basename(session['process_dir'])
-                ffmpeg_combined_audio = f'/files/{docker_dir}/' + os.path.basename(combined_chapters_file)
-                ffmpeg_metadata_file = f'/files/{docker_dir}/' + os.path.basename(metadata_file)
-                ffmpeg_final_file = f'/files/{docker_dir}/' + os.path.basename(docker_final_file)           
-                if session['cover'] is not None:
-                    ffmpeg_cover = f'/files/{docker_dir}/' + os.path.basename(session['cover'])                   
-                ffmpeg_cmd = ['ffmpeg', '-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
-            else:
-                ffmpeg_combined_audio = combined_chapters_file
-                ffmpeg_metadata_file = metadata_file
-                ffmpeg_final_file = final_file
-                if session['cover'] is not None:
-                    ffmpeg_cover = session['cover']                    
-                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
+            ffmpeg_combined_audio = combined_chapters_file
+            ffmpeg_metadata_file = metadata_file
+            ffmpeg_final_file = final_file
+            if session['cover'] is not None:
+                ffmpeg_cover = session['cover']                    
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a']
             elif session['output_format'] ==  'aac':
@@ -997,51 +853,26 @@ def combine_audio_chapters(session):
                     ffmpeg_cmd += ['-af', 'afftdn=nf=-70']
             ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1']
             ffmpeg_cmd += ['-threads', '8', '-y', ffmpeg_final_file]
-            if session['script_mode'] == DOCKER_UTILS:
-                try:
-                    container = session['client'].containers.run(
-                        docker_utils_image,
-                        command=ffmpeg_cmd,
-                        volumes={session['process_dir']: {'bind': f'/files/{docker_dir}', 'mode': 'rw'}},
-                        remove=True,
-                        detach=False,
-                        stdout=True,
-                        stderr=True
-                    )
-                    print(container.decode('utf-8', errors='replace'))
-                    if shutil.copy(docker_final_file, final_file):
-                        return True
+            try:
+                process = subprocess.Popen(
+                    ffmpeg_cmd,
+                    env={},
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    encoding='utf-8'
+                )
+                for line in process.stdout:
+                    print(line, end='')  # Print each line of stdout
+                process.wait()
+                if process.returncode == 0:
+                    return True
+                else:
+                    error = process.returncode
+                    print(error, ffmpeg_cmd)
                     return False
-                except docker.errors.ContainerError as e:
-                    DependencyError(e)
-                    return False
-                except docker.errors.ImageNotFound as e:
-                    DependencyError(e)
-                    return False
-                except docker.errors.APIError as e:
-                    DependencyError(e)
-                    return False
-            else:
-                try:
-                    process = subprocess.Popen(
-                        ffmpeg_cmd,
-                        env={},
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        encoding='utf-8'
-                    )
-                    for line in process.stdout:
-                        print(line, end='')  # Print each line of stdout
-                    process.wait()
-                    if process.returncode == 0:
-                        return True
-                    else:
-                        error = process.returncode
-                        print(error, ffmpeg_cmd)
-                        return False
-                except subprocess.CalledProcessError as e:
-                    DependencyError(e)
-                    return False
+            except subprocess.CalledProcessError as e:
+                DependencyError(e)
+                return False
  
         except Exception as e:
             DependencyError(e)
@@ -1276,8 +1107,6 @@ def convert_ebook(args):
                     bool, e = check_programs('FFmpeg', 'ffmpeg', '-version')
                     if not bool:
                         error = f'check_programs() FFMPEG failed: {e}'
-                elif session['script_mode'] == DOCKER_UTILS:
-                    session['client'] = docker.from_env()
 
                 if error is None:
                     session['session_dir'] = os.path.join(tmp_dir, f"ebook-{session['id']}")
