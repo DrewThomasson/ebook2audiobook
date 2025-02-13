@@ -1261,7 +1261,7 @@ def convert_ebook(args):
                     os.makedirs(session['voice_dir'], exist_ok=True)
                     voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And').replace(' ', '_')
                     voice_name = get_sanitized(voice_name)
-                    final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_24000.wav')
+                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}_24000.wav')
                     if not os.path.exists(final_voice_file):
                         extractor = VoiceExtractor(session, models_dir, session['voice'], voice_name)
                         status, msg = extractor.extract_voice()
