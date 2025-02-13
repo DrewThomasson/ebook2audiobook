@@ -1264,7 +1264,7 @@ def convert_ebook(args):
                         extractor = VoiceExtractor(session, models_dir, session['voice'], voice_name)
                         status, msg = extractor.extract_voice()
                         if status:
-                            session['voice'] = os.path.join(session['voice_dir'], f'{voice_name}_{sample_rate}.wav')
+                            session['voice'] = os.path.join(session['voice_dir'], f'{voice_name}_24000.wav')
                         else:
                             error = 'extractor.extract_voice()() failed! Check if you audio file is compatible.'
                             print(error)
