@@ -38,7 +38,7 @@ class VoiceExtractor:
             process = (
                 ffmpeg
                 .input(self.voice_file)
-                .output(self.wav_file, format='wav', ar=self.samplerate, ac=1)
+                .output(self.wav_file, format='wav', ar=44100, ac=1)
                 .run(overwrite_output=True)
             )
             msg = 'Conversion to .wav format for processing successful'
@@ -129,10 +129,11 @@ class VoiceExtractor:
             return False, error
 
     def _normalize_audio(self):
-        try:
-            error = None
-            filter_chain = (
-                '[0:a]agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
+        try:                 
+            ffmpeg_final_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', self.voice_track]
+            filter_complex = (
+                'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
                 'afftdn=nf=-70,'
                 'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
                 'loudnorm=I=-14:TP=-3:LRA=7:linear=true,'
@@ -141,26 +142,40 @@ class VoiceExtractor:
                 'equalizer=f=3000:t=q:w=2:g=2,'
                 'equalizer=f=5500:t=q:w=2:g=-4,'
                 'equalizer=f=9000:t=q:w=2:g=-2,'
-                'equalizer=f=12000:t=q:w=2:g=1,'
-                'equalizer=f=14000:t=q:w=2:g=2,'
-                'equalizer=f=16000:t=q:w=2:g=3,'
-                'highpass=f=63,pan=mono|c0=0.5*FL+0.5*FR[audio]'
+                'highpass=f=63[audio]'
             )
-            for rate in [16000, 24000]:
-                output_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_{rate}.wav')
+            ffmpeg_cmd += [
+                '-strict', 'experimental',
+                '-filter_complex', filter_complex,
+                '-map', '[audio]',
+                '-ar', 'null',
+                '-y', ffmpeg_final_file
+            ]
+            error = None
+            for rate in ['16000', '24000']:
+                ffmpeg_cmd[-3] = rate
+                ffmpeg_cmd[-1] = ffmpeg_final_file.replace('.wav', f'_{rate}.wav')
                 try:
-                    ffmpeg.input(self.voice_track).output(
-                        output_file,
-                        acodec='pcm_s16le', ar=rate, ac=1,
-                        af=filter_chain
-                    ).run(overwrite_output=True)   
+                    process = subprocess.Popen(
+                        ffmpeg_cmd,
+                        env={},
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        universal_newlines=True,
+                        encoding='utf-8'
+                    )
+                    for line in process.stdout:
+                        print(line, end='')  # Print each line of stdout
+                    process.wait()
+                    if process.returncode != 0:
+                        error = f'normalize_voice_file(): process.returncode: {process.returncode}'
+                        break
                 except ffmpeg.Error as e:
                     error = f'_normalize_audio ffmpeg.Error: {e.stderr.decode()}'
-                    raise ValueError(error)
                     break
-                if not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
-                    error = f'_normalize_audio output error: {output_file} was not created or is empty.'
-                    raise ValueError(error)
+                if not os.path.exists(ffmpeg_final_file) or os.path.getsize(ffmpeg_final_file) == 0:
+                    error = f'_normalize_audio output error: {ffmpeg_final_file} was not created or is empty.'
                     break
             if error is None:
                 msg = 'Audio normalization successful!'
