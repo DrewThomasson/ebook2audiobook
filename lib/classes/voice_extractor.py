@@ -20,7 +20,7 @@ class VoiceExtractor:
         self.voice_name = voice_name
         self.models_dir = models_dir
         self.voice_track = 'vocals.wav'
-        self.samplerate = models[session['tts_engine']]['samplerate']
+        self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', os.path.splitext(os.path.basename(self.input_file))[0])
 
