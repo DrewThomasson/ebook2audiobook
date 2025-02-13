@@ -38,7 +38,7 @@ class VoiceExtractor:
                 process = (
                     ffmpeg
                     .input(self.input_file)
-                    .output(self.wav_file, format='wav', ar=44100, ac=1)
+                    .output(self.wav_file, format='wav', ar=24000, ac=1)
                     .run(overwrite_output=True)
                 )
             else:
