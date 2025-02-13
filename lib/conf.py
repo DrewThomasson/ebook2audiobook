@@ -49,6 +49,11 @@ output_formats = ['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg
 default_audio_proc_format = 'flac' # or 'wav', 'pcm', 'ieee', 'ogg', 'nist', 'mp3', 'aiff', 'aac', 'wma', 'mp4', 'm4a', 'm4b', 'amr', '3gp', 'webm', 'alac'
 default_output_format = 'm4b' # or 'wav', 'pcm', 'ieee', 'ogg', 'nist', 'mp3', 'aiff', 'aac', 'wma', 'mp4', 'm4a', 'flac', 'amr', '3gp', 'webm', 'alac'
 
+
+# to enable_deepspeed, it must be installed manually.
+# conda activate [./python_env | .\python_env]
+# pip install deepspeed
+# conda deactivate
 tts_default_settings = {
     "temperature": 0.6,  # Natural variation without sounding robotic
     "length_penalty": 1.2,  # Encourages slightly longer phrases
@@ -58,12 +63,6 @@ tts_default_settings = {
     "top_p": 0.85,  # Good tradeoff between diversity and coherence
     "speed": 1.0,  # Normal pace
     "enable_text_splitting": True,  # Helps with better pacing for long content
-    '''
-    to enable_deepspeed, it must be installed manually.
-    conda activate [./python_env | .\python_env]
-    pip install deepspeed
-    conda deactivate
-    '''
     "enable_deepspeed": False,
     "length_scale": 1.0,
     "noise_scale": 0.3
