@@ -1,11 +1,13 @@
 beautifulsoup4
-coqui-tts<=0.25.1
 cutlet
 deep_translator
+demucs
 docker
 ebooklib
+fastapi
+ffmpeg-python
 gensim
-gradio>=4.44
+gradio
 hangul-romanize
 indic-nlp-library
 iso-639
@@ -16,7 +18,11 @@ mecab-python3
 pydub
 pypinyin
 ray
+regex
+sentencepiece
+torchvggish
 transformers
 translate
 tqdm
 unidic
+coqui-tts==0.25.3
