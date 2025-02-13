@@ -20,7 +20,7 @@ class VoiceExtractor:
         self.voice_name = voice_name
         self.models_dir = models_dir
         self.voice_track = 'vocals.wav'
-        self.sample_rate = models[session['tts_engine']]['sample_rate']
+        self.samplerate = models[session['tts_engine']]['samplerate']
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', os.path.splitext(os.path.basename(self.input_file))[0])
 
@@ -34,12 +34,12 @@ class VoiceExtractor:
 
     def _convert_to_wav(self):
         try:
-            if not self.input_file.lower().endswith(f'_{self.sample_rate}.wav'):
+            if not self.input_file.lower().endswith(f'_{self.samplerate}.wav'):
                 self.wav_file = os.path.join(os.path.dirname(self.input_file), os.path.basename(self.input_file).replace(os.path.splitext(self.input_file)[1], '.wav'))
                 process = (
                     ffmpeg
                     .input(self.input_file)
-                    .output(self.wav_file, format='wav', ar=self.sample_rate, ac=1)
+                    .output(self.wav_file, format='wav', ar=self.samplerate, ac=1)
                     .run(overwrite_output=True)
                 )
                 msg = 'Conversion to .wav format for processing successful'
