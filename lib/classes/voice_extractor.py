@@ -178,6 +178,7 @@ class VoiceExtractor:
                     error = f'_normalize_audio output error: {ffmpeg_final_file} was not created or is empty.'
                     break
             if error is None:
+                os.remove(ffmpeg_final_file)
                 msg = 'Audio normalization successful!'
                 return True, msg
         except FileNotFoundError:

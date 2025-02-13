@@ -20,7 +20,7 @@ default_yourtts_files = ['config.json', 'model_file.pth']
 default_xtts_samplerate = 24000
 default_bark_samplerate = 24000
 default_vits_samplerate = 24000
-default_fairseq_samplerate = 16000
+default_fairseq_samplerate = 24000
 default_yourtts_samplerate = 16000
 
 builtin_xtts_voices = {

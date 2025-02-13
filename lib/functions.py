@@ -810,7 +810,7 @@ def combine_audio_chapters(session):
             ffmpeg_final_file = final_file
             if session['cover'] is not None:
                 ffmpeg_cover = session['cover']                    
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hwaccel', 'cuda', '-hwaccel_output_format', 'cuda', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a']
             elif session['output_format'] ==  'aac':
