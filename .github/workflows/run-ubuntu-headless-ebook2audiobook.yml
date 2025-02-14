@@ -46,11 +46,11 @@ jobs:
       - name: Create test files
         run: |
           mkdir workflow-testing
-          echo " This is test sentence 1 . " > workflow-testing/test1.txt
-          echo " This is test sentence 2 . " > workflow-testing/test2.txt
-          echo " This is test sentence 3 . " > workflow-testing/test3.txt
-          echo " This is test sentence 4 . " > workflow-testing/test4.txt
-          echo " This is test sentence 5 . " > workflow-testing/test5.txt
+          echo "This is test sentence 1 ." > workflow-testing/test1.txt
+          echo "This is test sentence 2 ." > workflow-testing/test2.txt
+          echo "This is test sentence 3 ." > workflow-testing/test3.txt
+          echo "This is test sentence 4 ." > workflow-testing/test4.txt
+          echo "This is test sentence 5 ." > workflow-testing/test5.txt
       - name: Default headless single test python app.py
         run: python app.py --headless --ebook "workflow-testing/test1.txt"
 
