@@ -271,10 +271,10 @@ else
 		if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
 			# Use this condition to chmod writable folders once
 			chmod -R 777 ./audiobooks ./tmp ./models
-			source $CONDA_ENV
 			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y
 			conda init > /dev/null 2>&1
-			source activate "$SCRIPT_DIR/$PYTHON_ENV"
+			source $CONDA_ENV
+			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 			python -m pip install --upgrade pip
 			TMPDIR=./tmp xargs -n 1 python -m pip install --upgrade --no-cache-dir --progress-bar=on < requirements.txt
 			conda deactivate
@@ -318,9 +318,9 @@ else
 			if conda_check; then
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
-				conda deactivate
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+				conda deactivate
 				conda deactivate
 			fi
 		fi

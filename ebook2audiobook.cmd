@@ -21,6 +21,7 @@ set "CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86
 set "CONDA_INSTALLER=%TEMP%\Miniconda3-latest-Windows-x86_64.exe"
 set "CONDA_INSTALL_DIR=%USERPROFILE%\miniconda3"
 set "CONDA_PATH=%USERPROFILE%\miniconda3\bin"
+set "CONDA_ACTIVATE=%CONDA_INSTALL_DIR%\condabin\conda.bat"
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
 set "PATH=%PATH%;%CONDA_PATH%;%CONDA_INSTALL_DIR%\condabin;%USERPROFILE%\scoop\shims"
 
@@ -46,7 +47,6 @@ if defined CONTAINER (
 )
 
 echo Running in %SCRIPT_MODE% mode
-
 goto conda_check
 
 :conda_check
@@ -65,7 +65,7 @@ if not defined conda_version (
 	if defined VIRTUAL_ENV (
 		set "CURRENT_ENV=%VIRTUAL_ENV%"
 	)
-	for /f "delims=" %%i in ('where python') do (
+	for /f "delims=" %%i in ('where /Q python') do (
 		if defined CONDA_PREFIX (
 			if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
 				set "CURRENT_ENV=%CONDA_PREFIX%"
@@ -84,32 +84,28 @@ if not defined conda_version (
 		goto failed
 	)
 	call :programs_check
-	exit /b
 )
 goto dispatch
-exit /b
 
 :programs_check
 set "missing_prog_array="
 for %%p in (%PROGRAMS_LIST%) do (
     set "prog=%%p"
     if "%%p"=="nodejs" set "prog=node"
-    where !prog! >nul 2>&1
+    where /Q !prog!
     if errorlevel 1 (
         echo %%p is not installed.
         set "missing_prog_array=!missing_prog_array! %%p"
     )
 )
-if not "%missing_prog_array%"=="" (
+if not "!missing_prog_array!"=="" (
     set "PROGRAMS_CHECK=1"
-	goto install_components
-	exit /b
+    goto install_components
 )
 goto dispatch
-exit /b
 
 :docker_check
-where docker >nul 2>&1
+where /Q docker
 if %errorlevel% neq 0 (
 	set "DOCKER_CHECK_STATUS=1"
 ) else (
@@ -119,15 +115,13 @@ if %errorlevel% neq 0 (
 		set "DOCKER_CHECK_STATUS=1"
 	) else (
 		goto dispatch
-		exit /b
 	)
 )
 goto install_components
-exit /b
 
 :install_components
 :: Install Scoop if not already installed
-where scoop >nul 2>&1
+where /Q scoop
 if %errorlevel% neq 0 (
     echo Scoop is not installed. Installing Scoop...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb get.scoop.sh | iex"  
@@ -138,7 +132,7 @@ if %errorlevel% neq 0 (
     call scoop bucket known
 )
 :: Install Python if not already installed
-where python >nul 2>&1
+where /Q python
 if %errorlevel% neq 0 (
 	echo Python is not installed. Installing Python...
 	call scoop install python
@@ -157,7 +151,7 @@ if not "%CONDA_CHECK_STATUS%"=="0" (
 	echo Downloading Conda installer...
 	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
 	"%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /S /D=%CONDA_INSTALL_DIR%
-	if exist "%CONDA_INSTALL_DIR%\condabin\conda.bat" (
+	if exist "%CONDA_ACTIVATE%" (
 		echo Conda installed successfully.
 		set "CONDA_RUN_INIT=1"
 		set "CONDA_CHECK_STATUS=0"
@@ -168,7 +162,7 @@ if not "%DOCKER_CHECK_STATUS%"=="0" (
 	echo Docker is not installed. Installing it now...
 	call scoop install docker-cli
 	call scoop install docker-engine
-	call where docker >nul 2>&1
+	call where /Q docker
 	if %errorlevel% equ 0 (
 		echo Starting Docker Engine...
 		net start com.docker.service >nul 2>&1
@@ -179,17 +173,14 @@ if not "%DOCKER_CHECK_STATUS%"=="0" (
 	)
 )
 goto dispatch
-exit /b
 
 :dispatch
 if "%PROGRAMS_CHECK%"=="0" (
 	if "%CONDA_CHECK_STATUS%"=="0" (
 		if "%DOCKER_CHECK_STATUS%"=="0" (
 			goto main
-			exit /b
 		) else (
 			goto failed
-			exit /b
 		)
 	)
 )
@@ -198,7 +189,6 @@ echo CONDA_CHECK_STATUS: %CONDA_CHECK_STATUS%
 echo DOCKER_CHECK_STATUS: %DOCKER_CHECK_STATUS%
 timeout /t 5 /nobreak >nul
 goto install_components
-exit /b
 
 :main
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
