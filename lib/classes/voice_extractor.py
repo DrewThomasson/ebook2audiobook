@@ -1,6 +1,5 @@
 import os
 import subprocess
-import ffmpeg
 import shutil
 import torch
 
@@ -35,22 +34,39 @@ class VoiceExtractor:
     def _convert_to_wav(self):
         try:
             self.wav_file = os.path.join(self.session['voice_dir'], os.path.basename(self.voice_file).replace(os.path.splitext(self.voice_file)[1], '.wav'))
-            process = (
-                ffmpeg
-                .input(self.voice_file)
-                .output(self.wav_file, format='wav', ar=44100, ac=1)
-                .run(overwrite_output=True)
+            ffmpeg_cmd = [
+                shutil.which('ffmpeg'), '-i', self.voice_file,
+                '-ac', '1',
+                '-ar', '44100',
+                '-y', self.wav_file
+            ]
+            process = subprocess.Popen(
+                ffmpeg_cmd,
+                env={},
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                universal_newlines=True,
+                encoding='utf-8'
             )
-            msg = 'Conversion to .wav format for processing successful'
-            return True, msg
-        except ffmpeg.Error as e:
+            for line in process.stdout:
+                print(line, end='')  # Print each line of stdout
+            process.wait()
+            if process.returncode != 0:
+                error = f'_convert_to_wav(): process.returncode: {process.returncode}'
+            elif not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
+                error = f'_convert_to_wav output error: {self.wav_file} was not created or is empty.'                
+            else:
+                msg = 'Conversion to .wav format for processing successful'
+                return True, msg
+        except subprocess.CalledProcessError as e:
             error = f'convert_to_wav fmpeg.Error: {e.stderr.decode()}'
             raise ValueError(error)
         except Exception as e:
-            error = f'_validate_format() error: {e}'
+            error = f'_convert_to_wav() error: {e}'
             raise ValueError(error)
         return False, error
-
+        
     def _detect_background(self):
         try:
             torch_home = os.path.join(self.models_dir, 'hub')
@@ -145,7 +161,6 @@ class VoiceExtractor:
                 'highpass=f=63[audio]'
             )
             ffmpeg_cmd += [
-                '-strict', 'experimental',
                 '-filter_complex', filter_complex,
                 '-map', '[audio]',
                 '-ar', 'null',
@@ -171,7 +186,7 @@ class VoiceExtractor:
                     if process.returncode != 0:
                         error = f'normalize_voice_file(): process.returncode: {process.returncode}'
                         break
-                except ffmpeg.Error as e:
+                except subprocess.CalledProcessError as e:
                     error = f'_normalize_audio ffmpeg.Error: {e.stderr.decode()}'
                     break
                 if not os.path.exists(ffmpeg_final_file) or os.path.getsize(ffmpeg_final_file) == 0:
