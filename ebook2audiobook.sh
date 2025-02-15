@@ -316,7 +316,6 @@ else
 		if [ $pass = true ]; then
 			if conda_check; then
 				conda init > /dev/null 2>&1
-				source $CONDA_ENV
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate
