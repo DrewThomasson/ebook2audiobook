@@ -40,7 +40,6 @@ def coqui_tts_load_custom(model_path: str, config_path: str, vocab_path: str, de
                 config,
                 checkpoint_path=model_path,
                 vocab_path=vocab_path,
-                enable_deepspeed=True,
                 eval=True,
             ).to(device)
         return tts
