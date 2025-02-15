@@ -1104,13 +1104,12 @@ def convert_ebook(args):
                             print(error)
             if error is None:
                 if session['script_mode'] == NATIVE:
-                    bool, e = check_programs('Calibre', 'calibre', '--version')
+                    bool, e = check_programs('Calibre', 'ebook-convert', '--version')
                     if not bool:
                         error = f'check_programs() Calibre failed: {e}'
                     bool, e = check_programs('FFmpeg', 'ffmpeg', '-version')
                     if not bool:
                         error = f'check_programs() FFMPEG failed: {e}'
-
                 if error is None:
                     session['session_dir'] = os.path.join(tmp_dir, f"ebook-{session['id']}")
                     session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['ebook'].encode()).hexdigest()}")
