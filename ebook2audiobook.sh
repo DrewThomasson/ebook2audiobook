@@ -79,7 +79,7 @@ CONDA_INSTALL_DIR=$HOME/miniconda3
 CONDA_PATH=$HOME/miniconda3/bin
 CONDA_ENV=$HOME/miniconda3/etc/profile.d/conda.sh
 CONFIG_FILE="$HOME/.bashrc"
-PATH="$CONDA_PATH:$PATH"
+export PATH="$CONDA_PATH:$PATH"
 
 declare -a programs_missing
 
