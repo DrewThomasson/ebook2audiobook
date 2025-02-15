@@ -263,6 +263,7 @@ def analyze_uploaded_file(zip_path, required_files=None):
 
 def extract_custom_model(file_src, session, required_files=None):
     try:
+        model_path = None
         if required_files is None:
             required_files = models[session['tts_engine']][default_fine_tuned]['files']
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
@@ -282,8 +283,13 @@ def extract_custom_model(file_src, session, required_files=None):
                         zip_ref.extract(f, model_path)
                     t.update(1)
         os.remove(file_src)
-        print(f'Extracted files to {model_path}')
-        return model_path
+        if model_path is not None:
+            msg = f'Extracted files to {model_path}'
+            print(msg)
+            return model_path
+        else:
+            error = f'An error occured when unzip {file_src}'
+            return None
     except asyncio.exceptions.CancelledError:
         DependencyError(e)
         os.remove(file_src)

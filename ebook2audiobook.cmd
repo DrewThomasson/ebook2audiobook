@@ -23,7 +23,7 @@ set "CONDA_INSTALL_DIR=%USERPROFILE%\miniconda3"
 set "CONDA_PATH=%USERPROFILE%\miniconda3\bin"
 set "CONDA_ACTIVATE=%CONDA_INSTALL_DIR%\condabin\conda.bat"
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
-set "PATH=%PATH%;%CONDA_PATH%;%CONDA_INSTALL_DIR%\condabin;%USERPROFILE%\scoop\shims"
+set "PATH=%USERPROFILE%\scoop\shims;%CONDA_PATH%;%CONDA_INSTALL_DIR%\condabin;%PATH%"
 
 set "PROGRAMS_CHECK=0"
 set "CONDA_CHECK_STATUS=0"
@@ -51,39 +51,38 @@ goto conda_check
 
 :conda_check
 set "conda_version="
-for /f "tokens=* delims=" %%i in ('conda --version 2^>nul') do (
-    set "conda_version=%%i"
-)
-if not defined conda_version (
+where /Q conda
+if %errorlevel% neq 0 (
+	call rmdir /s /q "%CONDA_INSTALL_DIR%" 2>nul
 	set "CONDA_CHECK_STATUS=1"
 ) else (
-	:: Check if running in a Conda environment
-	if defined CONDA_DEFAULT_ENV (
-		set "CURRENT_ENV=%CONDA_PREFIX%"
-	)
-	:: Check if running in a Python virtual environment
-	if defined VIRTUAL_ENV (
-		set "CURRENT_ENV=%VIRTUAL_ENV%"
-	)
-	for /f "delims=" %%i in ('where /Q python') do (
-		if defined CONDA_PREFIX (
-			if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-				set "CURRENT_ENV=%CONDA_PREFIX%"
-				break
-			)
-		) else if defined VIRTUAL_ENV (
-			if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-				set "CURRENT_ENV=%VIRTUAL_ENV%"
-				break
+		:: Check if running in a Conda environment
+		if defined CONDA_DEFAULT_ENV (
+			set "CURRENT_ENV=%CONDA_PREFIX%"
+		)
+		:: Check if running in a Python virtual environment
+		if defined VIRTUAL_ENV (
+			set "CURRENT_ENV=%VIRTUAL_ENV%"
+		)
+		for /f "delims=" %%i in ('where /Q python') do (
+			if defined CONDA_PREFIX (
+				if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
+					set "CURRENT_ENV=%CONDA_PREFIX%"
+					break
+				)
+			) else if defined VIRTUAL_ENV (
+				if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
+					set "CURRENT_ENV=%VIRTUAL_ENV%"
+					break
+				)
 			)
 		)
-	)
-	if not "%CURRENT_ENV%"=="" (
-		echo Current python virtual environment detected: %CURRENT_ENV%. 
-		echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-		goto failed
-	)
-	call :programs_check
+		if not "%CURRENT_ENV%"=="" (
+			echo Current python virtual environment detected: %CURRENT_ENV%. 
+			echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+			goto failed
+		)
+		call :programs_check
 )
 goto dispatch
 
@@ -125,18 +124,12 @@ where /Q scoop
 if %errorlevel% neq 0 (
     echo Scoop is not installed. Installing Scoop...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb get.scoop.sh | iex"  
-    set "PATH=%USERPROFILE%\scoop\shims;%PATH%"
 	call refreshenv
     call scoop install git  
     call scoop bucket add extras
     call scoop bucket known
 )
-:: Install Python if not already installed
-where /Q python
-if %errorlevel% neq 0 (
-	echo Python is not installed. Installing Python...
-	call scoop install python
-)
+
 :: Install missing packages if any
 if not "%PROGRAMS_CHECK%"=="0" (
 	echo Installing %missing_prog_array%
