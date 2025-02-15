@@ -11,7 +11,7 @@ x-gpu-disabled: &gpu-disabled
   devices: [] # Disables GPU access (default for systems without an NVIDIA GPU).
 
 services:
-  ebook2audiobookxtts:
+  ebook2audiobook:
     image: athomasson2/ebook2audiobook:latest
     platform: linux/amd64
     tty: true
