@@ -43,7 +43,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMPDIR=./.cache
 
 WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("calibre" "ffmpeg" "mecab" "nodejs" "espeak" "espeak-ng" "rustc" "cargo")
+REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak" "espeak-ng" "rustc" "cargo")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
 
@@ -78,8 +78,8 @@ CONDA_INSTALLER=/tmp/Miniconda3-latest.sh
 CONDA_INSTALL_DIR=$HOME/miniconda3
 CONDA_PATH=$HOME/miniconda3/bin
 CONDA_ENV=$HOME/miniconda3/etc/profile.d/conda.sh
+export PATH="$CONDA_PATH:$PATH"
 CONFIG_FILE="$HOME/.bashrc"
-PATH="$CONDA_PATH:$PATH"
 
 declare -a programs_missing
 
