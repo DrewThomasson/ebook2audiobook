@@ -677,7 +677,7 @@ def convert_chapters_to_audio(session):
                     if progress_bar is not None:
                         progress_bar(sentence_number / total_sentences)
                     sentence_number += 1
-                end = sentence_number - 1
+                end = sentence_number - 1 if sentence_number > 1 else sentence_number
                 msg = f"\nEnd of Part {chapter_num}"
                 print(msg)
                 if sentence_number >= resume_sentence:
@@ -1004,6 +1004,7 @@ def convert_ebook_batch(args):
                     sys.exit(1)
                 args['ebook_list'].remove(file) 
         reset_ebook_session(args['session'])
+        return progress_status, audiobook_file
     else:
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
@@ -1077,15 +1078,17 @@ def convert_ebook(args):
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions',f"voice-{session['id']}")
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
                 if session['custom_model'] is not None:
-                    os.makedirs(session['custom_model_dir'], exist_ok=True)
-                    if analyze_uploaded_file(session['custom_model']):
-                        model = extract_custom_model(session['custom_model'], session)
-                        if model is not None:
-                            session['custom_model'] = model
+                    if not os.path.exists(session['custom_model_dir']):
+                        os.makedirs(session['custom_model_dir'], exist_ok=True)
+                    if not os.path.exists(os.path.join(session['custom_model_dir'], session['custom_model'])):
+                        if analyze_uploaded_file(session['custom_model']):
+                            model = extract_custom_model(session['custom_model'], session)
+                            if model is not None:
+                                session['custom_model'] = model
+                            else:
+                                error = f"{model} could not be extracted or mandatory files are missing"
                         else:
-                            error = f"{model} could not be extracted or mandatory files are missing"
-                    else:
-                        error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                            error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                 if session['voice'] is not None:
                     os.makedirs(session['voice_dir'], exist_ok=True)
                     voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And').replace(' ', '_')

@@ -78,8 +78,7 @@ class VoiceExtractor:
             # Preprocess audio to log mel spectrogram
             log_mel_spectrogram = vggish_input.wavfile_to_examples(self.wav_file)
             audio_tensor = log_mel_spectrogram.clone().detach()
-            with torch.no_grad():
-                embeddings = model(audio_tensor)
+            embeddings = model(audio_tensor)
             # Calculate total energy
             energy_score = torch.norm(embeddings).item()           
             status = energy_score > energy_threshold
@@ -209,25 +208,25 @@ class VoiceExtractor:
         msg = None
         try:
             success, msg = self._validate_format()
+            print(msg)
             if success:
-                print(msg)
                 success, msg = self._convert_to_wav()
+                print(msg)
                 if success:
-                    print(msg)
                     success, status, msg = self._detect_background()
+                    print(msg)
                     if success:
-                        print(msg)
                         if status:
-                            print(msg)
                             success, msg = self._demucs_voice()
+                            print(msg)
                         else:
                             self.voice_track = self.wav_file
                         if success:
-                            print(msg)
                             success, msg = self._remove_silences()
+                            print(msg)
                             if success:
+                                success, msg = self._normalize_audio()
                                 print(msg)
-                                success, msg = self._normalize_audio() 
         except Exception as e:
             msg = f'extract_voice() error: {e}'
             raise ValueError(msg)
