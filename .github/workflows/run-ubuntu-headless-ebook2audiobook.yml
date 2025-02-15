@@ -51,6 +51,7 @@ jobs:
           echo "This is test sentence 3 ." > workflow-testing/test3.txt
           echo "This is test sentence 4 ." > workflow-testing/test4.txt
           echo "This is test sentence 5 ." > workflow-testing/test5.txt
+
       - name: Default headless single test python app.py
         run: python app.py --headless --ebook "workflow-testing/test1.txt"
 
@@ -62,6 +63,15 @@ jobs:
 
       - name: Default xtts headless Custom-Voice batch test python app.py
         run: python app.py --headless --ebooks_dir "workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Create the custom_xtts_test.zip for headless custom xtts model single test python app.py
+        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm ref.wav
+
+      - name: English xtts headless custom xtts model single test python app.py
+        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+
+      - name: English xtts headless custom xtts model batch test python app.py
+        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
 
       - name: English Fairseq headless single test python app.py
         run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq
