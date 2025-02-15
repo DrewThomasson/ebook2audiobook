@@ -76,6 +76,7 @@ fi
 
 CONDA_INSTALL_DIR=$HOME/miniconda3
 CONDA_PATH=$HOME/miniconda3/bin
+CONDA_ENV=$HOME/miniconda3/etc/profile.d/conda.sh
 CONFIG_FILE="$HOME/.bashrc"
 
 declare -a programs_missing
@@ -245,7 +246,6 @@ else
 	function conda_check {
 		if ! command -v conda &> /dev/null; then
 			CONDA_INSTALLER=/tmp/Miniconda3-latest.sh
-			CONDA_ENV=$HOME/miniconda3/etc/profile.d/conda.sh
 			export PATH="$CONDA_PATH:$PATH"
 			echo -e "\e[33mconda is not installed!\e[0m"
 			echo -e "\e[33mDownloading conda installer...\e[0m"
@@ -316,7 +316,7 @@ else
 		if [ $pass = true ]; then
 			if conda_check; then
 				conda init > /dev/null 2>&1
-				source ./python_env
+				source $CONDA_ENV
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate
