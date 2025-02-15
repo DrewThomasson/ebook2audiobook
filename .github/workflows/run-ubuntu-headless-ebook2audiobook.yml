@@ -54,35 +54,35 @@ jobs:
       - name: Default headless single test python app.py
         run: python app.py --headless --ebook "workflow-testing/test1.txt"
 
-      - name: Default headless batch test python app.py
-        run: python app.py --headless --ebooks_dir "workflow-testing"
+      - name: Default xtts headless batch test python app.py
+        run: python app.py --headless --ebooks_dir "workflow-testing" --tts_engine xtts
 
-      - name: Default headless Custom-Voice single test python app.py
-        run: python app.py --headless --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      - name: Default xtts headless Custom-Voice single test python app.py
+        run: python app.py --headless --ebook "workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
-      - name: Default headless Custom-Voice batch test python app.py
-        run: python app.py --headless --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      - name: Default xtts headless Custom-Voice batch test python app.py
+        run: python app.py --headless --ebooks_dir "workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English Fairseq headless single test python app.py
-        run: python app.py --headless --language "eng" --ebook "workflow-testing/test1.txt"
+        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq
 
       - name: English Fairseq headless batch test python app.py
-        run: python app.py --headless --language "eng" --ebooks_dir "workflow-testing"
+        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine fairseq
 
       - name: English Fairseq Custom-Voice headless single test python app.py
-        run: python app.py --headless --language "eng" --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English Fairseq Custom-Voice headless batch test python app.py
-        run: python app.py --headless --language "eng" --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Unusual Fairseq headless single test python app.py
-        run: python app.py --headless --language "urd-script_devanagari" --ebook "workflow-testing/test1.txt"
+        run: python app.py --headless --language urd-script_devanagari --ebook "workflow-testing/test1.txt" --tts_engine fairseq
 
       - name: Unusual Fairseq headless batch test python app.py
-        run: python app.py --headless --language "urd-script_devanagari" --ebooks_dir "workflow-testing"
+        run: python app.py --headless --language urd-script_devanagari --ebooks_dir "workflow-testing" --tts_engine fairseq
 
       - name: Unusual Fairseq Custom-Voice headless single test python app.py
-        run: python app.py --headless --language "urd-script_devanagari" --ebook "workflow-testing/test1.txt" --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --language urd-script_devanagari --ebook "workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Unusual Fairseq  Custom-Voice headless batch test python app.py
-        run: python app.py --headless --language "urd-script_devanagari" --ebooks_dir "workflow-testing" --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --language urd-script_devanagari --ebooks_dir "workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
