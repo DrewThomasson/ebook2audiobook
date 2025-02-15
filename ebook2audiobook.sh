@@ -43,7 +43,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMPDIR=./.cache
 
 WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("calibre" "ffmpeg" "mecab" "nodejs" "espeak" "espeak-ng" "rustc" "cargo")
+REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak" "espeak-ng" "rustc" "cargo")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
 
@@ -74,12 +74,9 @@ elif [[ "$OSTYPE" = "darwin"* ]]; then
 	fi
 fi
 
-CONDA_INSTALLER=/tmp/Miniconda3-latest.sh
 CONDA_INSTALL_DIR=$HOME/miniconda3
 CONDA_PATH=$HOME/miniconda3/bin
-CONDA_ENV=$HOME/miniconda3/etc/profile.d/conda.sh
 CONFIG_FILE="$HOME/.bashrc"
-export PATH="$CONDA_PATH:$PATH"
 
 declare -a programs_missing
 
@@ -247,6 +244,9 @@ else
 
 	function conda_check {
 		if ! command -v conda &> /dev/null; then
+			CONDA_INSTALLER=/tmp/Miniconda3-latest.sh
+			CONDA_ENV=$HOME/miniconda3/etc/profile.d/conda.sh
+			export PATH="$CONDA_PATH:$PATH"
 			echo -e "\e[33mconda is not installed!\e[0m"
 			echo -e "\e[33mDownloading conda installer...\e[0m"
 			wget -O "$CONDA_INSTALLER" "$CONDA_URL"
@@ -273,7 +273,6 @@ else
 			chmod -R 777 ./audiobooks ./tmp ./models
 			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y
 			conda init > /dev/null 2>&1
-			source $CONDA_ENV
 			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 			python -m pip install --upgrade pip
 			TMPDIR=./tmp xargs -n 1 python -m pip install --upgrade --no-cache-dir --progress-bar=on < requirements.txt
