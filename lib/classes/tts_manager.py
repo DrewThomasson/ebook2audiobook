@@ -68,7 +68,7 @@ class TTSManager:
                 if self.model_name in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.model_name]
                 else:
-                    self.params['tts'] = self.coqui_tts_load_custom(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                    self.params['tts'] = coqui_tts_load_custom(self.model_path, self.config_path, self.vocab_path, self.session['device'])
             elif self.session['fine_tuned'] != default_fine_tuned:
                 self.model_name = self.session['fine_tuned']
                 msg = f"Loading TTS {self.session['tts_engine']} model from {self.session['fine_tuned']}, it takes a while, please be patient..."
@@ -82,7 +82,7 @@ class TTSManager:
                 if self.model_name in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.model_name]
                 else:
-                    self.params['tts'] = self.coqui_tts_load_custom(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                    self.params['tts'] = coqui_tts_load_custom(self.model_path, self.config_path, self.vocab_path, self.session['device'])
             else:
                 self.model_name = self.session['fine_tuned']
                 msg = f"Loading TTS {self.session['tts_engine']} model from {models[self.session['tts_engine']][self.session['fine_tuned']]['repo']}, it takes a while, please be patient..."
