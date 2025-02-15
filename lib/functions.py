@@ -383,7 +383,12 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
     )
     def replace_ambiguous(match):
         if match.group(2):  # "num SYMBOL num" case
-            return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
+            matched = match.group(2)
+
+            if matched == "/":
+                matched = "-"
+
+            return f"{match.group(1)} {ambiguous_replacements[matched]} {match.group(3)}"
         elif match.group(3):  # "SYMBOL num" case
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
