@@ -6,13 +6,14 @@ from iso639 import languages
 from deep_translator import GoogleTranslator
 from tqdm import tqdm
 
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.append(parent_dir)
+#parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+#sys.path.append(parent_dir)
 
 # Your language mapping dictionary from lang.py
 from lib.lang import language_mapping
 
 env = os.environ.copy()
+os.environ['COQUI_TOS_AGREED'] = '1'
 env["PYTHONIOENCODING"] = "utf-8";
 env["LANG"] = "en_US.UTF-8"
 
