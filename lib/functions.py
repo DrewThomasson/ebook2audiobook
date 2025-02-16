@@ -286,7 +286,7 @@ def extract_custom_model(file_src, session, required_files=None):
         if model_path is not None:
             msg = f'Extracted files to {model_path}'
             print(msg)
-            return model_path
+            return model_name
         else:
             error = f'An error occured when unzip {file_src}'
             return None
@@ -1086,7 +1086,9 @@ def convert_ebook(args):
                 if session['custom_model'] is not None:
                     if not os.path.exists(session['custom_model_dir']):
                         os.makedirs(session['custom_model_dir'], exist_ok=True)
-                    if not os.path.exists(os.path.join(session['custom_model_dir'], session['custom_model'])):
+                    src_path = Path(session['custom_model'])
+                    src_name = src_path.stem
+                    if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
                         if analyze_uploaded_file(session['custom_model']):
                             model = extract_custom_model(session['custom_model'], session)
                             if model is not None:

@@ -18,7 +18,7 @@ lock = threading.Lock()
 loaded_tts = {}
 
 @app.post("/coqui_tts_load_api/")
-def coqui_tts_load_api(model_path: str, device: str):
+def coqui_tts_load_api(model_path, device):
     try:
         with lock:
             tts = TtsXTTS(model_path, gpu=True if device == "cuda" else False).to(device)
@@ -29,7 +29,7 @@ def coqui_tts_load_api(model_path: str, device: str):
         return None
 
 @app.post("/coqui_tts_load_custom/")
-def coqui_tts_load_custom(model_path: str, config_path: str, vocab_path: str, device: str):
+def coqui_tts_load_custom(model_path, config_path, vocab_path, device):
     try:
         config = XttsConfig()
         config.models_dir = os.path.join("models", "tts")
