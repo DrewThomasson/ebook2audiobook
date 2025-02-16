@@ -1,40 +1,37 @@
-name: Build and Push Docker Image
+name: Manual Docker Build and Push
 
 on:
-  workflow_run:
-    workflows: ["Run Ubuntu Headless ebook2audiobook"]
-    types:
-      - completed
-  release:
-    types:
-      - published  # Trigger on release creation
+  workflow_dispatch:  # Allows manual trigger
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event_name == 'release' }}  # Trigger if workflow passed and release published
 
     steps:
       # Checkout the repository code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Log in to Docker Hub or GitHub Container Registry
+      # Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build the Docker image with multiple tags
+      # Get the short Git commit hash
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      # Build the Docker image for linux/amd64 and tag it
       - name: Build Docker image
         run: |
-          GIT_HASH=$(git rev-parse --short=9 HEAD)
-          docker build -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest_small -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH .
+          docker build --platform linux/amd64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH .
 
-      # Push the Docker image to the registry
+      # Push both tags to Docker Hub
       - name: Push Docker image
         run: |
-          GIT_HASH=$(git rev-parse --short=9 HEAD)
-          docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest_small
+          docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest
           docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH
