@@ -2,7 +2,7 @@
 # you will also find guides on how best to write your Dockerfile
 
 # Build with the command: 
-# docker build --platform linux/amd64 -t athomasson2/ebook2audiobook:dev_2.1_small . 
+# docker build --platform linux/amd64 -t athomasson2/ebook2audiobook:latest . 
 
 FROM python:3.12
 
@@ -46,9 +46,9 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 ENV UNIDIC_DIR=/home/user/.local/share/unidic
 
 # Do a test run to make sure that the base models are pre-downloaded and baked into the image
-#RUN echo "This is a test sentence." > test.txt 
-#RUN python app.py --headless --ebook test.txt --script_mode full_docker
-#RUN rm test.txt
+RUN echo "This is a test sentence." > test.txt 
+RUN python app.py --headless --ebook test.txt --script_mode full_docker
+RUN rm test.txt
 
 # Expose the required port
 EXPOSE 7860
