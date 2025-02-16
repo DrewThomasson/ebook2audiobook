@@ -17,11 +17,6 @@ set "PROGRAMS_LIST=calibre ffmpeg nodejs espeak-ng"
 
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
-set "CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
-set "CONDA_INSTALLER=%TEMP%\Miniconda3-latest-Windows-x86_64.exe"
-set "CONDA_INSTALL_DIR=%USERPROFILE%\miniconda3"
-set "CONDA_PATH=%USERPROFILE%\miniconda3\bin"
-set "CONDA_ACTIVATE=%CONDA_INSTALL_DIR%\condabin\conda.bat"
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
 set "PATH=%USERPROFILE%\scoop\shims;%CONDA_PATH%;%CONDA_INSTALL_DIR%\condabin;%PATH%"
 
@@ -125,7 +120,7 @@ if %errorlevel% neq 0 (
     echo Scoop is not installed. Installing Scoop...
     powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb get.scoop.sh | iex"  
 	call refreshenv
-    call scoop install git  
+    call scoop install git
     call scoop bucket add extras
     call scoop bucket known
 )
@@ -140,15 +135,10 @@ if not "%PROGRAMS_CHECK%"=="0" (
 :: Install Conda if not already installed
 if not "%CONDA_CHECK_STATUS%"=="0" (	
 	echo Installing Conda...
-	call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User'),'Process')"
-	echo Downloading Conda installer...
-	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
-	"%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /S /D=%CONDA_INSTALL_DIR%
-	if exist "%CONDA_ACTIVATE%" (
-		echo Conda installed successfully.
-		set "CONDA_RUN_INIT=1"
-		set "CONDA_CHECK_STATUS=0"
-	)
+	call scoop install miniconda3
+	echo Conda installed successfully.
+	set "CONDA_RUN_INIT=1"
+	set "CONDA_CHECK_STATUS=0"
 )
 :: Install Docker if not already installed
 if not "%DOCKER_CHECK_STATUS%"=="0" (
