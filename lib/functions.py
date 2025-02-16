@@ -263,6 +263,7 @@ def analyze_uploaded_file(zip_path, required_files=None):
 
 def extract_custom_model(file_src, session, required_files=None):
     try:
+        model_path = None
         if required_files is None:
             required_files = models[session['tts_engine']][default_fine_tuned]['files']
         model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
@@ -282,8 +283,13 @@ def extract_custom_model(file_src, session, required_files=None):
                         zip_ref.extract(f, model_path)
                     t.update(1)
         os.remove(file_src)
-        print(f'Extracted files to {model_path}')
-        return model_path
+        if model_path is not None:
+            msg = f'Extracted files to {model_path}'
+            print(msg)
+            return model_name
+        else:
+            error = f'An error occured when unzip {file_src}'
+            return None
     except asyncio.exceptions.CancelledError:
         DependencyError(e)
         os.remove(file_src)
@@ -383,9 +389,9 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
     )
     def replace_ambiguous(match):
         if match.group(2):  # "num SYMBOL num" case
-            return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
+            return f"{match.group(1)} {ambiguous_replacements[str(match.group(2))]} {match.group(3)}"
         elif match.group(3):  # "SYMBOL num" case
-            return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
+            return f"{ambiguous_replacements[str(match.group(3))]} {match.group(4)}"
         return match.group(0)
     if ambiguous_replacements:
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
@@ -1080,7 +1086,9 @@ def convert_ebook(args):
                 if session['custom_model'] is not None:
                     if not os.path.exists(session['custom_model_dir']):
                         os.makedirs(session['custom_model_dir'], exist_ok=True)
-                    if not os.path.exists(os.path.join(session['custom_model_dir'], session['custom_model'])):
+                    src_path = Path(session['custom_model'])
+                    src_name = src_path.stem
+                    if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
                         if analyze_uploaded_file(session['custom_model']):
                             model = extract_custom_model(session['custom_model'], session)
                             if model is not None:

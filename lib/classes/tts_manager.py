@@ -18,7 +18,7 @@ lock = threading.Lock()
 loaded_tts = {}
 
 @app.post("/coqui_tts_load_api/")
-def coqui_tts_load_api(model_path: str, device: str):
+def coqui_tts_load_api(model_path, device):
     try:
         with lock:
             tts = TtsXTTS(model_path, gpu=True if device == "cuda" else False).to(device)
@@ -29,7 +29,7 @@ def coqui_tts_load_api(model_path: str, device: str):
         return None
 
 @app.post("/coqui_tts_load_custom/")
-def coqui_tts_load_custom(model_path: str, config_path: str, vocab_path: str, device: str):
+def coqui_tts_load_custom(model_path, config_path, vocab_path, device):
     try:
         config = XttsConfig()
         config.models_dir = os.path.join("models", "tts")
@@ -40,8 +40,8 @@ def coqui_tts_load_custom(model_path: str, config_path: str, vocab_path: str, de
                 config,
                 checkpoint_path=model_path,
                 vocab_path=vocab_path,
-                enable_deepspeed=True,
-                eval=True,
+                enable_deepspeed=tts_default_settings['enable_deepspeed'],
+                eval=True
             ).to(device)
         return tts
     except Exception as e:
@@ -62,9 +62,9 @@ class TTSManager:
                 self.model_name = os.path.basename(self.session['custom_model'])
                 msg = f"Loading TTS {self.session['tts_engine']} model from {self.session['custom_model']}, it takes a while, please be patient..."
                 print(msg)
-                self.model_path = os.path.join(self.session['custom_model'], 'model.pth')
-                self.config_path = os.path.join(self.session['custom_model'],'config.json')
-                self.vocab_path = os.path.join(self.session['custom_model'],'vocab.json')
+                self.model_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'], 'model.pth')
+                self.config_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'],'config.json')
+                self.vocab_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'],'vocab.json')
                 if self.model_name in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.model_name]
                 else:
