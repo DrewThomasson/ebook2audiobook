@@ -12,7 +12,7 @@ x-gpu-disabled: &gpu-disabled
 
 services:
   ebook2audiobook:
-    image: athomasson2/ebook2audiobook:latest
+    image: docker.io/athomasson2/ebook2audiobook:latest
     platform: linux/amd64
     tty: true
     stdin_open: true
