@@ -62,9 +62,9 @@ class TTSManager:
                 self.model_name = os.path.basename(self.session['custom_model'])
                 msg = f"Loading TTS {self.session['tts_engine']} model from {self.session['custom_model']}, it takes a while, please be patient..."
                 print(msg)
-                self.model_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'], 'model.pth')
-                self.config_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'],'config.json')
-                self.vocab_path = os.path.join(self.session['custom_model_dir'], self.session['custom_model'],'vocab.json')
+                self.model_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'model.pth')
+                self.config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'config.json')
+                self.vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'vocab.json')
                 if self.model_name in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.model_name]
                 else:

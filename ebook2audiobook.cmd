@@ -13,21 +13,28 @@ set "SCRIPT_DIR=%~dp0"
 set "PYTHON_VERSION=3.12"
 set "PYTHON_ENV=python_env"
 set "CURRENT_ENV="
-set "PROGRAMS_LIST=calibre ffmpeg nodejs espeak-ng"
+set "PROGRAMS_LIST=calibre-normal-cjk ffmpeg nodejs espeak-ng curl"
 
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
-set "CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
-set "CONDA_INSTALLER=%TEMP%\Miniconda3-latest-Windows-x86_64.exe"
-set "CONDA_INSTALL_DIR=%USERPROFILE%\miniconda3"
-set "CONDA_PATH=%USERPROFILE%\miniconda3\bin"
-set "CONDA_ACTIVATE=%CONDA_INSTALL_DIR%\condabin\conda.bat"
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
-set "PATH=%USERPROFILE%\scoop\shims;%CONDA_PATH%;%CONDA_INSTALL_DIR%\condabin;%PATH%"
+set "SCOOP_HOME=%USERPROFILE%\scoop"
+set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
+set "SCOOP_APPS=%SCOOP_HOME%\apps"
+set "SCOOP_HOME=%USERPROFILE%\scoop"
+set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
+set "SCOOP_APPS=%SCOOP_HOME%\apps"
+set "SCOOP_BUCKETS=muggle extras versions"
+set "CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-py312_24.1.2-0-Windows-x86_64.exe"
+set "CONDA_INSTALLER=%TEMP%\miniconda.exe"
+set "CONDA_INSTALL_DIR=%USERPROFILE%\miniconda3"
+set "CONDA_BAT=%CONDA_INSTALL_DIR%\condabin\conda.bat"
+set "CONDA_PATH=%USERPROFILE%\miniconda3\bin"
+set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%CONDA_INSTALL_DIR%;%CONDA_INSTALL_DIR%\Scripts;%PATH%"
 
-set "PROGRAMS_CHECK=0"
+set "SCOOP_CHECK_STATUS=0"
 set "CONDA_CHECK_STATUS=0"
-set "CONDA_RUN_INIT=0"
+set "PROGRAMS_CHECK=0"
 set "DOCKER_CHECK_STATUS=0"
 
 set "HELP_FOUND=%ARGS:--help=%"
@@ -47,52 +54,60 @@ if defined CONTAINER (
 )
 
 echo Running in %SCRIPT_MODE% mode
+goto scoop_check
+
+:scoop_check
+where /Q scoop
+if %errorlevel% neq 0 (
+	set "SCOOP_CHECK_STATUS=1"
+)
 goto conda_check
+exit /b
 
 :conda_check
-set "conda_version="
 where /Q conda
 if %errorlevel% neq 0 (
 	call rmdir /s /q "%CONDA_INSTALL_DIR%" 2>nul
 	set "CONDA_CHECK_STATUS=1"
-) else (
-		:: Check if running in a Conda environment
-		if defined CONDA_DEFAULT_ENV (
-			set "CURRENT_ENV=%CONDA_PREFIX%"
-		)
-		:: Check if running in a Python virtual environment
-		if defined VIRTUAL_ENV (
-			set "CURRENT_ENV=%VIRTUAL_ENV%"
-		)
-		for /f "delims=" %%i in ('where /Q python') do (
-			if defined CONDA_PREFIX (
-				if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
-					set "CURRENT_ENV=%CONDA_PREFIX%"
-					break
-				)
-			) else if defined VIRTUAL_ENV (
-				if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
-					set "CURRENT_ENV=%VIRTUAL_ENV%"
-					break
-				)
-			)
-		)
-		if not "%CURRENT_ENV%"=="" (
-			echo Current python virtual environment detected: %CURRENT_ENV%. 
-			echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-			goto failed
-		)
-		call :programs_check
+	goto programs_check
 )
-goto dispatch
+:: Check if running in a Conda environment
+if defined CONDA_DEFAULT_ENV (
+	set "CURRENT_ENV=%CONDA_PREFIX%"
+)
+:: Check if running in a Python virtual environment
+if defined VIRTUAL_ENV (
+	set "CURRENT_ENV=%VIRTUAL_ENV%"
+)
+for /f "delims=" %%i in ('where /Q python') do (
+	if defined CONDA_PREFIX (
+		if /i "%%i"=="%CONDA_PREFIX%\Scripts\python.exe" (
+			set "CURRENT_ENV=%CONDA_PREFIX%"
+			break
+		)
+	) else if defined VIRTUAL_ENV (
+		if /i "%%i"=="%VIRTUAL_ENV%\Scripts\python.exe" (
+			set "CURRENT_ENV=%VIRTUAL_ENV%"
+			break
+		)
+	)
+)
+if not "%CURRENT_ENV%"=="" (
+	echo Current python virtual environment detected: %CURRENT_ENV%. 
+	echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
+	goto failed
+)
+goto programs_check
+exit /b
 
 :programs_check
 set "missing_prog_array="
 for %%p in (%PROGRAMS_LIST%) do (
     set "prog=%%p"
     if "%%p"=="nodejs" set "prog=node"
+	if "%%p"=="calibre-normal-cjk" set "prog=calibre"
     where /Q !prog!
-    if errorlevel 1 (
+    if !errorlevel! neq 0 (
         echo %%p is not installed.
         set "missing_prog_array=!missing_prog_array! %%p"
     )
@@ -102,97 +117,97 @@ if not "!missing_prog_array!"=="" (
     goto install_components
 )
 goto dispatch
-
-:docker_check
-where /Q docker
-if %errorlevel% neq 0 (
-	set "DOCKER_CHECK_STATUS=1"
-) else (
-	:: Verify Docker is running
-	call docker info >nul 2>&1
-	if %errorlevel% neq 0 (
-		set "DOCKER_CHECK_STATUS=1"
-	) else (
-		goto dispatch
-	)
-)
-goto install_components
+exit /b
 
 :install_components
 :: Install Scoop if not already installed
-where /Q scoop
-if %errorlevel% neq 0 (
-    echo Scoop is not installed. Installing Scoop...
-    powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb get.scoop.sh | iex"  
-	call refreshenv
-    call scoop install git  
-    call scoop bucket add extras
-    call scoop bucket known
+if not "%SCOOP_CHECK_STATUS%"=="0" (
+	echo Scoop is not installed. Installing Scoop...
+	powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb get.scoop.sh | iex"
+	timeout /t 6 /nobreak >nul
+	where /Q scoop
+	if !errorlevel! neq 0 (
+		echo Scoop installation failed.
+		goto failed
+	)
+	scoop install git
+	set "installed_buckets="
+	for /f "tokens=1" %%b in ('scoop bucket list ^| findstr /V "Name ----"') do (
+		set "installed_buckets=!installed_buckets! %%b"
+	)
+	for %%b in (%SCOOP_BUCKETS%) do (
+		set "found=0"
+		for %%i in (!installed_buckets!) do (
+			if "%%i"=="%%b" set "found=1"
+		)
+		if !found!==0 (
+			echo Adding missing bucket: %%b...
+			if /i "%%b"=="muggle" (
+				scoop bucket add %%b https://github.com/hu3rror/scoop-muggle.git
+			) else (
+				scoop bucket add %%b
+			)
+			set "installed_buckets=!installed_buckets! %%b"
+		) else (
+			echo Bucket %%b is already registered.
+		)
+	)
+	echo Scoop installed successfully.
+	set "SCOOP_CHECK_STATUS=0"
 )
-
-:: Install missing packages if any
+:: Install missing packages one by one
 if not "%PROGRAMS_CHECK%"=="0" (
-	echo Installing %missing_prog_array%
-	call scoop install %missing_prog_array%
-	set "PROGRAMS_CHECK=0"
-	set "missing_prog_array="
+    echo Installing missing programs...
+    for %%p in (%missing_prog_array%) do (
+		echo Installing %%p...
+		scoop install %%p
+    )
+    set "PROGRAMS_CHECK=0"
+    set "missing_prog_array="
 )
 :: Install Conda if not already installed
-if not "%CONDA_CHECK_STATUS%"=="0" (	
-	echo Installing Conda...
-	call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User'),'Process')"
-	echo Downloading Conda installer...
-	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
-	"%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /S /D=%CONDA_INSTALL_DIR%
-	if exist "%CONDA_ACTIVATE%" (
-		echo Conda installed successfully.
-		set "CONDA_RUN_INIT=1"
-		set "CONDA_CHECK_STATUS=0"
+if not "%CONDA_CHECK_STATUS%"=="0" (
+	echo Installing Miniconda3...
+	curl "%CONDA_URL%" -o "%CONDA_INSTALLER%"
+	start /wait "" "%CONDA_INSTALLER%" /S
+	where /Q conda
+	if !errorlevel! neq 0 (
+		echo Conda installation failed.
+		goto failed
 	)
-)
-:: Install Docker if not already installed
-if not "%DOCKER_CHECK_STATUS%"=="0" (
-	echo Docker is not installed. Installing it now...
-	call scoop install docker-cli
-	call scoop install docker-engine
-	call where /Q docker
-	if %errorlevel% equ 0 (
-		echo Starting Docker Engine...
-		net start com.docker.service >nul 2>&1
-		if %errorlevel% equ 0 (
-			echo Docker installed and started successfully.
-			set "DOCKER_CHECK_STATUS=0"
-		) 
-	)
+	call conda update conda -y
+	del %CONDA_INSTALLER%
+	set "CONDA_CHECK_STATUS=0"
+	echo Conda installed successfully.
 )
 goto dispatch
+exit /b
 
 :dispatch
-if "%PROGRAMS_CHECK%"=="0" (
-	if "%CONDA_CHECK_STATUS%"=="0" (
-		if "%DOCKER_CHECK_STATUS%"=="0" (
-			goto main
-		) else (
-			goto failed
+if "%SCOOP_CHECK_STATUS%"=="0" (
+	if "%PROGRAMS_CHECK%"=="0" (
+		if "%CONDA_CHECK_STATUS%"=="0" (
+			if "%DOCKER_CHECK_STATUS%"=="0" (
+				goto main
+			) else (
+				goto failed
+			)
 		)
 	)
 )
 echo PROGRAMS_CHECK: %PROGRAMS_CHECK%
 echo CONDA_CHECK_STATUS: %CONDA_CHECK_STATUS%
 echo DOCKER_CHECK_STATUS: %DOCKER_CHECK_STATUS%
-timeout /t 5 /nobreak >nul
 goto install_components
+exit /b
 
 :main
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
-	if "%CONDA_RUN_INIT%"=="1" (
-		call conda init
-		set "CONDA_RUN_INIT=0"
-	)
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
 		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
+		call %CONDA_BAT% activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 		call python -m pip cache purge
 		call python -m pip install --upgrade pip
@@ -200,12 +215,12 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 			echo Installing %%p...
 			python -m pip install --upgrade --no-cache-dir --progress-bar=on %%p
 		)
-		echo ✅ All required packages are installed.
+		echo All required packages are installed.
 	) else (
+		call %CONDA_BAT% activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 	)
 	call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
-	call conda deactivate
 )
 exit /b
 
