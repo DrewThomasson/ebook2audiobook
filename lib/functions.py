@@ -631,15 +631,12 @@ def convert_chapters_to_audio(session):
             return False
         progress_bar = None
         if is_gui_process:
-            progress_bar = gr.Progress(track_tqdm=True)  
-            
+            progress_bar = gr.Progress(track_tqdm=True)        
         tts_manager = TTSManager(session)
-        if not tts_manager:
+        if tts_manager is None:
             return False
-
         resume_chapter = 0
         resume_sentence = 0
-
         # Check existing files to resume the process if it was interrupted
         existing_chapters = sorted([f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')])
         existing_sentences = sorted([f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')])
