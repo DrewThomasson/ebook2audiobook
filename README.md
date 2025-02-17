@@ -32,19 +32,19 @@ Thanks to support ebook2audiobook developers!<br>
 
 
 ## Table of Contents
-- [ebook2audiobook](#ebook2audiobook)
+- [ebook2audiobook](#-ebook2audiobook)
 - [Features](#features)
 - [New v2.0 Web GUI Interface](#new-v20-web-gui-interface)
 - [Huggingface Space Demo](#huggingface-space-demo)
 - [Free Google Colab](#free-google-colab)
 - [Pre-made Audio Demos](#demos)
 - [Supported Languages](#supported-languages)
-- [Requirements](#requirements)
+- [Requirements](#hardware-requirements)
 - [Installation Instructions](#installation-instructions)
-- [Usage](#usage)
+- [Usage](#launching-gradio-web-interface)
   - [Launching Gradio Web Interface](#launching-gradio-web-interface)
-  - [Basic Headless Usage](#basic-headless-usage)
-  - [Headless Custom XTTS Model Usage](#headless-custom-xtts-model-usage)
+  - [Basic Headless Usage](#basic--usage)
+  - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
   - [Renting a GPU](#renting-a-gpu)
   - [Help command output](#help-command-output)
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
@@ -62,7 +62,7 @@ Thanks to support ebook2audiobook developers!<br>
 - [Special Thanks](#special-thanks)
 - [Join Our  Server!](#join-our--server)
 - [Legacy](#legacy-v10)
-- [Glossary of Sections](#glossary-of-sections)
+- [Table of Contents](#table-of-contents)
 
 
 ## Features
@@ -317,9 +317,9 @@ docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64
 
 #### Building the Docker Container
 - You can build the docker image with the command:
-'''powershell
-docker build --platform linux/amd64 -t athomasson2/ebook2audiobook
-'''
+```powershell
+docker build --platform linux/amd64 -t athomasson2/ebook2audiobook .
+```
 This command will start the Gradio interface on port 7860.(localhost:7860)
 - For more options add the parameter `--help`
 
