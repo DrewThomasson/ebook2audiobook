@@ -55,4 +55,4 @@ RUN rm test.txt
 EXPOSE 7860
 
 # Start the Gradio app with the required flag
-CMD ["python", "app.py", "--script_mode", "full_docker"]
+ENTRYPOINT ["python", "app.py", "--script_mode", "full_docker"]
