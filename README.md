@@ -305,11 +305,11 @@ To run the Docker container and start the Gradio interface, use the following co
 
  -Run with CPU only
 ```powershell
-docker run -it --rm -p 7860:7860 athomasson2/ebook2audiobook
+docker run --rm -p 7860:7860 athomasson2/ebook2audiobook
 ```
  -Run with GPU Speedup (NVIDIA compatible only)
 ```powershell
-docker run -it --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
+docker run --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
 ```
 
 
@@ -341,7 +341,7 @@ mkdir input-folder && mkdir Audiobooks
 ```
 - In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
 ```bash
-docker run -it --rm \
+docker run --rm \
     -v $(pwd)/input-folder:/home/user/app/input_folder \
     -v $(pwd)/audiobooks:/home/user/app/audiobooks \
     athomasson2/ebook2audiobook \
@@ -355,7 +355,7 @@ docker run -it --rm \
 ## To get the help command for the other parameters this program has you can run this 
 
 ```bash
-docker run -it --rm athomasson2/ebook2audiobook --help
+docker run --rm athomasson2/ebook2audiobook --help
 
 ```
 and that will output this 
@@ -411,7 +411,7 @@ Don't have the hardware to run it or you want to rent a GPU?
   as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
   Example of adding this fix in the `docker run` command
 ```Dockerfile
-docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
+docker run --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
     -p 7860:7860 athomasson2/ebook2audiobook
 ```
 
