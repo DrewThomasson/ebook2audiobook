@@ -58,7 +58,7 @@ tts_default_settings = {
     "temperature": 0.65,  # Natural variation without sounding robotic
     "length_penalty": 1.0,  # Encourages slightly longer phrases
     "num_beams": 1,  # More beams improve long-term coherence
-    "repetition_penalty": 2.4,  # Helps prevent redundant phrasing
+    "repetition_penalty": 2.5,  # Helps prevent redundant phrasing
     "top_k": 50,  # Balanced word diversity
     "top_p": 0.8,  # Good tradeoff between diversity and coherence
     "speed": 1.0,  # Normal pace
