@@ -344,7 +344,6 @@ mkdir input-folder && mkdir Audiobooks
 docker run -it --rm \
     -v $(pwd)/input-folder:/home/user/app/input_folder \
     -v $(pwd)/audiobooks:/home/user/app/audiobooks \
-    --platform linux/amd64 \
     athomasson2/ebook2audiobook \
     --headless --ebook /input_folder/YOUR_EBOOK_FILE
 ```
@@ -356,10 +355,7 @@ docker run -it --rm \
 ## To get the help command for the other parameters this program has you can run this 
 
 ```bash
-docker run -it --rm \
-    --platform linux/amd64 \
-    athomasson2/ebook2audiobook \
-    --help
+docker run -it --rm athomasson2/ebook2audiobook --help
 
 ```
 and that will output this 
