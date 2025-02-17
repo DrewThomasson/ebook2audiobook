@@ -348,7 +348,7 @@ docker run -it --rm \
     -v $(pwd)/audiobooks:/home/user/app/audiobooks \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook \
-    --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
+    --headless --ebook /input_folder/YOUR_EBOOK_FILE
 ```
 - And that should be it! 
 - The output Audiobooks will be found in the Audiobook folder which will also be located
