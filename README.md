@@ -306,12 +306,12 @@ To run the Docker container and start the Gradio interface, use the following co
  -Run with CPU only
 ```powershell
 docker run -it --rm -p 7860:7860 --platform=linux/amd64 \
-    athomasson2/ebook2audiobook python app.py
+    athomasson2/ebook2audiobook
 ```
  -Run with GPU Speedup (NVIDIA compatible only)
 ```powershell
 docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64
-    athomasson2/ebook2audiobook python app.py
+    athomasson2/ebook2audiobook
 ```
 
 
@@ -348,7 +348,7 @@ docker run -it --rm \
     -v $(pwd)/audiobooks:/home/user/app/audiobooks \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook \
-    python app.py --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
+    python app.py --script_mode full_docker --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
 ```
 - And that should be it! 
 - The output Audiobooks will be found in the Audiobook folder which will also be located
@@ -361,7 +361,7 @@ docker run -it --rm \
 docker run -it --rm \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook \
-    python app.py --help
+    python app.py --script_mode full_docker --help
 
 ```
 and that will output this 
@@ -418,7 +418,7 @@ Don't have the hardware to run it or you want to rent a GPU?
   Example of adding this fix in the `docker run` command
 ```Dockerfile
 docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
-    -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
+    -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py --script_mode full_docker
 ```
 
 
