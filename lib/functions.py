@@ -282,7 +282,8 @@ def extract_custom_model(file_src, session, required_files=None):
                     if f in required_files:
                         zip_ref.extract(f, model_path)
                     t.update(1)
-        os.remove(file_src)
+        if is_gui_process:
+            os.remove(file_src)
         if model_path is not None:
             msg = f'Extracted files to {model_path}'
             print(msg)
@@ -292,11 +293,13 @@ def extract_custom_model(file_src, session, required_files=None):
             return None
     except asyncio.exceptions.CancelledError:
         DependencyError(e)
-        os.remove(file_src)
+        if is_gui_process:
+            os.remove(file_src)
         return None       
     except Exception as e:
         DependencyError(e)
-        os.remove(file_src)
+        if is_gui_process:
+            os.remove(file_src)
         return None
         
 def hash_proxy_dict(proxy_dict):
