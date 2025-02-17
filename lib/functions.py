@@ -1547,9 +1547,10 @@ def web_interface(args):
                     label='Length Penalty', 
                     minimum=0.3, 
                     maximum=5.0, 
-                    step=0.1, 
+                    step=0.1,
                     value=tts_default_settings['length_penalty'],
-                    info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.'
+                    info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
+                    visible=False
                 )
                 gr_num_beams = gr.Slider(
                     label='Number Beams', 
@@ -1557,7 +1558,8 @@ def web_interface(args):
                     maximum=10, 
                     step=1, 
                     value=tts_default_settings['num_beams'],
-                    info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.'
+                    info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
+                    visible=False
                 )
                 gr_repetition_penalty = gr.Slider(
                     label='Repetition Penalty', 
@@ -2403,6 +2405,7 @@ def web_interface(args):
             inputs=[gr_temperature, gr_session],
             outputs=None
         )
+        '''
         gr_length_penalty.change(
             fn=lambda val, id, val2: change_param('length_penalty', val, id, val2),
             inputs=[gr_length_penalty, gr_session, gr_num_beams],
@@ -2413,6 +2416,7 @@ def web_interface(args):
             inputs=[gr_num_beams, gr_session, gr_length_penalty],
             outputs=None,
         )
+        '''
         gr_repetition_penalty.change(
             fn=lambda val, id: change_param('repetition_penalty', val, id),
             inputs=[gr_repetition_penalty, gr_session],
