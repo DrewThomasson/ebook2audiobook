@@ -1128,12 +1128,25 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                print('GPU is not available on your device!')
+                                msg = 'GPU is not available on your device!'
+                                print(msg)
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                print('MPS is not available on your device!')
-                        print(f"Available Processor Unit: {session['device']}")   
+                                msg = 'MPS is not available on your device!'
+                                print(msg)
+                        msg = f"Available Processor Unit: {session['device']}"
+                        print(msg)
+                        if tts_default_settings['use_deepspeed'] == True:
+                            try:
+                                import deepspeed
+                            except:
+                                tts_default_settings['use_deepspeed'] = False
+                                msg = 'deepseed not installed or package is broken. set to False'
+                                print(msg)
+                            else: 
+                                msg = 'deepspeed is detected!'
+                                print(msg)
                         session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
                         if convert_to_epub(session):
                             epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       

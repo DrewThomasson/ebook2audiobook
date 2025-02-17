@@ -5,6 +5,9 @@ if [[ -z "$SWITCHED_TO_ZSH" && "$SHELL" = */zsh ]]; then
 fi
 
 PYTHON_VERSION="3.12"
+
+export PYTHONUTF8="1"
+export PYTHONIOENCODING="utf-8"
 export TTS_CACHE="./models"
 
 ARGS=("$@")
@@ -43,7 +46,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMPDIR=./.cache
 
 WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak" "espeak-ng" "rustc" "cargo")
+REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rustc" "cargo")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
 

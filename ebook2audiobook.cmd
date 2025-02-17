@@ -12,7 +12,10 @@ set "SCRIPT_DIR=%~dp0"
 
 set "PYTHON_VERSION=3.12"
 set "PYTHON_ENV=python_env"
+set "PYTHONUTF8=1"
+set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
+
 set "PROGRAMS_LIST=calibre-normal-cjk ffmpeg nodejs espeak-ng curl"
 
 set "TMP=%SCRIPT_DIR%\tmp"
@@ -24,7 +27,6 @@ set "SCOOP_APPS=%SCOOP_HOME%\apps"
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
-set "SCOOP_BUCKETS=muggle extras versions"
 set "CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-py312_24.1.2-0-Windows-x86_64.exe"
 set "CONDA_INSTALLER=%TEMP%\miniconda.exe"
 set "CONDA_INSTALL_DIR=%USERPROFILE%\miniconda3"
@@ -109,6 +111,11 @@ for %%p in (%PROGRAMS_LIST%) do (
     where /Q !prog!
     if !errorlevel! neq 0 (
         echo %%p is not installed.
+		if "%SCOOP_CHECK_STATUS%"=="0" (
+			call scoop bucket add muggle b https://github.com/hu3rror/scoop-muggle.git
+			call scoop bucket add extras
+			call scoop bucket add versions
+		)
         set "missing_prog_array=!missing_prog_array! %%p"
     )
 )
@@ -123,34 +130,12 @@ exit /b
 :: Install Scoop if not already installed
 if not "%SCOOP_CHECK_STATUS%"=="0" (
 	echo Scoop is not installed. Installing Scoop...
-	powershell -NoProfile -ExecutionPolicy Bypass -Command "iwr -useb get.scoop.sh | iex"
-	timeout /t 6 /nobreak >nul
+	start /wait cmd /c powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+		"[environment]::SetEnvironmentVariable('SCOOP', '%SCOOP_HOME%', 'User'); Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression; scoop install git; scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git; scoop bucket add extras; scoop bucket add versions"
 	where /Q scoop
 	if !errorlevel! neq 0 (
 		echo Scoop installation failed.
 		goto failed
-	)
-	scoop install git
-	set "installed_buckets="
-	for /f "tokens=1" %%b in ('scoop bucket list ^| findstr /V "Name ----"') do (
-		set "installed_buckets=!installed_buckets! %%b"
-	)
-	for %%b in (%SCOOP_BUCKETS%) do (
-		set "found=0"
-		for %%i in (!installed_buckets!) do (
-			if "%%i"=="%%b" set "found=1"
-		)
-		if !found!==0 (
-			echo Adding missing bucket: %%b...
-			if /i "%%b"=="muggle" (
-				scoop bucket add %%b https://github.com/hu3rror/scoop-muggle.git
-			) else (
-				scoop bucket add %%b
-			)
-			set "installed_buckets=!installed_buckets! %%b"
-		) else (
-			echo Bucket %%b is already registered.
-		)
 	)
 	echo Scoop installed successfully.
 	set "SCOOP_CHECK_STATUS=0"
