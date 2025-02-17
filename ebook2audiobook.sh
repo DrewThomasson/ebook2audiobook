@@ -282,25 +282,6 @@ else
 		return 0
 	}
 
-	function docker_check {
-		if ! command -v docker &> /dev/null; then
-			echo -e "\e[33m docker is missing! trying to install it... \e[0m"
-			if [[ "$OSTYPE" = "darwin"* ]]; then
-				echo "Installing Docker using Homebrew..."
-				$PACK_MGR --cask docker $PACK_MGR_OPTIONS
-			else
-				$WGET -qO get-docker.sh https://get.docker.com && \
-				sudo sh get-docker.sh
-				sudo systemctl start docker
-				sudo systemctl enable docker
-				docker run hello-world
-				rm -f get-docker.sh
-			fi
-			echo -e "\e[32m===============>>> docker is installed! <<===============\e[0m"
-		fi
-		return 0
-	}
-
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
 		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
