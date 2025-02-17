@@ -8,6 +8,9 @@ from lib.conf import *
 from lib.lang import install_info, default_language_code
 from lib.models import models, default_fine_tuned
 
+os.environ["PYTHONUTF8"] = "1"
+os.environ["PYTHONIOENCODING"] = "utf-8"
+
 def check_virtual_env(script_mode):
     current_version = sys.version_info[:2]  # (major, minor)
     if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
@@ -69,7 +72,7 @@ def check_and_install_requirements(file_path):
             with tqdm(total=len(packages), desc='Installation 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
                 for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
                     try:
-                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', package])
+                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', package, '--no-cache-dir'])
                         t.update(1)
                     except subprocess.CalledProcessError as e:
                         error = f'Failed to install {package}: {e}'

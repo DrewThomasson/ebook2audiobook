@@ -63,7 +63,7 @@ tts_default_settings = {
     "top_p": 0.8,  # Good tradeoff between diversity and coherence
     "speed": 1.0,  # Normal pace
     "enable_text_splitting": False,  # Helps with better pacing for long content (note: ab2ab is already splitting sentencess, set to True can cause more trouble)
-    "enable_deepspeed": False,
+    "use_deepspeed": False,
     "length_scale": 1.0,
     "noise_scale": 0.3
 }
