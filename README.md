@@ -348,7 +348,7 @@ docker run -it --rm \
     -v $(pwd)/audiobooks:/home/user/app/audiobooks \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook \
-    python app.py --script_mode full_docker --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
+    --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
 ```
 - And that should be it! 
 - The output Audiobooks will be found in the Audiobook folder which will also be located
@@ -361,7 +361,7 @@ docker run -it --rm \
 docker run -it --rm \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook \
-    python app.py --script_mode full_docker --help
+    --help
 
 ```
 and that will output this 
@@ -469,7 +469,7 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
    [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead
    (It doesn't have zero-shot voice cloning though, and is Siri quality voices, but it is much faster on cpu).
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode,
-   add `-h` parameter after the `app.py` in the docker run command for more information.
+   add `--help` parameter at the end of the docker run command for more information.
 - "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
    we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
 
