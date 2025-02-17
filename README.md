@@ -306,12 +306,12 @@ To run the Docker container and start the Gradio interface, use the following co
  -Run with CPU only
 ```powershell
 docker run -it --rm -p 7860:7860 --platform=linux/amd64 \
-    athomasson2/ebook2audiobook python app.py
+    athomasson2/ebook2audiobook
 ```
  -Run with GPU Speedup (NVIDIA compatible only)
 ```powershell
 docker run -it --rm --gpus all -p 7860:7860 --platform=linux/amd64
-    athomasson2/ebook2audiobook python app.py
+    athomasson2/ebook2audiobook
 ```
 
 
@@ -348,7 +348,7 @@ docker run -it --rm \
     -v $(pwd)/audiobooks:/home/user/app/audiobooks \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook \
-    python app.py --headless --ebook /input_folder/YOUR_INPUT_FILE.TXT
+    --headless --ebook /input_folder/YOUR_EBOOK_FILE
 ```
 - And that should be it! 
 - The output Audiobooks will be found in the Audiobook folder which will also be located
@@ -361,7 +361,7 @@ docker run -it --rm \
 docker run -it --rm \
     --platform linux/amd64 \
     athomasson2/ebook2audiobook \
-    python app.py --help
+    --help
 
 ```
 and that will output this 
@@ -418,7 +418,7 @@ Don't have the hardware to run it or you want to rent a GPU?
   Example of adding this fix in the `docker run` command
 ```Dockerfile
 docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
-    -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py
+    -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook
 ```
 
 
@@ -469,7 +469,7 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
    [project that uses piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts) instead
    (It doesn't have zero-shot voice cloning though, and is Siri quality voices, but it is much faster on cpu).
 - "I'm having dependency issues" - Just use the docker, its fully self contained and has a headless mode,
-   add `-h` parameter after the `app.py` in the docker run command for more information.
+   add `--help` parameter at the end of the docker run command for more information.
 - "Im getting a truncated audio issue!" - PLEASE MAKE AN ISSUE OF THIS,
    we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
 
