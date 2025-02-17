@@ -418,7 +418,7 @@ Don't have the hardware to run it or you want to rent a GPU?
   Example of adding this fix in the `docker run` command
 ```Dockerfile
 docker run -it --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
-    -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook python app.py --script_mode full_docker
+    -p 7860:7860 --platform=linux/amd64 athomasson2/ebook2audiobook
 ```
 
 
