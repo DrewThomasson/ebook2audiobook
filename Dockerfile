@@ -29,7 +29,8 @@ RUN apt-get update && \
 USER root
 RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
 USER user
-RUN git clone https://github.com/DrewThomasson/ebook2audiobook.git /home/user/app
+RUN git clone --depth 1 https://github.com/DrewThomasson/ebook2audiobook.git /home/user/app && rm -rf /home/user/app/.git
+
 
 # Set the cloned repository as the base working directory
 WORKDIR /home/user/app
