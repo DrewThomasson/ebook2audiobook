@@ -366,6 +366,7 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
             return False
         except Exception as e:
             return False
+
     def rep_num(match):
         number = match.group().replace(",", "")  # Remove commas for proper conversion
         try:
@@ -374,6 +375,16 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
             return num2words(int(number), lang=lang_iso1)
         except ValueError:
             return number  # If conversion fails, return original number
+
+    def replace_ambiguous(match):
+        symbol2 = match.group(2)
+        symbol3 = match.group(3)
+        if symbol2 in ambiguous_replacements: # "num SYMBOL num" case
+            return f"{match.group(1)} {ambiguous_replacements[symbol2]} {match.group(3)}"            
+        elif symbol3 in ambiguous_replacements: # "SYMBOL num" case
+            return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
+        return match.group(0)
+
     is_num2words_compat = check_compat()
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     # Separate ambiguous and non-ambiguous symbols
@@ -390,12 +401,6 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
         r'(?<!\S)(\d+)\s*([-/*x])\s*(\d+)(?!\S)|'  # Matches "num SYMBOL num" (e.g., "3 + 5", "7-2", "8 * 4")
         r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'           # Matches "SYMBOL num" (e.g., "-4", "/ 9")
     )
-    def replace_ambiguous(match):
-        if match.group(2):  # "num SYMBOL num" case
-            return f"{match.group(1)} {ambiguous_replacements[str(match.group(2))]} {match.group(3)}"
-        elif match.group(3):  # "SYMBOL num" case
-            return f"{ambiguous_replacements[str(match.group(3))]} {match.group(4)}"
-        return match.group(0)
     if ambiguous_replacements:
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
     # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)

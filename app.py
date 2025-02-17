@@ -82,7 +82,7 @@ def check_and_install_requirements(file_path):
             print(msg)
         return True
     except Exception as e:
-        error = f'❌ An error occurred: {e}'
+        error = f'check_and_install_requirements() error: {e}'
         raise SystemExit(error)
         return False
        
