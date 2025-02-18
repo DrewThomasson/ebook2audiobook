@@ -10,7 +10,7 @@ from TTS.api import TTS as TtsXTTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 
-from lib.models import XTTSv2, FAIRSEQ, VITS, YOURTTS, BARK, models, default_fine_tuned, builtin_xtts_voices, builtin_yourtts_voices
+from lib.models import XTTSv2, FAIRSEQ, VITS, YOURTTS, BARK, models, builtin_xtts_voices, builtin_yourtts_voices
 from lib.conf import models_dir, tts_default_settings, default_audio_proc_format
 
 app = FastAPI()
@@ -75,7 +75,7 @@ class TTSManager:
                     self.params['tts'] = loaded_tts[self.model_name]
                 else:
                     self.params['tts'] = coqui_tts_load_custom(self.model_path, self.config_path, self.vocab_path, self.session['device'])
-            elif self.session['fine_tuned'] != default_fine_tuned:
+            elif self.session['fine_tuned'] != 'internal':
                 self.model_name = self.session['fine_tuned']
                 msg = f"Loading TTS {self.session['tts_engine']} model from {self.session['fine_tuned']}, it takes a while, please be patient..."
                 print(msg)
@@ -165,7 +165,7 @@ class TTSManager:
                 "enable_text_splitting": bool(self.session['enable_text_splitting'])
             }  
             if self.session['tts_engine'] == XTTSv2:
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != default_fine_tuned:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = 'Computing speaker latents...'
                     print(msg)
                     self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav')
@@ -210,7 +210,7 @@ class TTSManager:
                     CAPITALIZATION for emphasis of a word
                     [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                 '''
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != default_fine_tuned:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
@@ -223,7 +223,7 @@ class TTSManager:
                             emotion='neutral'  # Available options: "neutral", "angry", "happy", "sad"
                         )
             elif self.session['tts_engine'] == VITS:
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != default_fine_tuned:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
@@ -239,7 +239,7 @@ class TTSManager:
                                 text=self.params['sentence'],
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != default_fine_tuned:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
@@ -255,7 +255,7 @@ class TTSManager:
                                 text=self.params['sentence'],
                             )
             elif self.session['tts_engine'] == YOURTTS:
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != default_fine_tuned:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
