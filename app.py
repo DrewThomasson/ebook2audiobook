@@ -5,8 +5,8 @@ import subprocess
 import sys
 
 from lib.conf import *
+from lib.models import *
 from lib.lang import install_info, default_language_code
-from lib.models import models, default_fine_tuned, tts_default_settings
 
 os.environ["PYTHONUTF8"] = "1"
 os.environ["PYTHONIOENCODING"] = "utf-8"
@@ -161,23 +161,23 @@ Linux/Mac:
     Please refer to ./lib/models.py''')
     headless_optional_group.add_argument(options[11], type=str, default=default_fine_tuned, help='''(Optional) Fine tuned model path. Default is builtin model.''')
     headless_optional_group.add_argument(options[12], type=str, default=default_output_format, help=f'''(Optional) Output audio format. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[13], type=float, default=tts_default_settings['temperature'], help=f"""(xtts only, optional) Temperature for the model. 
-    Default to {tts_default_settings['temperature']}. Higher temperatures lead to more creative outputs.""")
-    headless_optional_group.add_argument(options[14], type=float, default=tts_default_settings['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder. 
-    Default to {tts_default_settings['length_penalty']}. Not applied to custom models.""")
-    headless_optional_group.add_argument(options[15], type=int, default=tts_default_settings['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
-    Default to {tts_default_settings['num_beams']}""")
-    headless_optional_group.add_argument(options[16], type=float, default=tts_default_settings['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
-    Default to {tts_default_settings['repetition_penalty']}""")
-    headless_optional_group.add_argument(options[17], type=int, default=tts_default_settings['top_k'], help=f"""(xtts only, optional) Top-k sampling. 
+    headless_optional_group.add_argument(options[13], type=float, default=default_xtts_settings['temperature'], help=f"""(xtts only, optional) Temperature for the model. 
+    Default to {default_xtts_settings['temperature']}. Higher temperatures lead to more creative outputs.""")
+    headless_optional_group.add_argument(options[14], type=float, default=default_xtts_settings['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder. 
+    Default to {default_xtts_settings['length_penalty']}. Not applied to custom models.""")
+    headless_optional_group.add_argument(options[15], type=int, default=default_xtts_settings['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
+    Default to {default_xtts_settings['num_beams']}""")
+    headless_optional_group.add_argument(options[16], type=float, default=default_xtts_settings['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
+    Default to {default_xtts_settings['repetition_penalty']}""")
+    headless_optional_group.add_argument(options[17], type=int, default=default_xtts_settings['top_k'], help=f"""(xtts only, optional) Top-k sampling. 
     Lower values mean more likely outputs and increased audio generation speed. 
-    Default to {tts_default_settings['top_k']}""")
-    headless_optional_group.add_argument(options[18], type=float, default=tts_default_settings['top_p'], help=f"""(xtts only, optional) Top-p sampling. 
-    Lower values mean more likely outputs and increased audio generation speed. Default to {tts_default_settings['top_p']}""")
-    headless_optional_group.add_argument(options[19], type=float, default=tts_default_settings['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation. 
-    Default to {tts_default_settings['speed']}""")
+    Default to {default_xtts_settings['top_k']}""")
+    headless_optional_group.add_argument(options[18], type=float, default=default_xtts_settings['top_p'], help=f"""(xtts only, optional) Top-p sampling. 
+    Lower values mean more likely outputs and increased audio generation speed. Default to {default_xtts_settings['top_p']}""")
+    headless_optional_group.add_argument(options[19], type=float, default=default_xtts_settings['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation. 
+    Default to {default_xtts_settings['speed']}""")
     headless_optional_group.add_argument(options[20], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
-    Default is set to {tts_default_settings['enable_text_splitting']}""")                     
+    Default is set to {default_xtts_settings['enable_text_splitting']}""")                     
     headless_optional_group.add_argument(options[21], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
     headless_optional_group.add_argument(options[22], action='version',version=f'ebook2audiobook version {version}', help='''Show the version of the script and exit''')
 

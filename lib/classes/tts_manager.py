@@ -10,8 +10,8 @@ from TTS.api import TTS as TtsXTTS
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 
-from lib.models import XTTSv2, FAIRSEQ, VITS, YOURTTS, BARK, models, builtin_xtts_voices, builtin_yourtts_voices
-from lib.conf import models_dir, tts_default_settings, default_audio_proc_format
+from lib.models import *
+from lib.conf import models_dir, default_audio_proc_format
 
 app = FastAPI()
 lock = threading.Lock()
@@ -28,8 +28,8 @@ def coqui_tts_load_api(model_path, device):
         print(error)
         return None
 
-@app.post("/coqui_tts_load_custom/")
-def coqui_tts_load_custom(model_path, config_path, vocab_path, device):
+@app.post("/load_custom_xtts/")
+def load_custom_xtts(model_path, config_path, vocab_path, device):
     try:
         config = XttsConfig()
         config.models_dir = os.path.join("models", "tts")
@@ -40,14 +40,14 @@ def coqui_tts_load_custom(model_path, config_path, vocab_path, device):
                 config,
                 checkpoint_path=model_path,
                 vocab_path=vocab_path,
-                use_deepspeed=tts_default_settings['use_deepspeed'],
+                use_deepspeed=default_xtts_settings['use_deepspeed'],
                 eval=True
             )
         if device == 'cuda':
             tts.cuda()
         return tts
     except Exception as e:
-        error = f'coqui_tts_load_custom() error: {e}'
+        error = f'load_custom_xtts() error: {e}'
         print(error)
         return None
 
@@ -74,7 +74,7 @@ class TTSManager:
                 if self.model_name in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.model_name]
                 else:
-                    self.params['tts'] = coqui_tts_load_custom(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                    self.params['tts'] = load_custom_xtts(self.model_path, self.config_path, self.vocab_path, self.session['device'])
             elif self.session['fine_tuned'] != 'internal':
                 self.model_name = self.session['fine_tuned']
                 msg = f"Loading TTS {self.session['tts_engine']} model from {self.session['fine_tuned']}, it takes a while, please be patient..."
@@ -88,7 +88,7 @@ class TTSManager:
                 if self.model_name in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.model_name]
                 else:
-                    self.params['tts'] = coqui_tts_load_custom(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                    self.params['tts'] = load_custom_xtts(self.model_path, self.config_path, self.vocab_path, self.session['device'])
             else:
                 self.model_name = self.session['fine_tuned']
                 msg = f"Loading TTS {self.session['tts_engine']} model from {models[self.session['tts_engine']][self.session['fine_tuned']]['repo']}, it takes a while, please be patient..."
@@ -186,7 +186,7 @@ class TTSManager:
                 else:
                     self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
                     voice_name = os.path.basename(self.params['voice_path']).replace('_24000.wav','').replace('_16000.wav','')
-                    if voice_name in builtin_xtts_voices.values():
+                    if voice_name in default_xtts_settings['voices'].values():
                         speaker_argument = {"speaker": voice_name}
                     else:
                         speaker_argument = {"speaker_wav": self.params['voice_path']}
@@ -264,7 +264,7 @@ class TTSManager:
                         self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
                         self.params['voice_path'] = self.params['voice_path'].replace('_24000.wav','_16000.wav')
                         voice_name = os.path.basename(self.params['voice_path']).replace('_16000.wav','')
-                        if voice_name in builtin_yourtts_voices.values():
+                        if voice_name in default_yourtts_settings['voices'].values():
                             speaker_argument = {"speaker": voice_name}
                         else:
                             speaker_argument = {"speaker_wav": self.params['voice_path']}
