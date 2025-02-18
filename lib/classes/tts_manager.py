@@ -42,7 +42,9 @@ def coqui_tts_load_custom(model_path, config_path, vocab_path, device):
                 vocab_path=vocab_path,
                 use_deepspeed=tts_default_settings['use_deepspeed'],
                 eval=True
-            ).to(device)
+            )
+        if device == 'cuda':
+            tts.cuda()
         return tts
     except Exception as e:
         error = f'coqui_tts_load_custom() error: {e}'
@@ -50,6 +52,7 @@ def coqui_tts_load_custom(model_path, config_path, vocab_path, device):
         return None
 
 class TTSManager:
+
     def __init__(self, session):   
         self.session = session
         self.params = {}
@@ -57,6 +60,9 @@ class TTSManager:
         self.model_path = None
         self.config_path = None
         self.vocab_path = None      
+        self._build()
+ 
+    def _build(self):
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
                 self.model_name = os.path.basename(self.session['custom_model'])
@@ -142,9 +148,8 @@ class TTSManager:
                     self.params['tts'] = loaded_tts[self.model_name]
                 else:
                     self.params['tts'] = coqui_tts_load_api(self.model_path, self.session['device'])
-        if self.params['tts'] is None:
-            return None
-        loaded_tts[self.model_name] = self.params['tts']
+        if self.params['tts'] is not None:
+            loaded_tts[self.model_name] = self.params['tts']
 
     def convert_sentence_to_audio(self):
         try:
@@ -163,7 +168,7 @@ class TTSManager:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != default_fine_tuned:
                     msg = 'Computing speaker latents...'
                     print(msg)
-                    self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else os.path.join(self.session['custom_model'],'ref.wav')
+                    self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav')
                     self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].get_conditioning_latents(audio_path=[self.params['voice_path']])
                     with torch.no_grad():
                         result = self.params['tts'].inference(

@@ -227,14 +227,12 @@ def check_programs(prog_name, command, options):
         DependencyError(e)
         return False, None
 
-def analyze_uploaded_file(zip_path, required_files=None):
+def analyze_uploaded_file(zip_path, required_files):
     try:
         if not os.path.exists(zip_path):
             error = f"The file does not exist: {os.path.basename(zip_path)}"
             print(error)
             return False
-        if required_files is None:
-            required_files = default_xtts_files
         files_in_zip = {}
         empty_files = set()
         with zipfile.ZipFile(zip_path, 'r') as zf:
@@ -638,7 +636,7 @@ def convert_chapters_to_audio(session):
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
         tts_manager = TTSManager(session)
-        if tts_manager is None:
+        if tts_manager.params['tts'] is None:
             return False
         resume_chapter = 0
         resume_sentence = 0
@@ -1094,7 +1092,8 @@ def convert_ebook(args):
                     src_path = Path(session['custom_model'])
                     src_name = src_path.stem
                     if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
-                        if analyze_uploaded_file(session['custom_model']):
+                        required_files = models[session['tts_engine']]['internal']['files']
+                        if analyze_uploaded_file(session['custom_model'], required_files):
                             model = extract_custom_model(session['custom_model'], session)
                             if model is not None:
                                 session['custom_model'] = model
@@ -2033,7 +2032,8 @@ def web_interface(args):
                     else:
                         session = context.get_session(id)
                         session['tts_engine'] = t
-                        if analyze_uploaded_file(f):
+                        required_files = models[session['tts_engine']]['internal']['files']
+                        if analyze_uploaded_file(f, required_files):
                             model = extract_custom_model(f, session)
                             if model is None:
                                 error = f'Cannot extract custom model zip file {os.path.basename(f)}'
