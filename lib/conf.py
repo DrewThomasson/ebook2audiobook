@@ -49,25 +49,6 @@ output_formats = ['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg
 default_audio_proc_format = 'flac' # or 'wav', 'pcm', 'ieee', 'ogg', 'nist', 'mp3', 'aiff', 'aac', 'wma', 'mp4', 'm4a', 'm4b', 'amr', '3gp', 'webm', 'alac'
 default_output_format = 'm4b' # or 'wav', 'pcm', 'ieee', 'ogg', 'nist', 'mp3', 'aiff', 'aac', 'wma', 'mp4', 'm4a', 'flac', 'amr', '3gp', 'webm', 'alac'
 
-
-# to enable_deepspeed, it must be installed manually.
-# conda activate [./python_env | .\python_env]
-# pip install deepspeed
-# conda deactivate
-tts_default_settings = {
-    "temperature": 0.65,  # Natural variation without sounding robotic
-    "length_penalty": 1.0,  # Encourages slightly longer phrases
-    "num_beams": 1,  # More beams improve long-term coherence
-    "repetition_penalty": 2.5,  # Helps prevent redundant phrasing
-    "top_k": 50,  # Balanced word diversity
-    "top_p": 0.8,  # Good tradeoff between diversity and coherence
-    "speed": 1.0,  # Normal pace
-    "enable_text_splitting": False,  # Helps with better pacing for long content (note: ab2ab is already splitting sentencess, set to True can cause more trouble)
-    "use_deepspeed": False,
-    "length_scale": 1.0,
-    "noise_scale": 0.3
-}
-
 os.environ['COQUI_TOS_AGREED'] = '1'
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['CALIBRE_TEMP_DIR'] = tmp_dir

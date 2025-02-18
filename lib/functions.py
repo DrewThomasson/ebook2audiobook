@@ -1598,7 +1598,8 @@ def web_interface(args):
                 gr_enable_text_splitting = gr.Checkbox(
                     label='Enable Text Splitting', 
                     value=tts_default_settings['enable_text_splitting'],
-                    info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.'
+                    info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
+                    visible=False
                 )
     
         gr_state = gr.State(value={"hash": None})
@@ -1743,6 +1744,7 @@ def web_interface(args):
             session['top_k'] = session['top_k'] if session['top_k'] else tts_default_settings['top_k']
             session['top_p'] = session['top_p'] if session['top_p'] else tts_default_settings['top_p']
             session['speed'] = session['speed'] if session['speed'] else tts_default_settings['speed']
+            session['enable_text_splitting'] = tts_default_settings['enable_text_splitting']
             return (
                 gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
                 gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
@@ -2065,7 +2067,7 @@ def web_interface(args):
             session['tts_engine'] = engine
             if session['tts_engine'] == XTTSv2:
                 visible = True
-                if session['fine_tuned'] != default_fine_tuned:
+                if session['fine_tuned'] != 'internal':
                     visible = visible_gr_group_custom_model
                 return gr.update(visible=visible_gr_tab_preferences), gr.update(visible=visible), update_gr_fine_tuned_list(id), gr.update(label=f"*Custom Model Zip File (Mandatory files {models[session['tts_engine']][default_fine_tuned]['files']})")
             else:
@@ -2074,7 +2076,7 @@ def web_interface(args):
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
             visible = False
-            if selected == default_fine_tuned and session['tts_engine'] == XTTSv2:
+            if selected == 'internal' and session['tts_engine'] == XTTSv2:
                 visible = visible_gr_group_custom_model
             session['fine_tuned'] = selected
             return gr.update(visible=visible)
