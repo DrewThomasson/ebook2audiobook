@@ -169,7 +169,7 @@ class VoiceExtractor:
             error = None
             for rate in ['16000', '24000']:
                 ffmpeg_cmd[-3] = rate
-                ffmpeg_final_file = re.sub(r'\.wav$', f'_{rate}.wav', process_file)
+                ffmpeg_cmd[-1] = re.sub(r'\.wav$', f'_{rate}.wav', process_file)
                 try:
                     process = subprocess.Popen(
                         ffmpeg_cmd,
