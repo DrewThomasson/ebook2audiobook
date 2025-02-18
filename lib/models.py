@@ -62,7 +62,7 @@ default_vits_settings = {
     "files": ['config.json', 'model_file.pth', 'language_ids.json']
 }
 default_yourtts_settings = {
-    "samplerate": 24000,
+    "samplerate": 16000,
     "files": ['config.json', 'model_file.pth'],
     "voices": {"MachinElla": "female-en-5", "ElectroMale": "male-en-2"}
 }

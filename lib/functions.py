@@ -1844,7 +1844,7 @@ def web_interface(args):
             try:
                 if selected is not None:
                     voice_name  = os.path.basename(selected).replace('_24000.wav','').replace('_16000.wav','')
-                    if voice_name in default_xtts_settings['voices'].keys() or voice_name in builtin_yourtts_voices.keys():
+                    if voice_name in default_xtts_settings['voices'].keys() or voice_name in default_yourtts_settings['voices'].keys():
                         error = f'Voice file {voice_name} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
                     else:                   
