@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 
-if [[ -z "$SWITCHED_TO_ZSH" && "$SHELL" = */zsh ]]; then
-	SWITCHED_TO_ZSH=1 exec env zsh "$0" "$@"
+if [[ -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
+    export SWITCHED_TO_ZSH=1
+    exec env zsh "$0" "$@"
 fi
 
 PYTHON_VERSION="3.12"

@@ -8,7 +8,6 @@
 import argparse
 import asyncio
 import csv
-import docker
 import ebooklib
 import fnmatch
 import gc
@@ -894,7 +893,6 @@ def combine_audio_chapters(session):
             if assemble_audio():
                 if generate_ffmpeg_metadata():
                     final_name = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
-                    docker_final_file = os.path.join(session['process_dir'], final_name)
                     final_file = os.path.join(session['audiobooks_dir'], final_name)                       
                     if export_audio():
                         return final_file
@@ -1109,7 +1107,7 @@ def convert_ebook(args):
                         extractor = VoiceExtractor(session, models_dir, session['voice'], voice_name)
                         status, msg = extractor.extract_voice()
                         if status:
-                            session['voice'] = os.path.join(session['voice_dir'], f'{voice_name}_24000.wav')
+                            session['voice'] = final_voice_file
                         else:
                             error = 'extractor.extract_voice()() failed! Check if you audio file is compatible.'
                             print(error)
@@ -1819,10 +1817,11 @@ def web_interface(args):
                     session = context.get_session(id)
                     voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_')
                     voice_name = get_sanitized(voice_name)
+                    final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
                     extractor = VoiceExtractor(session, models_dir, f, voice_name)
                     status, msg = extractor.extract_voice()
                     if status:
-                        session['voice'] = os.path.join(session['voice_dir'], f'{voice_name}_24000.wav')
+                        session['voice'] = final_voice_file
                         msg = f"Voice {voice_name} added to the voices list"
                         state['type'] = 'success'
                         state['msg'] = msg
