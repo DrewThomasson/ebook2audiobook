@@ -12,7 +12,7 @@ assignees: ''
 **Check it with the issue search field**
 
 **Script Mode**
-- Docker, Native
+- Native, Docker, Unraid
 
 **Process Mode**
 - Gradio GUI, Headless
