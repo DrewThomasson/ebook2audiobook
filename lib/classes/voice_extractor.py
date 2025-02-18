@@ -193,6 +193,7 @@ class VoiceExtractor:
                     error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
                     break
             if error is None:
+                shutil.rmtree(self.demucs_dir, ignore_errors=True)
                 os.remove(process_file)
                 msg = 'Audio normalization successful!'
                 return True, msg
