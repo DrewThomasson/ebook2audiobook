@@ -1,15 +1,12 @@
 name: Build and Push Docker Image
-
 on:
   workflow_dispatch:  # Allows manual trigger
   release:
     types:
       - published  # Triggers automatically when a new release is published
-
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -24,7 +21,10 @@ jobs:
         run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
 
       - name: Get Latest Release Tag
-        run: echo "RELEASE_TAG=${{ github.event.release.tag_name }}" >> $GITHUB_ENV
+        id: get_tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
       - name: Build Docker image
         run: |

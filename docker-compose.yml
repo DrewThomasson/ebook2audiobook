@@ -18,7 +18,6 @@ services:
     stdin_open: true
     ports:
       - 7860:7860 # Maps container's port 7860 to the host's port 7860.
-    command: python app.py --script_mode full_docker
     deploy:
       resources:
         reservations:

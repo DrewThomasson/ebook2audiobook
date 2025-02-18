@@ -1,6 +1,9 @@
 name: Run Ubuntu Headless ebook2audiobook 
 
 on:
+  push:
+    branches:
+      - act-trigger
   workflow_dispatch:
 
 
