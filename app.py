@@ -133,8 +133,7 @@ Linux/Mac:
         '--custom_model', '--fine_tuned', '--output_format',
         '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty',
         '--top_k', '--top_p', '--speed', '--enable_text_splitting', 
-        '--output_dir',
-        '--version', '--help'
+        '--output_dir', '--version', '--workflow', '--help'
     ]
     all_group = parser.add_argument_group('**** The following options are for all modes', 'Optional')
     all_group.add_argument(options[0], type=str, help='''Mode the script will run. Accepted values are "native" and "full_docker". Default mode is "native". 
@@ -179,8 +178,9 @@ Linux/Mac:
     headless_optional_group.add_argument(options[20], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
     Default is set to {default_xtts_settings['enable_text_splitting']}""")                     
     headless_optional_group.add_argument(options[21], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[22], action='version',version=f'ebook2audiobook version {version}', help='''Show the version of the script and exit''')
-
+    headless_optional_group.add_argument(options[22], action='version', version=f'ebook2audiobook version {version}', help='''Show the version of the script and exit''')
+    headless_optional_group.add_argument(options[23], action='store_true', help=argparse.SUPPRESS)
+    
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:
             error = f'Error: Unrecognized option "{arg}"'
@@ -203,6 +203,7 @@ Linux/Mac:
             sys.exit(1)
 
         args['script_mode'] = args['script_mode'] if args['script_mode'] else NATIVE
+        args['session'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
         args['share'] =  args['share'] if args['share'] else False
         args['ebook_list'] = None
 
