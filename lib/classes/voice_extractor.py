@@ -186,7 +186,7 @@ class VoiceExtractor:
                     if process.returncode != 0:
                         error = f'_normalize_audio(): process.returncode: {process.returncode}'
                         break
-                    elif not os.path.exists(ffmpeg_final_file) or os.path.getsize(ffmpeg_final_file) == 0:
+                    elif not os.path.exists(ffmpeg_cmd[-1]) or os.path.getsize(ffmpeg_cmd[-1]) == 0:
                         error = f'_normalize_audio() error: {ffmpeg_cmd[-1]} was not created or is empty.'
                         break
                 except subprocess.CalledProcessError as e:
