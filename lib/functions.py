@@ -514,7 +514,8 @@ def get_chapters(epubBook, session):
         # Step 4: Filter docs based on average character length or repetitive pattern
         final_selected_docs = [
             doc for doc in all_docs
-            if len(doc_cache[doc]) >= average_char_length or filter_pattern(str(doc)) == most_common_pattern
+            if doc in doc_cache and doc_cache[doc]
+            and (len(doc_cache[doc]) >= average_char_length or filter_pattern(str(doc)) == most_common_pattern)
         ]
         # Step 5: Extract parts from the final selected docs
         chapters = [doc_cache[doc] for doc in final_selected_docs]
