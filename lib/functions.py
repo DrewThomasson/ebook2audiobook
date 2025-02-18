@@ -1429,6 +1429,9 @@ def web_interface(args):
                 #component-8, #component-31, #component-15 {
                     height: 140px !important;
                 }
+                #component-31 [aria-label="Clear"], #component-15 [aria-label="Clear"] {
+                    display: none !important;
+                }               
                 #component-27, #component-28 {
                     height: 95px !important;
                 }
@@ -1540,7 +1543,7 @@ def web_interface(args):
                     minimum=0.1, 
                     maximum=10.0, 
                     step=0.1, 
-                    value=tts_default_settings['temperature'],
+                    value=float(tts_default_settings['temperature']),
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
                 )
                 gr_length_penalty = gr.Slider(
@@ -1548,7 +1551,7 @@ def web_interface(args):
                     minimum=0.3, 
                     maximum=5.0, 
                     step=0.1,
-                    value=tts_default_settings['length_penalty'],
+                    value=float(tts_default_settings['length_penalty']),
                     info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
                     visible=False
                 )
@@ -1557,7 +1560,7 @@ def web_interface(args):
                     minimum=1, 
                     maximum=10, 
                     step=1, 
-                    value=tts_default_settings['num_beams'],
+                    value=int(tts_default_settings['num_beams']),
                     info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
                     visible=False
                 )
@@ -1566,7 +1569,7 @@ def web_interface(args):
                     minimum=1.0, 
                     maximum=10.0, 
                     step=0.1, 
-                    value=tts_default_settings['repetition_penalty'], 
+                    value=float(tts_default_settings['repetition_penalty']), 
                     info='Penalizes repeated phrases. Higher values reduce repetition.'
                 )
                 gr_top_k = gr.Slider(
@@ -1574,7 +1577,7 @@ def web_interface(args):
                     minimum=10, 
                     maximum=100, 
                     step=1, 
-                    value=tts_default_settings['top_k'], 
+                    value=int(tts_default_settings['top_k']), 
                     info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
                 )
                 gr_top_p = gr.Slider(
@@ -1582,7 +1585,7 @@ def web_interface(args):
                     minimum=0.1, 
                     maximum=1.0, 
                     step=0.01, 
-                    value=tts_default_settings['top_p'], 
+                    value=float(tts_default_settings['top_p']), 
                     info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
                 )
                 gr_speed = gr.Slider(
@@ -1590,7 +1593,7 @@ def web_interface(args):
                     minimum=0.5, 
                     maximum=3.0, 
                     step=0.1, 
-                    value=tts_default_settings['speed'], 
+                    value=float(tts_default_settings['speed']), 
                     info='Adjusts how fast the narrator will speak.'
                 )
                 gr_enable_text_splitting = gr.Checkbox(
@@ -1734,13 +1737,20 @@ def web_interface(args):
                 ebook_data = session['ebook']
             else:
                 ebook_data = None
+            session['temperature'] = session['temperature'] if session['temperature'] else tts_default_settings['temperature']
+            session['length_penalty'] = tts_default_settings['length_penalty']
+            session['num_beams'] = tts_default_settings['num_beams']
+            session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else tts_default_settings['repetition_penalty']
+            session['top_k'] = session['top_k'] if session['top_k'] else tts_default_settings['top_k']
+            session['top_p'] = session['top_p'] if session['top_p'] else tts_default_settings['top_p']
+            session['speed'] = session['speed'] if session['speed'] else tts_default_settings['speed']
             return (
                 gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
                 gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
                 update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
-                gr.update(value=session['temperature']), gr.update(value=session['length_penalty']), gr.update(value=session['num_beams']),
-                gr.update(value=session['repetition_penalty']), gr.update(value=session['top_k']), gr.update(value=session['top_p']), gr.update(value=session['speed']), 
-                gr.update(value=session['enable_text_splitting']), gr.update(active=True)
+                gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
+                gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
+                gr.update(value=bool(session['enable_text_splitting'])), gr.update(active=True)
             )
 
         def refresh_interface(id):
@@ -2405,7 +2415,6 @@ def web_interface(args):
             inputs=[gr_temperature, gr_session],
             outputs=None
         )
-        '''
         gr_length_penalty.change(
             fn=lambda val, id, val2: change_param('length_penalty', val, id, val2),
             inputs=[gr_length_penalty, gr_session, gr_num_beams],
@@ -2416,7 +2425,6 @@ def web_interface(args):
             inputs=[gr_num_beams, gr_session, gr_length_penalty],
             outputs=None,
         )
-        '''
         gr_repetition_penalty.change(
             fn=lambda val, id: change_param('repetition_penalty', val, id),
             inputs=[gr_repetition_penalty, gr_session],

@@ -1,4 +1,5 @@
 import os
+import regex as re
 import subprocess
 import shutil
 import torch
@@ -145,7 +146,7 @@ class VoiceExtractor:
 
     def _normalize_audio(self):
         try:                 
-            ffmpeg_final_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
+            process_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', self.voice_track]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
@@ -163,12 +164,12 @@ class VoiceExtractor:
                 '-filter_complex', filter_complex,
                 '-map', '[audio]',
                 '-ar', 'null',
-                '-y', ffmpeg_final_file
+                '-y', process_file
             ]
             error = None
             for rate in ['16000', '24000']:
                 ffmpeg_cmd[-3] = rate
-                ffmpeg_cmd[-1] = ffmpeg_final_file.replace('.wav', f'_{rate}.wav')
+                ffmpeg_final_file = re.sub(r'\.wav$', f'_{rate}.wav', process_file)
                 try:
                     process = subprocess.Popen(
                         ffmpeg_cmd,
@@ -183,16 +184,16 @@ class VoiceExtractor:
                         print(line, end='')  # Print each line of stdout
                     process.wait()
                     if process.returncode != 0:
-                        error = f'normalize_voice_file(): process.returncode: {process.returncode}'
+                        error = f'_normalize_audio(): process.returncode: {process.returncode}'
+                        break
+                    elif not os.path.exists(ffmpeg_final_file) or os.path.getsize(ffmpeg_final_file) == 0:
+                        error = f'_normalize_audio() error: {ffmpeg_cmd[-1]} was not created or is empty.'
                         break
                 except subprocess.CalledProcessError as e:
-                    error = f'_normalize_audio ffmpeg.Error: {e.stderr.decode()}'
-                    break
-                if not os.path.exists(ffmpeg_final_file) or os.path.getsize(ffmpeg_final_file) == 0:
-                    error = f'_normalize_audio output error: {ffmpeg_final_file} was not created or is empty.'
+                    error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
                     break
             if error is None:
-                os.remove(ffmpeg_final_file)
+                os.remove(process_file)
                 msg = 'Audio normalization successful!'
                 return True, msg
         except FileNotFoundError:
