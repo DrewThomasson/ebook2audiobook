@@ -129,7 +129,6 @@ you should first remove manually any text you don't want to be converted in audi
 git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ```
 
-
 ### Launching Gradio Web Interface
 1. **Run ebook2audiobook**:
    - **Linux/MacOS**
@@ -146,6 +145,9 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
    `./ebook2audiobook.sh --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
 
+> [!IMPORTANT]
+**If the script is stopped and run again, you need to refresh your gradio GUI interface<br>
+to let the web page reconnect to the new connection socket.**
 
 ### Basic  Usage
    - **Linux/MacOS**:
