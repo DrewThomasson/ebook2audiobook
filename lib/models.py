@@ -24,8 +24,8 @@ default_xtts_settings = {
     # conda activate [./python_env | .\python_env]
     # pip install deepspeed
     # conda deactivate
-    "use_deepspeed": False
-    "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav']
+    "use_deepspeed": False,
+    "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav'],
     "voices": {
         'ClaribelDervla': 'Claribel Dervla', 'DaisyStudious': 'Daisy Studious', 'GracieWise': 'Gracie Wise',
         'TammieEma': 'Tammie Ema', 'AlisonDietlinde': 'Alison Dietlinde', 'AnaFlorence': 'Ana Florence',
@@ -63,7 +63,7 @@ default_vits_settings = {
 }
 default_yourtts_settings = {
     "samplerate": 24000,
-    "files": ['config.json', 'model_file.pth']
+    "files": ['config.json', 'model_file.pth'],
     "voices": {"MachinElla": "female-en-5", "ElectroMale": "male-en-2"}
 }
 
