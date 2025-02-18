@@ -178,8 +178,9 @@ Linux/Mac:
     headless_optional_group.add_argument(options[20], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
     Default is set to {default_xtts_settings['enable_text_splitting']}""")                     
     headless_optional_group.add_argument(options[21], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[22], action='version',version=f'ebook2audiobook version {version}', help='''Show the version of the script and exit''')
-
+    headless_optional_group.add_argument(options[22], action='version', version=f'ebook2audiobook version {version}', help='''Show the version of the script and exit''')
+    headless_optional_group.add_argument(options[23], action='store_true', help=argparse.SUPPRESS)
+    
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:
             error = f'Error: Unrecognized option "{arg}"'
