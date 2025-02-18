@@ -6,7 +6,7 @@ import sys
 
 from lib.conf import *
 from lib.lang import install_info, default_language_code
-from lib.models import models, default_fine_tuned
+from lib.models import models, default_fine_tuned, tts_default_settings
 
 os.environ["PYTHONUTF8"] = "1"
 os.environ["PYTHONIOENCODING"] = "utf-8"
