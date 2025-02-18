@@ -275,7 +275,7 @@ optional parameters:
                             Default to 1.0
   --enable_text_splitting
                         (xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
-                            Default is set to True
+                            Default is set to False
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
   --version             Show the version of the script and exit
