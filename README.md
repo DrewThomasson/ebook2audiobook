@@ -222,10 +222,6 @@ options:
 **** The following options are for all modes:
   Optional
 
-  --script_mode SCRIPT_MODE
-                        Mode the script will run. Accepted values are "native" and "full_docker". Default mode is "native". 
-                            "full_docker" cannot be used without a docker command.
-
 **** The following option are for gradio/gui mode only:
   Optional
 
