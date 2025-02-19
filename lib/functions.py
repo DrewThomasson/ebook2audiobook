@@ -2082,7 +2082,7 @@ def web_interface(args):
             session = context.get_session(id)
             visible = False
             if session['tts_engine'] == XTTSv2:
-                if selected == 'internal' 
+                if selected == 'internal':
                     visible = visible_gr_group_custom_model
             session['fine_tuned'] = selected
             return gr.update(visible=visible)
