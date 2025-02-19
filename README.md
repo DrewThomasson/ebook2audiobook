@@ -34,7 +34,7 @@ Thanks to support ebook2audiobook developers!<br>
 ## Table of Contents
 - [ebook2audiobook](#-ebook2audiobook)
 - [Features](#features)
-- [New v2.0 Web GUI Interface](#new-v20-web-gui-interface)
+- [Docker Web GUI Interface](#new-v20-web-gui-interface)
 - [Huggingface Space Demo](#huggingface-space-demo)
 - [Free Google Colab](#free-google-colab)
 - [Pre-made Audio Demos](#demos)
@@ -378,7 +378,7 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
   The service will be available at http://localhost:7860.
 
 
-#### Docker Web GUI Interface
+#### Docker GUI Interface
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
