@@ -1843,7 +1843,7 @@ def web_interface(args):
         def click_gr_voice_del_btn(selected, id):          
             try:
                 if selected is not None:
-                    voice_name  = os.path.basename(selected).replace('_24000.wav','').replace('_16000.wav','')
+                    voice_name = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(selected))
                     if voice_name in default_xtts_settings['voices'].keys() or voice_name in default_yourtts_settings['voices'].keys():
                         error = f'Voice file {voice_name} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
@@ -1895,11 +1895,11 @@ def web_interface(args):
                     session = context.get_session(id)
                     if method == 'confirm_voice_del':
                         selected_name = os.path.basename(voice)
-                        pattern = voice.replace('_16000.wav', '_*.wav').replace('_24000.wav', '_*.wav')
+                        pattern = re.sub(r'_(24000|16000)\.wav$', '_*.wav', voice)
                         files_to_remove = glob(pattern)
                         for file in files_to_remove:
                             os.remove(file)                           
-                        msg = f'Voice file {selected_name.replace('_16000.wav', '').replace('_24000.wav', '')} deleted!'
+                        msg = f'Voice file {re.sub(r'_(24000|16000)\.wav$', '', selected_name)} deleted!'
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
                         return update_gr_voice_list(id), gr.update(), gr.update(), gr.update(visible=False)
@@ -1937,11 +1937,11 @@ def web_interface(args):
                 voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
                 voice_file_pattern = f"*_{models[session['tts_engine']][session['fine_tuned']]['samplerate']}.wav"
                 voice_options = [
-                    (os.path.splitext(f.name)[0].replace('_16000', '').replace('_24000', '').replace('_22050',''), str(f))
+                    (os.path.splitext(re.sub(r'_(24000|16000)\.wav$', '', f.name))[0], str(f))
                     for f in Path(session['voice_dir']).rglob(voice_file_pattern)
                 ]
                 voice_options += [
-                    (os.path.splitext(f.name)[0].replace('_16000', '').replace('_24000', '').replace('_22050',''), str(f))
+                    (os.path.splitext(re.sub(r'_(24000|16000)\.wav$', '', f.name))[0], str(f))
                     for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
                 ]
                 voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())

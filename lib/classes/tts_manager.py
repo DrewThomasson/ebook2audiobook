@@ -154,6 +154,7 @@ class TTSManager:
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
+            '''
             fine_tuned_params = {
                 "temperature": float(self.session['temperature']),
                 "length_penalty": float(self.session["length_penalty"]),
@@ -163,9 +164,10 @@ class TTSManager:
                 "top_p": float(self.session['top_p']),
                 "speed": float(self.session['speed']),
                 "enable_text_splitting": bool(self.session['enable_text_splitting'])
-            }  
+            }
+            '''
             if self.session['tts_engine'] == XTTSv2:
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
+                if self.session['custom_model'] is not None:
                     msg = 'Computing speaker latents...'
                     print(msg)
                     self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav')
@@ -175,8 +177,8 @@ class TTSManager:
                             text=self.params['sentence'],
                             language=self.session['language_iso1'],
                             gpt_cond_latent=self.params['gpt_cond_latent'],
-                            speaker_embedding=self.params['speaker_embedding'],
-                            **fine_tuned_params
+                            speaker_embedding=self.params['speaker_embedding']
+                            #**fine_tuned_params
                         )
                     audio_data = result.get('wav')
                     if audio_data is None:
@@ -194,8 +196,8 @@ class TTSManager:
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
                             language=self.session['language_iso1'],
-                            **speaker_argument,
-                            **fine_tuned_params
+                            **speaker_argument
+                            #**fine_tuned_params
                         )
             elif self.session['tts_engine'] == BARK:
                 '''
@@ -210,7 +212,7 @@ class TTSManager:
                     CAPITALIZATION for emphasis of a word
                     [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                 '''
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
+                if self.session['custom_model'] is not None:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
@@ -223,7 +225,7 @@ class TTSManager:
                             emotion='neutral'  # Available options: "neutral", "angry", "happy", "sad"
                         )
             elif self.session['tts_engine'] == VITS:
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
+                if self.session['custom_model'] is not None:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
@@ -239,7 +241,7 @@ class TTSManager:
                                 text=self.params['sentence'],
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
+                if self.session['custom_model'] is not None:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
@@ -255,7 +257,7 @@ class TTSManager:
                                 text=self.params['sentence'],
                             )
             elif self.session['tts_engine'] == YOURTTS:
-                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
+                if self.session['custom_model'] is not None:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
