@@ -251,26 +251,26 @@ optional parameters:
                         (Optional) Output audio format. Default is set in ./lib/conf.py
   --temperature TEMPERATURE
                         (xtts only, optional) Temperature for the model. 
-                            Default to 0.6. Higher temperatures lead to more creative outputs.
+                            Default to config.json model. Higher temperatures lead to more creative outputs.
   --length_penalty LENGTH_PENALTY
                         (xtts only, optional) A length penalty applied to the autoregressive decoder. 
-                            Default to 1.2. Not applied to custom models.
+                            Default to config.json model. Not applied to custom models.
   --num_beams NUM_BEAMS
                         (xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
-                            Default to 4
+                            Default to config.json model.
   --repetition_penalty REPETITION_PENALTY
                         (xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
-                            Default to 2.0
+                            Default to config.json model.
   --top_k TOP_K         (xtts only, optional) Top-k sampling. 
                             Lower values mean more likely outputs and increased audio generation speed. 
-                            Default to 45
+                            Default to config.json model.
   --top_p TOP_P         (xtts only, optional) Top-p sampling. 
                             Lower values mean more likely outputs and increased audio generation speed. Default to 0.85
   --speed SPEED         (xtts only, optional) Speed factor for the speech generation. 
-                            Default to 1.0
+                            Default to config.json model.
   --enable_text_splitting
                         (xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
-                            Default is set to False
+                            Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
   --version             Show the version of the script and exit
