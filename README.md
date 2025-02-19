@@ -12,7 +12,7 @@ Thanks to support ebook2audiobook developers!<br>
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
 
-#### New v2.0 Web GUI Interface!
+#### GUI Interface
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
