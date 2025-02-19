@@ -167,10 +167,15 @@ class TTSManager:
             }
             '''
             if self.session['tts_engine'] == XTTSv2:
-                if self.session['custom_model'] is not None:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = 'Computing speaker latents...'
                     print(msg)
-                    self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav')
+                    self.params['voice_path'] = (
+                        self.session['voice'] if self.session['voice'] is not None 
+                        else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav') if self.session['custom_model']
+                        else models[self.session['tts_engine']][self.session['fine_tuned']]['voice'] if self.session['fine_tuned']
+                        else models[self.session['tts_engine']]['internal']['voice']
+                    )
                     self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].get_conditioning_latents(audio_path=[self.params['voice_path']])
                     with torch.no_grad():
                         result = self.params['tts'].inference(
@@ -212,7 +217,7 @@ class TTSManager:
                     CAPITALIZATION for emphasis of a word
                     [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                 '''
-                if self.session['custom_model'] is not None:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
@@ -225,7 +230,7 @@ class TTSManager:
                             emotion='neutral'  # Available options: "neutral", "angry", "happy", "sad"
                         )
             elif self.session['tts_engine'] == VITS:
-                if self.session['custom_model'] is not None:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
@@ -241,7 +246,7 @@ class TTSManager:
                                 text=self.params['sentence'],
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
-                if self.session['custom_model'] is not None:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
@@ -257,7 +262,7 @@ class TTSManager:
                                 text=self.params['sentence'],
                             )
             elif self.session['tts_engine'] == YOURTTS:
-                if self.session['custom_model'] is not None:
+                if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:

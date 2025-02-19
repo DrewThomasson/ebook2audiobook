@@ -22,7 +22,7 @@ interface_shared_tmp_expire = 3 # in days
 interface_concurrency_limit = 1 # or None for unlimited
 
 interface_component_options = {
-    "gr_tab_preferences": True,
+    "gr_tab_preferences": False,
     "gr_group_voice_file": True,
     "gr_group_custom_model": True
 }
