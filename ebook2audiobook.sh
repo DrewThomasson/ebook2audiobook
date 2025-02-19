@@ -5,6 +5,8 @@ if [[ -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
     exec env zsh "$0" "$@"
 fi
 
+unset SWITCHED_TO_ZSH
+
 PYTHON_VERSION="3.12"
 
 export PYTHONUTF8="1"
