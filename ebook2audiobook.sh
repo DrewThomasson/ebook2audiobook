@@ -62,8 +62,10 @@ ARCH=$(uname -m)
 
 if [[ "$OSTYPE" = "darwin"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
+	CONFIG_FILE="$HOME/.zshrc"
 elif [[ "$OSTYPE" = "linux"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+	CONFIG_FILE="$HOME/.bashrc"
 fi
 CONDA_INSTALLER=/tmp/Miniforge3.sh
 CONDA_INSTALL_DIR=$HOME/Miniforge3
