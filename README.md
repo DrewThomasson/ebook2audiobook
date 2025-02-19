@@ -219,9 +219,6 @@ options:
   --session SESSION     Session to resume the conversion in case of interruption, crash, 
                             or reuse of custom models and custom cloning voices.
 
-**** The following options are for all modes:
-  Optional
-
 **** The following option are for gradio/gui mode only:
   Optional
 
