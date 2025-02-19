@@ -12,7 +12,7 @@ Thanks to support ebook2audiobook developers!<br>
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
 
-#### New v2.0 Web GUI Interface!
+#### GUI Interface
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
@@ -34,7 +34,7 @@ Thanks to support ebook2audiobook developers!<br>
 ## Table of Contents
 - [ebook2audiobook](#-ebook2audiobook)
 - [Features](#features)
-- [New v2.0 Web GUI Interface](#new-v20-web-gui-interface)
+- [Docker GUI Interface](#docker-gui-interface)
 - [Huggingface Space Demo](#huggingface-space-demo)
 - [Free Google Colab](#free-google-colab)
 - [Pre-made Audio Demos](#demos)
@@ -110,7 +110,7 @@ Thanks to support ebook2audiobook developers!<br>
 ##  Hardware Requirements
 - 4gb RAM minimum, 8GB recommended
 - Virtualization enabled if running on windows (Docker only)
-- CPU compatible, GPU recommended
+- CPU, GPU (Recommended), MPS (Not yet optimized and can be slower than CPU) compatible
 
 
 > [!IMPORTANT]
@@ -219,13 +219,6 @@ options:
   --session SESSION     Session to resume the conversion in case of interruption, crash, 
                             or reuse of custom models and custom cloning voices.
 
-**** The following options are for all modes:
-  Optional
-
-  --script_mode SCRIPT_MODE
-                        Mode the script will run. Accepted values are "native" and "full_docker". Default mode is "native". 
-                            "full_docker" cannot be used without a docker command.
-
 **** The following option are for gradio/gui mode only:
   Optional
 
@@ -258,26 +251,26 @@ optional parameters:
                         (Optional) Output audio format. Default is set in ./lib/conf.py
   --temperature TEMPERATURE
                         (xtts only, optional) Temperature for the model. 
-                            Default to 0.6. Higher temperatures lead to more creative outputs.
+                            Default to config.json model. Higher temperatures lead to more creative outputs.
   --length_penalty LENGTH_PENALTY
                         (xtts only, optional) A length penalty applied to the autoregressive decoder. 
-                            Default to 1.2. Not applied to custom models.
+                            Default to config.json model. Not applied to custom models.
   --num_beams NUM_BEAMS
                         (xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
-                            Default to 4
+                            Default to config.json model.
   --repetition_penalty REPETITION_PENALTY
                         (xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
-                            Default to 2.0
+                            Default to config.json model.
   --top_k TOP_K         (xtts only, optional) Top-k sampling. 
                             Lower values mean more likely outputs and increased audio generation speed. 
-                            Default to 45
+                            Default to config.json model.
   --top_p TOP_P         (xtts only, optional) Top-p sampling. 
                             Lower values mean more likely outputs and increased audio generation speed. Default to 0.85
   --speed SPEED         (xtts only, optional) Speed factor for the speech generation. 
-                            Default to 1.0
+                            Default to config.json model.
   --enable_text_splitting
                         (xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
-                            Default is set to False
+                            Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
   --version             Show the version of the script and exit
@@ -385,7 +378,7 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
   The service will be available at http://localhost:7860.
 
 
-#### New v2.0 Docker Web GUI Interface!
+### Docker GUI Interface
 ![demo_web_gui](assets/demo_web_gui.gif)
 
 <details>
@@ -441,8 +434,6 @@ https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080
 
 **David Attenborough voice**
 https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
-
-
 
 
 ## Supported eBook Formats
