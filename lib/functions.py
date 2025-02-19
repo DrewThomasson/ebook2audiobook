@@ -2073,7 +2073,7 @@ def web_interface(args):
             if session['tts_engine'] == XTTSv2:
                 visible = True
                 if session['fine_tuned'] != 'internal':
-                    visible = visible_gr_group_custom_model
+                    visible = False
                 return gr.update(visible=visible_gr_tab_preferences), gr.update(visible=visible), update_gr_fine_tuned_list(id), gr.update(label=f"*Custom Model Zip File (Mandatory files {models[session['tts_engine']][default_fine_tuned]['files']})")
             else:
                 return gr.update(visible=False), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Custom Model Zip File (Mandatory files {models[session['tts_engine']][default_fine_tuned]['files']})")
@@ -2081,10 +2081,9 @@ def web_interface(args):
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
             visible = False
-            if selected == 'internal' and session['tts_engine'] == XTTSv2:
-                visible = visible_gr_group_custom_model
-            else:
-                visible = False
+            if session['tts_engine'] == XTTSv2:
+                if selected == 'internal' 
+                    visible = visible_gr_group_custom_model
             session['fine_tuned'] = selected
             return gr.update(visible=visible)
 
