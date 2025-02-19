@@ -113,6 +113,7 @@ Thanks to support ebook2audiobook developers!<br>
 - CPU, GPU*, MPS** compatible
 
 * Recommended
+
 ** Not yet optimized and can be slower than CPU
 
 
