@@ -1,9 +1,6 @@
 name: Vits Test Ubuntu Headless 
 
 on:
-  push:
-    branches:
-      - act-trigger
   workflow_dispatch:
 
 
