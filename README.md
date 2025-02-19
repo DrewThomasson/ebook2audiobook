@@ -34,7 +34,7 @@ Thanks to support ebook2audiobook developers!<br>
 ## Table of Contents
 - [ebook2audiobook](#-ebook2audiobook)
 - [Features](#features)
-- [Docker Web GUI Interface](#new-v20-web-gui-interface)
+- [Docker GUI Interface](#new-v20-web-gui-interface)
 - [Huggingface Space Demo](#huggingface-space-demo)
 - [Free Google Colab](#free-google-colab)
 - [Pre-made Audio Demos](#demos)
