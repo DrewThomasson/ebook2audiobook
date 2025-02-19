@@ -576,34 +576,6 @@ def filter_pattern(doc_identifier):
         elif re.match(r'^\d+$', segment):
             return 'numbers'
     return None
-'''
-def get_sentences(phoneme_list, max_tokens):
-    sentences = []
-    current_sentence = ""
-    current_phoneme_count = 0
-    for phoneme in phoneme_list:
-        part_phoneme_count = len(phoneme.split())
-        # If adding this phoneme exceeds max tokens, finalize the current sentence
-        if current_phoneme_count + part_phoneme_count > max_tokens:
-            sentences.append(current_sentence.strip())
-            current_sentence = phoneme
-            current_phoneme_count = part_phoneme_count
-        else:
-            # Add the phoneme to the current sentence
-            current_sentence += (" " if current_sentence else "") + phoneme
-            current_phoneme_count += part_phoneme_count
-        # Handle overly long rows by splitting them in the middle
-        if current_phoneme_count > max_tokens * 2:
-            new_phoneme_list = current_sentence.split()
-            mid_point = len(new_phoneme_list) // 2
-            sentences.append(" ".join(new_phoneme_list[:mid_point]).strip())
-            current_sentence = " ".join(new_phoneme_list[mid_point:]).strip()
-            current_word_count = len(current_sentence.split())
-    # Add the final sentence if any content remains
-    if current_sentence:
-        sentences.append(current_sentence.strip())
-    return sentences
-'''
 
 def get_sentences(phoneme_list, max_tokens):
     sentences = []
