@@ -63,7 +63,7 @@ class TTSManager:
         self._build()
  
     def _build(self):
-        self.params['curent_voice_path'] = None
+        self.params['current_voice_path'] = None
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
                 self.model_name = os.path.basename(self.session['custom_model'])
@@ -169,16 +169,16 @@ class TTSManager:
             '''
             if self.session['tts_engine'] == XTTSv2:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
-                    msg = 'Computing speaker latents...'
-                    print(msg)
                     self.params['voice_path'] = (
                         self.session['voice'] if self.session['voice'] is not None 
                         else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav') if self.session['custom_model']
                         else models[self.session['tts_engine']][self.session['fine_tuned']]['voice'] if self.session['fine_tuned']
                         else models[self.session['tts_engine']]['internal']['voice']
                     )
-                    if self.params['curent_voice_path'] != self.params['voice_path']:
-                        self.params['curent_voice_path'] = self.params['voice_path']
+                    if self.params['current_voice_path'] != self.params['voice_path']:
+                        msg = 'Computing speaker latents...'
+                        print(msg)
+                        self.params['current_voice_path'] = self.params['voice_path']
                         self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].get_conditioning_latents(audio_path=[self.params['voice_path']])
                     with torch.no_grad():
                         result = self.params['tts'].inference(
