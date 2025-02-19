@@ -53,8 +53,9 @@ def load_custom_xtts(model_path, config_path, vocab_path, device):
 
 class TTSManager:
 
-    def __init__(self, session):   
+    def __init__(self, session, is_gui_process):   
         self.session = session
+        self.is_gui_process = is_gui_process
         self.params = {}
         self.model_name = None
         self.model_path = None
@@ -155,18 +156,20 @@ class TTSManager:
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
-            '''
-            fine_tuned_params = {
-                "temperature": float(self.session['temperature']),
-                "length_penalty": float(self.session["length_penalty"]),
-                "num_beams": int(self.session["num_beams"]),
-                "repetition_penalty": float(self.session['repetition_penalty']),
-                "top_k": int(self.session['top_k']),
-                "top_p": float(self.session['top_p']),
-                "speed": float(self.session['speed']),
-                "enable_text_splitting": bool(self.session['enable_text_splitting'])
+            fine_tuned_params = {} if self.is_gui_process else {
+                key: cast_type(self.session[key])
+                for key, cast_type in {
+                    "temperature": float,
+                    "length_penalty": float,
+                    "num_beams": int,
+                    "repetition_penalty": float,
+                    "top_k": int,
+                    "top_p": float,
+                    "speed": float,
+                    "enable_text_splitting": bool
+                }.items()
+                if self.session.get(key) is not None  # Ensures only non-None values are included
             }
-            '''
             if self.session['tts_engine'] == XTTSv2:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     self.params['voice_path'] = (
@@ -185,8 +188,8 @@ class TTSManager:
                             text=self.params['sentence'],
                             language=self.session['language_iso1'],
                             gpt_cond_latent=self.params['gpt_cond_latent'],
-                            speaker_embedding=self.params['speaker_embedding']
-                            #**fine_tuned_params
+                            speaker_embedding=self.params['speaker_embedding'],
+                            **fine_tuned_params
                         )
                     audio_data = result.get('wav')
                     if audio_data is None:
@@ -204,8 +207,8 @@ class TTSManager:
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
                             language=self.session['language_iso1'],
-                            **speaker_argument
-                            #**fine_tuned_params
+                            **speaker_argument,
+                            **fine_tuned_params
                         )
             elif self.session['tts_engine'] == BARK:
                 '''

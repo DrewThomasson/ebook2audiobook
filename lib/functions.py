@@ -641,7 +641,7 @@ def convert_chapters_to_audio(session):
         progress_bar = None
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
-        tts_manager = TTSManager(session)
+        tts_manager = TTSManager(session, is_gui_process)
         if tts_manager.params['tts'] is None:
             return False
         resume_chapter = 0
