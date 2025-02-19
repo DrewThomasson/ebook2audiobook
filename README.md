@@ -34,7 +34,7 @@ Thanks to support ebook2audiobook developers!<br>
 ## Table of Contents
 - [ebook2audiobook](#-ebook2audiobook)
 - [Features](#features)
-- [Web GUI Interface](#web-gui-interface)
+- [Web GUI Interface](#new-v20-web-gui-interface)
 - [Huggingface Space Demo](#huggingface-space-demo)
 - [Free Google Colab](#free-google-colab)
 - [Pre-made Audio Demos](#demos)
@@ -434,8 +434,6 @@ https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080
 
 **David Attenborough voice**
 https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
-
-
 
 
 ## Supported eBook Formats
