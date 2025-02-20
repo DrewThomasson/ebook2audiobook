@@ -1,6 +1,8 @@
 import os
+import re
 import difflib
 from deep_translator import GoogleTranslator
+from markdown_it import MarkdownIt
 
 # Define languages and corresponding output file names
 LANGUAGES = {
@@ -26,6 +28,7 @@ LANGUAGES = {
 
 README_PATH = "README.md"
 TRANSLATION_DIR = "readme"
+MAX_CHARS = 5000  # Google Translate's character limit
 
 # Ensure readme directory exists
 os.makedirs(TRANSLATION_DIR, exist_ok=True)
@@ -35,7 +38,7 @@ with open(README_PATH, "r", encoding="utf-8") as file:
     original_text = file.readlines()
 
 # Check if this is the first commit
-if os.system("git rev-parse --verify HEAD~1") != 0:
+if os.system("git rev-parse --verify HEAD~1 > /dev/null 2>&1") != 0:
     print("First commit detected. Translating full README...")
     changed_text = "".join(original_text)
 else:
@@ -52,29 +55,77 @@ else:
 
     changed_text = "\n".join(changed_lines)
 
+# Function to split text into chunks <= 5000 chars for Google Translate
+def split_text(text, max_chars=MAX_CHARS):
+    sentences = re.split(r'(?<=[.!?])\s+', text)  # Split at sentence boundaries
+    chunks, current_chunk = [], ""
+
+    for sentence in sentences:
+        if len(current_chunk) + len(sentence) <= max_chars:
+            current_chunk += sentence + " "
+        else:
+            chunks.append(current_chunk.strip())
+            current_chunk = sentence + " "
+
+    if current_chunk:
+        chunks.append(current_chunk.strip())
+
+    return chunks
+
+# Function to extract plain text from Markdown while preserving formatting
+def extract_text_from_markdown(md_content):
+    md = MarkdownIt()
+    parsed = md.parse(md_content)
+    
+    extracted_text = []
+    for token in parsed:
+        if token.type in ["paragraph_open", "paragraph_close", "inline", "text"]:
+            extracted_text.append(token.content)
+
+    return "\n".join(extracted_text)
+
+# Function to replace translated text back into Markdown
+def replace_text_in_markdown(original, translated):
+    """Replace only the changed lines while preserving Markdown structure."""
+    original_lines = original.split("\n")
+    translated_lines = translated.split("\n")
+
+    if len(original_lines) == len(translated_lines):
+        return "\n".join(translated_lines)
+    
+    result = []
+    for orig, trans in zip(original_lines, translated_lines):
+        if orig.strip() and trans.strip():
+            result.append(trans)
+        else:
+            result.append(orig)
+
+    return "\n".join(result)
+
+# Extract text while keeping Markdown intact
+plain_text = extract_text_from_markdown(changed_text)
+
 # Translate and update each language file
 for lang_code, output_file in LANGUAGES.items():
     translator = GoogleTranslator(source="en", target=lang_code)
-
-    # Translate text
-    translated_text = translator.translate(changed_text)
+    
+    translated_chunks = [translator.translate(chunk) for chunk in split_text(plain_text)]
+    translated_text = " ".join(translated_chunks)
 
     # Read existing translated file or create a new one
     translated_file_path = os.path.join(TRANSLATION_DIR, output_file)
     if os.path.exists(translated_file_path):
         with open(translated_file_path, "r", encoding="utf-8") as f:
-            existing_content = f.readlines()
+            existing_content = f.read()
     else:
-        existing_content = original_text.copy()
+        existing_content = "".join(original_text)
 
-    # Replace modified lines with new translations
-    for i, line in enumerate(original_text):
-        if any(difflib.get_close_matches(line.strip(), changed_lines, n=1, cutoff=0.8)):
-            existing_content[i] = translated_text + "\n"
+    # Replace translated text in the Markdown file while keeping structure
+    updated_content = replace_text_in_markdown(existing_content, translated_text)
 
     # Write updated translation
     with open(translated_file_path, "w", encoding="utf-8") as f:
-        f.writelines(existing_content)
+        f.write(updated_content)
 
     print(f"Updated {output_file}")
 
