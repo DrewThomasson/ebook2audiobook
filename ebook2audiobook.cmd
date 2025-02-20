@@ -16,23 +16,26 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 
-set "PROGRAMS_LIST=calibre-normal-cjk ffmpeg nodejs espeak-ng curl"
+set "PROGRAMS_LIST=refreshenv calibre-normal-cjk ffmpeg nodejs espeak-ng curl"
 
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
+
 set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data"
+
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
-set "CONDA_URL=https://repo.anaconda.com/miniconda/Miniconda3-py312_24.1.2-0-Windows-x86_64.exe"
-set "CONDA_INSTALLER=%TEMP%\miniconda.exe"
-set "CONDA_INSTALL_DIR=%USERPROFILE%\miniconda3"
-set "CONDA_BAT=%CONDA_INSTALL_DIR%\condabin\conda.bat"
-set "CONDA_PATH=%USERPROFILE%\miniconda3\bin"
-set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%CONDA_INSTALL_DIR%;%CONDA_INSTALL_DIR%\Scripts;%PATH%"
+
+set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
+set "CONDA_INSTALL_DIR=%USERPROFILE%\Miniforge3"
+set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
+set "CONDA_ENV=%CONDA_INSTALL_DIR%\condabin\conda.bat"
+set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_INSTALL_DIR%\condabin;%CONDA_INSTALL_DIR%\Scripts;%CONDA_INSTALL_DIR%\Library\bin;%PATH%"
+setx PATH "%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_INSTALL_DIR%\condabin;%CONDA_INSTALL_DIR%\Scripts;%CONDA_INSTALL_DIR%\Library\bin;%PATH%"
 
 set "SCOOP_CHECK=0"
 set "CONDA_CHECK=0"
@@ -127,8 +130,6 @@ exit /b
 :: Install Scoop if not already installed
 if not "%SCOOP_CHECK%"=="0" (
 	echo Installing Scoop...
-	::start /wait cmd /c powershell -NoProfile -ExecutionPolicy Bypass -Command ^
-	::	"[environment]::SetEnvironmentVariable('SCOOP', '%SCOOP_HOME%', 'User'); Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression"
 	call powershell "[environment]::SetEnvironmentVariable('SCOOP', '%SCOOP_HOME%', 'User'); Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression"
 	where /Q scoop
 	if !errorlevel! neq 0 (
@@ -155,7 +156,10 @@ if not "%PROGRAMS_CHECK%"=="0" (
     for %%p in (%missing_prog_array%) do (
 		call scoop install %%p
 		set "prog=%%p"
-		if "%%p"=="nodejs" set "prog=node"
+		if "%%p"=="nodejs" (
+			set "prog=node"
+			call refreshenv
+		)
 		if "%%p"=="calibre-normal-cjk" set "prog=calibre"
 		where /Q !prog!
 		if !errorlevel! neq 0 (
@@ -169,16 +173,16 @@ if not "%PROGRAMS_CHECK%"=="0" (
 )
 :: Install Conda if not already installed
 if not "%CONDA_CHECK%"=="0" (
-	echo Installing Miniconda3...
-	curl "%CONDA_URL%" -o "%CONDA_INSTALLER%"
-	start /wait "" "%CONDA_INSTALLER%" /S
+	echo Installing Miniforge...
+	call curl -fsSLo "%CONDA_INSTALLER%" "%CONDA_URL%"
+	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where /Q conda
 	if !errorlevel! neq 0 (
 		echo Conda installation failed.
 		goto failed
 	)
+	call conda config --set auto_activate_base false
 	call conda update conda -y
-	del %CONDA_INSTALLER%
 	set "CONDA_CHECK=0"
 	echo Conda installed successfully.
 )
@@ -209,7 +213,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 ) else (
 	if not exist "%SCRIPT_DIR%\%PYTHON_ENV%" (
 		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
-		call %CONDA_BAT% activate base
+		call %CONDA_ENV% activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 		call python -m pip cache purge
 		call python -m pip install --upgrade pip
@@ -219,7 +223,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		)
 		echo All required packages are installed.
 	) else (
-		call %CONDA_BAT% activate base
+		call %CONDA_ENV% activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 	)
 	call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%

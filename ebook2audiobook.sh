@@ -69,8 +69,8 @@ elif [[ "$OSTYPE" = "linux"* ]]; then
 fi
 CONDA_INSTALLER=/tmp/Miniforge3.sh
 CONDA_INSTALL_DIR=$HOME/Miniforge3
-CONDA_PATH=$HOME/Miniforge3/bin
-CONDA_ENV=$HOME/Miniforge3/etc/profile.d/conda.sh
+CONDA_PATH=$CONDA_INSTALL_DIR/bin
+CONDA_ENV=$CONDA_INSTALL_DIR/etc/profile.d/conda.sh
 export PATH="$CONDA_PATH:$PATH"
 
 declare -a programs_missing
@@ -266,6 +266,7 @@ else
 				bash "$CONDA_INSTALLER" -b -p "$CONDA_INSTALL_DIR"
 				rm -f "$CONDA_INSTALLER"
 				if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
+					conda config --set auto_activate_base false
 					source $CONDA_ENV
 					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 				else
