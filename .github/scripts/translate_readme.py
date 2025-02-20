@@ -1,5 +1,4 @@
 import os
-import re
 import difflib
 from deep_translator import GoogleTranslator
 
@@ -35,25 +34,29 @@ os.makedirs(TRANSLATION_DIR, exist_ok=True)
 with open(README_PATH, "r", encoding="utf-8") as file:
     original_text = file.readlines()
 
-# Check for changes using git diff
-diff_output = os.popen("git diff -U0 HEAD~1 -- README.md").read()
+# Check if this is the first commit
+if os.system("git rev-parse --verify HEAD~1") != 0:
+    print("First commit detected. Translating full README...")
+    changed_text = "".join(original_text)
+else:
+    # Get modified lines
+    diff_output = os.popen("git diff -U0 HEAD~1 -- README.md").read()
+    changed_lines = [
+        line[1:].strip() for line in diff_output.split("\n")
+        if line.startswith("+") and not line.startswith("+++")
+    ]
+    
+    if not changed_lines:
+        print("No changes detected, skipping translation.")
+        exit(0)
 
-changed_lines = []
-for line in diff_output.split("\n"):
-    if line.startswith("+") and not line.startswith("+++"):
-        changed_lines.append(line[1:].strip())
-
-if not changed_lines:
-    print("No changes detected, skipping translation.")
-    exit(0)
-
-changed_text = "\n".join(changed_lines)
+    changed_text = "\n".join(changed_lines)
 
 # Translate and update each language file
 for lang_code, output_file in LANGUAGES.items():
     translator = GoogleTranslator(source="en", target=lang_code)
 
-    # Translate modified text
+    # Translate text
     translated_text = translator.translate(changed_text)
 
     # Read existing translated file or create a new one
