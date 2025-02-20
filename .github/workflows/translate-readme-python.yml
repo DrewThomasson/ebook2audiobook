@@ -1,0 +1,36 @@
+name: Translate README to 19 languages
+
+on:
+  push:
+    paths:
+      - "README.md"
+    branches:
+      - main
+  workflow_dispatch:  # Allows manual execution
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: pip install deep-translator
+
+      - name: Run Python translation script
+        run: python .github/scripts/translate_readme.py
+
+      - name: Commit & Push Translations
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "actions@github.com"
+          git add readme/README_*.md
+          git commit -m "Automated translation update for modified README sections"
+          git push
