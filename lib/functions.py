@@ -412,6 +412,9 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
     return text.strip()
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
+    # Replace punctuations causing hallucinations
+    pattern = f"[{''.join(map(re.escape, switch_punctuation_dict.keys()))}]"
+    text = re.sub(pattern, lambda match: switch_punctuation_dict[match.group()], text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
     if lang in abbreviations_mapping:
@@ -663,13 +666,13 @@ def convert_chapters_to_audio(session):
         sentence_number = 0
 
         with tqdm(total=total_sentences, desc='convertsion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+            msg = f'A total of {total_chapters} parts and {total_sentences} sentences...'
             t.n = resume_sentence
             for x in range(resume_chapter, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
                 sentences = session['chapters'][x]
                 sentences_count = len(sentences)
-                # Mark the starting sentence of the chapter
                 start = sentence_number
                 msg = f'Part {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
@@ -1604,6 +1607,7 @@ def web_interface(args):
                     label='Enable Text Splitting', 
                     value=default_xtts_settings['enable_text_splitting'],
                     info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
+                    visible=False
                 )
     
         gr_state = gr.State(value={"hash": None})

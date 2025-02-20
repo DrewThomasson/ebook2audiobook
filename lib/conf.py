@@ -1,7 +1,7 @@
 import os
 import platform
 
-version = '25.2.0'
+version = '25.2.18'
 min_python_version = (3,12)
 max_python_version = (3,12)
 
@@ -22,7 +22,7 @@ interface_shared_tmp_expire = 3 # in days
 interface_concurrency_limit = 1 # or None for unlimited
 
 interface_component_options = {
-    "gr_tab_preferences": False,
+    "gr_tab_preferences": True,
     "gr_group_voice_file": True,
     "gr_group_custom_model": True
 }
@@ -34,7 +34,7 @@ voices_dir = os.path.abspath('voices')
 tmp_dir = os.path.abspath('tmp')
 tmp_expire = 7 # days
 
-max_tts_in_memory = 4 # TTS engines to keep in memory
+max_tts_in_memory = 2 # TTS engines to keep in memory (1 model ~= 2GB RAM)
 max_custom_model = 10
 max_custom_voices = 100
 max_upload_size = '6GB'

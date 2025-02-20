@@ -1,8 +1,11 @@
 import gc
 import os
+import regex as re
+import tempfile
 import torch
 import torchaudio
 import threading
+import uuid
 
 from fastapi import FastAPI
 from huggingface_hub import hf_hub_download
@@ -17,19 +20,19 @@ app = FastAPI()
 lock = threading.Lock()
 loaded_tts = {}
 
-@app.post("/coqui_tts_load_api/")
-def coqui_tts_load_api(model_path, device):
+@app.post("/load_coqui_tts_api/")
+def load_coqui_tts_api(model_path, device):
     try:
         with lock:
             tts = TtsXTTS(model_path, gpu=True if device == "cuda" else False).to(device)
         return tts
     except Exception as e:
-        error = f'coqui_tts_load_api() error: {e}'
+        error = f'load_coqui_tts_api() error: {e}'
         print(error)
         return None
 
-@app.post("/load_custom_xtts/")
-def load_custom_xtts(model_path, config_path, vocab_path, device):
+@app.post("/load_coqui_tts_checkpoint/")
+def load_coqui_tts_checkpoint(model_path, config_path, vocab_path, device):
     try:
         config = XttsConfig()
         config.models_dir = os.path.join("models", "tts")
@@ -47,12 +50,22 @@ def load_custom_xtts(model_path, config_path, vocab_path, device):
             tts.cuda()
         return tts
     except Exception as e:
-        error = f'load_custom_xtts() error: {e}'
+        error = f'load_coqui_tts_checkpoint() error: {e}'
+        print(error)
+        return None
+
+@app.post("/load_coqui_tts_vc/")
+def load_coqui_tts_vc(device):
+    try:
+        with lock:
+            tts = TtsXTTS(default_vc_model).to(device)
+        return tts
+    except Exception as e:
+        error = f'load_coqui_tts_vc() error: {e}'
         print(error)
         return None
 
 class TTSManager:
-
     def __init__(self, session, is_gui_process):   
         self.session = session
         self.is_gui_process = is_gui_process
@@ -67,7 +80,7 @@ class TTSManager:
         self.params['current_voice_path'] = None
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
-                msg = f"Loading TTS {self.session['tts_engine']} model from {self.session['custom_model']}, it takes a while, please be patient..."
+                msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
                 self.model_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'model.pth')
                 self.config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'config.json')
@@ -76,9 +89,11 @@ class TTSManager:
                 if self.session['custom_model'] in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.session['custom_model']]
                 else:
-                    self.params['tts'] = load_custom_xtts(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                    if len(loaded_tts) == max_tts_in_memory:
+                        self.unload_tts()
+                    self.params['tts'] = load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.session['device'])
             elif self.session['fine_tuned'] != 'internal':
-                msg = f"Loading TTS {self.session['tts_engine']} model from {self.session['fine_tuned']}, it takes a while, please be patient..."
+                msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
@@ -87,31 +102,31 @@ class TTSManager:
                 self.config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/config.json", cache_dir=cache_dir)
                 self.vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/vocab.json", cache_dir=cache_dir)    
                 tts_key = hf_sub
-                if hf_sub in loaded_tts.keys():
+                if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[hf_sub]
                 else:
-                    self.params['tts'] = load_custom_xtts(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                    self.params['tts'] = load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.session['device'])
             else:
-                msg = f"Loading TTS {self.session['tts_engine']} model from {models[self.session['tts_engine']][self.session['fine_tuned']]['repo']}, it takes a while, please be patient..."
+                msg = f"Loading TTS {models[self.session['tts_engine']][self.session['fine_tuned']]['repo']} model, it takes a while, please be patient..."
                 print(msg)
                 self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 tts_key = self.model_path
-                if self.model_path in loaded_tts.keys():
+                if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.model_path]
                 else:
-                    self.params['tts'] = coqui_tts_load_api(self.model_path, self.session['device'])
+                    self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is not None:
                 print(f"{self.session['tts_engine']} custom model not implemented yet!")
             else:
                 self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                msg = f"Loading TTS {self.model_path} model from {self.model_path}, it takes a while, please be patient..."
+                msg = f"Loading TTS {self.model_path} model, it takes a while, please be patient..."
                 print(msg)
                 tts_key = self.model_path
-                if self.model_path in loaded_tts.keys():
-                    self.params['tts'] = loaded_tts[self.model_path]
+                if tts_key in loaded_tts.keys():
+                    self.params['tts'] = loaded_tts[tts_key]
                 else:
-                    self.params['tts'] = coqui_tts_load_api(self.model_path, self.session['device'])
+                    self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
         elif self.session['tts_engine'] == VITS:
             if self.session['custom_model'] is not None:
                 print(f"{self.session['tts_engine']} custom model not implemented yet!")
@@ -119,44 +134,61 @@ class TTSManager:
                 sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 sub = next((key for key, lang_list in sub_dict.items() if self.session['language_iso1'] in lang_list), None)
                 self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", self.session['language_iso1']).replace("[xxx]", sub)
-                msg = f"Loading TTS {self.model_path} model from {self.model_path}, it takes a while, please be patient..."
+                msg = f"Loading TTS {self.model_path} model, it takes a while, please be patient..."
                 print(msg)
                 tts_key = self.model_path
-                if self.model_path in loaded_tts.keys():
-                    self.params['tts'] = loaded_tts[self.model_path]
+                if tts_key in loaded_tts.keys():
+                    self.params['tts'] = loaded_tts[tts_key]
                 else:
-                    self.params['tts'] = coqui_tts_load_api(self.model_path, self.session['device'])                    
+                    self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])                    
         elif self.session['tts_engine'] == FAIRSEQ:
             if self.session['custom_model'] is not None:
                 print(f"{self.session['tts_engine']} custom model not implemented yet!")
             else:
                 self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
-                msg = f"Loading TTS {self.model_path} model from {self.model_path}, it takes a while, please be patient..."
-                print(msg)
                 tts_key = self.model_path
-                if self.model_path in loaded_tts.keys():
-                    self.params['tts'] = loaded_tts[self.model_path]
+                msg = f"Loading TTS {tts_key} model, it takes a while, please be patient..."
+                print(msg)
+                if tts_key in loaded_tts.keys():
+                    self.params['tts'] = loaded_tts[tts_key]
                 else:
-                    self.params['tts'] = coqui_tts_load_api(self.model_path, self.session['device'])
+                    self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
+                tts_vc_key = default_vc_model
+                msg = f"Loading TTS {tts_vc_key} zeroshot model, it takes a while, please be patient..."
+                print(msg)
+                if tts_vc_key in loaded_tts.keys():
+                    self.params['tts_vc'] = loaded_tts[tts_vc_key]
+                else:
+                    self.params['tts_vc'] = load_coqui_tts_vc(self.session['device'])
         elif self.session['tts_engine'] == YOURTTS:
             if self.session['custom_model'] is not None:
                 print(f"{self.session['tts_engine']} custom model not implemented yet!")
             else:
                 self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                msg = f"Loading TTS {self.model_path} model from {self.model_path}, it takes a while, please be patient..."
+                msg = f"Loading TTS {self.model_path} model, it takes a while, please be patient..."
                 print(msg)
                 tts_key = self.model_path
-                if self.model_path in loaded_tts.keys():
+                if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.model_path]
                 else:
-                    self.params['tts'] = coqui_tts_load_api(self.model_path, self.session['device'])
+                    self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
         if self.params['tts'] is not None:
             loaded_tts[tts_key] = self.params['tts']
+
+    def _unload_tts():
+         for key in list(loaded_tts.keys()):
+            if key != default_vc_model:
+                del loaded_tts[key]
+                gc.collect()
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+                break
 
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
-            fine_tuned_params = {} if self.is_gui_process else {
+            #fine_tuned_params = {} if self.is_gui_process else {
+            fine_tuned_params = {
                 key: cast_type(self.session[key])
                 for key, cast_type in {
                     "temperature": float,
@@ -168,9 +200,10 @@ class TTSManager:
                     "speed": float,
                     "enable_text_splitting": bool
                 }.items()
-                if self.session.get(key) is not None  # Ensures only non-None values are included
+                if self.session.get(key) is not None
             }
             if self.session['tts_engine'] == XTTSv2:
+                sample_rate = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     self.params['voice_path'] = (
                         self.session['voice'] if self.session['voice'] is not None 
@@ -198,7 +231,7 @@ class TTSManager:
                         return False
                 else:
                     self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
-                    voice_name = os.path.basename(self.params['voice_path']).replace('_24000.wav','').replace('_16000.wav','')
+                    voice_name = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(os.path.basename(self.params['voice_path'])))
                     if voice_name in default_xtts_settings['voices'].values():
                         speaker_argument = {"speaker": voice_name}
                     else:
@@ -211,6 +244,7 @@ class TTSManager:
                             **fine_tuned_params
                         )
             elif self.session['tts_engine'] == BARK:
+                sample_rate = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
                 '''
                     [laughter]
                     [laughs]
@@ -236,6 +270,7 @@ class TTSManager:
                             emotion='neutral'  # Available options: "neutral", "angry", "happy", "sad"
                         )
             elif self.session['tts_engine'] == VITS:
+                sample_rate = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -252,22 +287,27 @@ class TTSManager:
                                 text=self.params['sentence'],
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
+                sample_rate = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
-                    self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
+                    self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']                
                     with torch.no_grad():
                         if self.params['voice_path'] is not None:
-                            audio_data = self.params['tts'].tts_with_vc(
-                                text=self.params['sentence'],
-                                speaker_wav=self.params['voice_path']
+                            sample_rate = 24000
+                            tmp_wav = os.path.join(self.session['process_dir'], f"{uuid.uuid4()}.wav")
+                            self.params['tts'].tts_to_file(text=self.params['sentence'], file_path=tmp_wav)
+                            audio_data = self.params['tts_vc'].voice_conversion(
+                                source_wav=tmp_wav,
+                                target_wav=self.params['voice_path']
                             )
                         else:
                             audio_data = self.params['tts'].tts(
                                 text=self.params['sentence'],
                             )
             elif self.session['tts_engine'] == YOURTTS:
+                sample_rate = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -275,11 +315,11 @@ class TTSManager:
                     with torch.no_grad():
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                         self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
-                        self.params['voice_path'] = self.params['voice_path'].replace('_24000.wav','_16000.wav')
-                        voice_name = os.path.basename(self.params['voice_path']).replace('_16000.wav','')
+                        voice_name = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(os.path.basename(self.params['voice_path'])))
                         if voice_name in default_yourtts_settings['voices'].values():
                             speaker_argument = {"speaker": voice_name}
                         else:
+                            self.params['voice_path'] = re.sub(r'_24000\.wav$', '_16000.wav', self.params['voice_path'])
                             speaker_argument = {"speaker_wav": self.params['voice_path']}
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
@@ -287,7 +327,6 @@ class TTSManager:
                             **speaker_argument
                         )
             if audio_data is not None:
-                sample_rate = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
                 audio_tensor  = torch.tensor(audio_data, dtype=torch.float32).unsqueeze(0)
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, sample_rate, format=default_audio_proc_format)
                 del audio_data

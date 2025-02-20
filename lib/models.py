@@ -9,6 +9,7 @@ YOURTTS = 'yourtts'
 
 default_tts_engine = 'xtts'
 default_fine_tuned = 'internal'
+default_vc_model = "voice_conversion_models/multilingual/vctk/freevc24"
 
 default_xtts_settings = {
     "samplerate": 24000,
@@ -53,13 +54,13 @@ default_bark_settings = {
     "samplerate": 24000,
     "files": ['coarse_2.pt']
 }
-default_fairseq_settings = {
-    "samplerate": 24000,
-    "files": ['config.json', 'G_100000.pth', 'vocab.json']
-}
 default_vits_settings = {
     "samplerate": 24000,
     "files": ['config.json', 'model_file.pth', 'language_ids.json']
+}
+default_fairseq_settings = {
+    "samplerate": 16000,
+    "files": ['config.json', 'G_100000.pth', 'vocab.json']
 }
 default_yourtts_settings = {
     "samplerate": 16000,
