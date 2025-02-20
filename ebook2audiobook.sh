@@ -49,7 +49,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMPDIR=./.cache
 
 WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rustc" "cargo")
+REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rust")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
 
@@ -60,32 +60,18 @@ fi
 
 ARCH=$(uname -m)
 
-if [[ "$OSTYPE" = "linux"* ]]; then
-	if [[ "$ARCH" = "x86_64" ]]; then
-		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh"
-	elif [[ "$ARCH" = "aarch64" ]]; then
-		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-aarch64.sh"
-	else
-		echo "Error: Unsupported architecture for Linux: $ARCH."
-		exit 1
-	fi
-elif [[ "$OSTYPE" = "darwin"* ]]; then
-	if [[ "$ARCH" = "x86_64" ]]; then
-		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh"
-	elif [[ "$ARCH" = "arm64" ]]; then
-		CONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh"
-	else
-		echo "Error: Unsupported architecture for MacOS: $ARCH. Are you possibly using Rosetta?"
-		exit 1
-	fi
+if [[ "$OSTYPE" = "darwin"* ]]; then
+	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
+	CONFIG_FILE="$HOME/.zshrc"
+elif [[ "$OSTYPE" = "linux"* ]]; then
+	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+	CONFIG_FILE="$HOME/.bashrc"
 fi
-
-CONDA_INSTALLER=/tmp/Miniconda3-latest.sh
-CONDA_INSTALL_DIR=$HOME/miniconda3
-CONDA_PATH=$HOME/miniconda3/bin
-CONDA_ENV=$HOME/miniconda3/etc/profile.d/conda.sh
+CONDA_INSTALLER=/tmp/Miniforge3.sh
+CONDA_INSTALL_DIR=$HOME/Miniforge3
+CONDA_PATH=$HOME/Miniforge3/bin
+CONDA_ENV=$HOME/Miniforge3/etc/profile.d/conda.sh
 export PATH="$CONDA_PATH:$PATH"
-CONFIG_FILE="$HOME/.bashrc"
 
 declare -a programs_missing
 
@@ -122,7 +108,7 @@ else
 	if [[ -n "$CURRENT_ENV" ]]; then
 		echo -e "Current python virtual environment detected: $CURRENT_ENV."
 		echo -e "This script runs with its own virtual env and must be out of any other virtual environment when it's launched."
-		echo -e "If you are using miniconda then you would type in:"
+		echo -e "If you are using conda then you would type in:"
 		echo -e "conda deactivate"
 		exit 1
 	fi
@@ -133,6 +119,10 @@ else
 		for program in "${programs[@]}"; do
 			if [ "$program" = "nodejs" ]; then
 				bin="node"
+			elif [ "$program" = "rust" ]; then
+				if command -v apt-get &> /dev/null; then
+					bin="rustc"
+				fi
 			else
 				bin="$program"
 			fi
@@ -236,7 +226,18 @@ else
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 				else
 					echo "$program installation failed."
-				fi			
+				fi		
+			elif [ "$program" = "rust" ]; then
+				if command -v apt-get &> /dev/null; then
+					program="rustc"
+				fi
+				curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+				source $HOME/.cargo/env
+				if command -v $program &>/dev/null; then
+					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+				else
+					echo "$program installation failed."
+				fi
 			else
 				eval "sudo $PACK_MGR $program $PACK_MGR_OPTIONS"				
 				if command -v $program >/dev/null 2>&1; then
@@ -253,15 +254,18 @@ else
 
 	function conda_check {
 		if ! command -v conda &> /dev/null; then
-			echo -e "\e[33mconda is not installed!\e[0m"
-			echo -e "\e[33mDownloading conda installer...\e[0m"
-			wget -O "$CONDA_INSTALLER" "$CONDA_URL"
+			echo -e "\e[33mMiniforge3 is not installed!\e[0m"
+			echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
+			if [[ "$OSTYPE" = "darwin"* ]]; then
+				curl -fsSLo "$CONDA_INSTALLER" "$CONDA_URL"
+			else
+				wget -O "$CONDA_INSTALLER" "$CONDA_URL"
+			fi
 			if [[ -f "$CONDA_INSTALLER" ]]; then
-				echo -e "\e[33mInstalling Miniconda...\e[0m"
-				bash "$CONDA_INSTALLER" -u -b -p "$CONDA_INSTALL_DIR"
+				echo -e "\e[33mInstalling Miniforge3...\e[0m"
+				bash "$CONDA_INSTALLER" -b -p "$CONDA_INSTALL_DIR"
 				rm -f "$CONDA_INSTALLER"
 				if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
-					conda init > /dev/null 2>&1
 					source $CONDA_ENV
 					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 				else
@@ -269,7 +273,7 @@ else
 					return 1
 				fi
 			else
-				echo -e "\e[31mFailed to download Miniconda installer.\e[0m"
+				echo -e "\e[31mFailed to download Miniforge3 installer.\e[0m"
 				echo -e "\e[33mI'ts better to use the install.sh to install everything needed.\e[0m"
 				return 1
 			fi

@@ -24,6 +24,8 @@ language_tts = {
     "yourtts": {"eng": "en", "fra": "fr", "por": "pt"}
 }
 
+switch_punctuation_dict = {'«': '"', '»': '"'}
+
 punctuation_list = [
     # Common punctuation in Western languages
     ".", ", ", ":", ";", "!", "?", "¡", "¿", "«", "»",
