@@ -34,11 +34,6 @@ voices_dir = os.path.abspath('voices')
 tmp_dir = os.path.abspath('tmp')
 tmp_expire = 7 # days
 
-max_tts_in_memory = 2 # TTS engines to keep in memory (1 model ~= 2GB RAM)
-max_custom_model = 10
-max_custom_voices = 100
-max_upload_size = '6GB'
-
 audiobooks_gradio_dir = os.path.abspath(os.path.join('audiobooks','gui','gradio'))
 audiobooks_host_dir = os.path.abspath(os.path.join('audiobooks','gui','host'))
 audiobooks_cli_dir = os.path.abspath(os.path.join('audiobooks','cli'))
