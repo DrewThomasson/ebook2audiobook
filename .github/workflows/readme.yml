@@ -1,4 +1,4 @@
-name: Translate README
+name: README translation
 
 on:
   push:
