@@ -27,6 +27,7 @@ Grazie a Support EBook2Audiobook Developer!<br>[![Ko-Fi](https://img.shields.io/
 -   eng [Inglese](README.md)
 -   swe [Svedese (svedese)](./readme/README_SWE.md)
 -   fas [Persian (persiano)](./readme/README_FA.md)
+-   ita [Persian (persiano)](./readme/README.it.md)
 
 ## Sommario
 
