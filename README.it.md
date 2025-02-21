@@ -2,8 +2,7 @@
 
 Convertitore CPU/GPU da ebook agli audiolibri con capitoli e metadati<br/>Utilizzando Caliber, FFMPEG, XTTSV2, Fairseq e altro. Supporta la clonazione vocale e +1110 lingue!
 
-> [!IMPORTANTE]
-**Questo strumento è destinato all'uso solo con e-book non acquisiti legalmente.**<br>Gli autori non sono responsabili per qualsiasi uso improprio di questo software o di conseguenze legali risultanti.<br>Utilizzare questo strumento in modo responsabile e in conformità con tutte le leggi applicabili.
+> [!IMPORTANTE]**Questo strumento è destinato all'uso solo con e-book non acquisiti legalmente.**<br>Gli autori non sono responsabili per qualsiasi uso improprio di questo software o di conseguenze legali risultanti.<br>Utilizzare questo strumento in modo responsabile e in conformità con tutte le leggi applicabili.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
@@ -44,7 +43,7 @@ Grazie a Support EBook2Audiobook Developer!<br>[![Ko-Fi](https://img.shields.io/
     -   [Uso di base senza testa](#basic--usage)
     -   [Utilizzo del modello personalizzato senza testa](#example-of-custom-model-zip-upload)
     -   [Affittare una GPU](#renting-a-gpu)
-    -   [Help command output](#help-command-output)
+    -   [Aiuta l'output di comandi](#help-command-output)
 -   [Modelli TTS sintonizzati fine](#fine-tuned-tts-models)
     -   [Per la raccolta di modelli TTS perfezionati](#fine-tuned-tts-collection)
 -   [Usando Docker](#using-docker)
@@ -111,11 +110,9 @@ Grazie a Support EBook2Audiobook Developer!<br>[![Ko-Fi](https://img.shields.io/
 -   Virtualizzazione abilitata se in esecuzione su Windows (solo docker)
 -   CPU, GPU (consigliato), MPS (non ancora ottimizzato e può essere più lento della CPU) compatibile
 
-> [!IMPORTANTE]
-**Prima di pubblicare una ricerca di emissione di installazione o bug attentamente nella scheda Aperta e chiusa<br>Per essere sicuro che il tuo problema non esista già.**
+> [!IMPORTANTE]**Prima di pubblicare una ricerca di emissione di installazione o bug attentamente nella scheda Aperta e chiusa<br>Per essere sicuro che il tuo problema non esista già.**
 
-> [!NOTA]
-**In mancanza di una struttura standard come quello che è un capitolo, un paragrafo, una prefazione ecc.<br>Dovresti prima rimuovere manualmente qualsiasi testo che non vuoi essere convertito in audio.**
+> [!NOTA]**In mancanza di una struttura standard come quello che è un capitolo, un paragrafo, una prefazione ecc.<br>Dovresti prima rimuovere manualmente qualsiasi testo che non vuoi essere convertito in audio.**
 
 ### Istruzioni di installazione
 
@@ -139,8 +136,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 2.  **Apri l'app Web**: Fare clic sull'URL fornito nel terminale per accedere all'app Web e convertire gli eBook.
 3.  **Per collegamento pubblico**:`python app.py --share`(Tutto il sistema operativo)`./ebook2audiobook.sh --share`(Linux/macOS)`ebook2audiobook.cmd --share`(Windows)
 
-> [!IMPORTANTE]
-**Se lo script viene interrotto ed eseguito di nuovo, è necessario aggiornare l'interfaccia GUI di Gradio<br>Per consentire alla pagina Web di riconnettersi al nuovo socket di connessione.**
+> [!IMPORTANTE]**Se lo script viene interrotto ed eseguito di nuovo, è necessario aggiornare l'interfaccia GUI di Gradio<br>Per consentire alla pagina Web di riconnettersi al nuovo socket di connessione.**
 
 ### Uso di base
 
@@ -431,17 +427,20 @@ visita[Questo collegamento facciale abbracciato](https://huggingface.co/drewThom
 **David Attenborough Voice**<https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea>
 
 ## Formati di ebook supportati
+
 -   `.epub`,`.pdf`,`.mobi`,`.txt`,`.html`,`.rtf`,`.chm`,`.lit`,`.pdb`,`.fb2`,`.odt`,`.cbr`,`.cbz`,`.prc`,`.lrf`,`.pml`,`.snb`,`.cbc`,`.rb`,`.tcr`
 -   **I migliori risultati**:`.epub`O`.mobi`Per il rilevamento automatico di capitoli
 
 ## Produzione
+
 -   Crea un`['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']`(Imposta nel file ./lib/conf.py) con metadati e capitoli.
 -   **Esempio**![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 
 ## Problemi comuni:
+
 -   La CPU è lenta (migliore sulla CPU SPP Server) mentre la GPU NVIDIA può avere una conversione quasi in tempo reale.[Discussione su questo](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)Per una generazione multilingue più veloce suggerirei l'altro mio[Progetto che utilizza Piper-TTS](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)Invece
     (Tuttavia, non ha una clonazione vocale a zero colpi, ed è voci di qualità Siri, ma è molto più veloce per la CPU).
--   "Sto avendo problemi di dipendenza" - usa solo il docker, è completamente autonomo e ha una modalità senza testa,
+-   "Sto avendo problemi di dipendenza" - basta usare il docker, è completamente autonomo e ha una modalità senza testa,
      aggiungere`--help`Parametro alla fine del comando Docker Run per ulteriori informazioni.
 -   "Sto ottenendo un problema audio troncato!" - Si prega di fare un problema,
      Non parliamo di ogni lingua e abbiamo bisogno di consigli agli utenti di mettere a punto la logica di scissione della frase .😊
@@ -449,16 +448,19 @@ visita[Questo collegamento facciale abbracciato](https://huggingface.co/drewThom
 ## Cosa ho bisogno di aiuto! 🙌
 
 ## [L'elenco completo delle cose può essere trovato qui](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
+
 -   Qualsiasi aiuto da parte di persone che parlano di una delle lingue supportate per aiutare con i metodi di divisione delle frasi adeguate
 -   Potenzialmente creazione di guide Readme per più lingue (perché l'unica lingua che conosco è l'inglese 😔)
 
 ## Un ringraziamento speciale
+
 -   **Cucinare TTS**:[Coqui tts github](https://github.com/idiap/coqui-ai-TTS)
 -   **Calibro**:[Sito Web calibro](https://calibre-ebook.com)
 -   **Ffmpeg**:[Sito Web FFMPEG](https://ffmpeg.org)
 -   [@shakenbake15 per un migliore metodo di salvataggio dei capitoli](https://github.com/DrewThomasson/ebook2audiobook/issues/8)
 
 ### [Legacy v1.0](legacy/v1.0)
+
 Puoi visualizzare il codice[Qui](legacy/v1.0).
 
 ## Unisciti al nostro server!
