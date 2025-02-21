@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - v25
+      - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,8 +15,104 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 12.x
-      # ISO Langusge Codes: https://cloud.google.com/translate/docs/languages  
+
+      # Translate README into multiple languages
+      - name: Adding README - Arabic
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: ar
+          
+      - name: Adding README - Chinese
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: cn
+
+      - name: Adding README - Czech
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: cs
+
+      - name: Adding README - Croatian
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: hr
+
+      - name: Adding README - Dutch
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: nl
+
+      - name: Adding README - French
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: fr
+
+      - name: Adding README - German
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: de
+
+      - name: Adding README - Hindi
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: hi
+
+      - name: Adding README - Hungarian
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: hu
+
       - name: Adding README - Italian
         uses: dephraiim/translate-readme@main
         with:
           LANG: it
+
+      - name: Adding README - Japanese
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: jp
+
+      - name: Adding README - Korean
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: ko
+
+      - name: Adding README - Polish
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: pl
+
+      - name: Adding README - Portuguese
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: pt
+
+      - name: Adding README - Russian
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: ru
+
+      - name: Adding README - Spanish
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: es
+
+      - name: Adding README - Turkish
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: tr
+
+      - name: Adding README - Vietnamese
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: vi
+
+      - name: Adding README - Yoruba
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: yo
+
+      - name: Adding README - Swahili
+        uses: dephraiim/translate-readme@main
+        with:
+          LANG: sw
