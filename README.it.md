@@ -2,7 +2,8 @@
 
 Convertitore CPU/GPU da ebook agli audiolibri con capitoli e metadati<br/>Utilizzando Caliber, FFMPEG, XTTSV2, Fairseq e altro. Supporta la clonazione vocale e +1110 lingue!
 
-> [!IMPORTANTE]**Questo strumento è destinato all'uso solo con e-book non acquisiti legalmente.**<br>Gli autori non sono responsabili per qualsiasi uso improprio di questo software o di conseguenze legali risultanti.<br>Utilizzare questo strumento in modo responsabile e in conformità con tutte le leggi applicabili.
+> [!IMPORTANT]
+**Questo strumento è destinato all'uso solo con e-book non acquisiti legalmente.**<br>Gli autori non sono responsabili per qualsiasi uso improprio di questo software o di conseguenze legali risultanti.<br>Utilizzare questo strumento in modo responsabile e in conformità con tutte le leggi applicabili.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
@@ -110,9 +111,11 @@ Grazie a Support EBook2Audiobook Developer!<br>[![Ko-Fi](https://img.shields.io/
 -   Virtualizzazione abilitata se in esecuzione su Windows (solo docker)
 -   CPU, GPU (consigliato), MPS (non ancora ottimizzato e può essere più lento della CPU) compatibile
 
-> [!IMPORTANTE]**Prima di pubblicare una ricerca di emissione di installazione o bug attentamente nella scheda Aperta e chiusa<br>Per essere sicuro che il tuo problema non esista già.**
+> [!IMPORTANT]
+**Prima di pubblicare una ricerca di emissione di installazione o bug attentamente nella scheda Aperta e chiusa<br>Per essere sicuro che il tuo problema non esista già.**
 
-> [!NOTA]**In mancanza di una struttura standard come quello che è un capitolo, un paragrafo, una prefazione ecc.<br>Dovresti prima rimuovere manualmente qualsiasi testo che non vuoi essere convertito in audio.**
+> [!NOTE]
+**In mancanza di una struttura standard come quello che è un capitolo, un paragrafo, una prefazione ecc.<br>Dovresti prima rimuovere manualmente qualsiasi testo che non vuoi essere convertito in audio.**
 
 ### Istruzioni di installazione
 
@@ -136,7 +139,8 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 2.  **Apri l'app Web**: Fare clic sull'URL fornito nel terminale per accedere all'app Web e convertire gli eBook.
 3.  **Per collegamento pubblico**:`python app.py --share`(Tutto il sistema operativo)`./ebook2audiobook.sh --share`(Linux/macOS)`ebook2audiobook.cmd --share`(Windows)
 
-> [!IMPORTANTE]**Se lo script viene interrotto ed eseguito di nuovo, è necessario aggiornare l'interfaccia GUI di Gradio<br>Per consentire alla pagina Web di riconnettersi al nuovo socket di connessione.**
+> [!IMPORTANT]
+**Se lo script viene interrotto ed eseguito di nuovo, è necessario aggiornare l'interfaccia GUI di Gradio<br>Per consentire alla pagina Web di riconnettersi al nuovo socket di connessione.**
 
 ### Uso di base
 
@@ -440,7 +444,7 @@ visita[Questo collegamento facciale abbracciato](https://huggingface.co/drewThom
 
 -   La CPU è lenta (migliore sulla CPU SPP Server) mentre la GPU NVIDIA può avere una conversione quasi in tempo reale.[Discussione su questo](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)Per una generazione multilingue più veloce suggerirei l'altro mio[Progetto che utilizza Piper-TTS](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)Invece
     (Tuttavia, non ha una clonazione vocale a zero colpi, ed è voci di qualità Siri, ma è molto più veloce per la CPU).
--   "Sto avendo problemi di dipendenza" - basta usare il docker, è completamente autonomo e ha una modalità senza testa,
+-   "Sto avendo problemi di dipendenza" - usa solo il docker, è completamente autonomo e ha una modalità senza testa,
      aggiungere`--help`Parametro alla fine del comando Docker Run per ulteriori informazioni.
 -   "Sto ottenendo un problema audio troncato!" - Si prega di fare un problema,
      Non parliamo di ogni lingua e abbiamo bisogno di consigli agli utenti di mettere a punto la logica di scissione della frase .😊
