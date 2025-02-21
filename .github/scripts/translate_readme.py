@@ -7,7 +7,7 @@ from markdown_it import MarkdownIt
 # Define languages and corresponding output file names
 LANGUAGES = {
     "ar": "README_ARA.md",
-    "zh": "README_ZHO.md",
+    "zh-CN": "README_ZHO.md",
     "cs": "README_CES.md",
     "hr": "README_HRV.md",
     "nl": "README_NLD.md",
