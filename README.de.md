@@ -2,7 +2,7 @@
 
 CPU/GPU -Konverter von eBooks zu Hörbüchern mit Kapiteln und Metadaten<br/>Verwenden von Kaliber, FFMPEG, XTTSV2, Fairseq und mehr. Unterstützt Sprachklonen und +1110 Sprachen!
 
-> [!WICHTIG]**Dieses Tool dient zur Verwendung mit nicht-dRM-und legal erfassten E-Books.**<br>Die Autoren sind nicht für den Missbrauch dieser Software oder die daraus resultierenden rechtlichen Konsequenzen verantwortlich.<br>Verwenden Sie dieses Tool verantwortungsbewusst und gemäß allen geltenden Gesetzen.
+> [!WICHTIG]**Dieses Tool dient zur Verwendung mit nicht-dRM, nur legal erfassten E-Books.**<br>Die Autoren sind nicht für den Missbrauch dieser Software oder die daraus resultierenden rechtlichen Konsequenzen verantwortlich.<br>Verwenden Sie dieses Tool verantwortungsbewusst und gemäß allen geltenden Gesetzen.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
@@ -66,7 +66,7 @@ Vielen Dank an die Unterstützung eBook2AudioBook -Entwickler!<br>[![Ko-Fi](http
 
 -   📖 Konvertiert eBooks mit Kaliber in ein Textformat.
 -   📚 Teilen Sie das eBook in Kapitel für organisierte Audio ein.
--   🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2)Und[Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms)(und mehr).
+-   🎙️ hochwertige Text-zu-Sprache mit[Coqui XTSV2](https://huggingface.co/coqui/XTTS-v2)Und[Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms)(und mehr).
 -   🗣️ Optionales Sprachklonen mit Ihrer eigenen Sprachdatei.
 -   🌍 unterstützt +1110 Sprachen (standardmäßig Englisch).[Liste der unterstützten Sprachen](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 -   🖥️, der für 4 GB RAM ausgeführt wurde.
