@@ -22,12 +22,12 @@ Grazie a Support EBook2Audiobook Developer!<br>[![Ko-Fi](https://img.shields.io/
 
 ## README.md
 
--   ara [Arabo (Arabo)](./readme/README_AR.md)
--   zho [cinese](./readme/README_CN.md)
--   eng [Inglese](README.md)
--   swe [Svedese (svedese)](./readme/README_SWE.md)
--   fas [Persian (persiano)](./readme/README_FA.md)
--   ita [Persian (persiano)](./readme/README.it.md)
+- ara [العربية (Arabic)](./readme/README_AR.md)
+- zho [中文 (Chinese)](./readme/README_CN.md)
+- eng [English](README.md)
+- swe [Svenska (Swedish)](./readme/README_SWE.md)
+- fas [فارسی (Persian)](./readme/README_FA.md)
+- ita [Italiano (Italian)](./readme/README.it.md)
 
 ## Sommario
 

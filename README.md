@@ -29,6 +29,7 @@ Thanks to support ebook2audiobook developers!<br>
 - eng [English](README.md)
 - swe [Svenska (Swedish)](./readme/README_SWE.md)
 - fas [فارسی (Persian)](./readme/README_FA.md)
+- ita [Italiano (Italian)](./readme/README.it.md)
 
 
 ## Table of Contents
