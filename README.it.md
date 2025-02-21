@@ -95,7 +95,7 @@ Grazie a Support EBook2Audiobook Developer!<br>[![Ko-Fi](https://img.shields.io/
 -   **Non (hin)**
 -   **Ungherese (am)**
 -   **Italiano (Ita)**
--   **Giapponese (jpn)**
+-   **Japanese (jpn)**
 -   **Coreano (cor)**
 -   **Polish (Pol)**
 -   **Portoghese (POR)**
@@ -441,7 +441,7 @@ visita[Questo collegamento facciale abbracciato](https://huggingface.co/drewThom
 
 -   La CPU è lenta (migliore sulla CPU SPP Server) mentre la GPU NVIDIA può avere una conversione quasi in tempo reale.[Discussione su questo](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)Per una generazione multilingue più veloce suggerirei l'altro mio[Progetto che utilizza Piper-TTS](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)Invece
     (Tuttavia, non ha una clonazione vocale a zero colpi, ed è voci di qualità Siri, ma è molto più veloce per la CPU).
--   "Sto avendo problemi di dipendenza" - basta usare il docker, è completamente autonomo e ha una modalità senza testa,
+-   "Sto avendo problemi di dipendenza" - usa solo il docker, è completamente autonomo e ha una modalità senza testa,
      aggiungere`--help`Parametro alla fine del comando Docker Run per ulteriori informazioni.
 -   "Sto ottenendo un problema audio troncato!" - Si prega di fare un problema,
      Non parliamo di ogni lingua e abbiamo bisogno di consigli agli utenti di mettere a punto la logica di scissione della frase .😊
