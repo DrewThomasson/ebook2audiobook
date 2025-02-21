@@ -102,7 +102,7 @@
 -   **الروسي (روس)**
 -   **الإسبانية (سبا)**
 -   **التركية (جولة)**
--   **Vietnamese (vie)**
+-   **الفيتناميين (VIE)**
 -   [**+1100 لغات عبر فيرسيك**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 ## متطلبات الأجهزة
