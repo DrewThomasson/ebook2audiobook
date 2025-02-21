@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-if [[ -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
+if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
     export SWITCHED_TO_ZSH=1
     exec env zsh "$0" "$@"
 fi
