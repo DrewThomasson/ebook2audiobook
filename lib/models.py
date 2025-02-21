@@ -11,6 +11,11 @@ default_tts_engine = 'xtts'
 default_fine_tuned = 'internal'
 default_vc_model = "voice_conversion_models/multilingual/vctk/freevc24"
 
+max_tts_in_memory = 2 # TTS engines to keep in memory (1 model ~= 2GB RAM)
+max_custom_model = 10
+max_custom_voices = 100
+max_upload_size = '6GB'
+
 default_xtts_settings = {
     "samplerate": 24000,
     "temperature": 0.75,
