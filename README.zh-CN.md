@@ -135,8 +135,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
         .\ebook2audiobook.cmd  # Run launch script or double click on it (Bypass windows alerts)
         ```
 2.  **打开Web应用程序**：单击终端中提供的URL以访问Web应用程序并转换电子书。
-3.  **用于公共链接**:`python app.py --share` (all OS)
-    `./ebook2audiobook.sh --share`（Linux/MacOS）`ebook2audiobook.cmd --share`（视窗）
+3.  **用于公共链接**:`python app.py --share`（所有操作系统）`./ebook2audiobook.sh --share`（Linux/MacOS）`ebook2audiobook.cmd --share`（视窗）
 
 > [！重要的!]**如果脚本停止并再次运行，则需要刷新Gradio GUI接口<br>让网页重新连接到新的连接套接字。**
 
