@@ -20,7 +20,7 @@ jobs:
       - name: Adding README - Swedish
         uses: dephraiim/translate-readme@main
         with:
-          LANG: se
+          LANG: sv
           
       - name: Adding README - Persian
         uses: dephraiim/translate-readme@main
