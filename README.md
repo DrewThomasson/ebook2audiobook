@@ -76,7 +76,7 @@ Thanks to support ebook2audiobook developers!<br>
 
 ## [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
-- Huggingface space is running on free cpu tier so expect very slow or timeout lol, just do not give it giant files is all
+- Huggingface space is running on free cpu tier so expect very slow or timeout lol, just do not give it giant files is all.
 - Best to duplicate space or run locally.
 
 
