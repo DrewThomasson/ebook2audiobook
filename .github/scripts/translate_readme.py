@@ -3,38 +3,38 @@ import re
 import subprocess
 from deep_translator import GoogleTranslator
 
-# Define translation languages
+# Define translation languages (change to real target languages)
 LANGUAGES = {
-    "en": "README_ENG.md",  # Testing by translating English to English
+    "en": "README_ENG.md"
 }
 
 README_PATH = "README.md"
 TRANSLATION_DIR = "readme"
 MAX_CHARS = 5000  # Google Translate's character limit
 
-# Ensure readme directory exists
+# Ensure the readme directory exists
 os.makedirs(TRANSLATION_DIR, exist_ok=True)
 
-# Read original README.md
+# Read the original README.md
 with open(README_PATH, "r", encoding="utf-8") as file:
     original_text = file.read()
 
-# === Step 1: Extract Text to Translate (Ignore Special Markdown Elements) ===
+# === Step 1: Extract Translatable Text ===
 
-# Placeholder storage for text replacements
+# Store placeholders and extracted text
 placeholders = []
-text_segments = []
+translatable_text = []
 placeholder_index = 0
 
 def placeholder(text):
-    """Store text segment and return a placeholder."""
+    """Stores text segment and returns a placeholder."""
     global placeholder_index
     key = f"{{{{PLACEHOLDER_{placeholder_index}}}}}"
     placeholders.append((key, text))
     placeholder_index += 1
     return key
 
-# Regex patterns for elements we should NOT translate
+# Patterns for non-translatable elements
 patterns = {
     "code_blocks": r"```[\s\S]*?```",  # Multiline code blocks
     "inline_code": r"`[^`]+`",  # Inline code like `example`
@@ -44,38 +44,48 @@ patterns = {
     "blockquotes": r"> .*",  # Blockquotes
 }
 
-# Replace elements with placeholders
+# Replace non-translatable elements with placeholders
 processed_text = original_text
 for pattern_name, pattern in patterns.items():
     processed_text = re.sub(pattern, lambda match: placeholder(match.group()), processed_text)
 
-# Extract remaining text (translatable parts)
-text_segments = re.split(r"(\n|\s\s+)", processed_text)  # Preserve spacing and line breaks
+# Extract remaining translatable text
+segments = re.split(r"(\n|\s\s+)", processed_text)  # Preserve newlines and spaces
+
+# Store translatable text separately
+for segment in segments:
+    if segment.strip() and not any(placeholder in segment for placeholder, _ in placeholders):
+        translatable_text.append(segment)
 
 # === Step 2: Translate Only the Text Segments ===
-translator = GoogleTranslator(source="en", target="en")  # Test translation (English to English)
-translated_segments = []
 
-for segment in text_segments:
-    if segment.strip():  # Skip empty segments
-        translated_segments.append(translator.translate(segment) if segment.isalnum() else segment)
-    else:
-        translated_segments.append(segment)  # Preserve spacing
+def translate_text(text, target_lang):
+    """Translates text using Google Translator."""
+    translator = GoogleTranslator(source="en", target=target_lang)
+    translated_segments = []
+    for chunk in re.split(r'(?<=[.!?])\s+', text):  # Split into sentences
+        if chunk.strip():
+            translated_segments.append(translator.translate(chunk))
+    return " ".join(translated_segments)
 
-# === Step 3: Restore Placeholders and Write Translated Markdown ===
-translated_text = "".join(translated_segments)
-
-# Replace placeholders with original elements
-for placeholder_key, original_text in placeholders:
-    translated_text = translated_text.replace(placeholder_key, original_text)
-
-# Write translated file for each language
+# Translate text for each language
+translations = {}
 for lang_code, output_file in LANGUAGES.items():
+    print(f"Translating to {lang_code}...")
+
+    # Join extracted text into a single block for translation
+    text_to_translate = " ".join(translatable_text)
+    translated_text = translate_text(text_to_translate, lang_code)
+
+    # Restore placeholders into translated text
+    for placeholder_key, original_content in placeholders:
+        translated_text = translated_text.replace(placeholder_key, original_content)
+
+    # Write translated file
     translated_file_path = os.path.join(TRANSLATION_DIR, output_file)
-    
     with open(translated_file_path, "w", encoding="utf-8") as f:
         f.write(translated_text)
 
-    print(f"Updated {output_file}")
+    print(f"✅ Translated README saved as {output_file}")
 
-print("✅ Translation completed successfully while preserving Markdown format!")
+print("🎉 Translation completed successfully!")
