@@ -84,7 +84,7 @@
 
 ## اللغات المدعومة
 
--   **Arabic (ara)**
+-   **اللغة العربية (ARA)**
 -   **الصينية (ZH)**
 -   **التشيكية (CES)**
 -   **الكرواتية (HRV)**
@@ -102,7 +102,7 @@
 -   **الروسي (روس)**
 -   **الإسبانية (سبا)**
 -   **التركية (جولة)**
--   **الفيتناميين (VIE)**
+-   **Vietnamese (vie)**
 -   [**+1100 لغات عبر فيرسيك**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 ## متطلبات الأجهزة
@@ -418,8 +418,8 @@ docker run --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF
 
 ### مجموعة TTS ذات ضبطها
 
-To find our collection of already fine-tuned TTS models,
-visit [رابط الوجه المعانقة هذا](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)للحصول على طراز XTTS مخصص ، يكون مقطع الصوت المرجع للمرجع الصوتي إلزاميًا:
+للعثور على مجموعتنا من نماذج TTS التي تم ضبطها بالفعل ،
+يزور[رابط الوجه المعانقة هذا](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)للحصول على طراز XTTS مخصص ، يكون مقطع الصوت المرجع للمرجع الصوتي إلزاميًا:
 
 ## العروض التوضيحية
 
@@ -440,7 +440,7 @@ visit [رابط الوجه المعانقة هذا](https://huggingface.co/drewT
 ## القضايا الشائعة:
 
 -   وحدة المعالجة المركزية بطيئة (أفضل على CPU Server SMP) في حين أن GPU NVIDIA يمكن أن يكون لها تحويل في الوقت الفعلي تقريبًا.[مناقشة حول هذا](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)من أجل جيل متعدد اللغات أسرع ، أود أن أقترح بلدي الآخر[المشروع الذي يستخدم piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)بدلاً من
-    (لا يحتوي على صفر صوت استنساخ على الرغم من ذلك ، وهو أصوات ذات جودة Siri ، لكنها أسرع بكثير على وحدة المعالجة المركزية).
+    (لا يحتوي على صفر صوت استنساخ ، وهو أصوات Siri ذات جودة Siri ، ولكنها أسرع بكثير على وحدة المعالجة المركزية).
 -   "أواجه مشكلات تبعية" - ما عليك سوى استخدام Docker ، وذاته بالكامل وله وضع مقطوع الرأس ،
      يضيف`--help`المعلمة في نهاية الأمر Docker Run لمزيد من المعلومات.
 -   "أنا أتلقى مشكلة صوتية مقطوعة!" - يرجى تقديم مسألة من هذا ،
@@ -458,7 +458,7 @@ visit [رابط الوجه المعانقة هذا](https://huggingface.co/drewT
 -   **طبخ TTS**:[coqui tts github](https://github.com/idiap/coqui-ai-TTS)
 -   **عيار**:[موقع عيار](https://calibre-ebook.com)
 -   **FFMPEG**:[موقع FFMPEG](https://ffmpeg.org)
--   [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8)
+-   [@ShakenBake15 لتحسين طريقة حفظ الفصل](https://github.com/DrewThomasson/ebook2audiobook/issues/8)
 
 ### [Legacy v1.0](legacy/v1.0)
 
