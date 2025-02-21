@@ -66,7 +66,7 @@ Zahvaljujući podršci ebook2AudioBook programerima!<br>[![Ko-Fi](https://img.sh
 
 -   📖 Pretvara e -knjige u tekstni format s kalibrom.
 -   📚 dijeli e -knjigu u poglavlja za organizirani zvuk.
--   🎙️ visokokvalitetni tekst u govor s[Coqui xttsv2](https://huggingface.co/coqui/XTTS-v2)i[Sajam](https://github.com/facebookresearch/fairseq/tree/main/examples/mms)(i više).
+-   🎙️ visokokvalitetni tekst u govor s[Coqui xttsv2](https://huggingface.co/coqui/XTTS-v2)i[Sajam](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) (and more).
 -   🗣️ Neobavezno kloniranje glasa s vlastitom glasovnom datotekom.
 -   🌍 podržava +1110 jezika (engleski jezik prema zadanim postavkama).[Popis podržanih jezika](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 -   🖥️ dizajniran za pokretanje na 4 GB RAM -a.
@@ -113,7 +113,8 @@ Zahvaljujući podršci ebook2AudioBook programerima!<br>[![Ko-Fi](https://img.sh
 
 > [!VAŽNO]**Prije nego što objavite instalaciju ili problem s pogreškama, pažljivo pretražite na kartici otvorenih i zatvorenih problema<br>Da biste bili sigurni da vaš problem već ne postoji.**
 
-> [!BILJEŠKA]**Nedostaje bilo kakve strukture standarda poput onoga što je poglavlje, odlomak, predgovor itd.<br>Prvo biste trebali ručno ukloniti bilo koji tekst za koji ne želite biti pretvoreni u zvuk.**
+> [!BILJEŠKA]**Nedostaje bilo kakve strukture standarda poput onoga što je poglavlje, odlomak, predgovor itd.<br>
+> you should first remove manually any text you don't want to be converted in audio.**
 
 ### Upute za instalaciju
 
@@ -401,7 +402,7 @@ Nemate hardver za pokretanje ili želite unajmiti GPU?
 -   Docker dobiva zaglavljeno preuzimanje fino podešenih modela.
     (To se ne događa za svako računalo, ali čini se da neki nailaze na ovo pitanje)
     Čini se da će traka napretka riješiti problem,
-    Kao što je raspravljano[ovdje u #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)Primjer dodavanja ovog popravka u`docker run`naredba
+    Kao što je raspravljano[here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)Primjer dodavanja ovog popravka u`docker run`naredba
 
 ```Dockerfile
 docker run --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
@@ -430,7 +431,7 @@ posjetiti[ova veza zagrljaja lica](https://huggingface.co/drewThomasson/fineTune
 ## Podržani formati e -knjige
 
 -   `.epub`,`.pdf`,`.mobi`,`.txt`,`.html`,`.rtf`,`.chm`,`.lit`,`.pdb`,`.fb2`,`.odt`,`.cbr`,`.cbz`,`.prc`,`.lrf`,`.pml`,`.snb`,`.cbc`,`.rb`,`.tcr`
--   **Najbolji rezultati**:`.epub`ili`.mobi` for automatic chapter detection
+-   **Najbolji rezultati**:`.epub`ili`.mobi`Za automatsko otkrivanje poglavlja
 
 ## Izlaz
 
@@ -439,7 +440,7 @@ posjetiti[ova veza zagrljaja lica](https://huggingface.co/drewThomasson/fineTune
 
 ## Uobičajena pitanja:
 
--   CPU je spor (bolji na poslužitelju SMP CPU), dok NVIDIA GPU može imati gotovo pretvorbu u stvarnom vremenu.[Rasprava o ovome](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)Za bržu višejezičnu generaciju predložio bih svoje drugo[Projekt koji koristi Piper-TTS](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)umjesto toga
+-   CPU je spor (bolji na poslužitelju SMP CPU), dok NVIDIA GPU može imati gotovo pretvorbu u stvarnom vremenu.[Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)Za bržu višejezičnu generaciju predložio bih svoje drugo[Projekt koji koristi Piper-TTS](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)umjesto toga
     (Ipak, nema bez ikakvih glasova glasova, a je li Siri kvalitetan glasovi, ali na CPU-u je mnogo brži).
 -   "Imam problema s ovisnošću" - samo upotrijebite Docker, potpuno se samostalno i ima način bez glave,
      dodati`--help`Parametar na kraju naredbe Docker Run za više informacija.
@@ -451,7 +452,7 @@ posjetiti[ova veza zagrljaja lica](https://huggingface.co/drewThomasson/fineTune
 ## [Potpuni popis stvari možete pronaći ovdje](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
 
 -   Svaka pomoć ljudi koji govore bilo koji od podržanih jezika kako bi pomogli u pravilnim metodama dijeljenja rečenica
--   Potencijalno stvaranje Vodiča za ReadMe za više jezika (jer jedini jezik koji znam je engleski 😔)
+-   Potencijalno stvaranje ReadMe vodiča za više jezika (jer jedini jezik koji znam je engleski 😔)
 
 ## Posebna hvala
 
