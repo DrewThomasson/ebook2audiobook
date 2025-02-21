@@ -153,7 +153,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
     ```
 -   **[--ebook]**: Chemin vers votre fichier d'ebook.
 -   **[--voix]**: Chemin de fichier de clonage vocal (facultatif).
--   **[--langue]**: Code linguistique dans ISO-639-3 (c'est-à-dire: ita pour italien, eng pour l'anglais, le deu pour l'allemand ...).<br>La langue par défaut est Eng et --Language est facultative pour le jeu de langues par défaut dans ./lib/lang.py.<br>Les codes ISO-639-1 2 lettres sont également pris en charge.
+-   **[--language]**: Code linguistique dans ISO-639-3 (c'est-à-dire: ita pour italien, eng pour l'anglais, le deu pour l'allemand ...).<br>La langue par défaut est Eng et --Language est facultative pour le jeu de langues par défaut dans ./lib/lang.py.<br>Les codes ISO-639-1 2 lettres sont également pris en charge.
 
 ### Exemple de téléchargement de zip de modèle personnalisé
 
@@ -439,7 +439,7 @@ visite[Ce lien de visage étreint](https://huggingface.co/drewThomasson/fineTune
 
 ## Problèmes courants:
 
--   Le processeur est lent (mieux sur le SMP serveur CPU) tandis que NVIDIA GPU peut avoir une conversion presque en temps réel.[Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)Pour une génération multilingue plus rapide, je suggérerais mon autre[Projet qui utilise Piper-Tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)plutôt
+-   Le processeur est lent (mieux sur le SMP serveur CPU) tandis que NVIDIA GPU peut avoir une conversion presque en temps réel.[Discussion à ce sujet](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)Pour une génération multilingue plus rapide, je suggérerais mon autre[Projet qui utilise Piper-Tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)plutôt
     (Il n'a cependant pas de clonage vocal zéro et est des voix de qualité Siri, mais elle est beaucoup plus rapide sur CPU).
 -   "J'ai des problèmes de dépendance" - utilisez simplement le docker, c'est entièrement autonome et a un mode sans tête,
      ajouter`--help`Paramètre à la fin de la commande docker run pour plus d'informations.
