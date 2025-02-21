@@ -97,7 +97,7 @@ Merci à Support Ebook2Audiobook Develoers!<br>[![Ko-Fi](https://img.shields.io/
 -   **Italien (ita)**
 -   **Japonais (JPN)**
 -   **Coréen (COR)**
--   **Polon (Pol)**
+-   **Polish (pol)**
 -   **Portugais (POR)**
 -   **Russe (RUS)**
 -   **Espagnol (spa)**
@@ -153,7 +153,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
     ```
 -   **[--ebook]**: Chemin vers votre fichier d'ebook.
 -   **[--voix]**: Chemin de fichier de clonage vocal (facultatif).
--   **[--language]**: Code linguistique dans ISO-639-3 (c'est-à-dire: ita pour italien, eng pour l'anglais, le deu pour l'allemand ...).<br>La langue par défaut est Eng et --Language est facultative pour le jeu de langues par défaut dans ./lib/lang.py.<br>Les codes ISO-639-1 2 lettres sont également pris en charge.
+-   **[--langue]**: Code linguistique dans ISO-639-3 (c'est-à-dire: ita pour italien, eng pour l'anglais, le deu pour l'allemand ...).<br>La langue par défaut est Eng et --Language est facultative pour le jeu de langues par défaut dans ./lib/lang.py.<br>Les codes ISO-639-1 2 lettres sont également pris en charge.
 
 ### Exemple de téléchargement de zip de modèle personnalisé
 
@@ -455,7 +455,7 @@ visite[Ce lien de visage étreint](https://huggingface.co/drewThomasson/fineTune
 
 ## Merci spécial
 
--   **TTS de cuisine**:[Coqui tts github](https://github.com/idiap/coqui-ai-TTS)
+-   **Coqui TTS**:[Coqui tts github](https://github.com/idiap/coqui-ai-TTS)
 -   **Calibre**:[Calibre Website](https://calibre-ebook.com)
 -   **Ffmpeg**:[Site Web ffmpeg](https://ffmpeg.org)
 -   [@ shakenbake15 pour une meilleure méthode d'économie de chapitre](https://github.com/DrewThomasson/ebook2audiobook/issues/8)
