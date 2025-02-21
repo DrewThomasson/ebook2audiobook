@@ -30,7 +30,7 @@ Grazie a Support EBook2Audiobook Developer!<br>[![Ko-Fi](https://img.shields.io/
 
 ## Sommario
 
--   [eBook2AuDiookook](#-ebook2audiobook)
+-   [eBook2Audiokook](#-ebook2audiobook)
 -   [Caratteristiche](#features)
 -   [Interfaccia Docker GUI](#docker-gui-interface)
 -   [Demo spaziale Huggingface](#huggingface-space-demo)
