@@ -23,7 +23,7 @@ Grazie a Support EBook2Audiobook Developer!<br>[![Ko-Fi](https://img.shields.io/
 
 -   Compriamo[Arabo (Arabo)](./readme/README_AR.md)
 -   Zho[cinese](./readme/README_CN.md)
--   a \`a[Inglese](README.md)
+-   eng [Inglese](README.md)
 -   Swe[Svedese (svedese)](./readme/README_SWE.md)
 -   Fas[Persian (persiano)](./readme/README_FA.md)
 
@@ -136,7 +136,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 2.  **Apri l'app Web**: Fare clic sull'URL fornito nel terminale per accedere all'app Web e convertire gli eBook.
 3.  **Per collegamento pubblico**:`python app.py --share`(Tutto il sistema operativo)`./ebook2audiobook.sh --share`(Linux/macOS)`ebook2audiobook.cmd --share`(Windows)
 
-> [!IMPORTANTE]**Se lo script viene interrotto ed eseguito di nuovo, è necessario aggiornare l'interfaccia GUI di Gradio<br>Per consentire alla pagina Web di riconnettersi al nuovo socket di connessione.**
+> [!IMPORTANT]**Se lo script viene interrotto ed eseguito di nuovo, è necessario aggiornare l'interfaccia GUI di Gradio<br>Per consentire alla pagina Web di riconnettersi al nuovo socket di connessione.**
 
 ### Uso di base
 
