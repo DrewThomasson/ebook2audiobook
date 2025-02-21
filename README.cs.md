@@ -152,7 +152,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
         --voice [path_to_voice_file] --language [language_code]
     ```
 -   **[--Ebook]**: Cesta do souboru elektronické knihy.
--   **[--hlas]**: Cesta souboru pro klonování hlasové (volitelné).
+-   **[--voice]**: Cesta souboru pro klonování hlasové (volitelné).
 -   **[--jazyk]**: Jazykový kód v ISO-639-3 (tj.: ITA pro italštinu, Eng pro angličtinu, DEU pro němčinu ...).<br>Výchozí jazyk je Eng a -jazyk je volitelný pro výchozí jazyk nastavený ./lib/lang.py.<br>Kódy ISO-639-1 2 jsou také podporovány.
 
 ### Příklad vlastního modelu nahrávání zip
