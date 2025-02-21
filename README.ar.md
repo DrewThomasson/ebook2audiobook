@@ -314,7 +314,7 @@ docker build --platform linux/amd64 -t athomasson2/ebook2audiobook .
 
 ## مواقع ملفات حاوية Docker
 
-جميع eBook2AudiObooks سيكون لها قاعدة dir من`/home/user/app/`على سبيل المثال:`tmp`=`/home/user/app/tmp``audiobooks`=`/home/user/app/audiobooks`
+جميع eBook2AudiObooks سيكون لها قاعدة dir من`/home/user/app/`على سبيل المثال:`tmp` = `/home/user/app/tmp``audiobooks`=`/home/user/app/audiobooks`
 
 ## دليل Docker Headless
 
@@ -440,7 +440,7 @@ docker run --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF
 ## القضايا الشائعة:
 
 -   وحدة المعالجة المركزية بطيئة (أفضل على CPU Server SMP) في حين أن GPU NVIDIA يمكن أن يكون لها تحويل في الوقت الفعلي تقريبًا.[مناقشة حول هذا](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)من أجل جيل متعدد اللغات أسرع ، أود أن أقترح بلدي الآخر[المشروع الذي يستخدم piper-tts](https://github.com/DrewThomasson/ebook2audiobookpiper-tts)بدلاً من
-    (لا يحتوي على صفر صوت استنساخ ، وهو أصوات Siri ذات جودة Siri ، ولكنها أسرع بكثير على وحدة المعالجة المركزية).
+    (لا يحتوي على صفر صوت استنساخ على الرغم من ذلك ، وهو أصوات ذات جودة Siri ، لكنها أسرع بكثير على وحدة المعالجة المركزية).
 -   "أواجه مشكلات تبعية" - ما عليك سوى استخدام Docker ، وذاته بالكامل وله وضع مقطوع الرأس ،
      يضيف`--help`المعلمة في نهاية الأمر Docker Run لمزيد من المعلومات.
 -   "أنا أتلقى مشكلة صوتية مقطوعة!" - يرجى تقديم مسألة من هذا ،

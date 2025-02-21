@@ -152,7 +152,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
         --voice [path_to_voice_file] --language [language_code]
     ```
 -   **[--Ebook]**: Cesta do souboru elektronické knihy.
--   **[--voice]**: Cesta souboru pro klonování hlasové (volitelné).
+-   **[--hlas]**: Cesta souboru pro klonování hlasové (volitelné).
 -   **[--jazyk]**: Jazykový kód v ISO-639-3 (tj.: ITA pro italštinu, Eng pro angličtinu, DEU pro němčinu ...).<br>Výchozí jazyk je Eng a -jazyk je volitelný pro výchozí jazyk nastavený ./lib/lang.py.<br>Kódy ISO-639-1 2 jsou také podporovány.
 
 ### Příklad vlastního modelu nahrávání zip
@@ -277,7 +277,7 @@ Linux/Mac:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file'
 ```
 
-POZNÁMKA: V režimu Gradio/GUI, abyste zrušili konverzi běhu, stačí kliknout na[X]z komponenty ebook nahrát komponentu.
+NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X]z komponenty ebook nahrát komponentu.
 
 ### Pomocí Docker
 
@@ -398,10 +398,10 @@ Nemáte hardware k jeho spuštění nebo si chcete pronajmout GPU?
 
 ## Běžné problémy Docker
 
--   Docker uvízne stahování jemně doladěných modelů.
-    (To se nestane pro každý počítač, ale zdá se, že někteří se do tohoto problému narazí)
-    Zdá se, že deaktivace lišty pro pokrok vyřeší problém,
-    Jak bylo uvedeno[Tady v #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)Příklad přidání této opravy do`docker run`příkaz
+-   Docker gets stuck downloading Fine-Tuned models.
+    (This does not happen for every computer but some appear to run into this issue)
+    Disabling the progress bar appears to fix the issue,
+    as discussed [Tady v #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)Příklad přidání této opravy do`docker run`příkaz
 
 ```Dockerfile
 docker run --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \

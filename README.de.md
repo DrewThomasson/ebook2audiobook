@@ -135,7 +135,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
         .\ebook2audiobook.cmd  # Run launch script or double click on it (Bypass windows alerts)
         ```
 2.  **Öffnen Sie die Web -App**: Klicken Sie auf die im Terminal bereitgestellte URL, um auf die Web -App zuzugreifen und eBooks zu konvertieren.
-3.  **Für öffentliche Link**:`python app.py --share`(Alle Betriebssysteme)`./ebook2audiobook.sh --share`(Linux/macOS)`ebook2audiobook.cmd --share`(Windows)
+3.  **Für öffentliche Link**:`python app.py --share`(Alle Betriebssysteme)`./ebook2audiobook.sh --share`(Linux/macOS)`ebook2audiobook.cmd --share` (Windows)
 
 > [!WICHTIG]**Wenn das Skript gestoppt und wieder ausgeführt wird, müssen Sie Ihre Gradio GUI -Schnittstelle aktualisieren<br>Um die Webseite wieder mit dem neuen Verbindungsbuchsen zu verbinden.**
 
@@ -394,7 +394,7 @@ Sie haben nicht die Hardware, um sie auszuführen, oder Sie möchten eine GPU mi
 
 #### Oder Sie können versuchen, das Google Colab kostenlos zu verwenden!
 
-(Seien Sie sich bewusst, dass es sich nach einigem Spiel mit dem Google Colab einteilen.)[Kostenloser Google Colab](#free-google-colab)
+(Seien Sie sich bewusst, dass es nach einigem Spiel mit dem Google Colab eintägt wird.)[Kostenloser Google Colab](#free-google-colab)
 
 ## Häufige Docker -Probleme
 
