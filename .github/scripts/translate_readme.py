@@ -5,9 +5,10 @@ from deep_translator import GoogleTranslator
 from markdown_it import MarkdownIt
 
 # Define languages and corresponding output file names
+RTL_LANGUAGES = ["ar"]  # Add Hebrew ("he"), Persian ("fa") if needed
 LANGUAGES = {
-    "ar": "README_ARA.md",
-    "zh-CN": "README_ZHO.md",
+    "ar": "README_ARA.md",  # Arabic (Right-to-Left)
+    "zh-CN": "README_ZHO.md",  # Simplified Chinese
     "cs": "README_CES.md",
     "hr": "README_HRV.md",
     "nl": "README_NLD.md",
@@ -37,8 +38,10 @@ os.makedirs(TRANSLATION_DIR, exist_ok=True)
 with open(README_PATH, "r", encoding="utf-8") as file:
     original_text = file.readlines()
 
-# Check if this is the first commit
-if os.system("git rev-parse --verify HEAD~1 > /dev/null 2>&1") != 0:
+# Detect if it's the first commit
+first_commit = os.system("git rev-parse --verify HEAD~1 > /dev/null 2>&1") != 0
+
+if first_commit:
     print("First commit detected. Translating full README...")
     changed_text = "".join(original_text)
 else:
@@ -50,10 +53,8 @@ else:
     ]
     
     if not changed_lines:
-        print("No changes detected, skipping translation.")
-        exit(0)
-
-    changed_text = "\n".join(changed_lines)
+        print("No changes detected in README.md.")
+        changed_text = None  # Avoid translating if no changes
 
 # Function to split text into chunks <= 5000 chars for Google Translate
 def split_text(text, max_chars=MAX_CHARS):
@@ -84,11 +85,21 @@ def extract_text_from_markdown(md_content):
 
     return "\n".join(extracted_text)
 
+# Function to format RTL languages correctly
+def apply_rtl_formatting(markdown_text):
+    """Wraps Arabic and other RTL text with a proper RTL markdown format."""
+    rtl_wrapper = '<div dir="rtl" align="right">\n{}\n</div>\n'
+    return rtl_wrapper.format(markdown_text)
+
 # Function to replace translated text back into Markdown
-def replace_text_in_markdown(original, translated):
-    """Replace only the changed lines while preserving Markdown structure."""
+def replace_text_in_markdown(original, translated, lang_code):
+    """Replace only the changed lines while preserving Markdown structure and applying RTL formatting."""
     original_lines = original.split("\n")
     translated_lines = translated.split("\n")
+
+    # Apply RTL formatting for Arabic
+    if lang_code in RTL_LANGUAGES:
+        translated_lines = [apply_rtl_formatting(line) for line in translated_lines]
 
     if len(original_lines) == len(translated_lines):
         return "\n".join(translated_lines)
@@ -103,17 +114,29 @@ def replace_text_in_markdown(original, translated):
     return "\n".join(result)
 
 # Extract text while keeping Markdown intact
-plain_text = extract_text_from_markdown(changed_text)
+plain_text = extract_text_from_markdown(changed_text) if changed_text else None
 
 # Translate and update each language file
 for lang_code, output_file in LANGUAGES.items():
     translator = GoogleTranslator(source="en", target=lang_code)
     
-    translated_chunks = [translator.translate(chunk) for chunk in split_text(plain_text)]
+    translated_file_path = os.path.join(TRANSLATION_DIR, output_file)
+
+    # Check if the language file exists (New Language Case)
+    if not os.path.exists(translated_file_path):
+        print(f"New language detected: {lang_code}. Translating full README...")
+        text_to_translate = "".join(original_text)  # Translate the full README
+    elif plain_text:  # If README.md was modified, translate only the changes
+        text_to_translate = plain_text
+    else:
+        print(f"Skipping {output_file} (no changes detected).")
+        continue
+
+    # Translate the content in chunks
+    translated_chunks = [translator.translate(chunk) for chunk in split_text(text_to_translate)]
     translated_text = " ".join(translated_chunks)
 
     # Read existing translated file or create a new one
-    translated_file_path = os.path.join(TRANSLATION_DIR, output_file)
     if os.path.exists(translated_file_path):
         with open(translated_file_path, "r", encoding="utf-8") as f:
             existing_content = f.read()
@@ -121,7 +144,7 @@ for lang_code, output_file in LANGUAGES.items():
         existing_content = "".join(original_text)
 
     # Replace translated text in the Markdown file while keeping structure
-    updated_content = replace_text_in_markdown(existing_content, translated_text)
+    updated_content = replace_text_in_markdown(existing_content, translated_text, lang_code)
 
     # Write updated translation
     with open(translated_file_path, "w", encoding="utf-8") as f:
