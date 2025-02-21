@@ -25,7 +25,7 @@ jobs:
       - name: Adding README - Chinese
         uses: dephraiim/translate-readme@main
         with:
-          LANG: cn
+          LANG: zh-CN
 
       - name: Adding README - Czech
         uses: dephraiim/translate-readme@main
