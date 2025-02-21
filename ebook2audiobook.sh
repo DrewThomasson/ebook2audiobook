@@ -67,10 +67,10 @@ elif [[ "$OSTYPE" = "linux"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
 	CONFIG_FILE="$HOME/.bashrc"
 fi
-CONDA_INSTALLER=/tmp/Miniforge3.sh
-CONDA_INSTALL_DIR=$HOME/Miniforge3
-CONDA_PATH=$CONDA_INSTALL_DIR/bin
-CONDA_ENV=$CONDA_INSTALL_DIR/etc/profile.d/conda.sh
+CONDA_INSTALLER="/tmp/Miniforge3.sh"
+CONDA_INSTALL_DIR="$HOME/Miniforge3"
+CONDA_PATH="$CONDA_INSTALL_DIR/bin"
+CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
 export PATH="$CONDA_PATH:$PATH"
 
 declare -a programs_missing
