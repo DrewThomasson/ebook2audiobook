@@ -2,7 +2,7 @@
 
 Convertitore CPU/GPU da ebook agli audiolibri con capitoli e metadati<br/>Utilizzando Caliber, FFMPEG, XTTSV2, Fairseq e altro. Supporta la clonazione vocale e +1110 lingue!
 
-> [!IMPORTANTE]**Questo strumento è destinato all'uso solo con e-book non acquisiti legalmente.**<br>Gli autori non sono responsabili per qualsiasi uso improprio di questo software o di conseguenze legali risultanti.<br>Utilizzare questo strumento in modo responsabile e in conformità con tutte le leggi applicabili.
+> [!IMPORTANT]**Questo strumento è destinato all'uso solo con e-book non acquisiti legalmente.**<br>Gli autori non sono responsabili per qualsiasi uso improprio di questo software o di conseguenze legali risultanti.<br>Utilizzare questo strumento in modo responsabile e in conformità con tutte le leggi applicabili.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
@@ -110,9 +110,9 @@ Grazie a Support EBook2Audiobook Developer!<br>[![Ko-Fi](https://img.shields.io/
 -   Virtualizzazione abilitata se in esecuzione su Windows (solo docker)
 -   CPU, GPU (consigliato), MPS (non ancora ottimizzato e può essere più lento della CPU) compatibile
 
-> [!IMPORTANTE]**Prima di pubblicare una ricerca di emissione di installazione o bug attentamente nella scheda Aperta e chiusa<br>Per essere sicuro che il tuo problema non esista già.**
+> [!IMPORTANT]**Prima di pubblicare una ricerca di emissione di installazione o bug attentamente nella scheda Aperta e chiusa<br>Per essere sicuro che il tuo problema non esista già.**
 
-> [!NOTA]**In mancanza di una struttura standard come quello che è un capitolo, un paragrafo, una prefazione ecc.<br>Dovresti prima rimuovere manualmente qualsiasi testo che non vuoi essere convertito in audio.**
+> [!NOTE]**In mancanza di una struttura standard come quello che è un capitolo, un paragrafo, una prefazione ecc.<br>Dovresti prima rimuovere manualmente qualsiasi testo che non vuoi essere convertito in audio.**
 
 ### Istruzioni di installazione
 
@@ -136,7 +136,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
 2.  **Apri l'app Web**: Fare clic sull'URL fornito nel terminale per accedere all'app Web e convertire gli eBook.
 3.  **Per collegamento pubblico**:`python app.py --share`(Tutto il sistema operativo)`./ebook2audiobook.sh --share`(Linux/macOS)`ebook2audiobook.cmd --share`(Windows)
 
-> [!IMPORTANTE]**Se lo script viene interrotto ed eseguito di nuovo, è necessario aggiornare l'interfaccia GUI di Gradio<br>Per consentire alla pagina Web di riconnettersi al nuovo socket di connessione.**
+> [!IMPORTANT]**Se lo script viene interrotto ed eseguito di nuovo, è necessario aggiornare l'interfaccia GUI di Gradio<br>Per consentire alla pagina Web di riconnettersi al nuovo socket di connessione.**
 
 ### Uso di base
 
