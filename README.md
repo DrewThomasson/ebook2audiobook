@@ -104,7 +104,7 @@ Thanks to support ebook2audiobook developers!<br>
 - **Spanish (spa)**
 - **Turkish (tur)**
 - **Vietnamese (vie)**
-- [** +1100 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- [**+1100 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
 ##  Hardware Requirements
@@ -119,28 +119,28 @@ to be sure your issue does not exist already.**
 
 
 >[!NOTE]
-** Lacking of any standards structure like what is a chapter, paragraph, preface etc.<br>
+**Lacking of any standards structure like what is a chapter, paragraph, preface etc.<br>
 you should first remove manually any text you don't want to be converted in audio.**
 
 
 ### Installation Instructions
-1. ** Clone repo **
+1. **Clone repo**
 ```bash
 git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ```
 
 ### Launching Gradio Web Interface
-1. ** Run ebook2audiobook **:
-   - ** Linux/MacOS **
+1. **Run ebook2audiobook**:
+   - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.sh  # Run Launch script
      ```
-   - ** Windows **
+   - **Windows**
      ```bash
      .\ebook2audiobook.cmd  # Run launch script or double click on it (Bypass windows alerts)
      ```
-2. ** Open the Web App **: Click the URL provided in the terminal to access the web app and convert eBooks.
-3. ** For Public Link **:
+2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
+3. **For Public Link**:
    `python app.py --share` (all OS)
    `./ebook2audiobook.sh --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
