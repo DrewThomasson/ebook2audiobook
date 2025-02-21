@@ -1,6 +1,6 @@
 # 📚 eBook2audiokönyv
 
-CPU/GPU Converter from eBooks to audiobooks with chapters and metadata<br/>Caliber, FFMPEG, XTTSV2, FairSeQ és még sok más felhasználásával. Támogatja a hangklónozást és a +1110 nyelveket!
+CPU/GPU konverter az e -könyvekről a hangoskönyvekre fejezetekkel és metaadatokkal<br/>Caliber, FFMPEG, XTTSV2, FairSeQ és még sok más felhasználásával. Támogatja a hangklónozást és a +1110 nyelveket!
 
 > [!FONTOS]**Ezt az eszközt nem DRM, jogilag megvásárolt e-könyvekkel való használatra szánták.**<br>A szerzők nem felelősek a szoftverrel való visszaélés vagy az ebből eredő jogi következményekért.<br>Használja ezt az eszközt felelősségteljesen és az összes alkalmazandó törvénynek megfelelően.
 
@@ -37,7 +37,7 @@ Köszönet az eBook2audiobook fejlesztők támogatásának!<br>[![Ko-Fi](https:/
 -   [Ingyenes Google Colab](#free-google-colab)
 -   [Előre elkészített audio-demók](#demos)
 -   [Támogatott nyelvek](#supported-languages)
--   [Requirements](#hardware-requirements)
+-   [Követelmény](#hardware-requirements)
 -   [Telepítési utasítások](#installation-instructions)
 -   [Használat](#launching-gradio-web-interface)
     -   [A Gradio webes felület elindítása](#launching-gradio-web-interface)
@@ -318,7 +318,7 @@ Az összes eBook2audiokönyvnek megvan az alapja`/home/user/app/`Például:`tmp`
 
 ## Docker fej nélküli útmutató
 
-Először a legújabb Docker húzáshoz
+Először a legújabb Docker -húzáshoz
 
 ```bash
 docker pull athomasson2/ebook2audiobook
@@ -446,7 +446,7 @@ látogatás[Ez az átölelő arc link](https://huggingface.co/drewThomasson/fine
 -   "Kapok egy csonkított audio problémát!" - Kérjük, tegye fel ezt a kérdést,
      Nem beszélünk minden nyelvet, és tanácsot kell adnunk a felhasználóktól, hogy finomítsák a mondat felosztási logikáját.😊
 
-## Mire szükségem van segítségre! 🙌
+## Mire van szükségem segítségre! 🙌
 
 ## [A dolgok teljes listája itt található](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
 
