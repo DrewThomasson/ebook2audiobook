@@ -16,7 +16,7 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 
-set "PROGRAMS_LIST=refreshenv calibre-normal-cjk ffmpeg nodejs espeak-ng curl"
+set "PROGRAMS_LIST=calibre-normal-cjk ffmpeg nodejs espeak-ng"
 
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
@@ -26,16 +26,14 @@ set "ESPEAK_DATA_PATH=%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espea
 set "SCOOP_HOME=%USERPROFILE%\scoop"
 set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
 set "SCOOP_APPS=%SCOOP_HOME%\apps"
-set "SCOOP_HOME=%USERPROFILE%\scoop"
-set "SCOOP_SHIMS=%SCOOP_HOME%\shims"
-set "SCOOP_APPS=%SCOOP_HOME%\apps"
 
 set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Windows-x86_64.exe"
 set "CONDA_INSTALL_DIR=%USERPROFILE%\Miniforge3"
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
 set "CONDA_ENV=%CONDA_INSTALL_DIR%\condabin\conda.bat"
+
 set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_INSTALL_DIR%\condabin;%CONDA_INSTALL_DIR%\Scripts;%CONDA_INSTALL_DIR%\Library\bin;%PATH%"
-setx PATH "%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_INSTALL_DIR%\condabin;%CONDA_INSTALL_DIR%\Scripts;%CONDA_INSTALL_DIR%\Library\bin;%PATH%"
+powershell -command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_INSTALL_DIR%\condabin;%CONDA_INSTALL_DIR%\Scripts;%CONDA_INSTALL_DIR%\Library\bin;', 'User')"
 
 set "SCOOP_CHECK=0"
 set "CONDA_CHECK=0"
@@ -130,7 +128,9 @@ exit /b
 :: Install Scoop if not already installed
 if not "%SCOOP_CHECK%"=="0" (
 	echo Installing Scoop...
-	call powershell "[environment]::SetEnvironmentVariable('SCOOP', '%SCOOP_HOME%', 'User'); Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression"
+    call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
+    call powershell -command "iwr -useb get.scoop.sh | iex"
+	
 	where /Q scoop
 	if !errorlevel! neq 0 (
 		echo Scoop installation failed.
@@ -158,7 +158,6 @@ if not "%PROGRAMS_CHECK%"=="0" (
 		set "prog=%%p"
 		if "%%p"=="nodejs" (
 			set "prog=node"
-			call refreshenv
 		)
 		if "%%p"=="calibre-normal-cjk" set "prog=calibre"
 		where /Q !prog!
@@ -174,7 +173,7 @@ if not "%PROGRAMS_CHECK%"=="0" (
 :: Install Conda if not already installed
 if not "%CONDA_CHECK%"=="0" (
 	echo Installing Miniforge...
-	call curl -fsSLo "%CONDA_INSTALLER%" "%CONDA_URL%"
+	call powershell -Command "Invoke-WebRequest -Uri %CONDA_URL% -OutFile "%CONDA_INSTALLER%"
 	call start /wait "" "%CONDA_INSTALLER%" /InstallationType=JustMe /RegisterPython=0 /S /D=%UserProfile%\Miniforge3
 	where /Q conda
 	if !errorlevel! neq 0 (
