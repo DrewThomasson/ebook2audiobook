@@ -70,7 +70,7 @@ jobs:
       - name: Adding README - Japanese
         uses: dephraiim/translate-readme@main
         with:
-          LANG: jp
+          LANG: ja
 
       - name: Adding README - Korean
         uses: dephraiim/translate-readme@main
