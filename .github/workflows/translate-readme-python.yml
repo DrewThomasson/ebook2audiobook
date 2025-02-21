@@ -22,7 +22,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install dependencies
-        run: pip install deep-translator
+        run: pip install deep-translator markdown-it-py
 
       - name: Run Python translation script
         run: python .github/scripts/translate_readme.py
