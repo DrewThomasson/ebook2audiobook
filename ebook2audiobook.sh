@@ -288,6 +288,10 @@ else
 			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 			python -m pip install --upgrade pip
 			TMPDIR=./tmp xargs -n 1 python -m pip install --upgrade --no-cache-dir --progress-bar=on < requirements.txt
+			# Prevent coqui-tts "dot" bug
+			coqui_path="$(pip show coqui-tts 2>/dev/null | grep "Location" | awk '{print $2}')"
+			if [ ! -z "$coqui_path" ]; then
+				cp -a ./patches/tokenizer.py $coqui_path/TTS/tts/layers/xtts/tokenizer.py
 			conda deactivate
 		fi
 		return 0
@@ -296,6 +300,8 @@ else
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
 		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+		conda deactivate
+		conda deactivate
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
 		pass=true
 		echo -e "\e[33mRunning in $SCRIPT_MODE mode\e[0m"

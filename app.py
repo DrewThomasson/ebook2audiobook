@@ -1,8 +1,12 @@
 import argparse
+import importlib.util
 import os
+import shutil
 import socket
 import subprocess
 import sys
+
+from pathlib import Path
 
 from lib.conf import *
 from lib.models import *
@@ -78,6 +82,10 @@ def check_and_install_requirements(file_path):
                         error = f'Failed to install {package}: {e}'
                         print(error)
                         return False
+            # Prevent coqui-tts "dot" bug
+            coqui_path = importlib.util.find_spec('TTS')
+            coqui_path = Path(coqui_path.origin).parent
+            shutil.copy(os.path.join('patches', 'tokenizer.py'), os.path.join(coqui_path,'tts', 'layers', 'xtts', 'tokenizer.py'))
             msg = '\nAll required packages are installed.'
             print(msg)
         return True
