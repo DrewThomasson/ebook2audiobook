@@ -292,6 +292,7 @@ else
 			coqui_path="$(pip show coqui-tts 2>/dev/null | grep "Location" | awk '{print $2}')"
 			if [ ! -z "$coqui_path" ]; then
 				cp -a ./patches/tokenizer.py $coqui_path/TTS/tts/layers/xtts/tokenizer.py
+			fi
 			conda deactivate
 		fi
 		return 0
