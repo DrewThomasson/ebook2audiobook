@@ -413,8 +413,8 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace punctuations causing hallucinations
-    pattern = f"[{''.join(map(re.escape, switch_punctuation_dict.keys()))}]"
-    text = re.sub(pattern, lambda match: switch_punctuation_dict[match.group()], text)
+    pattern = f"[{''.join(map(re.escape, switch_punctuations.keys()))}]"
+    text = re.sub(pattern, lambda match: switch_punctuations[match.group()], text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
     if lang in abbreviations_mapping:
@@ -710,7 +710,8 @@ def convert_chapters_to_audio(session):
     except Exception as e:
         DependencyError(e)
         return False
-        
+
+r'''
 def combine_audio_sentences(chapter_audio_file, start, end, session):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
@@ -737,9 +738,79 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
     except Exception as e:
         DependencyError(e)
         return False
+'''
+
+def combine_audio_sentences(chapter_audio_file, start, end, session):
+    try:
+        chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
+        tmp_file = os.path.join(session['process_dir'], "sentences.txt")
+
+        # Get all audio sentence files sorted by their numeric indices
+        sentence_files = [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')]
+        sentences_dir_ordered = sorted(sentence_files, key=lambda x: int(re.search(r'\d+', x).group()))
+
+        # Filter the files in the range [start, end]
+        selected_files = [
+            f for f in sentences_dir_ordered 
+            if start <= int(''.join(filter(str.isdigit, os.path.basename(f)))) <= end
+        ]
+
+        if not selected_files:
+            print("No audio files found in the specified range.")
+            return False
+
+        # Create a list file for FFmpeg
+        with open(tmp_file, "w") as f:
+            for file in selected_files:
+                if session['cancellation_requested']:
+                    print("Cancel requested")
+                    return False
+                f.write(f"file '{os.path.join(session['chapters_dir_sentences'], file)}'\n")
+
+        # Run FFmpeg to concatenate audio
+        ffmpeg_cmd = [
+            "ffmpeg",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", tmp_file,
+            "-c", "copy",  # Use copy to avoid re-encoding if possible
+            chapter_audio_file
+        ]
+        process = subprocess.Popen(
+            ffmpeg_cmd,
+            env={},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding='utf-8'
+        )        
+        while True:
+            output = process.stdout.readline()
+            if output:
+                print(output.strip())  # Print each line as it comes
+                sys.stdout.flush()  # Ensure immediate terminal output
+
+            if process.poll() is not None:
+                break  # Stop loop if the process has finished
+
+            if session['cancellation_requested']:
+                process.terminate()
+                print("FFmpeg process terminated due to cancellation request.")
+                return False
+
+        # Ensure any remaining output is printed
+        for line in process.stdout:
+            print(line.strip())
+            sys.stdout.flush()
+
+        os.remove(tmp_file)
+        print(f"********* Combined part audio file saved to {chapter_audio_file}")
+        return process.returncode == 0
+    except Exception as e:
+        print(f"Error: {e}")
+        return False
 
 def combine_audio_chapters(session):
-    def assemble_audio():
+    def assemble_segments():
         try:
             combined_audio = AudioSegment.empty()
             batch_size = get_batch_size(chapter_files, session)
@@ -901,7 +972,7 @@ def combine_audio_chapters(session):
         if len(chapter_files) > 0:
             combined_chapters_file = os.path.join(session['process_dir'], session['metadata']['title'] + '.' + default_audio_proc_format)
             metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-            if assemble_audio():
+            if assemble_segments():
                 if generate_ffmpeg_metadata():
                     final_name = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                     final_file = os.path.join(session['audiobooks_dir'], final_name)                       

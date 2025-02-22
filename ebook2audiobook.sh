@@ -142,6 +142,7 @@ else
 	function install_programs {
 		if [[ "$OSTYPE" = "darwin"* ]]; then
 			echo -e "\e[33mInstalling required programs...\e[0m"
+			SUDO=""
 			PACK_MGR="brew install"
 				if ! command -v brew &> /dev/null; then
 					echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
@@ -151,33 +152,34 @@ else
 				fi
 			mecab_extra="mecab-ipadic"
 		else
+			SUDO="sudo"
 			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
 			PACK_MGR_OPTIONS=""
 			if command -v emerge &> /dev/null; then
-				PACK_MGR="sudo emerge"
+				PACK_MGR="$SUDO emerge"
 				mecab_extra="app-text/mecab app-text/mecab-ipadic"
 			elif command -v dnf &> /dev/null; then
-				PACK_MGR="sudo dnf install"
+				PACK_MGR="$SUDO dnf install"
 				PACK_MGR_OPTIONS="-y"
 				mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v yum &> /dev/null; then
-				PACK_MGR="sudo yum install"
+				PACK_MGR="$SUDO yum install"
 				PACK_MGR_OPTIONS="-y"
 				mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v zypper &> /dev/null; then
-				PACK_MGR="sudo zypper install"
+				PACK_MGR="$SUDO zypper install"
 				PACK_MGR_OPTIONS="-y"
 				mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v pacman &> /dev/null; then
-				PACK_MGR="sudo pacman -Sy"
+				PACK_MGR="$SUDO pacman -Sy"
 				mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v apt-get &> /dev/null; then
-				sudo apt-get update
-				PACK_MGR="sudo apt-get install"
+				$SUDO apt-get update
+				PACK_MGR="$SUDO apt-get install"
 				PACK_MGR_OPTIONS="-y"
 				mecab_extra="libmecab-dev mecab-ipadic-utf8"
 			elif command -v apk &> /dev/null; then
-				PACK_MGR="sudo apk add"
+				PACK_MGR="$SUDO apk add"
 				mecab_extra="mecab-dev mecab-ipadic"
 			else
 				echo "Cannot recognize your applications package manager. Please install the required applications manually."
@@ -204,12 +206,12 @@ else
 				if [[ "$OSTYPE" = "darwin"* ]]; then
 					eval "$PACK_MGR --cask calibre"
 				else
-					$WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | sudo sh /dev/stdin
+					$WGET -nv -O- https://download.calibre-ebook.com/linux-installer.sh | $SUDO sh /dev/stdin
 				fi
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> Calibre is installed! <<===============\e[0m"
 				else
-					eval "sudo $PACK_MGR $program $PACK_MGR_OPTIONS"				
+					eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
 					if command -v $program >/dev/null 2>&1; then
 						echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 					else
@@ -218,9 +220,9 @@ else
 				fi
 			elif [ "$program" = "mecab" ];then
 				if command -v emerge &> /dev/null; then
-					eval "sudo $PACK_MGR $mecab_extra $PACK_MGR_OPTIONS"
+					eval "$SUDO $PACK_MGR $mecab_extra $PACK_MGR_OPTIONS"
 				else
-					eval "sudo $PACK_MGR $program $mecab_extra $PACK_MGR_OPTIONS"
+					eval "$SUDO $PACK_MGR $program $mecab_extra $PACK_MGR_OPTIONS"
 				fi
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
@@ -239,7 +241,7 @@ else
 					echo "$program installation failed."
 				fi
 			else
-				eval "sudo $PACK_MGR $program $PACK_MGR_OPTIONS"				
+				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 				else
@@ -253,8 +255,14 @@ else
 	}
 
 	function conda_check {
-		if ! command -v conda &> /dev/null; then
-			echo -e "\e[33mMiniforge3 is not installed!\e[0m"
+		if ! command -v conda &> /dev/null || [ ! -f "$CONDA_ENV" ]; then
+			if [ -d $HOME/miniconda3 ]; then
+				echo "Miniconda3 is deprecated, switching to Miniforge3..."
+				$HOME/miniconda3/bin/conda deactivate
+				rm -rf $HOME/miniconda3
+			else
+				echo -e "\e[33mMiniforge3 is not installed!\e[0m"
+			fi
 			echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
 			if [[ "$OSTYPE" = "darwin"* ]]; then
 				curl -fsSLo "$CONDA_INSTALLER" "$CONDA_URL"
@@ -263,10 +271,10 @@ else
 			fi
 			if [[ -f "$CONDA_INSTALLER" ]]; then
 				echo -e "\e[33mInstalling Miniforge3...\e[0m"
-				bash "$CONDA_INSTALLER" -b -p "$CONDA_INSTALL_DIR"
+				bash "$CONDA_INSTALLER" -b -u -p "$CONDA_INSTALL_DIR"
 				rm -f "$CONDA_INSTALLER"
 				if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
-					conda config --set auto_activate_base false
+					$CONDA_INSTALL_DIR/bin/conda config --set auto_activate_base false
 					source $CONDA_ENV
 					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 				else
@@ -288,6 +296,11 @@ else
 			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 			python -m pip install --upgrade pip
 			TMPDIR=./tmp xargs -n 1 python -m pip install --upgrade --no-cache-dir --progress-bar=on < requirements.txt
+			# Prevent coqui-tts "dot" bug
+			coqui_path="$(pip show coqui-tts 2>/dev/null | grep "Location" | awk '{print $2}')"
+			if [ ! -z "$coqui_path" ]; then
+				cp -a ./patches/tokenizer.py $coqui_path/TTS/tts/layers/xtts/tokenizer.py
+			fi
 			conda deactivate
 		fi
 		return 0
@@ -296,6 +309,8 @@ else
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
 		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
+		conda deactivate
+		conda deactivate
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
 		pass=true
 		echo -e "\e[33mRunning in $SCRIPT_MODE mode\e[0m"

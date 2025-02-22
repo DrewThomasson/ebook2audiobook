@@ -76,7 +76,7 @@ exit /b
 where /Q conda
 if %errorlevel% neq 0 (
 	call rmdir /s /q "%CONDA_INSTALL_DIR%" 2>nul
-	echo Miniconda is not installed. 
+	echo Miniforge3 is not installed. 
 	set "CONDA_CHECK=1"
 	goto programs_check
 )
@@ -186,6 +186,7 @@ if not "%CONDA_CHECK%"=="0" (
 	)
 	call conda config --set auto_activate_base false
 	call conda update conda -y
+	del "%CONDA_INSTALLER%"
 	set "CONDA_CHECK=0"
 	echo Conda installed successfully.
 )
@@ -224,12 +225,15 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 			echo Installing %%p...
 			call python -m pip install --upgrade --no-cache-dir --progress-bar=on "%%p"
 		)
+		:: Prevent coqui-tts "dot" bug
+		call copy .\patches\tokenizer.py .\python_env\Lib\site-packages\TTS\tts\layers\xtts\
 		echo All required packages are installed.
 	) else (
 		call %CONDA_ENV% activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
 	)
 	call python "%SCRIPT_DIR%\app.py" --script_mode %SCRIPT_MODE% %ARGS%
+	call conda deactivate
 )
 exit /b
 

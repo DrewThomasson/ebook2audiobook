@@ -1,8 +1,8 @@
 import os
 import platform
 
-version = '25.2.18'
-min_python_version = (3,12)
+version = '25.2.22'
+min_python_version = (3,11)
 max_python_version = (3,12)
 
 NATIVE = 'native'
