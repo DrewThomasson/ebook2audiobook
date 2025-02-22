@@ -24,7 +24,43 @@ language_tts = {
     "yourtts": {"eng": "en", "fra": "fr", "por": "pt"}
 }
 
-switch_punctuation_dict = {'«': '"', '»': '"'}
+switch_punctuations = {
+    # Quotes causing hallucinations in some TTS engines
+    '«': '"', '»': '"',  # French-style quotes
+    '“': '"', '”': '"',  # Curly double quotes
+    '‘': "'", '’': "'",  # Curly single quotes
+    '„': '"',            # German-style quote
+
+    # Dashes & Hyphens that might cause weird pauses
+    '–': '-',  # En dash (Unicode U+2013)
+    '—': '-',  # Em dash (Unicode U+2014)
+
+    # Ellipsis (causes extreme long pauses in TTS)
+    '…': '...',  # Unicode ellipsis (U+2026) replaced with standard triple dots
+
+    # Misinterpreted punctuation that can lead to hallucinations
+    '‽': '?',    # Interrobang (U+203D) -> Replace with "?"
+    '⁉': '?!',   # Exclamation question mark (U+2049) -> "?!"
+    '‼': '!!',   # Double exclamation (U+203C) -> "!!"
+    
+    # Odd Unicode punctuation that can create strange effects
+    '⁈': '?!',  # Question mark with an exclamation mark
+    '⁇': '??',  # Double question marks
+    '﹖': '?',   # Small form question mark
+    '﹗': '!',   # Small form exclamation mark
+    
+    # Misinterpreted pauses
+    '۔': '.',   # Arabic full stop
+    '॥': '.',   # Devanagari double danda (used in Hindi, Bengali) -> Period
+    '。': '.',  # Chinese full stop -> Period
+    '።': '.',  # Ethiopic full stop
+    '།': '.',  # Tibetan shad
+    
+    # Miscellaneous
+    '፡': ':',   # Ethiopic colon
+    '፤': ';',   # Ethiopic semicolon
+    '।': '.',   # Hindi period
+}
 
 punctuation_list = [
     # Common punctuation in Western languages
