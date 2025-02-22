@@ -94,13 +94,13 @@ Thanks to support ebook2audiobook developers!<br>
 | **Hungarian (hu)** | **Korean (ko)**     | **Vietnamese (vi)**| **Swedish (sv)**   |
 | **Persian (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesian (id)**|
 | **Slovak (sk)**    | **Croatian (hr)**   | **Tamil (ta)**     | **Danish (da)**    |
-- [**+1100 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- [**+1100 languages and dialects**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
 ##  Hardware Requirements
 - 4gb RAM minimum, 8GB recommended
 - Virtualization enabled if running on windows (Docker only)
-- CPU, GPU (Recommended), MPS (Not yet optimized and can be slower than CPU) compatible
+- CPU, GPU (Recommended), MPS (Not yt optimized and can be slower than CPU) compatible
 
 
 > [!IMPORTANT]
