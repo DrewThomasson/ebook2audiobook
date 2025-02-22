@@ -86,25 +86,14 @@ Thanks to support ebook2audiobook developers!<br>
 
 
 ## Supported Languages
-- **Arabic (ara)**
-- **Chinese (zho)**
-- **Czech (ces)**
-- **Croatian (hrv)**
-- **Dutch (nld)**
-- **English (eng)**
-- **French (fra)**
-- **German (deu)**
-- **Hindi (hin)**
-- **Hungarian (hun)**
-- **Italian (ita)**
-- **Japanese (jpn)**
-- **Korean (kor)**
-- **Polish (pol)**
-- **Portuguese (por)**
-- **Russian (rus)**
-- **Spanish (spa)**
-- **Turkish (tur)**
-- **Vietnamese (vie)**
+| **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
+|:------------------:|:------------------:|:------------------:|:------------------:|
+| **French (fr)**    | **German (de)**     | **Italian (it)**   | **Portuguese (pt)** |
+| **Polish (pl)**    | **Turkish (tr)**    | **Russian (ru)**   | **Dutch (nl)**     |
+| **Czech (cs)**     | **Japanese (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
+| **Hungarian (hu)** | **Korean (ko)**     | **Vietnamese (vi)**| **Swedish (sv)**   |
+| **Persian (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesian (id)**|
+| **Slovak (sk)**    | **Croatian (hr)**   | **Tamil (ta)**     | **Danish (da)**    |
 - [** +1100 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
