@@ -94,7 +94,7 @@ Thanks to support ebook2audiobook developers!<br>
 | **Hungarian (hu)** | **Korean (ko)**     | **Vietnamese (vi)**| **Swedish (sv)**   |
 | **Persian (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesian (id)**|
 | **Slovak (sk)**    | **Croatian (hr)**   | **Tamil (ta)**     | **Danish (da)**    |
-- [** +1100 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
+- [**+1100 languages via Fairseq**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 
 
 ##  Hardware Requirements
