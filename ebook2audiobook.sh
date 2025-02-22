@@ -46,7 +46,8 @@ FULL_DOCKER="full_docker"
 SCRIPT_MODE="$NATIVE"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-TMPDIR=./.cache
+export TMPDIR="/tmp/ebook2audiobook_cache"
+mkdir -p "$TMPDIR"
 
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rust")
