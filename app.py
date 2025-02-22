@@ -51,9 +51,15 @@ def check_and_install_requirements(file_path):
         print(error)
         return False
     try:
-        import regex as re
         from importlib.metadata import version, PackageNotFoundError
-        from tqdm import tqdm
+        try:
+            import regex as re
+            from tqdm import tqdm
+        except Exception as e:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'cache', 'purge'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'regex', 'tqdm'])
+            import regex as re 
+            from tqdm import tqdm
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
             packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip()]
@@ -71,7 +77,6 @@ def check_and_install_requirements(file_path):
             msg = '\nInstalling missing packages...\n'
             print(msg)
             os.environ['TMPDIR'] = tmp_dir
-            subprocess.check_call([sys.executable, '-m', 'pip', 'cache', 'purge'])
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
             with tqdm(total=len(packages), desc='Installation 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
                 for package in tqdm(missing_packages, desc="Installing", unit="pkg"):

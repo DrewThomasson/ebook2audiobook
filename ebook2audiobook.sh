@@ -255,8 +255,14 @@ else
 	}
 
 	function conda_check {
-		if ! command -v conda &> /dev/null; then
-			echo -e "\e[33mMiniforge3 is not installed!\e[0m"
+		if ! command -v conda &> /dev/null || [ ! -f "$CONDA_ENV" ]; then
+			if [ -d $HOME/miniconda3 ]; then
+				echo "Miniconda3 is deprecated, switching to Miniforge3..."
+				$HOME/miniconda3/bin/conda deactivate
+				rm -rf $HOME/miniconda3
+			else
+				echo -e "\e[33mMiniforge3 is not installed!\e[0m"
+			fi
 			echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
 			if [[ "$OSTYPE" = "darwin"* ]]; then
 				curl -fsSLo "$CONDA_INSTALLER" "$CONDA_URL"
@@ -265,10 +271,10 @@ else
 			fi
 			if [[ -f "$CONDA_INSTALLER" ]]; then
 				echo -e "\e[33mInstalling Miniforge3...\e[0m"
-				bash "$CONDA_INSTALLER" -b -p "$CONDA_INSTALL_DIR"
+				bash "$CONDA_INSTALLER" -b -u -p "$CONDA_INSTALL_DIR"
 				rm -f "$CONDA_INSTALLER"
 				if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
-					conda config --set auto_activate_base false
+					$CONDA_INSTALL_DIR/bin/conda config --set auto_activate_base false
 					source $CONDA_ENV
 					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 				else
