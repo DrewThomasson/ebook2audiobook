@@ -57,7 +57,7 @@ def check_and_install_requirements(file_path):
             from tqdm import tqdm
         except Exception as e:
             subprocess.check_call([sys.executable, '-m', 'pip', 'cache', 'purge'])
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', 'regex', 'tqdm'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'regex', 'tqdm'])
             import regex as re 
             from tqdm import tqdm
         with open(file_path, 'r') as f:
@@ -81,7 +81,7 @@ def check_and_install_requirements(file_path):
             with tqdm(total=len(packages), desc='Installation 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
                 for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
                     try:
-                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', package, '--no-cache-dir'])
+                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', package])
                         t.update(1)
                     except subprocess.CalledProcessError as e:
                         error = f'Failed to install {package}: {e}'

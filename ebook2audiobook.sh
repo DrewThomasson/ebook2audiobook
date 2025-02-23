@@ -46,9 +46,6 @@ FULL_DOCKER="full_docker"
 SCRIPT_MODE="$NATIVE"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-export TMPDIR="/tmp/ebook2audiobook_cache"
-mkdir -p "$TMPDIR"
-
 WGET=$(which wget 2>/dev/null)
 REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rust")
 PYTHON_ENV="python_env"
@@ -72,6 +69,7 @@ CONDA_INSTALLER="/tmp/Miniforge3.sh"
 CONDA_INSTALL_DIR="$HOME/Miniforge3"
 CONDA_PATH="$CONDA_INSTALL_DIR/bin"
 CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
+export TMPDIR="$SCRIPT_DIR/.cache"
 export PATH="$CONDA_PATH:$PATH"
 
 declare -a programs_missing
@@ -143,6 +141,9 @@ else
 	function install_programs {
 		if [[ "$OSTYPE" = "darwin"* ]]; then
 			echo -e "\e[33mInstalling required programs...\e[0m"
+			if [ ! -d $TMPDIR ]; then
+				mkdir -p $TMPDIR
+			fi
 			SUDO=""
 			PACK_MGR="brew install"
 				if ! command -v brew &> /dev/null; then
@@ -296,7 +297,7 @@ else
 			source $CONDA_ENV
 			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 			python -m pip install --upgrade pip
-			TMPDIR=./tmp xargs -n 1 python -m pip install --upgrade --no-cache-dir --progress-bar=on < requirements.txt
+			python -m pip install --upgrade --no-cache-dir --progress-bar=on < requirements.txt
 			# Prevent coqui-tts "dot" bug
 			coqui_path="$(pip show coqui-tts 2>/dev/null | grep "Location" | awk '{print $2}')"
 			if [ ! -z "$coqui_path" ]; then
