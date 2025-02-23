@@ -14,6 +14,7 @@ import gc
 import gradio as gr
 import hashlib
 import json
+import math
 import os
 import platform
 import psutil
@@ -743,56 +744,44 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
 def combine_audio_sentences(chapter_audio_file, start, end, session, batch_size=10):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
-        tmp_dir = os.path.join(session['chapters_dir_sentences'], "merged")
-        os.makedirs(tmp_dir, exist_ok=True)
-
+        merge_dir = os.path.join(session['chapters_dir_sentences'], "merged")
+        os.makedirs(merge_dir, exist_ok=True)
         # Get all audio sentence files sorted by their numeric indices
         sentence_files = [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')]
         sentences_dir_ordered = sorted(sentence_files, key=lambda x: int(re.search(r'\d+', x).group()))
-
         # Filter the files in the range [start, end] while keeping order
         selected_files = [
             os.path.join(session['chapters_dir_sentences'], f)
             for f in sentences_dir_ordered
             if start <= int(''.join(filter(str.isdigit, os.path.basename(f)))) <= end
         ]
-
         if not selected_files:
             print("No audio files found in the specified range.")
             return False
-
         # Step 1: Calculate merging levels while preserving order
         total_files = len(selected_files)
         merge_depth = 0
         hierarchy = []
-
         while total_files > 1:
             merge_depth += 1
             batches = math.ceil(total_files / batch_size)
             hierarchy.append((merge_depth, total_files, batches))
             total_files = batches  # Reduce total files for the next level
-
         print(f"********* Merging will happen in {merge_depth} hierarchical steps *********")
-
         # Function to merge files while maintaining order
         def merge_files(file_list, output_dir, prefix, level):
             merged_files = []
             total_batches = math.ceil(len(file_list) / batch_size)
-
             print(f"Level {level}: {len(file_list)} files → {total_batches} merged batches")
-
             for i in range(total_batches):
                 batch_files = file_list[i * batch_size: (i + 1) * batch_size]  # Maintain order in batches
                 if session['cancellation_requested']:
                     print("Cancel requested")
                     return []
-
                 batch_output = os.path.join(output_dir, f"{prefix}_batch_{level}_{i:04d}.flac")  # Zero-padding ensures order
                 first_file = True
-
                 for file in batch_files:
-                    audio_segment = AudioSegment.from_file(file, format=default_audio_proc_format)
-                    
+                    audio_segment = AudioSegment.from_file(file, format=default_audio_proc_format)                 
                     if first_file:
                         audio_segment.export(batch_output, format=default_audio_proc_format)
                         first_file = False
@@ -802,25 +791,20 @@ def combine_audio_sentences(chapter_audio_file, start, end, session, batch_size=
                         temp_audio.export(batch_output, format=default_audio_proc_format)
 
                 merged_files.append(batch_output)
-
             return merged_files
-
         # First-level batch merging
-        merged_files = merge_files(selected_files, tmp_dir, "level1", 1)
-
+        merged_files = merge_files(selected_files, merge_dir, "level1", 1)
         # Iterative merging while maintaining order
         level = 2
         while len(merged_files) > 1:
-            merged_files = merge_files(merged_files, tmp_dir, f"level{level}", level)
+            merged_files = merge_files(merged_files, merge_dir, f"level{level}", level)
             level += 1
-
         # Final output file renaming
         if merged_files:
             os.rename(merged_files[0], chapter_audio_file)
-
         print(f"********* Final combined audio file saved to {chapter_audio_file}")
+        shutil.rmtree(merge_dir, ignore_errors=True)
         return True
-
     except Exception as e:
         print(f"Error: {e}")
         return False
@@ -1113,7 +1097,7 @@ def delete_unused_tmp_dirs(web_dir, days, session):
                 dir_mtime = os.path.getmtime(full_dir_path)
                 dir_ctime = os.path.getctime(full_dir_path)
                 if dir_mtime < threshold_time and dir_ctime < threshold_time:
-                    shutil.rmtree(full_dir_path)
+                    shutil.rmtree(full_dir_path, ignore_errors=True)
                     print(f"Deleted unmatched or old directory: {full_dir_path}")
             except Exception as e:
                 print(f"Error deleting {full_dir_path}: {e}")
@@ -1322,23 +1306,23 @@ def convert_ebook(args):
                                             if is_gui_process:
                                                 if len(chapters_dirs) > 1:
                                                     if os.path.exists(session['chapters_dir']):
-                                                        shutil.rmtree(session['chapters_dir'])
+                                                        shutil.rmtree(session['chapters_dir'], ignore_errors=True)
                                                     if os.path.exists(session['epub_path']):
                                                         os.remove(session['epub_path'])
                                                     if os.path.exists(session['cover']):
                                                         os.remove(session['cover'])
                                                 else:
                                                     if os.path.exists(session['process_dir']):
-                                                        shutil.rmtree(session['process_dir'])
+                                                        shutil.rmtree(session['process_dir'], ignore_errors=True)
                                             else:
                                                 if os.path.exists(session['voice_dir']):
                                                     if not any(os.scandir(session['voice_dir'])):
-                                                        shutil.rmtree(session['voice_dir'])
+                                                        shutil.rmtree(session['voice_dir'], ignore_errors=True)
                                                 if os.path.exists(session['custom_model_dir']):
                                                     if not any(os.scandir(session['custom_model_dir'])):
-                                                        shutil.rmtree(session['custom_model_dir'])
+                                                        shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
                                                 if os.path.exists(session['session_dir']):
-                                                    shutil.rmtree(session['session_dir'])
+                                                    shutil.rmtree(session['session_dir'], ignore_errors=True)
                                             progress_status = f'Audiobook {os.path.basename(final_file)} created!'
                                             print(info_session)
                                             return progress_status, final_file 
