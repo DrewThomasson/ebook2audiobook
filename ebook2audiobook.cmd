@@ -31,13 +31,11 @@ set "CONDA_URL=https://github.com/conda-forge/miniforge/releases/latest/download
 set "CONDA_INSTALL_DIR=%USERPROFILE%\Miniforge3"
 set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
 set "CONDA_ENV=%CONDA_INSTALL_DIR%\condabin\conda.bat"
-set "CONDA_PATH=%SCOOP_HOME%\apps\miniforge3\current"
+set "CONDA_PATH=%CONDA_INSTALL_DIR%\condabin"
 
-set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current\bin"
+set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 
-::set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_INSTALL_DIR%\condabin;%CONDA_INSTALL_DIR%\Scripts;%CONDA_INSTALL_DIR%\Library\bin;%PATH%"
-set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%"
-call powershell -command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + '%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;', 'User')"
+set "PATH=%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;%PATH%" 2>&1 >nul
 
 set "SCOOP_CHECK=0"
 set "CONDA_CHECK=0"
@@ -170,6 +168,7 @@ if not "%PROGRAMS_CHECK%"=="0" (
 			goto failed
 		)
     )
+	call powershell -command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + '%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;', 'User')"
 	set "SCOOP_CHECK=0"
     set "PROGRAMS_CHECK=0"
     set "missing_prog_array="

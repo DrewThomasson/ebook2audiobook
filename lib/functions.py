@@ -698,7 +698,7 @@ def convert_chapters_to_audio(session):
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
                 msg = f"\nEnd of Part {chapter_num}"
                 print(msg)
-                if sentence_number >= resume_sentence or (not os.path.exists(chapter_audio_file) and sentence_number <= resume_sentence):
+                if sentence_number >= resume_sentence or (not os.path.exists(chapter_audio_file) and sentence_number < resume_sentence):
                     if combine_audio_sentences(chapter_audio_file, start, end, session):
                         msg = f'Combining part {chapter_num} to audio, sentence {start} to {end}'
                         print(msg)
@@ -740,43 +740,87 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         return False
 '''
 
-def combine_audio_sentences(chapter_audio_file, start, end, session):
+def combine_audio_sentences(chapter_audio_file, start, end, session, batch_size=10):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
-        tmp_file = chapter_audio_file + ".temp"
-        os.remove(chapter_audio_file)
+        tmp_dir = os.path.join(session['chapters_dir_sentences'], "merged")
+        os.makedirs(tmp_dir, exist_ok=True)
+
         # Get all audio sentence files sorted by their numeric indices
         sentence_files = [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')]
         sentences_dir_ordered = sorted(sentence_files, key=lambda x: int(re.search(r'\d+', x).group()))
-        # Filter files in range [start, end]
+
+        # Filter the files in the range [start, end] while keeping order
         selected_files = [
             os.path.join(session['chapters_dir_sentences'], f)
-            for f in sentences_dir_ordered 
+            for f in sentences_dir_ordered
             if start <= int(''.join(filter(str.isdigit, os.path.basename(f)))) <= end
         ]
+
         if not selected_files:
             print("No audio files found in the specified range.")
             return False
-        # Process files in chunks instead of in-memory accumulation
-        first_file = True
-        for file in selected_files:
-            if session['cancellation_requested']:
-                print("Cancel requested")
-                return False
-            audio_segment = AudioSegment.from_file(file, format=default_audio_proc_format)
-            if first_file:
-                # Save the first file directly
-                audio_segment.export(tmp_file, format=default_audio_proc_format)
-                first_file = False
-            else:
-                # Append new segment to existing file on disk
-                tmp_segments = AudioSegment.from_file(tmp_file, format=default_audio_proc_format)
-                tmp_segments += audio_segment  # Append new segment
-                tmp_segments.export(tmp_file, format=default_audio_proc_format)
-        # Rename the final output file
-        os.rename(tmp_file, chapter_audio_file)
-        print(f"********* Combined part audio file saved to {chapter_audio_file}")
+
+        # Step 1: Calculate merging levels while preserving order
+        total_files = len(selected_files)
+        merge_depth = 0
+        hierarchy = []
+
+        while total_files > 1:
+            merge_depth += 1
+            batches = math.ceil(total_files / batch_size)
+            hierarchy.append((merge_depth, total_files, batches))
+            total_files = batches  # Reduce total files for the next level
+
+        print(f"********* Merging will happen in {merge_depth} hierarchical steps *********")
+
+        # Function to merge files while maintaining order
+        def merge_files(file_list, output_dir, prefix, level):
+            merged_files = []
+            total_batches = math.ceil(len(file_list) / batch_size)
+
+            print(f"Level {level}: {len(file_list)} files → {total_batches} merged batches")
+
+            for i in range(total_batches):
+                batch_files = file_list[i * batch_size: (i + 1) * batch_size]  # Maintain order in batches
+                if session['cancellation_requested']:
+                    print("Cancel requested")
+                    return []
+
+                batch_output = os.path.join(output_dir, f"{prefix}_batch_{level}_{i:04d}.flac")  # Zero-padding ensures order
+                first_file = True
+
+                for file in batch_files:
+                    audio_segment = AudioSegment.from_file(file, format=default_audio_proc_format)
+                    
+                    if first_file:
+                        audio_segment.export(batch_output, format=default_audio_proc_format)
+                        first_file = False
+                    else:
+                        temp_audio = AudioSegment.from_file(batch_output, format=default_audio_proc_format)
+                        temp_audio += audio_segment
+                        temp_audio.export(batch_output, format=default_audio_proc_format)
+
+                merged_files.append(batch_output)
+
+            return merged_files
+
+        # First-level batch merging
+        merged_files = merge_files(selected_files, tmp_dir, "level1", 1)
+
+        # Iterative merging while maintaining order
+        level = 2
+        while len(merged_files) > 1:
+            merged_files = merge_files(merged_files, tmp_dir, f"level{level}", level)
+            level += 1
+
+        # Final output file renaming
+        if merged_files:
+            os.rename(merged_files[0], chapter_audio_file)
+
+        print(f"********* Final combined audio file saved to {chapter_audio_file}")
         return True
+
     except Exception as e:
         print(f"Error: {e}")
         return False
