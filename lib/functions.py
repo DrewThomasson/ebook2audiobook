@@ -698,7 +698,7 @@ def convert_chapters_to_audio(session):
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
                 msg = f"\nEnd of Part {chapter_num}"
                 print(msg)
-                if sentence_number >= resume_sentence:
+                if sentence_number >= resume_sentence or (not os.path.exists(chapter_audio_file) and sentence_number <= resume_sentence):
                     if combine_audio_sentences(chapter_audio_file, start, end, session):
                         msg = f'Combining part {chapter_num} to audio, sentence {start} to {end}'
                         print(msg)
@@ -743,73 +743,46 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
 def combine_audio_sentences(chapter_audio_file, start, end, session):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
-        tmp_file = os.path.join(session['process_dir'], "sentences.txt")
-
+        tmp_file = chapter_audio_file + ".temp"
+        os.remove(chapter_audio_file)
         # Get all audio sentence files sorted by their numeric indices
         sentence_files = [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')]
         sentences_dir_ordered = sorted(sentence_files, key=lambda x: int(re.search(r'\d+', x).group()))
-
-        # Filter the files in the range [start, end]
+        # Filter files in range [start, end]
         selected_files = [
-            f for f in sentences_dir_ordered 
+            os.path.join(session['chapters_dir_sentences'], f)
+            for f in sentences_dir_ordered 
             if start <= int(''.join(filter(str.isdigit, os.path.basename(f)))) <= end
         ]
-
         if not selected_files:
             print("No audio files found in the specified range.")
             return False
-
-        # Create a list file for FFmpeg
-        with open(tmp_file, "w") as f:
-            for file in selected_files:
-                if session['cancellation_requested']:
-                    print("Cancel requested")
-                    return False
-                f.write(f"file '{os.path.join(session['chapters_dir_sentences'], file)}'\n")
-
-        # Run FFmpeg to concatenate audio
-        ffmpeg_cmd = [
-            "ffmpeg",
-            "-f", "concat",
-            "-safe", "0",
-            "-i", tmp_file,
-            "-c", "copy",  # Use copy to avoid re-encoding if possible
-            chapter_audio_file
-        ]
-        process = subprocess.Popen(
-            ffmpeg_cmd,
-            env={},
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            encoding='utf-8'
-        )        
-        while True:
-            output = process.stdout.readline()
-            if output:
-                print(output.strip())  # Print each line as it comes
-                sys.stdout.flush()  # Ensure immediate terminal output
-
-            if process.poll() is not None:
-                break  # Stop loop if the process has finished
-
+        # Process files in chunks instead of in-memory accumulation
+        first_file = True
+        for file in selected_files:
             if session['cancellation_requested']:
-                process.terminate()
-                print("FFmpeg process terminated due to cancellation request.")
+                print("Cancel requested")
                 return False
-
-        # Ensure any remaining output is printed
-        for line in process.stdout:
-            print(line.strip())
-            sys.stdout.flush()
-
-        os.remove(tmp_file)
+            audio_segment = AudioSegment.from_file(file, format=default_audio_proc_format)
+            if first_file:
+                # Save the first file directly
+                audio_segment.export(tmp_file, format=default_audio_proc_format)
+                first_file = False
+            else:
+                # Append new segment to existing file on disk
+                tmp_segments = AudioSegment.from_file(tmp_file, format=default_audio_proc_format)
+                tmp_segments += audio_segment  # Append new segment
+                tmp_segments.export(tmp_file, format=default_audio_proc_format)
+        # Rename the final output file
+        os.rename(tmp_file, chapter_audio_file)
         print(f"********* Combined part audio file saved to {chapter_audio_file}")
-        return process.returncode == 0
+        return True
     except Exception as e:
         print(f"Error: {e}")
         return False
 
 def combine_audio_chapters(session):
+    r'''
     def assemble_segments():
         try:
             combined_audio = AudioSegment.empty()
@@ -833,6 +806,42 @@ def combine_audio_chapters(session):
             return True
         except Exception as e:
             DependencyError(e)
+            return False
+    r'''
+
+    def assemble_segments():
+        try:
+            tmp_file = combined_chapters_file + ".temp"
+            os.remove(combined_chapters_file)
+            batch_size = get_batch_size(chapter_files, session)
+            print(f'************ DYNAMIC BATCH SIZE SET TO {batch_size} ******************')
+            first_file = True  # To track if it's the first file we process
+            # Process part files in batches
+            for i in range(0, len(chapter_files), batch_size):
+                batch_files = chapter_files[i:i + batch_size]
+                # Process the batch files one by one, appending them progressively
+                for chapter_file in batch_files:
+                    if session['cancellation_requested']:
+                        print('Cancel requested')
+                        return False
+                    file_path = os.path.join(session['chapters_dir'], chapter_file)
+                    audio_segment = AudioSegment.from_file(file_path, format=default_audio_proc_format)
+                    if first_file:
+                        # Save the first file directly to disk
+                        audio_segment.export(tmp_file, format=default_audio_proc_format)
+                        first_file = False
+                    else:
+                        # Load existing temp file and append new segment
+                        tmp_segments = AudioSegment.from_file(tmp_file, format=default_audio_proc_format)
+                        tmp_segments += audio_segment  # Append new segment
+                        tmp_segments.export(tmp_file, format=default_audio_proc_format)
+            # Rename final processed file
+            os.rename(tmp_file, combined_chapters_file)
+            msg = f'********* Total combined audio saved to {combined_chapters_file}'
+            print(msg)
+            return True
+        except Exception as e:
+            print(f"Error: {e}")
             return False
 
     def generate_ffmpeg_metadata():
