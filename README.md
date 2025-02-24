@@ -151,8 +151,8 @@ to let the web page reconnect to the new connection socket.**
          --voice [path_to_voice_file] --language [language_code]
      ```
      
-  - **[--ebook]**: Path to your eBook file.
-  - **[--voice]**: Voice cloning file path (optional).
+  - **[--ebook]**: Path to your eBook file
+  - **[--voice]**: Voice cloning file path (optional)
   - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german...).<br>
     Default language is eng and --language is optional for default language set in ./lib/lang.py.<br>
     The ISO-639-1 2 letters codes are also supported.
