@@ -1,8 +1,8 @@
 # NOTE!!NOTE!!!NOTE!!NOTE!!!NOTE!!NOTE!!!NOTE!!NOTE!!!
 # THE WORD "CHAPTER" IN THE CODE DOES NOT MEAN
 # IT'S THE REAL CHAPTER OF THE EBOOK SINCE NO STANDARDS
-# ARE DEFINING A CHAPTER ON .EPUB FORMAT. THE WORD "PART"
-# IS USED TO PRINT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
+# ARE DEFINING A CHAPTER ON .EPUB FORMAT. THE WORD "BLOCK"
+# IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse
@@ -650,38 +650,59 @@ def convert_chapters_to_audio(session):
             return False
         resume_chapter = 0
         resume_sentence = 0
-        # Check existing files to resume the process if it was interrupted
-        existing_chapters = sorted([f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')])
-        existing_sentences = sorted([f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')])
 
+        existing_chapters = sorted(
+            [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')],
+            key=lambda x: int(re.search(r'\d+', x).group())
+        )
         if existing_chapters:
-            count_chapter_files = len(existing_chapters)
-            resume_chapter = count_chapter_files - 1 if count_chapter_files > 0 else 0
-            print(f'Resuming from part {count_chapter_files}')
+            resume_chapter = max(int(re.search(r'\d+', f).group()) for f in existing_chapters) 
+            msg = f'Resuming from block {resume_chapter}'
+            print(msg)
+            existing_chapter_numbers = {int(re.search(r'\d+', f).group()) for f in existing_chapters}
+            missing_chapters = [
+                i for i in range(1, resume_chapter) if i not in existing_chapter_numbers
+            ]
+            if resume_chapter not in missing_chapters:
+                missing_chapters.append(resume_chapter)
+
+        existing_sentences = sorted(
+            [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')],
+            key=lambda x: int(re.search(r'\d+', x).group())
+        )
         if existing_sentences:
-            resume_sentence = len(existing_sentences)
-            print(f'Resuming from sentence {resume_sentence}')
+            resume_sentence = max(int(re.search(r'\d+', f).group()) for f in existing_sentences)
+            msg = f"Resuming from sentence {resume_sentence}"
+            print(msg)
+            existing_sentence_numbers = {int(re.search(r'\d+', f).group()) for f in existing_sentences}
+            missing_sentences = [
+                i for i in range(1, resume_sentence) if i not in existing_sentence_numbers
+            ]
+            if resume_sentence not in missing_sentences:
+                missing_sentences.append(resume_sentence)
 
         total_chapters = len(session['chapters'])
         total_sentences = sum(len(array) for array in session['chapters'])
         sentence_number = 0
-
         with tqdm(total=total_sentences, desc='convertsion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
-            msg = f'A total of {total_chapters} parts and {total_sentences} sentences...'
-            for x in range(resume_chapter, total_chapters):
+            msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
+            for x in range(0, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
                 sentences = session['chapters'][x]
                 sentences_count = len(sentences)
                 start = sentence_number
-                msg = f'Part {chapter_num} containing {sentences_count} sentences...'
+                msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
                 for i, sentence in enumerate(sentences):
                     if session['cancellation_requested']:
                         msg = 'Cancel requested'
                         print(msg)
                         return False
-                    if sentence_number >= resume_sentence:
+                    if sentence_number in missing_sentences or sentence_number > resume_sentence:
+                        if sentence_number <= resume_sentence:
+                            msg = f'**Recovering missing file sentence {sentence_number}'
+                            print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')                       
                         tts_manager.params['sentence'] = sentence
                         if tts_manager.convert_sentence_to_audio():                           
@@ -698,11 +719,14 @@ def convert_chapters_to_audio(session):
                 if progress_bar is not None:
                     progress_bar(sentence_number / total_sentences)
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
-                msg = f"\nEnd of Part {chapter_num}"
+                msg = f"End of Block {chapter_num}"
                 print(msg)
-                if sentence_number >= resume_sentence or (not os.path.exists(chapter_audio_file) and sentence_number < resume_sentence):
+                if chapter_num in missing_chapters or sentence_number > resume_sentence:
+                    if chapter_num <= resume_chapter:
+                        msg = f'**Recovering missing file block {chapter_num}'
+                        print(msg)
                     if combine_audio_sentences(chapter_audio_file, start, end, session):
-                        msg = f'Combining part {chapter_num} to audio, sentence {start} to {end}'
+                        msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
                         print(msg)
                     else:
                         msg = 'combine_audio_sentences() failed!'
@@ -713,173 +737,98 @@ def convert_chapters_to_audio(session):
         DependencyError(e)
         return False
 
-r'''
 def combine_audio_sentences(chapter_audio_file, start, end, session):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
-        combined_audio = AudioSegment.empty()  
-        # Get all audio sentence files sorted by their numeric indices
+        file_list = os.path.join(session['chapters_dir_sentences'], 'sentences.txt')
         sentence_files = [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')]
         sentences_dir_ordered = sorted(sentence_files, key=lambda x: int(re.search(r'\d+', x).group()))
-        # Filter the files in the range [start, end]
-        selected_files = [
-            f for f in sentences_dir_ordered 
-            if start <= int(''.join(filter(str.isdigit, os.path.basename(f)))) <= end
-        ]
-        for f in selected_files:
-            if session['cancellation_requested']:
-                msg = 'Cancel requested'
-                print(msg)
-                return False
-            audio_segment = AudioSegment.from_file(os.path.join(session['chapters_dir_sentences'], f), format=default_audio_proc_format)
-            combined_audio += audio_segment
-        combined_audio.export(chapter_audio_file, format=default_audio_proc_format)
-        msg = f'********* Combined part audio file saved to {chapter_audio_file}'
-        print(msg)
-        return True
-    except Exception as e:
-        DependencyError(e)
-        return False
-'''
-
-def combine_audio_sentences(chapter_audio_file, start, end, session, batch_size=10):
-    def merge_files(file_list, output_dir, prefix, level):
-        merged_files = []
-        total_batches = math.ceil(len(file_list) / batch_size)
-        print(f"Level {level}: {len(file_list)} files → {total_batches} merged batches")
-        for i in range(total_batches):
-            batch_files = file_list[i * batch_size: (i + 1) * batch_size]  # Maintain order in batches
-            if session['cancellation_requested']:
-                print("Cancel requested")
-                return []
-            batch_output = os.path.join(output_dir, f"{prefix}_batch_{level}_{i:04d}.flac")  # Zero-padding ensures order
-            first_file = True
-            for file in batch_files:
-                audio_segment = AudioSegment.from_file(file, format=default_audio_proc_format)                 
-                if first_file:
-                    audio_segment.export(batch_output, format=default_audio_proc_format)
-                    first_file = False
-                else:
-                    temp_audio = AudioSegment.from_file(batch_output, format=default_audio_proc_format)
-                    temp_audio += audio_segment
-                    temp_audio.export(batch_output, format=default_audio_proc_format)
-
-            merged_files.append(batch_output)
-        return merged_files
-    try:
-        chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
-        os.remove(chapter_audio_file)
-        merge_dir = os.path.join(session['chapters_dir_sentences'], "merged")
-        os.makedirs(merge_dir, exist_ok=True)
-        # Get all audio sentence files sorted by their numeric indices
-        sentence_files = [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')]
-        sentences_dir_ordered = sorted(sentence_files, key=lambda x: int(re.search(r'\d+', x).group()))
-        # Filter the files in the range [start, end] while keeping order
         selected_files = [
             os.path.join(session['chapters_dir_sentences'], f)
             for f in sentences_dir_ordered
             if start <= int(''.join(filter(str.isdigit, os.path.basename(f)))) <= end
         ]
         if not selected_files:
-            print("No audio files found in the specified range.")
+            error = 'No audio files found in the specified range.'
+            print(error)
             return False
-        # Step 1: Calculate merging levels while preserving order
-        total_files = len(selected_files)
-        merge_depth = 0
-        hierarchy = []
-        while total_files > 1:
-            merge_depth += 1
-            batches = math.ceil(total_files / batch_size)
-            hierarchy.append((merge_depth, total_files, batches))
-            total_files = batches  # Reduce total files for the next level
-        print(f"********* Merging will happen in {merge_depth} hierarchical steps *********")
-        # First-level batch merging
-        merged_files = merge_files(selected_files, merge_dir, "level1", 1)
-        # Iterative merging while maintaining order
-        level = 2
-        while len(merged_files) > 1:
-            merged_files = merge_files(merged_files, merge_dir, f"level{level}", level)
-            level += 1
-        # Final output file renaming
-        if merged_files:
-            os.rename(merged_files[0], chapter_audio_file)
-        print(f"********* Final combined audio file saved to {chapter_audio_file}")
-        shutil.rmtree(merge_dir, ignore_errors=True)
-        return True
+        with open(file_list, 'w') as f:
+            for file in selected_files:
+                file = file.replace("\\", "/")
+                f.write(f'file {file}\n')
+        ffmpeg_cmd = [
+            'ffmpeg', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
+            '-c:a', default_audio_proc_format, '-map_metadata', '-1', chapter_audio_file
+        ]
+        try:
+            process = subprocess.Popen(
+                ffmpeg_cmd,
+                env={},
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding='utf-8'
+            )
+            for line in process.stdout:
+                print(line, end='')  # Print each line of stdout
+            process.wait()
+            if process.returncode == 0:
+                os.remove(file_list)
+                msg = f'********* Combined block audio file saved to {chapter_audio_file}'
+                print(msg)
+                return True
+            else:
+                error = process.returncode
+                print(error, ffmpeg_cmd)
+                return False
+        except subprocess.CalledProcessError as e:
+            DependencyError(e)
+            return False
     except Exception as e:
-        print(f"Error: {e}")
+        DependencyError(e)
         return False
 
 def combine_audio_chapters(session):
-    r'''
     def assemble_segments():
         try:
-            combined_audio = AudioSegment.empty()
-            batch_size = get_batch_size(chapter_files, session)
-            print(f'************ DYNAMIC BATCH SIZE SET TO {batch_size} ******************')
-            # Process the part files in batches
-            for i in range(0, len(chapter_files), batch_size):
-                batch_files = chapter_files[i:i + batch_size]
-                batch_audio = AudioSegment.empty()  # Initialize an empty AudioSegment for the batch
-                # Sequentially append each file in the current batch to the batch_audio
-                for chapter_file in batch_files:
-                    if session['cancellation_requested']:
-                        print('Cancel requested')
-                        return False
-                    audio_segment = AudioSegment.from_file(os.path.join(session['chapters_dir'], chapter_file), format=default_audio_proc_format)
-                    batch_audio += audio_segment
-                combined_audio += batch_audio
-            combined_audio.export(combined_chapters_file, format=default_audio_proc_format)
-            msg = f'********* total audio parts saved to {combined_chapters_file}'
-            print(msg)
-            return True
+            file_list = os.path.join(session['chapters_dir'], 'chapters.txt')
+            chapter_files_ordered = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
+            if not chapter_files_ordered:
+                error = 'No block files found.'
+                print(error)
+                return False
+            with open(file_list, "w") as f:
+                for file in chapter_files_ordered:
+                    file = file.replace("\\", "/")
+                    f.write(f"file '{file}'\n")
+            ffmpeg_cmd = [
+                'ffmpeg', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
+                '-c:a', default_audio_proc_format, '-map_metadata', '-1', combined_chapters_file
+            ]
+            try:
+                process = subprocess.Popen(
+                    ffmpeg_cmd,
+                    env={},
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    encoding='utf-8'
+                )
+                for line in process.stdout:
+                    print(line, end='')  # Print each line of stdout
+                process.wait()
+                if process.returncode == 0:
+                    os.remove(file_list)
+                    msg = f'********* total audio blocks saved to {combined_chapters_file}'
+                    print(msg)
+                    return True
+                else:
+                    error = process.returncode
+                    print(error, ffmpeg_cmd)
+                    return False
+            except subprocess.CalledProcessError as e:
+                DependencyError(e)
+                return False
         except Exception as e:
             DependencyError(e)
-            return False
-    r'''
-    
-    def merge_files(file_list, output_dir, prefix, level):
-        merged_files = []
-        total_batches = math.ceil(len(file_list) / batch_size)
-        print(f"Level {level}: {len(file_list)} files → {total_batches} merged batches")
-        for i in range(total_batches):
-            batch_files = file_list[i * batch_size: (i + 1) * batch_size]  # Maintain order in batches
-            if session['cancellation_requested']:
-                print("Cancel requested")
-                return []
-            batch_output = os.path.join(output_dir, f"{prefix}_batch_{level}_{i:04d}.flac")  # Zero-padding ensures order
-            first_file = True
-            for file in batch_files:
-                audio_segment = AudioSegment.from_file(file, format=default_audio_proc_format)
-                if first_file:
-                    audio_segment.export(batch_output, format=default_audio_proc_format)
-                    first_file = False
-                else:
-                    temp_audio = AudioSegment.from_file(batch_output, format=default_audio_proc_format)
-                    temp_audio += audio_segment
-                    temp_audio.export(batch_output, format=default_audio_proc_format)
-            merged_files.append(batch_output)
-        return merged_files
-
-    def assemble_segments():
-        try:
-            merge_dir = os.path.join(session['chapters_dir'], "merged")
-            os.makedirs(merge_dir, exist_ok=True)
-            batch_size = get_batch_size(chapter_files, session)
-            print(f'************ DYNAMIC BATCH SIZE SET TO {batch_size} ******************')
-            # First-level batch merging
-            merged_files = merge_files(chapter_files, merge_dir, "level1", 1)
-            # Iterative merging until one final file remains
-            level = 2
-            while len(merged_files) > 1:
-                merged_files = merge_files(merged_files, merge_dir, f"level{level}", level)
-                level += 1
-            if merged_files:
-                os.rename(merged_files[0], combined_chapters_file)
-            print(f"********* Total combined audio parts saved to {combined_chapters_file}")
-            return True
-        except Exception as e:
-            print(f"Error: {e}")
             return False
 
     def generate_ffmpeg_metadata():
@@ -1026,7 +975,7 @@ def combine_audio_chapters(session):
                     if export_audio():
                         return final_file
         else:
-            error = 'No part files exists!'
+            error = 'No block files exists!'
             print(error)
         return None
     except Exception as e:
@@ -1438,7 +1387,7 @@ def web_interface(args):
     fine_tuned_options = []
     audiobook_options = []
     
-    src_label_file = f'Select a File {ebook_formats}'
+    src_label_file = 'Select a File'
     src_label_dir = 'Select a Directory'
     
     visible_gr_tab_preferences = interface_component_options['gr_tab_preferences']
