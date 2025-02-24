@@ -698,8 +698,8 @@ def convert_chapters_to_audio(session):
                         msg = 'Cancel requested'
                         print(msg)
                         return False
-                    if sentence_number in missing_sentences or sentence_number > resume_sentence:
-                        if sentence_number <= resume_sentence:
+                    if sentence_number in missing_sentences or sentence_number > resume_sentence or sentence_number == 0:
+                        if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')                       
