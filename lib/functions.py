@@ -649,10 +649,9 @@ def convert_chapters_to_audio(session):
         if tts_manager.params['tts'] is None:
             return False
         resume_chapter = 0
-        resume_sentence = 0
-
         missing_chapters = []
-
+        resume_sentence = 0
+        missing_sentences = []
         existing_chapters = sorted(
             [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')],
             key=lambda x: int(re.search(r'\d+', x).group())
@@ -667,9 +666,6 @@ def convert_chapters_to_audio(session):
             ]
             if resume_chapter not in missing_chapters:
                 missing_chapters.append(resume_chapter)
-
-        missing_sentences = []
-
         existing_sentences = sorted(
             [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')],
             key=lambda x: int(re.search(r'\d+', x).group())
@@ -684,7 +680,6 @@ def convert_chapters_to_audio(session):
             ]
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
-
         total_chapters = len(session['chapters'])
         total_sentences = sum(len(array) for array in session['chapters'])
         sentence_number = 0
@@ -761,7 +756,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 file = file.replace("\\", "/")
                 f.write(f'file {file}\n')
         ffmpeg_cmd = [
-            'ffmpeg', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
+            shutil.which('ffmpeg'), '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', chapter_audio_file
         ]
         try:
@@ -805,7 +800,7 @@ def combine_audio_chapters(session):
                     file = file.replace("\\", "/")
                     f.write(f"file '{file}'\n")
             ffmpeg_cmd = [
-                'ffmpeg', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
+                shutil.which('ffmpeg'), '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
                 '-c:a', default_audio_proc_format, '-map_metadata', '-1', combined_chapters_file
             ]
             try:
