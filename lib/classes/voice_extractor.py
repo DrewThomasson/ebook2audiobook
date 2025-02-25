@@ -1,5 +1,7 @@
 import os
+import numpy as np
 import regex as re
+import scipy.fftpack
 import subprocess
 import shutil
 import torch
@@ -129,7 +131,7 @@ class VoiceExtractor:
             raise ValueError(error)
         return False, error
     r"""      
-    def _remove_silences(self):
+    def _trim_and_clean(self):
         try:
             audio = AudioSegment.from_file(self.voice_track)
             trimmed_audio = AudioSegment.silent(duration=0)
@@ -145,11 +147,11 @@ class VoiceExtractor:
             return False, error
     """
 
-    def _remove_silences(self):
+    def _trim_and_clean(self):
         try:
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
-            min_required_duration = 9000  # 9 seconds
+            min_required_duration = 15000  # milliseconds
 
             # If audio is already shorter than 9 seconds, keep it as is.
             if total_duration <= min_required_duration:
@@ -178,7 +180,7 @@ class VoiceExtractor:
 
             # If no significant speech was detected, return an error
             if not amplitude_variations:
-                raise ValueError("_remove_silences(): No speech detected!")
+                raise ValueError("_trim_and_clean(): No speech detected!")
 
             # Normalize values for fair weighting
             amplitude_variations = np.array(amplitude_variations)
@@ -203,7 +205,7 @@ class VoiceExtractor:
             best_end = min(best_start + min_required_duration, total_duration)  # End time in ms
 
             # Step 3: Ensure Trim Happens at Silence Boundaries
-            silence_threshold = -60  # dBFS threshold for silence
+            silence_threshold = -50  # dBFS threshold for silence
             start_adjusted = best_start
             end_adjusted = best_end
 
@@ -229,7 +231,7 @@ class VoiceExtractor:
             return True, msg
 
         except Exception as e:
-            error = f'_remove_silences() error: {e}'
+            error = f'_trim_and_clean() error: {e}'
             raise ValueError(error)
 
     def _normalize_audio(self):
@@ -312,7 +314,7 @@ class VoiceExtractor:
                         else:
                             self.voice_track = self.wav_file
                         if success:
-                            success, msg = self._remove_silences()
+                            success, msg = self._trim_and_clean()
                             print(msg)
                             if success:
                                 success, msg = self._normalize_audio()
