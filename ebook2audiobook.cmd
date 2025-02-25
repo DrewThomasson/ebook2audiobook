@@ -16,6 +16,8 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 
+set /p VERSION=<VERSION.txt
+
 set "PROGRAMS_LIST=calibre-normal-cjk ffmpeg nodejs espeak-ng"
 
 set "TMP=%SCRIPT_DIR%\tmp"
@@ -53,12 +55,10 @@ cd /d "%SCRIPT_DIR%"
 
 :: Check if running inside Docker
 if defined CONTAINER (
-	echo Running in %FULL_DOCKER% mode
 	set "SCRIPT_MODE=%FULL_DOCKER%"
 	goto main
 )
 
-echo Running in %SCRIPT_MODE% mode
 goto scoop_check
 
 :scoop_check
@@ -211,6 +211,7 @@ goto install_components
 exit /b
 
 :main
+echo v%VERSION% %SCRIPT_MODE% mode
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (

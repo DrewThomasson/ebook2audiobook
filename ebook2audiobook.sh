@@ -8,6 +8,7 @@ fi
 unset SWITCHED_TO_ZSH
 
 PYTHON_VERSION="3.12"
+VERSION="$(cat VERSION.txt)"
 
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -15,8 +16,8 @@ export TTS_CACHE="./models"
 
 ARGS=("$@")
 
-# Declare an associative array
 declare -A arguments
+declare -A programs_missing
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -71,8 +72,6 @@ CONDA_PATH="$CONDA_INSTALL_DIR/bin"
 CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
 export TMPDIR="$SCRIPT_DIR/.cache"
 export PATH="$CONDA_PATH:$PATH"
-
-declare -a programs_missing
 
 # Check if the current script is run inside a docker container
 if [[ -n "$container" || -f /.dockerenv ]]; then
@@ -308,14 +307,13 @@ else
 		return 0
 	}
 
+	echo -e "\e[33m v${VERSION} ${SCRIPT_MODE} mode \e[0m"
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
-		echo -e "\e[33mRunning in $FULL_DOCKER mode\e[0m"
 		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 		conda deactivate
 		conda deactivate
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
 		pass=true
-		echo -e "\e[33mRunning in $SCRIPT_MODE mode\e[0m"
 		if [ "$SCRIPT_MODE" = "$NATIVE" ]; then		   
 			if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
 				if ! install_programs; then
