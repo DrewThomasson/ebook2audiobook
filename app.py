@@ -259,15 +259,15 @@ Linux/Mac:
                     if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                         args['ebook_list'].append(full_path)
-                progress_status, audiobook_file = convert_ebook_batch(args)
-                if audiobook_file is None:
+                progress_status, passed = convert_ebook_batch(args)
+                if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
                     sys.exit(1)
             elif args['ebook']:
                 args['ebook'] = os.path.abspath(args['ebook'])
-                progress_status, audiobook_file = convert_ebook(args)
-                if audiobook_file is None:
+                progress_status, passed = convert_ebook(args)
+                if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
                     sys.exit(1)

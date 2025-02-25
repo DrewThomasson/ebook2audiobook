@@ -1,7 +1,7 @@
 import os
 import platform
 
-version = '25.2.22'
+version = '25.2.25'
 min_python_version = (3,11)
 max_python_version = (3,12)
 
