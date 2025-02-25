@@ -26,7 +26,7 @@ jobs:
           sudo apt-get update &&
           sudo apt-get install -y wget git calibre ffmpeg nodejs espeak espeak-ng rustc cargo libmecab-dev mecab mecab-ipadic-utf8 curl &&
           sudo apt-get clean &&
-          sudo rm -rf /var/lib/apt/lists/*
+          sudo which(rm) -rf /var/lib/apt/lists/*
       - name: Install the python requirements
         run: |
           python -m pip install --upgrade pip
@@ -65,10 +65,10 @@ jobs:
         run: python app.py --headless --ebooks_dir "workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Create the custom_xtts_test.zip for headless custom xtts model single test python app.py
-        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm ref.wav
+        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && which(rm) -f ref.wav
         
       - name: Wipe models/tts folder
-        run: rm -rf models/tts
+        run: which(rm) -rf models/tts/*
 
       - name: English xtts headless custom xtts model single test python app.py
         run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
@@ -77,7 +77,7 @@ jobs:
         run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
      
       - name: Delete custom_xtts_test.zip
-        run: rm custom_xtts_test.zip
+        run: which(rm) -f custom_xtts_test.zip
 
       - name: English xtts headless fine-tuned xtts model single test python app.py
         run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
@@ -86,7 +86,7 @@ jobs:
         run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --fine_tuned AiExplained
 
       - name: Wipe models/tts folder
-        run: rm -rf models/tts
+        run: which(rm) -rf models/tts/*
 
       - name: English Fairseq headless single test python app.py
         run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq
@@ -101,7 +101,7 @@ jobs:
         run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
-        run: rm -rf models/tts
+        run: which(rm) -rf models/tts/*
 
       - name: Unusual Fairseq headless single test python app.py
         run: python app.py --headless --language urd-script_devanagari --ebook "workflow-testing/test1.txt" --tts_engine fairseq
@@ -116,7 +116,7 @@ jobs:
         run: python app.py --headless --language urd-script_devanagari --ebooks_dir "workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
-        run: rm -rf models/tts
+        run: which(rm) -rf models/tts/*
 
       - name: English Bark headless single test python app.py
         run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine bark
@@ -131,7 +131,7 @@ jobs:
         run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
-        run: rm -rf models/tts
+        run: which(rm) -rf models/tts/*
 
       - name: English Vits headless single test python app.py
         run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine vits
@@ -146,7 +146,7 @@ jobs:
         run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
-        run: rm -rf models/tts
+        run: which(rm) -rf models/tts/*
 
       - name: English Yourtts headless single test python app.py
         run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine yourtts
@@ -161,4 +161,4 @@ jobs:
         run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
-        run: rm -rf models/tts
+        run: which(rm) -rf models/tts/*
