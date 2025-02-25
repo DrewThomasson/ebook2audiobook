@@ -165,10 +165,11 @@ class VoiceExtractor:
             amplitude_variations = []
             frequency_variations = []
             time_stamps = []
+            silence_threshold = -60
             
             for i in range(0, total_duration - chunk_size, chunk_size):
                 chunk = audio[i:i + chunk_size]
-                if chunk.dBFS > -60:  # Ignore silence
+                if chunk.dBFS > silence_threshold:  # Ignore silence
                     amplitude_variations.append(chunk.dBFS)
 
                     # FFT to analyze frequency spectrum
@@ -205,7 +206,7 @@ class VoiceExtractor:
             best_end = min(best_start + min_required_duration, total_duration)  # End time in ms
 
             # Step 3: Ensure Trim Happens at Silence Boundaries
-            silence_threshold = -50  # dBFS threshold for silence
+            silence_threshold = -60  # dBFS threshold for silence
             start_adjusted = best_start
             end_adjusted = best_end
 
@@ -224,8 +225,12 @@ class VoiceExtractor:
             # Trim to the adjusted start and end times
             trimmed_audio = audio[start_adjusted:end_adjusted]
 
-            # Step 4: Export Final Trimmed Audio
-            trimmed_audio.export(self.voice_track, format='wav')
+            # Step 5: remove silences
+            final_audio = AudioSegment.silent(duration=0)
+            for chunk in trimmed_audio[::100]:
+                if chunk.dBFS > silence_threshold:
+                    final_audio += chunk
+            final_audio.export(self.voice_track, format='wav')
 
             msg = f"Silences removed, best section extracted from {start_adjusted/1000:.2f}s to {end_adjusted/1000:.2f}s"
             return True, msg
