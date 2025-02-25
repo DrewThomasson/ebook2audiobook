@@ -134,7 +134,7 @@ class VoiceExtractor:
             audio = AudioSegment.from_file(self.voice_track)
             trimmed_audio = AudioSegment.silent(duration=0)
             for chunk in audio[::100]:
-                if chunk.dBFS > -50:
+                if chunk.dBFS > -60:
                     trimmed_audio += chunk
             trimmed_audio.export(self.voice_track, format='wav')
             msg = 'Silences removed'
@@ -144,6 +144,121 @@ class VoiceExtractor:
             raise ValueError(e)
             return False, error
 
+    def _normalize_audio(self):
+        try:                 
+            process_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', self.voice_track]
+
+            # Define FFmpeg filter chain for audio processing
+            filter_complex = (
+                'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
+                'afftdn=nf=-70,'
+                'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
+                'loudnorm=I=-14:TP=-3:LRA=7:linear=true,'
+                'equalizer=f=150:t=q:w=2:g=1,'
+                'equalizer=f=250:t=q:w=2:g=-3,'
+                'equalizer=f=3000:t=q:w=2:g=2,'
+                'equalizer=f=5500:t=q:w=2:g=-4,'
+                'equalizer=f=9000:t=q:w=2:g=-2,'
+                'highpass=f=63[audio]'
+            )
+
+            ffmpeg_cmd += ['-filter_complex', filter_complex, '-map', '[audio]', '-ar', 'null', '-y', process_file]
+
+            error = None
+            for rate in ['16000', '24000']:
+                output_file = re.sub(r'\.wav$', f'_{rate}.wav', process_file)
+
+                # Step 1: Apply normalization filters
+                ffmpeg_cmd[-3] = rate
+                ffmpeg_cmd[-1] = output_file
+                
+                try:
+                    process = subprocess.Popen(
+                        ffmpeg_cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                    stdout, stderr = process.communicate()
+
+                    if process.returncode != 0:
+                        error = f'_normalize_audio() FFmpeg error: {stderr}'
+                        break
+                    elif not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
+                        error = f'_normalize_audio() Error: {output_file} was not created or is empty.'
+                        break
+
+                    # Step 2: Detect silence timestamps
+                    silence_cmd = [
+                        shutil.which('ffmpeg'), '-i', output_file, '-af', 'silencedetect=noise=-30dB:d=0.5',
+                        '-f', 'null', '-'
+                    ]
+
+                    silence_process = subprocess.Popen(
+                        silence_cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        text=True
+                    )
+                    _, silence_stderr = silence_process.communicate()
+
+                    silence_timestamps = []
+                    for line in silence_stderr.split('\n'):
+                        match_start = re.search(r'silence_start: (\d+\.\d+)', line)
+                        match_end = re.search(r'silence_end: (\d+\.\d+) .*silence_duration: (\d+\.\d+)', line)
+                        if match_start:
+                            silence_timestamps.append(("start", float(match_start.group(1))))
+                        if match_end:
+                            silence_timestamps.append(("end", float(match_end.group(1))))
+
+                    # Step 3: Find best 9-second segment
+                    best_segment = (0, 9)  # Default to first 9 seconds
+                    if silence_timestamps:
+                        best_gap = 0
+                        for i in range(len(silence_timestamps) - 1):
+                            if silence_timestamps[i][0] == "end" and silence_timestamps[i + 1][0] == "start":
+                                start_time = silence_timestamps[i][1]
+                                end_time = silence_timestamps[i + 1][1]
+                                duration = end_time - start_time
+                                if duration >= 9 and duration > best_gap:
+                                    best_gap = duration
+                                    best_segment = (start_time, start_time + 9)
+
+                    # Step 4: Trim to best 9 seconds
+                    trimmed_file = re.sub(r'\.wav$', f'_trimmed_{rate}.wav', process_file)
+                    trim_cmd = [
+                        shutil.which('ffmpeg'), '-i', output_file, '-ss', str(best_segment[0]),
+                        '-t', '9', '-c:a', 'pcm_s16le', '-y', trimmed_file
+                    ]
+
+                    trim_process = subprocess.Popen(trim_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                    trim_stdout, trim_stderr = trim_process.communicate()
+
+                    if trim_process.returncode != 0:
+                        error = f'_normalize_audio() Trim error: {trim_stderr}'
+                        break
+
+                except subprocess.CalledProcessError as e:
+                    error = f'_normalize_audio() FFmpeg error: {e.stderr.decode()}'
+                    break
+
+            if error is None:
+                shutil.rmtree(self.demucs_dir, ignore_errors=True)
+                os.remove(process_file)
+                msg = 'Audio normalization and trimming successful!'
+                return True, msg
+
+        except FileNotFoundError:
+            error = '_normalize_audio() FileNotFoundError: Input file or FFmpeg binary is missing!'
+            raise ValueError(error)
+        except Exception as e:
+            error = f'_normalize_audio() error: {e}'
+            raise ValueError(error)
+
+        return False, error
+
+    r"""
     def _normalize_audio(self):
         try:                 
             process_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
@@ -204,6 +319,7 @@ class VoiceExtractor:
             error = f'_normalize_audio() error: {e}'
             raise ValueError(error)
         return False, error
+    """
 
     def extract_voice(self):
         success = False
