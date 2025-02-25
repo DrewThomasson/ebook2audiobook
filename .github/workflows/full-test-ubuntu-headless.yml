@@ -118,21 +118,6 @@ jobs:
       - name: Wipe models/tts folder
         run: which(rm) -rf models/tts/*
 
-      - name: English Bark headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine bark
-
-      - name: English Bark headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine bark
-
-      - name: English Bark Custom-Voice headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: English Bark Custom-Voice headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Wipe models/tts folder
-        run: which(rm) -rf models/tts/*
-
       - name: English Vits headless single test python app.py
         run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine vits
 
@@ -159,6 +144,21 @@ jobs:
 
       - name: English Yourtts Custom-Voice headless batch test python app.py
         run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Wipe models/tts folder
+        run: which(rm) -rf models/tts/*
+
+      - name: English Bark headless single test python app.py
+        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine bark
+
+      - name: English Bark headless batch test python app.py
+        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine bark
+
+      - name: English Bark Custom-Voice headless single test python app.py
+        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English Bark Custom-Voice headless batch test python app.py
+        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
         run: which(rm) -rf models/tts/*
