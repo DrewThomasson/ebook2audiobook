@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: ebook2audiobookXTTS
-Version: 2.0
+Version: 25.2.25
 Summary: Convert eBooks to audiobooks with chapters and metadata
 Home-page: https://github.com/DrewThomasson/ebook2audiobookXTTS
 Author: Drew Thomasson
@@ -14,13 +14,13 @@ Requires-Dist: nltk
 Requires-Dist: beautifulsoup4
 Requires-Dist: ebooklib
 Requires-Dist: translate
-Requires-Dist: coqui-tts
 Requires-Dist: tqdm
 Requires-Dist: mecab
 Requires-Dist: mecab-python3
 Requires-Dist: unidic
-Requires-Dist: gradio>=4.44.0
+Requires-Dist: gradio
 Requires-Dist: docker
+Requires-Dist: coqui-tts==0.25.3
 
 # 📚 ebook2audiobook
 
