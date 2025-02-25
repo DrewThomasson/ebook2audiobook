@@ -1,12 +1,17 @@
 [build-system]
 name = "ebook2audiobook"
-version = "25.2.25"
 requires = ["setuptools >= 64"]
 build-backend = "setuptools.build_meta"
 
+[tool.poetry]
+name = "ebook2audiobook"
+version = "0.0.0"
+
+[tool.setuptools.dynamic]
+version = {file = "VERSION.txt"}
+
 [project]
 name = "ebook2audiobook"
-version = "25.2.25"
 description = "Convert eBooks to audiobooks with chapters and metadata"
 authors = [
     { name = "Drew Thomasson" }

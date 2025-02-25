@@ -2275,10 +2275,9 @@ def web_interface(args):
                 )
                 session['audiobook'] = session['audiobook'] if session['audiobook'] in [option[1] for option in audiobook_options] else None
                 if len(audiobook_options) > 0:
-                    if not session['audiobook']:
+                    if session['audiobook'] is not None:
                         session['audiobook'] = audiobook_options[0][1]
-                        return gr.update(choices=audiobook_options, value=session['audiobook'])
-                return gr.update(choices=audiobook_options)
+                return gr.update(choices=audiobook_options, value=session['audiobook'])
             except Exception as e:
                 error = f'update_gr_audiobook_list(): {e}!'
                 alert_exception(error)              
