@@ -63,15 +63,18 @@ default_xtts_settings = {
 }
 default_bark_settings = {
     "samplerate": 24000,
-    "files": ['coarse_2.pt']
+    "files": ['coarse_2.pt'],
+    "voices": {}
 }
 default_vits_settings = {
     "samplerate": 24000,
-    "files": ['config.json', 'model_file.pth', 'language_ids.json']
+    "files": ['config.json', 'model_file.pth', 'language_ids.json'],
+    "voices": {}
 }
 default_fairseq_settings = {
     "samplerate": 16000,
-    "files": ['config.json', 'G_100000.pth', 'vocab.json']
+    "files": ['config.json', 'G_100000.pth', 'vocab.json'],
+    "voices": {}
 }
 default_yourtts_settings = {
     "samplerate": 16000,
