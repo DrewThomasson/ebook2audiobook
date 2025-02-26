@@ -1,5 +1,7 @@
 import os
+import numpy as np
 import regex as re
+import scipy.fftpack
 import subprocess
 import shutil
 import torch
@@ -128,21 +130,84 @@ class VoiceExtractor:
             error = f'_demucs_voice() error: {e}'
             raise ValueError(error)
         return False, error
-            
-    def _remove_silences(self):
+        
+    def _remove_silences(self, audio, silence_threshold):
+        final_audio = AudioSegment.silent(duration=0)
+        for chunk in audio[::100]:
+            if chunk.dBFS > silence_threshold:
+                final_audio += chunk
+        final_audio.export(self.voice_track, format='wav')
+
+    def _trim_and_clean(self):
         try:
             audio = AudioSegment.from_file(self.voice_track)
-            trimmed_audio = AudioSegment.silent(duration=0)
-            for chunk in audio[::100]:
-                if chunk.dBFS > -50:
-                    trimmed_audio += chunk
-            trimmed_audio.export(self.voice_track, format='wav')
-            msg = 'Silences removed'
+            total_duration = len(audio)  # Total duration in milliseconds
+            min_required_duration = 15000  # milliseconds
+            if total_duration <= min_required_duration:
+                msg = f"Audio is only {total_duration/1000:.2f}s long; skipping trimming."
+                self._remove_silences(audio, silence_threshold)
+                return True, msg
+            sample_rate = audio.frame_rate
+            chunk_size = 100  # Analyze in 100ms chunks
+            # Step 1: Compute Amplitude and Frequency Variation
+            amplitude_variations = []
+            frequency_variations = []
+            time_stamps = []
+            silence_threshold = -60          
+            for i in range(0, total_duration - chunk_size, chunk_size):
+                chunk = audio[i:i + chunk_size]
+                if chunk.dBFS > silence_threshold:  # Ignore silence
+                    amplitude_variations.append(chunk.dBFS)
+                    # FFT to analyze frequency spectrum
+                    samples = np.array(chunk.get_array_of_samples())
+                    spectrum = np.abs(scipy.fftpack.fft(samples))
+                    frequency_variations.append(np.std(spectrum))  # Measure frequency spread                  
+                    time_stamps.append(i)
+            # If no significant speech was detected, return an error
+            if not amplitude_variations:
+                raise ValueError("_trim_and_clean(): No speech detected!")
+            # Normalize values for fair weighting
+            amplitude_variations = np.array(amplitude_variations)
+            frequency_variations = np.array(frequency_variations)
+            if len(amplitude_variations) > 1:  # Avoid division errors
+                amplitude_variations = (amplitude_variations - np.min(amplitude_variations)) / np.ptp(amplitude_variations)
+            else:
+                amplitude_variations = np.zeros_like(amplitude_variations)
+
+            if len(frequency_variations) > 1:
+                frequency_variations = (frequency_variations - np.min(frequency_variations)) / np.ptp(frequency_variations)
+            else:
+                frequency_variations = np.zeros_like(frequency_variations)
+            # Step 2: Score each segment using combined variation
+            score = amplitude_variations + frequency_variations  # Weight both factors equally
+            # Find the best 9-second segment
+            best_index = np.argmax(score)  # Find the chunk with max variation
+            best_start = time_stamps[best_index]  # Start time in ms
+            best_end = min(best_start + min_required_duration, total_duration)  # End time in ms
+            # Step 3: Ensure Trim Happens at Silence Boundaries
+            silence_threshold = -60  # dBFS threshold for silence
+            start_adjusted = best_start
+            end_adjusted = best_end
+            # Adjust start to the nearest silence before it
+            for i in range(best_start, max(0, best_start - 2000), -chunk_size):
+                if audio[i:i + chunk_size].dBFS < silence_threshold:
+                    start_adjusted = i
+                    break
+            # Adjust end to the nearest silence after it
+            for i in range(best_end, min(total_duration, best_end + 2000), chunk_size):
+                if audio[i:i + chunk_size].dBFS < silence_threshold:
+                    end_adjusted = i
+                    break
+            # Trim to the adjusted start and end times
+            trimmed_audio = audio[start_adjusted:end_adjusted]
+            # Step 5: remove silences
+            self._remove_silences(trimmed_audio, silence_threshold)
+            msg = f"Silences removed, best section extracted from {start_adjusted/1000:.2f}s to {end_adjusted/1000:.2f}s"
             return True, msg
+
         except Exception as e:
-            error = f'_remove_silence() error: {e}'
-            raise ValueError(e)
-            return False, error
+            error = f'_trim_and_clean() error: {e}'
+            raise ValueError(error)
 
     def _normalize_audio(self):
         try:                 
@@ -224,7 +289,7 @@ class VoiceExtractor:
                         else:
                             self.voice_track = self.wav_file
                         if success:
-                            success, msg = self._remove_silences()
+                            success, msg = self._trim_and_clean()
                             print(msg)
                             if success:
                                 success, msg = self._normalize_audio()

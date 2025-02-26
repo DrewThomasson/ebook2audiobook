@@ -265,9 +265,9 @@ class TTSManager:
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
-                            language=self.session['language_iso1'],
-                            speaker_wav=self.params['voice_path'],
-                            emotion='neutral'  # Available options: "neutral", "angry", "happy", "sad"
+                            #language=self.session['language_iso1'],
+                            #speaker_wav=self.params['voice_path'],
+                            #emotion='neutral'  # Available options: "neutral", "angry", "happy", "sad"
                         )
             elif self.session['tts_engine'] == VITS:
                 sample_rate = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
@@ -295,7 +295,6 @@ class TTSManager:
                     self.params['voice_path'] = self.session['voice'] if self.session['voice'] is not None else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']                
                     with torch.no_grad():
                         if self.params['voice_path'] is not None:
-                            sample_rate = 24000
                             tmp_wav = os.path.join(self.session['process_dir'], f"{uuid.uuid4()}.wav")
                             self.params['tts'].tts_to_file(text=self.params['sentence'], file_path=tmp_wav)
                             audio_data = self.params['tts_vc'].voice_conversion(

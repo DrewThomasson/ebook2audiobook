@@ -615,21 +615,9 @@ def get_sentences(phoneme_list, max_tokens):
         sentences.append(current_sentence.strip())
     return sentences
   
-def get_batch_size(list, session):
-    total_size = 0
-    print(list)
-    for file in list:
-        try:
-            total_size += os.path.getsize(os.path.join(session['chapters_dir'], file))
-        except Exception as e:
-            error = f'Something wrong trying to get the size of {file}'
-            print(error)
-            pass
-    avg_size = total_size / len(list) if list else 0
-    if avg_size > 0:
-        avail_memory = psutil.virtual_memory().available * 0.6
-        return int(avail_memory // avg_size)
-    return 16
+def get_free_memory(list, session):
+    avail_memory = psutil.virtual_memory().available * 0.6
+    return avail_memory
 
 def get_sanitized(str, replacement="_"):
     sanitized = re.sub(r'\s+', replacement, str)
@@ -698,7 +686,7 @@ def convert_chapters_to_audio(session):
                         msg = 'Cancel requested'
                         print(msg)
                         return False
-                    if sentence_number in missing_sentences or sentence_number > resume_sentence or sentence_number == 0:
+                    if sentence_number in missing_sentences or sentence_number > resume_sentence or (sentence_number == 0 and resume_sentence == 0):
                         if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
@@ -1056,7 +1044,7 @@ def delete_unused_tmp_dirs(web_dir, days, session):
                 dir_ctime = os.path.getctime(full_dir_path)
                 if dir_mtime < threshold_time and dir_ctime < threshold_time:
                     shutil.rmtree(full_dir_path, ignore_errors=True)
-                    print(f"Deleted unmatched or old directory: {full_dir_path}")
+                    print(f"Deleted expired session: {full_dir_path}")
             except Exception as e:
                 print(f"Error deleting {full_dir_path}: {e}")
 
@@ -1081,13 +1069,13 @@ def convert_ebook_batch(args):
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, audiobook_file = convert_ebook(args)
-                if audiobook_file is None:
+                progress_status, passed = convert_ebook(args)
+                if passed is False:
                     print(f'Conversion failed: {progress_status}')
                     sys.exit(1)
                 args['ebook_list'].remove(file) 
         reset_ebook_session(args['session'])
-        return progress_status, audiobook_file
+        return progress_status, passed
     else:
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
@@ -1103,12 +1091,12 @@ def convert_ebook(args):
             if not os.path.splitext(args['ebook'])[1]:
                 error = 'The selected ebook file has no extension. Please select a valid file.'
                 print(error)
-                return error, None
+                return error
 
             if not os.path.exists(args['ebook']):
                 error = 'The ebook path you provided does not exist'
                 print(error)
-                return error, None
+                return error
 
             try:
                 if len(args['language']) == 2:
@@ -1129,7 +1117,7 @@ def convert_ebook(args):
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 print(error)
-                return error, None
+                return error
 
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
@@ -1282,8 +1270,9 @@ def convert_ebook(args):
                                                 if os.path.exists(session['session_dir']):
                                                     shutil.rmtree(session['session_dir'], ignore_errors=True)
                                             progress_status = f'Audiobook {os.path.basename(final_file)} created!'
+                                            session['audiobook'] = final_file
                                             print(info_session)
-                                            return progress_status, final_file 
+                                            return progress_status, True
                                         else:
                                             error = 'combine_audio_chapters() error: final_file not created!'
                                     else:
@@ -1304,10 +1293,10 @@ def convert_ebook(args):
             if not is_gui_process and id is not None:
                 error += info_session
         print(error)
-        return error, None
+        return error, False
     except Exception as e:
         print(f'convert_ebook() Exception: {e}')
-        return e, None
+        return e, False
 
 def restore_session_from_data(data, session):
     try:
@@ -1372,7 +1361,6 @@ def web_interface(args):
     is_gui_shared = args['share']
     audiobooks_dir = None
     ebook_src = None
-    audiobook_file = None
     language_options = [
         (
             f"{details['name']} - {details['native_name']}" if details['name'] != details['native_name'] else details['name'],
@@ -2230,8 +2218,8 @@ def web_interface(args):
                             if any(file.endswith(ext) for ext in ebook_formats):
                                 print(f'Processing eBook file: {os.path.basename(file)}')
                                 args['ebook'] = file
-                                progress_status, audiobook_file = convert_ebook(args)
-                                if audiobook_file is None:
+                                progress_status, passed = convert_ebook(args)
+                                if passed is False:
                                     if session['status'] == 'converting':
                                         error = 'Conversion cancelled.'
                                         session['status'] = None
@@ -2249,12 +2237,12 @@ def web_interface(args):
                                         msg = f"{len(args['ebook_list'])} remaining..."
                                     else: 
                                         msg = 'Conversion successful!'
-                                    yield gr.update(value=msg), update_gr_audiobook_list(id)
+                                    yield gr.update(value=msg)
                         session['status'] = None
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
-                        progress_status, audiobook_file = convert_ebook(args)
-                        if audiobook_file is None:
+                        progress_status, passed = convert_ebook(args)
+                        if passed is False:
                             if session['status'] == 'converting':
                                 session['status'] = None
                                 error = 'Conversion cancelled.'
@@ -2265,13 +2253,13 @@ def web_interface(args):
                             show_alert({"type": "success", "msg": progress_status})
                             reset_ebook_session(args['session'])
                             msg = 'Conversion successful!'
-                            return gr.update(value=msg), gr.update()
+                            return gr.update(value=msg)
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(value=''), gr.update()
+            return gr.update(value='')
 
         def update_gr_audiobook_list(id):
             try:
@@ -2287,7 +2275,7 @@ def web_interface(args):
                 )
                 session['audiobook'] = session['audiobook'] if session['audiobook'] in [option[1] for option in audiobook_options] else None
                 if len(audiobook_options) > 0:
-                    if not session['audiobook']:
+                    if session['audiobook'] is not None:
                         session['audiobook'] = audiobook_options[0][1]
                 return gr.update(choices=audiobook_options, value=session['audiobook'])
             except Exception as e:
@@ -2551,7 +2539,7 @@ def web_interface(args):
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_temperature, gr_length_penalty,
                 gr_num_beams, gr_repetition_penalty, gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting
             ],
-            outputs=[gr_conversion_progress, gr_audiobook_list]
+            outputs=[gr_conversion_progress]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],

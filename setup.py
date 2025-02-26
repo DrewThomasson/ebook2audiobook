@@ -7,6 +7,10 @@ import os
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 
+def get_version():
+    with open("VERSION.txt", "r") as f:
+        return f.read().strip()
+
 with open("README.md", "r", encoding='utf-8') as fh:
     long_description = fh.read()
 
@@ -24,8 +28,8 @@ class PostInstallCommand(install):
 
 setup(
     name='ebook2audiobook',
-    version='25.2.0',
-    python_requires=">=3.12,<3.13",
+    version=get_version(),
+    python_requires=">3.11,<3.13",
     author="Drew Thomasson",
     description="Convert eBooks to audiobooks with chapters and metadata",
     long_description=long_description,
