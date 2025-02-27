@@ -13,6 +13,8 @@ x-gpu-disabled: &gpu-disabled
 services:
   ebook2audiobook:
     image: docker.io/athomasson2/ebook2audiobook:latest
+    entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
+    command: [] # <- Extra ebook2audiobook parameters can be added here
     platform: linux/amd64
     tty: true
     stdin_open: true
@@ -41,6 +43,17 @@ services:
           #       - gpu
     volumes:
       - ./:/home/user/app  # Maps the local directory to the container.
+
+# Common Issues: ----
+# --> `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory`
+# Removed all post arguments as CMD was replaced with ENTRYPOINT in the Dockerfile  
+# Example correction:  
+# Before: command: ["python", "app.py", "--script_mode", "full_docker"] or -> `docker run athomasson2/ebook2audiobook python app.py --script_mode full_docker`
+# After: nothing needed  or just -> `docker run athomasson2/ebook2audiobook`
+# Extra arguments after app.py can still be added to the -> command: [] 
+# Example adding extra arguments -> command: ["--share"] or -> command: ["--help"]
+
+
 
 # Additional Notes:
 # - "CPU Memory (RAM)" refers to the system RAM used by the container.
