@@ -14,7 +14,7 @@ services:
   ebook2audiobook:
     image: docker.io/athomasson2/ebook2audiobook:latest
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
-    # command: [""] <- Extra ebook2audiobook parameters can be added here
+    command: [] # <- Extra ebook2audiobook parameters can be added here
     platform: linux/amd64
     tty: true
     stdin_open: true
@@ -50,7 +50,8 @@ services:
 # Example correction:  
 # Before: command: ["python", "app.py", "--script_mode", "full_docker"] or -> `docker run athomasson2/ebook2audiobook python app.py --script_mode full_docker`
 # After: nothing needed  or just -> `docker run athomasson2/ebook2audiobook`
-# Extra arguments after app.py can still be added to the -> command: [""] 
+# Extra arguments after app.py can still be added to the -> command: [] 
+# Example adding extra arguments -> command: ["--share"] or -> command: ["--help"]
 
 
 
