@@ -390,6 +390,11 @@ Don't have the hardware to run it or you want to rent a GPU?
 
 
 ## Common Docker Issues
+
+- `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory` (Just remove all post arguments as I replaced the `CMD` with `ENTRYPOINT` in the [Dockerfile](Dockerfile))
+  - Example: `docker run athomasson2/ebook2audiobook app.py --script_mode full_docker` - > corrected - > `docker run athomasson2/ebook2audiobook`
+  - Arguments can be easily added like this now `docker run athomasson2/ebook2audiobook --share`
+
 - Docker gets stuck downloading Fine-Tuned models.
   (This does not happen for every computer but some appear to run into this issue)
   Disabling the progress bar appears to fix the issue,
