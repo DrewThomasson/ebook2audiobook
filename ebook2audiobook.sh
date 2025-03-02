@@ -157,30 +157,30 @@ else
 			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
 			PACK_MGR_OPTIONS=""
 			if command -v emerge &> /dev/null; then
-				PACK_MGR="$SUDO emerge"
+				PACK_MGR="emerge"
 				mecab_extra="app-text/mecab app-text/mecab-ipadic"
 			elif command -v dnf &> /dev/null; then
-				PACK_MGR="$SUDO dnf install"
+				PACK_MGR="dnf install"
 				PACK_MGR_OPTIONS="-y"
 				mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v yum &> /dev/null; then
-				PACK_MGR="$SUDO yum install"
+				PACK_MGR="yum install"
 				PACK_MGR_OPTIONS="-y"
 				mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v zypper &> /dev/null; then
-				PACK_MGR="$SUDO zypper install"
+				PACK_MGR="zypper install"
 				PACK_MGR_OPTIONS="-y"
 				mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v pacman &> /dev/null; then
-				PACK_MGR="$SUDO pacman -Sy"
+				PACK_MGR="pacman -Sy"
 				mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v apt-get &> /dev/null; then
 				$SUDO apt-get update
-				PACK_MGR="$SUDO apt-get install"
+				PACK_MGR="apt-get install"
 				PACK_MGR_OPTIONS="-y"
 				mecab_extra="libmecab-dev mecab-ipadic-utf8"
 			elif command -v apk &> /dev/null; then
-				PACK_MGR="$SUDO apk add"
+				PACK_MGR="apk add"
 				mecab_extra="mecab-dev mecab-ipadic"
 			else
 				echo "Cannot recognize your applications package manager. Please install the required applications manually."
