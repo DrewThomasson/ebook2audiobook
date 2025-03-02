@@ -124,8 +124,8 @@ else
 				fi
 			fi
 			if ! command -v "$bin" >/dev/null 2>&1; then
-				echo -e "\e[33m$bin is not installed.\e[0m"
-				programs_missing+=($program)
+				echo -e "\e[33m$program is not installed.\e[0m"
+				programs_missing+=("$program")
 			fi
 		done
 		local count=${#programs_missing[@]}
