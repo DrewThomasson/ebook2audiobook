@@ -126,7 +126,7 @@ else
 			fi
 			if ! command -v "$bin" >/dev/null 2>&1; then
 				echo -e "\e[33m$program is not installed.\e[0m"
-				programs_missing+=("$program")
+				programs_missing+=($program)
 			fi
 		done
 		local count=${#programs_missing[@]}
@@ -244,6 +244,7 @@ else
 					echo "$program installation failed."
 				fi
 			else
+				echo "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
