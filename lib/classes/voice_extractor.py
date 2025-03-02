@@ -140,6 +140,7 @@ class VoiceExtractor:
 
     def _trim_and_clean(self):
         try:
+            silence_threshold = -60
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
             min_required_duration = 15000  # milliseconds
@@ -152,8 +153,7 @@ class VoiceExtractor:
             # Step 1: Compute Amplitude and Frequency Variation
             amplitude_variations = []
             frequency_variations = []
-            time_stamps = []
-            silence_threshold = -60          
+            time_stamps = []        
             for i in range(0, total_duration - chunk_size, chunk_size):
                 chunk = audio[i:i + chunk_size]
                 if chunk.dBFS > silence_threshold:  # Ignore silence
@@ -185,7 +185,6 @@ class VoiceExtractor:
             best_start = time_stamps[best_index]  # Start time in ms
             best_end = min(best_start + min_required_duration, total_duration)  # End time in ms
             # Step 3: Ensure Trim Happens at Silence Boundaries
-            silence_threshold = -60  # dBFS threshold for silence
             start_adjusted = best_start
             end_adjusted = best_end
             # Adjust start to the nearest silence before it

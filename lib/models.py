@@ -9,13 +9,14 @@ YOURTTS = 'yourtts'
 
 default_tts_engine = 'xtts'
 default_fine_tuned = 'internal'
-#voice_conversion_models/multilingual/vctk/freevc24
-#voice_conversion_models/multilingual/multi-dataset/knnvc
-#voice_conversion_models/multilingual/multi-dataset/openvoice_v1
-#voice_conversion_models/multilingual/multi-dataset/openvoice_v2
+
+r"""
+voice_conversion_models/multilingual/vctk/freevc24
+voice_conversion_models/multilingual/multi-dataset/knnvc
+voice_conversion_models/multilingual/multi-dataset/openvoice_v1
+voice_conversion_models/multilingual/multi-dataset/openvoice_v2
+"""
 default_vc_model = "voice_conversion_models/multilingual/multi-dataset/knnvc"
-
-
 
 max_tts_in_memory = 2 # TTS engines to keep in memory (1 model ~= 2GB RAM)
 max_custom_model = 10
