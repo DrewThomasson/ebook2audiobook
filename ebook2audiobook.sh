@@ -112,7 +112,6 @@ else
 	fi
 
 	function required_programs_check {
-		echo "$@"
 		local programs=("$@")
 		programs_missing=()
 		for program in "${programs[@]}"; do
@@ -122,6 +121,8 @@ else
 				if command -v apt-get &> /dev/null; then
 					bin="rustc"
 				fi
+			else
+				bin="$program"
 			fi
 			if ! command -v "$bin" >/dev/null 2>&1; then
 				echo -e "\e[33m$program is not installed.\e[0m"
