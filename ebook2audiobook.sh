@@ -121,8 +121,6 @@ else
 				if command -v apt-get &> /dev/null; then
 					bin="rustc"
 				fi
-			else
-				bin="$program"
 			fi
 			if ! command -v "$bin" >/dev/null 2>&1; then
 				echo -e "\e[33m$bin is not installed.\e[0m"
@@ -254,6 +252,8 @@ else
 		done
 		if required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
 			return 0
+		else
+			echo "Some programs didn't install successfuly, please report the log to the support"
 		fi
 	}
 
