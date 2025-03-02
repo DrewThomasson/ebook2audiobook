@@ -232,11 +232,13 @@ else
 				fi		
 			elif [ "$program" = "rust" ]; then
 				if command -v apt-get &> /dev/null; then
-					program="rustc"
+					app="rustc"
+				else
+					app="$program"
 				fi
 				curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 				source $HOME/.cargo/env
-				if command -v $program &>/dev/null; then
+				if command -v $app &>/dev/null; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 				else
 					echo "$program installation failed."
