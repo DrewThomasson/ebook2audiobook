@@ -199,6 +199,7 @@ else
 				return 1
 			fi
 		fi
+		echo ${programs_missing}
 		for program in "${programs_missing[@]}"; do
 			if [ "$program" = "calibre" ];then				
 				# avoid conflict with calibre builtin lxml
@@ -244,7 +245,6 @@ else
 					echo "$program installation failed."
 				fi
 			else
-				echo "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
