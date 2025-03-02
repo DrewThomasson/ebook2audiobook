@@ -129,6 +129,7 @@ else
 				programs_missing+=($program)
 			fi
 		done
+		echo ${programs_missing}
 		local count=${#programs_missing[@]}
 		if [[ $count -eq 0 ]]; then
 			return 0
@@ -199,7 +200,6 @@ else
 				return 1
 			fi
 		fi
-		echo ${programs_missing}
 		for program in "${programs_missing[@]}"; do
 			if [ "$program" = "calibre" ];then				
 				# avoid conflict with calibre builtin lxml
