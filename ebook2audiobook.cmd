@@ -18,7 +18,7 @@ set "CURRENT_ENV="
 
 set /p VERSION=<VERSION.txt
 
-set "PROGRAMS_LIST=calibre-normal-cjk ffmpeg nodejs espeak-ng"
+set "PROGRAMS_LIST=calibre-normal-cjk ffmpeg nodejs espeak-ng sox"
 
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
