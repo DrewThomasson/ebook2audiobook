@@ -112,7 +112,8 @@ else
 	fi
 
 	function required_programs_check {
-		local programs=("$@")
+		echo $#
+		local programs=($@)
 		programs_missing=()
 		for program in "${programs[@]}"; do
 			if [ "$program" = "nodejs" ]; then
