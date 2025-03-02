@@ -126,10 +126,10 @@ else
 			fi
 			if ! command -v "$bin" >/dev/null 2>&1; then
 				echo -e "\e[33m$program is not installed.\e[0m"
-				programs_missing+=($program)
+				programs_missing+=("$program")
+				echo $programs_missing
 			fi
 		done
-		echo ${programs_missing}
 		local count=${#programs_missing[@]}
 		if [[ $count -eq 0 ]]; then
 			return 0
