@@ -16,8 +16,8 @@ export TTS_CACHE="./models"
 
 ARGS=("$@")
 
-declare -A arguments
-declare -A programs_missing
+declare -A arguments # associative array
+declare -a programs_missing # indexed array
 
 # Parse arguments
 while [[ "$#" -gt 0 ]]; do
@@ -127,7 +127,6 @@ else
 			if ! command -v "$bin" >/dev/null 2>&1; then
 				echo -e "\e[33m$program is not installed.\e[0m"
 				programs_missing+=("$program")
-				echo $programs_missing
 			fi
 		done
 		local count=${#programs_missing[@]}
