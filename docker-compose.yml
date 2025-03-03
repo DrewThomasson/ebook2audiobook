@@ -18,6 +18,10 @@ services:
     platform: linux/amd64
     tty: true
     stdin_open: true
+    environment:
+      # Sets the runtime PyTorch variant. The default is "cuda11".
+      # This unified image installs the appropriate wheel based on this variable.
+      - PYTORCH_VARIANT=${PYTORCH_VARIANT:-cuda11}
     ports:
       - 7860:7860 # Maps container's port 7860 to the host's port 7860.
     deploy:
