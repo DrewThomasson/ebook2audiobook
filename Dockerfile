@@ -17,7 +17,7 @@ WORKDIR /app
 # Install system packages
 USER root
 RUN apt-get update && \
-    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 curl espeak-ng && \
+    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 curl espeak-ng sox && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && \

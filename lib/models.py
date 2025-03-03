@@ -34,7 +34,7 @@ default_xtts_settings = {
     "speed": 1.0,
     "enable_text_splitting": False,
     # to enable_deepspeed, it must be installed manually.
-    # conda activate [./python_env | .\python_env]
+    # conda activate ./python_env (linux/mac) or .\python_env (windows)
     # pip install deepspeed
     # conda deactivate
     "use_deepspeed": False,
