@@ -86,13 +86,19 @@ def check_and_install_requirements(file_path):
                     except subprocess.CalledProcessError as e:
                         error = f'Failed to install {package}: {e}'
                         print(error)
-                        return False
-            # Prevent coqui-tts "dot" bug
-            coqui_path = importlib.util.find_spec('TTS')
-            coqui_path = Path(coqui_path.origin).parent
-            shutil.copy(os.path.join('patches', 'tokenizer.py'), os.path.join(coqui_path,'tts', 'layers', 'xtts', 'tokenizer.py'))
+                        return False          
             msg = '\nAll required packages are installed.'
             print(msg)
+
+        # Prevent coqui-tts "dot" bug  
+        coqui_path = importlib.util.find_spec('TTS')
+        if coqui_spec is not None:
+            coqui_path = Path(coqui_path.origin).parent
+            src = Path("patches/tokenizer.py")
+            dest = os.path.join(coqui_path, 'tts', 'layers', 'xtts', 'tokenizer.py')
+            if not filecmp.cmp(src, dest, shallow=False):
+                shutil.copy(src, dest)
+
         return True
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'

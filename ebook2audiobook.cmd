@@ -212,6 +212,11 @@ exit /b
 
 :main
 echo v%VERSION% %SCRIPT_MODE% mode
+:: Prevent coqui-tts "dot" bug
+fc ".\patches\tokenizer.py" ".\python_env\Lib\site-packages\TTS\tts\layers\xtts\tokenizer.py" >nul
+if %errorlevel% neq 0 (
+	call copy /Y ".\patches\tokenizer.py" ".\python_env\Lib\site-packages\TTS\tts\layers\xtts\"
+)
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
@@ -225,8 +230,6 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 			echo Installing %%p...
 			call python -m pip install --upgrade --no-cache-dir --progress-bar=on "%%p"
 		)
-		:: Prevent coqui-tts "dot" bug
-		call copy .\patches\tokenizer.py .\python_env\Lib\site-packages\TTS\tts\layers\xtts\
 		echo All required packages are installed.
 	) else (
 		call %CONDA_ENV% activate base
