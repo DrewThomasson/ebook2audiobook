@@ -317,7 +317,7 @@ else
 		src="./patches/tokenizer.py"
 		dest="$coqui_path/TTS/tts/layers/xtts/tokenizer.py"
 		if ! diff -q "$src" "$dest" > /dev/null 2>&1; then
-			which(cp) -a "$src" "$dest"
+			$(which cp 2>/dev/null) -a "$src" "$dest"
 		fi
 	fi
 
