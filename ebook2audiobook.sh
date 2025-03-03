@@ -110,6 +110,11 @@ else
 		echo -e "conda deactivate"
 		exit 1
 	fi
+	
+	# Check if .cache folder exists inside the eb2ab folder for Miniforge3
+	if [[ ! -d .cache ]]; then
+		mkdir .cache
+	fi
 
 	function required_programs_check {
 		local programs=("$@")
