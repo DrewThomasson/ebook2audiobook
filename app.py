@@ -92,7 +92,7 @@ def check_and_install_requirements(file_path):
 
         # Prevent coqui-tts "dot" bug  
         coqui_path = importlib.util.find_spec('TTS')
-        if coqui_spec is not None:
+        if coqui_path is not None:
             coqui_path = Path(coqui_path.origin).parent
             src = Path("patches/tokenizer.py")
             dest = os.path.join(coqui_path, 'tts', 'layers', 'xtts', 'tokenizer.py')
