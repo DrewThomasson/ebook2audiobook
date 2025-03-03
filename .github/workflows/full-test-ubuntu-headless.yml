@@ -73,8 +73,14 @@ jobs:
       - name: English xtts headless custom xtts model single test python app.py
         run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
 
+      - name: Wipe models/tts folder
+        run: rm -rf models/tts/*
+
       - name: English xtts headless custom xtts model batch test python app.py
         run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+
+      - name: Wipe models/tts folder
+        run: rm -rf models/tts/*
      
       - name: Delete custom_xtts_test.zip
         run: rm -f custom_xtts_test.zip
