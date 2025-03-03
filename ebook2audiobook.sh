@@ -306,15 +306,20 @@ else
 			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
 			python -m pip install --upgrade pip
 			python -m pip install --upgrade --no-cache-dir --progress-bar=on < requirements.txt
-			# Prevent coqui-tts "dot" bug
-			coqui_path="$(pip show coqui-tts 2>/dev/null | grep "Location" | awk '{print $2}')"
-			if [ ! -z "$coqui_path" ]; then
-				cp -a ./patches/tokenizer.py $coqui_path/TTS/tts/layers/xtts/tokenizer.py
-			fi
 			conda deactivate
 		fi
 		return 0
 	}
+
+	# Prevent Coqui-TTS "dot" bug
+	coqui_path="$(pip show coqui-tts 2>/dev/null | grep "Location" | awk '{print $2}')"
+	if [ ! -z "$coqui_path" ]; then
+		src="./patches/tokenizer.py"
+		dest="$coqui_path/TTS/tts/layers/xtts/tokenizer.py"
+		if ! diff -q "$src" "$dest" > /dev/null 2>&1; then
+			$(which cp 2>/dev/null) -a "$src" "$dest"
+		fi
+	fi
 
 	echo -e "\e[33m v${VERSION} ${SCRIPT_MODE} mode \e[0m"
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
