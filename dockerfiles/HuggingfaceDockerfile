@@ -4,8 +4,7 @@
 # Build with the command: 
 # docker build --platform linux/amd64 -t athomasson2/ebook2audiobook:latest . 
 
-ARG BASE=nvidia/cuda:11.8.0-base-ubuntu22.04
-FROM ${BASE}
+FROM python:3.12
 
 # Create and switch to a non-root user
 RUN useradd -m -u 1000 user
@@ -23,6 +22,7 @@ RUN apt-get update && \
     apt-get install -y nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
 
 
 # Clone the GitHub repository and set it as the working directory
