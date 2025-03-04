@@ -469,9 +469,5 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 - [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
 
 
-### [Legacy V1.0](legacy/v1.0)
-You can view the code [here](legacy/v1.0).
-
-
 ## Join Our  Server!
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
