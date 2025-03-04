@@ -22,9 +22,13 @@ RUN apt-get update && \
 RUN curl --proto '=https' --tlsv1.2 -sSf "https://sh.rustup.rs" | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Clone the GitHub repository and set it as the working directory
-RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
-RUN git clone --depth 1 https://github.com/DrewThomasson/ebook2audiobook.git /app && rm -rf /app/.git
+
+# Copy ebook2audiobook repository contents:
+WORKDIR /app
+COPY . /app
+
+# Remove git folder to save space
+# rm -rf /app/.git
 
 # Ensure the repository is the current working directory
 WORKDIR /app
