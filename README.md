@@ -301,7 +301,7 @@ docker run --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
 #### Building the Docker Container
 - You can build the docker image with the command:
 ```powershell
-docker build --platform linux/amd64 -t athomasson2/ebook2audiobook .
+docker build -t athomasson2/ebook2audiobook .
 ```
 This command will start the Gradio interface on port 7860.(localhost:7860)
 - For more options add the parameter `--help`
