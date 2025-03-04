@@ -42,7 +42,7 @@ services:
           #     capabilities:
           #       - gpu
     volumes:
-      - ./:/home/user/app  # Maps the local directory to the container.
+      - ./:/app  # Maps the local directory to the container.
 
 # Common Issues: ----
 # --> `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory`
