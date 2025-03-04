@@ -4,7 +4,8 @@
 # Build with the command: 
 # docker build --platform linux/amd64 -t athomasson2/ebook2audiobook:latest . 
 
-FROM python:3.12
+ARG BASE=nvidia/cuda:11.8.0-base-ubuntu22.04
+FROM ${BASE}
 
 # Create and switch to a non-root user
 RUN useradd -m -u 1000 user
@@ -22,7 +23,11 @@ RUN apt-get update && \
     apt-get install -y nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
+    
+# Install Rust compiler (to build sudachipy for Mac)
+USER user
+RUN curl --proto '=https' --tlsv1.2 -sSf "https://sh.rustup.rs" | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 
 # Clone the GitHub repository and set it as the working directory
