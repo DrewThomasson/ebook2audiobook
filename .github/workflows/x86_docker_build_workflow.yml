@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push x86 Docker Image
 on:
   workflow_dispatch:  # Allows manual trigger
   release:
