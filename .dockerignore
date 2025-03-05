@@ -1,0 +1,25 @@
+# Ignore Git repository files
+.git/
+
+# Ignore Docker-related files (not needed in the image)
+# Dockerfile
+# .dockerignore
+
+# Ignore cache and temporary files
+.cache
+tmp/*
+
+# Ignore all files and subdirectories in models/ EXCEPT version.txt
+models/*
+!models/version.txt
+
+# Ignore virtual environments (if using venv)
+python_env/
+
+# Ignore compiled Python bytecode
+**/__pycache__/
+
+# Ignore specific directories inside the `audiobooks` project
+audiobooks/cli/*
+audiobooks/gui/gradio/*
+audiobooks/gui/host/*

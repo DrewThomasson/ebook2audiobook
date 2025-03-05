@@ -1,52 +1,48 @@
-# Read the doc: https://huggingface.co/docs/hub/spaces-sdks-docker
-# you will also find guides on how best to write your Dockerfile
+ARG BASE=python:3.12
+FROM ${BASE}
 
-# Build with the command: 
-# docker build --platform linux/amd64 -t athomasson2/ebook2audiobook:latest . 
-
-FROM python:3.12
-
-# Create and switch to a non-root user
-RUN useradd -m -u 1000 user
-USER user
-ENV PATH="/home/user/.local/bin:$PATH"
+# Set environment PATH for local installations
+ENV PATH="/root/.local/bin:$PATH"
 
 # Set a working directory for temporary operations
 WORKDIR /app
 
+# Set non-interactive mode to prevent tzdata prompt
+ENV DEBIAN_FRONTEND=noninteractive
+
 # Install system packages
-USER root
 RUN apt-get update && \
-    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 curl espeak-ng sox && \
+    apt-get install -y gcc g++ make wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 libsndfile1-dev libc-dev curl espeak-ng sox && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# Install Rust compiler (to build sudachipy for Mac)
+RUN curl --proto '=https' --tlsv1.2 -sSf "https://sh.rustup.rs" | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 
-# Clone the GitHub repository and set it as the working directory
-USER root
-RUN apt-get update && apt-get install -y git && apt-get clean && rm -rf /var/lib/apt/lists/*
-USER user
-RUN git clone --depth 1 https://github.com/DrewThomasson/ebook2audiobook.git /home/user/app && rm -rf /home/user/app/.git
+# Copy ebook2audiobook repository contents:
+WORKDIR /app
+COPY . /app
 
+# Remove git folder to save space
+# rm -rf /app/.git
 
-# Set the cloned repository as the base working directory
-WORKDIR /home/user/app
+# Ensure the repository is the current working directory
+WORKDIR /app
 
-# Install Python dependencies
-# Install UniDic and its dependencies
+# Install Python dependencies and UniDic
 RUN pip install --no-cache-dir unidic-lite unidic
 RUN python3 -m unidic download  # Download UniDic
-RUN mkdir -p /home/user/.local/share/unidic && \
-    mv ~/.local/share/unidic/* /home/user/.local/share/unidic/ || true
+RUN mkdir -p /root/.local/share/unidic
 RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-# Set environment variable to ensure MeCab can locate UniDic
-ENV UNIDIC_DIR=/home/user/.local/share/unidic
+# Set environment variable so MeCab can locate UniDic
+ENV UNIDIC_DIR=/root/.local/share/unidic
 
-# Do a test run to make sure that the base models are pre-downloaded and baked into the image
+# Do a test run to pre-download and bake base models into the image
 RUN echo "This is a test sentence." > test.txt 
 RUN python app.py --headless --ebook test.txt --script_mode full_docker
 RUN rm test.txt

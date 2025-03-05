@@ -1,5 +1,3 @@
-version: '3.8'
-
 x-gpu-enabled: &gpu-enabled
   devices:
     - driver: nvidia
@@ -15,7 +13,6 @@ services:
     image: docker.io/athomasson2/ebook2audiobook:latest
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here
-    platform: linux/amd64
     tty: true
     stdin_open: true
     ports:
@@ -42,7 +39,7 @@ services:
           #     capabilities:
           #       - gpu
     volumes:
-      - ./:/home/user/app  # Maps the local directory to the container.
+      - ./:/app  # Maps the local directory to the container.
 
 # Common Issues: ----
 # --> `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory`

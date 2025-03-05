@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: Build and Push x86 Docker Image
 on:
   workflow_dispatch:  # Allows manual trigger
   release:
@@ -6,7 +6,7 @@ on:
       - published  # Triggers automatically when a new release is published
 jobs:
   build:
-    runs-on: [self-hosted]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
+    runs-on: [self-hosted, ubuntu-latest]  # Attempts self-hosted first, then falls back to ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -29,9 +29,9 @@ jobs:
           TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
-      - name: Build and Push Docker image for multiple architectures
+      - name: Build and Push Docker image for linux/amd64
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
+          docker buildx build --platform linux/amd64 \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
