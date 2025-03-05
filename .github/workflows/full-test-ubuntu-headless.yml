@@ -32,6 +32,10 @@ jobs:
           import torch
           import os
           from TTS.api import TTS
+
+          # By using XTTS you agree to CPML license https://coqui.ai/cpml
+          os.environ["COQUI_TOS_AGREED"] = "1"
+
           
           device = "cuda" if torch.cuda.is_available() else "cpu"
           tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
