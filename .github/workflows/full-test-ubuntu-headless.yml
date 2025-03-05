@@ -9,7 +9,7 @@ on:
 
 jobs:
   run-script:
-    runs-on: [ubuntu-latest]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
+    runs-on: [self-hosted]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
