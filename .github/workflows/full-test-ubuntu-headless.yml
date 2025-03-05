@@ -60,3 +60,13 @@ jobs:
           )
 
           EOF
+
+
+      - name: Verify WAV file creation
+        run: |
+          if [ -f "output.wav" ]; then
+            echo "WAV file created successfully."
+          else
+            echo "WAV file not found!" && exit 1
+          fi
+
