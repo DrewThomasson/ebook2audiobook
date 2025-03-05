@@ -6,7 +6,7 @@ on:
       - published  # Triggers automatically when a new release is published
 jobs:
   build:
-    runs-on: [self-hosted, ubuntu-latest]  # Attempts self-hosted first, then falls back to ubuntu-latest
+    runs-on: [self-hosted]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
