@@ -13,6 +13,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+      
       - name: Set up Python 3.12
         uses: actions/setup-python@v4
         with:
@@ -24,9 +25,18 @@ jobs:
       - name: Install the system packages
         run: |
           sudo apt-get update &&
-          sudo apt-get install -y wget git calibre ffmpeg nodejs espeak espeak-ng rustc cargo libmecab-dev mecab mecab-ipadic-utf8 curl &&
+          sudo apt-get install -y gcc g++ make wget git calibre ffmpeg nodejs espeak espeak-ng rustc cargo libmecab-dev mecab mecab-ipadic-utf8 curl libsndfile1-dev libc-dev sox &&
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - &&
+          sudo apt-get install -y nodejs &&
           sudo apt-get clean &&
           sudo rm -rf /var/lib/apt/lists/*
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
       - name: Install the python requirements
         run: |
           python -m pip install --upgrade pip
@@ -34,10 +44,15 @@ jobs:
           pip install -r requirements.txt
 
       - name: pip Install unict
-        run: pip install unidic
+        run: pip install unidic-lite unidic
 
       - name: Download the unict dictionary
-        run: python -m unidic download
+        run: |
+          python -m unidic download
+          mkdir -p ~/.local/share/unidic
+
+      - name: Set UniDic environment variable
+        run: echo "UNIDIC_DIR=$HOME/.local/share/unidic" >> $GITHUB_ENV
 
       - name: Help command python app.py
         run: python app.py --help
@@ -50,7 +65,6 @@ jobs:
           echo "This is test sentence 3 ." > workflow-testing/test3.txt
           echo "This is test sentence 4 ." > workflow-testing/test4.txt
           echo "This is test sentence 5 ." > workflow-testing/test5.txt
-
 
       - name: Default headless single test python app.py
         run: python app.py --headless --ebook "workflow-testing/test1.txt"
