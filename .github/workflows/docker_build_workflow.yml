@@ -1,18 +1,56 @@
 name: Build and Push Docker Image
+
 on:
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch: # Allows manual trigger
   release:
-    types:
-      - published  # Triggers automatically when a new release is published
+    types: [published] # Triggers automatically when a new release is published
+
 jobs:
   build:
-    runs-on: [self-hosted]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
+    runs-on: [self-hosted] # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
+    
     steps:
+      - name: Install Docker
+        run: |
+          # Check if Docker is installed
+          if ! command -v docker &> /dev/null; then
+            # Update package lists
+            sudo apt-get update
+            
+            # Install dependencies
+            sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+            
+            # Add Docker's official GPG key
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+            
+            # Set up the stable repository
+            sudo add-apt-repository \
+              "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+              $(lsb_release -cs) \
+              stable"
+            
+            # Install Docker CE
+            sudo apt-get update
+            sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+            
+            # Add current user to docker group
+            sudo usermod -aG docker $USER
+          fi
+
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: all
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+        with:
+          version: latest
+          driver: docker-container
+          buildkitd-flags: --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -32,7 +70,7 @@ jobs:
       - name: Build and Push Docker image for multiple architectures
         run: |
           docker buildx build --platform linux/amd64,linux/arm64 \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
-            --push .
+          -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+          -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.GIT_HASH }} \
+          -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.RELEASE_TAG }} \
+          --push .
