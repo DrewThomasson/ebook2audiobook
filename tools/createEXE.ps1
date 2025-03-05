@@ -1,3 +1,8 @@
+# .ps1
+# Script to run ebook2audiobook.cmd with administrator privileges
+
+# Paste contents into https://ps2exe.azurewebsites.net to create exe
+
 # Determine script/exe directory
 $scriptDirectory = if ($PSScriptRoot) { 
     $PSScriptRoot 
