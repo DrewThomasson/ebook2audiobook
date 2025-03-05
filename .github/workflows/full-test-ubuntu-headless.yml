@@ -67,16 +67,16 @@ jobs:
           echo "This is test sentence 5 ." > workflow-testing/test5.txt
 
       - name: Default headless single test python app.py
-        run: python app.py --headless --ebook "workflow-testing/test1.txt"
+        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebook "workflow-testing/test1.txt"
 
       - name: Default xtts headless batch test python app.py
-        run: python app.py --headless --ebooks_dir "workflow-testing" --tts_engine xtts
+        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebooks_dir "workflow-testing" --tts_engine xtts
 
       - name: Default xtts headless Custom-Voice single test python app.py
-        run: python app.py --headless --ebook "workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --ebook "workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Default xtts headless Custom-Voice batch test python app.py
-        run: python app.py --headless --ebooks_dir "workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --ebooks_dir "workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Create the custom_xtts_test.zip for headless custom xtts model single test python app.py
         run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
@@ -85,13 +85,13 @@ jobs:
         run: rm -rf models/tts/*
 
       - name: English xtts headless custom xtts model single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
 
       - name: Wipe models/tts folder
         run: rm -rf models/tts/*
 
       - name: English xtts headless custom xtts model batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
 
       - name: Wipe models/tts folder
         run: rm -rf models/tts/*
@@ -100,85 +100,85 @@ jobs:
         run: rm -f custom_xtts_test.zip
 
       - name: English xtts headless fine-tuned xtts model single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
 
       - name: English xtts headless fine-tuned xtts model batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --fine_tuned AiExplained
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --fine_tuned AiExplained
 
       - name: Wipe models/tts folder
         run: rm -rf models/tts/*
 
       - name: English Fairseq headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq
 
       - name: English Fairseq headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine fairseq
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine fairseq
 
       - name: English Fairseq Custom-Voice headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English Fairseq Custom-Voice headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
         run: rm -rf models/tts/*
 
       - name: Unusual Fairseq headless single test python app.py
-        run: python app.py --headless --language urd-script_devanagari --ebook "workflow-testing/test1.txt" --tts_engine fairseq
+        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebook "workflow-testing/test1.txt" --tts_engine fairseq
 
       - name: Unusual Fairseq headless batch test python app.py
-        run: python app.py --headless --language urd-script_devanagari --ebooks_dir "workflow-testing" --tts_engine fairseq
+        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "workflow-testing" --tts_engine fairseq
 
       - name: Unusual Fairseq Custom-Voice headless single test python app.py
-        run: python app.py --headless --language urd-script_devanagari --ebook "workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebook "workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Unusual Fairseq  Custom-Voice headless batch test python app.py
-        run: python app.py --headless --language urd-script_devanagari --ebooks_dir "workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
         run: rm -rf models/tts/*
 
       - name: English Vits headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine vits
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine vits
 
       - name: English Vits headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine vits
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine vits
 
       - name: English Vits Custom-Voice headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English Vits Custom-Voice headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
         run: rm -rf models/tts/*
 
       - name: English Yourtts headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine yourtts
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine yourtts
 
       - name: English Yourtts headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine yourtts
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine yourtts
 
       - name: English Yourtts Custom-Voice headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English Yourtts Custom-Voice headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
         run: rm -rf models/tts/*
 
       - name: English Bark headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine bark
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine bark
 
       - name: English Bark headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine bark
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine bark
 
       - name: English Bark Custom-Voice headless single test python app.py
-        run: python app.py --headless --language eng --ebook "workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English Bark Custom-Voice headless batch test python app.py
-        run: python app.py --headless --language eng --ebooks_dir "workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe models/tts folder
         run: rm -rf models/tts/*
