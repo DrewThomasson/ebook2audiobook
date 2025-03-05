@@ -302,7 +302,7 @@ docker run --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
 #### Building the Docker Container
 - You can build the docker image with the command:
 ```powershell
-docker build --platform linux/amd64 -t athomasson2/ebook2audiobook .
+docker build -t athomasson2/ebook2audiobook .
 ```
 This command will start the Gradio interface on port 7860.(localhost:7860)
 - For more options add the parameter `--help`
@@ -468,10 +468,6 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 - [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
-
-
-### [Legacy V1.0](legacy/v1.0)
-You can view the code [here](legacy/v1.0).
 
 
 ## Join Our  Server!
