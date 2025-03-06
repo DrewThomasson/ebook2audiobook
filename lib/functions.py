@@ -706,13 +706,14 @@ def convert_chapters_to_audio(session):
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')                       
                         tts_manager.params['sentence'] = re.sub(' . ', r' <pause> ', sentence)
                         print(f"*********{tts_manager.params['sentence']}*************")
-                        if tts_manager.convert_sentence_to_audio():                           
-                            percentage = (sentence_number / total_sentences) * 100
-                            t.set_description(f'Converting {percentage:.2f}%')
-                            msg = f'\nSentence: {sentence}'
-                            print(msg)
-                        else:
-                            return False
+                        if ts_manager.params['sentence'] != "":
+                            if tts_manager.convert_sentence_to_audio():                           
+                                percentage = (sentence_number / total_sentences) * 100
+                                t.set_description(f'Converting {percentage:.2f}%')
+                                msg = f'\nSentence: {sentence}'
+                                print(msg)
+                            else:
+                                return False
                         t.update(1)
                     if progress_bar is not None:
                         progress_bar(sentence_number / total_sentences)
@@ -1812,14 +1813,13 @@ def web_interface(args):
                 ebook_data = session['ebook']
             else:
                 ebook_data = None
-            session['temperature'] = session['temperature'] if session['temperature'] else default_xtts_settings['temperature']
+            session['temperature'] = default_xtts_settings['temperature']
             session['length_penalty'] = default_xtts_settings['length_penalty']
             session['num_beams'] = default_xtts_settings['num_beams']
-            #session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_xtts_settings['repetition_penalty']
             session['repetition_penalty'] = default_xtts_settings['repetition_penalty']
-            session['top_k'] = session['top_k'] if session['top_k'] else default_xtts_settings['top_k']
-            session['top_p'] = session['top_p'] if session['top_p'] else default_xtts_settings['top_p']
-            session['speed'] = session['speed'] if session['speed'] else default_xtts_settings['speed']
+            session['top_k'] = default_xtts_settings['top_k']
+            session['top_p'] = default_xtts_settings['top_p']
+            session['speed'] = default_xtts_settings['speed']
             session['enable_text_splitting'] = default_xtts_settings['enable_text_splitting']
             return (
                 gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
@@ -2281,7 +2281,6 @@ def web_interface(args):
 
         def update_gr_audiobook_list(id):
             try:
-                nonlocal audiobook_options
                 session = context.get_session(id)            
                 audiobook_options = [
                     (f, os.path.join(session['audiobooks_dir'], f))
