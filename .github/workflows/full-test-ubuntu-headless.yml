@@ -31,4 +31,4 @@ jobs:
         run: mv tools/headlessDockerTester.sh headlessDockerTester.sh
 
       - name: English Fairseq headless single test python app.py
-        run: headlessDockerTester.sh --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq
+        run: ./headlessDockerTester.sh --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq
