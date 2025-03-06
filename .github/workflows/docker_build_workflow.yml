@@ -46,3 +46,10 @@ jobs:
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
             --push .
+            
+      - name: Build and Push Huggingface Docker image for x86 only
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -f dockerfiles/HuggingfaceDockerfile \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
+            --push .
