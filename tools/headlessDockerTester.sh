@@ -13,7 +13,7 @@ DOCKER_PARAMS="$@"
 DOCKER_LOG=$(docker run --rm \
     -v "$(pwd)/workflow-testing:/app/workflow-testing" \
     -v "$(pwd)/audiobooks:/app/audiobooks" \
-    athomasson2/ebook2audiobook \
+    athomasson2/ebook2audiobook:latest \
     $DOCKER_PARAMS 2>&1)
 
 # Check if the Docker command was successful
