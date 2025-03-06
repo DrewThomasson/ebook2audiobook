@@ -1373,7 +1373,6 @@ def web_interface(args):
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
-    audiobooks_dir = None
     ebook_src = None
     language_options = [
         (
@@ -2196,6 +2195,7 @@ def web_interface(args):
 
         def submit_convert_btn(id, device, ebook_file, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting):
             try:
+                session = context.get_session(id)
                 args = {
                     "is_gui_process": is_gui_process,
                     "session": id,
@@ -2204,7 +2204,7 @@ def web_interface(args):
                     "tts_engine": tts_engine,
                     "ebook": ebook_file if isinstance(ebook_file, str) else None,
                     "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
-                    "audiobooks_dir": audiobooks_dir,
+                    "audiobooks_dir": session['audiobooks_dir'],
                     "voice": voice,
                     "language": language,
                     "custom_model": custom_model,
@@ -2226,8 +2226,7 @@ def web_interface(args):
                 elif args['num_beams'] < args['length_penalty']:
                     error = 'Error: num beams must be greater or equal than length penalty.'
                     show_alert({"type": "warning", "msg": error})                   
-                else:  
-                    session = context.get_session(id)
+                else:
                     session['status'] = 'converting'
                     session['progress'] = len(audiobook_options)
                     if isinstance(args['ebook_list'], list):
@@ -2303,7 +2302,6 @@ def web_interface(args):
                 return gr.update()
 
         def change_gr_read_data(data, state):
-            nonlocal audiobooks_dir
             msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
             try:
                 if data is None:
@@ -2348,13 +2346,11 @@ def web_interface(args):
                 os.makedirs(session['voice_dir'], exist_ok=True)             
                 if is_gui_shared:
                     msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
-                    audiobooks_dir = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
-                    session['audiobooks_dir'] = audiobooks_dir
+                    session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
                     delete_unused_tmp_dirs(audiobooks_gradio_dir, interface_shared_tmp_expire, session)
                 else:
                     msg = f' Note: if no activity is detected after {tmp_expire} days, your session will be cleaned up.'
-                    audiobooks_dir = os.path.join(audiobooks_host_dir, f"web-{session['id']}")
-                    session['audiobooks_dir'] = audiobooks_dir
+                    session['audiobooks_dir'] = os.path.join(audiobooks_host_dir, f"web-{session['id']}")
                     delete_unused_tmp_dirs(audiobooks_host_dir, tmp_expire, session)
                 if not os.path.exists(session['audiobooks_dir']):
                     os.makedirs(session['audiobooks_dir'], exist_ok=True)
