@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - act-trigger
+  release:
+    types:
+      - published
   workflow_dispatch:
 
 
