@@ -21,7 +21,7 @@ if (Test-Path $cmdPath) {
     $psi.Arguments = "/c `"$cmdPath`""
     $psi.Verb = "runas"  # Run as administrator
     $psi.WorkingDirectory = $scriptDirectory
-    $psi.UseShellExecute = $true
+    $psi.UseShellExecute = $false
 
     # Start the process
     try {
