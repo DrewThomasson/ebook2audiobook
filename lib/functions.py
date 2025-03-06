@@ -2289,6 +2289,8 @@ def web_interface(args):
                     key=lambda x: os.path.getmtime(x[1]),
                     reverse=True
                 )
+                print(session['audiobooks_dir'])
+                print(audiobook_options)
                 session['audiobook'] = session['audiobook'] if session['audiobook'] in [option[1] for option in audiobook_options] else None
                 if len(audiobook_options) > 0:
                     if session['audiobook'] is not None:
