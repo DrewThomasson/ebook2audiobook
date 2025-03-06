@@ -17,7 +17,7 @@ WORKDIR /app
 # Install system packages
 USER root
 RUN apt-get update && \
-    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 curl espeak-ng sox && \
+    apt-get install -y wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 curl espeak-ng sox libsndfile1-dev libc-dev && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     apt-get clean && \
@@ -47,9 +47,9 @@ RUN pip install --no-cache-dir --upgrade -r requirements.txt
 ENV UNIDIC_DIR=/home/user/.local/share/unidic
 
 # Do a test run to make sure that the base models are pre-downloaded and baked into the image
-RUN echo "This is a test sentence." > test.txt 
-RUN python app.py --headless --ebook test.txt --script_mode full_docker
-RUN rm test.txt
+#RUN echo "This is a test sentence." > test.txt 
+#RUN python app.py --headless --ebook test.txt --script_mode full_docker
+#RUN rm test.txt
 
 # Expose the required port
 EXPOSE 7860
