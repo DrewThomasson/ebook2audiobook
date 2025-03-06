@@ -601,14 +601,14 @@ def get_sentences(phoneme_list, max_tokens):
         # Always append to current sentence unless punctuation is hit
         if current_phoneme_count + part_phoneme_count > max_tokens:
             # Ensure we finalize the sentence at punctuation, not a space
-            if any(current_sentence.endswith(punc) for punc in punctuation_list):
+            if any(current_sentence.endswith(punc) for punc in punctuation_split):
                 sentences.append(current_sentence.strip())
                 current_sentence = phoneme
                 current_phoneme_count = part_phoneme_count
             else:
                 # Look back and split at last punctuation instead of splitting randomly
                 last_punc_index = max(
-                    (current_sentence.rfind(punc) for punc in punctuation_list if punc in current_sentence),
+                    (current_sentence.rfind(punc) for punc in punctuation_split if punc in current_sentence),
                     default=-1
                 )
                 if last_punc_index > -1:
@@ -704,7 +704,8 @@ def convert_chapters_to_audio(session):
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')                       
-                        tts_manager.params['sentence'] = sentence
+                        tts_manager.params['sentence'] = re.sub(' . ', r' <pause> ', sentence)
+                        print(f"*********{tts_manager.params['sentence']}*************")
                         if tts_manager.convert_sentence_to_audio():                           
                             percentage = (sentence_number / total_sentences) * 100
                             t.set_description(f'Converting {percentage:.2f}%')

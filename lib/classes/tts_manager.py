@@ -20,7 +20,6 @@ from TTS.tts.models.xtts import Xtts
 
 from lib.models import *
 from lib.conf import models_dir, default_audio_proc_format
-from lib.lang import punctuation_split
 
 app = FastAPI()
 lock = threading.Lock()
@@ -251,9 +250,6 @@ class TTSManager:
                 else models[self.session['tts_engine']]['internal']['voice']
             )
             sample_rate = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
-            pattern_pause = re.escape(''.join(punctuation_split))
-            self.params['sentence'] = re.sub(pattern_pause, r'<pause>', self.params['sentence'])
-            print(f"*********{self.params['sentence']}*************")
             if self.session['tts_engine'] == XTTSv2:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     if self.params['current_voice_path'] != self.params['voice_path']:
