@@ -30,5 +30,8 @@ jobs:
       - name: move test script to main dir
         run: mv tools/headlessDockerTester.sh headlessDockerTester.sh
 
+      - name: Grant execution permission to script
+        run: chmod +x headlessDockerTester.sh
+
       - name: English Fairseq headless single test python app.py
         run: ./headlessDockerTester.sh --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq
