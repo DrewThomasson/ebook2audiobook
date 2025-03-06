@@ -1,5 +1,5 @@
 # .ps1
-# Script to run ebook2audiobook.cmd with administrator privileges
+# Script to run ebook2audiobook.cmd without administrator privileges
 
 # Paste contents into https://ps2exe.azurewebsites.net to create exe
 
@@ -21,7 +21,7 @@ if (Test-Path $cmdPath) {
     $psi.Arguments = "/c `"$cmdPath`""
     $psi.Verb = "runas"  # Run as administrator
     $psi.WorkingDirectory = $scriptDirectory
-    $psi.UseShellExecute = $true
+    $psi.UseShellExecute = $false
 
     # Start the process
     try {
