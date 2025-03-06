@@ -59,54 +59,13 @@ jobs:
 
       - name: Create test files
         run: |
-          mkdir workflow-testing
-          echo "This is test sentence 1 ." > workflow-testing/test1.txt
-          echo "This is test sentence 2 ." > workflow-testing/test2.txt
-          echo "This is test sentence 3 ." > workflow-testing/test3.txt
-          echo "This is test sentence 4 ." > workflow-testing/test4.txt
-          echo "This is test sentence 5 ." > workflow-testing/test5.txt
-
-      - name: Default headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebook "workflow-testing/test1.txt"
-
-      - name: Default xtts headless batch test python app.py
-        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebooks_dir "workflow-testing" --tts_engine xtts
-
-      - name: Default xtts headless Custom-Voice single test python app.py
-        run: python app.py --headless --script_mode full_docker --ebook "workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Default xtts headless Custom-Voice batch test python app.py
-        run: python app.py --headless --script_mode full_docker --ebooks_dir "workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Create the custom_xtts_test.zip for headless custom xtts model single test python app.py
-        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
-        
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: English xtts headless custom xtts model single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: English xtts headless custom xtts model batch test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-     
-      - name: Delete custom_xtts_test.zip
-        run: rm -f custom_xtts_test.zip
-
-      - name: English xtts headless fine-tuned xtts model single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
-
-      - name: English xtts headless fine-tuned xtts model batch test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --fine_tuned AiExplained
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
+          mkdir -p workflow-testing
+          CONTENT=$'"This is a test sentence," she said. "Here'\''s another one."\nThe quick brown fox jumps over the lazy dog, but the cat stays still.\nNumbers like 123,456.78 should also be tested.\nWhat happens if we use question marks? Or exclamation points!\n"Nested quotes are '\''interesting'\''," he noted.'
+          echo -e "$CONTENT" > workflow-testing/test1.txt
+          echo -e "$CONTENT" > workflow-testing/test2.txt
+          echo -e "$CONTENT" > workflow-testing/test3.txt
+          echo -e "$CONTENT" > workflow-testing/test4.txt
+          echo -e "$CONTENT" > workflow-testing/test5.txt
 
       - name: English Fairseq headless single test python app.py
         run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine fairseq
@@ -164,6 +123,48 @@ jobs:
 
       - name: English Yourtts Custom-Voice headless batch test python app.py
         run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Wipe models/tts folder
+        run: rm -rf models/tts/*
+
+      - name: Default headless single test python app.py
+        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebook "workflow-testing/test1.txt"
+
+      - name: Default xtts headless batch test python app.py
+        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebooks_dir "workflow-testing" --tts_engine xtts
+
+      - name: Default xtts headless Custom-Voice single test python app.py
+        run: python app.py --headless --script_mode full_docker --ebook "workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Default xtts headless Custom-Voice batch test python app.py
+        run: python app.py --headless --script_mode full_docker --ebooks_dir "workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Create the custom_xtts_test.zip for headless custom xtts model single test python app.py
+        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
+        
+      - name: Wipe models/tts folder
+        run: rm -rf models/tts/*
+
+      - name: English xtts headless custom xtts model single test python app.py
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+
+      - name: Wipe models/tts folder
+        run: rm -rf models/tts/*
+
+      - name: English xtts headless custom xtts model batch test python app.py
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+
+      - name: Wipe models/tts folder
+        run: rm -rf models/tts/*
+     
+      - name: Delete custom_xtts_test.zip
+        run: rm -f custom_xtts_test.zip
+
+      - name: English xtts headless fine-tuned xtts model single test python app.py
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
+
+      - name: English xtts headless fine-tuned xtts model batch test python app.py
+        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "workflow-testing" --tts_engine xtts --fine_tuned AiExplained
 
       - name: Wipe models/tts folder
         run: rm -rf models/tts/*
