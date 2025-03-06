@@ -10,7 +10,7 @@ mkdir -p workflow-testing audiobooks
 DOCKER_PARAMS="$@"
 
 # Run the Docker command and capture logs
-DOCKER_LOG=$(docker run --rm \
+DOCKER_LOG=$(docker run --rm --pull=always \
     -v "$(pwd)/workflow-testing:/app/workflow-testing" \
     -v "$(pwd)/audiobooks:/app/audiobooks" \
     athomasson2/ebook2audiobook:latest \
