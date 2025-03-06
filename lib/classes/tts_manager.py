@@ -29,7 +29,11 @@ loaded_tts = {}
 def load_coqui_tts_api(model_path, device):
     try:
         with lock:
-            tts = TtsXTTS(model_path, gpu=True if device == "cuda" else False).to(device)
+            tts = TtsXTTS(model_path)
+            if device == 'cuda':
+                tts.cuda()
+            else:
+                tts.to(device)
         return tts
     except Exception as e:
         error = f'load_coqui_tts_api() error: {e}'
@@ -53,6 +57,8 @@ def load_coqui_tts_checkpoint(model_path, config_path, vocab_path, device):
             )
         if device == 'cuda':
             tts.cuda()
+        else:
+            tts.to(device)
         return tts
     except Exception as e:
         error = f'load_coqui_tts_checkpoint() error: {e}'
