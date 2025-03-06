@@ -90,16 +90,6 @@ def check_and_install_requirements(file_path):
                         return False          
             msg = '\nAll required packages are installed.'
             print(msg)
-
-        # Prevent coqui-tts "dot" bug  
-        coqui_path = importlib.util.find_spec('TTS')
-        if coqui_path is not None:
-            coqui_path = Path(coqui_path.origin).parent
-            src = Path("patches/tokenizer.py")
-            dest = os.path.join(coqui_path, 'tts', 'layers', 'xtts', 'tokenizer.py')
-            if not filecmp.cmp(src, dest, shallow=False):
-                shutil.copy(src, dest)
-
         return True
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
@@ -197,7 +187,7 @@ Linux/Mac:
     headless_optional_group.add_argument(options[20], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
     Default to config.json model.""")                     
     headless_optional_group.add_argument(options[21], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[22], action='version', version=f'ebook2audiobook version {version}', help='''Show the version of the script and exit''')
+    headless_optional_group.add_argument(options[22], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
     headless_optional_group.add_argument(options[23], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
@@ -225,6 +215,8 @@ Linux/Mac:
         args['session'] = 'ba800d22-ee51-11ef-ac34-d4ae52cfd9ce' if args['workflow'] else args['session'] if args['session'] else None
         args['share'] =  args['share'] if args['share'] else False
         args['ebook_list'] = None
+
+        print(f"v{prog_version} {args['script_mode']} mode")
 
         if args['script_mode'] == NATIVE:
             check_pkg = check_and_install_requirements(requirements_file)

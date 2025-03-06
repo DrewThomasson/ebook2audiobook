@@ -211,7 +211,6 @@ def check_programs(prog_name, command, options):
             stderr=subprocess.PIPE,
             check=True,
             text=True,
-            universal_newlines=True,
             encoding='utf-8'
         )
         return True, None
@@ -414,15 +413,17 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace punctuations causing hallucinations
-    pattern = f"[{''.join(map(re.escape, switch_punctuations.keys()))}]"
-    text = re.sub(pattern, lambda match: switch_punctuations[match.group()], text)
+    pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
+    text = re.sub(pattern, lambda match: punctuation_switch[match.group()], text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
     if lang in abbreviations_mapping:
         pattern = r'\b(' + '|'.join(re.escape(k) for k in abbreviations_mapping[lang]) + r')\b'
         text = re.sub(pattern, lambda match: abbreviations_mapping[lang].get(match.group(0), match.group(0)), text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r") with " . " as many times as they occur
-    text = re.sub('(\r\n|\n\n|\r\r|\n\r)+', lambda m: ' . ' * (m.group().count("\n") // 2 + m.group().count("\r") // 2), text)
+    #text = re.sub('(\r\n|\n\n|\r\r|\n\r)+', lambda m: ' . ' * (m.group().count("\n") // 2 + m.group().count("\r") // 2), text)
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a single "\n"
+    text = re.sub(r'(\r\n|\r|\n)+', '\n', text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'[\r\n]', ' ', text)
     # Replace tabs ("\t") with equivalent spaces
@@ -431,8 +432,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = replace_roman_numbers(text)
     # Pattern 1: Add a space between UTF-8 characters and numbers
     text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    # Pattern 2: Split big numbers into groups of 2
-    text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
+    # Pattern 2: Split big numbers into groups of 4
+    text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
     # Replace math symbols with words
     text = maths_to_words(text, lang, lang_iso1, tts_engine)
     return text
@@ -447,13 +448,24 @@ def convert_to_epub(session):
             error = "The 'ebook-convert' utility is not installed or not found."
             print(error)
             return False
-        print(f"Running command: {util_app} {session['ebook']} {session['epub_path']} --input-encoding=utf-8 --output-profile=generic_eink --verbose")
+        print(f"Running command: {util_app} {session['ebook']} {session['epub_path']}")
         result = subprocess.run(
-            [util_app, session['ebook'], session['epub_path'], '--input-encoding=utf-8', '--output-profile=generic_eink', '--verbose'],
+            [
+                util_app, session['ebook'], session['epub_path'],
+                '--input-encoding=utf-8',
+                '--output-profile=generic_eink',
+                '--epub-version=3',
+                '--flow-size=0',
+                '--chapter-mark=pagebreak',
+                '--page-breaks-before', "//*[name()='h1' or name()='h2']",
+                '--disable-font-rescaling',
+                '--pretty-print',
+                '--smarten-punctuation',
+                '--verbose'
+            ],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            universal_newlines=True,
             encoding='utf-8'
         )
         print(result.stdout)
@@ -540,21 +552,20 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     # Remove scripts and styles
     for script in soup(["script", "style"]):
         script.decompose()
-    # Rule 1: Ensure spaces before & after punctuation (EXCLUDING `,` and `.`)
-    escaped_punctuation = re.escape(''.join(punctuation_list))
-    punctuation_pattern_spaces = r'\s*([{}])\s*'.format(escaped_punctuation.replace(',', '').replace('.', ''))
+    # Rule 1: Ensure spaces before & after punctuation
+    pattern_space = re.escape(''.join(punctuation_list))
+    # Step 1: Ensure space before and after punctuation (excluding `,` and `.`)
+    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+    text = re.sub(punctuation_pattern_space, r' \1 ', soup.get_text().strip())
     # Rule 2: Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
     comma_dot_pattern = r'(?<!\d)\s*([,.])\s*(?!\d)'
-    # Step 1: Ensure space before and after punctuation (excluding `,` and `.`)
-    text = re.sub(punctuation_pattern_spaces, r' \1 ', soup.get_text().strip())
     # Step 2: Ensure space before and after `,` and `.` only when NOT between numbers
     text = re.sub(comma_dot_pattern, r' \1 ', text)
     # Normalize lines and remove unnecessary spaces
     text = normalize_text(text, lang, lang_iso1, tts_engine)
     # Create regex pattern from punctuation list to split the phoneme_list
-    escaped_punctuation = re.escape(''.join(punctuation_list))
-    #punctuation_pattern_split = rf'([^{"".join(escaped_punctuation)}]+|[{escaped_punctuation}])'
-    punctuation_pattern_split = rf'(\S.*?[{"".join(escaped_punctuation)}])|\S+'
+    pattern_split = re.escape(''.join(punctuation_split))
+    punctuation_pattern_split = rf'(\S.*?[{"".join(pattern_split)}])|\S+'
     # Split by punctuation marks while keeping the punctuation at the end of each word
     tmp_list = re.findall(punctuation_pattern_split, text)
     phoneme_list =  [phoneme.strip() for phoneme in tmp_list if phoneme.strip()]    
@@ -612,6 +623,8 @@ def get_sentences(phoneme_list, max_tokens):
             current_sentence += (" " if current_sentence else "") + phoneme
             current_phoneme_count += part_phoneme_count
     if current_sentence:
+        pattern_pause = re.escape(''.join(punctuation_split))
+        current_sentence = re.sub(pattern_pause, r'<pause>', current_sentence)
         sentences.append(current_sentence.strip())
     return sentences
   
@@ -620,9 +633,11 @@ def get_free_memory(list, session):
     return avail_memory
 
 def get_sanitized(str, replacement="_"):
+    str = str.replace('&', 'And')
+    forbidden_chars = r'[<>:"/\\|?*\x00-\x1F ()]'
     sanitized = re.sub(r'\s+', replacement, str)
-    sanitized = re.sub(r'[<>:"/\\|?*]', replacement, sanitized)
-    sanitized = sanitized.strip()
+    sanitized = re.sub(forbidden_chars, replacement, sanitized)
+    sanitized = sanitized.strip("_")
     return sanitized
 
 def convert_chapters_to_audio(session):
@@ -1165,8 +1180,7 @@ def convert_ebook(args):
                             error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                 if session['voice'] is not None:
                     os.makedirs(session['voice_dir'], exist_ok=True)
-                    voice_name = os.path.splitext(os.path.basename(session['voice']))[0].replace('&', 'And').replace(' ', '_')
-                    voice_name = get_sanitized(voice_name)
+                    voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
                     final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
                     if not os.path.exists(final_voice_file):
                         extractor = VoiceExtractor(session, models_dir, session['voice'], voice_name)
@@ -1547,7 +1561,7 @@ def web_interface(args):
         )
         main_markdown = gr.Markdown(
             f'''
-            <h1 style="line-height: 0.7">Ebook2Audiobook v{version}</h1>
+            <h1 style="line-height: 0.7">Ebook2Audiobook v{prog_version}</h1>
             <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" style="line-height:0">https://github.com/DrewThomasson/ebook2audiobook</a>
             <div style="line-height: 1.3;">
                 Multiuser, multiprocessing tasks on a geo cluster to share the conversion to the Grid<br/>
@@ -1588,7 +1602,7 @@ def web_interface(args):
                                 gr_custom_model_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
-                            gr_session = gr.Textbox(label='Session')
+                            gr_session = gr.Textbox(label='Session', interactive=False)
                         gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
             gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', visible=visible_gr_tab_preferences)
             
@@ -1802,7 +1816,8 @@ def web_interface(args):
             session['temperature'] = session['temperature'] if session['temperature'] else default_xtts_settings['temperature']
             session['length_penalty'] = default_xtts_settings['length_penalty']
             session['num_beams'] = default_xtts_settings['num_beams']
-            session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_xtts_settings['repetition_penalty']
+            #session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_xtts_settings['repetition_penalty']
+            session['repetition_penalty'] = default_xtts_settings['repetition_penalty']
             session['top_k'] = session['top_k'] if session['top_k'] else default_xtts_settings['top_k']
             session['top_p'] = session['top_p'] if session['top_p'] else default_xtts_settings['top_p']
             session['speed'] = session['speed'] if session['speed'] else default_xtts_settings['speed']
@@ -1828,15 +1843,19 @@ def web_interface(args):
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
 
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
-            if session is None:
-                return gr.update(variant='primary', interactive=False)
-            else:
-                if hasattr(upload_file, 'name') and not hasattr(custom_model_file, 'name'):
-                    return gr.update(variant='primary', interactive=True)
-                elif isinstance(upload_file, list) and len(upload_file) > 0 and upload_file_mode == 'directory' and not hasattr(custom_model_file, 'name'):
-                    return gr.update(variant='primary', interactive=True)
+            try:
+                if session is None:
+                    return gr.update(variant='primary', interactive=False)
                 else:
-                    return gr.update(variant='primary', interactive=False)   
+                    if hasattr(upload_file, 'name') and not hasattr(custom_model_file, 'name'):
+                        return gr.update(variant='primary', interactive=True)
+                    elif isinstance(upload_file, list) and len(upload_file) > 0 and upload_file_mode == 'directory' and not hasattr(custom_model_file, 'name'):
+                        return gr.update(variant='primary', interactive=True)
+                    else:
+                        return gr.update(variant='primary', interactive=False)
+            except Exception as e:
+                error = f'update_convert_btn(): {e}'
+                alert_exception(error)               
 
         def change_gr_ebook_file(data, id):
             try:
@@ -1849,7 +1868,7 @@ def web_interface(args):
                         msg = 'Cancellation requested, please wait...'
                         yield gr.update(value=show_modal('wait', msg),visible=True)
                         return
-                elif isinstance(data, list):
+                if isinstance(data, list):
                     session['ebook_list'] = data
                 else:
                     session['ebook'] = data
@@ -1880,7 +1899,7 @@ def web_interface(args):
                     state['msg'] = error
                 else:                  
                     session = context.get_session(id)
-                    voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And').replace(' ', '_')
+                    voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
                     voice_name = get_sanitized(voice_name)
                     final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
                     extractor = VoiceExtractor(session, models_dir, f, voice_name)
@@ -2000,7 +2019,7 @@ def web_interface(args):
                 nonlocal voice_options
                 session = context.get_session(id)
                 voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                voice_file_pattern = f"*_{models[session['tts_engine']][session['fine_tuned']]['samplerate']}.wav"
+                voice_file_pattern = f"*_24000.wav"
                 voice_options = [
                     (os.path.splitext(re.sub(r'_(24000|16000)\.wav$', '', f.name))[0], str(f))
                     for f in Path(session['voice_dir']).rglob(voice_file_pattern)
@@ -2247,8 +2266,8 @@ def web_interface(args):
                                 session['status'] = None
                                 error = 'Conversion cancelled.'
                             else:
-                                error = 'Conversion failed.'
                                 session['status'] = None
+                                error = 'Conversion failed.'
                         else:
                             show_alert({"type": "success", "msg": progress_status})
                             reset_ebook_session(args['session'])
@@ -2277,7 +2296,9 @@ def web_interface(args):
                 if len(audiobook_options) > 0:
                     if session['audiobook'] is not None:
                         session['audiobook'] = audiobook_options[0][1]
-                return gr.update(choices=audiobook_options, value=session['audiobook'])
+                    return gr.update(choices=audiobook_options, value=session['audiobook'])
+                else:
+                    return gr.update()
             except Exception as e:
                 error = f'update_gr_audiobook_list(): {e}!'
                 alert_exception(error)              

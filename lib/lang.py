@@ -24,7 +24,7 @@ language_tts = {
     "yourtts": {"eng": "en", "fra": "fr", "por": "pt"}
 }
 
-switch_punctuations = {
+punctuation_switch = {
     # Quotes causing hallucinations in some TTS engines
     '«': '"', '»': '"',  # French-style quotes
     '“': '"', '”': '"',  # Curly double quotes
@@ -64,7 +64,7 @@ switch_punctuations = {
 
 punctuation_list = [
     # Common punctuation in Western languages
-    ".", ", ", ":", ";", "!", "?", "¡", "¿", "«", "»",
+    ".", ",", ":", ";", "!", "?", "¡", "¿", "«", "»",
     # Punctuation used in Arabic and Persian
     "،", "؛", "؟",
     # Punctuation used in Chinese, Japanese, and Korean (CJK) languages
@@ -85,6 +85,31 @@ punctuation_list = [
     "໌", "ໍ",
     # Miscellaneous punctuation (pause-inducing, used globally)
     "—", "...", "‽"
+]
+
+punctuation_split = [
+    # Common punctuation in Western languages
+    ".", 
+    # Punctuation used in Arabic and Persian
+    "،",
+    # Punctuation used in Chinese, Japanese, and Korean (CJK) languages
+    "。", "，", "、", "·", "…",
+    # Punctuation used in Indic scripts (e.g., Hindi, Bengali, Tamil)
+    "।", "॥",
+    # Punctuation used in Thai
+    "ฯ",
+    # Punctuation used in Ethiopic scripts
+    "፡", "።", "፣", "፤", "፥", "፦", "፧",
+    # Punctuation used in Hebrew
+    "״",
+    # Punctuation used in Tibetan
+    "།", "༎",
+    # Punctuation used in Khmer
+    "។", "៕",
+    # Punctuation used in Lao
+    "໌", "ໍ",
+    # Miscellaneous punctuation (pause-inducing, used globally)
+    "—", "..."
 ]
 
 language_math_phonemes = {

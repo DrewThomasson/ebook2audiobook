@@ -16,8 +16,6 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 
-set /p VERSION=<VERSION.txt
-
 set "PROGRAMS_LIST=calibre-normal-cjk ffmpeg nodejs espeak-ng sox"
 
 set "TMP=%SCRIPT_DIR%\tmp"
@@ -211,12 +209,6 @@ goto install_components
 exit /b
 
 :main
-echo v%VERSION% %SCRIPT_MODE% mode
-:: Prevent coqui-tts "dot" bug
-fc ".\patches\tokenizer.py" ".\python_env\Lib\site-packages\TTS\tts\layers\xtts\tokenizer.py" >nul
-if %errorlevel% neq 0 (
-	call copy /Y ".\patches\tokenizer.py" ".\python_env\Lib\site-packages\TTS\tts\layers\xtts\"
-)
 if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 	call python %SCRIPT_DIR%\app.py --script_mode %SCRIPT_MODE% %ARGS%
 ) else (
