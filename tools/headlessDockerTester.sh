@@ -11,8 +11,8 @@ DOCKER_PARAMS="$@"
 
 # Run the Docker command and capture logs
 DOCKER_LOG=$(docker run --rm \
-    -v "$(pwd)/workflow-testing:/home/user/app/workflow-testing" \
-    -v "$(pwd)/audiobooks:/home/user/app/audiobooks" \
+    -v "$(pwd)/workflow-testing:/app/workflow-testing" \
+    -v "$(pwd)/audiobooks:/app/audiobooks" \
     athomasson2/ebook2audiobook \
     $DOCKER_PARAMS 2>&1)
 
