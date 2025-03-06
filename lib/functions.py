@@ -623,8 +623,6 @@ def get_sentences(phoneme_list, max_tokens):
             current_sentence += (" " if current_sentence else "") + phoneme
             current_phoneme_count += part_phoneme_count
     if current_sentence:
-        pattern_pause = re.escape(''.join(punctuation_split))
-        current_sentence = re.sub(pattern_pause, r'<pause>', current_sentence)
         sentences.append(current_sentence.strip())
     return sentences
   
@@ -920,7 +918,7 @@ def combine_audio_chapters(session):
                         ffmpeg_cmd += ['-c:v', 'libvpx-vp9', '-crf', '40', '-speed', '8', '-shortest']
                     elif session['output_format'] == 'ogg':
                         ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
+                        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
                     if ffmpeg_cover.endswith('.png'):
                         ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
                 else:
@@ -937,7 +935,7 @@ def combine_audio_chapters(session):
                 elif session['output_format'] == 'mp3':
                     ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
                 if session['output_format'] != 'ogg':
-                    ffmpeg_cmd += ['-af', 'afftdn=nf=-70']
+                    ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
             ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1']
             ffmpeg_cmd += ['-threads', '8', '-y', ffmpeg_final_file]
             try:
