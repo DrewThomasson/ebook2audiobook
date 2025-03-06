@@ -12,10 +12,16 @@ on:
 
 jobs:
   run-script:
-    runs-on: [self-hosted]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
+    runs-on: [ubuntu-latest]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: A docker test that is suppose to succeed
+        run: docker run athomasson2/ebook2audiobook:latest --help
+
+      - name: A docker run test that is suppose to fail
+        run: docker run athomasson2/ebook2audiobook:latest --sldfjosdosdisdfoisdofijsd OOOGAH BOOGEH 
 
       - name: Create test files
         run: |
