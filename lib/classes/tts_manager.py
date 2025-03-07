@@ -431,15 +431,8 @@ class TTSManager:
                             self.params['voice_path'] = re.sub(r'_24000\.wav$', '_16000.wav', self.params['voice_path'])
                             speaker_argument = {"speaker_wav": self.params['voice_path']}
                         else:
-                            speaker_argument = None
-                            for voice_id, voice_name in default_yourtts_settings["voices"].items():
-                                value = voice_name.strip()
-                                if f"-{self.session['language_iso1']}-" in value and value.startswith(gender):
-                                    speaker_argument = {"speaker": voice_name}
-                                    break
-                            if speaker_argument is None:
-                                voice_name = default_yourtts_settings['voices']['ElectroMale-2']
-                                speaker_argument = {"speaker": voice_name}
+                            voice_name = default_yourtts_settings['voices']['ElectroMale-2']
+                            speaker_argument = {"speaker": voice_name}
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
                             language=language,
