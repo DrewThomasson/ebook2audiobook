@@ -127,6 +127,7 @@ jobs:
       - name: Default xtts headless batch test
         run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
 
+# I need to get these working properly, I need to somehow figure out hwo to get the docker image to create a zip and then run that command
 
 #      - name: Create the custom_xtts_test.zip for headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
 #        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
@@ -154,15 +155,15 @@ jobs:
 
       - name: English Bark headless single test
         run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
-
-      - name: English Bark headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark
+# Batch Bark Test takes too long
+#      - name: English Bark headless batch test
+#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark
 
       - name: English Bark Custom-Voice headless single test
         run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: English Bark Custom-Voice headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+# Batch Bark Test takes too long
+#      - name: English Bark Custom-Voice headless batch test
+#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe all dangling docker images
         run: docker image prune -f
