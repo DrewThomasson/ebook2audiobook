@@ -1837,7 +1837,7 @@ def web_interface(args):
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
             session['audiobook'] = selected
-            visible = True if session['audiobook'] is not None else False
+            visible = True if len(audiobook_options) else False
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
 
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
@@ -1996,7 +1996,7 @@ def web_interface(args):
                         selected_name = os.path.basename(audiobook)
                         if os.path.isdir(audiobook):
                             shutil.rmtree(selected, ignore_errors=True)
-                        else:
+                        elif os.path.exists(audiobook):
                             os.remove(audiobook)
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
@@ -2017,13 +2017,13 @@ def web_interface(args):
                 nonlocal voice_options
                 session = context.get_session(id)
                 voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                voice_file_pattern = f"*_24000.wav"
+                voice_file_pattern = "*_24000.wav"
                 voice_options = [
-                    (os.path.splitext(re.sub(r'_(24000|16000)\.wav$', '', f.name))[0], str(f))
+                    (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
                     for f in Path(session['voice_dir']).rglob(voice_file_pattern)
                 ]
                 voice_options += [
-                    (os.path.splitext(re.sub(r'_(24000|16000)\.wav$', '', f.name))[0], str(f))
+                    (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
                     for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
                 ]
                 voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
@@ -2280,24 +2280,23 @@ def web_interface(args):
 
         def update_gr_audiobook_list(id):
             try:
-                session = context.get_session(id)            
+                nonlocal audiobook_options
+                session = context.get_session(id)
                 audiobook_options = [
-                    (f, os.path.join(session['audiobooks_dir'], f))
+                    (f, os.path.join(session['audiobooks_dir'], str(f)))
                     for f in os.listdir(session['audiobooks_dir'])
                 ]
                 audiobook_options.sort(
                     key=lambda x: os.path.getmtime(x[1]),
                     reverse=True
                 )
-                print(session['audiobooks_dir'])
-                print(audiobook_options)
                 session['audiobook'] = session['audiobook'] if session['audiobook'] in [option[1] for option in audiobook_options] else None
                 if len(audiobook_options) > 0:
                     if session['audiobook'] is not None:
-                        session['audiobook'] = audiobook_options[0][1]
-                    return gr.update(choices=audiobook_options, value=session['audiobook'])
-                else:
-                    return gr.update()
+                        return gr.update(choices=audiobook_options, value=session['audiobook'])
+                    else:
+                        return gr.update(choices=audiobook_options, value=audiobook_options[0][1])
+                gr.update(choices=audiobook_options)
             except Exception as e:
                 error = f'update_gr_audiobook_list(): {e}!'
                 alert_exception(error)              
