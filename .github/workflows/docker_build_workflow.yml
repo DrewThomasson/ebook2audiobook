@@ -1,19 +1,7 @@
 name: Build and Push Docker Image
 on:
-  workflow_dispatch:  # Allows manual trigger
-  release:
-    types:
-      - published  # Triggers on new release
-  push:
-    branches:
-      - main  # Triggers when a PR is merged into main
-    paths-ignore: # Workflow won't trigger if only files/folders in paths-ignore are modified.
-      - 'CODE_OF_CONDUCT.md'
-      - 'LICENSE'
-      - 'README.md'
-      - 'readme/**'
-      - 'dockerfiles/**'
-      - 'Notebooks/**'
+  workflow_dispatch:  # Allows manual trigger only
+
 jobs:
   build:
     runs-on: [self-hosted]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
