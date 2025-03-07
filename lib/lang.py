@@ -36,7 +36,7 @@ punctuation_switch = {
     '—': '-',  # Em dash (Unicode U+2014)
 
     # Ellipsis (causes extreme long pauses in TTS)
-    '…': '...',  # Unicode ellipsis (U+2026) replaced with standard triple dots
+    '...': '…',  # standard triple dots replaced with Unicode ellipsis (U+2026)
 
     # Misinterpreted punctuation that can lead to hallucinations
     '‽': '?',    # Interrobang (U+203D) -> Replace with "?"
@@ -84,7 +84,7 @@ punctuation_list = [
     # Punctuation used in Lao
     "໌", "ໍ",
     # Miscellaneous punctuation (pause-inducing, used globally)
-    "—", "...", "‽"
+    "—", "‽"
 ]
 
 punctuation_split = [
