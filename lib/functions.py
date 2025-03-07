@@ -756,7 +756,7 @@ def convert_chapters_to_audio(session):
                             tts_manager.params['sentence'] = sentence.replace('.', '<pause>').replace(',', '<pause>')
                             print(f"*********{tts_manager.params['sentence']}*************")
                         else:
-                            ts_manager.params['sentence'] = sentence
+                            tts_manager.params['sentence'] = sentence
                         if tts_manager.params['sentence'] != "":
                             if tts_manager.convert_sentence_to_audio():                           
                                 percentage = (sentence_number / total_sentences) * 100
