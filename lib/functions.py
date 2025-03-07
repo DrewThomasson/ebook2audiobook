@@ -706,7 +706,7 @@ def convert_chapters_to_audio(session):
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')                       
                         tts_manager.params['sentence'] = re.sub(' . ', r' <pause> ', sentence)
                         print(f"*********{tts_manager.params['sentence']}*************")
-                        if ts_manager.params['sentence'] != "":
+                        if tts_manager.params['sentence'] != "":
                             if tts_manager.convert_sentence_to_audio():                           
                                 percentage = (sentence_number / total_sentences) * 100
                                 t.set_description(f'Converting {percentage:.2f}%')
