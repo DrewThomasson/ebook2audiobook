@@ -127,6 +127,19 @@ jobs:
       - name: Default xtts headless batch test
         run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
 
+
+#      - name: Create the custom_xtts_test.zip for headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
+#        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
+
+#      - name: English xtts headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
+#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+
+#      - name: English xtts headless custom xtts model batch test docker run athomasson2/ebook2audiobook:dev
+#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+
+
+
+
       - name: Default xtts headless Custom-Voice single test
         run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
