@@ -1311,8 +1311,6 @@ def convert_ebook(args):
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                print(session['toc'])
-                                print(session['chapters'])
                                 if session['chapters'] is not None:
                                     if convert_chapters_to_audio(session):
                                         final_file = combine_audio_chapters(session)               
