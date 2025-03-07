@@ -552,6 +552,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     # Remove scripts and styles
     for script in soup(["script", "style"]):
         script.decompose()
+    print(soup.get_text().strip())
     # Normalize lines and remove unnecessary spaces and switch special chars
     text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
     # Rule 1: Ensure spaces before & after punctuation
