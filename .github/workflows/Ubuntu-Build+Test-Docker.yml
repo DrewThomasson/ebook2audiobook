@@ -27,8 +27,6 @@ jobs:
       - name: Set up Docker Buildx (Windows)
         if: runner.os == 'Windows'
         uses: docker/setup-buildx-action@v2
-        with:
-          driver: default
 
       - name: Set up Docker Buildx (Unix)
         if: runner.os != 'Windows'
@@ -80,6 +78,7 @@ jobs:
           docker buildx build --platform linux/amd64,linux/arm64 \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev \
             --push .
+
 
 
 
