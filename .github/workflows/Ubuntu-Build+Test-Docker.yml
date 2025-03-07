@@ -49,7 +49,7 @@ jobs:
       # Get Git Commit Hash for Windows using PowerShell
       - name: Get Git Commit Hash (Windows)
         if: runner.os == 'Windows'
-        shell: pwsh
+        shell: powershell
         run: |
           $gitHash = (git rev-parse --short=9 HEAD).Trim()
           Add-Content -Path $env:GITHUB_ENV -Value "GIT_HASH=$gitHash"
@@ -66,7 +66,7 @@ jobs:
       - name: Get Latest Release Tag (Windows)
         if: runner.os == 'Windows'
         id: get_tag_win
-        shell: pwsh
+        shell: powershell
         run: |
           $response = Invoke-WebRequest -Uri "https://api.github.com/repos/${{ github.repository }}/releases/latest" -UseBasicParsing
           $json = $response.Content | ConvertFrom-Json
@@ -78,6 +78,7 @@ jobs:
           docker buildx build --platform linux/amd64,linux/arm64 \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev \
             --push .
+
 
 
 
