@@ -593,13 +593,13 @@ jobs:
           TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
-      - name: Build and Push Release Docker Images
+      - name: Pull and Re-Tag dev Docker Image for Release
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
-            --push .
+          docker buildx imagetools create \
+          --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+          --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
+          --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
+          athomasson2/ebook2audiobook:dev
 
   huggingface:
     needs: final_push
