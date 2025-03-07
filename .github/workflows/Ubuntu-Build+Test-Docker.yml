@@ -74,10 +74,12 @@ jobs:
           Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_TAG=$tag"
 
       - name: Build and Push Dev Docker Image (multi-arch)
+        shell: bash
         run: |
           docker buildx build --platform linux/amd64,linux/arm64 \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev \
             --push .
+
 
 
 
