@@ -988,25 +988,26 @@ jobs:
           $tag = $json.tag_name
           Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_TAG=$tag"
 
-      # Build and Push Release Docker Images conditionally
-      - name: Build and Push Release Docker Images (multi-arch, Unix)
+      # Re-tag dev Docker Images conditionally
+      - name: Re-tag dev Docker Image (multi-arch, Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
-            --push .
+          docker buildx imagetools create \
+            --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
+            --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
+            ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev
 
-      - name: Build and Push Release Docker Images (multi-arch, Windows)
+      - name: Re-tag dev Docker Image (multi-arch, Windows)
         if: runner.os == 'Windows'
         shell: powershell
-        run: docker buildx build --platform linux/amd64,linux/arm64 `
-          -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest `
-          -t $env:GIT_HASH `
-          -t $env:RELEASE_TAG `
-          --push .
+        run: |
+          docker buildx imagetools create `
+            --tag $env:DOCKER_USERNAME/ebook2audiobook:$env:GIT_HASH `
+            --tag $env:DOCKER_USERNAME/ebook2audiobook:$env:RELEASE_TAG `
+            $env:DOCKER_USERNAME/ebook2audiobook:dev
+
+
 
 
 
