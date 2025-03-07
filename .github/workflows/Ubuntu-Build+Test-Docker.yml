@@ -1,18 +1,20 @@
 name: Ubuntu Build+Test
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: {}
   release:
-    types: [published]
+    types:
+      - published
   push:
-    branches: [main]
+    branches:
+      - main
     paths-ignore:
-      - 'CODE_OF_CONDUCT.md'
-      - 'LICENSE'
-      - 'README.md'
-      - 'readme/**'
-      - 'dockerfiles/**'
-      - 'Notebooks/**'
+      - CODE_OF_CONDUCT.md
+      - LICENSE
+      - README.md
+      - readme/**
+      - dockerfiles/**
+      - Notebooks/**
 
 jobs:
   build:
@@ -48,7 +50,6 @@ jobs:
   test:
     needs: build
     strategy:
-      # The "os" value here can be extended to multiple OS runners (e.g. ubuntu-latest, macos-latest, windows-latest) if needed.
       matrix:
         os: [self-hosted]
         test:
