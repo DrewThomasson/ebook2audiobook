@@ -103,6 +103,7 @@ jobs:
       # Get Git Commit Hash conditionally
       - name: Get Git Commit Hash (Unix)
         if: runner.os != 'Windows'
+        shell: bash
         run: |
           echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
   
@@ -116,7 +117,7 @@ jobs:
       # Get Latest Release Tag conditionally
       - name: Get Latest Release Tag (Unix)
         if: runner.os != 'Windows'
-        id: get_tag
+        shell: bash
         run: |
           TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           if [[ -z "$TAG" || "$TAG" == "null" ]]; then TAG="latest"; fi
@@ -124,7 +125,6 @@ jobs:
   
       - name: Get Latest Release Tag (Windows)
         if: runner.os == 'Windows'
-        id: get_tag_win
         shell: powershell
         run: |
           $response = Invoke-WebRequest -Uri "https://api.github.com/repos/${{ github.repository }}/releases/latest" -UseBasicParsing
@@ -133,8 +133,17 @@ jobs:
           if (-not $tag -or $tag -eq "null") { $tag = "latest" }
           Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_TAG=$tag"
   
-      # Debugging Step - Print Variables (Optional, remove if not needed)
-      - name: Debug Print Variables
+      # ✅ Debugging Step (Shell-Specific)
+      - name: Debug Print Variables (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          echo "DOCKER_USERNAME: $env:DOCKER_USERNAME"
+          echo "GIT_HASH: $env:GIT_HASH"
+          echo "RELEASE_TAG: $env:RELEASE_TAG"
+  
+      - name: Debug Print Variables (Unix)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}"
@@ -167,7 +176,7 @@ jobs:
             --tag "$dockerUsername/ebook2audiobook:$gitHash" `
             --tag "$dockerUsername/ebook2audiobook:$releaseTag" `
             "$dockerUsername/ebook2audiobook:dev"
-
+  
 
 
 
