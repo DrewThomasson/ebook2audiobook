@@ -16,7 +16,7 @@ on:
 
 jobs:
   build:
-    runs-on: [self-hosted]
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -45,532 +45,102 @@ jobs:
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev \
             --push .
 
-  # ================================
-  # Single Tests Chain
-  # ================================
-  test-help:
+  test:
     needs: build
-    runs-on: [self-hosted]
-    name: Help command test (Single)
+    strategy:
+      # The "os" value here can be extended to multiple OS runners (e.g. ubuntu-latest, macos-latest, windows-latest) if needed.
+      matrix:
+        os: [self-hosted]
+        test:
+          - name: "Help command test"
+            command: "docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help"
+          - name: "English Fairseq headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine fairseq"
+          - name: "English Fairseq headless batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir 'tools/workflow-testing' --tts_engine fairseq"
+          - name: "English Fairseq Custom-Voice headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine fairseq --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "English Fairseq Custom-Voice headless batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir 'tools/workflow-testing' --tts_engine fairseq --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "Unusual Fairseq headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook 'tools/workflow-testing/test1.txt' --tts_engine fairseq"
+          - name: "Unusual Fairseq headless batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir 'tools/workflow-testing' --tts_engine fairseq"
+          - name: "Unusual Fairseq Custom-Voice headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook 'tools/workflow-testing/test1.txt' --tts_engine fairseq --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "Unusual Fairseq Custom-Voice headless batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir 'tools/workflow-testing' --tts_engine fairseq --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "English Vits headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine vits"
+          - name: "English Vits headless batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir 'tools/workflow-testing' --tts_engine vits"
+          - name: "English Vits Custom-Voice headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine vits --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "English Vits Custom-Voice headless batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir 'tools/workflow-testing' --tts_engine vits --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "English Yourtts headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine yourtts"
+          - name: "English Yourtts headless batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir 'tools/workflow-testing' --tts_engine yourtts"
+          - name: "English Yourtts Custom-Voice headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine yourtts --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "English Yourtts Custom-Voice headless batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir 'tools/workflow-testing' --tts_engine yourtts --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "Default headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook 'tools/workflow-testing/test1.txt'"
+          - name: "Default xtts headless batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir 'tools/workflow-testing' --tts_engine xtts"
+          # The following commands are left commented as placeholders for later implementation:
+          # - name: "Create the custom_xtts_test.zip for headless custom xtts model single test docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev"
+          #   run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
+          # - name: "English xtts headless custom xtts model single test docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev"
+          #   run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine xtts --custom_model 'custom_xtts_test.zip'
+          # - name: "English xtts headless custom xtts model batch test docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev"
+          #   run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir 'tools/workflow-testing' --tts_engine xtts --custom_model 'custom_xtts_test.zip'
+          - name: "Default xtts headless Custom-Voice single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook 'tools/workflow-testing/test1.txt' --tts_engine xtts --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "Default xtts headless Custom-Voice batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir 'tools/workflow-testing' --tts_engine xtts --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+          - name: "English xtts headless fine-tuned xtts model single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine xtts --fine_tuned AiExplained"
+          - name: "English xtts headless fine-tuned xtts model batch test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir 'tools/workflow-testing' --tts_engine xtts --fine_tuned AiExplained"
+          - name: "English Bark headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine bark"
+          - name: "English Bark Custom-Voice headless single test"
+            command: "docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook 'tools/workflow-testing/test1.txt' --tts_engine bark --voice 'voices/eng/elder/male/DavidAttenborough_24000.wav'"
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
       - name: Get Git Commit Hash
         run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: Help command test
-        run: docker run --pull=always athomasson2/ebook2audiobook:dev --help
 
-  test-fairseq-single:
-    needs: test-help
-    runs-on: [self-hosted]
-    name: English Fairseq headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Fairseq single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+      - name: Get Latest Release Tag
+        id: get_tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
-  test-fairseq-custom-single:
-    needs: test-fairseq-single
-    runs-on: [self-hosted]
-    name: English Fairseq Custom-Voice headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Fairseq Custom-Voice single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      - name: Run Test: ${{ matrix.test.name }}
+        run: ${{ matrix.test.command }}
 
-  test-unusual-fairseq-single:
-    needs: test-fairseq-custom-single
-    runs-on: [self-hosted]
-    name: Unusual Fairseq headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: Unusual Fairseq single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-
-  test-unusual-fairseq-custom-single:
-    needs: test-unusual-fairseq-single
-    runs-on: [self-hosted]
-    name: Unusual Fairseq Custom-Voice headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: Unusual Fairseq Custom-Voice single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  test-vits-single:
-    needs: test-unusual-fairseq-custom-single
-    runs-on: [self-hosted]
-    name: English Vits headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Vits single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
-
-  test-vits-custom-single:
-    needs: test-vits-single
-    runs-on: [self-hosted]
-    name: English Vits Custom-Voice headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Vits Custom-Voice single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  test-yourtts-single:
-    needs: test-vits-custom-single
-    runs-on: [self-hosted]
-    name: English Yourtts headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Yourtts single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
-
-  test-yourtts-custom-single:
-    needs: test-yourtts-single
-    runs-on: [self-hosted]
-    name: English Yourtts Custom-Voice headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Yourtts Custom-Voice single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  test-default-single:
-    needs: test-yourtts-custom-single
-    runs-on: [self-hosted]
-    name: Default headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: Default single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
-
-  test-xtts-custom-single:
-    needs: test-default-single
-    runs-on: [self-hosted]
-    name: Default xtts Custom-Voice headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: Default xtts Custom-Voice single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  test-xtts-finetuned-single:
-    needs: test-xtts-custom-single
-    runs-on: [self-hosted]
-    name: English xtts fine-tuned xtts model single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English xtts fine-tuned single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
-
-  test-bark-single:
-    needs: test-xtts-finetuned-single
-    runs-on: [self-hosted]
-    name: English Bark headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Bark single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
-
-  test-bark-custom-single:
-    needs: test-bark-single
-    runs-on: [self-hosted]
-    name: English Bark Custom-Voice headless single test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Bark Custom-Voice single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  # ================================
-  # Batch Tests Chain
-  # ================================
-  test-fairseq-batch:
-    needs: build
-    runs-on: [self-hosted]
-    name: English Fairseq headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Fairseq batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-
-  test-fairseq-custom-batch:
-    needs: test-fairseq-batch
-    runs-on: [self-hosted]
-    name: English Fairseq Custom-Voice headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Fairseq Custom-Voice batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  test-unusual-fairseq-batch:
-    needs: test-fairseq-custom-batch
-    runs-on: [self-hosted]
-    name: Unusual Fairseq headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: Unusual Fairseq batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-
-  test-unusual-fairseq-custom-batch:
-    needs: test-unusual-fairseq-batch
-    runs-on: [self-hosted]
-    name: Unusual Fairseq Custom-Voice headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: Unusual Fairseq Custom-Voice batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  test-vits-batch:
-    needs: test-unusual-fairseq-custom-batch
-    runs-on: [self-hosted]
-    name: English Vits headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Vits batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits
-
-  test-vits-custom-batch:
-    needs: test-vits-batch
-    runs-on: [self-hosted]
-    name: English Vits Custom-Voice headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Vits Custom-Voice batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  test-yourtts-batch:
-    needs: test-vits-custom-batch
-    runs-on: [self-hosted]
-    name: English Yourtts headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Yourtts batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
-
-  test-yourtts-custom-batch:
-    needs: test-yourtts-batch
-    runs-on: [self-hosted]
-    name: English Yourtts Custom-Voice headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English Yourtts Custom-Voice batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  test-default-batch:
-    needs: test-yourtts-custom-batch
-    runs-on: [self-hosted]
-    name: Default xtts headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: Default batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
-
-  test-xtts-custom-batch:
-    needs: test-default-batch
-    runs-on: [self-hosted]
-    name: Default xtts Custom-Voice headless batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: Default xtts Custom-Voice batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-  test-xtts-finetuned-batch:
-    needs: test-xtts-custom-batch
-    runs-on: [self-hosted]
-    name: English xtts fine-tuned xtts model batch test
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      - name: English xtts fine-tuned batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained
-
-  # The following custom_xtts tests are commented out
-  # test-custom_xtts-zip:
-  #   needs: test-xtts-finetuned-batch
-  #   runs-on: [self-hosted]
-  #   name: Create the custom_xtts_test.zip for headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
-  #   steps:
-  #     - name: Create custom_xtts_test.zip
-  #       run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
-  #
-  # test-xtts-custom-model-single:
-  #   needs: test-custom_xtts-zip
-  #   runs-on: [self-hosted]
-  #   name: English xtts headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
-  #   steps:
-  #     - name: Run custom xtts single test
-  #       run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-  #
-  # test-xtts-custom-model-batch:
-  #   needs: test-xtts-custom-model-single
-  #   runs-on: [self-hosted]
-  #   name: English xtts headless custom xtts model batch test docker run athomasson2/ebook2audiobook:dev
-  #   steps:
-  #     - name: Run custom xtts batch test
-  #       run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-  # ================================
-  # Wipe dangling images
-  # ================================
-  test-wipe:
-    needs:
-      - test-bark-custom-single
-      - test-xtts-finetuned-batch
-    runs-on: [self-hosted]
-    name: Wipe all dangling docker images
-    steps:
-      - name: Wipe dangling images
+      - name: Wipe all dangling docker images
         run: docker image prune -f
 
-  # ================================
-  # Final Push and Huggingface
-  # ================================
   final_push:
-    needs: test-wipe
-    runs-on: [self-hosted]
-    name: Build and Push Release Docker Images (multi-arch)
+    needs: test
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -593,18 +163,17 @@ jobs:
           TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
-      - name: Pull and Re-Tag dev Docker Image for Release
+      - name: Build and Push Release Docker Images (multi-arch)
         run: |
-          docker buildx imagetools create \
-          --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
-          --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
-          --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
-          athomasson2/ebook2audiobook:dev
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
+            --push .
 
   huggingface:
-    needs: test-wipe
-    runs-on: [ubuntu-latest]
-    name: Build and Push Huggingface Docker Image (x86 only)
+    needs: test
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -627,7 +196,7 @@ jobs:
           TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
-      - name: Build and Push Huggingface Docker Image
+      - name: Build and Push Huggingface Docker Image (x86 only)
         run: |
           docker buildx build --platform linux/amd64 \
             -f dockerfiles/HuggingfaceDockerfile \
