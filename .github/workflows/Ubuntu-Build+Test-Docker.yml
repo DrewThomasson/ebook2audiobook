@@ -38,7 +38,6 @@ jobs:
         run: |
           TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-
       - name: Build and Push Dev Docker Image (multi-arch)
         run: |
           docker buildx build --platform linux/amd64,linux/arm64 \
@@ -70,100 +69,133 @@ jobs:
           TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
+      # Run Help command test (single command)
       - name: Help command test
         run: docker run --pull=always athomasson2/ebook2audiobook:dev --help
 
-      - name: English Fairseq headless single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+      # English Fairseq tests (Single and Batch)
+      - name: English Fairseq tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: English Fairseq headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
+      # English Fairseq Custom-Voice tests (Single and Batch)
+      - name: English Fairseq Custom-Voice tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: English Fairseq Custom-Voice headless single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      # Unusual Fairseq tests (Single and Batch)
+      - name: Unusual Fairseq tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: English Fairseq Custom-Voice headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      # Unusual Fairseq Custom-Voice tests (Single and Batch)
+      - name: Unusual Fairseq Custom-Voice tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: Unusual Fairseq headless single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+      # English Vits tests (Single and Batch)
+      - name: English Vits tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: Unusual Fairseq headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
+      # English Vits Custom-Voice tests (Single and Batch)
+      - name: English Vits Custom-Voice tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: Unusual Fairseq Custom-Voice headless single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      # English Yourtts tests (Single and Batch)
+      - name: English Yourtts tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: Unusual Fairseq Custom-Voice headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      # English Yourtts Custom-Voice tests (Single and Batch)
+      - name: English Yourtts Custom-Voice tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: English Vits headless single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
+      # Default tests (Single and Batch)
+      - name: Default tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: English Vits headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits
+      # The following custom_xtts tests are commented out
+      # - name: Create the custom_xtts_test.zip for headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
+      #   run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
 
-      - name: English Vits Custom-Voice headless single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      # - name: English xtts headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
+      #   run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
 
-      - name: English Vits Custom-Voice headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      # - name: English xtts headless custom xtts model batch test docker run athomasson2/ebook2audiobook:dev
+      #   run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
 
-      - name: English Yourtts headless single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+      # Default xtts Custom-Voice tests (Single and Batch)
+      - name: Default xtts Custom-Voice tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: English Yourtts headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
+      # English xtts fine-tuned tests (Single and Batch)
+      - name: English xtts fine-tuned tests concurrently
+        run: |
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained &
+          pid1=$!
+          docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained &
+          pid2=$!
+          wait $pid1 $pid2
 
-      - name: English Yourtts Custom-Voice headless single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: English Yourtts Custom-Voice headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Default headless single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
-
-      - name: Default xtts headless batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
-
-# I need to get these working properly, I need to somehow figure out hwo to get the docker image to create a zip and then run that command
-
-#      - name: Create the custom_xtts_test.zip for headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
-#        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
-
-#      - name: English xtts headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
-#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-#      - name: English xtts headless custom xtts model batch test docker run athomasson2/ebook2audiobook:dev
-#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-
-
-
-      - name: Default xtts headless Custom-Voice single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Default xtts headless Custom-Voice batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: English xtts headless fine-tuned xtts model single test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
-
-      - name: English xtts headless fine-tuned xtts model batch test
-        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained
-
+      # English Bark tests (Single test only; batch test commented out)
       - name: English Bark headless single test
         run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
-# Batch Bark Test takes too long
-#      - name: English Bark headless batch test
-#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark
 
+      # Batch Bark Test takes too long
+      # - name: English Bark headless batch test
+      #   run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark
+
+      # English Bark Custom-Voice tests (Single test only; batch test commented out)
       - name: English Bark Custom-Voice headless single test
         run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-# Batch Bark Test takes too long
-#      - name: English Bark Custom-Voice headless batch test
-#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      # Batch Bark Test takes too long
+      # - name: English Bark Custom-Voice headless batch test
+      #   run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: Wipe all dangling docker images
         run: docker image prune -f
@@ -192,7 +224,6 @@ jobs:
         run: |
           TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-
       - name: Build and Push Release Docker Images (multi-arch)
         run: |
           docker buildx build --platform linux/amd64,linux/arm64 \
@@ -225,7 +256,6 @@ jobs:
         run: |
           TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
           echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-
       - name: Build and Push Huggingface Docker Image (x86 only)
         run: |
           docker buildx build --platform linux/amd64 \
