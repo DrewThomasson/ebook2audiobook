@@ -552,17 +552,17 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     # Remove scripts and styles
     for script in soup(["script", "style"]):
         script.decompose()
+    # Normalize lines and remove unnecessary spaces and switch special chars
+    text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
     # Rule 1: Ensure spaces before & after punctuation
     pattern_space = re.escape(''.join(punctuation_list))
     # Step 1: Ensure space before and after punctuation (excluding `,` and `.`)
     punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', '').replace('...', ''))
-    text = re.sub(punctuation_pattern_space, r' \1 ', soup.get_text().strip())
+    text = re.sub(punctuation_pattern_space, r' \1 ', text)
     # Rule 2: Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-    comma_dot_pattern = r'(?<!\d)\s*([,.])\s*(?!\d)'
+    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
     # Step 2: Ensure space before and after `,` and `.` only when NOT between numbers
     text = re.sub(comma_dot_pattern, r' \1 ', text)
-    # Normalize lines and remove unnecessary spaces
-    text = normalize_text(text, lang, lang_iso1, tts_engine)
     # Create regex pattern from punctuation list to split the phoneme_list
     pattern_split = re.escape(''.join(punctuation_split))
     punctuation_pattern_split = rf'(\S.*?[{"".join(pattern_split)}])|\S+'
