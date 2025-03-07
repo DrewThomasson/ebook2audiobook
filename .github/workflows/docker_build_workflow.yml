@@ -14,34 +14,30 @@ on:
       - 'dockerfiles/**'
       - 'Notebooks/**'
 
-# Common setup steps reused in each job.
-x-setup-steps: &setup-steps
-  - name: Checkout code
-    uses: actions/checkout@v3
-
-  - name: Set up Docker Buildx
-    uses: docker/setup-buildx-action@v2
-
-  - name: Log in to Docker Hub
-    uses: docker/login-action@v2
-    with:
-      username: ${{ secrets.DOCKER_USERNAME }}
-      password: ${{ secrets.DOCKER_PASSWORD }}
-
-  - name: Get Git Commit Hash
-    run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-
-  - name: Get Latest Release Tag
-    id: get_tag
-    run: |
-      TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
-      echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-
 jobs:
   build:
     runs-on: [self-hosted]
     steps:
-      - <<: *setup-steps
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        id: get_tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
       - name: Build and Push Dev Docker Image (multi-arch)
         run: |
@@ -53,7 +49,26 @@ jobs:
     needs: build
     runs-on: [self-hosted]
     steps:
-      - <<: *setup-steps
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        id: get_tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
       - name: Help command test
         run: docker run --pull=always athomasson2/ebook2audiobook:dev --help
@@ -143,7 +158,26 @@ jobs:
     needs: test
     runs-on: [self-hosted]
     steps:
-      - <<: *setup-steps
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        id: get_tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
       - name: Build and Push Release Docker Images (multi-arch)
         run: |
@@ -157,7 +191,26 @@ jobs:
     needs: final_push
     runs-on: [self-hosted]
     steps:
-      - <<: *setup-steps
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        id: get_tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
       - name: Build and Push Huggingface Docker Image (x86 only)
         run: |
