@@ -617,6 +617,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     else:
         tmp_list = re.split(pattern_split, text)
         phoneme_list = [phoneme.strip() for phoneme in tmp_list if phoneme and phoneme.strip() and phoneme != ' ']
+        phoneme_list = [
+            tmp_list[i] + tmp_list[i + 1] if tmp_list[i + 1] in punctuation_split else tmp_list[i]
+            for i in range(len(tmp_list) - 1)
+            if tmp_list[i] and tmp_list[i].strip()
+        ] + ([tmp_list[-1]] if tmp_list[-1] and tmp_list[-1].strip() else [])
     # get the final sentence array according to the max_tokens limitation
     max_tokens = language_mapping[lang]['max_tokens']
     chapter_sentences = get_sentences(phoneme_list, max_tokens)

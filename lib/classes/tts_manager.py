@@ -222,6 +222,9 @@ class TTSManager:
         except Exception as e:
             print(f"Error processing {voice_path}: {e}")
             return None
+            
+    def _is_tts_active(self, tts):
+        return any(obj is tts for obj in gc.get_objects())
 
     def _unload_tts():
          for key in list(loaded_tts.keys()):
