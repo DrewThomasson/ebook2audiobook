@@ -456,6 +456,7 @@ def convert_to_epub(session):
                 '--output-profile=generic_eink',
                 '--epub-version=3',
                 '--flow-size=0',
+                '--remove-header',
                 '--chapter-mark=pagebreak',
                 '--page-breaks-before', "//*[name()='h1' or name()='h2']",
                 '--disable-font-rescaling',
@@ -580,7 +581,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         tmp_list = re.split(pattern_split, text)
         # Remove None and empty values
         phoneme_list = [phoneme.strip() for phoneme in tmp_list if phoneme and phoneme.strip()]
-    print(phoneme_list)
     # get the final sentence array according to the max_tokens limitation
     max_tokens = language_mapping[lang]['max_tokens']
     chapter_sentences = get_sentences(phoneme_list, max_tokens)
