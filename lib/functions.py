@@ -704,7 +704,7 @@ def convert_chapters_to_audio(session):
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')                       
-                        tts_manager.params['sentence'] = re.sub(' .', r' <pause> ', sentence)
+                        tts_manager.params['sentence'] = sentence.replace(' .', ' <pause>').replace(' ,', ' <pause>')
                         print(f"*********{tts_manager.params['sentence']}*************")
                         if tts_manager.params['sentence'] != "":
                             if tts_manager.convert_sentence_to_audio():                           
