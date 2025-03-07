@@ -138,6 +138,7 @@ class SessionContext:
                 "voice_dir": None,
                 "custom_model": None,
                 "custom_model_dir": None,
+                "toc": None,
                 "chapters": None,
                 "cover": None,
                 "status": None,
@@ -503,7 +504,8 @@ def get_cover(epubBook, session):
     except Exception as e:
         DependencyError(e)
         return False
-
+     
+r"""
 def get_chapters(epubBook, session):
     try:
         if session['cancellation_requested']:
@@ -546,6 +548,51 @@ def get_chapters(epubBook, session):
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
         return None
+"""
+
+def get_chapters(epubBook, session):
+    try:
+        if session['cancellation_requested']:
+            print('Cancel requested')
+            return False
+        # Step 1: Extract TOC (Table of Contents)
+        toc_list = []
+        try:
+            toc = epubBook.toc  # Extract TOC
+            toc_list = [normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine']) 
+                        for item in toc if hasattr(item, 'title')]  # Normalize TOC entries
+        except Exception as toc_error:
+            error = f"Error extracting TOC: {toc_error}"
+            print(error)
+        all_docs = list(epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT))
+        if not all_docs:
+            return [], []        
+        all_docs = all_docs[1:]  # Exclude the first document if needed
+        doc_cache = {}
+        msg = '******* NOTE: YOU CAN SAFELY IGNORE "Character xx not found in the vocabulary." *******'
+        print(msg)
+        for doc in all_docs:
+            doc_cache[doc] = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
+        # Step 4: Determine the most common pattern
+        doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
+        most_common_pattern = filter_doc(doc_patterns)
+        # Step 5: Calculate average character length
+        char_length = [len(content) for content in doc_cache.values()]
+        average_char_length = sum(char_length) / len(char_length) if char_length else 0
+        # Step 6: Filter docs based on character length or pattern
+        final_selected_docs = [
+            doc for doc in all_docs
+            if doc in doc_cache and doc_cache[doc]
+            and (len(doc_cache[doc]) >= average_char_length or filter_pattern(str(doc)) == most_common_pattern)
+        ]
+        # Step 7: Extract parts from the final selected docs
+        chapters = [doc_cache[doc] for doc in final_selected_docs]
+        # Step 8: Return both TOC and Chapters separately
+        return toc, chapters
+    except Exception as e:
+        error = f'Error extracting main content pages: {e}'
+        DependencyError(error)
+        return None, None
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine):
     soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
@@ -569,9 +616,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         phoneme_list = []
     else:
         tmp_list = re.split(pattern_split, text)
-        phoneme_list = [phoneme.strip() for phoneme in tmp_list if phoneme and phoneme.strip()]
-    toc = phoneme_list.pop() if isinstance(phoneme_list[-1], list) else []
-    print(toc)
+        phoneme_list = [phoneme.strip() for phoneme in tmp_list if phoneme and phoneme.strip() and phoneme != ' ']
     # get the final sentence array according to the max_tokens limitation
     max_tokens = language_mapping[lang]['max_tokens']
     chapter_sentences = get_sentences(phoneme_list, max_tokens)
@@ -1260,7 +1305,9 @@ def convert_ebook(args):
                                 print(error)
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
-                                session['chapters'] = get_chapters(epubBook, session)
+                                session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                print(session['toc'])
+                                print(session['chapters'])
                                 if session['chapters'] is not None:
                                     if convert_chapters_to_audio(session):
                                         final_file = combine_audio_chapters(session)               

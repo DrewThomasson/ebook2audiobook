@@ -233,7 +233,7 @@ Linux/Mac:
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False
-            args['audiobooks_dir'] = args['output_dir'] if args['output_dir'] else audiobooks_cli_dir
+            args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
             args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
             # Condition to stop if both --ebook and --ebooks_dir are provided
             if args['ebook'] and args['ebooks_dir']:
@@ -247,8 +247,12 @@ Linux/Mac:
             if args['custom_model']:
                 if os.path.exists(args['custom_model']):
                     args['custom_model'] = os.path.abspath(args['custom_model'])
-            # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
+            if not os.path.exists(args['audiobooks_dir']):
+                error = 'Error: --output_dir path does not exist.'
+                print(error)
+                sys.exit(1)                
             if args['ebooks_dir']:
+                args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
                 if not os.path.exists(args['ebooks_dir']):
                     error = f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.'
                     print(error)
@@ -265,6 +269,10 @@ Linux/Mac:
                     sys.exit(1)
             elif args['ebook']:
                 args['ebook'] = os.path.abspath(args['ebook'])
+                if not os.path.exists(args['ebooks_dir']):
+                    error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
+                    print(error)
+                    sys.exit(1) 
                 progress_status, passed = convert_ebook(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
