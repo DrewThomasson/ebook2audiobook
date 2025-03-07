@@ -99,15 +99,32 @@ jobs:
     needs: build
     runs-on: self-hosted
     steps:
-      
       - name: Prune all dangling Docker images
         run: docker image prune -f
-      
-      - name: Run Help command test
-        run: docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help
+
+      - name: Run Help command test (with GPU if available, Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "Attempting to run with GPU support..."
+          docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --gpus all --help || \
+          (echo "GPU run failed, trying without GPU support..." && docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help)
+
+      - name: Run Help command test (with GPU if available, Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Write-Host "Attempting to run with GPU support..."
+          try {
+            docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --gpus all --help -ErrorAction Stop
+          } catch {
+            Write-Host "GPU run failed, trying without GPU support..."
+            docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help
+          }
 
       - name: Prune all dangling Docker images
         run: docker image prune -f
+
 
 
   test_fairseq_single_eng:
@@ -117,11 +134,29 @@ jobs:
       - name: Prune all dangling Docker images
         run: docker image prune -f
 
-      - name: Run English Fairseq headless single test
-        run: docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+      - name: Run English Fairseq headless single test (with GPU if available, Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "Attempting to run with GPU support..."
+          docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --gpus all --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq || \
+          (echo "GPU run failed, trying without GPU support..." && docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq)
+
+      - name: Run English Fairseq headless single test (with GPU if available, Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          Write-Host "Attempting to run with GPU support..."
+          try {
+            docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --gpus all --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq -ErrorAction Stop
+          } catch {
+            Write-Host "GPU run failed, trying without GPU support..."
+            docker run --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+          }
 
       - name: Prune all dangling Docker images
         run: docker image prune -f
+
 
 #-NOT-UPDATED-PAST-THIS-POINT------------------------------------------------------------------------------------------------------------------------ 
 
