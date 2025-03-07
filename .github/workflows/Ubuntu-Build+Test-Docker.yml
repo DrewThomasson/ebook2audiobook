@@ -602,8 +602,8 @@ jobs:
           athomasson2/ebook2audiobook:dev
 
   huggingface:
-    needs: final_push
-    runs-on: [self-hosted]
+    needs: test-wipe
+    runs-on: [ubuntu-latest]
     name: Build and Push Huggingface Docker Image (x86 only)
     steps:
       - name: Checkout code
