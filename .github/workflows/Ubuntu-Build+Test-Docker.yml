@@ -1,0 +1,203 @@
+name: Ubuntu Build+Test
+
+on:
+  workflow_dispatch:  # Allows manual trigger
+  release:
+    types:
+      - published  # Triggers on new release
+  push:
+    branches:
+      - main  # Triggers when a PR is merged into main
+    paths-ignore: # Workflow won't trigger if only files/folders in paths-ignore are modified.
+      - 'CODE_OF_CONDUCT.md'
+      - 'LICENSE'
+      - 'README.md'
+      - 'readme/**'
+      - 'dockerfiles/**'
+      - 'Notebooks/**'
+jobs:
+  build:
+    runs-on: [self-hosted]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        id: get_tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Build and Push Docker image for multiple architectures
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev \
+            --push .
+
+
+
+
+
+
+
+# Run tests on the Dev docker image if that above works
+
+      - name: Help command docker run athomasson2/ebook2audiobook:dev
+        run: docker run --pull=always athomasson2/ebook2audiobook:dev --help
+
+      - name: English Fairseq headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+
+      - name: English Fairseq headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
+
+      - name: English Fairseq Custom-Voice headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English Fairseq Custom-Voice headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Unusual Fairseq headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+
+      - name: Unusual Fairseq headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
+
+      - name: Unusual Fairseq Custom-Voice headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Unusual Fairseq  Custom-Voice headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English Vits headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
+
+      - name: English Vits headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits
+
+      - name: English Vits Custom-Voice headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English Vits Custom-Voice headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English Yourtts headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+
+      - name: English Yourtts headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
+
+      - name: English Yourtts Custom-Voice headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English Yourtts Custom-Voice headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Default headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
+
+      - name: Default xtts headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
+
+      - name: Default xtts headless Custom-Voice single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Default xtts headless Custom-Voice batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+#      - name: Create the custom_xtts_test.zip for headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
+#        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
+
+#      - name: English xtts headless custom xtts model single test docker run athomasson2/ebook2audiobook:dev
+#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+
+#      - name: English xtts headless custom xtts model batch test docker run athomasson2/ebook2audiobook:dev
+#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+
+      - name: English xtts headless fine-tuned xtts model single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
+
+      - name: English xtts headless fine-tuned xtts model batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained
+
+      - name: English Bark headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
+
+      - name: English Bark headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark
+
+      - name: English Bark Custom-Voice headless single test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English Bark Custom-Voice headless batch test docker run athomasson2/ebook2audiobook:dev
+        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: Wipe all dangling docker images
+        run: docker image prune -f
+
+
+
+
+
+# Now that those have all run sucessfully build and push again but for all the tags I actually want for the latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        id: get_tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Build and Push Docker image for multiple architectures
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
+            --push .
+
+
+
+
+
+
+
+
+
+
+# Now that that has been pushed I can run the Docker push+build to hugginface Tag
+
+
+      - name: Build and Push Huggingface Docker image for x86 only
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -f dockerfiles/HuggingfaceDockerfile \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
+            --push .
+
+
+
