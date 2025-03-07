@@ -564,14 +564,23 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     # Step 2: Ensure space before and after `,` and `.` only when NOT between numbers
     text = re.sub(comma_dot_pattern, r' \1 ', text)
     # Create regex pattern from punctuation list to split the phoneme_list
-    pattern_split = re.escape(''.join(punctuation_split))
+    #pattern_split = re.escape(''.join(punctuation_split))
+    pattern_split = f"[{re.escape(''.join(punctuation_split))}]"
     punctuation_pattern_split = rf'(\S.*?[{"".join(pattern_split)}])|\S+'
     # Split by punctuation marks while keeping the punctuation at the end of each word
     #tmp_list = re.findall(punctuation_pattern_split, text)
-    tmp_list = re.split(punctuation_pattern_split, text)
-    print(tmp_list)
+    #tmp_list = re.split(punctuation_pattern_split, text)
     #phoneme_list =  [phoneme.strip() for phoneme in tmp_list if phoneme.strip()]
-    phoneme_list = [phoneme.strip() for phoneme in tmp_list if phoneme.strip()]
+    #phoneme_list = [phoneme.strip() for phoneme in tmp_list if phoneme.strip()]
+    # Ensure text is not empty before processing
+    if not text.strip():
+        phoneme_list = []
+    else:
+        # Split the text based on punctuation
+        tmp_list = re.split(pattern_split, text)
+        # Remove None and empty values
+        phoneme_list = [phoneme.strip() for phoneme in tmp_list if phoneme and phoneme.strip()]
+    print(phoneme_list)
     # get the final sentence array according to the max_tokens limitation
     max_tokens = language_mapping[lang]['max_tokens']
     chapter_sentences = get_sentences(phoneme_list, max_tokens)
