@@ -414,7 +414,7 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
 def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
-    text = re.sub(pattern, lambda match: punctuation_switch[match.group()], text)
+    text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
     if lang in abbreviations_mapping:
