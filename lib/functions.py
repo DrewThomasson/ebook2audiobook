@@ -552,7 +552,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     # Remove scripts and styles
     for script in soup(["script", "style"]):
         script.decompose()
-    print(soup.get_text().strip())
     # Normalize lines and remove unnecessary spaces and switch special chars
     text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
     # Rule 1: Ensure spaces before & after punctuation
@@ -569,7 +568,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     punctuation_pattern_split = rf'(\S.*?[{"".join(pattern_split)}])|\S+'
     # Split by punctuation marks while keeping the punctuation at the end of each word
     tmp_list = re.findall(punctuation_pattern_split, text)
-    phoneme_list =  [phoneme.strip() for phoneme in tmp_list if phoneme.strip()]    
+    phoneme_list =  [phoneme.strip() for phoneme in tmp_list if phoneme.strip()]
+    print(phoneme_list)
     # get the final sentence array according to the max_tokens limitation
     max_tokens = language_mapping[lang]['max_tokens']
     chapter_sentences = get_sentences(phoneme_list, max_tokens)
