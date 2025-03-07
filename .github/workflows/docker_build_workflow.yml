@@ -1,14 +1,6 @@
 name: Build and Push Docker Image
 on:
-  push:  # Runs on push but ignores specific paths
-    paths-ignore:
-      - 'CODE_OF_CONDUCT.md'
-      - 'LICENSE'
-      - 'README.md'
-      - 'readme/**'
-      - 'dockerfiles/**'
-      - 'Notebooks/**'
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:  # Allows manual trigger only
 
 jobs:
   build:
