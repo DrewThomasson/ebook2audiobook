@@ -115,9 +115,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help
@@ -247,9 +248,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
@@ -279,9 +281,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
@@ -310,9 +313,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
@@ -341,9 +345,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
@@ -372,9 +377,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
@@ -403,9 +409,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
@@ -434,9 +441,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits
@@ -464,9 +472,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
@@ -496,9 +505,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
@@ -526,9 +536,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
@@ -559,9 +570,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
@@ -589,9 +601,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
@@ -621,9 +634,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
@@ -651,9 +665,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
@@ -683,9 +698,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
@@ -735,9 +751,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
@@ -765,9 +782,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
@@ -797,9 +815,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
@@ -827,9 +846,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained
@@ -859,9 +879,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
@@ -894,9 +915,10 @@ jobs:
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" -ErrorAction Stop
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
