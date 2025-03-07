@@ -555,7 +555,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     # Rule 1: Ensure spaces before & after punctuation
     pattern_space = re.escape(''.join(punctuation_list))
     # Step 1: Ensure space before and after punctuation (excluding `,` and `.`)
-    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', '').replace('...', ''))
     text = re.sub(punctuation_pattern_space, r' \1 ', soup.get_text().strip())
     # Rule 2: Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
     comma_dot_pattern = r'(?<!\d)\s*([,.])\s*(?!\d)'

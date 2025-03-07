@@ -64,7 +64,7 @@ punctuation_switch = {
 
 punctuation_list = [
     # Common punctuation in Western languages
-    ".", ",", ":", ";", "!", "?", "¡", "¿", "«", "»",
+    ".", ",", ":", ";", "!", "?", "¡", "¿", "«", "»", '"',
     # Punctuation used in Arabic and Persian
     "،", "؛", "؟",
     # Punctuation used in Chinese, Japanese, and Korean (CJK) languages
