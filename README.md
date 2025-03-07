@@ -331,8 +331,8 @@ mkdir input-folder && mkdir Audiobooks
 - In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
 ```bash
 docker run --rm \
-    -v $(pwd)/input-folder:/home/user/app/input_folder \
-    -v $(pwd)/audiobooks:/home/user/app/audiobooks \
+    -v $(pwd)/input-folder:/app/input_folder \
+    -v $(pwd)/audiobooks:/app/audiobooks \
     athomasson2/ebook2audiobook \
     --headless --ebook /input_folder/YOUR_EBOOK_FILE
 ```
