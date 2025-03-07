@@ -456,7 +456,6 @@ def convert_to_epub(session):
                 '--output-profile=generic_eink',
                 '--epub-version=3',
                 '--flow-size=0',
-                '--remove-header',
                 '--chapter-mark=pagebreak',
                 '--page-breaks-before', "//*[name()='h1' or name()='h2']",
                 '--disable-font-rescaling',
