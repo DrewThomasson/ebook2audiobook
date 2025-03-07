@@ -567,9 +567,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     pattern_split = re.escape(''.join(punctuation_split))
     punctuation_pattern_split = rf'(\S.*?[{"".join(pattern_split)}])|\S+'
     # Split by punctuation marks while keeping the punctuation at the end of each word
-    tmp_list = re.findall(punctuation_pattern_split, text)
-    print(text)
-    phoneme_list =  [phoneme.strip() for phoneme in tmp_list if phoneme.strip()]
+    #tmp_list = re.findall(punctuation_pattern_split, text)
+    tmp_list = re.split(punctuation_pattern_split, text)
+    print(tmp_list)
+    #phoneme_list =  [phoneme.strip() for phoneme in tmp_list if phoneme.strip()]
+    phoneme_list = [phoneme.strip() for phoneme in tmp_list if phoneme.strip()]
     # get the final sentence array according to the max_tokens limitation
     max_tokens = language_mapping[lang]['max_tokens']
     chapter_sentences = get_sentences(phoneme_list, max_tokens)
