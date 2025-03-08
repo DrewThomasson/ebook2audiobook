@@ -52,6 +52,9 @@ jobs:
           # Verify activation
           python --version
 
+          #Download unidict
+          python -c "import unidic; unidic.download()"
+
       - name: pip install requirements.txt Mac/Linux
         if: runner.os != 'Windows'
         shell: bash
