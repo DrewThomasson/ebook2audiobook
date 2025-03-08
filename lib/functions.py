@@ -617,6 +617,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     else:
         tmp_list = re.split(pattern_split, text)
         #phoneme_list = [phoneme.strip() for phoneme in tmp_list if phoneme and phoneme.strip() and phoneme != ' ']
+        phoneme_list = []
         buffer = ""
         for item in tmp_list:
             if item and item.strip() and item != ' ':
