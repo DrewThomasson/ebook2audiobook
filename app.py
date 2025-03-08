@@ -266,7 +266,7 @@ Linux/Mac:
                     sys.exit(1)
             elif args['ebook']:
                 args['ebook'] = os.path.abspath(args['ebook'])
-                if not os.path.exists(args['ebooks']):
+                if not os.path.exists(args['ebook']):
                     error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
                     print(error)
                     sys.exit(1) 
