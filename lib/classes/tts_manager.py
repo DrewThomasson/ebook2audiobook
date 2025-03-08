@@ -21,7 +21,7 @@ from TTS.tts.models.xtts import Xtts
 from lib.models import *
 from lib.conf import models_dir, default_audio_proc_format
 
-torch.backends.cudnn.enabled = False
+torch.backends.cudnn.benchmark = True
 
 app = FastAPI()
 lock = threading.Lock()
