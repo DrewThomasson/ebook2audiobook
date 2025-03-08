@@ -29,3 +29,20 @@ jobs:
           chmod +x ./ebook2audiobook.sh
           ./ebook2audiobook.sh --help
           conda env list
+
+      - name: Run Bad Command on Windows
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: |
+          echo "Running on Windows..."
+          ./ebook2audiobook.cmd --fhdjjns
+          conda env list
+
+      - name: Run BadCommand on Mac/Linux
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "Running on Mac/Linux..."
+          chmod +x ./ebook2audiobook.sh
+          ./ebook2audiobook.sh --fhjdkfjfk
+          conda env list
