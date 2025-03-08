@@ -403,8 +403,12 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
     number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+)?(?:[eE][-+]?\d+)?)(?!\S)'
     if tts_engine != XTTSv2:
         if is_num2words_compat:
+            # Pattern 2: Split big numbers into groups of 4
+            text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
             text = re.sub(number_pattern, rep_num, text)
         else:
+            # Pattern 2: Split big numbers into groups of 2
+            text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
             # Fallback: Replace numbers using phonemes dictionary
             sorted_numbers = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
             if sorted_numbers:
@@ -433,8 +437,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = replace_roman_numbers(text)
     # Pattern 1: Add a space between UTF-8 characters and numbers
     text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    # Pattern 2: Split big numbers into groups of 4
-    text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
     # Replace math symbols with words
     text = maths_to_words(text, lang, lang_iso1, tts_engine)
     return text
