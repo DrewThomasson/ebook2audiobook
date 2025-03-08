@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - act-trigger
-      - v25
   workflow_dispatch:
 
 jobs:
