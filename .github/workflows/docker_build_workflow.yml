@@ -1,43 +1,31 @@
-name: Build and Push Docker Image
+name: Lite Self-Hosted
+
 on:
-  workflow_dispatch:  # Allows manual trigger only
+  workflow_dispatch: {}
+  push:
+    branches:
+      - main
 
 jobs:
-  build:
-    runs-on: [self-hosted]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
+  run-commands:
+    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-
-      - name: Get Latest Release Tag
-        id: get_tag
+      - name: Run Command on Windows
+        if: runner.os == 'Windows'
+        shell: cmd
         run: |
-          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
-          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+          echo "Running on Windows..."
+          ./ebook2audiobook.cmd --help
+          conda env list
 
-      - name: Build and Push Docker image for multiple architectures
+      - name: Run Command on Mac/Linux
+        if: runner.os != 'Windows'
+        shell: bash
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
-            --push .
-            
-      - name: Build and Push Huggingface Docker image for x86 only
-        run: |
-          docker buildx build --platform linux/amd64 \
-            -f dockerfiles/HuggingfaceDockerfile \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
-            --push .
+          echo "Running on Mac/Linux..."
+          chmod +x ./ebook2audiobook.sh
+          ./ebook2audiobook.sh --help
+          conda env list
