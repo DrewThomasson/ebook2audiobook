@@ -1020,7 +1020,7 @@ def combine_audio_chapters(session):
         chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
         chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
         if len(chapter_files) > 0:
-            combined_chapters_file = os.path.join(session['process_dir'], session['metadata']['title'] + '.' + default_audio_proc_format)
+            combined_chapters_file = os.path.join(session['process_dir'], get_sanitized(session['metadata']['title']) + '.' + default_audio_proc_format)
             metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
             if assemble_segments():
                 if generate_ffmpeg_metadata():
