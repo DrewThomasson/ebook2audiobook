@@ -4,11 +4,8 @@ on:
   push:
     branches:
       - act-trigger
-  release:
-    types:
-      - published
+      - v25
   workflow_dispatch:
-
 
 jobs:
   run-script:
