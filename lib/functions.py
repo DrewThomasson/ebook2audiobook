@@ -506,51 +506,6 @@ def get_cover(epubBook, session):
     except Exception as e:
         DependencyError(e)
         return False
-     
-r"""
-def get_chapters(epubBook, session):
-    try:
-        if session['cancellation_requested']:
-            print('Cancel requested')
-            return False
-        # Step 1: Get all documents and their patterns
-        all_docs = list(epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT))
-        if not all_docs:
-            return False
-        all_docs = all_docs[1:]  # Exclude the first document if needed
-        # Cache filtered parts to avoid redundant calls
-        doc_cache = {}
-        msg = '******* NOTE: YOU CAN SAFELY IGNORE "Character xx not found in the vocabulary." *******'
-        print(msg)
-        for doc in all_docs:
-            doc_cache[doc] = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
-        # Step 2: Determine the most common pattern
-        doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
-        most_common_pattern = filter_doc(doc_patterns)
-        # Step 3: Calculate average character length of selected docs
-        char_length = [len(content) for content in doc_cache.values()]
-        average_char_length = sum(char_length) / len(char_length) if char_length else 0
-        # Step 4: Filter docs based on average character length or repetitive pattern
-        final_selected_docs = [
-            doc for doc in all_docs
-            if doc in doc_cache and doc_cache[doc]
-            and (len(doc_cache[doc]) >= average_char_length or filter_pattern(str(doc)) == most_common_pattern)
-        ]
-        # Step 5: Extract parts from the final selected docs
-        chapters = [doc_cache[doc] for doc in final_selected_docs]
-        # Add introductory metadata if available
-        #creator = session['metadata'].get('creator') or ''
-        #title = session['metadata']['title'] or ''
-        #intro = f"{creator} , \n\n{title} , \n\n"
-        #intro = normalize_text(intro, session['language'], session['language_iso1'], session['tts_engine'])
-        #if chapters:
-        #    chapters[0] = [intro] + chapters[0]
-        return chapters
-    except Exception as e:
-        error = f'Error extracting main content pages: {e}'
-        DependencyError(error)
-        return None
-"""
 
 def get_chapters(epubBook, session):
     try:
