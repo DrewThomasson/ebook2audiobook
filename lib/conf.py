@@ -59,7 +59,7 @@ os.environ['HF_TOKEN_PATH'] = os.path.join(os.path.expanduser('~'), '.huggingfac
 os.environ['TTS_CACHE'] = models_dir
 os.environ['TORCH_HOME'] = models_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
-os.environ["SUNO_OFFLOAD_CPU"] = "True" # BARK option: "False" needs A GPU
-os.environ["SUNO_USE_SMALL_MODELS"] = "True" # "False" needs a GPU with VRAM > 4GB
+os.environ["SUNO_OFFLOAD_CPU"] = False # BARK option: False needs A GPU
+os.environ["SUNO_USE_SMALL_MODELS"] = False # BARK option: False needs a GPU with VRAM > 4GB
 if platform.system() == "Windows":
     os.environ["ESPEAK_DATA_PATH"] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
