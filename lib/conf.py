@@ -1,7 +1,8 @@
 import os
 import platform
 
-version = '25.2.25'
+prog_version = (lambda: open("VERSION.txt").read().strip())()
+
 min_python_version = (3,11)
 max_python_version = (3,12)
 

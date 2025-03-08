@@ -8,7 +8,6 @@ fi
 unset SWITCHED_TO_ZSH
 
 PYTHON_VERSION="3.12"
-VERSION="$(cat VERSION.txt)"
 
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -311,17 +310,6 @@ else
 		return 0
 	}
 
-	# Prevent Coqui-TTS "dot" bug
-	coqui_path="$(pip show coqui-tts 2>/dev/null | grep "Location" | awk '{print $2}')"
-	if [ ! -z "$coqui_path" ]; then
-		src="./patches/tokenizer.py"
-		dest="$coqui_path/TTS/tts/layers/xtts/tokenizer.py"
-		if ! diff -q "$src" "$dest" > /dev/null 2>&1; then
-			$(which cp 2>/dev/null) -a "$src" "$dest"
-		fi
-	fi
-
-	echo -e "\e[33m v${VERSION} ${SCRIPT_MODE} mode \e[0m"
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 		conda deactivate
