@@ -22,6 +22,7 @@ from lib.models import *
 from lib.conf import models_dir, default_audio_proc_format
 
 torch.backends.cudnn.benchmark = True
+torch.serialization.add_safe_globals(["numpy.core.multiarray.scalar"])
 
 app = FastAPI()
 lock = threading.Lock()

@@ -676,9 +676,55 @@ def get_sentences(phoneme_list, max_tokens):
         sentences.append(current_sentence.strip())
     return sentences
   
-def get_free_memory(list, session):
-    avail_memory = psutil.virtual_memory().available * 0.6
-    return avail_memory
+import os
+import platform
+
+def get_vram():
+    os_name = platform.system()
+    # NVIDIA (Cross-Platform: Windows, Linux, macOS)
+    try:
+        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
+        nvmlInit()
+        handle = nvmlDeviceGetHandleByIndex(0)  # First GPU
+        info = nvmlDeviceGetMemoryInfo(handle)
+        vram = info.total
+        return int(vram / (1024 ** 3))
+    except ImportError:
+        pass
+    except Exception:
+        pass
+    # AMD (Windows & Linux)
+    try:
+        import pyamdgpuinfo
+        vram = pyamdgpuinfo.detect_gpus()[0].memory_total
+        return int(total_vram / 1024)
+    except ImportError:
+        pass
+    except Exception:
+        pass
+    # Intel (Linux Only)
+    intel_vram_paths = [
+        "/sys/kernel/debug/dri/0/i915_vram_total",  # Intel dedicated GPUs
+        "/sys/class/drm/card0/device/resource0"  # Some integrated GPUs
+    ]
+    for path in intel_vram_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "r") as f:
+                    vram = int(f.read().strip()) // (1024 ** 3)  # Convert bytes to GB
+                    return vram
+            except Exception:
+                pass  # Ignore errors
+    # macOS (OpenGL Alternative)
+    if os_name == "Darwin":
+        try:
+            from OpenGL.GL import glGetIntegerv
+            from OpenGL.GLX import GLX_RENDERER_VIDEO_MEMORY_MB_MESA
+            vram = int(glGetIntegerv(GLX_RENDERER_VIDEO_MEMORY_MB_MESA) // 1024)
+            return vram
+        except ImportError:
+            return 0
+    return 0
 
 def get_sanitized(str, replacement="_"):
     str = str.replace('&', 'And')
@@ -1260,13 +1306,19 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
                                 msg = 'GPU is not available on your device!'
                                 print(msg)
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
                                 msg = 'MPS is not available on your device!'
                                 print(msg)
+                        else:
+                            os.environ["SUNO_OFFLOAD_CPU"] = 'True'
+                        if get_vram() <= 4
+                            os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
                         msg = f"Available Processor Unit: {session['device']}"
                         print(msg)
                         if default_xtts_settings['use_deepspeed'] == True:

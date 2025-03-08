@@ -16,6 +16,9 @@ m4b-util
 mecab
 mecab-python3
 pydub
+nvidia-ml-py3
+pyamdgpuinfo
+PyOpenGL
 pypinyin
 ray
 regex
