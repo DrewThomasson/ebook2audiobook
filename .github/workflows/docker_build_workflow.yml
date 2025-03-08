@@ -40,7 +40,7 @@ jobs:
 
       - name: Activate conda environment on Mac/Linux
         if: runner.os != 'Windows'
-        shell: bash -l  # Use login shell to ensure conda is available
+        shell: bash
         run: |
           echo "Activating Conda environment on Mac/Linux..."
           source ~/miniconda3/etc/profile.d/conda.sh  # Ensure conda is initialized
