@@ -1272,7 +1272,7 @@ def convert_ebook(args):
                                 print(msg)
                         else:
                             os.environ["SUNO_OFFLOAD_CPU"] = 'True'
-                        if get_vram() <= 4
+                        if get_vram() <= 4:
                             os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
                         msg = f"Available Processor Unit: {session['device']}"
                         print(msg)
