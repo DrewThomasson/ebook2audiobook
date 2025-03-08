@@ -1,11 +1,14 @@
 # .ps1
-# Script to run ebook2audiobook.cmd with administrator privileges
+# Script to run ebook2audiobook.cmd without administrator privileges
 
 # Paste contents into https://ps2exe.azurewebsites.net to create exe
 
-
-# Get the directory of the current script
-$scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
+# Determine script/exe directory
+$scriptDirectory = if ($PSScriptRoot) { 
+    $PSScriptRoot 
+} else { 
+    Split-Path -Parent (Convert-Path -LiteralPath ([System.Environment]::GetCommandLineArgs()[0]))
+}
 
 # Full path to the ebook2audiobook.cmd
 $cmdPath = Join-Path $scriptDirectory "ebook2audiobook.cmd"
@@ -16,9 +19,9 @@ if (Test-Path $cmdPath) {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "cmd.exe"
     $psi.Arguments = "/c `"$cmdPath`""
-    $psi.Verb = "runas"  # This triggers running as administrator
+    $psi.Verb = "runas"  # Run as administrator
     $psi.WorkingDirectory = $scriptDirectory
-    $psi.UseShellExecute = $true
+    $psi.UseShellExecute = $false
 
     # Start the process
     try {

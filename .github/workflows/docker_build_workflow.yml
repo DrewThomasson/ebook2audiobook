@@ -1,19 +1,7 @@
 name: Build and Push Docker Image
 on:
-  workflow_dispatch:  # Allows manual trigger
-  release:
-    types:
-      - published  # Triggers on new release
-  push:
-    branches:
-      - main  # Triggers when a PR is merged into main
-    paths-ignore: # Workflow won't trigger if only files/folders in paths-ignore are modified.
-      - 'CODE_OF_CONDUCT.md'
-      - 'LICENSE'
-      - 'README.md'
-      - 'readme/**'
-      - 'dockerfiles/**'
-      - 'Notebooks/**'
+  workflow_dispatch:  # Allows manual trigger only
+
 jobs:
   build:
     runs-on: [self-hosted]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
@@ -45,4 +33,11 @@ jobs:
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
+            --push .
+            
+      - name: Build and Push Huggingface Docker image for x86 only
+        run: |
+          docker buildx build --platform linux/amd64 \
+            -f dockerfiles/HuggingfaceDockerfile \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
             --push .

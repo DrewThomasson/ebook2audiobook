@@ -119,16 +119,20 @@ you should first remove manually any text you don't want to be converted in audi
 git clone https://github.com/DrewThomasson/ebook2audiobook.git
 ```
 
-### Launching Gradio Web Interface
-1. **Run ebook2audiobook**:
-   - **Linux/MacOS**
+### Launching Gradio Web Interface  
+1. **Run ebook2audiobook**:  
+   - **Linux/MacOS**  
      ```bash
-     ./ebook2audiobook.sh  # Run Launch script
+     ./ebook2audiobook.sh  # Run launch script
      ```
-   - **Windows**
+   - **Mac Launcher**  
+     Double click `Mac Ebook2Audiobook Launcher.command`  
+   - **Windows**  
      ```bash
-     .\ebook2audiobook.cmd  # Run launch script or double click on it (Bypass windows alerts)
+     .\ebook2audiobook.cmd  # Run launch script or double click on it
      ```
+   - **Windows Launcher**  
+     Double click `ebook2audiobook.exe`  
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
 3. **For Public Link**:
    `python app.py --share` (all OS)
@@ -327,8 +331,8 @@ mkdir input-folder && mkdir Audiobooks
 - In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
 ```bash
 docker run --rm \
-    -v $(pwd)/input-folder:/home/user/app/input_folder \
-    -v $(pwd)/audiobooks:/home/user/app/audiobooks \
+    -v $(pwd)/input-folder:/app/input_folder \
+    -v $(pwd)/audiobooks:/app/audiobooks \
     athomasson2/ebook2audiobook \
     --headless --ebook /input_folder/YOUR_EBOOK_FILE
 ```
