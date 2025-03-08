@@ -51,3 +51,13 @@ jobs:
           
           # Verify activation
           python --version
+
+      - name: app.py --help Mac/Linux
+        if: runner.os != 'Windows'
+        shell: bash
+        run: python app.py --help
+
+      - name: app.py default run Mac/Linux
+        if: runner.os != 'Windows'
+        shell: bash
+        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
