@@ -456,7 +456,6 @@ class TTSManager:
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, sample_rate, format=default_audio_proc_format)
                 del audio_data
-            #collected = gc.collect()
             if self.session['device'] == 'cuda':
                 torch.cuda.empty_cache()         
             if os.path.exists(self.params['sentence_audio_file']):
