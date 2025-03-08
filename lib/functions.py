@@ -506,51 +506,6 @@ def get_cover(epubBook, session):
     except Exception as e:
         DependencyError(e)
         return False
-     
-r"""
-def get_chapters(epubBook, session):
-    try:
-        if session['cancellation_requested']:
-            print('Cancel requested')
-            return False
-        # Step 1: Get all documents and their patterns
-        all_docs = list(epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT))
-        if not all_docs:
-            return False
-        all_docs = all_docs[1:]  # Exclude the first document if needed
-        # Cache filtered parts to avoid redundant calls
-        doc_cache = {}
-        msg = '******* NOTE: YOU CAN SAFELY IGNORE "Character xx not found in the vocabulary." *******'
-        print(msg)
-        for doc in all_docs:
-            doc_cache[doc] = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
-        # Step 2: Determine the most common pattern
-        doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
-        most_common_pattern = filter_doc(doc_patterns)
-        # Step 3: Calculate average character length of selected docs
-        char_length = [len(content) for content in doc_cache.values()]
-        average_char_length = sum(char_length) / len(char_length) if char_length else 0
-        # Step 4: Filter docs based on average character length or repetitive pattern
-        final_selected_docs = [
-            doc for doc in all_docs
-            if doc in doc_cache and doc_cache[doc]
-            and (len(doc_cache[doc]) >= average_char_length or filter_pattern(str(doc)) == most_common_pattern)
-        ]
-        # Step 5: Extract parts from the final selected docs
-        chapters = [doc_cache[doc] for doc in final_selected_docs]
-        # Add introductory metadata if available
-        #creator = session['metadata'].get('creator') or ''
-        #title = session['metadata']['title'] or ''
-        #intro = f"{creator} , \n\n{title} , \n\n"
-        #intro = normalize_text(intro, session['language'], session['language_iso1'], session['tts_engine'])
-        #if chapters:
-        #    chapters[0] = [intro] + chapters[0]
-        return chapters
-    except Exception as e:
-        error = f'Error extracting main content pages: {e}'
-        DependencyError(error)
-        return None
-"""
 
 def get_chapters(epubBook, session):
     try:
@@ -675,10 +630,75 @@ def get_sentences(phoneme_list, max_tokens):
     if current_sentence:
         sentences.append(current_sentence.strip())
     return sentences
-  
-def get_free_memory(list, session):
-    avail_memory = psutil.virtual_memory().available * 0.6
-    return avail_memory
+
+import platform
+import subprocess
+import os
+
+def get_vram():
+    os_name = platform.system()
+    # NVIDIA (Cross-Platform: Windows, Linux, macOS)
+    try:
+        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
+        nvmlInit()
+        handle = nvmlDeviceGetHandleByIndex(0)  # First GPU
+        info = nvmlDeviceGetMemoryInfo(handle)
+        vram = info.total
+        return int(vram / (1024 ** 3))  # Convert to GB
+    except ImportError:
+        pass
+    except Exception as e:
+        error = f"NVIDIA VRAM detection failed: {e}"
+        print(error)
+    # AMD (Windows)
+    if os_name == "Windows":
+        try:
+            cmd = 'wmic path Win32_VideoController get AdapterRAM'
+            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+            lines = output.stdout.splitlines()
+            vram_values = [int(line.strip()) for line in lines if line.strip().isdigit()]
+            if vram_values:
+                return int(vram_values[0] / (1024 ** 3))
+        except Exception as e:
+            error = f"AMD VRAM detection failed on Windows: {e}"
+            print(error)
+    # AMD (Linux)
+    if os_name == "Linux":
+        try:
+            cmd = "lspci -v | grep -i 'VGA' -A 12 | grep -i 'preallocated' | awk '{print $2}'"
+            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+            if output.stdout.strip().isdigit():
+                return int(output.stdout.strip()) // 1024
+        except Exception as e:
+            error = f"AMD VRAM detection failed on Linux: {e}"
+            print(error)
+    # Intel (Linux Only)
+    intel_vram_paths = [
+        "/sys/kernel/debug/dri/0/i915_vram_total",  # Intel dedicated GPUs
+        "/sys/class/drm/card0/device/resource0"  # Some integrated GPUs
+    ]
+    for path in intel_vram_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "r") as f:
+                    vram = int(f.read().strip()) // (1024 ** 3)
+                    return vram
+            except Exception as e:
+                error = f"Intel VRAM detection failed: {e}"
+                print(error)
+    # macOS (OpenGL Alternative)
+    if os_name == "Darwin":
+        try:
+            from OpenGL.GL import glGetIntegerv
+            from OpenGL.GLX import GLX_RENDERER_VIDEO_MEMORY_MB_MESA
+            vram = int(glGetIntegerv(GLX_RENDERER_VIDEO_MEMORY_MB_MESA) // 1024)
+            return vram
+        except ImportError:
+            pass
+        except Exception as e:
+            error = f"macOS VRAM detection failed: {e}"
+            print(error)
+    return 0
 
 def get_sanitized(str, replacement="_"):
     str = str.replace('&', 'And')
@@ -1020,7 +1040,7 @@ def combine_audio_chapters(session):
         chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
         chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
         if len(chapter_files) > 0:
-            combined_chapters_file = os.path.join(session['process_dir'], session['metadata']['title'] + '.' + default_audio_proc_format)
+            combined_chapters_file = os.path.join(session['process_dir'], get_sanitized(session['metadata']['title']) + '.' + default_audio_proc_format)
             metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
             if assemble_segments():
                 if generate_ffmpeg_metadata():
@@ -1260,13 +1280,19 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
                                 msg = 'GPU is not available on your device!'
                                 print(msg)
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
                                 msg = 'MPS is not available on your device!'
                                 print(msg)
+                        else:
+                            os.environ["SUNO_OFFLOAD_CPU"] = 'True'
+                        if get_vram() <= 4:
+                            os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
                         msg = f"Available Processor Unit: {session['device']}"
                         print(msg)
                         if default_xtts_settings['use_deepspeed'] == True:

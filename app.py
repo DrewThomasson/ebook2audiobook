@@ -13,9 +13,6 @@ from lib.conf import *
 from lib.models import *
 from lib.lang import install_info, default_language_code
 
-os.environ["PYTHONUTF8"] = "1"
-os.environ["PYTHONIOENCODING"] = "utf-8"
-
 def check_virtual_env(script_mode):
     current_version = sys.version_info[:2]  # (major, minor)
     if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
@@ -269,7 +266,7 @@ Linux/Mac:
                     sys.exit(1)
             elif args['ebook']:
                 args['ebook'] = os.path.abspath(args['ebook'])
-                if not os.path.exists(args['ebooks_dir']):
+                if not os.path.exists(args['ebook']):
                     error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
                     print(error)
                     sys.exit(1) 
