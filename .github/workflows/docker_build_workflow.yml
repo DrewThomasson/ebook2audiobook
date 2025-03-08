@@ -1,14 +1,14 @@
 name: Lite Self-Hosted
 
 on:
-  workflow_dispatch: {}
+  workflow_dispatch:
   push:
     branches:
       - main
 
 jobs:
   run-commands:
-    runs-on: self-hosted
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
