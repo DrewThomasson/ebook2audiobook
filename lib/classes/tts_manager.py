@@ -452,7 +452,7 @@ class TTSManager:
                             **speaker_argument
                         )
             if audio_data is not None:
-                sourceTensor = _tensor_type(audio_data)
+                sourceTensor = self._tensor_type(audio_data)
                 #audio_tensor = torch.tensor(audio_data, dtype=torch.float32).unsqueeze(0).cpu()
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, sample_rate, format=default_audio_proc_format)

@@ -630,9 +630,10 @@ def get_sentences(phoneme_list, max_tokens):
     if current_sentence:
         sentences.append(current_sentence.strip())
     return sentences
-  
-import os
+
 import platform
+import subprocess
+import os
 
 def get_vram():
     os_name = platform.system()
@@ -643,20 +644,34 @@ def get_vram():
         handle = nvmlDeviceGetHandleByIndex(0)  # First GPU
         info = nvmlDeviceGetMemoryInfo(handle)
         vram = info.total
-        return int(vram / (1024 ** 3))
+        return int(vram / (1024 ** 3))  # Convert to GB
     except ImportError:
         pass
-    except Exception:
-        pass
-    # AMD (Windows & Linux)
-    try:
-        import pyamdgpuinfo
-        vram = pyamdgpuinfo.detect_gpus()[0].memory_total
-        return int(total_vram / 1024)
-    except ImportError:
-        pass
-    except Exception:
-        pass
+    except Exception as e:
+        error = f"NVIDIA VRAM detection failed: {e}"
+        print(error)
+    # AMD (Windows)
+    if os_name == "Windows":
+        try:
+            cmd = 'wmic path Win32_VideoController get AdapterRAM'
+            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+            lines = output.stdout.splitlines()
+            vram_values = [int(line.strip()) for line in lines if line.strip().isdigit()]
+            if vram_values:
+                return int(vram_values[0] / (1024 ** 3))
+        except Exception as e:
+            error = f"AMD VRAM detection failed on Windows: {e}"
+            print(error)
+    # AMD (Linux)
+    if os_name == "Linux":
+        try:
+            cmd = "lspci -v | grep -i 'VGA' -A 12 | grep -i 'preallocated' | awk '{print $2}'"
+            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+            if output.stdout.strip().isdigit():
+                return int(output.stdout.strip()) // 1024
+        except Exception as e:
+            error = f"AMD VRAM detection failed on Linux: {e}"
+            print(error)
     # Intel (Linux Only)
     intel_vram_paths = [
         "/sys/kernel/debug/dri/0/i915_vram_total",  # Intel dedicated GPUs
@@ -666,10 +681,11 @@ def get_vram():
         if os.path.exists(path):
             try:
                 with open(path, "r") as f:
-                    vram = int(f.read().strip()) // (1024 ** 3)  # Convert bytes to GB
+                    vram = int(f.read().strip()) // (1024 ** 3)
                     return vram
-            except Exception:
-                pass  # Ignore errors
+            except Exception as e:
+                error = f"Intel VRAM detection failed: {e}"
+                print(error)
     # macOS (OpenGL Alternative)
     if os_name == "Darwin":
         try:
@@ -678,7 +694,10 @@ def get_vram():
             vram = int(glGetIntegerv(GLX_RENDERER_VIDEO_MEMORY_MB_MESA) // 1024)
             return vram
         except ImportError:
-            return 0
+            pass
+        except Exception as e:
+            error = f"macOS VRAM detection failed: {e}"
+            print(error)
     return 0
 
 def get_sanitized(str, replacement="_"):
