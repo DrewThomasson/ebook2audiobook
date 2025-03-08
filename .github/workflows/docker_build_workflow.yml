@@ -52,6 +52,20 @@ jobs:
           # Verify activation
           python --version
 
+      - name: pip install requirements.txt Mac/Linux
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "Activating Conda environment on Mac/Linux..."
+          # Initialize conda with the correct path
+          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          
+          # Activate your environment
+          conda activate /Users/drew/actions-runner/_work/ebook2audiobook/ebook2audiobook/python_env
+
+          pip install -r requirements.txt
+
+
       - name: app.py --help Mac/Linux
         if: runner.os != 'Windows'
         shell: bash
@@ -65,7 +79,7 @@ jobs:
 
           python app.py --help
 
-      - name: app.py default run Mac/Linux
+      - name: app.py vits run Mac/Linux
         if: runner.os != 'Windows'
         shell: bash
         run: |
