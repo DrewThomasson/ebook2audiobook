@@ -30,7 +30,7 @@ jobs:
           ./ebook2audiobook.sh --help
           conda env list
 
-      - name: Activate conda environment on Windows
+      - name: Activate Conda environment on Windows
         if: runner.os == 'Windows'
         shell: cmd
         run: |
@@ -38,11 +38,16 @@ jobs:
           call conda activate /Users/drew/actions-runner/_work/ebook2audiobook/ebook2audiobook/python_env
           python --version  # Check if environment is activated
 
-      - name: Activate conda environment on Mac/Linux
+      - name: Activate Conda environment on Mac/Linux
         if: runner.os != 'Windows'
         shell: bash
         run: |
           echo "Activating Conda environment on Mac/Linux..."
-          source ~/miniconda3/etc/profile.d/conda.sh  # Ensure conda is initialized
+          # Initialize conda with the correct path
+          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          
+          # Activate your environment
           conda activate /Users/drew/actions-runner/_work/ebook2audiobook/ebook2audiobook/python_env
-          python --version  # Check if environment is activated
+          
+          # Verify activation
+          python --version
