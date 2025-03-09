@@ -2014,7 +2014,7 @@ def web_interface(args):
                                 msg = f'Are you sure to delete {voice_name}...'
                                 return gr.update(value='confirm_voice_del'), gr.update(value=show_modal('confirm', msg),visible=True)
                             else:
-                                error = f'{voice_name} is part of the global voices directorye. Only your own custom uploaded voices can be deleted!'
+                                error = f'{voice_name} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
                                 show_alert({"type": "warning", "msg": error})
                         except Exception as e:
                             error = f'Could not delete the voice file {voice_name}!'
