@@ -18,7 +18,7 @@ on:
 
 jobs:
   build:
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
