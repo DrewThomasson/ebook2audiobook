@@ -74,7 +74,7 @@ class VoiceExtractor:
             torch_home = os.path.join(self.models_dir, 'hub')
             torch.hub.set_dir(torch_home)
             os.environ['TORCH_HOME'] = torch_home
-            energy_threshold = 8000 # to tune if not enough accurate (higher = less sensitive)
+            energy_threshold = 8200 # to tune if not enough accurate (higher = less sensitive)
             model = vggish()
             model.eval()
             # Preprocess audio to log mel spectrogram
