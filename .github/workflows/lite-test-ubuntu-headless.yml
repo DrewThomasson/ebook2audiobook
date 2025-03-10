@@ -1,4 +1,4 @@
-name: lite Test Ubuntu Headless
+name: lite Test Adding automated build cache wipe if > 50gb
 
 on:
   push:
@@ -7,178 +7,103 @@ on:
   workflow_dispatch:
 
 jobs:
-  run-script:
-    runs-on: [ubuntu-latest]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
+  build:
+    runs-on: [self-hosted, Linux, ARM64]
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v3
-      
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v4
+
+      # Clean up Docker Buildx Cache if it exceeds 50GB (Windows)
+      - name: Clean up Docker Buildx Cache (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          # Get the build cache size (in MB)
+          $cacheSize = (docker system df --format '{{.BuildCacheSize}}') -replace '[^\d]', ''
+          # Check if the cache size exceeds 50GB (50000MB)
+          if ($cacheSize -gt 50000) {
+              Write-Host "Cache is over 50GB, pruning..."
+              docker builder prune --all --force
+          } else {
+              Write-Host "Cache size is under 50GB, no action taken."
+          }
+
+      # Set up Docker Buildx conditionally based on OS:
+      - name: Set up Docker Buildx (Windows)
+        if: runner.os == 'Windows'
+        uses: docker/setup-buildx-action@v2
+
+      - name: Set up Docker Buildx (Unix)
+        if: runner.os != 'Windows'
+        uses: docker/setup-buildx-action@v2
         with:
-          python-version: '3.12'
+          driver: docker-container
+          buildkitd-flags: --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
 
-      - name: Check Python version
-        run: python --version
-        
-      - name: Install the system packages
-        run: |
-          sudo apt-get update &&
-          sudo apt-get install -y gcc g++ make wget git calibre ffmpeg nodejs espeak espeak-ng rustc cargo libmecab-dev mecab mecab-ipadic-utf8 curl libsndfile1-dev libc-dev sox &&
-          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - &&
-          sudo apt-get install -y nodejs &&
-          sudo apt-get clean &&
-          sudo rm -rf /var/lib/apt/lists/*
-
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
         with:
-          toolchain: stable
-          override: true
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Install the python requirements
+      # Get Git Commit Hash for Linux/macOS
+      - name: Get Git Commit Hash (Unix)
+        if: runner.os != 'Windows'
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      # Get Git Commit Hash for Windows using PowerShell
+      - name: Get Git Commit Hash (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
         run: |
-          python -m pip install --upgrade pip
-          pip cache purge
-          pip install -r requirements.txt
+          $gitHash = (git rev-parse --short=9 HEAD).Trim()
+          Add-Content -Path $env:GITHUB_ENV -Value "GIT_HASH=$gitHash"
 
-      - name: pip Install unict
-        run: pip install unidic-lite unidic
-
-      - name: Download the unict dictionary
+      # Get Latest Release Tag for Linux/macOS
+      - name: Get Latest Release Tag (Unix)
+        if: runner.os != 'Windows'
+        id: get_tag
         run: |
-          python -m unidic download
-          mkdir -p ~/.local/share/unidic
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
-      - name: Set UniDic environment variable
-        run: echo "UNIDIC_DIR=$HOME/.local/share/unidic" >> $GITHUB_ENV
+      # Get Latest Release Tag for Windows using PowerShell
+      - name: Get Latest Release Tag (Windows)
+        if: runner.os == 'Windows'
+        id: get_tag_win
+        shell: powershell
+        run: |
+          $response = Invoke-WebRequest -Uri "https://api.github.com/repos/${{ github.repository }}/releases/latest" -UseBasicParsing
+          $json = $response.Content | ConvertFrom-Json
+          $tag = $json.tag_name
+          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_TAG=$tag"
 
-      - name: Help command python app.py
-        run: python app.py --help
+      # Clean up Docker Buildx Cache if it exceeds 50GB (Unix)
+      - name: Clean up Docker Buildx Cache (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          # Get the build cache size (in MB)
+          cache_size=$(docker system df --format '{{.BuildCacheSize}}' | tr -d '[:alpha:]' | tr -d '[:space:]')
+          # Check if the cache size exceeds 50GB (50000MB)
+          if [ "$cache_size" -gt 50000 ]; then
+            echo "Cache is over 50GB, pruning..."
+            docker builder prune --all --force
+          else
+            echo "Cache size is under 50GB, no action taken."
+          fi
 
-#      - name: Create test files
-#        run: |
-#          mkdir -p tools/workflow-testing
-#          CONTENT=$'"This is a test sentence," she said. "Here'\''s another one."\nThe quick brown fox jumps over the lazy dog, but the cat stays still.\nNumbers like 123,456.78 should also be tested.\nWhat happens if we use question marks? Or exclamation points!\n"Nested quotes are '\''interesting'\''," he noted.'
-#          echo -e "$CONTENT" > tools/workflow-testing/test1.txt
-#          echo -e "$CONTENT" > tools/workflow-testing/test2.txt
-#          echo -e "$CONTENT" > tools/workflow-testing/test3.txt
-#          echo -e "$CONTENT" > tools/workflow-testing/test4.txt
-#          echo -e "$CONTENT" > tools/workflow-testing/test5.txt
+      # Build and Push Dev_25 Docker Image for Unix using bash
+      - name: Build and Push Dev_25 Docker Image (multi-arch, Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          docker buildx build --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 \
+            --push .
 
-      - name: English Fairseq headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-
-      - name: English Fairseq headless batch test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-
-      - name: English Fairseq Custom-Voice headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: English Fairseq Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: Unusual Fairseq headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-
-#      - name: Unusual Fairseq headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-
-      - name: Unusual Fairseq Custom-Voice headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: Unusual Fairseq  Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: English Vits headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
-
-#      - name: English Vits headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits
-
-      - name: English Vits Custom-Voice headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: English Vits Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: English Yourtts headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
-
-#      - name: English Yourtts headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
-
-      - name: English Yourtts Custom-Voice headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: English Yourtts Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: Default headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
-
-#      - name: Default xtts headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
-
-      - name: Default xtts headless Custom-Voice single test python app.py
-        run: python app.py --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: Default xtts headless Custom-Voice batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: Create the custom_xtts_test.zip for headless custom xtts model single test python app.py
-#        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
-        
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
-
-#      - name: English xtts headless custom xtts model single test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
-
-#      - name: English xtts headless custom xtts model batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
-     
-#      - name: Delete custom_xtts_test.zip
-#        run: rm -f custom_xtts_test.zip
-
-#      - name: English xtts headless fine-tuned xtts model single test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
-
-#      - name: English xtts headless fine-tuned xtts model batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained
-
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
-
-#      - name: English Bark headless single test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
-
-#      - name: English Bark headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark
-
-#      - name: English Bark Custom-Voice headless single test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: English Bark Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
+      # Build and Push Dev_25 Docker Image for Windows using PowerShell
+      - name: Build and Push Dev_25 Docker Image (multi-arch, Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: docker buildx build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --push .
