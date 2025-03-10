@@ -83,8 +83,8 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          # Get the build cache size (in MB)
-          cache_size=$(docker system df --format '{{.BuildCacheSize}}' | tr -d '[:alpha:]' | tr -d '[:space:]')
+          # Get the build cache size (in MB) using docker system df
+          cache_size=$(docker system df --format '{{.Size}}' | grep 'Build cache' | tr -d '[:alpha:]' | tr -d '[:space:]')
           # Check if the cache size exceeds 50GB (50000MB)
           if [ "$cache_size" -gt 50000 ]; then
             echo "Cache is over 50GB, pruning..."
@@ -92,6 +92,7 @@ jobs:
           else
             echo "Cache size is under 50GB, no action taken."
           fi
+
 
 
 
