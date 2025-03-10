@@ -2,9 +2,6 @@ name: Full Dev Docker Test
 
 on:
   workflow_dispatch: {}
-  release:
-    types:
-      - published
   push:
     branches:
       - v25
@@ -15,6 +12,7 @@ on:
       - readme/**
       - dockerfiles/**
       - Notebooks/**
+
 
 jobs:
   build:
