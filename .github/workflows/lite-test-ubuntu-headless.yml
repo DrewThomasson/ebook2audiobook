@@ -84,13 +84,13 @@ jobs:
         shell: bash
         run: |
           # Get the build cache size (in MB) using docker system df
-          cache_size=$(docker system df --format '{{.Size}}' | grep 'Build cache' | tr -d '[:alpha:]' | tr -d '[:space:]')
-          # Check if the cache size exceeds 50GB (50000MB)
-          if [ "$cache_size" -gt 50000 ]; then
+          cache_size=$(docker system df -v | grep "Build Cache" | awk '{print $3}' | sed 's/GB//' | sed 's/MB//' | awk '{printf "%.0f\n", $1 * (index($0, "GB") > 0 ? 1024 : 1)}')
+          # Check if the cache size exceeds 50GB (51200MB)
+          if [ "$cache_size" -gt 51200 ]; then
             echo "Cache is over 50GB, pruning..."
             docker builder prune --all --force
           else
-            echo "Cache size is under 50GB, no action taken."
+            echo "Cache size is ${cache_size}MB, under 50GB, no action taken."
           fi
 
 
