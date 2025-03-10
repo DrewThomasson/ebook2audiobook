@@ -648,8 +648,7 @@ def get_vram():
     except ImportError:
         pass
     except Exception as e:
-        error = f"NVIDIA VRAM detection failed: {e}"
-        print(error)
+        pass
     # AMD (Windows)
     if os_name == "Windows":
         try:
@@ -660,8 +659,7 @@ def get_vram():
             if vram_values:
                 return int(vram_values[0] / (1024 ** 3))
         except Exception as e:
-            error = f"AMD VRAM detection failed on Windows: {e}"
-            print(error)
+            pass
     # AMD (Linux)
     if os_name == "Linux":
         try:
@@ -670,8 +668,7 @@ def get_vram():
             if output.stdout.strip().isdigit():
                 return int(output.stdout.strip()) // 1024
         except Exception as e:
-            error = f"AMD VRAM detection failed on Linux: {e}"
-            print(error)
+            pass
     # Intel (Linux Only)
     intel_vram_paths = [
         "/sys/kernel/debug/dri/0/i915_vram_total",  # Intel dedicated GPUs
@@ -684,8 +681,7 @@ def get_vram():
                     vram = int(f.read().strip()) // (1024 ** 3)
                     return vram
             except Exception as e:
-                error = f"Intel VRAM detection failed: {e}"
-                print(error)
+                pass
     # macOS (OpenGL Alternative)
     if os_name == "Darwin":
         try:
@@ -696,8 +692,7 @@ def get_vram():
         except ImportError:
             pass
         except Exception as e:
-            error = f"macOS VRAM detection failed: {e}"
-            print(error)
+            pass
     return 0
 
 def get_sanitized(str, replacement="_"):
