@@ -13,9 +13,6 @@ from lib.conf import *
 from lib.models import *
 from lib.lang import install_info, default_language_code
 
-os.environ["PYTHONUTF8"] = "1"
-os.environ["PYTHONIOENCODING"] = "utf-8"
-
 def check_virtual_env(script_mode):
     current_version = sys.version_info[:2]  # (major, minor)
     if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
@@ -90,16 +87,6 @@ def check_and_install_requirements(file_path):
                         return False          
             msg = '\nAll required packages are installed.'
             print(msg)
-
-        # Prevent coqui-tts "dot" bug  
-        coqui_path = importlib.util.find_spec('TTS')
-        if coqui_path is not None:
-            coqui_path = Path(coqui_path.origin).parent
-            src = Path("patches/tokenizer.py")
-            dest = os.path.join(coqui_path, 'tts', 'layers', 'xtts', 'tokenizer.py')
-            if not filecmp.cmp(src, dest, shallow=False):
-                shutil.copy(src, dest)
-
         return True
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
@@ -197,7 +184,7 @@ Linux/Mac:
     headless_optional_group.add_argument(options[20], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
     Default to config.json model.""")                     
     headless_optional_group.add_argument(options[21], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[22], action='version', version=f'ebook2audiobook version {version}', help='''Show the version of the script and exit''')
+    headless_optional_group.add_argument(options[22], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
     headless_optional_group.add_argument(options[23], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
@@ -226,6 +213,8 @@ Linux/Mac:
         args['share'] =  args['share'] if args['share'] else False
         args['ebook_list'] = None
 
+        print(f"v{prog_version} {args['script_mode']} mode")
+
         if args['script_mode'] == NATIVE:
             check_pkg = check_and_install_requirements(requirements_file)
             if check_pkg:
@@ -241,7 +230,7 @@ Linux/Mac:
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False
-            args['audiobooks_dir'] = args['output_dir'] if args['output_dir'] else audiobooks_cli_dir
+            args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
             args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
             # Condition to stop if both --ebook and --ebooks_dir are provided
             if args['ebook'] and args['ebooks_dir']:
@@ -255,8 +244,12 @@ Linux/Mac:
             if args['custom_model']:
                 if os.path.exists(args['custom_model']):
                     args['custom_model'] = os.path.abspath(args['custom_model'])
-            # Condition 1: If --ebooks_dir exists, check value and set 'ebooks_dir'
+            if not os.path.exists(args['audiobooks_dir']):
+                error = 'Error: --output_dir path does not exist.'
+                print(error)
+                sys.exit(1)                
             if args['ebooks_dir']:
+                args['ebooks_dir'] = os.path.abspath(args['ebooks_dir'])
                 if not os.path.exists(args['ebooks_dir']):
                     error = f'Error: The provided --ebooks_dir "{args["ebooks_dir"]}" does not exist.'
                     print(error)
@@ -273,6 +266,10 @@ Linux/Mac:
                     sys.exit(1)
             elif args['ebook']:
                 args['ebook'] = os.path.abspath(args['ebook'])
+                if not os.path.exists(args['ebook']):
+                    error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
+                    print(error)
+                    sys.exit(1) 
                 progress_status, passed = convert_ebook(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'

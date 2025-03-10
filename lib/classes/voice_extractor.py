@@ -11,7 +11,7 @@ from pydub import AudioSegment
 from torchvggish import vggish, vggish_input
 
 from lib.conf import voice_formats
-from lib.models import models
+from lib.models import XTTSv2, models
 
 class VoiceExtractor:
 
@@ -36,11 +36,10 @@ class VoiceExtractor:
 
     def _convert_to_wav(self):
         try:
-            self.wav_file = os.path.join(self.session['voice_dir'], os.path.basename(self.voice_file).replace(os.path.splitext(self.voice_file)[1], '.wav'))
+            self.wav_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
             ffmpeg_cmd = [
                 shutil.which('ffmpeg'), '-i', self.voice_file,
                 '-ac', '1',
-                '-ar', '44100',
                 '-y', self.wav_file
             ]
             process = subprocess.Popen(
@@ -75,7 +74,7 @@ class VoiceExtractor:
             torch_home = os.path.join(self.models_dir, 'hub')
             torch.hub.set_dir(torch_home)
             os.environ['TORCH_HOME'] = torch_home
-            energy_threshold = 8800 # to tune if not enough accurate (higher = less sensitive)
+            energy_threshold = 8200 # to tune if not enough accurate (higher = less sensitive)
             model = vggish()
             model.eval()
             # Preprocess audio to log mel spectrogram
@@ -143,7 +142,7 @@ class VoiceExtractor:
             silence_threshold = -60
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
-            min_required_duration = 15000  # milliseconds
+            min_required_duration = 15000 if self.session['tts_engine'] == XTTSv2 else 30000  # milliseconds
             if total_duration <= min_required_duration:
                 msg = f"Audio is only {total_duration/1000:.2f}s long; skipping trimming."
                 self._remove_silences(audio, silence_threshold)
@@ -180,7 +179,7 @@ class VoiceExtractor:
                 frequency_variations = np.zeros_like(frequency_variations)
             # Step 2: Score each segment using combined variation
             score = amplitude_variations + frequency_variations  # Weight both factors equally
-            # Find the best 9-second segment
+            # Find the best segments
             best_index = np.argmax(score)  # Find the chunk with max variation
             best_start = time_stamps[best_index]  # Start time in ms
             best_end = min(best_start + min_required_duration, total_duration)  # End time in ms
@@ -233,7 +232,8 @@ class VoiceExtractor:
             error = None
             for rate in ['16000', '24000']:
                 ffmpeg_cmd[-3] = rate
-                ffmpeg_cmd[-1] = re.sub(r'\.wav$', f'_{rate}.wav', process_file)
+                output_file = re.sub(r'\.wav$', f'_{rate}.wav', process_file)
+                ffmpeg_cmd[-1] = output_file
                 try:
                     process = subprocess.Popen(
                         ffmpeg_cmd,
@@ -250,19 +250,20 @@ class VoiceExtractor:
                     if process.returncode != 0:
                         error = f'_normalize_audio(): process.returncode: {process.returncode}'
                         break
-                    elif not os.path.exists(ffmpeg_cmd[-1]) or os.path.getsize(ffmpeg_cmd[-1]) == 0:
-                        error = f'_normalize_audio() error: {ffmpeg_cmd[-1]} was not created or is empty.'
+                    elif not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
+                        error = f'_normalize_audio() error: {output_file} was not created or is empty.'
                         break
                 except subprocess.CalledProcessError as e:
                     error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
                     break
             if error is None:
                 shutil.rmtree(self.demucs_dir, ignore_errors=True)
-                os.remove(process_file)
+                if os.path.exists(process_file):
+                    os.remove(process_file)
                 msg = 'Audio normalization successful!'
                 return True, msg
-        except FileNotFoundError:
-            error = '_normalize_audio() FileNotFoundError: Error: Input file or FFmpeg binary is missing!'
+        except FileNotFoundError as e:
+            error = '_normalize_audio() FileNotFoundError: {e} Input file or FFmpeg PATH not found!'
             raise ValueError(error)
         except Exception as e:
             error = f'_normalize_audio() error: {e}'

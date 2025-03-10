@@ -1,7 +1,37 @@
 import os
 import platform
 
-version = '25.2.25'
+models_dir = os.path.abspath('models')
+ebooks_dir = os.path.abspath('ebooks')
+voices_dir = os.path.abspath('voices')
+
+tmp_dir = os.path.abspath('tmp')
+tmp_expire = 7 # days
+
+os.environ["PYTHONUTF8"] = '1'
+os.environ["PYTHONIOENCODING"] = 'utf-8'
+os.environ['COQUI_TOS_AGREED'] = '1'
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
+os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir
+os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
+os.environ['DO_NOT_TRACK'] = 'true'
+os.environ['HUGGINGFACE_HUB_CACHE'] = models_dir
+os.environ['TTS_HOME'] = models_dir
+os.environ['HF_HOME'] = models_dir
+os.environ['HF_DATASETS_CACHE'] = models_dir
+os.environ['HF_TOKEN_PATH'] = os.path.join(os.path.expanduser('~'), '.huggingface_token')
+os.environ['TTS_CACHE'] = models_dir
+os.environ['TORCH_HOME'] = models_dir
+os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
+os.environ['XDG_CACHE_HOME'] = models_dir
+os.environ["SUNO_OFFLOAD_CPU"] = 'False' # BARK option: False needs A GPU
+os.environ["SUNO_USE_SMALL_MODELS"] = 'False' # BARK option: False needs a GPU with VRAM > 4GB
+if platform.system() == 'Windows':
+    os.environ["ESPEAK_DATA_PATH"] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
+
+prog_version = (lambda: open("VERSION.txt").read().strip())()
+
 min_python_version = (3,11)
 max_python_version = (3,12)
 
@@ -27,13 +57,6 @@ interface_component_options = {
     "gr_group_custom_model": True
 }
 
-models_dir = os.path.abspath('models')
-ebooks_dir = os.path.abspath('ebooks')
-voices_dir = os.path.abspath('voices')
-
-tmp_dir = os.path.abspath('tmp')
-tmp_expire = 7 # days
-
 audiobooks_gradio_dir = os.path.abspath(os.path.join('audiobooks','gui','gradio'))
 audiobooks_host_dir = os.path.abspath(os.path.join('audiobooks','gui','host'))
 audiobooks_cli_dir = os.path.abspath(os.path.join('audiobooks','cli'))
@@ -43,22 +66,3 @@ voice_formats = ['.mp4', '.m4b', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg
 output_formats = ['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']
 default_audio_proc_format = 'flac' # or 'wav', 'mp3', 'aac', 'm4a', 'm4b', 'amr', '3gp', 'alac'
 default_output_format = 'm4b' # or 'wav', 'pcm', 'ieee', 'ogg', 'nist', 'mp3', 'aiff', 'aac', 'wma', 'mp4', 'm4a', 'flac', 'amr', '3gp', 'webm', 'alac'
-
-os.environ['COQUI_TOS_AGREED'] = '1'
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
-os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir
-os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
-os.environ['DO_NOT_TRACK'] = 'true'
-os.environ['HUGGINGFACE_HUB_CACHE'] = models_dir
-os.environ['TTS_HOME'] = models_dir
-os.environ['HF_HOME'] = models_dir
-os.environ['HF_DATASETS_CACHE'] = models_dir
-os.environ['HF_TOKEN_PATH'] = os.path.join(os.path.expanduser('~'), '.huggingface_token')
-os.environ['TTS_CACHE'] = models_dir
-os.environ['TORCH_HOME'] = models_dir
-os.environ['XDG_CACHE_HOME'] = models_dir
-os.environ["SUNO_OFFLOAD_CPU"] = "True" # BARK option: "False" needs A GPU
-os.environ["SUNO_USE_SMALL_MODELS"] = "True" # "False" needs a GPU with VRAM > 4GB
-if platform.system() == "Windows":
-    os.environ["ESPEAK_DATA_PATH"] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")

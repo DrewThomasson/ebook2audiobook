@@ -28,7 +28,7 @@ default_xtts_settings = {
     "temperature": 0.75,
     "length_penalty": 1.0,
     "num_beams": 1,
-    "repetition_penalty": 5.0,
+    "repetition_penalty": 3.0,
     "top_k": 50,
     "top_p": 0.85,
     "speed": 1.0,
@@ -68,7 +68,7 @@ default_bark_settings = {
     "voices": {}
 }
 default_vits_settings = {
-    "samplerate": 24000,
+    "samplerate": 22050,
     "files": ['config.json', 'model_file.pth', 'language_ids.json'],
     "voices": {}
 }
@@ -80,7 +80,7 @@ default_fairseq_settings = {
 default_yourtts_settings = {
     "samplerate": 16000,
     "files": ['config.json', 'model_file.pth'],
-    "voices": {"MachinElla": "female-en-5", "ElectroMale": "male-en-2"}
+    "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'}
 }
 
 models = {
@@ -233,7 +233,7 @@ models = {
             "lang": "multi",
             "repo": "tts_models/multilingual/multi-dataset/your_tts",
             "sub": "",
-            "voice": default_yourtts_settings['voices']['ElectroMale'],
+            "voice": None,
             "files": default_yourtts_settings['files'],
             "samplerate": default_yourtts_settings['samplerate']
         }
