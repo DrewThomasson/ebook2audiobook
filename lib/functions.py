@@ -18,6 +18,7 @@ import math
 import os
 import platform
 import psutil
+import pymupdf4llm
 import random
 import regex as re
 import requests
@@ -451,10 +452,20 @@ def convert_to_epub(session):
             error = "The 'ebook-convert' utility is not installed or not found."
             print(error)
             return False
-        print(f"Running command: {util_app} {session['ebook']} {session['epub_path']}")
+        file_input = session['ebook']
+        file_ext = os.path.splitext(session['ebook'])[1].lower()
+        if file_ext == '.pdf':
+            msg = 'File input is a PDF. flatten it in MD format...'
+            print(msg)
+            file_input = f"{os.path.splitext(session['epub_path'])[0]}.md"
+            markdown_text = pymupdf4llm.to_markdown(session['ebook'])
+            with open(file_input, "w", encoding="utf-8") as md_file:
+            md_file.write(markdown_text)
+        msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
+        print(msg)
         result = subprocess.run(
             [
-                util_app, session['ebook'], session['epub_path'],
+                util_app, file_input, session['epub_path'],
                 '--input-encoding=utf-8',
                 '--output-profile=generic_eink',
                 '--epub-version=3',
