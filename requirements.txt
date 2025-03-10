@@ -31,4 +31,4 @@ pymupdf4llm
 torch==2.4.1
 torchaudio==2.4.1
 torchvision==0.19.1
-coqui-tts==0.25.3
+coqui-tts==0.26.0
