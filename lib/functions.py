@@ -18,6 +18,7 @@ import math
 import os
 import platform
 import psutil
+import pymupdf4llm
 import random
 import regex as re
 import requests
@@ -353,7 +354,7 @@ def proxy_to_dict(proxy_obj):
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
 
-def maths_to_words(text, lang, lang_iso1, tts_engine):
+def math2word(text, lang, lang_iso1, tts_engine):
     def check_compat():
         try:
             num2words(1, lang=lang_iso1)
@@ -400,7 +401,8 @@ def maths_to_words(text, lang, lang_iso1, tts_engine):
     if ambiguous_replacements:
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
     # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
-    number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+)?(?:[eE][-+]?\d+)?)(?!\S)'
+    #number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+)?(?:[eE][-+]?\d+)?)(?!\S)'
+    number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)(?!\S)'
     if tts_engine != XTTSv2:
         if is_num2words_compat:
             # Pattern 2: Split big numbers into groups of 4
@@ -438,7 +440,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Pattern 1: Add a space between UTF-8 characters and numbers
     text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
     # Replace math symbols with words
-    text = maths_to_words(text, lang, lang_iso1, tts_engine)
+    text = math2word(text, lang, lang_iso1, tts_engine)
     return text
 
 def convert_to_epub(session):
@@ -451,10 +453,20 @@ def convert_to_epub(session):
             error = "The 'ebook-convert' utility is not installed or not found."
             print(error)
             return False
-        print(f"Running command: {util_app} {session['ebook']} {session['epub_path']}")
+        file_input = session['ebook']
+        file_ext = os.path.splitext(session['ebook'])[1].lower()
+        if file_ext == '.pdf':
+            msg = 'File input is a PDF. flatten it in MD format...'
+            print(msg)
+            file_input = f"{os.path.splitext(session['epub_path'])[0]}.md"
+            markdown_text = pymupdf4llm.to_markdown(session['ebook'])
+            with open(file_input, "w", encoding="utf-8") as md_file:
+                md_file.write(markdown_text)
+        msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
+        print(msg)
         result = subprocess.run(
             [
-                util_app, session['ebook'], session['epub_path'],
+                util_app, file_input, session['epub_path'],
                 '--input-encoding=utf-8',
                 '--output-profile=generic_eink',
                 '--epub-version=3',
