@@ -83,14 +83,38 @@ jobs:
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          # Get the build cache size (in MB) using docker system df
-          cache_size=$(docker system df -v | grep "Build Cache" | awk '{print $3}' | sed 's/GB//' | sed 's/MB//' | awk '{printf "%.0f\n", $1 * (index($0, "GB") > 0 ? 1024 : 1)}')
-          # Check if the cache size exceeds 50GB (51200MB)
-          if [ "$cache_size" -gt 51200 ]; then
-            echo "Cache is over 50GB, pruning..."
-            docker builder prune --all --force
+          # First check if build cache exists
+          if docker system df -v | grep -q "Build Cache"; then
+            # Get the build cache size and convert to MB
+            cache_info=$(docker system df -v | grep "Build Cache")
+            if echo "$cache_info" | grep -q "GB"; then
+              # Extract value and convert GB to MB
+              cache_size=$(echo "$cache_info" | awk '{print $3}' | sed 's/GB//' | awk '{printf "%.0f", $1 * 1024}')
+            elif echo "$cache_info" | grep -q "MB"; then
+              # Extract MB value directly
+              cache_size=$(echo "$cache_info" | awk '{print $3}' | sed 's/MB//' | awk '{printf "%.0f", $1}')
+            else
+              # Handle KB or smaller (treat as 0 MB)
+              cache_size=0
+            fi
+            
+            # Ensure cache_size is a number
+            if [[ "$cache_size" =~ ^[0-9]+$ ]]; then
+              # Check if the cache size exceeds 50GB (51200MB)
+              if [ "$cache_size" -gt 51200 ]; then
+                echo "Cache is over 50GB (${cache_size}MB), pruning..."
+                docker builder prune --all --force
+              else
+                echo "Cache size is ${cache_size}MB, under 50GB, no action taken."
+              fi
+            else
+              echo "Could not determine cache size, output was: $cache_info"
+              # Show example output to debug
+              echo "Full docker system df -v output:"
+              docker system df -v
+            fi
           else
-            echo "Cache size is ${cache_size}MB, under 50GB, no action taken."
+            echo "No build cache found."
           fi
 
 
