@@ -11,7 +11,11 @@ Use this tool responsibly and in accordance with all applicable laws.
 Thanks to support ebook2audiobook developers!<br>
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
-[![Ubuntu Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml) [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)
+[![Ubuntu Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)
+
+<a href="https://github.com/DrewThomasson/ebook2audiobook">
+  <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
+</a>
 
 
 #### GUI Interface

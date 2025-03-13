@@ -778,6 +778,37 @@ jobs:
       - name: Prune all dangling Docker images
         run: docker image prune -f
 
+
+  test_xtts_finetuned_single_long:
+    needs: build
+    runs-on: self-hosted
+    steps:
+      - name: Prune all dangling Docker images
+        run: docker image prune -f
+
+      - name: Run English XTTS headless fine-tuned XTTS model single long test (with GPU if available, Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          echo "Attempting to run with GPU support..."
+          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained || \
+          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained)
+      - name: Run English XTTS headless fine-tuned XTTS model single long test (with GPU if available, Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          Write-Host "Attempting to run with GPU support..."
+          try {
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/long_test.txt" --tts_engine xtts --fine_tuned AiExplained
+          } catch {
+            Write-Host "GPU run failed, trying without GPU support..."
+            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/long_test.txt" --tts_engine xtts --fine_tuned AiExplained
+          }
+      - name: Prune all dangling Docker images
+        run: docker image prune -f
+
+
   test_xtts_finetuned_batch:
     needs: build
     runs-on: self-hosted
