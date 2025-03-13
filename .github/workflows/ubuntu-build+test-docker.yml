@@ -1,10 +1,13 @@
 name: Ubuntu Build+Test
 
 on:
-  workflow_dispatch: {}
-  release:
-    types:
-      - published
+  workflow_dispatch:
+    inputs:
+      docker_tag:
+        description: 'Docker tag to use for testing'
+        required: false
+        default: 'dev'
+        type: string
   push:
     branches:
       - main
@@ -15,6 +18,7 @@ on:
       - readme/**
       - dockerfiles/**
       - Notebooks/**
+
 
 jobs:
   build:
@@ -155,7 +159,7 @@ jobs:
             command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark'            
           # Add more test configurations as needed
     env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'dev_v25' }}
+      DOCKER_TAG: ${{ inputs.docker_tag || 'dev' }}
     steps:
       - name: Prune all dangling Docker images
         run: docker image prune -f
@@ -197,13 +201,13 @@ jobs:
   #   runs-on: self-hosted
   #   steps:
   #     - name: English xtts headless custom xtts model single test docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev
-  #       run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+  #       run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
   # test_xtts_custom_batch:
   #   needs: build
   #   runs-on: self-hosted
   #   steps:
   #     - name: English xtts headless custom xtts model batch test docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev
-  #       run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+  #       run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
 
 
   final_push:
