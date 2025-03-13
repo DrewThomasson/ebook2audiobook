@@ -249,10 +249,13 @@ class TTSManager:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
 
-    def _trim_silence(selft, audio_tensor, sample_rate, threshold=0.01):
-        vad = T.Vad(sample_rate=sample_rate)
-        audio = vad(audio_tensor)
-        return audio
+    def _trim_end(self, audio_data, sample_rate, silence_threshold=0.001, buffer_seconds=0.001):
+        non_silent_indices = np.where(np.abs(audio_data) > silence_threshold)[0]
+        if len(non_silent_indices) == 0:
+            return np.array([])
+        end_index = non_silent_indices[-1] + int(buffer_seconds * sample_rate)
+        trimmed_audio = audio_data[:end_index]
+        return trimmed_audio
 
     def convert_sentence_to_audio(self):
         try:
@@ -459,10 +462,10 @@ class TTSManager:
                             **speaker_argument
                         )
             if audio_data is not None:
+                if self.params['sentence'].endswith('–'):
+                    audio_data = self._trim_end(audio_data, sample_rate)
                 sourceTensor = self._tensor_type(audio_data)
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                if self.params['sentence'].endswith('–'):
-                    audio_tensor = self._trim_silence(audio_tensor, sample_rate)
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, sample_rate, format=default_audio_proc_format)
                 del audio_data, sourceTensor, audio_tensor
             if self.session['device'] == 'cuda':
