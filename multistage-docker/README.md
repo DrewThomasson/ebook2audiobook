@@ -245,6 +245,12 @@ docker build --build-arg TORCH_VERSION=cuda12 -t myapp:cuda12 .
 docker build --build-arg TORCH_VERSION="torch==2.0.0+cu117 --extra-index-url https://download.pytorch.org/whl/cu117" -t myapp:custom .
 ```
 
+```bash
+docker build -t your-image-name . # Should also work
+```
+
+
+
 ### Benefits of This Approach
 
 1. **Storage Efficiency**: Only one torch version is stored in the image
