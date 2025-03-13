@@ -33,6 +33,7 @@ import urllib.request
 import uuid
 import zipfile
 import traceback
+import unicodedata
 
 import lib.conf as conf
 import lib.lang as lang
@@ -454,7 +455,11 @@ def convert_to_epub(session):
             print(error)
             return False
         file_input = session['ebook']
-        file_ext = os.path.splitext(session['ebook'])[1].lower()
+        file_ext = os.path.splitext(file_input)[1].lower()
+        if file_ext not in ebook_formats:
+            error = f'Unsupported file format: {file_ext}'
+            print(error)
+            return False
         if file_ext == '.pdf':
             msg = 'File input is a PDF. flatten it in MD format...'
             print(msg)
@@ -485,7 +490,6 @@ def convert_to_epub(session):
         )
         print(result.stdout)
         return True
-
     except subprocess.CalledProcessError as e:
         print(f"Subprocess error: {e.stderr}")
         DependencyError(e)
@@ -494,6 +498,46 @@ def convert_to_epub(session):
         print(f"Utility not found: {e}")
         DependencyError(e)
         return False
+
+def filter_chapter(doc, lang, lang_iso1, tts_engine):
+    soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
+    # Remove scripts and styles
+    for script in soup(["script", "style"]):
+        script.decompose()
+    # Normalize lines and remove unnecessary spaces and switch special chars
+    text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
+    # Rule 1: Ensure spaces before & after punctuation
+    pattern_space = re.escape(''.join(punctuation_list))
+    # Step 1: Ensure space before and after punctuation (excluding `,` and `.`)
+    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+    text = re.sub(punctuation_pattern_space, r' \1 ', text)
+    # Rule 2: Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+    # Step 2: Ensure space before and after `,` and `.` only when NOT between numbers
+    text = re.sub(comma_dot_pattern, r' \1 ', text)
+    if not text.strip():
+        chapter_sentences = []
+    else:
+        chapter_sentences = get_sentences(text, lang)
+    return chapter_sentences
+
+def filter_doc(doc_patterns):
+    pattern_counter = Counter(doc_patterns)
+    # Returns a list with one tuple: [(pattern, count)]
+    most_common = pattern_counter.most_common(1)
+    return most_common[0][0] if most_common else None
+
+def filter_pattern(doc_identifier):
+    docs = doc_identifier.split(':')
+    if len(docs) > 2:
+        segment = docs[1]
+        if re.search(r'[a-zA-Z]', segment) and re.search(r'\d', segment):
+            return ''.join([char for char in segment if char.isalpha()])
+        elif re.match(r'^[a-zA-Z]+$', segment):
+            return segment
+        elif re.match(r'^\d+$', segment):
+            return 'numbers'
+    return None
 
 def get_cover(epubBook, session):
     try:
@@ -562,53 +606,7 @@ def get_chapters(epubBook, session):
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
         return None, None
-
-def filter_chapter(doc, lang, lang_iso1, tts_engine):
-    soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
-    # Remove scripts and styles
-    for script in soup(["script", "style"]):
-        script.decompose()
-    # Normalize lines and remove unnecessary spaces and switch special chars
-    text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
-    # Rule 1: Ensure spaces before & after punctuation
-    pattern_space = re.escape(''.join(punctuation_list))
-    # Step 1: Ensure space before and after punctuation (excluding `,` and `.`)
-    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-    text = re.sub(punctuation_pattern_space, r' \1 ', text)
-    # Rule 2: Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-    # Step 2: Ensure space before and after `,` and `.` only when NOT between numbers
-    text = re.sub(comma_dot_pattern, r' \1 ', text)
-    # Create regex pattern from punctuation list to split the phoneme_list
-    pattern_split = f"[^{re.escape(''.join(punctuation_split))}]+[{re.escape(''.join(punctuation_split))}]?|[{re.escape(''.join(punctuation_split))}]"
-    if not text.strip():
-        phoneme_list = []
-    else:
-        tmp_list = re.findall(pattern_split, text)
-        phoneme_list = [item.strip() for item in tmp_list if item and item.strip() and item != ' ']
-    # get the final sentence array according to the max_tokens limitation
-    max_tokens = language_mapping[lang]['max_tokens']
-    chapter_sentences = get_sentences(phoneme_list, max_tokens)
-    return chapter_sentences
-
-def filter_doc(doc_patterns):
-    pattern_counter = Counter(doc_patterns)
-    # Returns a list with one tuple: [(pattern, count)]
-    most_common = pattern_counter.most_common(1)
-    return most_common[0][0] if most_common else None
-
-def filter_pattern(doc_identifier):
-    docs = doc_identifier.split(':')
-    if len(docs) > 2:
-        segment = docs[1]
-        if re.search(r'[a-zA-Z]', segment) and re.search(r'\d', segment):
-            return ''.join([char for char in segment if char.isalpha()])
-        elif re.match(r'^[a-zA-Z]+$', segment):
-            return segment
-        elif re.match(r'^\d+$', segment):
-            return 'numbers'
-    return None
-
+r"""
 def get_sentences(phoneme_list, max_tokens):
     sentences = []
     current_sentence = ""
@@ -642,10 +640,70 @@ def get_sentences(phoneme_list, max_tokens):
     if current_sentence:
         sentences.append(current_sentence.strip())
     return sentences
+"""
 
-import platform
-import subprocess
-import os
+def get_sentences(text, lang):
+    max_tokens = language_mapping[lang]['max_tokens']
+    max_chars = max_tokens * 10
+    pattern_split = [re.escape(p) for p in punctuation_split]
+    pattern = f"({'|'.join(pattern_split)})"
+
+    def split_sentence(sentence):
+        end = ''
+        if len(sentence) < max_chars:
+            if sentence[-1].isalpha():
+                end = '–'
+            return [sentence + end]
+        if ',' in sentence:
+            mid_index = len(sentence) // 2
+            left_split = sentence.rfind(",", 0, mid_index)
+            right_split = sentence.find(",", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split + 1
+            else:
+                split_index = right_split + 1 if right_split != -1 else mid_index
+        elif ';' in sentence:
+            mid_index = len(sentence) // 2
+            left_split = sentence.rfind(";", 0, mid_index)
+            right_split = sentence.find(";", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split + 1
+            else:
+                split_index = right_split + 1 if right_split != -1 else mid_index
+        elif ':' in sentence:
+            mid_index = len(sentence) // 2
+            left_split = sentence.rfind(":", 0, mid_index)
+            right_split = sentence.find(":", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split + 1
+            else:
+                split_index = right_split + 1 if right_split != -1 else mid_index
+        elif ' ' in sentence:
+            mid_index = len(sentence) // 2
+            left_split = sentence.rfind(" ", 0, mid_index)
+            right_split = sentence.find(" ", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split
+            else:
+                split_index = right_split if right_split != -1 else mid_index
+            end = '–'
+        else:
+            split_index = len(sentence) // 2
+            end = '–'
+        part1 = sentence[:split_index]
+        part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
+        return split_sentence(part1.strip()) + split_sentence(part2.strip())
+
+    raw_list = re.split(pattern, text)
+    if len(raw_list) > 1:
+        tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
+    else:
+        tmp_list = raw_list
+    sentences = []
+    for sentence in tmp_list:
+        sentences.extend(split_sentence(sentence.strip()))  
+    #print(json.dumps(sentences, indent=4, ensure_ascii=False))
+    return sentences
 
 def get_vram():
     os_name = platform.system()
@@ -782,7 +840,8 @@ def convert_chapters_to_audio(session):
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
                         if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
-                            tts_manager.params['sentence'] = sentence.replace('.', '<pause>').replace(',', '<pause>')
+                            #tts_manager.params['sentence'] = sentence.replace('.', '<pause>').replace(',', '<pause>')
+                            tts_manager.params['sentence'] = sentence.replace('.', '').replace(',', '…')
                         else:
                             tts_manager.params['sentence'] = sentence
                         if tts_manager.params['sentence'] != "":
