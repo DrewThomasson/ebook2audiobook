@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import torch
 import torchaudio
+import torchaudio.transforms as T
 import threading
 import uuid
 
@@ -248,6 +249,11 @@ class TTSManager:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
 
+    def _trim_silence(selft, audio_tensor, sample_rate, threshold=0.01):
+        vad = T.Vad(sample_rate=sample_rate)
+        audio = vad(audio_tensor)
+        return audio
+
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
@@ -454,10 +460,11 @@ class TTSManager:
                         )
             if audio_data is not None:
                 sourceTensor = self._tensor_type(audio_data)
-                #audio_tensor = torch.tensor(audio_data, dtype=torch.float32).unsqueeze(0).cpu()
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                if self.params['sentence'].endswith('–'):
+                    audio_tensor = self._trim_silence(audio_tensor, sample_rate)
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, sample_rate, format=default_audio_proc_format)
-                del audio_data
+                del audio_data, sourceTensor, audio_tensor
             if self.session['device'] == 'cuda':
                 torch.cuda.empty_cache()         
             if os.path.exists(self.params['sentence_audio_file']):
