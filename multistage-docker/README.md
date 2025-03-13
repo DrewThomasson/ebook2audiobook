@@ -1,4 +1,6 @@
-I'll provide you with all the files and commands needed to efficiently build multi-architecture Docker images with different PyTorch versions.
+You're absolutely right about that! When using multiple `RUN` commands in a Dockerfile, each creates a new layer. If we install requirements.txt (which includes torch) and then install a different torch version in separate layers, both versions will be stored in the image, taking up extra space.
+
+Let's fix that by combining the commands into a single `RUN` instruction:
 
 ```dockerfile
 ARG BASE=python:3.12
@@ -21,54 +23,51 @@ RUN apt-get update && \
 RUN curl --proto '=https' --tlsv1.2 -sSf "https://sh.rustup.rs" | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
 
-# Copy everything except requirements.txt
+# Copy the application
 WORKDIR /app
 COPY . /app
-RUN if [ -f requirements.txt ]; then cp requirements.txt requirements.txt.orig; fi
 
 # Install UniDic (non-torch dependent)
-RUN pip install --no-cache-dir unidic-lite unidic
-RUN python3 -m unidic download
-RUN mkdir -p /root/.local/share/unidic
+RUN pip install --no-cache-dir unidic-lite unidic && \
+    python3 -m unidic download && \
+    mkdir -p /root/.local/share/unidic
 ENV UNIDIC_DIR=/root/.local/share/unidic
 
 # Second stage for PyTorch installation
 FROM base AS pytorch
 
-# Add parameter for PyTorch version
-ARG TORCH_VERSION=default
+# Add parameter for PyTorch version with a default empty value
+ARG TORCH_VERSION=""
 
-# Define torch versions
-RUN echo '#!/bin/bash \n\
-declare -A TORCH_VERSIONS \n\
-TORCH_VERSIONS["default"]="torch" \n\
-TORCH_VERSIONS["cuda12"]="torch==2.2.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121" \n\
-TORCH_VERSIONS["cuda11"]="torch==2.2.0+cu118 --extra-index-url https://download.pytorch.org/whl/cu118" \n\
-TORCH_VERSIONS["cpu"]="torch==2.2.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu" \n\
-\n\
-if [ -n "${TORCH_VERSIONS[$TORCH_VERSION]}" ]; then \n\
-  echo "Using predefined torch version: $TORCH_VERSION -> ${TORCH_VERSIONS[$TORCH_VERSION]}" \n\
-  TORCH_LINE="${TORCH_VERSIONS[$TORCH_VERSION]}" \n\
-else \n\
-  echo "Using custom torch version: $TORCH_VERSION" \n\
-  TORCH_LINE="$TORCH_VERSION" \n\
-fi \n\
-\n\
-cp requirements.txt.orig requirements.txt \n\
-sed -i "s|^torch.*$|${TORCH_LINE}|" requirements.txt \n\
-cat requirements.txt | grep torch \n\
-' > /app/update_torch.sh && chmod +x /app/update_torch.sh
-
-# Replace torch line in requirements.txt
-RUN /app/update_torch.sh $TORCH_VERSION
-
-# Install Python dependencies
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+# Install Python dependencies from requirements.txt and specific torch version if provided
+# Use a single RUN instruction to avoid storing multiple versions
+RUN if [ -z "$TORCH_VERSION" ]; then \
+        pip install --no-cache-dir --upgrade -r requirements.txt; \
+    else \
+        # Create a temporary requirements file without torch
+        grep -v "^torch" requirements.txt > requirements_no_torch.txt && \
+        pip install --no-cache-dir --upgrade -r requirements_no_torch.txt && \
+        case "$TORCH_VERSION" in \
+            "cuda12") \
+                pip install --no-cache-dir torch==2.2.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121 \
+                ;; \
+            "cuda11") \
+                pip install --no-cache-dir torch==2.2.0+cu118 --extra-index-url https://download.pytorch.org/whl/cu118 \
+                ;; \
+            "cpu") \
+                pip install --no-cache-dir torch==2.2.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu \
+                ;; \
+            *) \
+                pip install --no-cache-dir $TORCH_VERSION \
+                ;; \
+        esac && \
+        rm requirements_no_torch.txt; \
+    fi
 
 # Do a test run to pre-download and bake base models into the image
-RUN echo "This is a test sentence." > test.txt 
-RUN python app.py --headless --ebook test.txt --script_mode full_docker
-RUN rm test.txt
+RUN echo "This is a test sentence." > test.txt && \
+    python app.py --headless --ebook test.txt --script_mode full_docker && \
+    rm test.txt
 
 # Expose the required port
 EXPOSE 7860
@@ -107,7 +106,7 @@ PLATFORMS="linux/amd64,linux/arm64"
 IMAGE_NAME="myapp"
 REPOSITORY="myrepo"  # Replace with your registry/repo name
 
-# Create the builder instance
+# Create the builder instance if it doesn't exist
 docker buildx create --name multi-arch-builder --use --bootstrap || true
 echo "Created and bootstrapped multi-arch-builder"
 
@@ -118,19 +117,25 @@ docker buildx build \
   --target base \
   --tag $REPOSITORY/$IMAGE_NAME:base \
   --push \
-  --cache-to=type=registry,ref=$REPOSITORY/$IMAGE_NAME:base-cache \
   .
 
 echo "Base image built and pushed"
 
+# Build default version (using torch from requirements.txt)
+echo "Building default variant..."
+docker buildx build \
+  --platform=$PLATFORMS \
+  --tag $REPOSITORY/$IMAGE_NAME:default \
+  --push \
+  .
+
 # Build variants for each torch version
-for VARIANT in default cuda12 cuda11 cpu; do
+for VARIANT in cuda12 cuda11 cpu; do
   echo "Building $VARIANT variant for all architectures..."
   docker buildx build \
     --platform=$PLATFORMS \
     --build-arg TORCH_VERSION=$VARIANT \
     --tag $REPOSITORY/$IMAGE_NAME:$VARIANT \
-    --cache-from=type=registry,ref=$REPOSITORY/$IMAGE_NAME:base-cache \
     --push \
     .
   
@@ -147,38 +152,37 @@ echo "Build complete for all variants"
 #!/bin/bash
 set -e
 
-# Configuration
-PLATFORMS="linux/amd64,linux/arm64"
+# Configuration 
 IMAGE_NAME="myapp"
 
-# Create a local cache directory
-mkdir -p ./docker-cache
-
-# Create the builder instance
+# Create the builder instance if it doesn't exist
 docker buildx create --name local-builder --use --bootstrap || true
 echo "Created and bootstrapped local-builder"
 
 # Build the base image first (all architectures, no torch-specific stuff)
-echo "Building base image for all architectures..."
+echo "Building base image..."
 docker buildx build \
-  --platform=$PLATFORMS \
+  --load \
   --target base \
   --tag $IMAGE_NAME:base \
-  --cache-to=type=local,dest=./docker-cache \
-  --output=type=docker \
   .
 
 echo "Base image built locally"
 
+# Build default version (using torch from requirements.txt)
+echo "Building default variant..."
+docker buildx build \
+  --load \
+  --tag $IMAGE_NAME:default \
+  .
+
 # Build variants for each torch version
-for VARIANT in default cuda12 cuda11 cpu; do
-  echo "Building $VARIANT variant for all architectures..."
+for VARIANT in cuda12 cuda11 cpu; do
+  echo "Building $VARIANT variant..."
   docker buildx build \
-    --platform=$PLATFORMS \
+    --load \
     --build-arg TORCH_VERSION=$VARIANT \
     --tag $IMAGE_NAME:$VARIANT \
-    --cache-from=type=local,src=./docker-cache \
-    --output=type=docker \
     .
   
   echo "$VARIANT variant built locally"
@@ -190,42 +194,62 @@ echo "Build complete for all variants"
 
 ```
 
-## Usage Instructions
+## Updated Usage Guide
+
+This improved approach addresses the storage efficiency issue by making these key changes:
+
+1. When a custom torch version is specified, we:
+   - Create a temporary requirements file without the torch line
+   - Install all requirements except torch
+   - Install the specific torch version
+   - Remove the temporary file
+
+2. We use a single `RUN` instruction for the entire process, ensuring that only one layer is created and only one torch version is stored in the image.
+
+### Setup Instructions
 
 1. Save the Dockerfile to your project directory
 2. Save the `.dockerignore` file to your project directory
 3. Choose one of the build scripts based on your needs:
-   - Use `build-script.sh` if you want to push to a registry (recommended for best caching)
-   - Use `local-build-script.sh` if you want to build locally without a registry
+   - Use `buildx-script-final.sh` for multi-architecture builds with registry push
+   - Use `local-buildx-script-final.sh` for local single-architecture builds
 
 4. Make the script executable and run it:
 
 ```bash
-# For registry-based builds
-chmod +x build-script.sh
-./build-script.sh
+# For multi-architecture builds
+chmod +x buildx-script-final.sh
+./buildx-script-final.sh
 
 # For local builds
-chmod +x local-build-script.sh
-./local-build-script.sh
+chmod +x local-buildx-script-final.sh
+./local-buildx-script-final.sh
 ```
 
-## Important Notes
+### How It Works
 
-1. **Registry Setup**: For the registry-based script, replace `myrepo` with your actual Docker registry/repository name. You'll need to be logged in to this registry:
-   ```bash
-   docker login your-registry.com
-   ```
+1. The optimization uses `grep -v "^torch"` to create a temporary requirements file without the torch line
+2. This ensures we only install the specific torch version we want
+3. All installation happens in a single `RUN` instruction, creating only one layer
+4. The temporary file is removed at the end of the same `RUN` instruction
 
-2. **ARM Compatibility**: Make sure your application and dependencies are compatible with ARM architecture. Some Python packages might not have ARM versions.
+### Example Commands
 
-3. **Build Time**: The first build will take longer as it needs to download and compile everything. Subsequent builds will be faster.
+You can also run individual builds manually:
 
-4. **Caching Efficiency**: The registry-based method is more efficient for multi-architecture builds as it can reuse layers across architectures.
+```bash
+# Build with CUDA 12
+docker build --build-arg TORCH_VERSION=cuda12 -t myapp:cuda12 .
 
-5. **Local Testing**: Before pushing to a registry, you can test locally with:
-   ```bash
-   docker run --rm -it myapp:default
-   ```
+# Build with a custom torch version string
+docker build --build-arg TORCH_VERSION="torch==2.0.0+cu117 --extra-index-url https://download.pytorch.org/whl/cu117" -t myapp:custom .
+```
 
-This setup ensures that the base image with all the non-PyTorch dependencies is built only once per architecture, and then each PyTorch variant builds on top of that base image, maximizing cache reuse and minimizing build time.
+### Benefits of This Approach
+
+1. **Storage Efficiency**: Only one torch version is stored in the image
+2. **Simplicity**: No complex file manipulation or shell scripts
+3. **Layer Efficiency**: Uses a single layer for all Python dependencies
+4. **Flexibility**: Works with both predefined and custom torch versions
+
+This approach gives you the best of both worlds: the storage efficiency of modifying requirements.txt, but with the simplicity of a direct pip install.
