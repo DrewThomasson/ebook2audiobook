@@ -3,8 +3,8 @@ set -e
 
 # Configuration
 PLATFORMS="linux/amd64,linux/arm64"
-IMAGE_NAME="myapp"
-REPOSITORY="myrepo"  # Replace with your registry/repo name
+IMAGE_NAME="ebook2audiobook"
+REPOSITORY="athomasson2"
 
 # Create the builder instance if it doesn't exist
 docker buildx create --name multi-arch-builder --use --bootstrap || true
@@ -20,14 +20,6 @@ docker buildx build \
   .
 
 echo "Base image built and pushed"
-
-# Build default version (using torch from requirements.txt)
-echo "Building default variant..."
-docker buildx build \
-  --platform=$PLATFORMS \
-  --tag $REPOSITORY/$IMAGE_NAME:default \
-  --push \
-  .
 
 # Build variants for each torch version
 for VARIANT in cuda12 cuda11 cpu; do
