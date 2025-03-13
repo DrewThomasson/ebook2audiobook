@@ -44,13 +44,13 @@ RUN if [ -z "$TORCH_VERSION" ]; then \
         pip install --no-cache-dir --upgrade -r requirements_no_torch.txt && \
         case "$TORCH_VERSION" in \
             "cuda12") \
-                pip install --no-cache-dir torch==2.2.0+cu121 --extra-index-url https://download.pytorch.org/whl/cu121 \
+                pip install --no-cache-dir torch==2.2.0 --extra-index-url https://download.pytorch.org/whl/cu121 \
                 ;; \
             "cuda11") \
-                pip install --no-cache-dir torch==2.2.0+cu118 --extra-index-url https://download.pytorch.org/whl/cu118 \
+                pip install --no-cache-dir torch==2.2.0 --extra-index-url https://download.pytorch.org/whl/cu118 \
                 ;; \
             "cpu") \
-                pip install --no-cache-dir torch==2.2.0+cpu --extra-index-url https://download.pytorch.org/whl/cpu \
+                pip install --no-cache-dir torch==2.2.0 --extra-index-url https://download.pytorch.org/whl/cpu \
                 ;; \
             *) \
                 pip install --no-cache-dir $TORCH_VERSION \
