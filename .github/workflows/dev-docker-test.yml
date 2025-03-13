@@ -89,8 +89,6 @@ jobs:
         shell: powershell
         run: docker buildx build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --push .
 
-
-jobs:
   run_tests:
     needs: build
     runs-on: self-hosted
@@ -181,8 +179,6 @@ jobs:
       
       - name: Prune all dangling Docker images
         run: docker image prune -f
-
-
 
 
   # The following tests are kept as comments for future implementation:
