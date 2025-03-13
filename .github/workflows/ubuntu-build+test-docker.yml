@@ -93,582 +93,96 @@ jobs:
 
 
 
-  test_help:
+  run_tests:
     needs: build
     runs-on: self-hosted
+    strategy:
+      matrix:
+        test:
+          - name: "Help command test"
+            command: "--help"
+          - name: "English Fairseq headless single test"
+            command: "--headless --script_mode full_docker --language eng --ebook \"tools/workflow-testing/test1.txt\" --tts_engine fairseq"
+          - name: "English Fairseq headless batch test"
+            command: "--headless --script_mode full_docker --language eng --ebooks_dir \"tools/workflow-testing\" --tts_engine fairseq"
+          - name: "English Fairseq Custom-Voice headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English Fairseq Custom-Voice headless batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "Unusual Fairseq headless single test"
+            command: '--headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq'
+          - name: "Unusual Fairseq headless batch test"
+            command: '--headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq'
+          - name: "Unusual Fairseq Custom-Voice headless single test"
+            command: '--headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "Unusual Fairseq Custom-Voice headless batch test"
+            command: '--headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English Vits headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits'
+          - name: "English Vits headless batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits'
+          - name: "English Vits Custom-Voice headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English Vits Custom-Voice headless batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English YourTTS headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts'
+          - name: "English YourTTS headless batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts'
+          - name: "English YourTTS Custom-Voice headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English YourTTS Custom-Voice headless batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "Default headless single test"
+            command: '--headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"'
+          - name: "Default XTTS headless batch test"
+            command: '--headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts'
+          - name: "Default XTTS headless Custom-Voice single test"
+            command: '--headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "Default XTTS headless Custom-Voice batch test"
+            command: '--headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English XTTS headless fine-tuned XTTS model single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained'   
+          - name: "English XTTS headless fine-tuned XTTS model batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained'
+          - name: "English Bark headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark'
+          #- name: "English Bark Custom-Voice headless batch test" # Marked out as it takes too long
+          #  command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English Bark Custom-Voice headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English Bark headless batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark'            
+          # Add more test configurations as needed
+    env:
+      DOCKER_TAG: ${{ inputs.docker_tag || 'dev_v25' }}
     steps:
       - name: Prune all dangling Docker images
         run: docker image prune -f
-
-      - name: Run Help command test (with GPU if available, Unix)
+      
+      - name: Run ${{ matrix.test.name }} (with GPU if available, Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
           echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help)
-      - name: Run Help command test (with GPU if available, Windows)
+          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.command }} || \
+          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.command }})
+      
+      - name: Run ${{ matrix.test.name }} (with GPU if available, Windows)
         if: runner.os == 'Windows'
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
           Write-Host "Attempting to run with GPU support..."
           try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help
+            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.command }}
           } catch {
             Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --help
+            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.command }}
           }
+      
       - name: Prune all dangling Docker images
         run: docker image prune -f
-
-
-
-  test_fairseq_single_eng:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Fairseq headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq)
-      - name: Run English Fairseq headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-
-  test_fairseq_batch_eng:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Fairseq headless batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq)
-      - name: Run English Fairseq headless batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-  test_fairseq_custom_eng_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Fairseq Custom-Voice headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run English Fairseq Custom-Voice headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-  test_fairseq_custom_eng_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Fairseq Custom-Voice headless batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run English Fairseq Custom-Voice headless batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-  test_unusual_fairseq_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run Unusual Fairseq headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq)
-      - name: Run Unusual Fairseq headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-  test_unusual_fairseq_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run Unusual Fairseq headless batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq)
-      - name: Run Unusual Fairseq headless batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-  test_unusual_fairseq_custom_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run Unusual Fairseq Custom-Voice headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run Unusual Fairseq Custom-Voice headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-  test_unusual_fairseq_custom_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run Unusual Fairseq Custom-Voice headless batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run Unusual Fairseq Custom-Voice headless batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-  test_vits_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Vits headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits)
-      - name: Run English Vits headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-  test_vits_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Vits headless batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits)
-      - name: Run English Vits headless batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-  test_vits_custom_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Vits Custom-Voice headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run English Vits Custom-Voice headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-  test_vits_custom_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Vits Custom-Voice headless batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run English Vits Custom-Voice headless batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-  test_yourtts_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English YourTTS headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts)
-      - name: Run English YourTTS headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-
-  test_yourtts_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English YourTTS headless batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts)
-      - name: Run English YourTTS headless batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-  test_yourtts_custom_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English YourTTS Custom-Voice headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run English YourTTS Custom-Voice headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-  test_yourtts_custom_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English YourTTS Custom-Voice headless batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run English YourTTS Custom-Voice headless batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-  test_default_headless_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run Default headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt")
-      - name: Run Default headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-  test_xtts_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run Default XTTS headless batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts)
-      - name: Run Default XTTS headless batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
 
 
   # The following tests are kept as comments for future implementation:
@@ -683,262 +197,17 @@ jobs:
   #   runs-on: self-hosted
   #   steps:
   #     - name: English xtts headless custom xtts model single test docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev
-  #       run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+  #       run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
   # test_xtts_custom_batch:
   #   needs: build
   #   runs-on: self-hosted
   #   steps:
   #     - name: English xtts headless custom xtts model batch test docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev
-  #       run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-  test_xtts_custom_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run Default XTTS headless Custom-Voice single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run Default XTTS headless Custom-Voice single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-  test_xtts_custom_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run Default XTTS headless Custom-Voice batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run Default XTTS headless Custom-Voice batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-  test_xtts_finetuned_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English XTTS headless fine-tuned XTTS model single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained)
-      - name: Run English XTTS headless fine-tuned XTTS model single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-  test_xtts_finetuned_single_long:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English XTTS headless fine-tuned XTTS model single long test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained)
-      - name: Run English XTTS headless fine-tuned XTTS model single long test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/long_test.txt" --tts_engine xtts --fine_tuned AiExplained
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/long_test.txt" --tts_engine xtts --fine_tuned AiExplained
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-  test_xtts_finetuned_batch:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English XTTS headless fine-tuned XTTS model batch test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained)
-      - name: Run English XTTS headless fine-tuned XTTS model batch test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-  test_bark_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Bark headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark)
-      - name: Run English Bark headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-# Batch Bark Test takes too long
-#      - name: English Bark Custom-Voice headless batch test
-#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-
-  test_bark_custom_single:
-    needs: build
-    runs-on: self-hosted
-    steps:
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-      - name: Run English Bark Custom-Voice headless single test (with GPU if available, Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "Attempting to run with GPU support..."
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" || \
-          (echo "GPU run failed, trying without GPU support..." && docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav")
-      - name: Run English Bark Custom-Voice headless single test (with GPU if available, Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $ErrorActionPreference = "Stop"
-          Write-Host "Attempting to run with GPU support..."
-          try {
-            docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          } catch {
-            Write-Host "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-          }
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-
-
-
-# Batch Bark Test takes too long
-#      - name: English Bark headless batch test
-#        run: docker run athomasson2/ebook2audiobook:dev --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark
-
+  #       run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
 
 
   final_push:
-    needs:
-      - test_help
-      - test_fairseq_single_eng
-      - test_fairseq_batch_eng
-      - test_fairseq_custom_eng_single
-      - test_fairseq_custom_eng_batch
-      - test_unusual_fairseq_single
-      - test_unusual_fairseq_batch
-      - test_unusual_fairseq_custom_single
-      - test_unusual_fairseq_custom_batch
-      - test_vits_single
-      - test_vits_batch
-      - test_vits_custom_single
-      - test_vits_custom_batch
-      - test_yourtts_single
-      - test_yourtts_batch
-      - test_yourtts_custom_single
-      - test_yourtts_custom_batch
-      - test_default_headless_single
-      - test_xtts_batch
-      - test_xtts_custom_single
-      - test_xtts_custom_batch
-      - test_xtts_finetuned_single
-      - test_xtts_finetuned_batch
-      - test_bark_single
-      - test_bark_custom_single
+    needs: run_tests
     runs-on: self-hosted
     steps:
       - name: Checkout code
@@ -1040,32 +309,7 @@ jobs:
             "$dockerUsername/ebook2audiobook:dev"
   
   huggingface:
-    needs:
-      - test_help
-      - test_fairseq_single_eng
-      - test_fairseq_batch_eng
-      - test_fairseq_custom_eng_single
-      - test_fairseq_custom_eng_batch
-      - test_unusual_fairseq_single
-      - test_unusual_fairseq_batch
-      - test_unusual_fairseq_custom_single
-      - test_unusual_fairseq_custom_batch
-      - test_vits_single
-      - test_vits_batch
-      - test_vits_custom_single
-      - test_vits_custom_batch
-      - test_yourtts_single
-      - test_yourtts_batch
-      - test_yourtts_custom_single
-      - test_yourtts_custom_batch
-      - test_default_headless_single
-      - test_xtts_batch
-      - test_xtts_custom_single
-      - test_xtts_custom_batch
-      - test_xtts_finetuned_single
-      - test_xtts_finetuned_batch
-      - test_bark_single
-      - test_bark_custom_single
+    needs: run_tests
     runs-on: self-hosted
     steps:
       - name: Checkout code
