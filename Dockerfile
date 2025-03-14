@@ -1,5 +1,7 @@
 ARG BASE=python:3.12
+ARG BASE_IMAGE=base
 FROM ${BASE} AS base
+
 # Set environment PATH for local installations
 ENV PATH="/root/.local/bin:$PATH"
 # Set non-interactive mode to prevent tzdata prompt
@@ -23,8 +25,8 @@ RUN pip install --no-cache-dir unidic-lite unidic && \
     mkdir -p /root/.local/share/unidic
 ENV UNIDIC_DIR=/root/.local/share/unidic
 
-# Second stage for PyTorch installation
-FROM base AS pytorch
+# Second stage for PyTorch installation + swappable base image if you want to use a pulled image
+FROM $BASE_IMAGE AS pytorch
 # Add parameter for PyTorch version with a default empty value
 ARG TORCH_VERSION=""
 
@@ -39,12 +41,26 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
         TORCH_VERSION_REQ=$(grep -E "^torch==" requirements.txt | cut -d'=' -f3) && \
         TORCHAUDIO_VERSION_REQ=$(grep -E "^torchaudio==" requirements.txt | cut -d'=' -f3) && \
         TORCHVISION_VERSION_REQ=$(grep -E "^torchvision==" requirements.txt | cut -d'=' -f3) && \
+
         case "$TORCH_VERSION" in \
             "cuda12") \
                 pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cu121 \
                 ;; \
             "cuda11") \
                 pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cu118 \
+                ;; \
+            "rocm") \
+                # Using the correct syntax for ROCm PyTorch installation
+                pip install --no-cache-dir \
+                    torch==${TORCH_VERSION_REQ} \
+                    torchvision==${TORCHVISION_VERSION_REQ} \
+                    torchaudio==${TORCHAUDIO_VERSION_REQ} \
+                    --extra-index-url https://download.pytorch.org/whl/rocm6.2 \
+                ;; \
+            "xpu") \
+                # Install PyTorch with Intel XPU support through IPEX
+                pip install --no-cache-dir torch torchvision torchaudio && \
+                pip install --no-cache-dir intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/ \
                 ;; \
             "cpu") \
                 pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cpu \
@@ -70,3 +86,8 @@ RUN echo "This is a test sentence." > test.txt && \
 EXPOSE 7860
 # Start the Gradio app with the required flag
 ENTRYPOINT ["python", "app.py", "--script_mode", "full_docker"]
+
+
+#docker build --pull --build-arg BASE_IMAGE=athomasson2/ebook2audiobook:latest -t your-image-name .
+#The --pull flag forces Docker to always try to pull the latest version of the image, even if it already exists locally.
+#Without --pull, Docker will only use the local version if it exists, which might not be the latest.
