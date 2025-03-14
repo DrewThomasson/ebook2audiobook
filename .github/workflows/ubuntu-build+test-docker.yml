@@ -443,15 +443,20 @@ jobs:
           echo "GIT_HASH=${GIT_HASH}"
           echo "RELEASE_TAG=${RELEASE_TAG}"
           echo "TORCH_VERSION=${{ matrix.torch_version }}"
-      
-      # Build with Docker Buildx (Unix)
+        
+        # Build with Docker Buildx (Unix)
       - name: Build with Docker Buildx (Unix)
         if: runner.os != 'Windows'
         shell: bash
         run: |
+          PLATFORMS="linux/amd64,linux/arm64"
+          if [[ "${{ matrix.torch_version }}" == "xpu" ]]; then
+            PLATFORMS="linux/amd64"
+          fi
+          
           docker buildx build \
             --pull \
-            --platform linux/amd64,linux/arm64 \
+            --platform $PLATFORMS \
             --build-arg TORCH_VERSION=${{ matrix.torch_version }} \
             --build-arg BASE_IMAGE=${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:base \
             --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.GIT_HASH }} \
@@ -459,15 +464,19 @@ jobs:
             --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }} \
             --push \
             .
-
-      # Build with Docker Buildx (Windows)
+  
       - name: Build with Docker Buildx (Windows)
         if: runner.os == 'Windows'
         shell: powershell
         run: |
+          $PLATFORMS = "linux/amd64,linux/arm64"
+          if ("${{ matrix.torch_version }}" -eq "xpu") {
+            $PLATFORMS = "linux/amd64"
+          }
+          
           docker buildx build `
             --pull `
-            --platform linux/amd64,linux/arm64 `
+            --platform $PLATFORMS `
             --build-arg TORCH_VERSION=${{ matrix.torch_version }} `
             --build-arg BASE_IMAGE=${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:base `
             --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.GIT_HASH }} `
@@ -475,7 +484,7 @@ jobs:
             --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }} `
             --push `
             .
-
+  
 
 
 
