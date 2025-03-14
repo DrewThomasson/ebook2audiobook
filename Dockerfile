@@ -1,15 +1,9 @@
 ARG BASE=python:3.12
-FROM ${BASE}
-
+FROM ${BASE} AS base
 # Set environment PATH for local installations
 ENV PATH="/root/.local/bin:$PATH"
-
-# Set a working directory for temporary operations
-WORKDIR /app
-
 # Set non-interactive mode to prevent tzdata prompt
 ENV DEBIAN_FRONTEND=noninteractive
-
 # Install system packages
 RUN apt-get update && \
     apt-get install -y gcc g++ make wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 libsndfile1-dev libc-dev curl espeak-ng sox && \
@@ -17,38 +11,62 @@ RUN apt-get update && \
     apt-get install -y nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Install Rust compiler (to build sudachipy for Mac)
-RUN curl --proto '=https' --tlsv1.2 -sSf "https://sh.rustup.rs" | sh -s -- -y
+# Install Rust compiler
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-
-
-# Copy ebook2audiobook repository contents:
+# Copy the application
 WORKDIR /app
 COPY . /app
-
-# Remove git folder to save space
-# rm -rf /app/.git
-
-# Ensure the repository is the current working directory
-WORKDIR /app
-
-# Install Python dependencies and UniDic
-RUN pip install --no-cache-dir unidic-lite unidic
-RUN python3 -m unidic download  # Download UniDic
-RUN mkdir -p /root/.local/share/unidic
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
-
-# Set environment variable so MeCab can locate UniDic
+# Install UniDic (non-torch dependent)
+RUN pip install --no-cache-dir unidic-lite unidic && \
+    python3 -m unidic download && \
+    mkdir -p /root/.local/share/unidic
 ENV UNIDIC_DIR=/root/.local/share/unidic
 
-# Do a test run to pre-download and bake base models into the image
-RUN echo "This is a test sentence." > test.txt 
-RUN python app.py --headless --ebook test.txt --script_mode full_docker
-RUN rm test.txt
+# Second stage for PyTorch installation
+FROM base AS pytorch
+# Add parameter for PyTorch version with a default empty value
+ARG TORCH_VERSION=""
 
+# Extract torch versions from requirements.txt
+RUN TORCH_VERSION_REQ=$(grep -E "^torch==" requirements.txt | cut -d'=' -f3) && \
+    TORCHAUDIO_VERSION_REQ=$(grep -E "^torchaudio==" requirements.txt | cut -d'=' -f3) && \
+    TORCHVISION_VERSION_REQ=$(grep -E "^torchvision==" requirements.txt | cut -d'=' -f3) && \
+    echo "Found in requirements: torch==$TORCH_VERSION_REQ torchaudio==$TORCHAUDIO_VERSION_REQ torchvision==$TORCHVISION_VERSION_REQ"
+
+# Install PyTorch with CUDA support if specified
+RUN if [ ! -z "$TORCH_VERSION" ]; then \
+        TORCH_VERSION_REQ=$(grep -E "^torch==" requirements.txt | cut -d'=' -f3) && \
+        TORCHAUDIO_VERSION_REQ=$(grep -E "^torchaudio==" requirements.txt | cut -d'=' -f3) && \
+        TORCHVISION_VERSION_REQ=$(grep -E "^torchvision==" requirements.txt | cut -d'=' -f3) && \
+        case "$TORCH_VERSION" in \
+            "cuda12") \
+                pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cu121 \
+                ;; \
+            "cuda11") \
+                pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cu118 \
+                ;; \
+            "cpu") \
+                pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cpu \
+                ;; \
+            *) \
+                pip install --no-cache-dir $TORCH_VERSION \
+                ;; \
+        esac && \
+        # Install remaining requirements, skipping torch packages
+        grep -v -E "^torch==|^torchvision==|^torchaudio==" requirements.txt > requirements_no_torch.txt && \
+        pip install --no-cache-dir --upgrade -r requirements_no_torch.txt && \
+        rm requirements_no_torch.txt; \
+    else \
+        # Install all requirements as specified
+        pip install --no-cache-dir --upgrade -r requirements.txt; \
+    fi
+
+# Do a test run to pre-download and bake base models into the image
+RUN echo "This is a test sentence." > test.txt && \
+    python app.py --headless --ebook test.txt --script_mode full_docker && \
+    rm test.txt
 # Expose the required port
 EXPOSE 7860
-
 # Start the Gradio app with the required flag
 ENTRYPOINT ["python", "app.py", "--script_mode", "full_docker"]
