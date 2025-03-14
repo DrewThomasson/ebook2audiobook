@@ -39,12 +39,19 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
         TORCH_VERSION_REQ=$(grep -E "^torch==" requirements.txt | cut -d'=' -f3) && \
         TORCHAUDIO_VERSION_REQ=$(grep -E "^torchaudio==" requirements.txt | cut -d'=' -f3) && \
         TORCHVISION_VERSION_REQ=$(grep -E "^torchvision==" requirements.txt | cut -d'=' -f3) && \
+
         case "$TORCH_VERSION" in \
             "cuda12") \
                 pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cu121 \
                 ;; \
             "cuda11") \
                 pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cu118 \
+                ;; \
+            "rocm") \
+                pip install --no-cache-dir torch==${TORCH_VERSION_REQ}+rocm6.2 torchvision==${TORCHVISION_VERSION_REQ}+rocm6.2 torchaudio==${TORCHAUDIO_VERSION_REQ}+rocm6.2 --extra-index-url https://download.pytorch.org/whl/rocm6.2 \
+                ;; \
+            "xpu") \
+                pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/test/xpu \
                 ;; \
             "cpu") \
                 pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cpu \
