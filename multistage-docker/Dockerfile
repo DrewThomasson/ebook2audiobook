@@ -50,7 +50,12 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
                 pip install --no-cache-dir torch==${TORCH_VERSION_REQ} torchvision==${TORCHVISION_VERSION_REQ} torchaudio==${TORCHAUDIO_VERSION_REQ} --extra-index-url https://download.pytorch.org/whl/cu118 \
                 ;; \
             "rocm") \
-                pip install --no-cache-dir torch==${TORCH_VERSION_REQ}+rocm6.2 torchvision==${TORCHVISION_VERSION_REQ}+rocm6.2 torchaudio==${TORCHAUDIO_VERSION_REQ}+rocm6.2 --extra-index-url https://download.pytorch.org/whl/rocm6.2 \
+                # Using the correct syntax for ROCm PyTorch installation
+                pip install --no-cache-dir \
+                    torch==${TORCH_VERSION_REQ} \
+                    torchvision==${TORCHVISION_VERSION_REQ} \
+                    torchaudio==${TORCHAUDIO_VERSION_REQ} \
+                    --extra-index-url https://download.pytorch.org/whl/rocm6.2 \
                 ;; \
             "xpu") \
                 # Install PyTorch with Intel XPU support through IPEX
