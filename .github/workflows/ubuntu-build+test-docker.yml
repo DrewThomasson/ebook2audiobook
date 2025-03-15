@@ -1,5 +1,4 @@
 name: Ubuntu Build+Test
-
 on:
   workflow_dispatch:
     inputs:
@@ -59,6 +58,8 @@ jobs:
   build:
     needs: build_base
     runs-on: [self-hosted, Linux, ARM64]
+    env:
+      DOCKER_TAG: ${{ inputs.docker_tag || 'dev' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -118,7 +119,7 @@ jobs:
         run: |
           docker buildx build --pull --platform linux/amd64,linux/arm64 \
             --build-arg BASE_IMAGE=${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:base \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
             --push \
             .
 
@@ -129,7 +130,7 @@ jobs:
         run: |
           docker buildx build --pull --platform linux/amd64,linux/arm64 `
             --build-arg BASE_IMAGE=${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:base `
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev `
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} `
             --push `
             .
 
@@ -257,6 +258,8 @@ jobs:
   final_push:
     needs: run_tests
     runs-on: self-hosted
+    env:
+      DOCKER_TAG: ${{ inputs.docker_tag || 'dev' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -337,8 +340,9 @@ jobs:
           docker buildx imagetools create \
             --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$GIT_HASH \
             --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:$RELEASE_TAG \
-            ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev
-  
+            --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+            ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+    
       - name: Re-tag dev Docker Image (multi-arch, Windows)
         if: runner.os == 'Windows'
         shell: powershell
@@ -346,15 +350,16 @@ jobs:
           $dockerUsername = "${{ secrets.DOCKER_USERNAME }}"
           $gitHash = if ($env:GIT_HASH) { $env:GIT_HASH } else { "latest" }
           $releaseTag = if ($env:RELEASE_TAG) { $env:RELEASE_TAG } else { "latest" }
-  
+
           echo "DOCKER_USERNAME: $dockerUsername"
           echo "GIT_HASH: $gitHash"
           echo "RELEASE_TAG: $releaseTag"
-  
+
           docker buildx imagetools create `
             --tag "$dockerUsername/ebook2audiobook:$gitHash" `
             --tag "$dockerUsername/ebook2audiobook:$releaseTag" `
-            "$dockerUsername/ebook2audiobook:dev"
+            --tag "$dockerUsername/ebook2audiobook:latest" `
+            "$dockerUsername/ebook2audiobook:${{ env.DOCKER_TAG }}"
 
 
 
