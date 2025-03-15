@@ -1407,6 +1407,7 @@ def convert_ebook(args):
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
                                             ]
+                                            shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
                                             if is_gui_process:
                                                 if len(chapters_dirs) > 1:
                                                     if os.path.exists(session['chapters_dir']):
