@@ -2161,14 +2161,24 @@ def web_interface(args):
                 nonlocal voice_options
                 session = context.get_session(id)
                 voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
+                voice_lang_eng_dir = 'eng'
                 voice_file_pattern = "*_24000.wav"
-                voice_options = [
-                    (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                    for f in Path(session['voice_dir']).rglob(voice_file_pattern)
-                ]
-                voice_options += [
+                voice_builtin_options = [
                     (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
                     for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
+                ]
+                if session['language'] in language_tts[XTTSv2]:
+                    voice_eng_options = [
+                        (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
+                        for f in Path(os.path.join(voices_dir, voice_lang_eng_dir)).rglob(voice_file_pattern)
+                    ]
+                else:
+                    voice_eng_options = []
+                voice_keys = {key for key, _ in voice_builtin_options}
+                voice_options = voice_builtin_options + [row for row in voice_eng_options if row[0] not in voice_keys]
+                voice_options += [
+                    (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
+                    for f in Path(session['voice_dir']).rglob(voice_file_pattern)
                 ]
                 voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 session['voice'] = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]

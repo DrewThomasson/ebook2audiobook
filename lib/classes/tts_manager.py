@@ -3,6 +3,7 @@ import numpy as np
 import os
 import regex as re
 import shutil
+import soundfile as sf
 import subprocess
 import tempfile
 import torch
@@ -13,6 +14,7 @@ import uuid
 
 from fastapi import FastAPI
 from huggingface_hub import hf_hub_download
+from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
 from TTS.api import TTS as TtsXTTS
@@ -20,7 +22,8 @@ from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 
 from lib.models import *
-from lib.conf import models_dir, default_audio_proc_format
+from lib.conf import voices_dir, models_dir, default_audio_proc_format
+from lib.lang import language_tts
 
 torch.backends.cudnn.benchmark = True
 #torch.serialization.add_safe_globals(["numpy.core.multiarray.scalar"])
@@ -93,6 +96,54 @@ class TTSManager:
     def _build(self):
         tts_key = None
         self.params['current_voice_path'] = None
+        if self.session['language'] in language_tts[XTTSv2].keys():
+            if self.session['voice'] is not None:
+                voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.session['voice']))
+                if voice_key in default_xtts_settings['voices']:
+                    if not f"/{self.session['language']}/" in self.session['voice']:
+                        msg = f"Converting xttsv2 builtin english voice to {self.session['language']}..."
+                        print(msg)
+                        self.model_path = models[XTTSv2]['internal']['repo']
+                        tts_key = self.model_path
+                        if tts_key in loaded_tts.keys():
+                            self.params['tts'] = loaded_tts[self.model_path]
+                        else:
+                            self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
+                        try:
+                            lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
+                            file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
+                            base_dir = os.path.dirname(file_path)
+                            default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
+                            if os.path.exists(default_text_file):
+                                default_text = Path(default_text_file).read_text(encoding="utf-8")
+                                self.params['tts'].tts_to_file(
+                                    text=f"{default_xtts_settings['voices'][voice_key]}, {default_text}",
+                                    speaker=default_xtts_settings['voices'][voice_key],
+                                    language=self.session['language_iso1'],
+                                    file_path=file_path
+                                )
+                                for samplerate in [16000, 24000]:
+                                    output_file = file_path.replace('.wav', f'_{samplerate}.wav')
+                                    if self._normalize_audio(file_path, output_file, samplerate):
+                                        # for Bark
+                                        if samplerate == 24000:
+                                            bark_voice_dir = voice_key
+                                            npz_dir = os.path.join(base_dir, 'bark', bark_voice_dir)
+                                            os.makedirs(npz_dir, exist_ok=True)
+                                            bark_file = os.path.join(npz_dir, 'voice.npz')
+                                            self._wav_to_npz(output_file, bark_file)
+                                    else:
+                                        break
+                                if os.path.exists(file_path):
+                                    os.remove(file_path)
+                            else:
+                                error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
+                                print(error)
+                        except Exception as e:
+                            error = f'_build() builtin voice conversion error: {file_path}: {e}'
+                            print(error)
+                        if torch.cuda.is_available():
+                            torch.cuda.empty_cache()
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
@@ -224,7 +275,7 @@ class TTSManager:
                     break     
             return None
         except Exception as e:
-            print(f"Error processing {voice_path}: {e}")
+            print(f"_detect_gender() error: {voice_path}: {e}")
             return None
             
     def _is_tts_active(self, tts):
@@ -250,12 +301,52 @@ class TTSManager:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
 
     def _trim_end(self, audio_data, sample_rate, silence_threshold=0.001, buffer_seconds=0.001):
-        non_silent_indices = np.where(np.abs(audio_data) > silence_threshold)[0]
+        device = audio_data.device
+        non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
         if len(non_silent_indices) == 0:
-            return np.array([])
+            return torch.tensor([], device=device)
         end_index = non_silent_indices[-1] + int(buffer_seconds * sample_rate)
         trimmed_audio = audio_data[:end_index]
         return trimmed_audio
+
+    def _normalize_audio(self, input_file, output_file, samplerate):
+        filter_complex = (
+            'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
+            'afftdn=nf=-70,'
+            'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
+            'loudnorm=I=-14:TP=-3:LRA=7:linear=true,'
+            'equalizer=f=150:t=q:w=2:g=1,'
+            'equalizer=f=250:t=q:w=2:g=-3,'
+            'equalizer=f=3000:t=q:w=2:g=2,'
+            'equalizer=f=5500:t=q:w=2:g=-4,'
+            'equalizer=f=9000:t=q:w=2:g=-2,'
+            'highpass=f=63[audio]'
+        )
+        ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', input_file]
+        ffmpeg_cmd += [
+            '-filter_complex', filter_complex,
+            '-map', '[audio]',
+            '-ar', str(samplerate),
+            '-y', output_file
+        ]
+        try:
+            subprocess.run(
+                ffmpeg_cmd,
+                stdout=subprocess.PIPE, 
+                stderr=subprocess.PIPE,
+                check=True,
+                text=True,
+                encoding='utf-8'
+            )
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"_normalize_audio() error: {input_file}: {e}")
+            return False
+
+    def _wav_to_npz(self, wav_path, npz_path):
+        audio, sr = sf.read(wav_path)
+        np.savez(npz_path, audio=audio, sample_rate=24000)
+        print(f"Saved NPZ file: {npz_path}")
 
     def convert_sentence_to_audio(self):
         try:
@@ -302,9 +393,9 @@ class TTSManager:
                         print(error)
                         return False
                 else:
-                    voice_name = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(os.path.basename(self.params['voice_path'])))
-                    if voice_name in default_xtts_settings['voices'].values():
-                        speaker_argument = {"speaker": voice_name}
+                    voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
+                    if voice_key in default_xtts_settings['voices']:
+                        speaker_argument = {"speaker": default_xtts_settings['voices'][voice_key]}
                     else:
                         if self.params['current_voice_path'] != self.params['voice_path']:
                             self.params['current_voice_path'] = self.params['voice_path']
@@ -333,12 +424,17 @@ class TTSManager:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
+                    if self.params['voice_path'] is not None:
+                        voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
+                        self.params['voice_path'] = os.path.join(os.path.dirname(self.params['voice_path']), 'bark', voice_key)
+                        speaker_argument = {"voice_dir": self.params['voice_path'], "speaker": voice_key}
+                    else:
+                        speaker_argument = {}
                     with torch.no_grad():
+                        speaker_argument = {}
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
-                            #language=self.session['language_iso1'],
-                            #speaker_wav=self.params['voice_path'],
-                            #emotion='neutral'  # Available options: "neutral", "angry", "happy", "sad"
+                            **speaker_argument,
                         )
             elif self.session['tts_engine'] == VITS:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
