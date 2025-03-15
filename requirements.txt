@@ -5,7 +5,6 @@ demucs
 docker
 ebooklib
 fastapi
-ffmpeg-python
 gensim
 gradio
 hangul-romanize
