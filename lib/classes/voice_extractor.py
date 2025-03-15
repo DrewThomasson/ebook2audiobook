@@ -74,7 +74,7 @@ class VoiceExtractor:
             torch_home = os.path.join(self.models_dir, 'hub')
             torch.hub.set_dir(torch_home)
             os.environ['TORCH_HOME'] = torch_home
-            energy_threshold = 8200 # to tune if not enough accurate (higher = less sensitive)
+            energy_threshold = 15000 # to tune if not enough accurate (higher = less sensitive)
             model = vggish()
             model.eval()
             # Preprocess audio to log mel spectrogram
@@ -129,20 +129,20 @@ class VoiceExtractor:
             error = f'_demucs_voice() error: {e}'
             raise ValueError(error)
         return False, error
-        
+
     def _remove_silences(self, audio, silence_threshold):
         final_audio = AudioSegment.silent(duration=0)
         for chunk in audio[::100]:
             if chunk.dBFS > silence_threshold:
                 final_audio += chunk
         final_audio.export(self.voice_track, format='wav')
-
+    
     def _trim_and_clean(self):
         try:
             silence_threshold = -60
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
-            min_required_duration = 15000 if self.session['tts_engine'] == XTTSv2 else 30000  # milliseconds
+            min_required_duration = 12000
             if total_duration <= min_required_duration:
                 msg = f"Audio is only {total_duration/1000:.2f}s long; skipping trimming."
                 self._remove_silences(audio, silence_threshold)
@@ -152,7 +152,7 @@ class VoiceExtractor:
             # Step 1: Compute Amplitude and Frequency Variation
             amplitude_variations = []
             frequency_variations = []
-            time_stamps = []        
+            time_stamps = []
             for i in range(0, total_duration - chunk_size, chunk_size):
                 chunk = audio[i:i + chunk_size]
                 if chunk.dBFS > silence_threshold:  # Ignore silence
@@ -160,7 +160,7 @@ class VoiceExtractor:
                     # FFT to analyze frequency spectrum
                     samples = np.array(chunk.get_array_of_samples())
                     spectrum = np.abs(scipy.fftpack.fft(samples))
-                    frequency_variations.append(np.std(spectrum))  # Measure frequency spread                  
+                    frequency_variations.append(np.std(spectrum))  # Measure frequency spread
                     time_stamps.append(i)
             # If no significant speech was detected, return an error
             if not amplitude_variations:
@@ -202,7 +202,6 @@ class VoiceExtractor:
             self._remove_silences(trimmed_audio, silence_threshold)
             msg = f"Silences removed, best section extracted from {start_adjusted/1000:.2f}s to {end_adjusted/1000:.2f}s"
             return True, msg
-
         except Exception as e:
             error = f'_trim_and_clean() error: {e}'
             raise ValueError(error)
@@ -256,10 +255,10 @@ class VoiceExtractor:
                 except subprocess.CalledProcessError as e:
                     error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
                     break
+            shutil.rmtree(self.demucs_dir, ignore_errors=True)
+            if os.path.exists(process_file):
+                os.remove(process_file)
             if error is None:
-                shutil.rmtree(self.demucs_dir, ignore_errors=True)
-                if os.path.exists(process_file):
-                    os.remove(process_file)
                 msg = 'Audio normalization successful!'
                 return True, msg
         except FileNotFoundError as e:

@@ -452,15 +452,19 @@ class TTSManager:
                                 self.params['current_voice_path'] = self.params['voice_path']
                                 self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
                                 self.params['voice_builtin_gender'] = self._detect_gender(tmp_in_wav)
-                                print(f"Cloned voice seems to be {self.params['voice_path_gender']}")
-                                print(f"Builtin voice seems to be {self.params['voice_builtin_gender']}")
+                                msg = f"Cloned voice seems to be {self.params['voice_path_gender']}"
+                                print(msg)
+                                msg = f"Builtin voice seems to be {self.params['voice_builtin_gender']}"
+                                print(msg)
                                 if self.params['voice_builtin_gender'] != self.params['voice_path_gender']:
                                     self.params['semitones'] = -4 if self.params['voice_path_gender'] == 'male' else 4
+                                msg = f"Adapting builtin voice frequencies from the clone voice..."
+                                print(msg)
                             if 'semitones' in self.params:
                                 try:
                                     cmd = [
                                         shutil.which('sox'), tmp_in_wav,
-                                        "-r", str(sample_rate), tmp_out_wav,
+                                        "-r", str(16000), tmp_out_wav,
                                         "pitch", str(self.params['semitones'] * 100)
                                     ]
                                     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -486,7 +490,7 @@ class TTSManager:
                                 os.remove(tmp_out_wav)
                         else:
                             audio_data = self.params['tts'].tts(
-                                text=self.params['sentence'],
+                                text=self.params['sentence']
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
@@ -505,10 +509,14 @@ class TTSManager:
                                 self.params['current_voice_path'] = self.params['voice_path']
                                 self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
                                 self.params['voice_builtin_gender'] = self._detect_gender(tmp_in_wav)
-                                print(f"Cloned voice seems to be {self.params['voice_path_gender']}")
-                                print(f"Builtin voice seems to be {self.params['voice_builtin_gender']}")
+                                msg = f"Cloned voice seems to be {self.params['voice_path_gender']}"
+                                print(msg)
+                                msg = f"Builtin voice seems to be {self.params['voice_builtin_gender']}"
+                                print(msg)
                                 if self.params['voice_builtin_gender'] != self.params['voice_path_gender']:
                                     self.params['semitones'] = -4 if self.params['voice_path_gender'] == 'male' else 4
+                                msg = f"Adapting builtin voice frequencies from the clone voice..."
+                                print(msg)
                             if 'semitones' in self.params:
                                 try:
                                     cmd = [
@@ -537,7 +545,7 @@ class TTSManager:
                                 os.remove(tmp_out_wav)
                         else:
                             audio_data = self.params['tts'].tts(
-                                text=self.params['sentence'],
+                                text=self.params['sentence']
                             )
             elif self.session['tts_engine'] == YOURTTS:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
