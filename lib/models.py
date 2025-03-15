@@ -212,7 +212,23 @@ models = {
         "internal": {
             "lang": "multi",
             "repo": "tts_models/[lang_iso1]/[xxx]",
-            "sub": {"cv/vits":["bg","cs","da","et","ga","hr","lt","lv","mt","pt","ro","sk","sl","sv"], "css10/vits":["es","fr","nl","hu","fi","ru","el","ja","zh"], "ljspeech/vits": ["en"], "thorsten/tacotron2-DDC": ["de"]},
+            "sub": {
+                    "cv/vits":["bg","cs","da","et","ga","hr","lt","lv","mt","pt","ro","sk","sl","sv"],
+                    "css10/vits":["hu","fi","ru","el","zh"],
+                    "vctk/vits": ["en"],
+                    "openbible/vits": ["ewe", "hau", "lin", "yor"],
+                    "mai/tacotron2-DDC": ["es", "fr", "nl"],
+                    "mai/glow-tts": ["uk"],
+                    "mai_female/vits": ["pl"],
+                    "mai_male/glow-tts": ["it"],
+                    "thorsten/tacotron2-DDC": ["de"],
+                    "kokoro/tacotron2-DDC": ["ja"],
+                    "common-voice/glow-tts": ["be", "tr"],
+                    "baker/tacotron2-DDC-GST": ["zh-CN"],
+                    "custom/vits": ["ca"],
+                    "custom/vits-female": ["bn", "fa"],
+                    "openbible/vits": ["tw_akuapem", "tw_asante"]
+                    },
             "voice": None,
             "files": default_vits_settings['files'],
             "samplerate": default_vits_settings['samplerate']
