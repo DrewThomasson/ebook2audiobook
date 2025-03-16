@@ -371,8 +371,9 @@ def math2word(text, lang, lang_iso1, tts_engine):
             if "." in number or "e" in number or "E" in number:
                 return num2words(float(number), lang=lang_iso1)
             return num2words(int(number), lang=lang_iso1)
-        except ValueError:
-            return number  # If conversion fails, return original number
+        except Exception as e:
+            print(f'rep_num:() error: {e}')
+            return number
 
     def replace_ambiguous(match):
         symbol2 = match.group(2)
