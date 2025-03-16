@@ -96,7 +96,7 @@ class TTSManager:
         tts_key = None
         self.params['current_voice_path'] = None
         if self.session['language'] in language_tts[XTTSv2].keys():
-            if self.session['voice'] is not None:
+            if self.session['voice'] is not None and self.session['language'] != 'eng':
                 voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.session['voice']))
                 if voice_key in default_xtts_settings['voices']:
                     if not f"/{self.session['language']}/" in self.session['voice']:
@@ -452,13 +452,21 @@ class TTSManager:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
+                    speaker_argument = {}
+                    if 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
+                        if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
+                            speaker_argument = {"speaker": 'p262'}
                     with torch.no_grad():
                         if self.params['voice_path'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            self.params['tts'].tts_to_file(text=self.params['sentence'], file_path=tmp_in_wav)
+                            self.params['tts'].tts_to_file(
+                                text=self.params['sentence'],
+                                file_path=tmp_in_wav,
+                                **speaker_argument
+                            )
                             if self.params['current_voice_path'] != self.params['voice_path']:
                                 self.params['current_voice_path'] = self.params['voice_path']
                                 self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
@@ -500,10 +508,6 @@ class TTSManager:
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
                         else:
-                            speaker_argument = {}
-                            if 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
-                                if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
-                                    speaker_argument = {"speaker": 'p262'}
                             audio_data = self.params['tts'].tts(
                                 text=self.params['sentence'],
                                 **speaker_argument
