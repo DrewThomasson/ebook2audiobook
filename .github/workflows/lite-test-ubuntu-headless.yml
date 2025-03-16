@@ -1,5 +1,4 @@
 name: lite Ubuntu Headless
-
 on:
   workflow_dispatch:
     inputs:
@@ -26,12 +25,16 @@ on:
         required: true
         default: 'false'
         type: boolean
+      use_xtts_zip_mode:
+        description: 'Use XTTS model in zip mode (only applies when TTS engine is XTTS)'
+        required: true
+        default: 'false'
+        type: boolean
       language:
         description: 'Language code'
         required: true
         default: 'eng'
         type: string
-
 jobs:
   run-tts:
     runs-on: ubuntu-latest
@@ -52,46 +55,82 @@ jobs:
           sudo apt-get install -y nodejs &&
           sudo apt-get clean &&
           sudo rm -rf /var/lib/apt/lists/*
-
       - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
-
       - name: Install Python requirements
         run: |
           python -m pip install --upgrade pip
           pip cache purge
           pip install -r requirements.txt
-
       - name: Install unict
         run: pip install unidic-lite unidic
-
       - name: Download unict dictionary
         run: |
           python -m unidic download
           mkdir -p ~/.local/share/unidic
-
       - name: Set UniDic environment variable
         run: echo "UNIDIC_DIR=$HOME/.local/share/unidic" >> $GITHUB_ENV
-
-      - name: Run Single Mode with Default Voice
-        if: ${{ inputs.mode == 'single' && inputs.use_custom_voice == 'false' }}
+      
+      # Download XTTS model if using zip mode
+      - name: Download XTTS model for zip mode
+        if: ${{ inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true' }}
+        run: python app.py --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
+      
+      # Create zip file for XTTS if using zip mode
+      - name: Create the custom_xtts_test.zip
+        if: ${{ inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true' }}
+        run: |
+          cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav
+          zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav
+          rm -f ref.wav
+      
+      # Clean models folder if using zip mode
+      - name: Wipe models/tts folder for zip mode
+        if: ${{ inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true' }}
+        run: rm -rf models/tts/*
+      
+      # Normal run steps for non-zip mode
+      - name: Run Single Mode with Default Voice (non-zip mode)
+        if: ${{ inputs.mode == 'single' && inputs.use_custom_voice == 'false' && !(inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true') }}
         run: python app.py --headless --script_mode full_docker --language ${{ inputs.language }} --ebook "tools/workflow-testing/test1.txt" --tts_engine ${{ inputs.tts_engine }}
-
-      - name: Run Batch Mode with Default Voice
-        if: ${{ inputs.mode == 'batch' && inputs.use_custom_voice == 'false' }}
+      
+      - name: Run Batch Mode with Default Voice (non-zip mode)
+        if: ${{ inputs.mode == 'batch' && inputs.use_custom_voice == 'false' && !(inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true') }}
         run: python app.py --headless --script_mode full_docker --language ${{ inputs.language }} --ebooks_dir "tools/workflow-testing" --tts_engine ${{ inputs.tts_engine }}
-
-      - name: Run Single Mode with Custom Voice
-        if: ${{ inputs.mode == 'single' && inputs.use_custom_voice == 'true' }}
+      
+      - name: Run Single Mode with Custom Voice (non-zip mode)
+        if: ${{ inputs.mode == 'single' && inputs.use_custom_voice == 'true' && !(inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true') }}
         run: python app.py --headless --script_mode full_docker --language ${{ inputs.language }} --ebook "tools/workflow-testing/test1.txt" --tts_engine ${{ inputs.tts_engine }} --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Run Batch Mode with Custom Voice
-        if: ${{ inputs.mode == 'batch' && inputs.use_custom_voice == 'true' }}
+      
+      - name: Run Batch Mode with Custom Voice (non-zip mode)
+        if: ${{ inputs.mode == 'batch' && inputs.use_custom_voice == 'true' && !(inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true') }}
         run: python app.py --headless --script_mode full_docker --language ${{ inputs.language }} --ebooks_dir "tools/workflow-testing" --tts_engine ${{ inputs.tts_engine }} --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
+      
+      # Zip mode run steps
+      - name: Run Single Mode with Default Voice (zip mode)
+        if: ${{ inputs.mode == 'single' && inputs.use_custom_voice == 'false' && inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true' }}
+        run: python app.py --headless --script_mode full_docker --language ${{ inputs.language }} --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+      
+      - name: Run Batch Mode with Default Voice (zip mode)
+        if: ${{ inputs.mode == 'batch' && inputs.use_custom_voice == 'false' && inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true' }}
+        run: python app.py --headless --script_mode full_docker --language ${{ inputs.language }} --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+      
+      - name: Run Single Mode with Custom Voice (zip mode)
+        if: ${{ inputs.mode == 'single' && inputs.use_custom_voice == 'true' && inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true' }}
+        run: python app.py --headless --script_mode full_docker --language ${{ inputs.language }} --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip" --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      
+      - name: Run Batch Mode with Custom Voice (zip mode)
+        if: ${{ inputs.mode == 'batch' && inputs.use_custom_voice == 'true' && inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true' }}
+        run: python app.py --headless --script_mode full_docker --language ${{ inputs.language }} --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip" --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      
+      # Clean up zip file
+      - name: Delete custom_xtts_test.zip
+        if: ${{ inputs.tts_engine == 'xtts' && inputs.use_xtts_zip_mode == 'true' }}
+        run: rm -f custom_xtts_test.zip
+      
       - name: Upload audiobooks as artifact
         uses: actions/upload-artifact@v4
         with:
