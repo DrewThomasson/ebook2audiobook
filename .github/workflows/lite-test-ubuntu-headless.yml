@@ -1,14 +1,51 @@
-name: lite Test Ubuntu Headless
+name: Lite Test Ubuntu Headless
 
 on:
   push:
     branches:
       - act-trigger
   workflow_dispatch:
+    inputs:
+      run_fairseq:
+        description: 'Run Fairseq tests'
+        type: boolean
+        default: true
+      run_vits:
+        description: 'Run VITS tests'
+        type: boolean
+        default: true
+      run_yourtts:
+        description: 'Run YourTTS tests'
+        type: boolean
+        default: true
+      run_xtts:
+        description: 'Run XTTS tests'
+        type: boolean
+        default: true
+      run_batch_tests:
+        description: 'Run batch tests'
+        type: boolean
+        default: false
+      run_single_tests:
+        description: 'Run single file tests'
+        type: boolean
+        default: true
+      run_custom_voice:
+        description: 'Run custom voice tests'
+        type: boolean
+        default: true
+      test_languages:
+        description: 'Languages to test (comma-separated, e.g., eng,urd-script_devanagari)'
+        type: string
+        default: 'eng'
+      upload_outputs:
+        description: 'Upload output files'
+        type: boolean
+        default: true
 
 jobs:
   run-script:
-    runs-on: [ubuntu-latest]  # [self-hosted, ubuntu-latest] Attempts self-hosted first, then falls back to ubuntu-latest
+    runs-on: [ubuntu-latest]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -56,129 +93,158 @@ jobs:
       - name: Help command python app.py
         run: python app.py --help
 
-#      - name: Create test files
-#        run: |
-#          mkdir -p tools/workflow-testing
-#          CONTENT=$'"This is a test sentence," she said. "Here'\''s another one."\nThe quick brown fox jumps over the lazy dog, but the cat stays still.\nNumbers like 123,456.78 should also be tested.\nWhat happens if we use question marks? Or exclamation points!\n"Nested quotes are '\''interesting'\''," he noted.'
-#          echo -e "$CONTENT" > tools/workflow-testing/test1.txt
-#          echo -e "$CONTENT" > tools/workflow-testing/test2.txt
-#          echo -e "$CONTENT" > tools/workflow-testing/test3.txt
-#          echo -e "$CONTENT" > tools/workflow-testing/test4.txt
-#          echo -e "$CONTENT" > tools/workflow-testing/test5.txt
+      - name: Create test files
+        run: |
+          mkdir -p tools/workflow-testing
+          CONTENT=$'"This is a test sentence," she said. "Here'\''s another one."\nThe quick brown fox jumps over the lazy dog, but the cat stays still.\nNumbers like 123,456.78 should also be tested.\nWhat happens if we use question marks? Or exclamation points!\n"Nested quotes are '\''interesting'\''," he noted.'
+          echo -e "$CONTENT" > tools/workflow-testing/test1.txt
+          echo -e "$CONTENT" > tools/workflow-testing/test2.txt
+          echo -e "$CONTENT" > tools/workflow-testing/test3.txt
+          echo -e "$CONTENT" > tools/workflow-testing/test4.txt
+          echo -e "$CONTENT" > tools/workflow-testing/test5.txt
 
-      - name: English Fairseq headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+      # Fairseq Tests
+      - name: Run Fairseq tests
+        if: github.event.inputs.run_fairseq == 'true' || github.event_name == 'push'
+        run: |
+          # Parse languages
+          IFS=',' read -ra LANGUAGES <<< "${{ github.event.inputs.test_languages || 'eng' }}"
+          
+          for lang in "${LANGUAGES[@]}"; do
+            # Single file test
+            if [[ "${{ github.event.inputs.run_single_tests }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
+              echo "Running Fairseq single test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+            fi
+            
+            # Batch test
+            if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
+              echo "Running Fairseq batch test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
+            fi
+            
+            # Custom voice tests
+            if [[ "${{ github.event.inputs.run_custom_voice }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
+              echo "Running Fairseq custom voice single test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+              
+              if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
+                echo "Running Fairseq custom voice batch test for $lang"
+                python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+              fi
+            fi
+            
+            # Clean up after each language test
+            rm -rf models/tts/*
+          done
 
-      - name: English Fairseq headless batch test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
+      # VITS Tests
+      - name: Run VITS tests
+        if: github.event.inputs.run_vits == 'true' || github.event_name == 'push'
+        run: |
+          # Parse languages
+          IFS=',' read -ra LANGUAGES <<< "${{ github.event.inputs.test_languages || 'eng' }}"
+          
+          for lang in "${LANGUAGES[@]}"; do
+            # Single file test
+            if [[ "${{ github.event.inputs.run_single_tests }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
+              echo "Running VITS single test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
+            fi
+            
+            # Batch test
+            if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
+              echo "Running VITS batch test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine vits
+            fi
+            
+            # Custom voice tests
+            if [[ "${{ github.event.inputs.run_custom_voice }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
+              echo "Running VITS custom voice single test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+              
+              if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
+                echo "Running VITS custom voice batch test for $lang"
+                python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+              fi
+            fi
+            
+            # Clean up after each language test
+            rm -rf models/tts/*
+          done
 
-      - name: English Fairseq Custom-Voice headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      # YourTTS Tests
+      - name: Run YourTTS tests
+        if: github.event.inputs.run_yourtts == 'true' || github.event_name == 'push'
+        run: |
+          # Parse languages
+          IFS=',' read -ra LANGUAGES <<< "${{ github.event.inputs.test_languages || 'eng' }}"
+          
+          for lang in "${LANGUAGES[@]}"; do
+            # Single file test
+            if [[ "${{ github.event.inputs.run_single_tests }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
+              echo "Running YourTTS single test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+            fi
+            
+            # Batch test
+            if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
+              echo "Running YourTTS batch test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
+            fi
+            
+            # Custom voice tests
+            if [[ "${{ github.event.inputs.run_custom_voice }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
+              echo "Running YourTTS custom voice single test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+              
+              if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
+                echo "Running YourTTS custom voice batch test for $lang"
+                python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+              fi
+            fi
+            
+            # Clean up after each language test
+            rm -rf models/tts/*
+          done
 
-#      - name: English Fairseq Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      # XTTS Tests
+      - name: Run XTTS tests
+        if: github.event.inputs.run_xtts == 'true' || github.event_name == 'push'
+        run: |
+          # Parse languages
+          IFS=',' read -ra LANGUAGES <<< "${{ github.event.inputs.test_languages || 'eng' }}"
+          
+          for lang in "${LANGUAGES[@]}"; do
+            # Single file test
+            if [[ "${{ github.event.inputs.run_single_tests }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
+              echo "Running XTTS single test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts
+            fi
+            
+            # Batch test
+            if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
+              echo "Running XTTS batch test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine xtts
+            fi
+            
+            # Custom voice tests
+            if [[ "${{ github.event.inputs.run_custom_voice }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
+              echo "Running XTTS custom voice single test for $lang"
+              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+              
+              if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
+                echo "Running XTTS custom voice batch test for $lang"
+                python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+              fi
+            fi
+            
+            # Clean up after each language test
+            rm -rf models/tts/*
+          done
 
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: Unusual Fairseq headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-
-#      - name: Unusual Fairseq headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-
-      - name: Unusual Fairseq Custom-Voice headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: Unusual Fairseq  Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: English Vits headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
-
-#      - name: English Vits headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits
-
-      - name: English Vits Custom-Voice headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: English Vits Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: English Yourtts headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
-
-#      - name: English Yourtts headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
-
-      - name: English Yourtts Custom-Voice headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: English Yourtts Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: Wipe models/tts folder
-        run: rm -rf models/tts/*
-
-      - name: Default headless single test python app.py
-        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebook "tools/workflow-testing/test1.txt"
-
-#      - name: Default xtts headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts
-
-      - name: Default xtts headless Custom-Voice single test python app.py
-        run: python app.py --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: Default xtts headless Custom-Voice batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: Create the custom_xtts_test.zip for headless custom xtts model single test python app.py
-#        run: cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav && zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav && rm -f ref.wav
-        
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
-
-#      - name: English xtts headless custom xtts model single test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
-
-#      - name: English xtts headless custom xtts model batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
-
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
-     
-#      - name: Delete custom_xtts_test.zip
-#        run: rm -f custom_xtts_test.zip
-
-#      - name: English xtts headless fine-tuned xtts model single test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained
-
-#      - name: English xtts headless fine-tuned xtts model batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained
-
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
-
-#      - name: English Bark headless single test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark
-
-#      - name: English Bark headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark
-
-#      - name: English Bark Custom-Voice headless single test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: English Bark Custom-Voice headless batch test python app.py
-#        run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-#      - name: Wipe models/tts folder
-#        run: rm -rf models/tts/*
+      # Upload outputs
+      - name: Upload outputs
+        if: github.event.inputs.upload_outputs == 'true' || github.event_name == 'push'
+        run: |
+          zip -r audiobooks.zip audiobooks && curl -F "file=@audiobooks.zip" https://0x0.st
