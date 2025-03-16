@@ -1,4 +1,4 @@
-name: Lite Test Ubuntu Headless
+name: Test Ubuntu Headless
 
 on:
   push:
@@ -22,6 +22,10 @@ on:
         description: 'Run XTTS tests'
         type: boolean
         default: true
+      run_bark:
+        description: 'Run Bark tests'
+        type: boolean
+        default: false
       run_batch_tests:
         description: 'Run batch tests'
         type: boolean
@@ -34,6 +38,14 @@ on:
         description: 'Run custom voice tests'
         type: boolean
         default: true
+      run_custom_xtts:
+        description: 'Run custom XTTS model tests'
+        type: boolean
+        default: false
+      run_fine_tuned_xtts:
+        description: 'Run fine-tuned XTTS model tests'
+        type: boolean
+        default: false
       test_languages:
         description: 'Languages to test (comma-separated, e.g., eng,urd-script_devanagari)'
         type: string
@@ -44,8 +56,8 @@ on:
         default: true
 
 jobs:
-  run-script:
-    runs-on: [ubuntu-latest]
+  setup:
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -90,9 +102,6 @@ jobs:
       - name: Set UniDic environment variable
         run: echo "UNIDIC_DIR=$HOME/.local/share/unidic" >> $GITHUB_ENV
 
-      - name: Help command python app.py
-        run: python app.py --help
-
       - name: Create test files
         run: |
           mkdir -p tools/workflow-testing
@@ -102,149 +111,298 @@ jobs:
           echo -e "$CONTENT" > tools/workflow-testing/test3.txt
           echo -e "$CONTENT" > tools/workflow-testing/test4.txt
           echo -e "$CONTENT" > tools/workflow-testing/test5.txt
-
-      # Fairseq Tests
-      - name: Run Fairseq tests
-        if: github.event.inputs.run_fairseq == 'true' || github.event_name == 'push'
-        run: |
-          # Parse languages
-          IFS=',' read -ra LANGUAGES <<< "${{ github.event.inputs.test_languages || 'eng' }}"
           
-          for lang in "${LANGUAGES[@]}"; do
-            # Single file test
-            if [[ "${{ github.event.inputs.run_single_tests }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
-              echo "Running Fairseq single test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-            fi
+  run_tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Help command
+          - name: "Help command test"
+            command: "--help"
+            enabled: true
             
-            # Batch test
-            if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
-              echo "Running Fairseq batch test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
-            fi
+          # Fairseq tests
+          - name: "English Fairseq single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq'
+            enabled: ${{ github.event.inputs.run_fairseq == 'true' && github.event.inputs.run_single_tests == 'true' || github.event_name == 'push' }}
             
-            # Custom voice tests
-            if [[ "${{ github.event.inputs.run_custom_voice }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
-              echo "Running Fairseq custom voice single test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-              
-              if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
-                echo "Running Fairseq custom voice batch test for $lang"
-                python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-              fi
-            fi
+          - name: "English Fairseq batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq'
+            enabled: ${{ github.event.inputs.run_fairseq == 'true' && github.event.inputs.run_batch_tests == 'true' }}
             
-            # Clean up after each language test
-            rm -rf models/tts/*
-          done
-
-      # VITS Tests
-      - name: Run VITS tests
-        if: github.event.inputs.run_vits == 'true' || github.event_name == 'push'
+          - name: "English Fairseq Custom-Voice single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_fairseq == 'true' && github.event.inputs.run_custom_voice == 'true' || github.event_name == 'push' }}
+            
+          - name: "English Fairseq Custom-Voice batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_fairseq == 'true' && github.event.inputs.run_batch_tests == 'true' && github.event.inputs.run_custom_voice == 'true' }}
+            
+          # VITS tests
+          - name: "English VITS single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits'
+            enabled: ${{ github.event.inputs.run_vits == 'true' && github.event.inputs.run_single_tests == 'true' || github.event_name == 'push' }}
+            
+          - name: "English VITS batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits'
+            enabled: ${{ github.event.inputs.run_vits == 'true' && github.event.inputs.run_batch_tests == 'true' }}
+            
+          - name: "English VITS Custom-Voice single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_vits == 'true' && github.event.inputs.run_custom_voice == 'true' || github.event_name == 'push' }}
+            
+          - name: "English VITS Custom-Voice batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_vits == 'true' && github.event.inputs.run_batch_tests == 'true' && github.event.inputs.run_custom_voice == 'true' }}
+            
+          # YourTTS tests
+          - name: "English YourTTS single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts'
+            enabled: ${{ github.event.inputs.run_yourtts == 'true' && github.event.inputs.run_single_tests == 'true' || github.event_name == 'push' }}
+            
+          - name: "English YourTTS batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts'
+            enabled: ${{ github.event.inputs.run_yourtts == 'true' && github.event.inputs.run_batch_tests == 'true' }}
+            
+          - name: "English YourTTS Custom-Voice single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_yourtts == 'true' && github.event.inputs.run_custom_voice == 'true' || github.event_name == 'push' }}
+            
+          - name: "English YourTTS Custom-Voice batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_yourtts == 'true' && github.event.inputs.run_batch_tests == 'true' && github.event.inputs.run_custom_voice == 'true' }}
+            
+          # XTTS tests
+          - name: "English XTTS single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts'
+            enabled: ${{ github.event.inputs.run_xtts == 'true' && github.event.inputs.run_single_tests == 'true' || github.event_name == 'push' }}
+            
+          - name: "English XTTS batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts'
+            enabled: ${{ github.event.inputs.run_xtts == 'true' && github.event.inputs.run_batch_tests == 'true' }}
+            
+          - name: "English XTTS Custom-Voice single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_xtts == 'true' && github.event.inputs.run_custom_voice == 'true' || github.event_name == 'push' }}
+            
+          - name: "English XTTS Custom-Voice batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_xtts == 'true' && github.event.inputs.run_batch_tests == 'true' && github.event.inputs.run_custom_voice == 'true' }}
+            
+          - name: "English XTTS fine-tuned single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained'
+            enabled: ${{ github.event.inputs.run_xtts == 'true' && github.event.inputs.run_fine_tuned_xtts == 'true' }}
+            
+          - name: "English XTTS fine-tuned batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained'
+            enabled: ${{ github.event.inputs.run_xtts == 'true' && github.event.inputs.run_fine_tuned_xtts == 'true' && github.event.inputs.run_batch_tests == 'true' }}
+            
+          # Bark tests
+          - name: "English Bark single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark'
+            enabled: ${{ github.event.inputs.run_bark == 'true' && github.event.inputs.run_single_tests == 'true' }}
+            
+          - name: "English Bark batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark'
+            enabled: ${{ github.event.inputs.run_bark == 'true' && github.event.inputs.run_batch_tests == 'true' }}
+            
+          - name: "English Bark Custom-Voice single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_bark == 'true' && github.event.inputs.run_custom_voice == 'true' }}
+            
+          - name: "English Bark Custom-Voice batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+            enabled: ${{ github.event.inputs.run_bark == 'true' && github.event.inputs.run_batch_tests == 'true' && github.event.inputs.run_custom_voice == 'true' }}
+            
+          # Multi-language tests (for demo - add more as needed)
+          - name: "Urdu Devanagari Fairseq single test"
+            command: '--headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq'
+            enabled: ${{ contains(github.event.inputs.test_languages, 'urd-script_devanagari') && github.event.inputs.run_fairseq == 'true' && github.event.inputs.run_single_tests == 'true' }}
+            
+steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Setup environment
         run: |
-          # Parse languages
-          IFS=',' read -ra LANGUAGES <<< "${{ github.event.inputs.test_languages || 'eng' }}"
+          # Create test files if they don't exist
+          mkdir -p tools/workflow-testing
+          if [ ! -f "tools/workflow-testing/test1.txt" ]; then
+            CONTENT=$'"This is a test sentence," she said. "Here'\''s another one."\nThe quick brown fox jumps over the lazy dog, but the cat stays still.\nNumbers like 123,456.78 should also be tested.\nWhat happens if we use question marks? Or exclamation points!\n"Nested quotes are '\''interesting'\''," he noted.'
+            echo -e "$CONTENT" > tools/workflow-testing/test1.txt
+            echo -e "$CONTENT" > tools/workflow-testing/test2.txt
+            echo -e "$CONTENT" > tools/workflow-testing/test3.txt
+            echo -e "$CONTENT" > tools/workflow-testing/test4.txt
+            echo -e "$CONTENT" > tools/workflow-testing/test5.txt
+          fi
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install the system packages
+        run: |
+          sudo apt-get update &&
+          sudo apt-get install -y gcc g++ make wget git calibre ffmpeg nodejs espeak espeak-ng rustc cargo libmecab-dev mecab mecab-ipadic-utf8 curl libsndfile1-dev libc-dev sox &&
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - &&
+          sudo apt-get install -y nodejs &&
+          sudo apt-get clean &&
+          sudo rm -rf /var/lib/apt/lists/*
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install the python requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip cache purge
+          pip install -r requirements.txt
+
+      - name: pip Install unict
+        run: pip install unidic-lite unidic
+
+      - name: Download the unict dictionary
+        run: |
+          python -m unidic download
+          mkdir -p ~/.local/share/unidic
+
+      - name: Set UniDic environment variable
+        run: echo "UNIDIC_DIR=$HOME/.local/share/unidic" >> $GITHUB_ENV
+      
+      - name: Help command test
+        if: ${{ matrix.enabled }}
+        run: python app.py ${{ matrix.command }}
+      
+      - name: Run test
+        if: ${{ matrix.enabled && matrix.command != '--help' }}
+        run: |
+          # Clear models/tts directory if it exists
+          if [ -d "models/tts" ]; then
+            rm -rf models/tts/*
+          fi
           
-          for lang in "${LANGUAGES[@]}"; do
-            # Single file test
-            if [[ "${{ github.event.inputs.run_single_tests }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
-              echo "Running VITS single test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
-            fi
-            
-            # Batch test
-            if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
-              echo "Running VITS batch test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine vits
-            fi
-            
-            # Custom voice tests
-            if [[ "${{ github.event.inputs.run_custom_voice }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
-              echo "Running VITS custom voice single test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-              
-              if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
-                echo "Running VITS custom voice batch test for $lang"
-                python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-              fi
-            fi
-            
-            # Clean up after each language test
-            rm -rf models/tts/*
-          done
-
-      # YourTTS Tests
-      - name: Run YourTTS tests
-        if: github.event.inputs.run_yourtts == 'true' || github.event_name == 'push'
-        run: |
-          # Parse languages
-          IFS=',' read -ra LANGUAGES <<< "${{ github.event.inputs.test_languages || 'eng' }}"
+          # Run the test
+          python app.py ${{ matrix.command }}
           
-          for lang in "${LANGUAGES[@]}"; do
-            # Single file test
-            if [[ "${{ github.event.inputs.run_single_tests }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
-              echo "Running YourTTS single test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
-            fi
-            
-            # Batch test
-            if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
-              echo "Running YourTTS batch test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine yourtts
-            fi
-            
-            # Custom voice tests
-            if [[ "${{ github.event.inputs.run_custom_voice }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
-              echo "Running YourTTS custom voice single test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-              
-              if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
-                echo "Running YourTTS custom voice batch test for $lang"
-                python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-              fi
-            fi
-            
-            # Clean up after each language test
-            rm -rf models/tts/*
-          done
-
-      # XTTS Tests
-      - name: Run XTTS tests
-        if: github.event.inputs.run_xtts == 'true' || github.event_name == 'push'
-        run: |
-          # Parse languages
-          IFS=',' read -ra LANGUAGES <<< "${{ github.event.inputs.test_languages || 'eng' }}"
+          # Create output directory for artifacts
+          mkdir -p workflow-outputs/${{ matrix.name }}
           
-          for lang in "${LANGUAGES[@]}"; do
-            # Single file test
-            if [[ "${{ github.event.inputs.run_single_tests }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
-              echo "Running XTTS single test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts
-            fi
-            
-            # Batch test
-            if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
-              echo "Running XTTS batch test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine xtts
-            fi
-            
-            # Custom voice tests
-            if [[ "${{ github.event.inputs.run_custom_voice }}" == "true" || "${{ github.event_name }}" == "push" ]]; then
-              echo "Running XTTS custom voice single test for $lang"
-              python app.py --headless --script_mode full_docker --language "$lang" --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-              
-              if [[ "${{ github.event.inputs.run_batch_tests }}" == "true" ]]; then
-                echo "Running XTTS custom voice batch test for $lang"
-                python app.py --headless --script_mode full_docker --language "$lang" --ebooks_dir "tools/workflow-testing" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-              fi
-            fi
-            
-            # Clean up after each language test
-            rm -rf models/tts/*
-          done
+          # Copy output files if they exist
+          if [ -d "output" ]; then
+            cp -r output/* workflow-outputs/${{ matrix.name }}/
+          fi
+      
+      - name: Upload test outputs
+        if: ${{ github.event.inputs.upload_outputs == 'true' && matrix.enabled && matrix.command != '--help' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.name }}-outputs
+          path: workflow-outputs/${{ matrix.name }}
+          retention-days: 3
 
-      # Upload outputs
-      - name: Upload outputs
-        if: github.event.inputs.upload_outputs == 'true' || github.event_name == 'push'
+  custom_xtts_tests:
+    needs: setup
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.run_custom_xtts == 'true' && github.event.inputs.run_xtts == 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Setup environment
         run: |
-          zip -r audiobooks.zip audiobooks && curl -F "file=@audiobooks.zip" https://0x0.st
+          # Create test files if they don't exist
+          mkdir -p tools/workflow-testing
+          if [ ! -f "tools/workflow-testing/test1.txt" ]; then
+            CONTENT=$'"This is a test sentence," she said. "Here'\''s another one."\nThe quick brown fox jumps over the lazy dog, but the cat stays still.\nNumbers like 123,456.78 should also be tested.\nWhat happens if we use question marks? Or exclamation points!\n"Nested quotes are '\''interesting'\''," he noted.'
+            echo -e "$CONTENT" > tools/workflow-testing/test1.txt
+            echo -e "$CONTENT" > tools/workflow-testing/test2.txt
+            echo -e "$CONTENT" > tools/workflow-testing/test3.txt
+            echo -e "$CONTENT" > tools/workflow-testing/test4.txt
+            echo -e "$CONTENT" > tools/workflow-testing/test5.txt
+          fi
+      
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Install the system packages
+        run: |
+          sudo apt-get update &&
+          sudo apt-get install -y gcc g++ make wget git calibre ffmpeg nodejs espeak espeak-ng rustc cargo libmecab-dev mecab mecab-ipadic-utf8 curl libsndfile1-dev libc-dev sox &&
+          curl -fsSL https://deb.nodesource.com/setup_18.x | sudo bash - &&
+          sudo apt-get install -y nodejs &&
+          sudo apt-get clean &&
+          sudo rm -rf /var/lib/apt/lists/*
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install the python requirements
+        run: |
+          python -m pip install --upgrade pip
+          pip cache purge
+          pip install -r requirements.txt
+
+      - name: Create custom XTTS test zip
+        run: |
+          cp voices/eng/elder/male/DavidAttenborough_24000.wav ref.wav 
+          mkdir -p models/tts/tts_models--multilingual--multi-dataset--xtts_v2
+          # Download or setup necessary files for XTTS model
+          python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts
+          zip -j custom_xtts_test.zip models/tts/tts_models--multilingual--multi-dataset--xtts_v2/config.json models/tts/tts_models--multilingual--multi-dataset--xtts_v2/model.pth models/tts/tts_models--multilingual--multi-dataset--xtts_v2/vocab.json ref.wav
+          rm -f ref.wav
+
+      - name: Run custom XTTS single test
+        if: ${{ github.event.inputs.run_single_tests == 'true' }}
+        run: |
+          rm -rf models/tts/*
+          python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+          mkdir -p workflow-outputs/custom-xtts-single
+          if [ -d "output" ]; then
+            cp -r output/* workflow-outputs/custom-xtts-single/
+          fi
+
+      - name: Run custom XTTS batch test
+        if: ${{ github.event.inputs.run_batch_tests == 'true' }}
+        run: |
+          rm -rf models/tts/*
+          python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
+          mkdir -p workflow-outputs/custom-xtts-batch
+          if [ -d "output" ]; then
+            cp -r output/* workflow-outputs/custom-xtts-batch/
+          fi
+          
+      - name: Upload custom XTTS single outputs
+        if: ${{ github.event.inputs.upload_outputs == 'true' && github.event.inputs.run_single_tests == 'true' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: custom-xtts-single-outputs
+          path: workflow-outputs/custom-xtts-single
+          retention-days: 3
+          
+      - name: Upload custom XTTS batch outputs
+        if: ${{ github.event.inputs.upload_outputs == 'true' && github.event.inputs.run_batch_tests == 'true' }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: custom-xtts-batch-outputs
+          path: workflow-outputs/custom-xtts-batch
+          retention-days: 3
+
+  summary:
+    needs: [run_tests, custom_xtts_tests]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: echo "All tests completed"
