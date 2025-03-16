@@ -35,6 +35,18 @@ on:
         required: true
         default: 'eng'
         type: string
+  push:
+    branches:
+      - v25
+      - act-trigger
+    paths-ignore:
+      - CODE_OF_CONDUCT.md
+      - LICENSE
+      - README.md
+      - readme/**
+      - dockerfiles/**
+      - Notebooks/**
+  
 jobs:
   run-tts:
     runs-on: ubuntu-latest
