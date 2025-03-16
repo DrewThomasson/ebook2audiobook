@@ -189,4 +189,3 @@ jobs:
           name: audiobooks
           path: audiobooks/
           retention-days: 3
-          path: audiobooks/
