@@ -404,7 +404,9 @@ class TTSManager:
                             **fine_tuned_params
                         )
                     audio_data = result.get('wav')
-                    if audio_data is None:
+                    if audio_data is not None:
+                        audio_data = audio_data.tolist()
+                    else:
                         error = f'No audio waveform found in convert_sentence_to_audio() result: {result}'
                         print(error)
                         return False
