@@ -40,37 +40,37 @@ default_xtts_settings = {
     "use_deepspeed": False,
     "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav'],
     "voices": {
-        'ClaribelDervla': 'Claribel Dervla', 'DaisyStudious': 'Daisy Studious', 'GracieWise': 'Gracie Wise',
-        'TammieEma': 'Tammie Ema', 'AlisonDietlinde': 'Alison Dietlinde', 'AnaFlorence': 'Ana Florence',
-        'AnnmarieNele': 'Annmarie Nele', 'AsyaAnara': 'Asya Anara', 'BrendaStern': 'Brenda Stern',
-        'GittaNikolina': 'Gitta Nikolina', 'HenrietteUsha': 'Henriette Usha', 'SofiaHellen': 'Sofia Hellen',
-        'TammyGrit': 'Tammy Grit', 'TanjaAdelina': 'Tanja Adelina', 'VjollcaJohnnie': 'Vjollca Johnnie',
-        'AndrewChipper': 'Andrew Chipper', 'BadrOdhiambo': 'Badr Odhiambo', 'DionisioSchuyler': 'Dionisio Schuyler',
-        'RoystonMin': 'Royston Min', 'ViktorEka': 'Viktor Eka', 'AbrahanMack': 'Abrahan Mack',
-        'AddeMichal': 'Adde Michal', 'BaldurSanjin': 'Baldur Sanjin', 'CraigGutsy': 'Craig Gutsy',
-        'DamienBlack': 'Damien Black', 'GilbertoMathias': 'Gilberto Mathias', 'IlkinUrbano': 'Ilkin Urbano',
-        'KazuhikoAtallah': 'Kazuhiko Atallah', 'LudvigMilivoj': 'Ludvig Milivoj', 'SuadQasim': 'Suad Qasim',
-        'TorcullDiarmuid': 'Torcull Diarmuid', 'ViktorMenelaos': 'Viktor Menelaos', 'ZacharieAimilios': 'Zacharie Aimilios',
-        'NovaHogarth': 'Nova Hogarth', 'MajaRuoho': 'Maja Ruoho', 'UtaObando': 'Uta Obando',
-        'LidiyaSzekeres': 'Lidiya Szekeres', 'ChandraMacFarland': 'Chandra MacFarland', 'SzofiGranger': 'Szofi Granger',
-        'CamillaHolmström': 'Camilla Holmström', 'LilyaStainthorpe': 'Lilya Stainthorpe', 'ZofijaKendrick': 'Zofija Kendrick',
-        'NarelleMoon': 'Narelle Moon', 'BarboraMacLean': 'Barbora MacLean', 'AlexandraHisakawa': 'Alexandra Hisakawa',
-        'AlmaMaría': 'Alma María', 'RosemaryOkafor': 'Rosemary Okafor', 'IgeBehringer': 'Ige Behringer',
-        'FilipTraverse': 'Filip Traverse', 'DamjanChapman': 'Damjan Chapman', 'WulfCarlevaro': 'Wulf Carlevaro',
-        'AaronDreschner': 'Aaron Dreschner', 'KumarDahl': 'Kumar Dahl', 'EugenioMataracı': 'Eugenio Mataracı',
-        'FerranSimen': 'Ferran Simen', 'XavierHayasaka': 'Xavier Hayasaka', 'LuisMoray': 'Luis Moray',
-        'MarcosRudaski': 'Marcos Rudaski'
+        "ClaribelDervla": "Claribel Dervla", "DaisyStudious": "Daisy Studious", "GracieWise": "Gracie Wise",
+        "TammieEma": "Tammie Ema", "AlisonDietlinde": "Alison Dietlinde", "AnaFlorence": "Ana Florence",
+        "AnnmarieNele": "Annmarie Nele", "AsyaAnara": "Asya Anara", "BrendaStern": "Brenda Stern",
+        "GittaNikolina": "Gitta Nikolina", "HenrietteUsha": "Henriette Usha", "SofiaHellen": "Sofia Hellen",
+        "TammyGrit": "Tammy Grit", "TanjaAdelina": "Tanja Adelina", "VjollcaJohnnie": "Vjollca Johnnie",
+        "AndrewChipper": "Andrew Chipper", "BadrOdhiambo": "Badr Odhiambo", "DionisioSchuyler": "Dionisio Schuyler",
+        "RoystonMin": "Royston Min", "ViktorEka": "Viktor Eka", "AbrahanMack": "Abrahan Mack",
+        "AddeMichal": "Adde Michal", "BaldurSanjin": "Baldur Sanjin", "CraigGutsy": "Craig Gutsy",
+        "DamienBlack": "Damien Black", "GilbertoMathias": "Gilberto Mathias", "IlkinUrbano": "Ilkin Urbano",
+        "KazuhikoAtallah": "Kazuhiko Atallah", "LudvigMilivoj": "Ludvig Milivoj", "SuadQasim": "Suad Qasim",
+        "TorcullDiarmuid": "Torcull Diarmuid", "ViktorMenelaos": "Viktor Menelaos", "ZacharieAimilios": "Zacharie Aimilios",
+        "NovaHogarth": "Nova Hogarth", "MajaRuoho": "Maja Ruoho", "UtaObando": "Uta Obando",
+        "LidiyaSzekeres": "Lidiya Szekeres", "ChandraMacFarland": "Chandra MacFarland", "SzofiGranger": "Szofi Granger",
+        "CamillaHolmström": "Camilla Holmström", "LilyaStainthorpe": "Lilya Stainthorpe", "ZofijaKendrick": "Zofija Kendrick",
+        "NarelleMoon": "Narelle Moon", "BarboraMacLean": "Barbora MacLean", "AlexandraHisakawa": "Alexandra Hisakawa",
+        "AlmaMaría": "Alma María", "RosemaryOkafor": "Rosemary Okafor", "IgeBehringer": "Ige Behringer",
+        "FilipTraverse": "Filip Traverse", "DamjanChapman": "Damjan Chapman", "WulfCarlevaro": "Wulf Carlevaro",
+        "AaronDreschner": "Aaron Dreschner", "KumarDahl": "Kumar Dahl", "EugenioMataracı": "Eugenio Mataracı",
+        "FerranSimen": "Ferran Simen", "XavierHayasaka": "Xavier Hayasaka", "LuisMoray": "Luis Moray",
+        "MarcosRudaski": "Marcos Rudaski"
     }
 }
 default_bark_settings = {
     "samplerate": 24000,
-    "files": ['coarse_2.pt'],
-    "voices": {}
+    "files": ["coarse_2.pt'],
+    "voices": {"KumarDahl": os.path.join(voices_dir, "eng", "adult", "male", "bark","KumarDahl", "KumarDahl.npz"}
 }
 default_vits_settings = {
     "samplerate": 22050,
     "files": ['config.json', 'model_file.pth', 'language_ids.json'],
-    "voices": {}
+    "voices": {)}
 }
 default_fairseq_settings = {
     "samplerate": 16000,
@@ -203,7 +203,7 @@ models = {
             "lang": "multi",
             "repo": "tts_models/multilingual/multi-dataset/bark",
             "sub": "",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDahl_{default_bark_settings['samplerate']}.wav"),
+            "voice": default_bark_settings['voice'],
             "files": default_bark_settings['files'],
             "samplerate": default_bark_settings['samplerate']
         }

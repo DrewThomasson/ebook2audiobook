@@ -441,8 +441,12 @@ class TTSManager:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
-                    voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
-                    bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
+                    if self.params['voice_path'] is not None:
+                        voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
+                        bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
+                    else:
+                        voice_key = re.sub(r'.npz$', '', os.path.basename(models[self.session['tts_engine']]['internal']['voice']))
+                        bark_dir = os.path.dirname(models[self.session['tts_engine']]['internal']['voice'])
                     speaker_argument = {"voice_dir": bark_dir, "speaker": voice_key}
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
