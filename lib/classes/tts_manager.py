@@ -445,7 +445,7 @@ class TTSManager:
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
-                            **speaker_argument,
+                            **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
@@ -500,8 +500,12 @@ class TTSManager:
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
                         else:
+                            speaker_argument = {}
+                            if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
+                                speaker_argument = {"speaker": 'p275'}
                             audio_data = self.params['tts'].tts(
-                                text=self.params['sentence']
+                                text=self.params['sentence'],
+                                **speaker_argument
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
