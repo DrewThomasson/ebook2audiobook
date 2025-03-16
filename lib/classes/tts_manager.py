@@ -440,7 +440,7 @@ class TTSManager:
                     print(msg)
                 else:
                     voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
-                    bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark', voice_key)
+                    bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
                     speaker_argument = {"voice_dir": bark_dir, "speaker": voice_key}
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
