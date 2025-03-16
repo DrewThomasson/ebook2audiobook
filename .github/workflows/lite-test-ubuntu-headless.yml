@@ -184,7 +184,9 @@ jobs:
 #        run: rm -rf models/tts/*
 
       - name: Upload audiobooks as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: audiobooks
+          path: audiobooks/
+          retention-days: 3
           path: audiobooks/
