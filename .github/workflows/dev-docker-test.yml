@@ -22,6 +22,8 @@ on:
 jobs:
   build:
     runs-on: [self-hosted, Linux, ARM64]
+    env:
+      DOCKER_TAG: ${{ inputs.docker_tag || 'dev_v25' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -80,14 +82,14 @@ jobs:
         shell: bash
         run: |
           docker buildx build --platform linux/amd64,linux/arm64 \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
             --push .
 
       # Build and Push Dev_v25 Docker Image for Windows using PowerShell
       - name: Build and Push Dev_25 Docker Image (multi-arch, Windows)
         if: runner.os == 'Windows'
         shell: powershell
-        run: docker buildx build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --push .
+        run: docker buildx build --platform linux/amd64,linux/arm64 -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --push .
 
   run_tests:
     needs: build
