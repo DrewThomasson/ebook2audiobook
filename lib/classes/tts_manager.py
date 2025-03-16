@@ -501,8 +501,9 @@ class TTSManager:
                                 os.remove(tmp_out_wav)
                         else:
                             speaker_argument = {}
-                            if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
-                                speaker_argument = {"speaker": 'p275'}
+                            if 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
+                                if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
+                                    speaker_argument = {"speaker": 'p262'}
                             audio_data = self.params['tts'].tts(
                                 text=self.params['sentence'],
                                 **speaker_argument
