@@ -8,7 +8,6 @@ import subprocess
 import tempfile
 import torch
 import torchaudio
-import torchaudio.transforms as T
 import threading
 import uuid
 
@@ -250,6 +249,11 @@ class TTSManager:
         if self.params['tts'] is not None:
             loaded_tts[tts_key] = self.params['tts']
             
+    def _wav_to_npz(self, wav_path, npz_path):
+        audio, sr = sf.read(wav_path)
+        np.savez(npz_path, audio=audio, sample_rate=24000)
+        print(f"Saved NPZ file: {npz_path}")
+        
     def _detect_gender(self, voice_path):
         try:
             sample_rate, signal = wav.read(voice_path)
@@ -301,13 +305,30 @@ class TTSManager:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
 
     def _trim_end(self, audio_data, sample_rate, silence_threshold=0.001, buffer_seconds=0.001):
-        device = audio_data.device
-        non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
-        if len(non_silent_indices) == 0:
-            return torch.tensor([], device=device)
-        end_index = non_silent_indices[-1] + int(buffer_seconds * sample_rate)
-        trimmed_audio = audio_data[:end_index]
-        return trimmed_audio
+        # Ensure audio_data is a PyTorch tensor
+        if isinstance(audio_data, list):  
+            audio_data = torch.tensor(audio_data)  # Convert list to tensor
+        
+        if isinstance(audio_data, torch.Tensor):
+            if audio_data.is_cuda:
+                audio_data = audio_data.cpu()  # Move to CPU if it's on CUDA
+            
+            # Detect non-silent indices
+            non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
+
+            if len(non_silent_indices) == 0:
+                return torch.tensor([], device=audio_data.device)
+
+            # Determine the trimming index
+            end_index = non_silent_indices[-1] + int(buffer_seconds * sample_rate)
+
+            # Trim the audio, keeping it as a tensor
+            trimmed_audio = audio_data[:end_index]
+
+            return trimmed_audio
+        
+        # If somehow the input is still incorrect, raise an error
+        raise TypeError("audio_data must be a PyTorch tensor or a list of numerical values.")
 
     def _normalize_audio(self, input_file, output_file, samplerate):
         filter_complex = (
@@ -342,11 +363,6 @@ class TTSManager:
         except subprocess.CalledProcessError as e:
             print(f"_normalize_audio() error: {input_file}: {e}")
             return False
-
-    def _wav_to_npz(self, wav_path, npz_path):
-        audio, sr = sf.read(wav_path)
-        np.savez(npz_path, audio=audio, sample_rate=24000)
-        print(f"Saved NPZ file: {npz_path}")
 
     def convert_sentence_to_audio(self):
         try:
