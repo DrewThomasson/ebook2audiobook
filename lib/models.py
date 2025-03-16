@@ -203,7 +203,7 @@ models = {
             "lang": "multi",
             "repo": "tts_models/multilingual/multi-dataset/bark",
             "sub": "",
-            "voice": None,
+            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDahl_{default_bark_settings['samplerate']}.wav"),
             "files": default_bark_settings['files'],
             "samplerate": default_bark_settings['samplerate']
         }
