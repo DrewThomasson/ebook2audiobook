@@ -409,9 +409,8 @@ class TTSManager:
                         print(error)
                         return False
                 else:
-                    voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
-                    if voice_key in default_xtts_settings['voices']:
-                        speaker_argument = {"speaker": default_xtts_settings['voices'][voice_key]}
+                    if self.params['voice_path'] in default_xtts_settings['voices'].values():
+                        speaker_argument = {"speaker": self.params['voice_path']}
                     else:
                         if self.params['current_voice_path'] != self.params['voice_path']:
                             self.params['current_voice_path'] = self.params['voice_path']
@@ -440,14 +439,10 @@ class TTSManager:
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
                 else:
-                    if self.params['voice_path'] is not None:
-                        voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
-                        self.params['voice_path'] = os.path.join(os.path.dirname(self.params['voice_path']), 'bark', voice_key)
-                        speaker_argument = {"voice_dir": self.params['voice_path'], "speaker": voice_key}
-                    else:
-                        speaker_argument = {}
+                    voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
+                    bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark', voice_key)
+                    speaker_argument = {"voice_dir": bark_dir, "speaker": voice_key}
                     with torch.no_grad():
-                        speaker_argument = {}
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
                             **speaker_argument,
