@@ -182,3 +182,9 @@ jobs:
 
 #      - name: Wipe models/tts folder
 #        run: rm -rf models/tts/*
+
+      - name: Upload audiobooks as artifact
+              uses: actions/upload-artifact@v3
+              with:
+                name: audiobooks
+                path: audiobooks/
