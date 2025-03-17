@@ -6,54 +6,22 @@ on:
       - act-trigger
   workflow_dispatch:
     inputs:
-      run_english_fairseq_single:
-        description: 'Run English Fairseq single test'
-        type: boolean
-        default: false
-      run_english_fairseq_batch:
-        description: 'Run English Fairseq batch test'
-        type: boolean
-        default: false
-      run_english_fairseq_custom_voice_single:
-        description: 'Run English Fairseq Custom Voice single test'
-        type: boolean
-        default: false
-      run_unusual_fairseq_single:
-        description: 'Run Unusual Fairseq single test'
-        type: boolean
-        default: false
-      run_unusual_fairseq_custom_voice_single:
-        description: 'Run Unusual Fairseq Custom Voice single test'
-        type: boolean
-        default: false
-      run_english_vits_single:
-        description: 'Run English VITS single test'
-        type: boolean
-        default: false
-      run_english_vits_custom_voice_single:
-        description: 'Run English VITS Custom Voice single test'
-        type: boolean
-        default: false
-      run_english_yourtts_single:
-        description: 'Run English YourTTS single test'
-        type: boolean
-        default: false
-      run_english_yourtts_custom_voice_single:
-        description: 'Run English YourTTS Custom Voice single test'
-        type: boolean
-        default: false
-      run_default_single:
-        description: 'Run Default single test'
-        type: boolean
-        default: false
-      run_default_xtts_custom_voice_single:
-        description: 'Run Default XTTS Custom Voice single test'
-        type: boolean
-        default: false
-      run_all_tests:
-        description: 'Run all tests'
-        type: boolean
-        default: false
+      test_group:
+        description: 'Select test group to run'
+        type: choice
+        options:
+          - all
+          - english_fairseq
+          - unusual_fairseq
+          - english_vits_yourtts
+          - default_xtts
+          - custom
+        default: 'all'
+      custom_tests:
+        description: 'Custom test selection (comma-separated, e.g.: eng_fairseq_single,eng_vits_single)'
+        type: string
+        required: false
+        default: ''
 
 jobs:
   setup:
@@ -63,75 +31,39 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.run_all_tests }}" == "true" ]]; then
-            echo "test_matrix=["
-            echo '"english_fairseq_single",'
-            echo '"english_fairseq_batch",'
-            echo '"english_fairseq_custom_voice_single",'
-            echo '"unusual_fairseq_single",'
-            echo '"unusual_fairseq_custom_voice_single",'
-            echo '"english_vits_single",'
-            echo '"english_vits_custom_voice_single",'
-            echo '"english_yourtts_single",'
-            echo '"english_yourtts_custom_voice_single",'
-            echo '"default_single",'
-            echo '"default_xtts_custom_voice_single"'
-            echo "]" | tr -d '\n'
-          elif [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            echo "test_matrix=[" > matrix.txt
-            if [[ "${{ github.event.inputs.run_english_fairseq_single }}" == "true" ]]; then
-              echo '"english_fairseq_single",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_english_fairseq_batch }}" == "true" ]]; then
-              echo '"english_fairseq_batch",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_english_fairseq_custom_voice_single }}" == "true" ]]; then
-              echo '"english_fairseq_custom_voice_single",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_unusual_fairseq_single }}" == "true" ]]; then
-              echo '"unusual_fairseq_single",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_unusual_fairseq_custom_voice_single }}" == "true" ]]; then
-              echo '"unusual_fairseq_custom_voice_single",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_english_vits_single }}" == "true" ]]; then
-              echo '"english_vits_single",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_english_vits_custom_voice_single }}" == "true" ]]; then
-              echo '"english_vits_custom_voice_single",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_english_yourtts_single }}" == "true" ]]; then
-              echo '"english_yourtts_single",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_english_yourtts_custom_voice_single }}" == "true" ]]; then
-              echo '"english_yourtts_custom_voice_single",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_default_single }}" == "true" ]]; then
-              echo '"default_single",' >> matrix.txt
-            fi
-            if [[ "${{ github.event.inputs.run_default_xtts_custom_voice_single }}" == "true" ]]; then
-              echo '"default_xtts_custom_voice_single",' >> matrix.txt
-            fi
-            # Remove trailing comma if present
-            sed -i '$ s/,$//' matrix.txt
-            echo "]" >> matrix.txt
-            cat matrix.txt | tr -d '\n'
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            case "${{ github.event.inputs.test_group }}" in
+              "all")
+                echo "test_matrix=[\"eng_fairseq_single\",\"eng_fairseq_batch\",\"eng_fairseq_custom_voice\",\"unusual_fairseq_single\",\"unusual_fairseq_custom_voice\",\"eng_vits_single\",\"eng_vits_custom_voice\",\"eng_yourtts_single\",\"eng_yourtts_custom_voice\",\"default_single\",\"default_xtts_custom_voice\"]" >> $GITHUB_OUTPUT
+                ;;
+              "english_fairseq")
+                echo "test_matrix=[\"eng_fairseq_single\",\"eng_fairseq_batch\",\"eng_fairseq_custom_voice\"]" >> $GITHUB_OUTPUT
+                ;;
+              "unusual_fairseq")
+                echo "test_matrix=[\"unusual_fairseq_single\",\"unusual_fairseq_custom_voice\"]" >> $GITHUB_OUTPUT
+                ;;
+              "english_vits_yourtts")
+                echo "test_matrix=[\"eng_vits_single\",\"eng_vits_custom_voice\",\"eng_yourtts_single\",\"eng_yourtts_custom_voice\"]" >> $GITHUB_OUTPUT
+                ;;
+              "default_xtts")
+                echo "test_matrix=[\"default_single\",\"default_xtts_custom_voice\"]" >> $GITHUB_OUTPUT
+                ;;
+              "custom")
+                # Parse comma-separated list into a proper JSON array
+                CUSTOM_TESTS="${{ github.event.inputs.custom_tests }}"
+                if [[ -z "$CUSTOM_TESTS" ]]; then
+                  echo "test_matrix=[]" >> $GITHUB_OUTPUT
+                else
+                  # Convert comma-separated string to JSON array
+                  JSON_ARRAY=$(echo "$CUSTOM_TESTS" | sed 's/,/","/g')
+                  echo "test_matrix=[\"$JSON_ARRAY\"]" >> $GITHUB_OUTPUT
+                fi
+                ;;
+            esac
           else
             # For push events, run all tests
-            echo "test_matrix=["
-            echo '"english_fairseq_single",'
-            echo '"english_fairseq_batch",'
-            echo '"english_fairseq_custom_voice_single",'
-            echo '"unusual_fairseq_single",'
-            echo '"unusual_fairseq_custom_voice_single",'
-            echo '"english_vits_single",'
-            echo '"english_vits_custom_voice_single",'
-            echo '"english_yourtts_single",'
-            echo '"english_yourtts_custom_voice_single",'
-            echo '"default_single",'
-            echo '"default_xtts_custom_voice_single"'
-            echo "]" | tr -d '\n'
-          fi >> $GITHUB_OUTPUT
+            echo "test_matrix=[\"eng_fairseq_single\",\"eng_fairseq_batch\",\"eng_fairseq_custom_voice\",\"unusual_fairseq_single\",\"unusual_fairseq_custom_voice\",\"eng_vits_single\",\"eng_vits_custom_voice\",\"eng_yourtts_single\",\"eng_yourtts_custom_voice\",\"default_single\",\"default_xtts_custom_voice\"]" >> $GITHUB_OUTPUT
+          fi
 
   run-tests:
     needs: setup
@@ -200,17 +132,17 @@ jobs:
 
       # English Fairseq single test
       - name: English Fairseq headless single test
-        if: ${{ matrix.test == 'english_fairseq_single' }}
+        if: ${{ matrix.test == 'eng_fairseq_single' }}
         run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
 
       # English Fairseq batch test
       - name: English Fairseq headless batch test
-        if: ${{ matrix.test == 'english_fairseq_batch' }}
+        if: ${{ matrix.test == 'eng_fairseq_batch' }}
         run: python app.py --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine fairseq
 
       # English Fairseq Custom-Voice single test
       - name: English Fairseq Custom-Voice headless single test
-        if: ${{ matrix.test == 'english_fairseq_custom_voice_single' }}
+        if: ${{ matrix.test == 'eng_fairseq_custom_voice' }}
         run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       # Unusual Fairseq single test
@@ -224,47 +156,47 @@ jobs:
 
       # Unusual Fairseq Custom-Voice single test
       - name: Wipe models/tts folder before unusual fairseq custom voice test
-        if: ${{ matrix.test == 'unusual_fairseq_custom_voice_single' }}
+        if: ${{ matrix.test == 'unusual_fairseq_custom_voice' }}
         run: rm -rf models/tts/*
 
       - name: Unusual Fairseq Custom-Voice headless single test
-        if: ${{ matrix.test == 'unusual_fairseq_custom_voice_single' }}
+        if: ${{ matrix.test == 'unusual_fairseq_custom_voice' }}
         run: python app.py --headless --script_mode full_docker --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       # English Vits single test
       - name: Wipe models/tts folder before vits test
-        if: ${{ matrix.test == 'english_vits_single' }}
+        if: ${{ matrix.test == 'eng_vits_single' }}
         run: rm -rf models/tts/*
 
       - name: English Vits headless single test
-        if: ${{ matrix.test == 'english_vits_single' }}
+        if: ${{ matrix.test == 'eng_vits_single' }}
         run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits
 
       # English Vits Custom-Voice single test
       - name: Wipe models/tts folder before vits custom voice test
-        if: ${{ matrix.test == 'english_vits_custom_voice_single' }}
+        if: ${{ matrix.test == 'eng_vits_custom_voice' }}
         run: rm -rf models/tts/*
 
       - name: English Vits Custom-Voice headless single test
-        if: ${{ matrix.test == 'english_vits_custom_voice_single' }}
+        if: ${{ matrix.test == 'eng_vits_custom_voice' }}
         run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine vits --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       # English Yourtts single test
       - name: Wipe models/tts folder before yourtts test
-        if: ${{ matrix.test == 'english_yourtts_single' }}
+        if: ${{ matrix.test == 'eng_yourtts_single' }}
         run: rm -rf models/tts/*
 
       - name: English Yourtts headless single test
-        if: ${{ matrix.test == 'english_yourtts_single' }}
+        if: ${{ matrix.test == 'eng_yourtts_single' }}
         run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
 
       # English Yourtts Custom-Voice single test
       - name: Wipe models/tts folder before yourtts custom voice test
-        if: ${{ matrix.test == 'english_yourtts_custom_voice_single' }}
+        if: ${{ matrix.test == 'eng_yourtts_custom_voice' }}
         run: rm -rf models/tts/*
 
       - name: English Yourtts Custom-Voice headless single test
-        if: ${{ matrix.test == 'english_yourtts_custom_voice_single' }}
+        if: ${{ matrix.test == 'eng_yourtts_custom_voice' }}
         run: python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       # Default single test
@@ -278,9 +210,9 @@ jobs:
 
       # Default xtts Custom-Voice single test
       - name: Wipe models/tts folder before default xtts custom voice test
-        if: ${{ matrix.test == 'default_xtts_custom_voice_single' }}
+        if: ${{ matrix.test == 'default_xtts_custom_voice' }}
         run: rm -rf models/tts/*
 
       - name: Default xtts headless Custom-Voice single test
-        if: ${{ matrix.test == 'default_xtts_custom_voice_single' }}
+        if: ${{ matrix.test == 'default_xtts_custom_voice' }}
         run: python app.py --headless --script_mode full_docker --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
