@@ -10,7 +10,7 @@ on:
       tts_engine:
         description: 'TTS Engine to use'
         required: false
-        default: 'fairseq'
+        default: 'bark'
         type: choice
         options:
           - all
@@ -47,6 +47,16 @@ on:
         required: false
         default: 'true'
         type: boolean
+  push:
+    branches:
+      - v25
+    paths-ignore:
+      - CODE_OF_CONDUCT.md
+      - LICENSE
+      - README.md
+      - readme/**
+      - dockerfiles/**
+      - Notebooks/**
 
 jobs:
   build:
