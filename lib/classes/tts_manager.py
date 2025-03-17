@@ -126,11 +126,11 @@ class TTSManager:
                                     if self._normalize_audio(file_path, output_file, samplerate):
                                         # for Bark
                                         if samplerate == 24000:
-                                            bark_voice_dir = voice_key
-                                            npz_dir = os.path.join(base_dir, 'bark', bark_voice_dir)
+                                            bark_dir = os.path.join(base_dir, 'bark')
+                                            npz_dir = os.path.join(bark_dir, voice_key)
                                             os.makedirs(npz_dir, exist_ok=True)
-                                            bark_file = os.path.join(npz_dir, 'voice.npz')
-                                            self._wav_to_npz(output_file, bark_file)
+                                            npz_file = os.path.join(npz_dir, f'{voice_key}.npz')
+                                            self._wav_to_npz(output_file, npz_file)
                                     else:
                                         break
                                 if os.path.exists(file_path):
@@ -442,8 +442,15 @@ class TTSManager:
                     print(msg)
                 else:
                     if self.params['voice_path'] is not None:
-                        voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
-                        bark_dir = os.path.dirname(self.params['voice_path'])
+                        if self.params['current_voice_path'] != self.params['voice_path']:
+                            self.params['current_voice_path'] = self.params['voice_path']
+                            voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
+                            bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
+                            npz_dir = os.path.join(bark_dir, voice_key)
+                            npz_file = os.path.join(npz_dir, f'{voice_key}.npz')
+                            if not os.path.exists(npz_file):
+                                os.makedirs(npz_dir, exist_ok=True)
+                                self._wav_to_npz(output_file, npz_file)
                     else:
                         voice_key = re.sub(r'.npz$', '', os.path.basename(models[self.session['tts_engine']]['internal']['voice']))
                         bark_dir = os.path.dirname(models[self.session['tts_engine']]['internal']['voice'])
