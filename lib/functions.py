@@ -365,15 +365,15 @@ def math2word(text, lang, lang_iso1, tts_engine):
         except Exception as e:
             return False
 
-    def rep_num(match, lang_iso1):
+    def rep_num(match):
         number = match.group().strip().replace(",", "")
         try:
             if "." in number or "e" in number or "E" in number:
                 number_value = float(number)
             else:
                 number_value = int(number)
-            number_in_words = num2words(number_value, lang_iso1)
-            return f" {number_in_words} "
+            number_in_words = num2words(number_value, lang=lang_iso1)
+            return f" {number_in_words}"
         except Exception as e:
             print(f"Error converting number: {number}, Error: {e}")
             return f"{number}"
@@ -411,7 +411,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
         if is_num2words_compat:
             # Pattern 2: Split big numbers into groups of 4
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
-            text = re.sub(number_pattern, lambda match: rep_num(match, lang_iso1), text)
+            text = re.sub(number_pattern, rep_num, text)
         else:
             # Pattern 2: Split big numbers into groups of 2
             text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
@@ -441,8 +441,9 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(r'\t+', lambda m: ' ' * len(m.group()), text)
     # replace roman numbers by digits
     text = replace_roman_numbers(text)
-    # Pattern 1: Add a space between UTF-8 characters and numbers
-    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+    if tts_engine == XTTSv2:
+        # Pattern 1: Add a space between UTF-8 characters and numbers
+        text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
     # Replace math symbols with words
     text = math2word(text, lang, lang_iso1, tts_engine)
     return text
@@ -509,15 +510,15 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         script.decompose()
     # Normalize lines and remove unnecessary spaces and switch special chars
     text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
-    # Rule 1: Ensure spaces before & after punctuation
-    #pattern_space = re.escape(''.join(punctuation_list))
-    # Step 1: Ensure space before and after punctuation (excluding `,` and `.`)
-    #punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-    #text = re.sub(punctuation_pattern_space, r' \1 ', text)
-    # Rule 2: Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-    # Step 2: Ensure space before and after `,` and `.` only when NOT between numbers
-    text = re.sub(comma_dot_pattern, r' \1 ', text)
+    if tts_engine == XTTSv2:
+        # Ensure spaces before & after punctuation
+        pattern_space = re.escape(''.join(punctuation_list))
+        # Ensure space before and after punctuation (excluding `,` and `.`)
+        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+        text = re.sub(comma_dot_pattern, r' \1 ', text)
     if not text.strip():
         chapter_sentences = []
     else:
@@ -609,41 +610,6 @@ def get_chapters(epubBook, session):
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
         return None, None
-r"""
-def get_sentences(phoneme_list, max_tokens):
-    sentences = []
-    current_sentence = ""
-    current_phoneme_count = 0
-    for phoneme in phoneme_list:
-        part_phoneme_count = len(phoneme.split())
-        # Always append to current sentence unless punctuation is hit
-        if current_phoneme_count + part_phoneme_count > max_tokens:
-            # Ensure we finalize the sentence at punctuation, not a space
-            if any(current_sentence.endswith(punc) for punc in punctuation_split):
-                sentences.append(current_sentence.strip())
-                current_sentence = phoneme
-                current_phoneme_count = part_phoneme_count
-            else:
-                # Look back and split at last punctuation instead of splitting randomly
-                last_punc_index = max(
-                    (current_sentence.rfind(punc) for punc in punctuation_split if punc in current_sentence),
-                    default=-1
-                )
-                if last_punc_index > -1:
-                    sentences.append(current_sentence[:last_punc_index+1].strip())  # Keep punctuation
-                    current_sentence = current_sentence[last_punc_index+1:].strip() + " " + phoneme
-                    current_phoneme_count = len(current_sentence.split())
-                else:
-                    sentences.append(current_sentence.strip())
-                    current_sentence = phoneme
-                    current_phoneme_count = part_phoneme_count
-        else:
-            current_sentence += (" " if current_sentence else "") + phoneme
-            current_phoneme_count += part_phoneme_count
-    if current_sentence:
-        sentences.append(current_sentence.strip())
-    return sentences
-"""
 
 def get_sentences(text, lang):
     max_tokens = language_mapping[lang]['max_tokens']
@@ -844,7 +810,7 @@ def convert_chapters_to_audio(session):
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
                         if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
                             #tts_manager.params['sentence'] = sentence.replace('.', '<pause>').replace(',', '<pause>')
-                            tts_manager.params['sentence'] = sentence.replace('.', '').replace(',', '…')
+                            tts_manager.params['sentence'] = sentence.replace('.', '…')
                         else:
                             tts_manager.params['sentence'] = sentence
                         if tts_manager.params['sentence'] != "":
