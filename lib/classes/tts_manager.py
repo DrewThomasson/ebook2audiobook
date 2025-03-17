@@ -452,8 +452,8 @@ class TTSManager:
                                 os.makedirs(npz_dir, exist_ok=True)
                                 self._wav_to_npz(self.params['voice_path'], npz_file)
                     else:
-                        voice_key = re.sub(r'.npz$', '', os.path.basename(models[self.session['tts_engine']]['internal']['voice']))
-                        bark_dir = os.path.dirname(models[self.session['tts_engine']]['internal']['voice'])
+                        voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['KumarDahl']))
+                        bark_dir = os.path.dirname(os.path.dirname(default_bark_settings['voices']['KumarDahl']))
                     speaker_argument = {"voice_dir": bark_dir, "speaker": voice_key}
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(

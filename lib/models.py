@@ -203,7 +203,7 @@ models = {
             "lang": "multi",
             "repo": "tts_models/multilingual/multi-dataset/bark",
             "sub": "",
-            "voice": default_bark_settings['voices']['KumarDahl'],
+            "voice": None,
             "files": default_bark_settings['files'],
             "samplerate": default_bark_settings['samplerate']
         }
