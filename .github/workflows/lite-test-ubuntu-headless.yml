@@ -38,7 +38,7 @@ on:
           - true
           - false
       language:
-        description: 'Language code'
+        description: 'Language code(s) - comma-separated (e.g., eng,spa,fra)'
         required: false
         default: 'eng'
         type: string
@@ -107,12 +107,29 @@ jobs:
           ENGINES=("fairseq" "vits" "yourtts" "xtts" "bark")
           MODES=("single" "batch")
           VOICES=("default" "custom")
-          LANGS=("${{ inputs.language }}")
+          
+          # Process language input - split by comma and trim whitespace
+          IFS=',' read -ra LANG_ARRAY <<< "${{ inputs.language }}"
+          LANGS=()
+          for lang in "${LANG_ARRAY[@]}"; do
+            # Trim whitespace
+            lang=$(echo "$lang" | xargs)
+            if [[ -n "$lang" ]]; then
+              LANGS+=("$lang")
+            fi
+          done
           
           # If "all" is specified for language, use the predefined list of languages
           if [[ "${{ inputs.language }}" == "all" ]]; then
             LANGS=("eng" "urd-script_devanagari")
           fi
+          
+          # If no valid languages provided, default to English
+          if [[ ${#LANGS[@]} -eq 0 ]]; then
+            LANGS=("eng")
+          fi
+          
+          echo "Languages to test: ${LANGS[*]}"
           
           # Filter based on input parameters
           if [[ "${{ inputs.tts_engine }}" != "all" ]]; then
@@ -169,21 +186,25 @@ jobs:
           # Add special XTTS fine-tuned tests if XTTS is included
           if [[ "${{ inputs.tts_engine }}" == "all" || "${{ inputs.tts_engine }}" == "xtts" ]]; then
             if [[ "${{ inputs.mode }}" == "all" || "${{ inputs.mode }}" == "single" ]]; then
-              # Only run these tests for eng language
-              if [[ "${{ inputs.language }}" == "all" || "${{ inputs.language }}" == "eng" ]]; then
-                NAME="English XTTS headless fine-tuned XTTS model single test"
-                CMD="--headless --script_mode full_docker --language eng --ebook \"tools/workflow-testing/test1.txt\" --tts_engine xtts --fine_tuned AiExplained"
-                echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
-              fi
+              # Run XTTS fine-tuned tests for each language that matches eng
+              for LANG in "${LANGS[@]}"; do
+                if [[ "$LANG" == "eng" ]]; then
+                  NAME="English XTTS headless fine-tuned XTTS model single test"
+                  CMD="--headless --script_mode full_docker --language eng --ebook \"tools/workflow-testing/test1.txt\" --tts_engine xtts --fine_tuned AiExplained"
+                  echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
+                fi
+              done
             fi
             
             if [[ "${{ inputs.mode }}" == "all" || "${{ inputs.mode }}" == "batch" ]]; then
-              # Only run these tests for eng language
-              if [[ "${{ inputs.language }}" == "all" || "${{ inputs.language }}" == "eng" ]]; then
-                NAME="English XTTS headless fine-tuned XTTS model batch test"
-                CMD="--headless --script_mode full_docker --language eng --ebooks_dir \"tools/workflow-testing\" --tts_engine xtts --fine_tuned AiExplained"
-                echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
-              fi
+              # Run XTTS fine-tuned tests for each language that matches eng
+              for LANG in "${LANGS[@]}"; do
+                if [[ "$LANG" == "eng" ]]; then
+                  NAME="English XTTS headless fine-tuned XTTS model batch test"
+                  CMD="--headless --script_mode full_docker --language eng --ebooks_dir \"tools/workflow-testing\" --tts_engine xtts --fine_tuned AiExplained"
+                  echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
+                fi
+              done
             fi
           fi
           
