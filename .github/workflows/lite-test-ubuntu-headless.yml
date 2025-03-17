@@ -5,7 +5,7 @@ on:
       docker_tag:
         description: 'Docker tag to use for testing'
         required: false
-        default: 'dev_v25'
+        default: 'lite_dev_v25'
         type: string
       tts_engine:
         description: 'TTS Engine to use'
@@ -51,22 +51,12 @@ on:
         required: false
         default: 'true'
         type: boolean
-  push:
-    branches:
-      - v25
-    paths-ignore:
-      - CODE_OF_CONDUCT.md
-      - LICENSE
-      - README.md
-      - readme/**
-      - dockerfiles/**
-      - Notebooks/**
 
 jobs:
   build:
     runs-on: [self-hosted, Linux, ARM64]
     env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'dev_v25' }}
+      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -98,16 +88,17 @@ jobs:
       # Build and Push Docker Image
       - name: Build and Push Docker Image
         run: |
-          docker buildx build --platform linux/amd64,linux/arm64 \
+          docker buildx build --platform linux/arm64 \
+            --build-arg SKIP_XTTS_TEST=true \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
             --push .
         shell: bash
 
   run_tests:
     needs: build
-    runs-on: self-hosted
+    runs-on: [self-hosted, Linux, ARM64]
     env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'dev_v25' }}
+      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
