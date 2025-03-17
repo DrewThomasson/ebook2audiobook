@@ -111,18 +111,14 @@ jobs:
           if docker pull ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}; then
             echo "🔄 Existing image found, updating with latest code instead of rebuilding"
             
-            # Save the original entrypoint from the existing image
-            ORIG_ENTRYPOINT=$(docker inspect --format='{{json .Config.Entrypoint}}' ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }})
-            echo "Original entrypoint: $ORIG_ENTRYPOINT"
-            
             # Create a temporary Dockerfile for updating
-            cat > Dockerfile.update << EOL
+            cat > Dockerfile.update << EOF
             FROM ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
             WORKDIR /app
             
             # Copy new code over the existing code
             COPY . .
-            EOL
+            EOF
             
             # Build and push the updated image
             docker buildx build --platform linux/arm64 \
