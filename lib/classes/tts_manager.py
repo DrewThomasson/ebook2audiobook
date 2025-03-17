@@ -343,7 +343,7 @@ class TTSManager:
             'equalizer=f=9000:t=q:w=2:g=-2,'
             'highpass=f=63[audio]'
         )
-        ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', input_file]
+        ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', input_file]
         ffmpeg_cmd += [
             '-filter_complex', filter_complex,
             '-map', '[audio]',
@@ -443,7 +443,7 @@ class TTSManager:
                 else:
                     if self.params['voice_path'] is not None:
                         voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
-                        bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
+                        bark_dir = os.path.dirname(self.params['voice_path'])
                     else:
                         voice_key = re.sub(r'.npz$', '', os.path.basename(models[self.session['tts_engine']]['internal']['voice']))
                         bark_dir = os.path.dirname(models[self.session['tts_engine']]['internal']['voice'])

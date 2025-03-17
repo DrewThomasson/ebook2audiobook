@@ -405,7 +405,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
     # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
     #number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+)?(?:[eE][-+]?\d+)?)(?!\S)'
     number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)(?!\S)'
-    if tts_engine != XTTSv2:
+    if tts_engine == VITS or tts_engine == FAIRSEQ or tts_engine == YOURTTS:
         if is_num2words_compat:
             # Pattern 2: Split big numbers into groups of 4
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
@@ -898,7 +898,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 file = file.replace("\\", "/")
                 f.write(f'file {file}\n')
         ffmpeg_cmd = [
-            shutil.which('ffmpeg'), '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
+            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', chapter_audio_file
         ]
         try:
@@ -942,7 +942,7 @@ def combine_audio_chapters(session):
                     file = file.replace("\\", "/")
                     f.write(f"file '{file}'\n")
             ffmpeg_cmd = [
-                shutil.which('ffmpeg'), '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
+                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
                 '-c:a', default_audio_proc_format, '-map_metadata', '-1', combined_chapters_file
             ]
             try:
@@ -1036,7 +1036,7 @@ def combine_audio_chapters(session):
             ffmpeg_final_file = final_file
             if session['cover'] is not None:
                 ffmpeg_cover = session['cover']                    
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a']
             elif session['output_format'] ==  'aac':
