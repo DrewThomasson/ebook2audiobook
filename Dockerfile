@@ -29,6 +29,9 @@ ENV UNIDIC_DIR=/root/.local/share/unidic
 FROM $BASE_IMAGE AS pytorch
 # Add parameter for PyTorch version with a default empty value
 ARG TORCH_VERSION=""
+# Add parameter to control whether to skip the XTTS test
+ARG SKIP_XTTS_TEST="false"
+
 
 # Extract torch versions from requirements.txt
 RUN TORCH_VERSION_REQ=$(grep -E "^torch==" requirements.txt | cut -d'=' -f3) && \
@@ -78,10 +81,16 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
         pip install --no-cache-dir --upgrade -r requirements.txt; \
     fi
 
-# Do a test run to pre-download and bake base models into the image
-RUN echo "This is a test sentence." > test.txt && \
-    python app.py --headless --ebook test.txt --script_mode full_docker && \
-    rm test.txt
+# Do a test run to pre-download and bake base models into the image, but only if SKIP_XTTS_TEST is not true
+RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
+        echo "Running XTTS test to pre-download models..." && \
+        echo "This is a test sentence." > test.txt && \
+        python app.py --headless --ebook test.txt --script_mode full_docker && \
+        rm test.txt; \
+    else \
+        echo "Skipping XTTS test run as requested."; \
+    fi
+
 # Expose the required port
 EXPOSE 7860
 # Start the Gradio app with the required flag
