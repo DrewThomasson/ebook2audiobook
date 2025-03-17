@@ -372,7 +372,6 @@ def math2word(text, lang, lang_iso1, tts_engine):
                 return num2words(float(number), lang=lang_iso1)
             return num2words(int(number), lang=lang_iso1)
         except Exception as e:
-            print(f'rep_num:() error: {e}')
             return number
 
     def replace_ambiguous(match):
@@ -404,6 +403,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
     # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
     #number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+)?(?:[eE][-+]?\d+)?)(?!\S)'
+    print(f'***************{text}***********')
     number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)(?!\S)'
     if tts_engine == VITS or tts_engine == FAIRSEQ or tts_engine == YOURTTS:
         if is_num2words_compat:
