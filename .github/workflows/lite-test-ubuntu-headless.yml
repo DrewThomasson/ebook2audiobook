@@ -111,14 +111,12 @@ jobs:
           if docker pull ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}; then
             echo "🔄 Existing image found, updating with latest code instead of rebuilding"
             
-            # Create a temporary Dockerfile for updating
-            cat > Dockerfile.update << EOF
-            FROM ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
-            WORKDIR /app
-            
-            # Copy new code over the existing code
-            COPY . .
-            EOF
+            # Create a temporary Dockerfile without using heredoc
+            echo "FROM ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}" > Dockerfile.update
+            echo "WORKDIR /app" >> Dockerfile.update
+            echo "" >> Dockerfile.update
+            echo "# Copy new code over the existing code" >> Dockerfile.update
+            echo "COPY . ." >> Dockerfile.update
             
             # Build and push the updated image
             docker buildx build --platform linux/arm64 \
@@ -133,6 +131,7 @@ jobs:
             echo "rebuild_needed=true" >> $GITHUB_OUTPUT
           fi
         shell: bash
+
 
       # Build and Push Docker Image (full rebuild)
       - name: Build and Push Docker Image
