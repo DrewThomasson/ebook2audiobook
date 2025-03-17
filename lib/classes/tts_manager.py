@@ -445,15 +445,14 @@ class TTSManager:
                         if self.params['current_voice_path'] != self.params['voice_path']:
                             self.params['current_voice_path'] = self.params['voice_path']
                             voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
-                            bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
-                            npz_dir = os.path.join(bark_dir, voice_key)
-                            npz_file = os.path.join(npz_dir, f'{voice_key}.npz')
+                            bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark', voice_key, 'speaker')
+                            npz_file = os.path.join(bark_dir, f'{voice_key}.npz')
                             if not os.path.exists(npz_file):
-                                os.makedirs(npz_dir, exist_ok=True)
+                                os.makedirs(bark_dir, exist_ok=True)
                                 self._wav_to_npz(self.params['voice_path'], npz_file)
                     else:
+                        bark_dir = os.path.dirname(f"{default_bark_settings['voices']['KumarDahl']}/")
                         voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['KumarDahl']))
-                        bark_dir = os.path.dirname(default_bark_settings['voices']['KumarDahl'])
                     speaker_argument = {"voice_dir": bark_dir, "speaker": voice_key}
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
