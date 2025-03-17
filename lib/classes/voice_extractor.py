@@ -38,7 +38,7 @@ class VoiceExtractor:
         try:
             self.wav_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
             ffmpeg_cmd = [
-                shutil.which('ffmpeg'), '-i', self.voice_file,
+                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
                 '-ac', '1',
                 '-y', self.wav_file
             ]
@@ -209,7 +209,7 @@ class VoiceExtractor:
     def _normalize_audio(self):
         try:                 
             process_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', self.voice_track]
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_track]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
                 'afftdn=nf=-70,'
