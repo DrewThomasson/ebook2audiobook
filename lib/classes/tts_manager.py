@@ -450,7 +450,7 @@ class TTSManager:
                             npz_file = os.path.join(npz_dir, f'{voice_key}.npz')
                             if not os.path.exists(npz_file):
                                 os.makedirs(npz_dir, exist_ok=True)
-                                self._wav_to_npz(output_file, npz_file)
+                                self._wav_to_npz(self.params['voice_path'], npz_file)
                     else:
                         voice_key = re.sub(r'.npz$', '', os.path.basename(models[self.session['tts_engine']]['internal']['voice']))
                         bark_dir = os.path.dirname(models[self.session['tts_engine']]['internal']['voice'])
