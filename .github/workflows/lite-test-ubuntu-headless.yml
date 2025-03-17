@@ -22,7 +22,7 @@ on:
       mode:
         description: 'Processing mode'
         required: false
-        default: 'all'
+        default: 'single'
         type: choice
         options:
           - all
@@ -31,7 +31,7 @@ on:
       use_custom_voice:
         description: 'Use custom voice'
         required: false
-        default: 'all'
+        default: 'false'
         type: choice
         options:
           - all
@@ -40,7 +40,7 @@ on:
       language:
         description: 'Language code'
         required: false
-        default: 'all'
+        default: 'eng'
         type: choice
         options:
           - all
