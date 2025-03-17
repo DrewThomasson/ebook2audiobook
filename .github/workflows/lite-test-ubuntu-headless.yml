@@ -142,8 +142,12 @@ jobs:
             fi
           fi
           
-          # Use jq to create the matrix
-          echo '[]' > matrix.json
+          # Create the matrix directly as a JSON string
+          echo "test_matrix=[]" >> $GITHUB_OUTPUT
+          
+          # Temporary file for building the matrix
+          touch matrix_temp.json
+          echo "[]" > matrix_temp.json
           
           # Generate regular tests
           for ENGINE in "${ENGINES[@]}"; do
@@ -171,8 +175,9 @@ jobs:
                   
                   CMD="--headless --script_mode full_docker --language ${LANG} --tts_engine ${ENGINE} ${EBOOK_PARAM} ${VOICE_PARAM}"
                   
-                  # Add to JSON array using jq
-                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix.json > temp.json && mv temp.json matrix.json
+                  # Safely append to the matrix
+                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix_temp.json > matrix_temp2.json
+                  mv matrix_temp2.json matrix_temp.json
                 done
               done
             done
@@ -186,7 +191,8 @@ jobs:
                 if [[ "$LANG" == "eng" ]]; then
                   NAME="English XTTS headless fine-tuned XTTS model single test"
                   CMD="--headless --script_mode full_docker --language eng --ebook tools/workflow-testing/test1.txt --tts_engine xtts --fine_tuned AiExplained"
-                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix.json > temp.json && mv temp.json matrix.json
+                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix_temp.json > matrix_temp2.json
+                  mv matrix_temp2.json matrix_temp.json
                 fi
               done
             fi
@@ -197,14 +203,19 @@ jobs:
                 if [[ "$LANG" == "eng" ]]; then
                   NAME="English XTTS headless fine-tuned XTTS model batch test"
                   CMD="--headless --script_mode full_docker --language eng --ebooks_dir tools/workflow-testing --tts_engine xtts --fine_tuned AiExplained"
-                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix.json > temp.json && mv temp.json matrix.json
+                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix_temp.json > matrix_temp2.json
+                  mv matrix_temp2.json matrix_temp.json
                 fi
               done
             fi
           fi
           
-          # Set output for test matrix
-          echo "test_matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
+          # Set output for test matrix in the correct format
+          MATRIX_JSON=$(cat matrix_temp.json)
+          # Use proper multiline string syntax for GITHUB_OUTPUT
+          echo "test_matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
           
           # Set output for help test
           if [[ "${{ inputs.run_help_test }}" == "true" ]]; then
