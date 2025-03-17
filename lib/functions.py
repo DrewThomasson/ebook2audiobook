@@ -809,7 +809,6 @@ def convert_chapters_to_audio(session):
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
                         if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
-                            #tts_manager.params['sentence'] = sentence.replace('.', '<pause>').replace(',', '<pause>')
                             tts_manager.params['sentence'] = sentence.replace('.', '…')
                         else:
                             tts_manager.params['sentence'] = sentence
