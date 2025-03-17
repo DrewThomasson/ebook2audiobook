@@ -53,6 +53,9 @@ jobs:
     runs-on: [self-hosted, Linux, ARM64]
     env:
       DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+    outputs:
+      test_matrix: ${{ steps.generate_matrix.outputs.test_matrix }}
+      help_test: ${{ steps.generate_matrix.outputs.help_test }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -90,18 +93,9 @@ jobs:
             --push .
         shell: bash
 
-  generate_test_matrix:
-    needs: build
-    runs-on: [self-hosted, Linux, ARM64]
-    outputs:
-      test_matrix: ${{ steps.set_matrix.outputs.test_matrix }}
-      help_test: ${{ steps.set_matrix.outputs.help_test }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        
+      # Generate test matrix directly in the build job
       - name: Generate test matrix
-        id: set_matrix
+        id: generate_matrix
         run: |
           # Define parameters for the test matrix
           ENGINES=("fairseq" "vits" "yourtts" "xtts" "bark")
@@ -221,8 +215,8 @@ jobs:
         shell: bash
 
   run_help_test:
-    needs: generate_test_matrix
-    if: needs.generate_test_matrix.outputs.help_test == 'true'
+    needs: build
+    if: needs.build.outputs.help_test == 'true'
     runs-on: [self-hosted, Linux, ARM64]
     env:
       DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
@@ -245,12 +239,12 @@ jobs:
         shell: bash
 
   run_tests:
-    needs: generate_test_matrix
+    needs: build
     runs-on: [self-hosted, Linux, ARM64]
     strategy:
       fail-fast: false
       matrix: 
-        test: ${{ fromJson(needs.generate_test_matrix.outputs.test_matrix) }}
+        test: ${{ fromJson(needs.build.outputs.test_matrix) }}
     env:
       DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
     steps:
