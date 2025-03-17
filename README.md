@@ -135,7 +135,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      Double click `Mac Ebook2Audiobook Launcher.command`  
    - **Windows**  
      ```bash
-     .\ebook2audiobook.cmd  # Run launch script or double click on it
+     ebook2audiobook.cmd  # Run launch script or double click on it
      ```
    - **Windows Launcher**  
      Double click `ebook2audiobook.exe`  
@@ -157,7 +157,7 @@ to let the web page reconnect to the new connection socket.**
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd --headless --ebook <path_to_ebook_file>
+     ebook2audiobook.cmd --headless --ebook <path_to_ebook_file>
          --voice [path_to_voice_file] --language [language_code]
      ```
      
@@ -177,7 +177,7 @@ to let the web page reconnect to the new connection socket.**
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
+     ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
          --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
      ```
 - **<custom_model_path>**: Path to `model_name.zip` file,
@@ -192,7 +192,7 @@ to let the web page reconnect to the new connection socket.**
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd --help
+     ebook2audiobook.cmd --help
      ```
    - **Or for all OS**
     ```python
