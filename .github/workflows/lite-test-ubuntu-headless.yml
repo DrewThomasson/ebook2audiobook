@@ -47,6 +47,14 @@ on:
         required: false
         default: 'true'
         type: boolean
+      rebuild_docker:
+        description: 'Rebuild Docker image from scratch'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
   push:
     branches:
       - v25
@@ -94,13 +102,47 @@ jobs:
         run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
         shell: bash
 
-      # Build and Push Docker Image
-      - name: Build and Push Docker Image
+      # Check if we should update existing image or rebuild
+      - name: Check for existing image and update if needed
+        if: github.event_name == 'workflow_dispatch' && inputs.rebuild_docker == 'false'
+        id: check_image
         run: |
+          echo "Checking for existing Docker image..."
+          if docker pull ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}; then
+            echo "🔄 Existing image found, updating with latest code instead of rebuilding"
+            
+            # Create a temporary Dockerfile without using heredoc
+            echo "FROM ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}" > Dockerfile.update
+            echo "WORKDIR /app" >> Dockerfile.update
+            echo "" >> Dockerfile.update
+            echo "# Copy new code over the existing code" >> Dockerfile.update
+            echo "COPY . ." >> Dockerfile.update
+            
+            # Build and push the updated image
+            docker buildx build --platform linux/arm64 \
+              -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
+              -f Dockerfile.update \
+              --push .
+            
+            echo "✅ Image updated successfully with latest code"
+            echo "rebuild_needed=false" >> $GITHUB_OUTPUT
+          else
+            echo "❗ No existing image found or pull failed, will perform full rebuild"
+            echo "rebuild_needed=true" >> $GITHUB_OUTPUT
+          fi
+        shell: bash
+
+
+      # Build and Push Docker Image (full rebuild)
+      - name: Build and Push Docker Image
+        if: github.event_name != 'workflow_dispatch' || inputs.rebuild_docker == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
+        run: |
+          echo "🏗️ Building full Docker image from scratch..."
           docker buildx build --platform linux/arm64 \
             --build-arg SKIP_XTTS_TEST=true \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
             --push .
+          echo "✅ Full image build and push complete"
         shell: bash
 
       # Generate test matrix directly in the build job
