@@ -148,8 +148,8 @@ jobs:
             fi
           fi
           
-          # Initialize JSON array for test matrix
-          echo "test_matrix=[" > matrix.json
+          # Use jq to create the matrix
+          echo '[]' > matrix.json
           
           # Generate regular tests
           for ENGINE in "${ENGINES[@]}"; do
@@ -162,22 +162,23 @@ jobs:
                   fi
                   NAME="${NAME} ${MODE} test"
                   
-                  CMD="--headless --script_mode full_docker --language ${LANG}"
-                  
+                  # Build command with proper escaping
                   if [[ "$MODE" == "single" ]]; then
-                    CMD="${CMD} --ebook \"tools/workflow-testing/test1.txt\""
+                    EBOOK_PARAM="--ebook tools/workflow-testing/test1.txt"
                   else
-                    CMD="${CMD} --ebooks_dir \"tools/workflow-testing\""
+                    EBOOK_PARAM="--ebooks_dir tools/workflow-testing"
                   fi
-                  
-                  CMD="${CMD} --tts_engine ${ENGINE}"
                   
                   if [[ "$VOICE" == "custom" ]]; then
-                    CMD="${CMD} --voice \"voices/eng/elder/male/DavidAttenborough_24000.wav\""
+                    VOICE_PARAM="--voice voices/eng/elder/male/DavidAttenborough_24000.wav"
+                  else
+                    VOICE_PARAM=""
                   fi
                   
-                  # Add to JSON array
-                  echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
+                  CMD="--headless --script_mode full_docker --language ${LANG} --tts_engine ${ENGINE} ${EBOOK_PARAM} ${VOICE_PARAM}"
+                  
+                  # Add to JSON array using jq
+                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix.json > temp.json && mv temp.json matrix.json
                 done
               done
             done
@@ -190,8 +191,8 @@ jobs:
               for LANG in "${LANGS[@]}"; do
                 if [[ "$LANG" == "eng" ]]; then
                   NAME="English XTTS headless fine-tuned XTTS model single test"
-                  CMD="--headless --script_mode full_docker --language eng --ebook \"tools/workflow-testing/test1.txt\" --tts_engine xtts --fine_tuned AiExplained"
-                  echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
+                  CMD="--headless --script_mode full_docker --language eng --ebook tools/workflow-testing/test1.txt --tts_engine xtts --fine_tuned AiExplained"
+                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix.json > temp.json && mv temp.json matrix.json
                 fi
               done
             fi
@@ -201,18 +202,12 @@ jobs:
               for LANG in "${LANGS[@]}"; do
                 if [[ "$LANG" == "eng" ]]; then
                   NAME="English XTTS headless fine-tuned XTTS model batch test"
-                  CMD="--headless --script_mode full_docker --language eng --ebooks_dir \"tools/workflow-testing\" --tts_engine xtts --fine_tuned AiExplained"
-                  echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
+                  CMD="--headless --script_mode full_docker --language eng --ebooks_dir tools/workflow-testing --tts_engine xtts --fine_tuned AiExplained"
+                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix.json > temp.json && mv temp.json matrix.json
                 fi
               done
             fi
           fi
-          
-          # Remove trailing comma if any tests were added
-          sed -i '$ s/,$//' matrix.json
-          
-          # Close JSON array
-          echo "]" >> matrix.json
           
           # Set output for test matrix
           echo "test_matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
