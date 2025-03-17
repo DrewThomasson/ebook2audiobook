@@ -90,34 +90,23 @@ jobs:
             --push .
         shell: bash
 
-  run_tests:
+  generate_test_matrix:
     needs: build
     runs-on: [self-hosted, Linux, ARM64]
-    env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+    outputs:
+      test_matrix: ${{ steps.set_matrix.outputs.test_matrix }}
+      help_test: ${{ steps.set_matrix.outputs.help_test }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         
-      - name: Prune all dangling Docker images
-        run: docker image prune -f
-      
-      - name: Setup test params
-        id: test_params
+      - name: Generate test matrix
+        id: set_matrix
         run: |
-          # Create test configurations based on parameters
-          
-          # Help test if enabled
-          if [[ "${{ inputs.run_help_test }}" == "true" ]]; then
-            TESTS+=("Help command test|--help")
-          fi
-          
           # Define parameters for the test matrix
           ENGINES=("fairseq" "vits" "yourtts" "xtts" "bark")
           MODES=("single" "batch")
           VOICES=("default" "custom")
-          
-          # Since language is now a string input, we can use it directly
           LANGS=("${{ inputs.language }}")
           
           # If "all" is specified for language, use the predefined list of languages
@@ -142,7 +131,10 @@ jobs:
             fi
           fi
           
-          # Generate tests based on combinations
+          # Initialize JSON array for test matrix
+          echo "test_matrix=[" > matrix.json
+          
+          # Generate regular tests
           for ENGINE in "${ENGINES[@]}"; do
             for MODE in "${MODES[@]}"; do
               for VOICE in "${VOICES[@]}"; do
@@ -167,7 +159,8 @@ jobs:
                     CMD="${CMD} --voice \"voices/eng/elder/male/DavidAttenborough_24000.wav\""
                   fi
                   
-                  TESTS+=("${NAME}|${CMD}")
+                  # Add to JSON array
+                  echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
                 done
               done
             done
@@ -178,44 +171,90 @@ jobs:
             if [[ "${{ inputs.mode }}" == "all" || "${{ inputs.mode }}" == "single" ]]; then
               # Only run these tests for eng language
               if [[ "${{ inputs.language }}" == "all" || "${{ inputs.language }}" == "eng" ]]; then
-                TESTS+=("English XTTS headless fine-tuned XTTS model single test|--headless --script_mode full_docker --language eng --ebook \"tools/workflow-testing/test1.txt\" --tts_engine xtts --fine_tuned AiExplained")
+                NAME="English XTTS headless fine-tuned XTTS model single test"
+                CMD="--headless --script_mode full_docker --language eng --ebook \"tools/workflow-testing/test1.txt\" --tts_engine xtts --fine_tuned AiExplained"
+                echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
               fi
             fi
             
             if [[ "${{ inputs.mode }}" == "all" || "${{ inputs.mode }}" == "batch" ]]; then
               # Only run these tests for eng language
               if [[ "${{ inputs.language }}" == "all" || "${{ inputs.language }}" == "eng" ]]; then
-                TESTS+=("English XTTS headless fine-tuned XTTS model batch test|--headless --script_mode full_docker --language eng --ebooks_dir \"tools/workflow-testing\" --tts_engine xtts --fine_tuned AiExplained")
+                NAME="English XTTS headless fine-tuned XTTS model batch test"
+                CMD="--headless --script_mode full_docker --language eng --ebooks_dir \"tools/workflow-testing\" --tts_engine xtts --fine_tuned AiExplained"
+                echo "  {\"name\": \"${NAME}\", \"cmd\": \"${CMD}\"}," >> matrix.json
               fi
             fi
           fi
           
-          echo "TESTS=${#TESTS[@]}" >> $GITHUB_ENV
+          # Remove trailing comma if any tests were added
+          sed -i '$ s/,$//' matrix.json
           
-          # Save tests to a file for use in next steps
-          for i in "${!TESTS[@]}"; do
-            echo "${TESTS[$i]}" >> test_list.txt
-          done
+          # Close JSON array
+          echo "]" >> matrix.json
+          
+          # Set output for test matrix
+          echo "test_matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
+          
+          # Set output for help test
+          if [[ "${{ inputs.run_help_test }}" == "true" ]]; then
+            echo "help_test=true" >> $GITHUB_OUTPUT
+          else
+            echo "help_test=false" >> $GITHUB_OUTPUT
+          fi
         shell: bash
-      
-      - name: Run all tests
+
+  run_help_test:
+    needs: generate_test_matrix
+    if: needs.generate_test_matrix.outputs.help_test == 'true'
+    runs-on: [self-hosted, Linux, ARM64]
+    env:
+      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+    steps:
+      - name: Prune dangling Docker images
+        run: docker image prune -f
+        
+      - name: Run help command test
         run: |
-          while IFS="|" read -r NAME CMD; do
-            echo "Running test: $NAME"
-            echo "Command: $CMD"
-            # First try with GPU
-            set +e
-            eval "docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} $CMD"
-            STATUS=$?
-            set -e
-            
-            # If GPU run failed, try without GPU
-            if [ $STATUS -ne 0 ]; then
-              echo "GPU run failed, trying without GPU support..."
-              eval "docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} $CMD"
-            fi
-            
-            # Prune images between tests to save space
-            docker image prune -f
-          done < test_list.txt
+          echo "Running help command test"
+          set +e
+          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --help
+          STATUS=$?
+          set -e
+          
+          if [ $STATUS -ne 0 ]; then
+            echo "GPU run failed, trying without GPU support..."
+            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --help
+          fi
+        shell: bash
+
+  run_tests:
+    needs: generate_test_matrix
+    runs-on: [self-hosted, Linux, ARM64]
+    strategy:
+      fail-fast: false
+      matrix: 
+        test: ${{ fromJson(needs.generate_test_matrix.outputs.test_matrix) }}
+    env:
+      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+    steps:
+      - name: Prune dangling Docker images
+        run: docker image prune -f
+      
+      - name: Run ${{ matrix.test.name }}
+        run: |
+          echo "Running test: ${{ matrix.test.name }}"
+          echo "Command: ${{ matrix.test.cmd }}"
+          
+          # First try with GPU
+          set +e
+          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
+          STATUS=$?
+          set -e
+          
+          # If GPU run failed, try without GPU
+          if [ $STATUS -ne 0 ]; then
+            echo "GPU run failed, trying without GPU support..."
+            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
+          fi
         shell: bash
