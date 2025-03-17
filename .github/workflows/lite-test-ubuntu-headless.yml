@@ -10,7 +10,7 @@ on:
       tts_engine:
         description: 'TTS Engine to use'
         required: false
-        default: 'all'
+        default: 'fairseq'
         type: choice
         options:
           - all
