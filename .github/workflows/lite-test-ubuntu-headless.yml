@@ -300,7 +300,6 @@ jobs:
             docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --help
           fi
         shell: bash
-
   run_tests:
     needs: build
     runs-on: [self-hosted, Linux, ARM64]
@@ -314,20 +313,46 @@ jobs:
       - name: Prune dangling Docker images
         run: docker image prune -f
       
-      - name: Run ${{ matrix.test.name }}
+      - name: Run ${{ matrix.test.name }} and preserve models
+        id: run_test
         run: |
           echo "Running test: ${{ matrix.test.name }}"
           echo "Command: ${{ matrix.test.cmd }}"
           
+          # Generate a unique container name for this test
+          CONTAINER_NAME="test_container_${{ github.run_id }}_${{ strategy.job-index }}"
+          
           # First try with GPU
           set +e
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
-          STATUS=$?
+          docker run --name $CONTAINER_NAME --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
+          TEST_STATUS=$?
           set -e
           
-          # If GPU run failed, try without GPU
-          if [ $STATUS -ne 0 ]; then
+          # If GPU run failed, try without GPU but keep the container
+          if [ $TEST_STATUS -ne 0 ]; then
             echo "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
+            # Remove the previous container
+            docker rm $CONTAINER_NAME || true
+            
+            # Run without GPU
+            docker run --name $CONTAINER_NAME --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
+            TEST_STATUS=$?
           fi
+          
+          # Always commit and push the container state to preserve models
+          echo "Committing container state to preserve downloaded models..."
+          docker commit $CONTAINER_NAME ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+          
+          # Login to Docker Hub again
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+          
+          # Push the image with the models
+          echo "Pushing image with downloaded models..."
+          docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+          
+          # Remove the container
+          docker rm $CONTAINER_NAME || true
+          
+          # Exit with the test's status
+          exit $TEST_STATUS
         shell: bash
