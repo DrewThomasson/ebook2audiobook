@@ -55,6 +55,14 @@ on:
         options:
           - 'true'
           - 'false'
+      save_outputs:
+        description: 'Cache previously loaded models.'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
   push:
     branches:
       - v25
@@ -78,6 +86,7 @@ jobs:
       LANGUAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.language || 'eng' }}
       RUN_HELP_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.run_help_test || 'true' }}
       REBUILD_DOCKER: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_docker || 'false' }}
+      SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
     outputs:
       test_matrix: ${{ steps.generate_matrix.outputs.test_matrix }}
       help_test: ${{ steps.generate_matrix.outputs.help_test }}
@@ -317,11 +326,12 @@ jobs:
         test: ${{ fromJson(needs.build.outputs.test_matrix) }}
     env:
       DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
+      SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
     steps:
       - name: Prune dangling Docker images
         run: docker image prune -f
       
-      - name: Run ${{ matrix.test.name }} and preserve models
+      - name: Run ${{ matrix.test.name }} test
         id: run_test
         run: |
           echo "Running test: ${{ matrix.test.name }}"
@@ -355,28 +365,34 @@ jobs:
             set -e
           fi
           
-          # Always commit and push the container state to preserve models, regardless of test status
-          echo "Test completed with status $TEST_STATUS"
-          echo "Committing container state to preserve downloaded models..."
-          
-          # Check if container exists before committing
-          if docker container inspect $CONTAINER_NAME &>/dev/null; then
-            docker commit $CONTAINER_NAME ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+          # Check if we should save the outputs
+          if [[ "${{ env.SAVE_OUTPUTS }}" == "true" ]]; then
+            echo "Test completed with status $TEST_STATUS"
+            echo "Saving container state with all outputs..."
             
-            # Login to Docker Hub again
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-            
-            # Push the image with the models
-            echo "Pushing image with downloaded models..."
-            docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
-            
-            # Remove the container
-            docker rm $CONTAINER_NAME || true
-            
-            echo "Container state preserved successfully."
+            # Check if container exists before committing
+            if docker container inspect $CONTAINER_NAME &>/dev/null; then
+              # Commit the container with all outputs
+              docker commit $CONTAINER_NAME ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+              
+              # Login to Docker Hub again
+              echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+              
+              # Push the image with all outputs
+              echo "Pushing image with all outputs..."
+              docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+              
+              echo "Container state with all outputs preserved successfully."
+            else
+              echo "Container $CONTAINER_NAME doesn't exist, skipping commit"
+            fi
           else
-            echo "Container $CONTAINER_NAME doesn't exist, skipping commit"
+            echo "Test completed with status $TEST_STATUS"
+            echo "SAVE_OUTPUTS is set to false - not preserving any outputs"
           fi
+          
+          # Remove the container
+          docker rm $CONTAINER_NAME || true
           
           # If the test failed, print the output again
           if [ $TEST_STATUS -ne 0 ]; then
@@ -385,7 +401,11 @@ jobs:
             echo "=============================================================="
             cat "$OUTPUT_FILE"
             echo "=============================================================="
-            echo "Test failed but container state has been preserved."
+            if [[ "${{ env.SAVE_OUTPUTS }}" == "true" ]]; then
+              echo "Test failed but container state has been preserved."
+            else
+              echo "Test failed and outputs were not preserved (SAVE_OUTPUTS=false)."
+            fi
           fi
           
           # Clean up the temporary file
