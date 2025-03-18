@@ -223,7 +223,6 @@ models = {
                 "mai/vits": ['uk'],
                 "mai_male/glow-tts": ['it'],
                 "mai_female/vits": ['pl'],
-                "kokoro/tacotron2-DDC": ['ja'],
                 "openbible/vits": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
                 "thorsten/tacotron2-DDC": ['de'],
                 "vctk/vits": ['en']
