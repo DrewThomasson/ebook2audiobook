@@ -138,7 +138,7 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      ebook2audiobook.cmd  # Run launch script or double click on it
      ```
    - **Windows Launcher**  
-     Double click `ebook2audiobook.exe`  
+     Double click `ebook2audiobook.cmd`  
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
 3. **For Public Link**:
    `python app.py --share` (all OS)
