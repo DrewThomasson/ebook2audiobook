@@ -207,7 +207,7 @@ class TTSManager:
                     iso_dir = self.session['language']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is not None:
-                    self.params['sample_rate'] = 16000 if sub == "mai/tacotron2-DDC" and self.session['language'] == 'spa' else self.params['sample_rate']
+                    #self.params['sample_rate'] = 16000 if sub == "mai/tacotron2-DDC" and self.session['language'] == 'spa' else self.params['sample_rate']
                     self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     tts_key = self.model_path
                     msg = f"Loading TTS {tts_key} model, it takes a while, please be patient..."
@@ -474,6 +474,7 @@ class TTSManager:
                     speaker_argument = {"speaker_embedding": default_bark_settings['voices']['KumarDahl']}
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
+                            text=self.params['sentence'],
                             history_prompt=self.params['sentence'],
                             **speaker_argument
                         )

@@ -586,7 +586,7 @@ def get_chapters(epubBook, session):
             return [], []        
         all_docs = all_docs[1:]  # Exclude the first document if needed
         doc_cache = {}
-        msg = '******* NOTE: IF YOU SEE THIS: "Character xx not found in the vocabulary." IT MEANS THE MODEL CANNOT INTERPRET AND WILL MAYBE GENERATE AN HALLUCINATION *******\n'
+        msg = '******* NOTE: THE WARNING "Character xx not found in the vocabulary." MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE AN HALLUCINATION *******\n'
         msg += '******* TO IMPROVE THIS MODEL IT NEEDS TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A MODEL TRAINING DEVELOPER *******'
         print(msg)
         for doc in all_docs:
