@@ -70,7 +70,7 @@ jobs:
   build:
     runs-on: [self-hosted, Linux, ARM64]
     env:
-      # Add default values for all parameters when triggered by push
+      # Add default values for all parameters when triggered by push, using the same defaults as workflow_dispatch
       DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
       TTS_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.tts_engine || 'bark' }}
       MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'single' }}
@@ -111,7 +111,8 @@ jobs:
 
       # Check if we should update existing image or rebuild
       - name: Check for existing image and update if needed
-        if: github.event_name == 'workflow_dispatch' && env.REBUILD_DOCKER == 'false'
+        # Note: For push events, default is to NOT rebuild (same as workflow_dispatch default)
+        if: env.REBUILD_DOCKER == 'false'
         id: check_image
         run: |
           echo "Checking for existing Docker image..."
@@ -142,7 +143,7 @@ jobs:
 
       # Build and Push Docker Image (full rebuild)
       - name: Build and Push Docker Image
-        if: github.event_name != 'workflow_dispatch' || env.REBUILD_DOCKER == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
+        if: env.REBUILD_DOCKER == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
         run: |
           echo "🏗️ Building full Docker image from scratch..."
           docker buildx build --platform linux/arm64 \
