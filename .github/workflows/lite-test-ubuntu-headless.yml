@@ -70,7 +70,14 @@ jobs:
   build:
     runs-on: [self-hosted, Linux, ARM64]
     env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+      # Add default values for all parameters when triggered by push
+      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
+      TTS_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.tts_engine || 'bark' }}
+      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'single' }}
+      USE_CUSTOM_VOICE: ${{ github.event_name == 'workflow_dispatch' && inputs.use_custom_voice || 'false' }}
+      LANGUAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.language || 'eng' }}
+      RUN_HELP_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.run_help_test || 'true' }}
+      REBUILD_DOCKER: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_docker || 'false' }}
     outputs:
       test_matrix: ${{ steps.generate_matrix.outputs.test_matrix }}
       help_test: ${{ steps.generate_matrix.outputs.help_test }}
@@ -104,7 +111,7 @@ jobs:
 
       # Check if we should update existing image or rebuild
       - name: Check for existing image and update if needed
-        if: github.event_name == 'workflow_dispatch' && inputs.rebuild_docker == 'false'
+        if: github.event_name == 'workflow_dispatch' && env.REBUILD_DOCKER == 'false'
         id: check_image
         run: |
           echo "Checking for existing Docker image..."
@@ -135,7 +142,7 @@ jobs:
 
       # Build and Push Docker Image (full rebuild)
       - name: Build and Push Docker Image
-        if: github.event_name != 'workflow_dispatch' || inputs.rebuild_docker == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
+        if: github.event_name != 'workflow_dispatch' || env.REBUILD_DOCKER == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
         run: |
           echo "🏗️ Building full Docker image from scratch..."
           docker buildx build --platform linux/arm64 \
@@ -155,7 +162,7 @@ jobs:
           VOICES=("default" "custom")
           
           # Process language input - split by comma and trim whitespace
-          IFS=',' read -ra LANG_ARRAY <<< "${{ inputs.language }}"
+          IFS=',' read -ra LANG_ARRAY <<< "${{ env.LANGUAGE }}"
           LANGS=()
           for lang in "${LANG_ARRAY[@]}"; do
             # Trim whitespace
@@ -166,7 +173,7 @@ jobs:
           done
           
           # If "all" is specified for language, use the predefined list of languages
-          if [[ "${{ inputs.language }}" == "all" ]]; then
+          if [[ "${{ env.LANGUAGE }}" == "all" ]]; then
             LANGS=("eng" "urd-script_devanagari")
           fi
           
@@ -178,16 +185,16 @@ jobs:
           echo "Languages to test: ${LANGS[*]}"
           
           # Filter based on input parameters
-          if [[ "${{ inputs.tts_engine }}" != "all" ]]; then
-            ENGINES=("${{ inputs.tts_engine }}")
+          if [[ "${{ env.TTS_ENGINE }}" != "all" ]]; then
+            ENGINES=("${{ env.TTS_ENGINE }}")
           fi
           
-          if [[ "${{ inputs.mode }}" != "all" ]]; then
-            MODES=("${{ inputs.mode }}")
+          if [[ "${{ env.MODE }}" != "all" ]]; then
+            MODES=("${{ env.MODE }}")
           fi
           
-          if [[ "${{ inputs.use_custom_voice }}" != "all" ]]; then
-            if [[ "${{ inputs.use_custom_voice }}" == "true" ]]; then
+          if [[ "${{ env.USE_CUSTOM_VOICE }}" != "all" ]]; then
+            if [[ "${{ env.USE_CUSTOM_VOICE }}" == "true" ]]; then
               VOICES=("custom")
             else
               VOICES=("default")
@@ -236,8 +243,8 @@ jobs:
           done
           
           # Add special XTTS fine-tuned tests if XTTS is included
-          if [[ "${{ inputs.tts_engine }}" == "all" || "${{ inputs.tts_engine }}" == "xtts" ]]; then
-            if [[ "${{ inputs.mode }}" == "all" || "${{ inputs.mode }}" == "single" ]]; then
+          if [[ "${{ env.TTS_ENGINE }}" == "all" || "${{ env.TTS_ENGINE }}" == "xtts" ]]; then
+            if [[ "${{ env.MODE }}" == "all" || "${{ env.MODE }}" == "single" ]]; then
               # Run XTTS fine-tuned tests for each language that matches eng
               for LANG in "${LANGS[@]}"; do
                 if [[ "$LANG" == "eng" ]]; then
@@ -249,7 +256,7 @@ jobs:
               done
             fi
             
-            if [[ "${{ inputs.mode }}" == "all" || "${{ inputs.mode }}" == "batch" ]]; then
+            if [[ "${{ env.MODE }}" == "all" || "${{ env.MODE }}" == "batch" ]]; then
               # Run XTTS fine-tuned tests for each language that matches eng
               for LANG in "${LANGS[@]}"; do
                 if [[ "$LANG" == "eng" ]]; then
@@ -270,7 +277,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
           
           # Set output for help test
-          if [[ "${{ inputs.run_help_test }}" == "true" ]]; then
+          if [[ "${{ env.RUN_HELP_TEST }}" == "true" ]]; then
             echo "help_test=true" >> $GITHUB_OUTPUT
           else
             echo "help_test=false" >> $GITHUB_OUTPUT
@@ -282,7 +289,7 @@ jobs:
     if: needs.build.outputs.help_test == 'true'
     runs-on: [self-hosted, Linux, ARM64]
     env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
     steps:
       - name: Prune dangling Docker images
         run: docker image prune -f
@@ -308,7 +315,7 @@ jobs:
       matrix: 
         test: ${{ fromJson(needs.build.outputs.test_matrix) }}
     env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
     steps:
       - name: Prune dangling Docker images
         run: docker image prune -f
