@@ -328,7 +328,7 @@ jobs:
                 # First try with GPU
                 set +e
                 docker run --name $CONTAINER_NAME --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
-                TEST_STATUS=${PIPESTATUS[0]}
+                TEST_STATUS=$?
                 set -e
                 
                 # If GPU run failed, try without GPU but keep the container
@@ -343,7 +343,7 @@ jobs:
                   set +e
                   # Run without GPU
                   docker run --name $CONTAINER_NAME --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
-                  TEST_STATUS=${PIPESTATUS[0]}
+                  TEST_STATUS=$?
                   set -e
                 fi
                 
