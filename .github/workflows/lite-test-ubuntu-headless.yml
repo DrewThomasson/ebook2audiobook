@@ -314,45 +314,75 @@ jobs:
         run: docker image prune -f
       
       - name: Run ${{ matrix.test.name }} and preserve models
-        id: run_test
-        run: |
-          echo "Running test: ${{ matrix.test.name }}"
-          echo "Command: ${{ matrix.test.cmd }}"
-          
-          # Generate a unique container name for this test
-          CONTAINER_NAME="test_container_${{ github.run_id }}_${{ strategy.job-index }}"
-          
-          # First try with GPU
-          set +e
-          docker run --name $CONTAINER_NAME --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
-          TEST_STATUS=$?
-          set -e
-          
-          # If GPU run failed, try without GPU but keep the container
-          if [ $TEST_STATUS -ne 0 ]; then
-            echo "GPU run failed, trying without GPU support..."
-            # Remove the previous container
-            docker rm $CONTAINER_NAME || true
-            
-            # Run without GPU
-            docker run --name $CONTAINER_NAME --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
-            TEST_STATUS=$?
-          fi
-          
-          # Always commit and push the container state to preserve models
-          echo "Committing container state to preserve downloaded models..."
-          docker commit $CONTAINER_NAME ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
-          
-          # Login to Docker Hub again
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          
-          # Push the image with the models
-          echo "Pushing image with downloaded models..."
-          docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
-          
-          # Remove the container
-          docker rm $CONTAINER_NAME || true
-          
-          # Exit with the test's status
-          exit $TEST_STATUS
-        shell: bash
+              id: run_test
+              run: |
+                echo "Running test: ${{ matrix.test.name }}"
+                echo "Command: ${{ matrix.test.cmd }}"
+                
+                # Generate a unique container name for this test
+                CONTAINER_NAME="test_container_${{ github.run_id }}_${{ strategy.job-index }}"
+                
+                # Create a temporary file to store the output
+                OUTPUT_FILE=$(mktemp)
+                
+                # First try with GPU
+                set +e
+                docker run --name $CONTAINER_NAME --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
+                TEST_STATUS=${PIPESTATUS[0]}
+                set -e
+                
+                # If GPU run failed, try without GPU but keep the container
+                if [ $TEST_STATUS -ne 0 ]; then
+                  echo "GPU run failed, trying without GPU support..."
+                  # Remove the previous container
+                  docker rm $CONTAINER_NAME || true
+                  
+                  # Clear the output file for the next run
+                  > "$OUTPUT_FILE"
+                  
+                  set +e
+                  # Run without GPU
+                  docker run --name $CONTAINER_NAME --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
+                  TEST_STATUS=${PIPESTATUS[0]}
+                  set -e
+                fi
+                
+                # Always commit and push the container state to preserve models, regardless of test status
+                echo "Test completed with status $TEST_STATUS"
+                echo "Committing container state to preserve downloaded models..."
+                
+                # Check if container exists before committing
+                if docker container inspect $CONTAINER_NAME &>/dev/null; then
+                  docker commit $CONTAINER_NAME ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+                  
+                  # Login to Docker Hub again
+                  echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+                  
+                  # Push the image with the models
+                  echo "Pushing image with downloaded models..."
+                  docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+                  
+                  # Remove the container
+                  docker rm $CONTAINER_NAME || true
+                  
+                  echo "Container state preserved successfully."
+                else
+                  echo "Container $CONTAINER_NAME doesn't exist, skipping commit"
+                fi
+                
+                # If the test failed, print the output again
+                if [ $TEST_STATUS -ne 0 ]; then
+                  echo "========================== TEST FAILED ==========================="
+                  echo "Here is the output from the failed run:"
+                  echo "=============================================================="
+                  cat "$OUTPUT_FILE"
+                  echo "=============================================================="
+                  echo "Test failed but container state has been preserved."
+                fi
+                
+                # Clean up the temporary file
+                rm -f "$OUTPUT_FILE"
+                
+                # Exit with the test's status
+                exit $TEST_STATUS
+              shell: bash
