@@ -55,6 +55,14 @@ on:
         options:
           - 'true'
           - 'false'
+      save_outputs:
+        description: 'Cache previously loaded models.'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
   push:
     branches:
       - v25
@@ -70,7 +78,15 @@ jobs:
   build:
     runs-on: [self-hosted, Linux, ARM64]
     env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+      # Add default values for all parameters when triggered by push, using the same defaults as workflow_dispatch
+      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
+      TTS_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.tts_engine || 'bark' }}
+      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'single' }}
+      USE_CUSTOM_VOICE: ${{ github.event_name == 'workflow_dispatch' && inputs.use_custom_voice || 'false' }}
+      LANGUAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.language || 'eng' }}
+      RUN_HELP_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.run_help_test || 'true' }}
+      REBUILD_DOCKER: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_docker || 'false' }}
+      SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
     outputs:
       test_matrix: ${{ steps.generate_matrix.outputs.test_matrix }}
       help_test: ${{ steps.generate_matrix.outputs.help_test }}
@@ -104,7 +120,8 @@ jobs:
 
       # Check if we should update existing image or rebuild
       - name: Check for existing image and update if needed
-        if: github.event_name == 'workflow_dispatch' && inputs.rebuild_docker == 'false'
+        # Note: For push events, default is to NOT rebuild (same as workflow_dispatch default)
+        if: env.REBUILD_DOCKER == 'false'
         id: check_image
         run: |
           echo "Checking for existing Docker image..."
@@ -135,7 +152,7 @@ jobs:
 
       # Build and Push Docker Image (full rebuild)
       - name: Build and Push Docker Image
-        if: github.event_name != 'workflow_dispatch' || inputs.rebuild_docker == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
+        if: env.REBUILD_DOCKER == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
         run: |
           echo "🏗️ Building full Docker image from scratch..."
           docker buildx build --platform linux/arm64 \
@@ -155,7 +172,7 @@ jobs:
           VOICES=("default" "custom")
           
           # Process language input - split by comma and trim whitespace
-          IFS=',' read -ra LANG_ARRAY <<< "${{ inputs.language }}"
+          IFS=',' read -ra LANG_ARRAY <<< "${{ env.LANGUAGE }}"
           LANGS=()
           for lang in "${LANG_ARRAY[@]}"; do
             # Trim whitespace
@@ -166,7 +183,7 @@ jobs:
           done
           
           # If "all" is specified for language, use the predefined list of languages
-          if [[ "${{ inputs.language }}" == "all" ]]; then
+          if [[ "${{ env.LANGUAGE }}" == "all" ]]; then
             LANGS=("eng" "urd-script_devanagari")
           fi
           
@@ -178,16 +195,16 @@ jobs:
           echo "Languages to test: ${LANGS[*]}"
           
           # Filter based on input parameters
-          if [[ "${{ inputs.tts_engine }}" != "all" ]]; then
-            ENGINES=("${{ inputs.tts_engine }}")
+          if [[ "${{ env.TTS_ENGINE }}" != "all" ]]; then
+            ENGINES=("${{ env.TTS_ENGINE }}")
           fi
           
-          if [[ "${{ inputs.mode }}" != "all" ]]; then
-            MODES=("${{ inputs.mode }}")
+          if [[ "${{ env.MODE }}" != "all" ]]; then
+            MODES=("${{ env.MODE }}")
           fi
           
-          if [[ "${{ inputs.use_custom_voice }}" != "all" ]]; then
-            if [[ "${{ inputs.use_custom_voice }}" == "true" ]]; then
+          if [[ "${{ env.USE_CUSTOM_VOICE }}" != "all" ]]; then
+            if [[ "${{ env.USE_CUSTOM_VOICE }}" == "true" ]]; then
               VOICES=("custom")
             else
               VOICES=("default")
@@ -236,8 +253,8 @@ jobs:
           done
           
           # Add special XTTS fine-tuned tests if XTTS is included
-          if [[ "${{ inputs.tts_engine }}" == "all" || "${{ inputs.tts_engine }}" == "xtts" ]]; then
-            if [[ "${{ inputs.mode }}" == "all" || "${{ inputs.mode }}" == "single" ]]; then
+          if [[ "${{ env.TTS_ENGINE }}" == "all" || "${{ env.TTS_ENGINE }}" == "xtts" ]]; then
+            if [[ "${{ env.MODE }}" == "all" || "${{ env.MODE }}" == "single" ]]; then
               # Run XTTS fine-tuned tests for each language that matches eng
               for LANG in "${LANGS[@]}"; do
                 if [[ "$LANG" == "eng" ]]; then
@@ -249,7 +266,7 @@ jobs:
               done
             fi
             
-            if [[ "${{ inputs.mode }}" == "all" || "${{ inputs.mode }}" == "batch" ]]; then
+            if [[ "${{ env.MODE }}" == "all" || "${{ env.MODE }}" == "batch" ]]; then
               # Run XTTS fine-tuned tests for each language that matches eng
               for LANG in "${LANGS[@]}"; do
                 if [[ "$LANG" == "eng" ]]; then
@@ -270,7 +287,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
           
           # Set output for help test
-          if [[ "${{ inputs.run_help_test }}" == "true" ]]; then
+          if [[ "${{ env.RUN_HELP_TEST }}" == "true" ]]; then
             echo "help_test=true" >> $GITHUB_OUTPUT
           else
             echo "help_test=false" >> $GITHUB_OUTPUT
@@ -282,7 +299,7 @@ jobs:
     if: needs.build.outputs.help_test == 'true'
     runs-on: [self-hosted, Linux, ARM64]
     env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
     steps:
       - name: Prune dangling Docker images
         run: docker image prune -f
@@ -308,12 +325,13 @@ jobs:
       matrix: 
         test: ${{ fromJson(needs.build.outputs.test_matrix) }}
     env:
-      DOCKER_TAG: ${{ inputs.docker_tag || 'lite_dev_v25' }}
+      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
+      SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
     steps:
       - name: Prune dangling Docker images
         run: docker image prune -f
       
-      - name: Run ${{ matrix.test.name }} and preserve models
+      - name: Run ${{ matrix.test.name }} test
         id: run_test
         run: |
           echo "Running test: ${{ matrix.test.name }}"
@@ -322,9 +340,12 @@ jobs:
           # Generate a unique container name for this test
           CONTAINER_NAME="test_container_${{ github.run_id }}_${{ strategy.job-index }}"
           
+          # Create a temporary file to store the output
+          OUTPUT_FILE=$(mktemp)
+          
           # First try with GPU
           set +e
-          docker run --name $CONTAINER_NAME --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
+          docker run --name $CONTAINER_NAME --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
           TEST_STATUS=$?
           set -e
           
@@ -334,24 +355,61 @@ jobs:
             # Remove the previous container
             docker rm $CONTAINER_NAME || true
             
+            # Clear the output file for the next run
+            > "$OUTPUT_FILE"
+            
+            set +e
             # Run without GPU
-            docker run --name $CONTAINER_NAME --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }}
+            docker run --name $CONTAINER_NAME --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
             TEST_STATUS=$?
+            set -e
           fi
           
-          # Always commit and push the container state to preserve models
-          echo "Committing container state to preserve downloaded models..."
-          docker commit $CONTAINER_NAME ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
-          
-          # Login to Docker Hub again
-          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-          
-          # Push the image with the models
-          echo "Pushing image with downloaded models..."
-          docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+          # Check if we should save the outputs
+          if [[ "${{ env.SAVE_OUTPUTS }}" == "true" ]]; then
+            echo "Test completed with status $TEST_STATUS"
+            echo "Saving container state with all outputs..."
+            
+            # Check if container exists before committing
+            if docker container inspect $CONTAINER_NAME &>/dev/null; then
+              # Commit the container with all outputs
+              docker commit $CONTAINER_NAME ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+              
+              # Login to Docker Hub again
+              echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+              
+              # Push the image with all outputs
+              echo "Pushing image with all outputs..."
+              docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
+              
+              echo "Container state with all outputs preserved successfully."
+            else
+              echo "Container $CONTAINER_NAME doesn't exist, skipping commit"
+            fi
+          else
+            echo "Test completed with status $TEST_STATUS"
+            echo "SAVE_OUTPUTS is set to false - not preserving any outputs"
+          fi
           
           # Remove the container
           docker rm $CONTAINER_NAME || true
+          
+          # If the test failed, print the output again
+          if [ $TEST_STATUS -ne 0 ]; then
+            echo "========================== TEST FAILED ==========================="
+            echo "Here is the output from the failed run:"
+            echo "=============================================================="
+            cat "$OUTPUT_FILE"
+            echo "=============================================================="
+            if [[ "${{ env.SAVE_OUTPUTS }}" == "true" ]]; then
+              echo "Test failed but container state has been preserved."
+            else
+              echo "Test failed and outputs were not preserved (SAVE_OUTPUTS=false)."
+            fi
+          fi
+          
+          # Clean up the temporary file
+          rm -f "$OUTPUT_FILE"
           
           # Exit with the test's status
           exit $TEST_STATUS
