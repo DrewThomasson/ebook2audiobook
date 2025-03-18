@@ -96,6 +96,7 @@ class TTSManager:
         tts_key = None
         self.params['tts'] = None
         self.params['current_voice_path'] = None
+        self.params['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
         if self.session['language'] in language_tts[XTTSv2].keys():
             if self.session['voice'] is not None and self.session['language'] != 'eng':
                 voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.session['voice']))
@@ -144,7 +145,6 @@ class TTSManager:
                             print(error)
                         if torch.cuda.is_available():
                             torch.cuda.empty_cache()
-        self.params['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
@@ -207,6 +207,7 @@ class TTSManager:
                     iso_dir = self.session['language']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is not None:
+                    self.params['sample_rate'] = 16000 if sub == "mai/tacotron2-DDC" and self.session['language'] == 'spa' else self.params['sample_rate']
                     self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     tts_key = self.model_path
                     msg = f"Loading TTS {tts_key} model, it takes a while, please be patient..."
@@ -473,7 +474,7 @@ class TTSManager:
                     speaker_argument = {"speaker_embedding": default_bark_settings['voices']['KumarDahl']}
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
-                            text=self.params['sentence'],
+                            history_prompt=self.params['sentence'],
                             **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
