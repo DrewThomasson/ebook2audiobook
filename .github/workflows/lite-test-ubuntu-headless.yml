@@ -12,57 +12,68 @@ jobs:
   run-and-upload:
     runs-on: [self-hosted, Linux, ARM64]
     steps:
-      - name: Create output directory with proper permissions
+      - name: Create output directory in shared location
         run: |
-          mkdir -p /tmp/audiobooks/cli
+          # Use a location that's definitely shared with Docker on Mac
+          mkdir -p /tmp/audiobooks
           chmod 777 -R /tmp/audiobooks
-          # Debug check
-          ls -la /tmp/audiobooks
+          echo "Created directory at $(pwd)"
+          echo "Contents of /tmp:"
+          ls -la /tmp
 
-      - name: Run Docker container with explicit volume mount
+      - name: Run Docker container with Docker-friendly volume mount
         run: |
           docker run --rm \
-            -v "$(pwd)/tmp/audiobooks:/app/audiobooks" \
+            -v /tmp:/tmp \
             ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ github.event.inputs.docker_tag }} \
             --headless --script_mode full_docker \
             --language eng \
             --ebook "tools/workflow-testing/test1.txt" \
-            --tts_engine fairseq
+            --tts_engine fairseq \
+            --output_path "/tmp/audiobooks"
 
       - name: Debug - Check directory contents
         run: |
-          echo "=== Current directory contents ==="
-          ls -la "$(pwd)/tmp/audiobooks" || echo "Directory not found"
-          echo "=== Tmp directory contents ==="
+          echo "=== Contents of /tmp ==="
+          ls -la /tmp
+          echo "=== Contents of /tmp/audiobooks ==="
           ls -la /tmp/audiobooks || echo "Directory not found"
+          echo "=== Finding any audiobook files ==="
+          find /tmp -name "*.m4b" || echo "No audiobook files found"
 
       - name: Create ZIP archive and upload
         run: |
-          # First try current directory
-          if [ -d "$(pwd)/tmp/audiobooks" ] && [ "$(find "$(pwd)/tmp/audiobooks" -type f)" ]; then
-            cd "$(pwd)"
-            echo "=== Creating ZIP archive from current directory ==="
-            zip -r audiobooks.zip tmp/audiobooks
-            ARCHIVE_PATH="$(pwd)/audiobooks.zip"
-          # Fall back to /tmp if needed
-          elif [ -d "/tmp/audiobooks" ] && [ "$(find "/tmp/audiobooks" -type f)" ]; then
+          if [ -d "/tmp/audiobooks" ] && [ "$(find /tmp/audiobooks -type f)" ]; then
             cd "/tmp"
-            echo "=== Creating ZIP archive from /tmp directory ==="
+            echo "=== Creating ZIP archive ==="
             zip -r audiobooks.zip audiobooks
-            ARCHIVE_PATH="/tmp/audiobooks.zip"
+            
+            echo "=== ZIP contents ==="
+            unzip -l audiobooks.zip
+            
+            if [[ -s "audiobooks.zip" ]]; then
+              echo "=== Uploading audiobooks.zip ==="
+              UPLOAD_URL=$(curl -F "file=@audiobooks.zip" https://0x0.st)
+              echo "✅ Upload complete! File available at: $UPLOAD_URL"
+            else
+              echo "❌ ZIP archive is empty!"
+              exit 1
+            fi
           else
-            echo "❌ No output files found in either location!"
-            exit 1
-          fi
-          
-          echo "=== ZIP contents ==="
-          unzip -l "$ARCHIVE_PATH"
-          
-          if [[ -s "$ARCHIVE_PATH" ]]; then
-            echo "=== Uploading $(basename "$ARCHIVE_PATH") ==="
-            UPLOAD_URL=$(curl -F "file=@$ARCHIVE_PATH" https://0x0.st)
-            echo "✅ Upload complete! File available at: $UPLOAD_URL"
-          else
-            echo "❌ ZIP archive is empty!"
-            exit 1
+            echo "❌ No output files found in /tmp/audiobooks!"
+            echo "Checking alternative locations..."
+            AUDIOBOOK_FILES=$(find /tmp -name "*.m4b" -o -name "*.mp3")
+            if [ -n "$AUDIOBOOK_FILES" ]; then
+              echo "Found files in alternative location:"
+              echo "$AUDIOBOOK_FILES"
+              # Create a directory to collect all audiobook files
+              mkdir -p /tmp/collected_audiobooks
+              cp $AUDIOBOOK_FILES /tmp/collected_audiobooks/
+              cd /tmp
+              zip -r audiobooks.zip collected_audiobooks
+              UPLOAD_URL=$(curl -F "file=@audiobooks.zip" https://0x0.st)
+              echo "✅ Upload complete! File available at: $UPLOAD_URL"
+            else
+              exit 1
+            fi
           fi
