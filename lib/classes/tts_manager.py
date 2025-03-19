@@ -200,14 +200,13 @@ class TTSManager:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
             else:
-                iso_dir = 'zh-CN' if self.session['language'] == 'zho' else self.session['language_iso1']
+                iso_dir = self.session['language_iso1']
                 sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is None:
                     iso_dir = self.session['language']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is not None:
-                    #self.params['sample_rate'] = 16000 if sub == "mai/tacotron2-DDC" and self.session['language'] == 'spa' else self.params['sample_rate']
                     self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     tts_key = self.model_path
                     msg = f"Loading TTS {tts_key} model, it takes a while, please be patient..."
