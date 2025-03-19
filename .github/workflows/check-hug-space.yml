@@ -1,0 +1,66 @@
+name: Check Hugging Face Space Status
+
+on:
+  workflow_dispatch:
+    inputs:
+      space_id:
+        description: 'Hugging Face Space ID (format: username/spacename)'
+        required: true
+        default: 'drewThomasson/ebook2audiobook'
+        type: string
+
+jobs:
+  check-space:
+    runs-on: ubuntu-latest
+    outputs:
+      is_running: ${{ steps.check-status.outputs.is_running }}
+      space_status: ${{ steps.check-status.outputs.space_status }}
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+      
+      - name: Check Space Status
+        id: check-status
+        run: |
+          python - <<EOF
+          import requests
+          import os
+          
+          def check_space_status(space_id):
+              url = f"https://huggingface.co/api/spaces/{space_id}/runtime"
+              response = requests.get(url)
+              
+              if response.status_code == 200:
+                  data = response.json()
+                  status = data.get("stage", "UNKNOWN")
+                  print(f"Space status: {status}")
+                  return status
+              else:
+                  print(f"Error: {response.status_code}")
+                  return "ERROR"
+          
+          space_id = "${{ github.event.inputs.space_id }}"
+          status = check_space_status(space_id)
+          
+          # Set output variables
+          is_running = "true" if status == "RUNNING" else "false"
+          print(f"::set-output name=is_running::{is_running}")
+          print(f"::set-output name=space_status::{status}")
+          EOF
+      
+      - name: Report Status
+        run: |
+          echo "Space: ${{ github.event.inputs.space_id }}"
+          echo "Status: ${{ steps.check-status.outputs.space_status }}"
+          echo "Is Running: ${{ steps.check-status.outputs.is_running }}"
