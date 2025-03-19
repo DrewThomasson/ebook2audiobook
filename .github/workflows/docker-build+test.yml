@@ -513,7 +513,6 @@ jobs:
 
 
 
-  
   huggingface-build:
     needs: run_tests
     if: ${{ !failure() || inputs.require_all_tests == false }}
@@ -584,47 +583,48 @@ jobs:
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace `
             --push .
 
-
   update-huggingface:
     runs-on: ubuntu-latest
     needs: huggingface-build
     steps:
-      - name: Checkout repository
+      - name: Checkout repository for VERSION.txt
         uses: actions/checkout@v3
-      
+        with:
+          path: source
+  
       - name: Set up Git
         run: |
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
-      
+  
       - name: Install Git LFS
         run: |
           curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
           sudo apt-get install git-lfs
           git lfs install
-      
+  
       - name: Configure Hugging Face credentials
         run: |
           echo "machine hf-prod.huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" > ~/.netrc
           echo "machine huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" >> ~/.netrc
-      
-      - name: Clone Hugging Face space
+  
+      - name: Clone and update Hugging Face space
         run: |
-          git clone https://huggingface.co/spaces/drewThomasson/ebook2audiobook_v2.0_Beta
-          cd ebook2audiobook_v2.0_Beta
-          
-      - name: Update file
-        run: |
-          cd ebook2audiobook_v2.0_Beta
-          
-          # Create updates.txt if it doesn't exist
+          # Clone the Hugging Face space repository (using the correct URL)
+          git clone https://huggingface.co/spaces/drewThomasson/ebook2audiobook
+          cd ebook2audiobook
+          # Read the version from VERSION.txt (from the source repo)
+          VERSION=$(cat ../source/VERSION.txt | tr -d ' \t\n')
+          echo "Updating README with version $VERSION"
+          # Update the version in the README file using sed
+          sed -i "s/^title: Ebook2audiobook v[0-9.]\+/title: Ebook2audiobook v$VERSION/" README.md
+          # Create or update updates.txt
           if [ ! -f updates.txt ]; then
             echo "update" > updates.txt
           else
             echo "update" >> updates.txt
           fi
-          
           # Commit and push changes
-          git add updates.txt
-          git commit -m "Add update entry to updates.txt"
+          git add README.md updates.txt
+          git commit -m "Update version in README to $VERSION and add update entry to updates.txt"
           git push
