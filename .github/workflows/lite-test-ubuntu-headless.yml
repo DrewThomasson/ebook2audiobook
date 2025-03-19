@@ -37,14 +37,28 @@ jobs:
             echo "No files found in /tmp/audiobooks!"
             exit 1
           fi
-
-      - name: Upload all audiobook files
+      
+      - name: Upload newest audiobook file
+        shell: bash
         run: |
-          for file in /tmp/audiobooks/*; do
-            if [ -f "$file" ]; then
-              echo "Uploading $file"
-              curl -F "file=@$file" https://0x0.st
-            else
-              echo "Skipping non-file: $file"
-            fi
-          done
+          newest=$(ls -t /tmp/audiobooks/* 2>/dev/null | head -n1)
+          if [[ -f "$newest" ]]; then
+            echo "Uploading newest file: $newest"
+            curl -F "file=@$newest" https://0x0.st
+          else
+            echo "No audiobook file found to upload!"
+            exit 1
+          fi
+
+
+
+#      - name: Upload all audiobook files
+#        run: |
+#          for file in /tmp/audiobooks/*; do
+#            if [ -f "$file" ]; then
+#              echo "Uploading $file"
+#              curl -F "file=@$file" https://0x0.st
+#            else
+#              echo "Skipping non-file: $file"
+#            fi
+#          done
