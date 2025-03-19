@@ -17,9 +17,14 @@ jobs:
           mkdir -p /tmp/audiobooks
           chmod 777 -R /tmp/audiobooks
 
-      - name: Run Docker container with bind mount
+      - name: Run Docker container with bind mount and debugging
         run: |
-          # Check if OUTDIR environment variable is supported
+          echo "=== Running Docker container ==="
+          
+          # Create log directory
+          mkdir -p /tmp/logs
+          
+          # Run with more verbose output
           docker run --rm \
             -v /tmp:/tmp \
             -e OUTDIR="/tmp/audiobooks" \
@@ -27,7 +32,18 @@ jobs:
             --headless --script_mode full_docker \
             --language eng \
             --ebook "tools/workflow-testing/test1.txt" \
-            --tts_engine fairseq
+            --tts_engine fairseq \
+            --verbose > /tmp/logs/docker_output.log 2>&1 || true
+          
+          echo "=== Docker run completed ==="
+          echo "=== Docker container logs ==="
+          cat /tmp/logs/docker_output.log
+          
+          echo "=== Contents of /tmp/audiobooks ==="
+          ls -la /tmp/audiobooks || echo "Directory does not exist"
+          
+          echo "=== All directories in /tmp ==="
+          find /tmp -type d -maxdepth 2
 
       - name: Search for generated audiobook files
         run: |
