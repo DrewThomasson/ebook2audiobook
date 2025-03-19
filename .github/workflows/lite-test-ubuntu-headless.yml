@@ -34,7 +34,7 @@ jobs:
           
           # Step 2: Find and package the audiobooks
           echo "=== Searching for generated audiobooks ==="
-          OUTDIR=${OUTDIR:-/app/output}
+          OUTDIR=${OUTDIR:-/app/audiobooks}
           find $OUTDIR -name "*.m4b" -o -name "*.mp3" > /tmp/found_files.txt
           
           if [ -s /tmp/found_files.txt ]; then
