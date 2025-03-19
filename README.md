@@ -8,25 +8,19 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
-Thanks to support ebook2audiobook developers!<br>
+### Thanks to support ebook2audiobook developers!
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
-Run locally
-<br>
-<br>
+### Run locally
 
 [![Docker Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
 </a>
-<br>
-<br>
-**Run Remotely**
-<br>
-<br>
 
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
+### Run Remotely
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
 [![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
 
 #### GUI Interface
