@@ -47,7 +47,7 @@ jobs:
             done < /tmp/found_files.txt
 
             # Step 2.5: install zip
-            apt-get install update
+            apt-get update
             apt-get install zip -y
             
             
