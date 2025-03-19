@@ -1,0 +1,57 @@
+name: Docker Image and Cache Cleanup
+on:
+  workflow_dispatch:
+    inputs:
+      runner_config:
+        description: 'Select runner'
+        required: true
+        default: '[self-hosted, Linux, ARM64]'
+        type: choice
+        options:
+          - '[self-hosted, Linux, ARM64]'
+          - '[self-hosted, X64, Windows, NVIDIA-GPU]'
+          - '[self-hosted, Linux, default, ARM64]'
+          - '[self-hosted, macOS, ARM64]'
+          - '[self-hosted]'
+
+jobs:
+  cleanup:
+    runs-on: >-
+      ${{
+        inputs.runner_config == '[self-hosted, Linux, ARM64]' && fromJSON('["self-hosted", "Linux", "ARM64"]') ||
+        inputs.runner_config == '[self-hosted, X64, Windows, NVIDIA-GPU]' && fromJSON('["self-hosted", "X64", "Windows", "NVIDIA-GPU"]') ||
+        inputs.runner_config == '[self-hosted, Linux, default, ARM64]' && fromJSON('["self-hosted", "Linux", "default", "ARM64"]') ||
+        inputs.runner_config == '[self-hosted, macOS, ARM64]' && fromJSON('["self-hosted", "macOS", "ARM64"]') ||
+        inputs.runner_config == '[self-hosted]' && fromJSON('["self-hosted"]')
+      }}
+
+    steps:
+      - name: System info
+        run: |
+          echo "Docker version:"
+          docker version
+          echo "Disk space before cleanup:"
+          df -h
+
+      - name: Safe Docker cleanup
+        run: |
+          echo "Removing dangling images..."
+          docker image prune -f
+          
+          echo "Removing unused buildx cache..."
+          docker buildx prune -f
+          
+          echo "Removing dangling volumes..."
+          docker volume prune -f
+          
+          echo "Removing dangling networks..."
+          docker network prune -f
+
+      - name: Check disk space after cleanup
+        run: |
+          echo "Disk space after cleanup:"
+          df -h
+          
+          echo "Remaining Docker resources:"
+          echo "Images:"
+          docker images
