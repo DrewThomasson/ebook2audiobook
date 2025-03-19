@@ -63,6 +63,11 @@ on:
         options:
           - 'true'
           - 'false'
+      custom_entrypoint:
+        description: 'Custom entrypoint (leave empty for default)'
+        required: false
+        default: ''
+        type: string
   push:
     branches:
       - v25
@@ -87,6 +92,7 @@ jobs:
       RUN_HELP_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.run_help_test || 'true' }}
       REBUILD_DOCKER: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_docker || 'false' }}
       SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
+      CUSTOM_ENTRYPOINT: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_entrypoint || '' }}
     outputs:
       test_matrix: ${{ steps.generate_matrix.outputs.test_matrix }}
       help_test: ${{ steps.generate_matrix.outputs.help_test }}
@@ -118,6 +124,64 @@ jobs:
         run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
         shell: bash
 
+      # Create upload script that will be used for modified docker images
+      - name: Create upload script
+        run: |
+          cat > upload.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          
+          # Check if we have arguments - if so, run the original entrypoint with those arguments
+          if [ $# -gt 0 ]; then
+            # First run the original process with the provided arguments
+            python app.py "$@"
+            
+            # Step 2: Find and package the audiobooks
+            echo "=== Searching for generated audiobooks ==="
+            OUTDIR=${OUTDIR:-/app/audiobooks}
+            find $OUTDIR -name "*.m4b" -o -name "*.mp3" > /tmp/found_files.txt
+            
+            if [ -s /tmp/found_files.txt ]; then
+              echo "✅ Found audiobook files"
+              mkdir -p /tmp/audiobooks_to_upload
+              
+              while IFS= read -r file; do
+                echo "Copying $file to upload directory"
+                cp "$file" /tmp/audiobooks_to_upload/
+              done < /tmp/found_files.txt
+              
+              # Install zip if not already installed
+              if ! command -v zip &> /dev/null; then
+                echo "Installing zip..."
+                apt-get update
+                apt-get install -y zip
+              fi
+              
+              # Step 3: Create zip file
+              cd /tmp
+              zip -r audiobooks.zip audiobooks_to_upload
+              
+              # Step 4: Upload to file sharing service
+              echo "=== Uploading audiobooks ==="
+              UPLOAD_URL=$(curl -F "file=@audiobooks.zip" https://0x0.st)
+              echo "✅ UPLOAD_URL: $UPLOAD_URL"
+            else
+              echo "❌ No audiobook files found!"
+              echo "DEBUG: Contents of directories:"
+              find $OUTDIR -type f
+              exit 1
+            fi
+          else
+            # No arguments provided, print usage
+            echo "Usage: $0 [original app.py arguments]"
+            echo "Example: $0 --headless --script_mode full_docker --language eng --tts_engine fairseq"
+            exit 1
+          fi
+          EOF
+          
+          chmod +x upload.sh
+        shell: bash
+
       # Check if we should update existing image or rebuild
       - name: Check for existing image and update if needed
         # Note: For push events, default is to NOT rebuild (same as workflow_dispatch default)
@@ -134,6 +198,11 @@ jobs:
             echo "" >> Dockerfile.update
             echo "# Copy new code over the existing code" >> Dockerfile.update
             echo "COPY . ." >> Dockerfile.update
+            echo "# Copy our upload script" >> Dockerfile.update
+            echo "COPY upload.sh /app/upload.sh" >> Dockerfile.update
+            echo "RUN chmod +x /app/upload.sh" >> Dockerfile.update
+            echo "# Override the entrypoint to use our script by default" >> Dockerfile.update
+            echo "ENTRYPOINT [\"/app/upload.sh\"]" >> Dockerfile.update
             
             # Build and push the updated image
             docker buildx build --platform linux/arm64 \
@@ -141,7 +210,7 @@ jobs:
               -f Dockerfile.update \
               --push .
             
-            echo "✅ Image updated successfully with latest code"
+            echo "✅ Image updated successfully with latest code and upload functionality"
             echo "rebuild_needed=false" >> $GITHUB_OUTPUT
           else
             echo "❗ No existing image found or pull failed, will perform full rebuild"
@@ -149,17 +218,36 @@ jobs:
           fi
         shell: bash
 
-
       # Build and Push Docker Image (full rebuild)
       - name: Build and Push Docker Image
         if: env.REBUILD_DOCKER == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
         run: |
           echo "🏗️ Building full Docker image from scratch..."
+          
+          # Create a modified Dockerfile that includes our upload script
+          cat > Dockerfile.modified << EOF
+          FROM scratch
+          
+          # Include the original Dockerfile content
+          COPY Dockerfile /Dockerfile
+          RUN source /Dockerfile
+          
+          # Add our upload script
+          COPY upload.sh /app/upload.sh
+          RUN chmod +x /app/upload.sh
+          
+          # Override the entrypoint to use our script
+          ENTRYPOINT ["/app/upload.sh"]
+          EOF
+          
+          # Build the image with our modified Dockerfile
           docker buildx build --platform linux/arm64 \
             --build-arg SKIP_XTTS_TEST=true \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
+            -f Dockerfile.modified \
             --push .
-          echo "✅ Full image build and push complete"
+            
+          echo "✅ Full image build and push complete with upload functionality"
         shell: bash
 
       # Generate test matrix directly in the build job
@@ -300,6 +388,7 @@ jobs:
     runs-on: [self-hosted, Linux, ARM64]
     env:
       DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
+      CUSTOM_ENTRYPOINT: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_entrypoint || '' }}
     steps:
       - name: Prune dangling Docker images
         run: docker image prune -f
@@ -307,16 +396,25 @@ jobs:
       - name: Run help command test
         run: |
           echo "Running help command test"
+          
+          # Check if we need to use the custom entrypoint or the default one
+          if [[ -n "${{ env.CUSTOM_ENTRYPOINT }}" ]]; then
+            ENTRYPOINT_OVERRIDE="--entrypoint ${{ env.CUSTOM_ENTRYPOINT }}"
+          else
+            ENTRYPOINT_OVERRIDE=""
+          fi
+          
           set +e
-          docker run --rm --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --help
+          docker run --rm --pull=always --gpus all $ENTRYPOINT_OVERRIDE ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --help
           STATUS=$?
           set -e
           
           if [ $STATUS -ne 0 ]; then
             echo "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --help
+            docker run --rm --pull=always $ENTRYPOINT_OVERRIDE ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --help
           fi
         shell: bash
+
   run_tests:
     needs: build
     runs-on: [self-hosted, Linux, ARM64]
@@ -327,6 +425,7 @@ jobs:
     env:
       DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
       SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
+      CUSTOM_ENTRYPOINT: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_entrypoint || '' }}
     steps:
       - name: Prune dangling Docker images
         run: docker image prune -f
@@ -343,9 +442,16 @@ jobs:
           # Create a temporary file to store the output
           OUTPUT_FILE=$(mktemp)
           
+          # Check if we need to use the custom entrypoint or the default one
+          if [[ -n "${{ env.CUSTOM_ENTRYPOINT }}" ]]; then
+            ENTRYPOINT_OVERRIDE="--entrypoint ${{ env.CUSTOM_ENTRYPOINT }}"
+          else
+            ENTRYPOINT_OVERRIDE=""
+          fi
+          
           # First try with GPU
           set +e
-          docker run --name $CONTAINER_NAME --pull=always --gpus all ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
+          docker run --name $CONTAINER_NAME --pull=always --gpus all $ENTRYPOINT_OVERRIDE ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
           TEST_STATUS=$?
           set -e
           
@@ -360,9 +466,17 @@ jobs:
             
             set +e
             # Run without GPU
-            docker run --name $CONTAINER_NAME --pull=always ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
+            docker run --name $CONTAINER_NAME --pull=always $ENTRYPOINT_OVERRIDE ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
             TEST_STATUS=$?
             set -e
+          fi
+          
+          # Extract the upload URL if any from the output
+          UPLOAD_URL=$(grep -o "UPLOAD_URL: http.*" "$OUTPUT_FILE" | cut -d' ' -f2)
+          if [ -n "$UPLOAD_URL" ]; then
+            echo "📁 Audiobooks uploaded to: $UPLOAD_URL"
+          else
+            echo "❌ No audiobook upload URL found in the output."
           fi
           
           # Check if we should save the outputs
