@@ -7,16 +7,20 @@ on:
         required: false
         default: 'dev_v25'
         type: string
-#  push:
-#    branches:
-#      - v25
-#    paths-ignore:
-#      - CODE_OF_CONDUCT.md
-#      - LICENSE
-#      - README.md
-#      - readme/**
-#      - dockerfiles/**
-#      - Notebooks/**
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+    paths-ignore:
+      - CODE_OF_CONDUCT.md
+      - LICENSE
+      - README.md
+      - readme/**
+      - dockerfiles/**
+      - Notebooks/**
 
 
 jobs:
