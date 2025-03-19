@@ -13,23 +13,25 @@ jobs:
     runs-on: [self-hosted, Linux, ARM64]
 
     steps:
-      - name: Create output directory
-        run: mkdir -p /tmp/audiobooks
 
+      - name: Create output directory and set permissions
+        run: |
+          mkdir -p /tmp/audiobooks/cli
+          chmod 777 -R /tmp/audiobooks
+          
       - name: Run Docker container with volume mount
         run: |
           docker run --rm -v /tmp/audiobooks:/app/audiobooks ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ github.event.inputs.docker_tag }} \
           --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-
-      - name: Check if files were copied
-        run: |
-          if [ -d /tmp/audiobooks ] && [ "$(ls -A /tmp/audiobooks)" ]; then
-            echo "Files copied successfully:"
-            ls -l /tmp/audiobooks
-          else
-            echo "No files found in /tmp/audiobooks!"
-            exit 1
-          fi
+            - name: Check if files were copied
+              run: |
+                if [ -d /tmp/audiobooks ] && [ "$(ls -A /tmp/audiobooks)" ]; then
+                  echo "Files copied successfully:"
+                  ls -l /tmp/audiobooks
+                else
+                  echo "No files found in /tmp/audiobooks!"
+                  exit 1
+                fi
 
       - name: Upload all audiobook files
         run: |
