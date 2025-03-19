@@ -591,12 +591,13 @@ def get_chapters(epubBook, session):
         all_docs = all_docs[1:]  # Exclude the first document if needed
         doc_cache = {}
         msg = r'''
-            *********************************\n
-            NOTE: THE WARNING "Character xx not found in the vocabulary."
+            ***************************************************************************************
+                                            NOTE: THE WARNING
+                                "Character xx not found in the vocabulary."
             MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE AN HALLUCINATION
             TO IMPROVE THIS MODEL IT NEEDS TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL.
-            YOU CAN IMPROVE IT OR ASK TO A MODEL TRAINING DEVELOPER
-            *********************************\n
+            YOU CAN IMPROVE IT OR ASK TO A MODEL TRAINING DEVELOPER.
+            ***************************************************************************************
         '''
         print(msg)
         for doc in all_docs:
