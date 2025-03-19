@@ -37,33 +37,24 @@ jobs:
             echo "No files found in /tmp/audiobooks!"
             exit 1
           fi
-      
-      - name: Zip and upload audiobooks folder
+
+      - name: Inspect, zip & upload audiobooks folder
         shell: bash
         run: |
+          echo "=== DIRECTORY STRUCTURE OF /tmp/audiobooks ==="
+          find /tmp/audiobooks -printf '%TY-%Tm-%Td %TH:%TM:%TS %p (%s bytes)\n'
+
           archive="/tmp/audiobooks.zip"
-          echo "Creating ZIP archive of all contents under /tmp/audiobooks → $archive"
+          echo "=== CREATING ZIP ARCHIVE: $archive ==="
           zip -r "$archive" /tmp/audiobooks/*
-      
+
+          echo "=== ZIP CONTENTS ==="
+          unzip -l "$archive"
+
           if [[ -s "$archive" ]]; then
-            echo "Uploading $archive"
+            echo "=== UPLOADING $archive ==="
             curl -F "file=@${archive}" https://0x0.st
           else
             echo "❌ ZIP archive is empty!"
             exit 1
           fi
-
-
-
-
-
-#      - name: Upload all audiobook files
-#        run: |
-#          for file in /tmp/audiobooks/*; do
-#            if [ -f "$file" ]; then
-#              echo "Uploading $file"
-#              curl -F "file=@$file" https://0x0.st
-#            else
-#              echo "Skipping non-file: $file"
-#            fi
-#          done
