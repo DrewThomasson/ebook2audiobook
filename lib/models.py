@@ -214,7 +214,7 @@ models = {
             "repo": "tts_models/[lang_iso1]/[xxx]",
             "sub": {
                 "baker/tacotron2-DDC-GST": ['zh-CN'],
-                "common-voice/hifigan": ['tr'],
+                "common-voice/glow-tts": ['tr'],
                 "css10/vits": ['es','hu','fi','fr','nl','ru','el'],
                 "custom/vits": ['ca'],
                 "custom/vits-female": ['bn', 'fa'],
