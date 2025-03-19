@@ -11,7 +11,7 @@ on:
 
 jobs:
   check-space:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       is_running: ${{ steps.check-status.outputs.is_running }}
       space_status: ${{ steps.check-status.outputs.space_status }}
