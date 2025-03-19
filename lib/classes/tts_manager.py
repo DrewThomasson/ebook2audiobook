@@ -207,7 +207,7 @@ class TTSManager:
                     iso_dir = self.session['language']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is not None:
-                    self.params['sample_rate'] = 16000 if sub == "mai/tacotron2-DDC" and self.session['language'] == 'spa' else self.params['sample_rate']
+                    #self.params['sample_rate'] = 16000 if sub == "mai/tacotron2-DDC" and self.session['language'] == 'spa' else self.params['sample_rate']
                     self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     tts_key = self.model_path
                     msg = f"Loading TTS {tts_key} model, it takes a while, please be patient..."
@@ -474,6 +474,7 @@ class TTSManager:
                     speaker_argument = {"speaker_embedding": default_bark_settings['voices']['KumarDahl']}
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
+                            text=self.params['sentence'],
                             history_prompt=self.params['sentence'],
                             **speaker_argument
                         )
@@ -483,9 +484,12 @@ class TTSManager:
                     print(msg)
                 else:
                     speaker_argument = {}
-                    if 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
+                    if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
                         if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
                             speaker_argument = {"speaker": 'p262'}
+                    elif self.session['language'] == 'cat' and 'custom/vits' in models[self.session['tts_engine']]['internal']['sub']:
+                        if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['custom/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['custom/vits']:
+                            speaker_argument = {"speaker": '09901'}
                     with torch.no_grad():
                         if self.params['voice_path'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
