@@ -42,17 +42,17 @@ jobs:
         shell: bash
         run: |
           archive="/tmp/audiobooks.zip"
+          echo "Creating ZIP archive of all contents under /tmp/audiobooks → $archive"
+          zip -r "$archive" /tmp/audiobooks/*
       
-          echo "Creating ZIP archive of /tmp/audiobooks → $archive"
-          zip -r "$archive" /tmp/audiobooks >/dev/null
-      
-          if [[ -f "$archive" ]]; then
+          if [[ -s "$archive" ]]; then
             echo "Uploading $archive"
             curl -F "file=@${archive}" https://0x0.st
           else
-            echo "❌ Failed to create ZIP archive!"
+            echo "❌ ZIP archive is empty!"
             exit 1
           fi
+
 
 
 
