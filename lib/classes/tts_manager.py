@@ -470,8 +470,7 @@ class TTSManager:
                     else:
                         bark_dir = os.path.dirname(f"{default_bark_settings['voices']['KumarDahl']}/")
                         voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['KumarDahl']))
-                    #speaker_argument = {"voice_dir": os.path.dirname(bark_dir), "speaker": voice_key}
-                    speaker_argument = {"speaker_embedding": default_bark_settings['voices']['KumarDahl']}
+                    speaker_argument = {"voice_dir": os.path.dirname(bark_dir), "speaker": voice_key}
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
