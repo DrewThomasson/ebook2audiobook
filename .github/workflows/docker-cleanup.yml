@@ -2,18 +2,29 @@ name: Docker Image and Cache Cleanup
 on:
   workflow_dispatch:
     inputs:
-      runner_type:
-        description: 'Choose runner configuration'
+      runner_config:
+        description: 'Select runner'
         required: true
         default: '[self-hosted, Linux, ARM64]'
         type: choice
         options:
           - '[self-hosted, Linux, ARM64]'
-          - 'self-hosted'
+          - '[self-hosted, X64, Windows, NVIDIA-GPU]'
+          - '[self-hosted, Linux, default, ARM64]'
+          - '[self-hosted, macOS, ARM64]'
+          - '[self-hosted]'
 
 jobs:
   cleanup:
-    runs-on: ${{ inputs.runner_type == '[self-hosted, Linux, ARM64]' && fromJSON('["self-hosted", "Linux", "ARM64"]') || 'self-hosted' }}
+    runs-on: >-
+      ${{
+        inputs.runner_config == '[self-hosted, Linux, ARM64]' && fromJSON('["self-hosted", "Linux", "ARM64"]') ||
+        inputs.runner_config == '[self-hosted, X64, Windows, NVIDIA-GPU]' && fromJSON('["self-hosted", "X64", "Windows", "NVIDIA-GPU"]') ||
+        inputs.runner_config == '[self-hosted, Linux, default, ARM64]' && fromJSON('["self-hosted", "Linux", "default", "ARM64"]') ||
+        inputs.runner_config == '[self-hosted, macOS, ARM64]' && fromJSON('["self-hosted", "macOS", "ARM64"]') ||
+        inputs.runner_config == '[self-hosted]' && fromJSON('["self-hosted"]')
+      }}
+
     steps:
       - name: System info
         run: |
