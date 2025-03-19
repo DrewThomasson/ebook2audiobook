@@ -441,6 +441,10 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(r'\t+', lambda m: ' ' * len(m.group()), text)
     # replace roman numbers by digits
     text = replace_roman_numbers(text)
+    # Escape special characters in the punctuation list for regex
+    pattern = '|'.join(map(re.escape, punctuation_split))
+    # Reduce multiple consecutive punctuations
+    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     if tts_engine == XTTSv2:
         # Pattern 1: Add a space between UTF-8 characters and numbers
         text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
@@ -586,8 +590,14 @@ def get_chapters(epubBook, session):
             return [], []        
         all_docs = all_docs[1:]  # Exclude the first document if needed
         doc_cache = {}
-        msg = '******* NOTE: THE WARNING "Character xx not found in the vocabulary." MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE AN HALLUCINATION *******\n'
-        msg += '******* TO IMPROVE THIS MODEL IT NEEDS TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK TO A MODEL TRAINING DEVELOPER *******'
+        msg = r'''
+            *********************************\n
+            NOTE: THE WARNING "Character xx not found in the vocabulary."\n
+            MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE AN HALLUCINATION\n
+            TO IMPROVE THIS MODEL IT NEEDS TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL.\n
+            YOU CAN IMPROVE IT OR ASK TO A MODEL TRAINING DEVELOPER\n
+            *********************************\n
+        '''
         print(msg)
         for doc in all_docs:
             doc_cache[doc] = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])

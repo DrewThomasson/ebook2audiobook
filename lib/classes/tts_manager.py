@@ -484,9 +484,12 @@ class TTSManager:
                     print(msg)
                 else:
                     speaker_argument = {}
-                    if 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
+                    if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
                         if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
                             speaker_argument = {"speaker": 'p262'}
+                    elif self.session['language'] == 'cat' and 'custom/vits' in models[self.session['tts_engine']]['internal']['sub']:
+                        if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['custom/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['custom/vits']:
+                            speaker_argument = {"speaker": '09901'}
                     with torch.no_grad():
                         if self.params['voice_path'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
