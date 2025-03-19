@@ -26,8 +26,23 @@ jobs:
         run: |
           docker rm ebook2audio
 
+      - name: Check if files were copied
+        run: |
+          if [ -d /tmp/audiobooks ] && [ "$(ls -A /tmp/audiobooks)" ]; then
+            echo "Files copied successfully:"
+            ls -l /tmp/audiobooks
+          else
+            echo "No files found in /tmp/audiobooks!"
+            exit 1
+          fi
+
       - name: Upload all audiobook files
         run: |
           for file in /tmp/audiobooks/*; do
-            curl -F "file=@$file" https://0x0.st
+            if [ -f "$file" ]; then
+              echo "Uploading $file"
+              curl -F "file=@$file" https://0x0.st
+            else
+              echo "No valid file to upload: $file"
+            fi
           done
