@@ -200,7 +200,7 @@ class TTSManager:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
             else:
-                iso_dir = self.session['language_iso1']
+                iso_dir = 'zh-CN' if self.session['language'] == 'zho' else self.session['language_iso1']
                 sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is None:
@@ -468,7 +468,7 @@ class TTSManager:
                                 os.makedirs(bark_dir, exist_ok=True)
                                 self._wav_to_npz(self.params['voice_path'], npz_file)
                     else:
-                        bark_dir = os.path.dirname(f"{default_bark_settings['voices']['KumarDahl']}/")
+                        bark_dir = f"{os.path.dirname(default_bark_settings['voices']['KumarDahl'])}/"
                         voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['KumarDahl']))
                     speaker_argument = {"voice_dir": bark_dir, "speaker": f"{voice_key}.npz"}
                     with torch.no_grad():
