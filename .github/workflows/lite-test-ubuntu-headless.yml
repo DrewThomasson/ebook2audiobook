@@ -10,25 +10,60 @@ jobs:
   run-and-upload:
     runs-on: [self-hosted, Linux, ARM64]
     steps:
-      - name: Run Docker container with self-contained process
+      - name: Run audiobook conversion in Docker container
         run: |
-          docker run --rm \
-            ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ github.event.inputs.docker_tag }} \
-            bash -c '
-              # Step 1: Run the conversion
-              ./run_script.sh --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq && \
-              
-              # Step 2: Find all generated audiobooks and create zip
-              OUTDIR=${OUTDIR:-/app/output}
-              cd $OUTDIR && \
-              
-              # Step 3: Create zip file
-              mkdir -p /tmp/audiobooks_to_upload
-              find . -name "*.m4b" -o -name "*.mp3" -exec cp {} /tmp/audiobooks_to_upload \; && \
-              cd /tmp && \
-              zip -r audiobooks.zip audiobooks_to_upload && \
-              
-              # Step 4: Upload to file sharing service
-              UPLOAD_URL=$(curl -F "file=@audiobooks.zip" https://0x0.st) && \
-              echo "✅ UPLOAD_URL: $UPLOAD_URL"
-            '
+          # Create a custom Dockerfile that extends your original image
+          cat > Dockerfile.upload << EOF
+          FROM ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ github.event.inputs.docker_tag }}
+          
+          # Add our upload script
+          COPY upload.sh /app/upload.sh
+          RUN chmod +x /app/upload.sh
+          
+          # Override the entrypoint to run our custom script
+          ENTRYPOINT ["/app/upload.sh"]
+          EOF
+          
+          # Create the upload script
+          cat > upload.sh << 'EOF'
+          #!/bin/bash
+          set -e
+          
+          # Step 1: Run the original conversion process first
+          python app.py --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
+          
+          # Step 2: Find and package the audiobooks
+          echo "=== Searching for generated audiobooks ==="
+          OUTDIR=${OUTDIR:-/app/output}
+          find $OUTDIR -name "*.m4b" -o -name "*.mp3" > /tmp/found_files.txt
+          
+          if [ -s /tmp/found_files.txt ]; then
+            echo "✅ Found audiobook files"
+            mkdir -p /tmp/audiobooks_to_upload
+            
+            while IFS= read -r file; do
+              echo "Copying $file to upload directory"
+              cp "$file" /tmp/audiobooks_to_upload/
+            done < /tmp/found_files.txt
+            
+            # Step 3: Create zip file
+            cd /tmp
+            zip -r audiobooks.zip audiobooks_to_upload
+            
+            # Step 4: Upload to file sharing service
+            echo "=== Uploading audiobooks ==="
+            UPLOAD_URL=$(curl -F "file=@audiobooks.zip" https://0x0.st)
+            echo "✅ UPLOAD_URL: $UPLOAD_URL"
+          else
+            echo "❌ No audiobook files found!"
+            echo "DEBUG: Contents of directories:"
+            find $OUTDIR -type f
+            exit 1
+          fi
+          EOF
+          
+          # Build our custom image
+          docker build -t ebook2audiobook-uploader -f Dockerfile.upload .
+          
+          # Run the custom image
+          docker run --rm ebook2audiobook-uploader
