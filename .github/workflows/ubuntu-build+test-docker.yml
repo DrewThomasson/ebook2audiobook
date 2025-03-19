@@ -514,7 +514,7 @@ jobs:
 
 
   
-  huggingface:
+  huggingface-build:
     needs: run_tests
     if: ${{ !failure() || inputs.require_all_tests == false }}
     runs-on: self-hosted
@@ -585,4 +585,46 @@ jobs:
             --push .
 
 
-
+  update-huggingface:
+    runs-on: ubuntu-latest
+    needs: huggingface-build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Git
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+      
+      - name: Install Git LFS
+        run: |
+          curl -s https://packagecloud.io/install/repositories/github/git-lfs/script.deb.sh | sudo bash
+          sudo apt-get install git-lfs
+          git lfs install
+      
+      - name: Configure Hugging Face credentials
+        run: |
+          echo "machine hf-prod.huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" > ~/.netrc
+          echo "machine huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" >> ~/.netrc
+      
+      - name: Clone Hugging Face space
+        run: |
+          git clone https://huggingface.co/spaces/drewThomasson/ebook2audiobook_v2.0_Beta
+          cd ebook2audiobook_v2.0_Beta
+          
+      - name: Update file
+        run: |
+          cd ebook2audiobook_v2.0_Beta
+          
+          # Create updates.txt if it doesn't exist
+          if [ ! -f updates.txt ]; then
+            echo "update" > updates.txt
+          else
+            echo "update" >> updates.txt
+          fi
+          
+          # Commit and push changes
+          git add updates.txt
+          git commit -m "Add update entry to updates.txt"
+          git push
