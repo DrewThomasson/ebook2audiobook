@@ -38,17 +38,22 @@ jobs:
             exit 1
           fi
       
-      - name: Upload newest audiobook file
+      - name: Zip and upload audiobooks folder
         shell: bash
         run: |
-          newest=$(ls -t /tmp/audiobooks/* 2>/dev/null | head -n1)
-          if [[ -f "$newest" ]]; then
-            echo "Uploading newest file: $newest"
-            curl -F "file=@$newest" https://0x0.st
+          archive="/tmp/audiobooks.zip"
+      
+          echo "Creating ZIP archive of /tmp/audiobooks → $archive"
+          zip -r "$archive" /tmp/audiobooks >/dev/null
+      
+          if [[ -f "$archive" ]]; then
+            echo "Uploading $archive"
+            curl -F "file=@${archive}" https://0x0.st
           else
-            echo "No audiobook file found to upload!"
+            echo "❌ Failed to create ZIP archive!"
             exit 1
           fi
+
 
 
 
