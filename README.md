@@ -439,15 +439,18 @@ For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 
 ## Demos
 **New Default Voice Demo**
+
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea
 
 
 
 **Rainy day voice**
+
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080
 
 
 **David Attenborough voice**
+
 https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 
 
