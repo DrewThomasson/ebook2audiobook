@@ -1,5 +1,4 @@
 name: Run Docker and Upload Audiobooks
-
 on:
   workflow_dispatch:
     inputs:
@@ -7,78 +6,29 @@ on:
         description: "Docker tag to use"
         required: true
         default: "latest"
-
 jobs:
   run-and-upload:
     runs-on: [self-hosted, Linux, ARM64]
     steps:
-      - name: Create output directory in shared location
+      - name: Run Docker container with self-contained process
         run: |
-          mkdir -p /tmp/audiobooks
-          chmod 777 -R /tmp/audiobooks
-
-      - name: Run Docker container with bind mount and debugging
-        run: |
-          echo "=== Running Docker container ==="
-          
-          # Create log directory
-          mkdir -p /tmp/logs
-          
-          # Run with more verbose output
           docker run --rm \
-            -v /tmp:/tmp \
-            -e OUTDIR="/tmp/audiobooks" \
             ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ github.event.inputs.docker_tag }} \
-            --headless --script_mode full_docker \
-            --language eng \
-            --ebook "tools/workflow-testing/test1.txt" \
-            --tts_engine fairseq \
-            --verbose > /tmp/logs/docker_output.log 2>&1 || true
-          
-          echo "=== Docker run completed ==="
-          echo "=== Docker container logs ==="
-          cat /tmp/logs/docker_output.log
-          
-          echo "=== Contents of /tmp/audiobooks ==="
-          ls -la /tmp/audiobooks || echo "Directory does not exist"
-          
-          echo "=== All directories in /tmp ==="
-          find /tmp -type d -maxdepth 2
-
-      - name: Search for generated audiobook files
-        run: |
-          echo "=== Searching for generated audiobook files ==="
-          find /tmp -name "*.m4b" -o -name "*.mp3" | tee /tmp/found_files.txt
-          
-          if [ -s /tmp/found_files.txt ]; then
-            echo "✅ Found audiobook files"
-            mkdir -p /tmp/collected_audiobooks
-            
-            while IFS= read -r file; do
-              echo "Copying $file to collection directory"
-              cp "$file" /tmp/collected_audiobooks/
-            done < /tmp/found_files.txt
-          else
-            echo "❌ No audiobook files found!"
-            echo "DEBUG: Contents of /tmp directory:"
-            find /tmp -type f -name "*.txt" -o -name "*.flac" -o -name "*.wav"
-            exit 1
-          fi
-
-      - name: Create ZIP archive and upload
-        run: |
-          cd /tmp
-          echo "=== Creating ZIP archive ==="
-          zip -r audiobooks.zip collected_audiobooks
-          
-          echo "=== ZIP contents ==="
-          unzip -l audiobooks.zip
-          
-          if [[ -s "audiobooks.zip" ]]; then
-            echo "=== Uploading audiobooks.zip ==="
-            UPLOAD_URL=$(curl -F "file=@audiobooks.zip" https://0x0.st)
-            echo "✅ Upload complete! File available at: $UPLOAD_URL"
-          else
-            echo "❌ ZIP archive is empty!"
-            exit 1
-          fi
+            bash -c '
+              # Step 1: Run the conversion
+              ./run_script.sh --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq && \
+              
+              # Step 2: Find all generated audiobooks and create zip
+              OUTDIR=${OUTDIR:-/app/output}
+              cd $OUTDIR && \
+              
+              # Step 3: Create zip file
+              mkdir -p /tmp/audiobooks_to_upload
+              find . -name "*.m4b" -o -name "*.mp3" -exec cp {} /tmp/audiobooks_to_upload \; && \
+              cd /tmp && \
+              zip -r audiobooks.zip audiobooks_to_upload && \
+              
+              # Step 4: Upload to file sharing service
+              UPLOAD_URL=$(curl -F "file=@audiobooks.zip" https://0x0.st) && \
+              echo "✅ UPLOAD_URL: $UPLOAD_URL"
+            '
