@@ -13,18 +13,13 @@ jobs:
     runs-on: [self-hosted, Linux, ARM64]
 
     steps:
-      - name: Run Docker container
+      - name: Create output directory
+        run: mkdir -p /tmp/audiobooks
+
+      - name: Run Docker container with volume mount
         run: |
-          docker run --name ebook2audio ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ github.event.inputs.docker_tag }} \
+          docker run --rm -v /tmp/audiobooks:/app/audiobooks ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ github.event.inputs.docker_tag }} \
           --headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine fairseq
-
-      - name: Copy all audiobooks from container
-        run: |
-          docker cp ebook2audio:/app/audiobooks /tmp/audiobooks
-
-      - name: Remove container
-        run: |
-          docker rm ebook2audio
 
       - name: Check if files were copied
         run: |
