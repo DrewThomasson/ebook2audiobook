@@ -45,6 +45,11 @@ jobs:
               echo "Copying $file to upload directory"
               cp "$file" /tmp/audiobooks_to_upload/
             done < /tmp/found_files.txt
+
+            # Step 2.5: install zip
+            apt-get install update
+            apt-get install zip -y
+            
             
             # Step 3: Create zip file
             cd /tmp
