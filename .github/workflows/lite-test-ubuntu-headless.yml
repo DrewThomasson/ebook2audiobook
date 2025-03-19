@@ -1,6 +1,8 @@
 name: Check and Update Hugging Face Space
 
 on:
+  schedule:
+    - cron: '0 0 * * *'
   workflow_dispatch:
     inputs:
       space_id:
