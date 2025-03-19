@@ -70,8 +70,10 @@ jobs:
     needs: check-space
     if: ${{ needs.check-space.outputs.space_status != 'RUNNING' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      - name: Checkout self repository for VERSION.txt
+        uses: actions/checkout@v4
+        with:
+          path: source
 
       - name: Set up Git
         run: |
@@ -89,21 +91,24 @@ jobs:
           echo "machine hf-prod.huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" > ~/.netrc
           echo "machine huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" >> ~/.netrc
 
-      - name: Clone Hugging Face space
+      - name: Clone Hugging Face space repository
         run: |
           git clone https://huggingface.co/spaces/drewThomasson/ebook2audiobook_v2.0_Beta
-          cd ebook2audiobook_v2.0_Beta
 
-      - name: Update file
+      - name: Update README and updates.txt in Hugging Face space
         run: |
+          # Read version from the source repository's VERSION.txt
+          VERSION=$(cat source/VERSION.txt | tr -d ' \t\n')
+          echo "Updating README with version $VERSION"
           cd ebook2audiobook_v2.0_Beta
-          # Create updates.txt if it doesn't exist, otherwise append an update entry
+          # Update updates.txt (append or create if it doesn't exist)
           if [ ! -f updates.txt ]; then
             echo "update" > updates.txt
           else
             echo "update" >> updates.txt
           fi
-          # Commit and push changes
-          git add updates.txt
-          git commit -m "Add update entry to updates.txt"
+          # Update the version in the README file using sed
+          sed -i "s/^title: Ebook2audiobook v[0-9.]\+/title: Ebook2audiobook v$VERSION/" README.md
+          git add updates.txt README.md
+          git commit -m "Update version in README to $VERSION and add update entry to updates.txt"
           git push
