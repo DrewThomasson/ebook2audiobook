@@ -1,0 +1,46 @@
+name: Docker Image and Cache Cleanup
+on:
+  workflow_dispatch:
+    inputs:
+      runner_type:
+        description: 'Choose runner configuration'
+        required: true
+        default: '[self-hosted, Linux, ARM64]'
+        type: choice
+        options:
+          - '[self-hosted, Linux, ARM64]'
+          - 'self-hosted'
+
+jobs:
+  cleanup:
+    runs-on: ${{ inputs.runner_type == '[self-hosted, Linux, ARM64]' && fromJSON('["self-hosted", "Linux", "ARM64"]') || 'self-hosted' }}
+    steps:
+      - name: System info
+        run: |
+          echo "Docker version:"
+          docker version
+          echo "Disk space before cleanup:"
+          df -h
+
+      - name: Safe Docker cleanup
+        run: |
+          echo "Removing dangling images..."
+          docker image prune -f
+          
+          echo "Removing unused buildx cache..."
+          docker buildx prune -f
+          
+          echo "Removing dangling volumes..."
+          docker volume prune -f
+          
+          echo "Removing dangling networks..."
+          docker network prune -f
+
+      - name: Check disk space after cleanup
+        run: |
+          echo "Disk space after cleanup:"
+          df -h
+          
+          echo "Remaining Docker resources:"
+          echo "Images:"
+          docker images
