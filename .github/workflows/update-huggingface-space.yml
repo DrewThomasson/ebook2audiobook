@@ -93,7 +93,7 @@ jobs:
 
       - name: Clone Hugging Face space repository
         run: |
-          git clone https://huggingface.co/spaces/drewThomasson/ebook2audiobook_v2.0_Beta
+          git clone https://huggingface.co/spaces/drewThomasson/ebook2audiobook
 
       - name: Update README and updates.txt in Hugging Face space
         run: |
