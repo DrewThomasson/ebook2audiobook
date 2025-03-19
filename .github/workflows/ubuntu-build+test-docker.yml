@@ -7,6 +7,11 @@ on:
         required: false
         default: 'dev'
         type: string
+      require_all_tests:
+        description: 'Require all tests to pass'
+        required: false
+        default: true
+        type: boolean
   push:
     branches:
       - main
@@ -145,6 +150,7 @@ jobs:
   run_tests:
     needs: build
     runs-on: self-hosted
+    continue-on-error: ${{ inputs.require_all_tests == false }}
     strategy:
       matrix:
         test:
@@ -257,6 +263,7 @@ jobs:
 
   final_push:
     needs: run_tests
+    if: ${{ !failure() || inputs.require_all_tests == false }}
     runs-on: self-hosted
     env:
       DOCKER_TAG: ${{ inputs.docker_tag || 'dev' }}
@@ -371,6 +378,7 @@ jobs:
 
   build_variants:
     needs: run_tests
+    if: ${{ !failure() || inputs.require_all_tests == false }}
     runs-on: self-hosted
     strategy:
       matrix:
@@ -508,6 +516,7 @@ jobs:
   
   huggingface:
     needs: run_tests
+    if: ${{ !failure() || inputs.require_all_tests == false }}
     runs-on: self-hosted
     steps:
       - name: Checkout code
