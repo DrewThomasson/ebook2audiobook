@@ -1,4 +1,4 @@
-name: Is Full DEV but I'm testing
+name: Full Dev Docker Test
 on:
   workflow_dispatch:
     inputs:
