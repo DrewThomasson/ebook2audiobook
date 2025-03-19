@@ -1,4 +1,4 @@
-name: lite test
+name: Is Full DEV but I'm testing
 on:
   workflow_dispatch:
     inputs:
@@ -133,6 +133,14 @@ jobs:
           
           # Check if we have arguments - if so, run the original entrypoint with those arguments
           if [ $# -gt 0 ]; then
+
+            # Check if this is just a help request
+            if [[ "$*" == *"--help"* || "$1" == "-h" ]]; then
+              # Just run the help command without checking for outputs
+              python app.py "$@"
+              exit $?
+            fi
+
             # First run the original process with the provided arguments
             python app.py "$@"
             
