@@ -1,4 +1,4 @@
-name: Ubuntu Build+Test
+name: Docker Build+Test
 on:
   workflow_dispatch:
     inputs:
