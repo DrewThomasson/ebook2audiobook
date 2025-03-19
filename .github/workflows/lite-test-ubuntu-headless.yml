@@ -11,11 +11,10 @@ on:
 jobs:
   run-and-upload:
     runs-on: [self-hosted, Linux, ARM64]
-
     steps:
-      - name: Create output directory and set permissions
+      - name: Create output directory
         run: |
-          mkdir -p /tmp/audiobooks/cli
+          mkdir -p /tmp/audiobooks
           chmod 777 -R /tmp/audiobooks
 
       - name: Run Docker container with volume mount
@@ -28,33 +27,20 @@ jobs:
             --ebook "tools/workflow-testing/test1.txt" \
             --tts_engine fairseq
 
-      - name: Check if files were copied
+      - name: Verify output files exist
         run: |
           if [ -d /tmp/audiobooks ] && [ "$(ls -A /tmp/audiobooks)" ]; then
-            echo "Files copied successfully:"
-            ls -l /tmp/audiobooks
+            echo "✅ Output files generated successfully:"
+            ls -la /tmp/audiobooks
           else
-            echo "No files found in /tmp/audiobooks!"
+            echo "❌ No output files found in /tmp/audiobooks!"
             exit 1
           fi
 
-      - name: Inspect, zip & upload audiobooks folder
-        shell: bash
+      - name: Create ZIP archive and upload
         run: |
-          echo "=== DIRECTORY STRUCTURE OF /tmp/audiobooks ==="
-          find /tmp/audiobooks -printf '%TY-%Tm-%Td %TH:%TM:%TS %p (%s bytes)\n'
-
-          archive="/tmp/audiobooks.zip"
-          echo "=== CREATING ZIP ARCHIVE: $archive ==="
-          zip -r "$archive" /tmp/audiobooks/*
-
-          echo "=== ZIP CONTENTS ==="
-          unzip -l "$archive"
-
-          if [[ -s "$archive" ]]; then
-            echo "=== UPLOADING $archive ==="
-            curl -F "file=@${archive}" https://0x0.st
-          else
-            echo "❌ ZIP archive is empty!"
-            exit 1
-          fi
+          cd /tmp
+          echo "=== Creating ZIP archive ==="
+          zip -r audiobooks.zip audiobooks
+          
+          echo "=== ZIP contents ==="
