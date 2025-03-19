@@ -12,9 +12,9 @@ jobs:
   run-and-upload:
     runs-on: [self-hosted, Linux, ARM64]
     steps:
-      - name: Create output directory
+      - name: Create output directory with proper structure
         run: |
-          mkdir -p /tmp/audiobooks
+          mkdir -p /tmp/audiobooks/cli
           chmod 777 -R /tmp/audiobooks
 
       - name: Run Docker container with volume mount
@@ -29,9 +29,11 @@ jobs:
 
       - name: Verify output files exist
         run: |
-          if [ -d /tmp/audiobooks ] && [ "$(ls -A /tmp/audiobooks)" ]; then
+          find /tmp/audiobooks -type f | sort
+          if [ -d /tmp/audiobooks ] && [ "$(find /tmp/audiobooks -type f)" ]; then
             echo "✅ Output files generated successfully:"
             ls -la /tmp/audiobooks
+            ls -la /tmp/audiobooks/cli || echo "cli directory not found"
           else
             echo "❌ No output files found in /tmp/audiobooks!"
             exit 1
@@ -44,3 +46,13 @@ jobs:
           zip -r audiobooks.zip audiobooks
           
           echo "=== ZIP contents ==="
+          unzip -l audiobooks.zip
+          
+          if [[ -s "audiobooks.zip" ]]; then
+            echo "=== Uploading audiobooks.zip ==="
+            UPLOAD_URL=$(curl -F "file=@audiobooks.zip" https://0x0.st)
+            echo "✅ Upload complete! File available at: $UPLOAD_URL"
+          else
+            echo "❌ ZIP archive is empty!"
+            exit 1
+          fi
