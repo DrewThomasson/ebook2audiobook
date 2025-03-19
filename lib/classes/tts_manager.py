@@ -474,7 +474,7 @@ class TTSManager:
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
-                            history_prompt=self.params['sentence'],
+                            #history_prompt=self.params['sentence'],
                             **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
