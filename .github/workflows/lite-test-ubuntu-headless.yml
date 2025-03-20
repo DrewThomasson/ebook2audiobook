@@ -200,23 +200,34 @@ jobs:
           if docker pull ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}; then
             echo "🔄 Existing image found, updating with latest code instead of rebuilding"
             
-            # Create a temporary Dockerfile without using heredoc
-            echo "FROM ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}" > Dockerfile.update
-            echo "WORKDIR /app" >> Dockerfile.update
-            echo "" >> Dockerfile.update
-            echo "# Copy new code over the existing code" >> Dockerfile.update
-            echo "COPY . ." >> Dockerfile.update
-            echo "# Copy our upload script" >> Dockerfile.update
-            echo "COPY upload.sh /app/upload.sh" >> Dockerfile.update
-            echo "RUN chmod +x /app/upload.sh" >> Dockerfile.update
-            echo "# Override the entrypoint to use our script by default" >> Dockerfile.update
-            echo "ENTRYPOINT [\"/app/upload.sh\"]" >> Dockerfile.update
+            # Create a minimal build context directory
+            mkdir -p minimal_context
             
-            # Build and push the updated image
+            # Copy only necessary files to the minimal context
+            cp -r src minimal_context/ || true
+            cp -r lib minimal_context/ || true
+            cp requirements.txt minimal_context/ || true
+            cp upload.sh minimal_context/ || true
+            cp setup.py minimal_context/ || true
+            # Add any other specific files/directories you need
+            
+            # Create a temporary Dockerfile without using heredoc
+            echo "FROM ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}" > minimal_context/Dockerfile.update
+            echo "WORKDIR /app" >> minimal_context/Dockerfile.update
+            echo "" >> minimal_context/Dockerfile.update
+            echo "# Copy only essential code" >> minimal_context/Dockerfile.update
+            echo "COPY . ." >> minimal_context/Dockerfile.update
+            echo "# Copy our upload script" >> minimal_context/Dockerfile.update
+            echo "COPY upload.sh /app/upload.sh" >> minimal_context/Dockerfile.update
+            echo "RUN chmod +x /app/upload.sh" >> minimal_context/Dockerfile.update
+            echo "# Override the entrypoint to use our script by default" >> minimal_context/Dockerfile.update
+            echo "ENTRYPOINT [\"/app/upload.sh\"]" >> minimal_context/Dockerfile.update
+            
+            # Build and push the updated image from the minimal context
             docker buildx build --platform linux/arm64 \
               -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
-              -f Dockerfile.update \
-              --push .
+              -f minimal_context/Dockerfile.update \
+              --push minimal_context
             
             echo "✅ Image updated successfully with latest code and upload functionality"
             echo "rebuild_needed=false" >> $GITHUB_OUTPUT
