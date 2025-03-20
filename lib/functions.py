@@ -691,14 +691,14 @@ def get_sentences(text, lang):
         part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
         return split_sentence(part1.strip()) + split_sentence(part2.strip())
 
-    raw_list = re.split(pattern, text)
+    if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        raw_list = segment_ideogramms()
+    else:
+        raw_list = re.split(pattern, text)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
     else:
-        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-            tmp_list = segment_ideogramms()
-        else:
-            tmp_list = raw_list
+        tmp_list = raw_list
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))  
