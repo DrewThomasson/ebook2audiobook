@@ -8,8 +8,8 @@ voices_dir = os.path.abspath('voices')
 tmp_dir = os.path.abspath('tmp')
 tmp_expire = 7 # days
 
-os.environ["PYTHONUTF8"] = '1'
-os.environ["PYTHONIOENCODING"] = 'utf-8'
+os.environ['PYTHONUTF8'] = '1'
+os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['COQUI_TOS_AGREED'] = '1'
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
@@ -28,9 +28,9 @@ os.environ['XDG_CACHE_HOME'] = models_dir
 os.environ["SUNO_OFFLOAD_CPU"] = 'False' # BARK option: False needs A GPU
 os.environ["SUNO_USE_SMALL_MODELS"] = 'False' # BARK option: False needs a GPU with VRAM > 4GB
 if platform.system() == 'Windows':
-    os.environ["ESPEAK_DATA_PATH"] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
+    os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
 
-prog_version = (lambda: open("VERSION.txt").read().strip())()
+prog_version = (lambda: open('VERSION.txt').read().strip())()
 
 min_python_version = (3,11)
 max_python_version = (3,12)
