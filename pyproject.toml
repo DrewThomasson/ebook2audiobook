@@ -17,6 +17,7 @@ authors = [
     { name = "Drew Thomasson" }
 ]
 dependencies = [
+	"argostranslate",
 	"beautifulsoup4",
 	"cutlet",
 	"deep_translator",
