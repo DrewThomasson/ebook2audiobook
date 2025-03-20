@@ -471,10 +471,10 @@ class TTSManager:
                         voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['KumarDahl']))
                     speaker_argument = {
                         "voice_dir": bark_dir,
-                        "speaker": voice_key, 
+                        #"speaker": voice_key, 
                         "speaker_wav": os.path.join(os.path.dirname(bark_dir), f"{os.path.splitext(os.path.basename(default_bark_settings['voices']['KumarDahl']))[0]}.wav"),
                         "speaker_embedding": default_bark_settings['voices']['KumarDahl'],
-                        "text_temp": 0.4
+                        "text_temp": 0.3
                     }                      
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
