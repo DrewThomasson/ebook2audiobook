@@ -128,6 +128,7 @@ you should first remove manually any text you don't want to be converted in audi
 1. **Clone repo**
 ```bash
 git clone https://github.com/DrewThomasson/ebook2audiobook.git
+cd ebook2audiobook
 ```
 
 ### Launching Gradio Web Interface  
