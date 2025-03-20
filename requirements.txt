@@ -10,10 +10,12 @@ gradio
 hangul-romanize
 indic-nlp-library
 iso-639
-jieba
-m4b-util
+jieba 
 mecab
 mecab-python3
+konlpy
+pythainlp
+m4b-util
 pydub
 nvidia-ml-py
 PyOpenGL

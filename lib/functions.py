@@ -629,6 +629,22 @@ def get_sentences(text, lang):
     pattern_split = [re.escape(p) for p in punctuation_split]
     pattern = f"({'|'.join(pattern_split)})"
 
+    def segment_ideogramms():
+        if lang == 'zho':
+            import jieba
+            return list(jieba.cut(text))
+        elif lang == 'jpn':
+            import MeCab
+            mecab = MeCab.Tagger()
+            return mecab.parse(text).split()
+        elif lang == 'kor':
+            from konlpy.tag import Kkma
+            kkma = Kkma()
+            return kkma.morphs(text)
+        elif lang in ['tha', 'lao', 'mya', 'khm']:
+            from pythainlp.tokenize import word_tokenize
+            return word_tokenize(text, engine='newmm')
+
     def split_sentence(sentence):
         end = ''
         if len(sentence) < max_chars:
@@ -679,7 +695,10 @@ def get_sentences(text, lang):
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
     else:
-        tmp_list = raw_list
+        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            tmp_list = segment_ideogramms()
+        else:
+            tmp_list = raw_list
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))  

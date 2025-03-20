@@ -11,10 +11,12 @@ hangul-romanize
 indic-nlp-library
 iso-639
 jieba
-m4b-util
 mecab
 mecab-python3
+konlpy
+pythainlp
 pydub
+m4b-util
 nvidia-ml-py
 PyOpenGL
 pypinyin
