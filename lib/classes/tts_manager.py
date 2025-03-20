@@ -470,7 +470,7 @@ class TTSManager:
                         bark_dir = f"{os.path.dirname(default_bark_settings['voices']['KumarDahl'])}/"
                         voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['KumarDahl']))
                     speaker_argument = {
-                        "voice_dirs": [bark_dir],
+                        "voice_dir": bark_dir,
                         "speaker_id": voice_key, 
                         #"speaker_wav": f"{os.path.splitext(os.path.basename(default_bark_settings['voices']['KumarDahl']))[0]}.wav",
                         #"speaker_embedding": default_bark_settings['voices']['KumarDahl']
