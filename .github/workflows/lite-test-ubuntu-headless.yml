@@ -84,15 +84,15 @@ jobs:
     runs-on: [self-hosted, Linux, ARM64]
     env:
       # Add default values for all parameters when triggered by push, using the same defaults as workflow_dispatch
-      DOCKER_TAG: ${{ github.event.inputs.docker_tag || 'lite_dev_v25' }}
-      TTS_ENGINE: ${{ github.event.inputs.tts_engine || 'xtts' }}
-      MODE: ${{ github.event.inputs.mode || 'single' }}
-      USE_CUSTOM_VOICE: ${{ github.event.inputs.use_custom_voice || 'false' }}
-      LANGUAGE: ${{ github.event.inputs.language || 'eng' }}
-      RUN_HELP_TEST: ${{ github.event.inputs.run_help_test || 'true' }}
-      REBUILD_DOCKER: ${{ github.event.inputs.rebuild_docker || 'false' }}
-      SAVE_OUTPUTS: ${{ github.event.inputs.save_outputs || 'false' }}
-      CUSTOM_ENTRYPOINT: ${{ github.event.inputs.custom_entrypoint || '' }}
+      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
+      TTS_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.tts_engine || 'xtts' }}
+      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'single' }}
+      USE_CUSTOM_VOICE: ${{ github.event_name == 'workflow_dispatch' && inputs.use_custom_voice || 'false' }}
+      LANGUAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.language || 'eng' }}
+      RUN_HELP_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.run_help_test || 'true' }}
+      REBUILD_DOCKER: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_docker || 'false' }}
+      SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
+      CUSTOM_ENTRYPOINT: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_entrypoint || '' }}
     outputs:
       test_matrix: ${{ steps.generate_matrix.outputs.test_matrix }}
       help_test: ${{ steps.generate_matrix.outputs.help_test }}
@@ -287,10 +287,10 @@ jobs:
             fi
           fi
           
-          # Create the matrix directly as a JSON string
+          # Create the matrix as a JSON string
           echo "test_matrix=[]" >> $GITHUB_OUTPUT
           
-          # Temporary file for building the matrix
+          # Create temporary file for building the matrix
           touch matrix_temp.json
           echo "[]" > matrix_temp.json
           
@@ -328,12 +328,10 @@ jobs:
             done
           done
           
-          # Add special XTTS fine-tuned tests only if XTTS is specifically included as an engine
+          # Add special XTTS fine-tuned tests only if XTTS is included and only for English
           if [[ "${{ env.TTS_ENGINE }}" == "all" || "${{ env.TTS_ENGINE }}" == "xtts" ]]; then
-            # Only add fine-tuned tests for English
             for LANG in "${LANGS[@]}"; do
               if [[ "$LANG" == "eng" ]]; then
-                # Only add for modes that are actually requested
                 if [[ "${{ env.MODE }}" == "all" || "${{ env.MODE }}" == "single" ]]; then
                   NAME="English XTTS headless fine-tuned XTTS model single test"
                   CMD="--headless --script_mode full_docker --language eng --ebook tools/workflow-testing/test1.txt --tts_engine xtts --fine_tuned AiExplained"
@@ -343,7 +341,7 @@ jobs:
                 
                 if [[ "${{ env.MODE }}" == "all" || "${{ env.MODE }}" == "batch" ]]; then
                   NAME="English XTTS headless fine-tuned XTTS model batch test"
-                  CMD=d"--headless --script_mode full_docker --language eng --ebooks_dir tools/workflow-testing --tts_engine xtts --fine_tuned AiExplained"
+                  CMD="--headless --script_mode full_docker --language eng --ebooks_dir tools/workflow-testing --tts_engine xtts --fine_tuned AiExplained"
                   jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix_temp.json > matrix_temp2.json
                   mv matrix_temp2.json matrix_temp.json
                 fi
@@ -371,8 +369,8 @@ jobs:
     if: needs.build.outputs.help_test == 'true'
     runs-on: [self-hosted, Linux, ARM64]
     env:
-      DOCKER_TAG: ${{ github.event.inputs.docker_tag || 'lite_dev_v25' }}
-      CUSTOM_ENTRYPOINT: ${{ github.event.inputs.custom_entrypoint || '' }}
+      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
+      CUSTOM_ENTRYPOINT: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_entrypoint || '' }}
     steps:
       - name: Prune dangling Docker images
         run: docker image prune -f
@@ -407,9 +405,9 @@ jobs:
       matrix: 
         test: ${{ fromJson(needs.build.outputs.test_matrix) }}
     env:
-      DOCKER_TAG: ${{ github.event.inputs.docker_tag || 'lite_dev_v25' }}
-      SAVE_OUTPUTS: ${{ github.event.inputs.save_outputs || 'false' }}
-      CUSTOM_ENTRYPOINT: ${{ github.event.inputs.custom_entrypoint || '' }}
+      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
+      SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
+      CUSTOM_ENTRYPOINT: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_entrypoint || '' }}
       
     steps:
       - name: Prune dangling Docker images
