@@ -10,7 +10,7 @@ on:
       tts_engine:
         description: 'TTS Engine to use'
         required: false
-        default: 'bark'
+        default: 'xtts'
         type: choice
         options:
           - all
@@ -85,7 +85,7 @@ jobs:
     env:
       # Add default values for all parameters when triggered by push, using the same defaults as workflow_dispatch
       DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
-      TTS_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.tts_engine || 'bark' }}
+      TTS_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.tts_engine || 'xtts' }}
       MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'single' }}
       USE_CUSTOM_VOICE: ${{ github.event_name == 'workflow_dispatch' && inputs.use_custom_voice || 'false' }}
       LANGUAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.language || 'eng' }}
