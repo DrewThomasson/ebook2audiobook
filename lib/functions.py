@@ -437,8 +437,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(r'(\r\n|\r|\n)+', '\n', text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'[\r\n]', ' ', text)
-    # Replace tabs ("\t") with equivalent spaces
-    text = re.sub(r'\t+', lambda m: ' ' * len(m.group()), text)
+    # Replace multiple  and spaces with single space
+    text = re.sub(r'[ \t]+', ' ', text)
     # replace roman numbers by digits
     text = replace_roman_numbers(text)
     # Escape special characters in the punctuation list for regex
@@ -1164,12 +1164,12 @@ def replace_roman_numbers(text):
         chapter_word = match.group(1)
         roman_numeral = match.group(2)
         integer_value = roman_to_int(roman_numeral.upper())
-        return f'{chapter_word.capitalize()} {integer_value} '
+        return f'{chapter_word.capitalize()} {integer_value}; '
 
     def replace_numeral_with_period(match):
         roman_numeral = match.group(1)
         integer_value = roman_to_int(roman_numeral)
-        return f'{integer_value}.'
+        return f'{integer_value}. '
 
     text = roman_chapter_pattern.sub(replace_chapter_match, text)
     text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
