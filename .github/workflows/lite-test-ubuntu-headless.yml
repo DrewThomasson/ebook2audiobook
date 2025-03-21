@@ -228,34 +228,14 @@ jobs:
 
       # Build and Push Docker Image (full rebuild)
       - name: Build and Push Docker Image
-        if: env.REBUILD_DOCKER == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
+        if: github.event_name != 'workflow_dispatch' || env.REBUILD_DOCKER == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
         run: |
           echo "🏗️ Building full Docker image from scratch..."
-          
-          # Create a modified Dockerfile that includes our upload script
-          cat > Dockerfile.modified << EOF
-          FROM scratch
-          
-          # Include the original Dockerfile content
-          COPY Dockerfile /Dockerfile
-          RUN source /Dockerfile
-          
-          # Add our upload script
-          COPY upload.sh /app/upload.sh
-          RUN chmod +x /app/upload.sh
-          
-          # Override the entrypoint to use our script
-          ENTRYPOINT ["/app/upload.sh"]
-          EOF
-          
-          # Build the image with our modified Dockerfile
           docker buildx build --platform linux/arm64 \
             --build-arg SKIP_XTTS_TEST=true \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
-            -f Dockerfile.modified \
             --push .
-            
-          echo "✅ Full image build and push complete with upload functionality"
+          echo "✅ Full image build and push complete"
         shell: bash
 
       # Generate test matrix directly in the build job
