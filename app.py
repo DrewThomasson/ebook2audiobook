@@ -142,7 +142,8 @@ Linux/Mac:
         '--top_k', '--top_p', '--speed', '--enable_text_splitting', 
         '--output_dir', '--version', '--workflow', '--help'
     ]
-    tts_engine_list = [k for k in models.keys() if k != BARK]
+    #tts_engine_list = [k for k in models.keys() if k != BARK]
+    tts_engine_list = [k for k in models.keys()]
     all_group = parser.add_argument_group('**** The following options are for all modes', 'Optional')
     all_group.add_argument(options[0], type=str, help=argparse.SUPPRESS)
     parser.add_argument(options[1], type=str, help='''Session to resume the conversion in case of interruption, crash, 
