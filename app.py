@@ -142,6 +142,7 @@ Linux/Mac:
         '--top_k', '--top_p', '--speed', '--enable_text_splitting', 
         '--output_dir', '--version', '--workflow', '--help'
     ]
+    tts_engine_list = [k for k in models.keys() if k != BARK]
     all_group = parser.add_argument_group('**** The following options are for all modes', 'Optional')
     all_group.add_argument(options[0], type=str, help=argparse.SUPPRESS)
     parser.add_argument(options[1], type=str, help='''Session to resume the conversion in case of interruption, crash, 
@@ -160,7 +161,7 @@ Linux/Mac:
     Uses the default voice if not present.''')
     headless_optional_group.add_argument(options[8], type=str, default=default_device, choices=device_list, help=f'''(Optional) Pprocessor unit type for the conversion. 
     Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.''')
-    headless_optional_group.add_argument(options[9], type=str, default=None, choices=list(models.keys()), help=f'''(Optional) Preferred TTS engine (available are: {list(models.keys())}.
+    headless_optional_group.add_argument(options[9], type=str, default=None, choices=tts_engine_list, help=f'''(Optional) Preferred TTS engine (available are: {tts_engine_list}.
     Default depends on the selected language. The tts engine should be compatible with the chosen language''')
     headless_optional_group.add_argument(options[10], type=str, default=None, help=f'''(Optional) Path to the custom model zip file cntaining mandatory model files. 
     Please refer to ./lib/models.py''')

@@ -8,11 +8,20 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 [![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
 
-Thanks to support ebook2audiobook developers!<br>
+### Thanks to support ebook2audiobook developers!
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/athomasson2) 
 
-[![Ubuntu Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml) [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)
+### Run locally
 
+[![Docker Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/ubuntu-build+test-docker.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)
+
+<a href="https://github.com/DrewThomasson/ebook2audiobook">
+  <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
+</a>
+
+### Run Remotely
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
+[![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
 
 #### GUI Interface
 ![demo_web_gui](assets/demo_web_gui.gif)
@@ -120,6 +129,7 @@ you should first remove manually any text you don't want to be converted in audi
 1. **Clone repo**
 ```bash
 git clone https://github.com/DrewThomasson/ebook2audiobook.git
+cd ebook2audiobook
 ```
 
 ### Launching Gradio Web Interface  
@@ -132,10 +142,10 @@ git clone https://github.com/DrewThomasson/ebook2audiobook.git
      Double click `Mac Ebook2Audiobook Launcher.command`  
    - **Windows**  
      ```bash
-     .\ebook2audiobook.cmd  # Run launch script or double click on it
+     ebook2audiobook.cmd  # Run launch script or double click on it
      ```
    - **Windows Launcher**  
-     Double click `ebook2audiobook.exe`  
+     Double click `ebook2audiobook.cmd`  
 2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
 3. **For Public Link**:
    `python app.py --share` (all OS)
@@ -154,7 +164,7 @@ to let the web page reconnect to the new connection socket.**
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd --headless --ebook <path_to_ebook_file>
+     ebook2audiobook.cmd --headless --ebook <path_to_ebook_file>
          --voice [path_to_voice_file] --language [language_code]
      ```
      
@@ -174,7 +184,7 @@ to let the web page reconnect to the new connection socket.**
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
+     ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
          --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
      ```
 - **<custom_model_path>**: Path to `model_name.zip` file,
@@ -189,7 +199,7 @@ to let the web page reconnect to the new connection socket.**
      ```
    - **Windows**
      ```bash
-     .\ebook2audiobook.cmd --help
+     ebook2audiobook.cmd --help
      ```
    - **Or for all OS**
     ```python
@@ -430,11 +440,19 @@ For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 
 
 ## Demos
+**New Default Voice Demo**
+
+https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea
+
+
+
 **Rainy day voice**
+
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080
 
 
 **David Attenborough voice**
+
 https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 
 

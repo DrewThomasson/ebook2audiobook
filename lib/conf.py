@@ -8,8 +8,8 @@ voices_dir = os.path.abspath('voices')
 tmp_dir = os.path.abspath('tmp')
 tmp_expire = 7 # days
 
-os.environ["PYTHONUTF8"] = '1'
-os.environ["PYTHONIOENCODING"] = 'utf-8'
+os.environ['PYTHONUTF8'] = '1'
+os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['COQUI_TOS_AGREED'] = '1'
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
@@ -28,9 +28,9 @@ os.environ['XDG_CACHE_HOME'] = models_dir
 os.environ["SUNO_OFFLOAD_CPU"] = 'False' # BARK option: False needs A GPU
 os.environ["SUNO_USE_SMALL_MODELS"] = 'False' # BARK option: False needs a GPU with VRAM > 4GB
 if platform.system() == 'Windows':
-    os.environ["ESPEAK_DATA_PATH"] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
+    os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
 
-prog_version = (lambda: open("VERSION.txt").read().strip())()
+prog_version = (lambda: open('VERSION.txt').read().strip())()
 
 min_python_version = (3,11)
 max_python_version = (3,12)
@@ -62,7 +62,7 @@ audiobooks_host_dir = os.path.abspath(os.path.join('audiobooks','gui','host'))
 audiobooks_cli_dir = os.path.abspath(os.path.join('audiobooks','cli'))
 
 ebook_formats = ['.epub', '.mobi', '.azw3', '.fb2', '.lrf', '.rb', '.snb', '.tcr', '.pdf', '.txt', '.rtf', '.doc', '.docx', '.html', '.odt', '.azw']
-voice_formats = ['.mp4', '.m4b', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg', '.aiff', '.aif', '.wma', '.dsd', '.opus', '.pcmu', '.pcma', '.gsm'] # Add or remove the format you wish
+voice_formats = ['.mp4', '.m4b', '.m4a', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg', '.aiff', '.aif', '.wma', '.dsd', '.opus', '.pcmu', '.pcma', '.gsm'] # Add or remove the format you wish
 output_formats = ['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']
 default_audio_proc_format = 'flac' # or 'wav', 'mp3', 'aac', 'm4a', 'm4b', 'amr', '3gp', 'alac'
 default_output_format = 'm4b' # or 'wav', 'pcm', 'ieee', 'ogg', 'nist', 'mp3', 'aiff', 'aac', 'wma', 'mp4', 'm4a', 'flac', 'amr', '3gp', 'webm', 'alac'

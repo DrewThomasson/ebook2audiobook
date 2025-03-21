@@ -33,6 +33,7 @@ import urllib.request
 import uuid
 import zipfile
 import traceback
+import unicodedata
 
 import lib.conf as conf
 import lib.lang as lang
@@ -365,13 +366,17 @@ def math2word(text, lang, lang_iso1, tts_engine):
             return False
 
     def rep_num(match):
-        number = match.group().replace(",", "")  # Remove commas for proper conversion
+        number = match.group().strip().replace(",", "")
         try:
             if "." in number or "e" in number or "E" in number:
-                return num2words(float(number), lang=lang_iso1)
-            return num2words(int(number), lang=lang_iso1)
-        except ValueError:
-            return number  # If conversion fails, return original number
+                number_value = float(number)
+            else:
+                number_value = int(number)
+            number_in_words = num2words(number_value, lang=lang_iso1)
+            return f" {number_in_words}"
+        except Exception as e:
+            print(f"Error converting number: {number}, Error: {e}")
+            return f"{number}"
 
     def replace_ambiguous(match):
         symbol2 = match.group(2)
@@ -401,9 +406,8 @@ def math2word(text, lang, lang_iso1, tts_engine):
     if ambiguous_replacements:
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
     # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
-    #number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+)?(?:[eE][-+]?\d+)?)(?!\S)'
-    number_pattern = r'(?<!\S)(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)(?!\S)'
-    if tts_engine != XTTSv2:
+    number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
+    if tts_engine == VITS or tts_engine == FAIRSEQ or tts_engine == YOURTTS:
         if is_num2words_compat:
             # Pattern 2: Split big numbers into groups of 4
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
@@ -437,8 +441,13 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(r'\t+', lambda m: ' ' * len(m.group()), text)
     # replace roman numbers by digits
     text = replace_roman_numbers(text)
-    # Pattern 1: Add a space between UTF-8 characters and numbers
-    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+    # Escape special characters in the punctuation list for regex
+    pattern = '|'.join(map(re.escape, punctuation_split))
+    # Reduce multiple consecutive punctuations
+    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
+    if tts_engine == XTTSv2:
+        # Pattern 1: Add a space between UTF-8 characters and numbers
+        text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
     # Replace math symbols with words
     text = math2word(text, lang, lang_iso1, tts_engine)
     return text
@@ -454,7 +463,11 @@ def convert_to_epub(session):
             print(error)
             return False
         file_input = session['ebook']
-        file_ext = os.path.splitext(session['ebook'])[1].lower()
+        file_ext = os.path.splitext(file_input)[1].lower()
+        if file_ext not in ebook_formats:
+            error = f'Unsupported file format: {file_ext}'
+            print(error)
+            return False
         if file_ext == '.pdf':
             msg = 'File input is a PDF. flatten it in MD format...'
             print(msg)
@@ -485,7 +498,6 @@ def convert_to_epub(session):
         )
         print(result.stdout)
         return True
-
     except subprocess.CalledProcessError as e:
         print(f"Subprocess error: {e.stderr}")
         DependencyError(e)
@@ -494,6 +506,46 @@ def convert_to_epub(session):
         print(f"Utility not found: {e}")
         DependencyError(e)
         return False
+
+def filter_chapter(doc, lang, lang_iso1, tts_engine):
+    soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
+    # Remove scripts and styles
+    for script in soup(["script", "style"]):
+        script.decompose()
+    # Normalize lines and remove unnecessary spaces and switch special chars
+    text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
+    if tts_engine == XTTSv2:
+        # Ensure spaces before & after punctuation
+        pattern_space = re.escape(''.join(punctuation_list))
+        # Ensure space before and after punctuation (excluding `,` and `.`)
+        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+        text = re.sub(comma_dot_pattern, r' \1 ', text)
+    if not text.strip():
+        chapter_sentences = []
+    else:
+        chapter_sentences = get_sentences(text, lang)
+    return chapter_sentences
+
+def filter_doc(doc_patterns):
+    pattern_counter = Counter(doc_patterns)
+    # Returns a list with one tuple: [(pattern, count)]
+    most_common = pattern_counter.most_common(1)
+    return most_common[0][0] if most_common else None
+
+def filter_pattern(doc_identifier):
+    docs = doc_identifier.split(':')
+    if len(docs) > 2:
+        segment = docs[1]
+        if re.search(r'[a-zA-Z]', segment) and re.search(r'\d', segment):
+            return ''.join([char for char in segment if char.isalpha()])
+        elif re.match(r'^[a-zA-Z]+$', segment):
+            return segment
+        elif re.match(r'^\d+$', segment):
+            return 'numbers'
+    return None
 
 def get_cover(epubBook, session):
     try:
@@ -538,7 +590,15 @@ def get_chapters(epubBook, session):
             return [], []        
         all_docs = all_docs[1:]  # Exclude the first document if needed
         doc_cache = {}
-        msg = '******* NOTE: YOU CAN SAFELY IGNORE "Character xx not found in the vocabulary." *******'
+        msg = r'''
+            ***************************************************************************************
+                                            NOTE: THE WARNING
+                                "Character xx not found in the vocabulary."
+            MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE AN HALLUCINATION
+            TO IMPROVE THIS MODEL IT NEEDS TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL.
+            YOU CAN IMPROVE IT OR ASK TO A MODEL TRAINING DEVELOPER.
+            ***************************************************************************************
+        '''
         print(msg)
         for doc in all_docs:
             doc_cache[doc] = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
@@ -563,89 +623,87 @@ def get_chapters(epubBook, session):
         DependencyError(error)
         return None, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine):
-    soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
-    # Remove scripts and styles
-    for script in soup(["script", "style"]):
-        script.decompose()
-    # Normalize lines and remove unnecessary spaces and switch special chars
-    text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
-    # Rule 1: Ensure spaces before & after punctuation
-    pattern_space = re.escape(''.join(punctuation_list))
-    # Step 1: Ensure space before and after punctuation (excluding `,` and `.`)
-    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-    text = re.sub(punctuation_pattern_space, r' \1 ', text)
-    # Rule 2: Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-    # Step 2: Ensure space before and after `,` and `.` only when NOT between numbers
-    text = re.sub(comma_dot_pattern, r' \1 ', text)
-    # Create regex pattern from punctuation list to split the phoneme_list
-    pattern_split = f"[^{re.escape(''.join(punctuation_split))}]+[{re.escape(''.join(punctuation_split))}]?|[{re.escape(''.join(punctuation_split))}]"
-    if not text.strip():
-        phoneme_list = []
-    else:
-        tmp_list = re.findall(pattern_split, text)
-        phoneme_list = [item.strip() for item in tmp_list if item and item.strip() and item != ' ']
-    # get the final sentence array according to the max_tokens limitation
+def get_sentences(text, lang):
     max_tokens = language_mapping[lang]['max_tokens']
-    chapter_sentences = get_sentences(phoneme_list, max_tokens)
-    return chapter_sentences
+    max_chars = max_tokens * 10
+    pattern_split = [re.escape(p) for p in punctuation_split]
+    pattern = f"({'|'.join(pattern_split)})"
 
-def filter_doc(doc_patterns):
-    pattern_counter = Counter(doc_patterns)
-    # Returns a list with one tuple: [(pattern, count)]
-    most_common = pattern_counter.most_common(1)
-    return most_common[0][0] if most_common else None
+    def segment_ideogramms():
+        if lang == 'zho':
+            import jieba
+            return list(jieba.cut(text))
+        elif lang == 'jpn':
+            import MeCab
+            mecab = MeCab.Tagger()
+            return mecab.parse(text).split()
+        elif lang == 'kor':
+            from konlpy.tag import Kkma
+            kkma = Kkma()
+            return kkma.morphs(text)
+        elif lang in ['tha', 'lao', 'mya', 'khm']:
+            from pythainlp.tokenize import word_tokenize
+            return word_tokenize(text, engine='newmm')
 
-def filter_pattern(doc_identifier):
-    docs = doc_identifier.split(':')
-    if len(docs) > 2:
-        segment = docs[1]
-        if re.search(r'[a-zA-Z]', segment) and re.search(r'\d', segment):
-            return ''.join([char for char in segment if char.isalpha()])
-        elif re.match(r'^[a-zA-Z]+$', segment):
-            return segment
-        elif re.match(r'^\d+$', segment):
-            return 'numbers'
-    return None
-
-def get_sentences(phoneme_list, max_tokens):
-    sentences = []
-    current_sentence = ""
-    current_phoneme_count = 0
-    for phoneme in phoneme_list:
-        part_phoneme_count = len(phoneme.split())
-        # Always append to current sentence unless punctuation is hit
-        if current_phoneme_count + part_phoneme_count > max_tokens:
-            # Ensure we finalize the sentence at punctuation, not a space
-            if any(current_sentence.endswith(punc) for punc in punctuation_split):
-                sentences.append(current_sentence.strip())
-                current_sentence = phoneme
-                current_phoneme_count = part_phoneme_count
+    def split_sentence(sentence):
+        end = ''
+        if len(sentence) < max_chars:
+            if sentence[-1].isalpha():
+                end = '–'
+            return [sentence + end]
+        if ',' in sentence:
+            mid_index = len(sentence) // 2
+            left_split = sentence.rfind(",", 0, mid_index)
+            right_split = sentence.find(",", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split + 1
             else:
-                # Look back and split at last punctuation instead of splitting randomly
-                last_punc_index = max(
-                    (current_sentence.rfind(punc) for punc in punctuation_split if punc in current_sentence),
-                    default=-1
-                )
-                if last_punc_index > -1:
-                    sentences.append(current_sentence[:last_punc_index+1].strip())  # Keep punctuation
-                    current_sentence = current_sentence[last_punc_index+1:].strip() + " " + phoneme
-                    current_phoneme_count = len(current_sentence.split())
-                else:
-                    sentences.append(current_sentence.strip())
-                    current_sentence = phoneme
-                    current_phoneme_count = part_phoneme_count
+                split_index = right_split + 1 if right_split != -1 else mid_index
+        elif ';' in sentence:
+            mid_index = len(sentence) // 2
+            left_split = sentence.rfind(";", 0, mid_index)
+            right_split = sentence.find(";", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split + 1
+            else:
+                split_index = right_split + 1 if right_split != -1 else mid_index
+        elif ':' in sentence:
+            mid_index = len(sentence) // 2
+            left_split = sentence.rfind(":", 0, mid_index)
+            right_split = sentence.find(":", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split + 1
+            else:
+                split_index = right_split + 1 if right_split != -1 else mid_index
+        elif ' ' in sentence:
+            mid_index = len(sentence) // 2
+            left_split = sentence.rfind(" ", 0, mid_index)
+            right_split = sentence.find(" ", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split
+            else:
+                split_index = right_split if right_split != -1 else mid_index
+            end = '–'
         else:
-            current_sentence += (" " if current_sentence else "") + phoneme
-            current_phoneme_count += part_phoneme_count
-    if current_sentence:
-        sentences.append(current_sentence.strip())
-    return sentences
+            split_index = len(sentence) // 2
+            end = '–'
+        part1 = sentence[:split_index]
+        part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
+        return split_sentence(part1.strip()) + split_sentence(part2.strip())
 
-import platform
-import subprocess
-import os
+    if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        raw_list = segment_ideogramms()
+    else:
+        raw_list = re.split(pattern, text)
+    if len(raw_list) > 1:
+        tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
+    else:
+        tmp_list = raw_list
+    sentences = []
+    for sentence in tmp_list:
+        sentences.extend(split_sentence(sentence.strip()))  
+    #print(json.dumps(sentences, indent=4, ensure_ascii=False))
+    return sentences
 
 def get_vram():
     os_name = platform.system()
@@ -782,7 +840,7 @@ def convert_chapters_to_audio(session):
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
                         if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
-                            tts_manager.params['sentence'] = sentence.replace('.', '<pause>').replace(',', '<pause>')
+                            tts_manager.params['sentence'] = sentence.replace('.', '…')
                         else:
                             tts_manager.params['sentence'] = sentence
                         if tts_manager.params['sentence'] != "":
@@ -838,7 +896,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 file = file.replace("\\", "/")
                 f.write(f'file {file}\n')
         ffmpeg_cmd = [
-            shutil.which('ffmpeg'), '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
+            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', chapter_audio_file
         ]
         try:
@@ -882,7 +940,7 @@ def combine_audio_chapters(session):
                     file = file.replace("\\", "/")
                     f.write(f"file '{file}'\n")
             ffmpeg_cmd = [
-                shutil.which('ffmpeg'), '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
+                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
                 '-c:a', default_audio_proc_format, '-map_metadata', '-1', combined_chapters_file
             ]
             try:
@@ -976,7 +1034,7 @@ def combine_audio_chapters(session):
             ffmpeg_final_file = final_file
             if session['cover'] is not None:
                 ffmpeg_cover = session['cover']                    
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a']
             elif session['output_format'] ==  'aac':
@@ -1152,7 +1210,7 @@ def compare_file_metadata(f1, f2):
 def get_compatible_tts_engines(language):
     compatible_engines = [
         tts for tts in models.keys()
-        if language in language_tts.get(tts, {})
+        if language in language_tts.get(tts, {}) and tts != BARK
     ]
     return compatible_engines
 
@@ -1348,6 +1406,7 @@ def convert_ebook(args):
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
                                             ]
+                                            shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
                                             if is_gui_process:
                                                 if len(chapters_dirs) > 1:
                                                     if os.path.exists(session['chapters_dir']):
@@ -2102,14 +2161,24 @@ def web_interface(args):
                 nonlocal voice_options
                 session = context.get_session(id)
                 voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
+                voice_lang_eng_dir = 'eng'
                 voice_file_pattern = "*_24000.wav"
-                voice_options = [
-                    (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                    for f in Path(session['voice_dir']).rglob(voice_file_pattern)
-                ]
-                voice_options += [
+                voice_builtin_options = [
                     (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
                     for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
+                ]
+                if session['language'] in language_tts[XTTSv2]:
+                    voice_eng_options = [
+                        (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
+                        for f in Path(os.path.join(voices_dir, voice_lang_eng_dir)).rglob(voice_file_pattern)
+                    ]
+                else:
+                    voice_eng_options = []
+                voice_keys = {key for key, _ in voice_builtin_options}
+                voice_options = voice_builtin_options + [row for row in voice_eng_options if row[0] not in voice_keys]
+                voice_options += [
+                    (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
+                    for f in Path(session['voice_dir']).rglob(voice_file_pattern)
                 ]
                 voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 session['voice'] = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
