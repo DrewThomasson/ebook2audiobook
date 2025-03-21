@@ -15,13 +15,15 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 [![Docker Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)
 
+
+
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
 </a>
 
 ### Run Remotely
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
-[![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
+[![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/Rihcus/ebook2audiobookXTTS/blob/main/Notebooks/kaggle-ebook2audiobook.ipynb)
 
 #### GUI Interface
 ![demo_web_gui](assets/demo_web_gui.gif)
