@@ -1210,7 +1210,7 @@ def compare_file_metadata(f1, f2):
 def get_compatible_tts_engines(language):
     compatible_engines = [
         tts for tts in models.keys()
-        if language in language_tts.get(tts, {})
+        if language in language_tts.get(tts, {}) and tts != BARK
     ]
     return compatible_engines
 
