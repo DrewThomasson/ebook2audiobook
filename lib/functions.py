@@ -420,7 +420,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
             if sorted_numbers:
                 number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
                 text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
-    return text.strip()
+    return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace punctuations causing hallucinations
@@ -647,7 +647,7 @@ def get_sentences(text, lang):
 
     def split_sentence(sentence):
         end = ''
-        if len(sentence) < max_chars:
+        if len(sentence) <= max_chars:
             if sentence[-1].isalpha():
                 end = '–'
             return [sentence + end]
@@ -687,18 +687,26 @@ def get_sentences(text, lang):
         else:
             split_index = len(sentence) // 2
             end = '–'
+        if split_index == len(sentence):
+            if sentence[-1].isalpha():
+                end = '–'
+            return [sentence + end]
         part1 = sentence[:split_index]
         part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
-        return split_sentence(part1.strip()) + split_sentence(part2.strip())
+        return split_sentence(part1.strip()) + split_sentence(part2.strip())     
 
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
     else:
         raw_list = re.split(pattern, text)
+
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
     else:
         tmp_list = raw_list
+        
+    if tmp_list[-1] == 'Start':
+        tmp_list.pop()
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))  
@@ -1156,7 +1164,7 @@ def replace_roman_numbers(text):
         chapter_word = match.group(1)
         roman_numeral = match.group(2)
         integer_value = roman_to_int(roman_numeral.upper())
-        return f'{chapter_word.capitalize()} {integer_value}'
+        return f'{chapter_word.capitalize()} {integer_value} '
 
     def replace_numeral_with_period(match):
         roman_numeral = match.group(1)
@@ -1210,7 +1218,8 @@ def compare_file_metadata(f1, f2):
 def get_compatible_tts_engines(language):
     compatible_engines = [
         tts for tts in models.keys()
-        if language in language_tts.get(tts, {}) and tts != BARK
+        #if language in language_tts.get(tts, {}) and tts != BARK
+        if language in language_tts.get(tts, {})
     ]
     return compatible_engines
 

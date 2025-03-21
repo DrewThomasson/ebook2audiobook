@@ -65,7 +65,7 @@ default_xtts_settings = {
 default_bark_settings = {
     "samplerate": 24000,
     "files": ['coarse_2.pt'],
-    "voices": {"KumarDahl": os.path.join(voices_dir, "eng", "adult", "male", "bark","KumarDahl", "KumarDahl.npz")}
+    "voices": {"KumarDahl": os.path.join(voices_dir, "eng", "adult", "male", "bark","Jamie", "Jamie.npz")}
 }
 default_vits_settings = {
     "samplerate": 22050,

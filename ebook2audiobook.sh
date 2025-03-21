@@ -265,13 +265,6 @@ else
 
 	function conda_check {
 		if ! command -v conda &> /dev/null || [ ! -f "$CONDA_ENV" ]; then
-			if [ -d $HOME/miniconda3 ]; then
-				echo "Miniconda3 is deprecated, switching to Miniforge3..."
-				$HOME/miniconda3/bin/conda deactivate
-				rm -rf $HOME/miniconda3
-			else
-				echo -e "\e[33mMiniforge3 is not installed!\e[0m"
-			fi
 			echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
 			if [[ "$OSTYPE" = "darwin"* ]]; then
 				curl -fsSLo "$CONDA_INSTALLER" "$CONDA_URL"

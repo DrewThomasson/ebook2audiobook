@@ -1,16 +1,7 @@
 import os
 import subprocess
 
-def normalize_audio_file(input_file, target_folder):
-    # Ensure the target folder exists
-    os.makedirs(target_folder, exist_ok=True)
-
-    # Extract the filename from the input file
-    filename = os.path.basename(input_file)
-
-    # Construct the output file path in the target folder
-    output_file = os.path.join(target_folder, filename)
-
+def normalize_audio_file(input_file, output_file):
     # FFmpeg command
     ffmpeg_cmd = [
         'ffmpeg', '-i', input_file,
@@ -28,8 +19,6 @@ def normalize_audio_file(input_file, target_folder):
     ]
 
     try:
-        # Run FFmpeg command
-        print(f"Processing file: {input_file}")
         subprocess.run(ffmpeg_cmd, check=True)
         print(f"Processed file saved to: {output_file}")
     except subprocess.CalledProcessError as e:
@@ -38,6 +27,6 @@ def normalize_audio_file(input_file, target_folder):
         print(f"Unexpected error: {e}")
 
 # Example Usage
-input_file = '../tmp/file.wav'  # Path to the uploaded source file
-target_folder = '../tmp/output.wav'  # Target folder to save the output
-normalize_audio_file(input_file, target_folder)
+input_file = os.path.join('voices', 'eng', 'adult', 'male', 'Jamie.wav')
+output_file = os.path.join('voices', 'eng', 'adult', 'male', 'Jamie2.wav')
+normalize_audio_file(input_file, output_file)
