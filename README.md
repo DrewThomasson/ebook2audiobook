@@ -383,17 +383,6 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
   The service will be available at http://localhost:7860.
 
 
-### Docker GUI Interface
-![demo_web_gui](assets/demo_web_gui.gif)
-
-<details>
-  <summary>Click to see images of Web GUI</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
-</details>
-
-
 ## Renting a GPU
 Don't have the hardware to run it or you want to rent a GPU?
 #### You can duplicate the hugginface space and rent a gpu for around $0.40 an hour
