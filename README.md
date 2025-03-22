@@ -35,6 +35,23 @@ Use this tool responsibly and in accordance with all applicable laws.
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+<details>
+  <summary>## Demos</summary>
+
+**New Default Voice Demo**  
+   
+https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
+
+**Rainy Day Voice**  
+   
+https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
+
+**David Attenborough Voice**  
+   
+https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea  
+
+</details>
+
 
 ## README.md
 - ara [العربية (Arabic)](./readme/README_AR.md)
@@ -424,23 +441,6 @@ A space you can use to de-noise the training data easily also
 To find our collection of already fine-tuned TTS models,
 visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 For an XTTS custom model a ref audio clip of the voice reference is mandatory:
-
-
-## Demos
-**New Default Voice Demo**
-
-https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea
-
-
-
-**Rainy day voice**
-
-https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080
-
-
-**David Attenborough voice**
-
-https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 
 
 ## Supported eBook Formats
