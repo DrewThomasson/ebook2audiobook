@@ -13,8 +13,8 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ### Run locally
 
-[![Docker Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   [Quick Start](#launching-gradio-web-interface)
-
+[![Docker Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#launching-gradio-web-interface)
 
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
