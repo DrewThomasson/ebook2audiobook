@@ -78,7 +78,7 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
     - [Hugging Face](#hugging-face)  
     - [Google Colab](#google-colab)  
     - [Kaggle](#kaggle)  
-  - [Run Locally](#launching-gradio-web-interface
+  - [Run Locally](#launching-gradio-web-interface)
     - [Launching Gradio Web Interface](#launching-gradio-web-interface)
     - [Basic Headless Usage](#basic--usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
