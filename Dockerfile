@@ -90,7 +90,11 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
 RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
         echo "Running XTTS test to pre-download models..." && \
         echo "This is a test sentence." > test.txt && \
-        TORCH_DEVICE_BACKEND_AUTOLOAD=0 python app.py --headless --ebook test.txt --script_mode full_docker && \
+        if [ "$TORCH_VERSION" = "xpu" ]; then \
+            TORCH_DEVICE_BACKEND_AUTOLOAD=0 python app.py --headless --ebook test.txt --script_mode full_docker; \
+        else \
+            python app.py --headless --ebook test.txt --script_mode full_docker; \
+        fi && \
         rm test.txt; \
     else \
         echo "Skipping XTTS test run as requested."; \
