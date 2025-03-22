@@ -35,19 +35,21 @@ Use this tool responsibly and in accordance with all applicable laws.
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
-<details>
-  <summary>## Demos</summary>
+## Demos
 
 **New Default Voice Demo**  
-   
+
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
+<details>
+  <summary>More Demos</summary>
+
 **Rainy Day Voice**  
-   
+
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
 **David Attenborough Voice**  
-   
+
 https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea  
 
 </details>
