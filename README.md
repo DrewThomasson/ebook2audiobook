@@ -13,14 +13,14 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ### Run locally
 
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#launching-gradio-web-interface)
+
 [![Docker Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
 
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
 </a>
-
-[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#launching-gradio-web-interface)
 
 ### Run Remotely
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
