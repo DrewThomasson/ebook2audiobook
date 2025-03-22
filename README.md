@@ -65,6 +65,7 @@ Use this tool responsibly and in accordance with all applicable laws.
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
 - [Using Docker](#using-docker)
+  - [GPU options](#docker-gpu-options)
   - [Docker Run](#running-the-docker-container)
   - [Docker Build](#building-the-docker-container)
   - [Docker Compose](#docker-compose)
@@ -302,6 +303,11 @@ NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] 
 ### Using Docker
 You can also use Docker to run the eBook to Audiobook converter. 
 This method ensures consistency across different environments and simplifies setup.
+
+
+#### Docker GPU Options
+
+Available tags: `latest` (CUDA 11), `cpu`, `rocm`, `cuda11`, `cuda12`, `xpu` (x86 only)
 
 
 #### Running the Docker Container
