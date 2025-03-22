@@ -61,7 +61,7 @@ from urllib.parse import urlparse
 
 #from lib.classes.redirect_console import RedirectConsole
 from lib.classes.voice_extractor import VoiceExtractor
-from lib.classes.argos_translator import ArgosTranslator
+#from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
 
 def inject_configs(target_namespace):
