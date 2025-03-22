@@ -69,7 +69,7 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 - [ebook2audiobook](#-ebook2audiobook)
 - [Features](#features)
 - [GUI Interface](#gui-interface)
-- [Pre-made Audio Demos](#demos)
+- [Demos](#demos)
 - [Supported Languages](#supported-languages)
 - [Requirements](#hardware-requirements)
 - [Installation Instructions](#installation-instructions)
