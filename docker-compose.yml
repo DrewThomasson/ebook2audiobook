@@ -11,6 +11,7 @@ x-gpu-disabled: &gpu-disabled
 services:
   ebook2audiobook:
     image: docker.io/athomasson2/ebook2audiobook:latest
+    pull_policy: always
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here
     tty: true
