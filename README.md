@@ -101,7 +101,6 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 
 
 ## Features
-- 📖 Converts eBooks to text format with Calibre.
 - 📚 Splits eBook into chapters for organized audio.
 - 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) (and more).
 - 🗣️ Optional voice cloning with your own voice file.
