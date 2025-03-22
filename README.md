@@ -72,7 +72,7 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 - [GUI Interface](#gui-interface)
 - [Demos](#demos)
 - [Supported Languages](#supported-languages)
-- [Requirements](#hardware-requirements)
+- [Minimum Requirements](#hardware-requirements)
 - [Installation Instructions](#installation-instructions)
 - [Usage](#launching-gradio-web-interface)
   - [Run Locally](#launching-gradio-web-interface)
