@@ -68,7 +68,7 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 ## Table of Contents
 - [ebook2audiobook](#-ebook2audiobook)
 - [Features](#features)
-- [Docker GUI Interface](#docker-gui-interface)
+- [Docker GUI Interface](#gui-interface)
 - [Pre-made Audio Demos](#demos)
 - [Supported Languages](#supported-languages)
 - [Requirements](#hardware-requirements)
