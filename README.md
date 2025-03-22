@@ -315,11 +315,11 @@ To run the Docker container and start the Gradio interface, use the following co
 
  -Run with CPU only
 ```powershell
-docker run --rm -p 7860:7860 athomasson2/ebook2audiobook
+docker run --pull always --rm -p 7860:7860 athomasson2/ebook2audiobook
 ```
  -Run with GPU Speedup (NVIDIA compatible only)
 ```powershell
-docker run --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
+docker run --pull always --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
 ```
 
 
@@ -351,7 +351,7 @@ mkdir input-folder && mkdir Audiobooks
 ```
 - In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
 ```bash
-docker run --rm \
+docker run --pull always --rm \
     -v $(pwd)/input-folder:/app/input_folder \
     -v $(pwd)/audiobooks:/app/audiobooks \
     athomasson2/ebook2audiobook \
@@ -365,7 +365,7 @@ docker run --rm \
 ## To get the help command for the other parameters this program has you can run this 
 
 ```bash
-docker run --rm athomasson2/ebook2audiobook --help
+docker run --pull always --rm athomasson2/ebook2audiobook --help
 
 ```
 and that will output this 
@@ -417,8 +417,8 @@ Don't have the hardware to run it or you want to rent a GPU?
 ## Common Docker Issues
 
 - `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory` (Just remove all post arguments as I replaced the `CMD` with `ENTRYPOINT` in the [Dockerfile](Dockerfile))
-  - Example: `docker run athomasson2/ebook2audiobook app.py --script_mode full_docker` - > corrected - > `docker run athomasson2/ebook2audiobook`
-  - Arguments can be easily added like this now `docker run athomasson2/ebook2audiobook --share`
+  - Example: `docker run --pull always athomasson2/ebook2audiobook app.py --script_mode full_docker` - > corrected - > `docker run --pull always athomasson2/ebook2audiobook`
+  - Arguments can be easily added like this now `docker run --pull always athomasson2/ebook2audiobook --share`
 
 - Docker gets stuck downloading Fine-Tuned models.
   (This does not happen for every computer but some appear to run into this issue)
@@ -426,7 +426,7 @@ Don't have the hardware to run it or you want to rent a GPU?
   as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
   Example of adding this fix in the `docker run` command
 ```Dockerfile
-docker run --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
+docker run --pull always --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
     -p 7860:7860 athomasson2/ebook2audiobook
 ```
 
