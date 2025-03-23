@@ -13,8 +13,9 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 ### Run locally
 
-[![Docker Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)
+[![Quick Start](https://img.shields.io/badge/Quick%20Start-blue?style=for-the-badge)](#launching-gradio-web-interface)
 
+[![Docker Build+Test](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml/badge.svg)](https://github.com/DrewThomasson/ebook2audiobook/actions/workflows/docker-build+test.yml)  [![Download](https://img.shields.io/badge/Download-Now-blue.svg)](https://github.com/DrewThomasson/ebook2audiobook/releases/latest)   
 
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
@@ -35,6 +36,30 @@ Use this tool responsibly and in accordance with all applicable laws.
   <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
 </details>
 
+## Demos
+
+**New Default Voice Demo**  
+
+https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
+
+<details>
+  <summary>More Demos</summary>
+
+**Rainy Day Voice**  
+
+https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
+
+**David Attenborough Voice**  
+
+https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea  
+
+**Example**
+
+![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+
+
+</details>
+
 
 ## README.md
 - ara [العربية (Arabic)](./readme/README_AR.md)
@@ -49,19 +74,17 @@ Use this tool responsibly and in accordance with all applicable laws.
 ## Table of Contents
 - [ebook2audiobook](#-ebook2audiobook)
 - [Features](#features)
-- [Docker GUI Interface](#docker-gui-interface)
-- [Huggingface Space Demo](#huggingface-space-demo)
-- [Free Google Colab](#free-google-colab)
-- [Pre-made Audio Demos](#demos)
+- [GUI Interface](#gui-interface)
+- [Demos](#demos)
 - [Supported Languages](#supported-languages)
-- [Requirements](#hardware-requirements)
-- [Installation Instructions](#installation-instructions)
+- [Minimum Requirements](#hardware-requirements)
 - [Usage](#launching-gradio-web-interface)
-  - [Launching Gradio Web Interface](#launching-gradio-web-interface)
-  - [Basic Headless Usage](#basic--usage)
-  - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
-  - [Renting a GPU](#renting-a-gpu)
-  - [Help command output](#help-command-output)
+  - [Run Locally](#launching-gradio-web-interface)
+    - [Launching Gradio Web Interface](#launching-gradio-web-interface)
+    - [Basic Headless Usage](#basic--usage)
+    - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
+    - [Help command output](#help-command-output)
+  - [Run Remotely](#run-remotely)  
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
 - [Using Docker](#using-docker)
@@ -73,31 +96,18 @@ Use this tool responsibly and in accordance with all applicable laws.
   - [Docker container file locations](#docker-container-file-locations)
   - [Common Docker issues](#common-docker-issues)
 - [Supported eBook Formats](#supported-ebook-formats)
-- [Output](#output)
+- [Output Formats](#output-formats)
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
-- [Join Our  Server!](#join-our--server)
-- [Legacy](#legacy-v10)
 - [Table of Contents](#table-of-contents)
 
 
 ## Features
-- 📖 Converts eBooks to text format with Calibre.
 - 📚 Splits eBook into chapters for organized audio.
 - 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) (and more).
 - 🗣️ Optional voice cloning with your own voice file.
 - 🌍 Supports +1110 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 - 🖥️ Designed to run on 4GB RAM.
-
-
-## [Huggingface space demo](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=for-the-badge&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/ebook2audiobook)
-- Huggingface space is running on free cpu tier so expect very slow or timeout lol, just do not give it giant files is all
-- Best to duplicate space or run locally.
-
-
-## Free Google Colab 
-[![Free Google Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/main/Notebooks/colab_ebook2audiobook.ipynb)
 
 
 ## Supported Languages
@@ -340,10 +350,7 @@ For example:
 
 
 ## Docker headless guide
-first for a docker pull of the latest with
-```bash 
-docker pull athomasson2/ebook2audiobook
-```
+
 - Before you do run this you need to create a dir named "input-folder" in your current dir
   which will be linked, This is where you can put your input files for the docker image to see
 ```bash
@@ -393,27 +400,6 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
   The service will be available at http://localhost:7860.
 
 
-### Docker GUI Interface
-![demo_web_gui](assets/demo_web_gui.gif)
-
-<details>
-  <summary>Click to see images of Web GUI</summary>
-  <img width="1728" alt="GUI Screen 1" src="assets/gui_1.png">
-  <img width="1728" alt="GUI Screen 2" src="assets/gui_2.png">
-  <img width="1728" alt="GUI Screen 3" src="assets/gui_3.png">
-</details>
-
-
-## Renting a GPU
-Don't have the hardware to run it or you want to rent a GPU?
-#### You can duplicate the hugginface space and rent a gpu for around $0.40 an hour
-[Huggingface Space Demo](#huggingface-space-demo)
-
-#### Or you can try using the google colab for free!
-(Be aware it will time out after a bit of your not messing with the google colab)
-[Free Google Colab](#free-google-colab)
-
-
 ## Common Docker Issues
 
 - `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory` (Just remove all post arguments as I replaced the `CMD` with `ENTRYPOINT` in the [Dockerfile](Dockerfile))
@@ -447,23 +433,6 @@ visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTS
 For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 
 
-## Demos
-**New Default Voice Demo**
-
-https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea
-
-
-
-**Rainy day voice**
-
-https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080
-
-
-**David Attenborough voice**
-
-https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
-
-
 ## Supported eBook Formats
 - `.epub`, `.pdf`, `.mobi`, `.txt`, `.html`, `.rtf`, `.chm`, `.lit`,
   `.pdb`, `.fb2`, `.odt`, `.cbr`, `.cbz`, `.prc`, `.lrf`, `.pml`,
@@ -471,11 +440,8 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
 
-## Output
+## Output Formats
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
-- **Example**
-  ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
-
 
 ## Common Issues:
 -  CPU is slow (better on server smp CPU) while NVIDIA GPU can have almost real time conversion.
@@ -500,7 +466,3 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 - **Calibre**: [Calibre Website](https://calibre-ebook.com)
 - **FFmpeg**: [FFmpeg Website](https://ffmpeg.org)
 - [@shakenbake15 for better chapter saving method](https://github.com/DrewThomasson/ebook2audiobook/issues/8) 
-
-
-## Join Our  Server!
-[![Discord](https://dcbadge.limes.pink/api/server/https://discord.gg/63Tv3F65k6)](https://discord.gg/63Tv3F65k6)
