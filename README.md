@@ -96,7 +96,7 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
   - [Docker container file locations](#docker-container-file-locations)
   - [Common Docker issues](#common-docker-issues)
 - [Supported eBook Formats](#supported-ebook-formats)
-- [Output](#output)
+- [Output Formats](#output-formats)
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
@@ -440,7 +440,7 @@ For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
 
-## Output
+## Output Formats
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
 
 ## Common Issues:
