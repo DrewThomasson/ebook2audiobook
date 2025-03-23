@@ -399,16 +399,6 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
   The service will be available at http://localhost:7860.
 
 
-## Renting a GPU
-Don't have the hardware to run it or you want to rent a GPU?
-#### You can duplicate the hugginface space and rent a gpu for around $0.40 an hour
-[Huggingface Space Demo](#huggingface-space-demo)
-
-#### Or you can try using the google colab for free!
-(Be aware it will time out after a bit of your not messing with the google colab)
-[Free Google Colab](#free-google-colab)
-
-
 ## Common Docker Issues
 
 - `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory` (Just remove all post arguments as I replaced the `CMD` with `ENTRYPOINT` in the [Dockerfile](Dockerfile))
