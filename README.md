@@ -53,6 +53,11 @@ https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080
 
 https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea  
 
+**Example**
+
+![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
+
+
 </details>
 
 
@@ -438,9 +443,6 @@ For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 
 ## Output
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
-- **Example**
-  ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
-
 
 ## Common Issues:
 -  CPU is slow (better on server smp CPU) while NVIDIA GPU can have almost real time conversion.
