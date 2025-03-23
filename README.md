@@ -346,10 +346,7 @@ For example:
 
 
 ## Docker headless guide
-first for a docker pull of the latest with
-```bash 
-docker pull athomasson2/ebook2audiobook
-```
+
 - Before you do run this you need to create a dir named "input-folder" in your current dir
   which will be linked, This is where you can put your input files for the docker image to see
 ```bash
