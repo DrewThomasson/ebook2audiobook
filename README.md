@@ -83,7 +83,6 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
     - [Launching Gradio Web Interface](#launching-gradio-web-interface)
     - [Basic Headless Usage](#basic--usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
-    - [Renting a GPU](#renting-a-gpu)
     - [Help command output](#help-command-output)
   - [Run Remotely](#run-remotely)  
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
