@@ -96,7 +96,6 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 - [Output](#output)
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
-- [Join Our  Server!](#join-our--server)
 - [Table of Contents](#table-of-contents)
 
 
