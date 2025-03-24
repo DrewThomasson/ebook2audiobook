@@ -313,9 +313,6 @@ Linux/Mac:
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
 
 ### Using Docker
-You can also use Docker to run the eBook to Audiobook converter. 
-This method ensures consistency across different environments and simplifies setup.
-
 
 #### Docker GPU Options
 
