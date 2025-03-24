@@ -58,6 +58,9 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
             "cuda12") \
                 pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cu121 \
                 ;; \
+            "cuda128") \
+                pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/nightly/cu128 \
+                ;; \
             "cuda11") \
                 pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cu118 \
                 ;; \
