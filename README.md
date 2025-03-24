@@ -20,6 +20,8 @@ Use this tool responsibly and in accordance with all applicable laws.
 
 <a href="https://github.com/DrewThomasson/ebook2audiobook">
   <img src="https://img.shields.io/badge/Platform-mac%20|%20linux%20|%20windows-lightgrey" alt="Platform">
+</a><a href="https://hub.docker.com/r/athomasson2/ebook2audiobook">
+<img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/athomasson2/ebook2audiobook.svg"/>
 </a>
 
 ### Run Remotely
