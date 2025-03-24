@@ -382,7 +382,7 @@ jobs:
     runs-on: self-hosted
     strategy:
       matrix:
-        torch_version: [cuda12, cuda11, rocm, xpu, cpu]
+        torch_version: [cuda12, cuda11, cuda128, rocm, xpu, cpu]
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
