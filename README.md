@@ -345,10 +345,10 @@ This command will start the Gradio interface on port 7860.(localhost:7860)
 
 
 ## Docker container file locations
-All ebook2audiobooks will have the base dir of `/home/user/app/`
+All ebook2audiobooks will have the base dir of `/app/`
 For example:
-`tmp` = `/home/user/app/tmp`
-`audiobooks` = `/home/user/app/audiobooks`
+`tmp` = `/app/tmp`
+`audiobooks` = `/app/audiobooks`
 
 
 ## Docker headless guide
