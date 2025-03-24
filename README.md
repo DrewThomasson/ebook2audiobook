@@ -319,7 +319,7 @@ This method ensures consistency across different environments and simplifies set
 
 #### Docker GPU Options
 
-Available tags: `latest` (CUDA 11), `cpu`, `rocm`, `cuda11`, `cuda12`, `xpu` (x86 only)
+Available tags: `latest` (CUDA 11), `cpu`, `rocm`, `cuda11`, `cuda12`, `cuda128`, `xpu` (x86 only)
 
 
 #### Running the Docker Container
