@@ -89,7 +89,7 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
   - [Run Remotely](#run-remotely)  
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
-- [Using Docker](#using-docker)
+- [Docker](#docker-gpu-options) 
   - [GPU options](#docker-gpu-options)
   - [Docker Run](#running-the-docker-container)
   - [Docker Build](#building-the-docker-container)
@@ -311,10 +311,6 @@ Linux/Mac:
 ```
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
-
-### Using Docker
-You can also use Docker to run the eBook to Audiobook converter. 
-This method ensures consistency across different environments and simplifies setup.
 
 
 #### Docker GPU Options
