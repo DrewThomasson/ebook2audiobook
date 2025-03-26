@@ -11,8 +11,8 @@ x-gpu-disabled: &gpu-disabled
 services:
   ebook2audiobook:
     # Docker GPU Options
-    # Available tags: latest (CUDA 11), cpu, rocm, cuda11, cuda12, xpu (x86 only)
-    image: docker.io/athomasson2/ebook2audiobook:latest
+    # Available tags: latest (CUDA 11), cpu, rocm, cuda11, cuda12, xpu (x86 only), lite
+    image: docker.io/athomasson2/ebook2audiobook:lite
     pull_policy: always
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here
