@@ -141,6 +141,14 @@ models = {
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
         },
+        "EvaSeymour": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/EvaSeymour",
+            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"EvaSeymour_{default_xtts_settings['samplerate']}.wav"),
+            "files": default_xtts_settings['files'],
+            "samplerate": default_xtts_settings['samplerate']
+        },
         "GhostMW2": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
