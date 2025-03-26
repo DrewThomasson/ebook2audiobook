@@ -372,132 +372,143 @@ jobs:
 
 
 
-
-
-
-
+  
   build_variants:
-    needs: run_tests
-    if: ${{ !failure() || inputs.require_all_tests == false }}
-    runs-on: self-hosted
-    strategy:
-      matrix:
-        torch_version: [cuda12, cuda11, cuda128, rocm, xpu, cpu]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      
-      # Set up Docker Buildx conditionally
-      - name: Set up Docker Buildx (Windows)
-        if: runner.os == 'Windows'
-        uses: docker/setup-buildx-action@v2
-      
-      - name: Set up Docker Buildx (Unix)
-        if: runner.os != 'Windows'
-        uses: docker/setup-buildx-action@v2
-        with:
-          driver: docker-container
-          buildkitd-flags: --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
-      
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
-      # Get Git Commit Hash conditionally
-      - name: Get Git Commit Hash (Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-      
-      - name: Get Git Commit Hash (Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $gitHash = (git rev-parse --short=9 HEAD).Trim()
-          Add-Content -Path $env:GITHUB_ENV -Value "GIT_HASH=$gitHash"
-      
-      # Get Latest Release Tag conditionally
-      - name: Get Latest Release Tag (Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
-          if [[ -z "$TAG" || "$TAG" == "null" ]]; then TAG="latest"; fi
-          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
-      
-      - name: Get Latest Release Tag (Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $response = Invoke-WebRequest -Uri "https://api.github.com/repos/${{ github.repository }}/releases/latest" -UseBasicParsing
-          $json = $response.Content | ConvertFrom-Json
-          $tag = $json.tag_name
-          if (-not $tag -or $tag -eq "null") { $tag = "latest" }
-          Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_TAG=$tag"
-      
-      # Debug output
-      - name: Debug Print Variables (Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          echo "DOCKER_USERNAME: $env:DOCKER_USERNAME"
-          echo "GIT_HASH: $env:GIT_HASH"
-          echo "RELEASE_TAG: $env:RELEASE_TAG"
-          echo "TORCH_VERSION: ${{ matrix.torch_version }}"
-      
-      - name: Debug Print Variables (Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}"
-          echo "GIT_HASH=${GIT_HASH}"
-          echo "RELEASE_TAG=${RELEASE_TAG}"
-          echo "TORCH_VERSION=${{ matrix.torch_version }}"
+      needs: run_tests
+      if: ${{ !failure() || inputs.require_all_tests == false }}
+      runs-on: self-hosted
+      strategy:
+        matrix:
+          torch_version: [cuda12, cuda11, cuda128, rocm, xpu, cpu, lite]
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v3
         
+        # Set up Docker Buildx conditionally
+        - name: Set up Docker Buildx (Windows)
+          if: runner.os == 'Windows'
+          uses: docker/setup-buildx-action@v2
+        
+        - name: Set up Docker Buildx (Unix)
+          if: runner.os != 'Windows'
+          uses: docker/setup-buildx-action@v2
+          with:
+            driver: docker-container
+            buildkitd-flags: --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
+        
+        - name: Log in to Docker Hub
+          uses: docker/login-action@v2
+          with:
+            username: ${{ secrets.DOCKER_USERNAME }}
+            password: ${{ secrets.DOCKER_PASSWORD }}
+        
+        # Get Git Commit Hash conditionally
+        - name: Get Git Commit Hash (Unix)
+          if: runner.os != 'Windows'
+          shell: bash
+          run: |
+            echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+        
+        - name: Get Git Commit Hash (Windows)
+          if: runner.os == 'Windows'
+          shell: powershell
+          run: |
+            $gitHash = (git rev-parse --short=9 HEAD).Trim()
+            Add-Content -Path $env:GITHUB_ENV -Value "GIT_HASH=$gitHash"
+        
+        # Get Latest Release Tag conditionally
+        - name: Get Latest Release Tag (Unix)
+          if: runner.os != 'Windows'
+          shell: bash
+          run: |
+            TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+            if [[ -z "$TAG" || "$TAG" == "null" ]]; then TAG="latest"; fi
+            echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+        
+        - name: Get Latest Release Tag (Windows)
+          if: runner.os == 'Windows'
+          shell: powershell
+          run: |
+            $response = Invoke-WebRequest -Uri "https://api.github.com/repos/${{ github.repository }}/releases/latest" -UseBasicParsing
+            $json = $response.Content | ConvertFrom-Json
+            $tag = $json.tag_name
+            if (-not $tag -or $tag -eq "null") { $tag = "latest" }
+            Add-Content -Path $env:GITHUB_ENV -Value "RELEASE_TAG=$tag"
+        
+        # Debug output
+        - name: Debug Print Variables (Windows)
+          if: runner.os == 'Windows'
+          shell: powershell
+          run: |
+            echo "DOCKER_USERNAME: $env:DOCKER_USERNAME"
+            echo "GIT_HASH: $env:GIT_HASH"
+            echo "RELEASE_TAG: $env:RELEASE_TAG"
+            echo "TORCH_VERSION: ${{ matrix.torch_version }}"
+        
+        - name: Debug Print Variables (Unix)
+          if: runner.os != 'Windows'
+          shell: bash
+          run: |
+            echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}"
+            echo "GIT_HASH=${GIT_HASH}"
+            echo "RELEASE_TAG=${RELEASE_TAG}"
+            echo "TORCH_VERSION=${{ matrix.torch_version }}"
+          
         # Build with Docker Buildx (Unix)
-      - name: Build with Docker Buildx (Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          PLATFORMS="linux/amd64,linux/arm64"
-          if [[ "${{ matrix.torch_version }}" == "xpu" ]]; then
-            PLATFORMS="linux/amd64"
-          fi
-          
-          docker buildx build \
-            --pull \
-            --platform $PLATFORMS \
-            --build-arg TORCH_VERSION=${{ matrix.torch_version }} \
-            --build-arg BASE_IMAGE=${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:base \
-            --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.GIT_HASH }} \
-            --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.RELEASE_TAG }} \
-            --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }} \
-            --push \
-            .
-  
-      - name: Build with Docker Buildx (Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $PLATFORMS = "linux/amd64,linux/arm64"
-          if ("${{ matrix.torch_version }}" -eq "xpu") {
-            $PLATFORMS = "linux/amd64"
-          }
-          
-          docker buildx build `
-            --pull `
-            --platform $PLATFORMS `
-            --build-arg TORCH_VERSION=${{ matrix.torch_version }} `
-            --build-arg BASE_IMAGE=${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:base `
-            --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.GIT_HASH }} `
-            --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.RELEASE_TAG }} `
-            --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }} `
-            --push `
-            .
-  
+        - name: Build with Docker Buildx (Unix)
+          if: runner.os != 'Windows'
+          shell: bash
+          run: |
+            PLATFORMS="linux/amd64,linux/arm64"
+            if [[ "${{ matrix.torch_version }}" == "xpu" ]]; then
+              PLATFORMS="linux/amd64"
+            fi
+            
+            # Conditional build argument based on torch_version
+            if [[ "${{ matrix.torch_version }}" == "lite" ]]; then
+              BUILD_ARG="--build-arg SKIP_XTTS_TEST=true"
+            else
+              BUILD_ARG="--build-arg TORCH_VERSION=${{ matrix.torch_version }}"
+            fi
+            
+            docker buildx build \
+              --pull \
+              --platform $PLATFORMS \
+              $BUILD_ARG \
+              --build-arg BASE_IMAGE=${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:base \
+              --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.GIT_HASH }} \
+              --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.RELEASE_TAG }} \
+              --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }} \
+              --push \
+              .
+    
+        - name: Build with Docker Buildx (Windows)
+          if: runner.os == 'Windows'
+          shell: powershell
+          run: |
+            $PLATFORMS = "linux/amd64,linux/arm64"
+            if ("${{ matrix.torch_version }}" -eq "xpu") {
+              $PLATFORMS = "linux/amd64"
+            }
+            
+            # Conditional build argument based on torch_version
+            $BUILD_ARG = if ("${{ matrix.torch_version }}" -eq "lite") {
+              "--build-arg SKIP_XTTS_TEST=true"
+            } else {
+              "--build-arg TORCH_VERSION=${{ matrix.torch_version }}"
+            }
+            
+            docker buildx build `
+              --pull `
+              --platform $PLATFORMS `
+              $BUILD_ARG `
+              --build-arg BASE_IMAGE=${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:base `
+              --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.GIT_HASH }} `
+              --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }}-${{ env.RELEASE_TAG }} `
+              --tag ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ matrix.torch_version }} `
+              --push `
+              .
+    
 
 
 
