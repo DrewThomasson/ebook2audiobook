@@ -363,7 +363,6 @@ docker run --pull always --rm \
     athomasson2/ebook2audiobook \
     --headless --ebook /input_folder/YOUR_EBOOK_FILE
 ```
-- And that should be it! 
 - The output Audiobooks will be found in the Audiobook folder which will also be located
   in your local dir you ran this docker command in
 
@@ -374,7 +373,7 @@ docker run --pull always --rm \
 docker run --pull always --rm athomasson2/ebook2audiobook --help
 
 ```
-and that will output this 
+That will output this 
 [Help command output](#help-command-output)
 
 
