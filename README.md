@@ -88,7 +88,8 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
     - [Help command output](#help-command-output)
   - [Run Remotely](#run-remotely)  
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
-  - [For Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
+  - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
+  - [Train XTTS](#fine-tune-your-own-xtts-model)
 - [Docker](#docker-gpu-options) 
   - [GPU options](#docker-gpu-options)
   - [Docker Run](#running-the-docker-container)
@@ -416,18 +417,19 @@ docker run --pull always --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF
 
 
 ## Fine Tuned TTS models
-You can fine-tune your own xtts model easily with this repo
-[xtts-finetune-webui](https://github.com/daswer123/xtts-finetune-webui)
+#### Fine Tune your own xtts model
 
-If you want to rent a GPU easily you can also duplicate this huggingface
-[xtts-finetune-webui-space](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu)
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/tree/v25/Notebooks/finetune/xtts)
 
-A space you can use to de-noise the training data easily also
-[denoise-huggingface-space](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit)
+#### De-noise training data
+
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit)
+
 
 ### Fine Tuned TTS Collection
-To find our collection of already fine-tuned TTS models,
-visit [this Hugging Face link](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
+
+[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
+
 For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 
 
