@@ -189,6 +189,14 @@ models = {
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
         },
+        "LeeHorsley": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/LeeHorsley",
+            "voice": os.path.join(voices_dir, "eng", "elder", "male", f"LeeHorsley_{default_xtts_settings['samplerate']}.wav"),
+            "files": default_xtts_settings['files'],
+            "samplerate": default_xtts_settings['samplerate']
+        },
         "MorganFreeman": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
