@@ -100,7 +100,7 @@ jobs:
           # Read version from the source repository's VERSION.txt
           VERSION=$(cat source/VERSION.txt | tr -d ' \t\n')
           echo "Updating README with version $VERSION"
-          cd ebook2audiobook_v2.0_Beta
+          cd ebook2audiobook
           # Update updates.txt (append or create if it doesn't exist)
           if [ ! -f updates.txt ]; then
             echo "update" > updates.txt
