@@ -649,6 +649,8 @@ def get_sentences(text, lang):
     def split_sentence(sentence):
         end = ''
         if len(sentence) <= max_chars:
+            if not sentence:
+                return []
             if sentence[-1].isalpha():
                 end = '–'
             return [sentence + end]
