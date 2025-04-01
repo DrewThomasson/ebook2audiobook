@@ -167,8 +167,7 @@ cd ebook2audiobook
      
      ```bash
      REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rust" "sox")
-     conda create -n ebook2audiobook python=3.12 -y  # Create Python 3.12 env 
-     conda activate ebook2audiobook  # Activate Python 3.12 env
+     REQUIRED_PYTHON_VERSION="3.12"
      pip install -r requirements.txt  # Install Python Requirments
      python app.py  # Run Ebook2Audiobook
      ```
