@@ -205,6 +205,14 @@ models = {
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
         },
+        "MelinaEldenRing": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/MelinaEldenRing",
+            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"MelinaEldenRing_{default_xtts_settings['samplerate']}.wav"),
+            "files": default_xtts_settings['files'],
+            "samplerate": default_xtts_settings['samplerate']
+        },
         "MorganFreeman": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
