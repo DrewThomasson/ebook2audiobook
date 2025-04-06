@@ -261,6 +261,14 @@ models = {
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
         },
+        "RelaxForAWhile": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/RelaxForAWhile",
+            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"RelaxForAWhile_{default_xtts_settings['samplerate']}.wav"),
+            "files": default_xtts_settings['files'],
+            "samplerate": default_xtts_settings['samplerate']
+        },
         "RosamundPike": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
