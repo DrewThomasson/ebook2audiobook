@@ -2135,7 +2135,7 @@ def web_interface(args):
                         files_to_remove = glob(pattern)
                         for file in files_to_remove:
                             os.remove(file)                           
-                        msg = f'Voice file {re.sub(r'_(24000|16000)\.wav$', '', selected_name)} deleted!'
+                        msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
                         return update_gr_voice_list(id), gr.update(), gr.update(), gr.update(visible=False)
