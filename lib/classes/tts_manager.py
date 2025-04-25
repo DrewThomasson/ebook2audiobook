@@ -321,7 +321,7 @@ class TTSManager:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
 
-    def _trim_end(self, audio_data, sample_rate, silence_threshold=0.001, buffer_seconds=0.007):
+    def _trim_end(self, audio_data, sample_rate, silence_threshold=0.001, buffer_sec=0.007):
         # Ensure audio_data is a PyTorch tensor
         if isinstance(audio_data, list):  
             audio_data = torch.tensor(audio_data)  # Convert list to tensor
@@ -337,7 +337,7 @@ class TTSManager:
                 return torch.tensor([], device=audio_data.device)
 
             # Determine the trimming index
-            end_index = non_silent_indices[-1] + int(buffer_seconds * sample_rate)
+            end_index = non_silent_indices[-1] + int(buffer_sec * sample_rate)
 
             # Trim the audio, keeping it as a tensor
             trimmed_audio = audio_data[:end_index]
@@ -384,6 +384,7 @@ class TTSManager:
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
+            trim_end = 0.007
             fine_tuned_params = {
                 key: cast_type(self.session[key])
                 for key, cast_type in {
@@ -490,6 +491,7 @@ class TTSManager:
                             **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
+                trim_end = 0.004
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -556,6 +558,7 @@ class TTSManager:
                                 **speaker_argument
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
+                trim_end = 0.004
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -611,6 +614,7 @@ class TTSManager:
                                 text=self.params['sentence']
                             )
             elif self.session['tts_engine'] == YOURTTS:
+                trim_end = 0.005
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -630,7 +634,7 @@ class TTSManager:
                         )
             if audio_data is not None:
                 if self.params['sentence'].endswith('–'):
-                    audio_data = self._trim_end(audio_data, self.params['sample_rate'])
+                    audio_data = self._trim_end(audio_data, self.params['sample_rate'],0.001,trim_end)
                 sourceTensor = self._tensor_type(audio_data)
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, self.params['sample_rate'], format=default_audio_proc_format)
