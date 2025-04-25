@@ -491,7 +491,7 @@ class TTSManager:
                             **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
-                trim_end = 0.004
+                trim_end = 0.003
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -558,7 +558,7 @@ class TTSManager:
                                 **speaker_argument
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
-                trim_end = 0.004
+                trim_end = 0.002
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -614,7 +614,7 @@ class TTSManager:
                                 text=self.params['sentence']
                             )
             elif self.session['tts_engine'] == YOURTTS:
-                trim_end = 0.005
+                trim_end = 0.004
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
