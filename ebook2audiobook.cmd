@@ -16,7 +16,7 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 
-set "PROGRAMS_LIST=calibre-normal-cjk ffmpeg nodejs espeak-ng sox"
+set "PROGRAMS_LIST=calibre-normal ffmpeg nodejs espeak-ng sox"
 
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
@@ -64,6 +64,7 @@ where /Q scoop
 if %errorlevel% neq 0 (
 	echo Scoop is not installed. 
 	set "SCOOP_CHECK=1"
+	goto install_components
 )
 goto conda_check
 exit /b
@@ -74,7 +75,7 @@ if %errorlevel% neq 0 (
 	call rmdir /s /q "%CONDA_INSTALL_DIR%" 2>nul
 	echo Miniforge3 is not installed. 
 	set "CONDA_CHECK=1"
-	goto programs_check
+	goto install_components
 )
 :: Check if running in a Conda environment
 if defined CONDA_DEFAULT_ENV (
@@ -110,7 +111,7 @@ set "missing_prog_array="
 for %%p in (%PROGRAMS_LIST%) do (
     set "prog=%%p"
     if "%%p"=="nodejs" set "prog=node"
-	if "%%p"=="calibre-normal-cjk" set "prog=calibre"
+	if "%%p"=="calibre-normal" set "prog=calibre"
     where /Q !prog!
     if !errorlevel! neq 0 (
         echo %%p is not installed.
@@ -130,12 +131,6 @@ if not "%SCOOP_CHECK%"=="0" (
 	echo Installing Scoop...
     call powershell -command "Set-ExecutionPolicy RemoteSigned -scope CurrentUser"
     call powershell -command "iwr -useb get.scoop.sh | iex"
-	
-	where /Q scoop
-	if !errorlevel! neq 0 (
-		echo Scoop installation failed.
-		goto failed
-	)
 	call scoop install git
 	call scoop bucket add muggle https://github.com/hu3rror/scoop-muggle.git
 	call scoop bucket add extras
@@ -144,32 +139,8 @@ if not "%SCOOP_CHECK%"=="0" (
 	if "%PROGRAMS_CHECK%"=="0" (
 		set "SCOOP_CHECK=0"
 	)
-)
-:: Install missing packages one by one
-if not "%PROGRAMS_CHECK%"=="0" (
-    echo Installing missing programs...
-	if "%SCOOP_CHECK%"=="0" (
-		call scoop bucket add muggle b https://github.com/hu3rror/scoop-muggle.git
-		call scoop bucket add extras
-		call scoop bucket add versions
-	)
-    for %%p in (%missing_prog_array%) do (
-		call scoop install %%p
-		set "prog=%%p"
-		if "%%p"=="nodejs" (
-			set "prog=node"
-		)
-		if "%%p"=="calibre-normal-cjk" set "prog=calibre"
-		where /Q !prog!
-		if !errorlevel! neq 0 (
-			echo %%p installation failed...
-			goto failed
-		)
-    )
-	call powershell -command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + '%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;', 'User')"
-	set "SCOOP_CHECK=0"
-    set "PROGRAMS_CHECK=0"
-    set "missing_prog_array="
+	start "" cmd /k cd /d "%CD%" ^& call "%~f0"
+	exit
 )
 :: Install Conda if not already installed
 if not "%CONDA_CHECK%"=="0" (
@@ -186,6 +157,34 @@ if not "%CONDA_CHECK%"=="0" (
 	del "%CONDA_INSTALLER%"
 	set "CONDA_CHECK=0"
 	echo Conda installed successfully.
+	start "" cmd /k cd /d "%CD%" ^& call "%~f0"
+	exit
+)
+:: Install missing packages one by one
+if not "%PROGRAMS_CHECK%"=="0" (
+    echo Installing missing programs...
+	if "%SCOOP_CHECK%"=="0" (
+		call scoop bucket add muggle b https://github.com/hu3rror/scoop-muggle.git
+		call scoop bucket add extras
+		call scoop bucket add versions
+	)
+    for %%p in (%missing_prog_array%) do (
+		call scoop install %%p
+		set "prog=%%p"
+		if "%%p"=="nodejs" (
+			set "prog=node"
+		)
+		if "%%p"=="calibre-normal" set "prog=calibre"
+		where /Q !prog!
+		if !errorlevel! neq 0 (
+			echo %%p installation failed...
+			goto failed
+		)
+    )
+	call powershell -command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + '%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;', 'User')"
+	set "SCOOP_CHECK=0"
+    set "PROGRAMS_CHECK=0"
+    set "missing_prog_array="
 )
 goto dispatch
 exit /b
