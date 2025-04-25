@@ -848,7 +848,8 @@ def convert_chapters_to_audio(session):
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
-                        if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
+                        #if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
+                        if session['tts_engine'] == FAIRSEQ:
                             tts_manager.params['sentence'] = sentence.replace('.', '…')
                         else:
                             tts_manager.params['sentence'] = sentence
@@ -1368,7 +1369,7 @@ def convert_ebook(args):
                             os.environ["SUNO_OFFLOAD_CPU"] = 'True'
                         if get_vram() <= 4:
                             os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
-                        msg = f"Available Processor Unit: {session['device']}"
+                        msg = f"Available Processor Unit: {session['device'].upper()}"
                         print(msg)
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:

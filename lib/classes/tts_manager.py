@@ -321,7 +321,7 @@ class TTSManager:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
 
-    def _trim_end(self, audio_data, sample_rate, silence_threshold=0.010, buffer_seconds=0.010):
+    def _trim_end(self, audio_data, sample_rate, silence_threshold=0.001, buffer_seconds=0.010):
         # Ensure audio_data is a PyTorch tensor
         if isinstance(audio_data, list):  
             audio_data = torch.tensor(audio_data)  # Convert list to tensor
