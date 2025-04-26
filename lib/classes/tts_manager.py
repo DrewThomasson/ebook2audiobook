@@ -321,30 +321,24 @@ class TTSManager:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
 
-    def _trim_end(self, audio_data, sample_rate, silence_threshold=0.001, buffer_sec=0.007):
+    def _trim_audio(self, audio_data, sample_rate, silence_threshold=0.001, buffer_sec=0.007):
         # Ensure audio_data is a PyTorch tensor
         if isinstance(audio_data, list):  
-            audio_data = torch.tensor(audio_data)  # Convert list to tensor
-        
+            audio_data = torch.tensor(audio_data)
         if isinstance(audio_data, torch.Tensor):
             if audio_data.is_cuda:
-                audio_data = audio_data.cpu()  # Move to CPU if it's on CUDA
-            
+                audio_data = audio_data.cpu()           
             # Detect non-silent indices
             non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
 
             if len(non_silent_indices) == 0:
                 return torch.tensor([], device=audio_data.device)
-
-            # Determine the trimming index
+            # Calculate start and end trimming indices with buffer
+            start_index = max(non_silent_indices[0] - int(buffer_sec * sample_rate), 0)
             end_index = non_silent_indices[-1] + int(buffer_sec * sample_rate)
-
-            # Trim the audio, keeping it as a tensor
-            trimmed_audio = audio_data[:end_index]
-
-            return trimmed_audio
-        
-        # If somehow the input is still incorrect, raise an error
+            # Trim the audio
+            trimmed_audio = audio_data[start_index:end_index]
+            return trimmed_audio       
         raise TypeError("audio_data must be a PyTorch tensor or a list of numerical values.")
 
     def _normalize_audio(self, input_file, output_file, samplerate):
@@ -384,7 +378,7 @@ class TTSManager:
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
-            end_trim_audio = 0.007
+            trim_audio_buffer = 0.007
             fine_tuned_params = {
                 key: cast_type(self.session[key])
                 for key, cast_type in {
@@ -491,7 +485,7 @@ class TTSManager:
                             **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
-                end_trim_audio = 0.002
+                trim_audio_buffer = 0.002
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -558,7 +552,7 @@ class TTSManager:
                                 **speaker_argument
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
-                end_trim_audio = 0.001
+                trim_audio_buffer = 0.001
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -614,7 +608,7 @@ class TTSManager:
                                 text=self.params['sentence']
                             )
             elif self.session['tts_engine'] == YOURTTS:
-                end_trim_audio = 0.004
+                trim_audio_buffer = 0.004
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -634,7 +628,7 @@ class TTSManager:
                         )
             if audio_data is not None:
                 if self.params['sentence'].endswith('–'):
-                    audio_data = self._trim_end(audio_data, self.params['sample_rate'],0.001,end_trim_audio)
+                    audio_data = self._trim_audio(audio_data, self.params['sample_rate'],0.001,trim_audio_buffer)
                 sourceTensor = self._tensor_type(audio_data)
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, self.params['sample_rate'], format=default_audio_proc_format)
