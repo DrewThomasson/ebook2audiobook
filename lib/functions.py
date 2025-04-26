@@ -691,9 +691,10 @@ def get_sentences(text, lang):
             split_index = sentence_length // 2
             end = ' –'
         if split_index == sentence_length:
-            if sentence[-1].isalpha():
-                end = ' –'
-            return [sentence + end]
+            if sentence:
+                if sentence[-1].isalpha():
+                    end = ' –'
+                return [sentence + end]
         part1 = sentence[:split_index]
         part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
         return split_sentence(part1.strip()) + split_sentence(part2.strip())     
