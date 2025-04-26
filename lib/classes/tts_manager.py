@@ -627,7 +627,7 @@ class TTSManager:
                             **speaker_argument
                         )
             if audio_data is not None:
-                if self.params['sentence'].endswith('–'):
+                if self.params['sentence'].endswith("'"):
                     audio_data = self._trim_audio(audio_data, self.params['sample_rate'],0.001,trim_audio_buffer)
                 sourceTensor = self._tensor_type(audio_data)
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()

@@ -650,7 +650,7 @@ def get_sentences(text, lang):
         end = ''
         if len(sentence) <= max_chars:
             if sentence[-1].isalpha():
-                end = '–'
+                end = " '"
             return [sentence + end]
         if ',' in sentence:
             mid_index = len(sentence) // 2
