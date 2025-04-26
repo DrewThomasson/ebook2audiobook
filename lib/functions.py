@@ -650,7 +650,7 @@ def get_sentences(text, lang):
         end = ''
         sentence_length = len(sentence)
         if sentence_length <= max_chars:
-            if sentence[-1]
+            if sentence[-1]:
                 if sentence[-1].isalpha():
                     end = ' -'
             else
