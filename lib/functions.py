@@ -653,7 +653,7 @@ def get_sentences(text, lang):
             if sentence[-1]:
                 if sentence[-1].isalpha():
                     end = ' -'
-            else
+            else:
                 if sentence.isalpha():
                     end = ' -'               
             return [sentence + end]
