@@ -16,7 +16,7 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
-from TTS.api import TTS as TtsXTTS
+from TTS.api import TTS as coquiAPI
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 
@@ -35,7 +35,7 @@ loaded_tts = {}
 def load_coqui_tts_api(model_path, device):
     try:
         with lock:
-            tts = TtsXTTS(model_path)
+            tts = coquiAPI(model_path)
             if device == 'cuda':
                 tts.cuda()
             else:
@@ -75,7 +75,7 @@ def load_coqui_tts_checkpoint(model_path, config_path, vocab_path, device):
 def load_coqui_tts_vc(device):
     try:
         with lock:
-            tts = TtsXTTS(default_vc_model).to(device)
+            tts = coquiAPI(default_vc_model).to(device)
         return tts
     except Exception as e:
         error = f'load_coqui_tts_vc() error: {e}'
@@ -485,7 +485,7 @@ class TTSManager:
                             **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
-                trim_audio_buffer = 0.002
+                trim_audio_buffer = 0.001
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
