@@ -626,7 +626,7 @@ def get_chapters(epubBook, session):
 
 def get_sentences(text, lang):
     max_tokens = language_mapping[lang]['max_tokens']
-    max_chars = max_tokens * 10
+    max_chars = (max_tokens * 10) - 4
     pattern_split = [re.escape(p) for p in punctuation_split]
     pattern = f"({'|'.join(pattern_split)})"
 
@@ -650,7 +650,7 @@ def get_sentences(text, lang):
         end = ''
         if len(sentence) <= max_chars:
             if sentence[-1].isalpha():
-                end = '–'
+                end = ' -'
             return [sentence + end]
         if ',' in sentence:
             mid_index = len(sentence) // 2
@@ -684,13 +684,13 @@ def get_sentences(text, lang):
                 split_index = left_split
             else:
                 split_index = right_split if right_split != -1 else mid_index
-            end = '–'
+            end = ' –'
         else:
             split_index = len(sentence) // 2
-            end = '–'
+            end = ' –'
         if split_index == len(sentence):
             if sentence[-1].isalpha():
-                end = '–'
+                end = ' –'
             return [sentence + end]
         part1 = sentence[:split_index]
         part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
@@ -848,7 +848,8 @@ def convert_chapters_to_audio(session):
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
-                        if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
+                        #if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
+                        if session['tts_engine'] == FAIRSEQ:
                             tts_manager.params['sentence'] = sentence.replace('.', '…')
                         else:
                             tts_manager.params['sentence'] = sentence
@@ -1368,7 +1369,7 @@ def convert_ebook(args):
                             os.environ["SUNO_OFFLOAD_CPU"] = 'True'
                         if get_vram() <= 4:
                             os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
-                        msg = f"Available Processor Unit: {session['device']}"
+                        msg = f"Available Processor Unit: {session['device'].upper()}"
                         print(msg)
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
@@ -2135,7 +2136,7 @@ def web_interface(args):
                         files_to_remove = glob(pattern)
                         for file in files_to_remove:
                             os.remove(file)                           
-                        msg = f'Voice file {re.sub(r'_(24000|16000)\.wav$', '', selected_name)} deleted!'
+                        msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
                         return update_gr_voice_list(id), gr.update(), gr.update(), gr.update(visible=False)

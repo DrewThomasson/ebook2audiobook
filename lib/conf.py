@@ -33,7 +33,7 @@ if platform.system() == 'Windows':
 
 prog_version = (lambda: open('VERSION.txt').read().strip())()
 
-min_python_version = (3,11)
+min_python_version = (3,10)
 max_python_version = (3,12)
 
 NATIVE = 'native'

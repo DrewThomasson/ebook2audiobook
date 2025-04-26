@@ -16,7 +16,7 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
-from TTS.api import TTS as TtsXTTS
+from TTS.api import TTS as coquiAPI
 from TTS.tts.configs.xtts_config import XttsConfig
 from TTS.tts.models.xtts import Xtts
 
@@ -35,7 +35,7 @@ loaded_tts = {}
 def load_coqui_tts_api(model_path, device):
     try:
         with lock:
-            tts = TtsXTTS(model_path)
+            tts = coquiAPI(model_path)
             if device == 'cuda':
                 tts.cuda()
             else:
@@ -75,7 +75,7 @@ def load_coqui_tts_checkpoint(model_path, config_path, vocab_path, device):
 def load_coqui_tts_vc(device):
     try:
         with lock:
-            tts = TtsXTTS(default_vc_model).to(device)
+            tts = coquiAPI(default_vc_model).to(device)
         return tts
     except Exception as e:
         error = f'load_coqui_tts_vc() error: {e}'
@@ -321,30 +321,24 @@ class TTSManager:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
 
-    def _trim_end(self, audio_data, sample_rate, silence_threshold=0.001, buffer_seconds=0.001):
+    def _trim_audio(self, audio_data, sample_rate, silence_threshold=0.001, buffer_sec=0.007):
         # Ensure audio_data is a PyTorch tensor
         if isinstance(audio_data, list):  
-            audio_data = torch.tensor(audio_data)  # Convert list to tensor
-        
+            audio_data = torch.tensor(audio_data)
         if isinstance(audio_data, torch.Tensor):
             if audio_data.is_cuda:
-                audio_data = audio_data.cpu()  # Move to CPU if it's on CUDA
-            
+                audio_data = audio_data.cpu()           
             # Detect non-silent indices
             non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
 
             if len(non_silent_indices) == 0:
                 return torch.tensor([], device=audio_data.device)
-
-            # Determine the trimming index
-            end_index = non_silent_indices[-1] + int(buffer_seconds * sample_rate)
-
-            # Trim the audio, keeping it as a tensor
-            trimmed_audio = audio_data[:end_index]
-
-            return trimmed_audio
-        
-        # If somehow the input is still incorrect, raise an error
+            # Calculate start and end trimming indices with buffer
+            start_index = max(non_silent_indices[0] - int(buffer_sec * sample_rate), 0)
+            end_index = non_silent_indices[-1] + int(buffer_sec * sample_rate)
+            # Trim the audio
+            trimmed_audio = audio_data[start_index:end_index]
+            return trimmed_audio       
         raise TypeError("audio_data must be a PyTorch tensor or a list of numerical values.")
 
     def _normalize_audio(self, input_file, output_file, samplerate):
@@ -384,6 +378,8 @@ class TTSManager:
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
+            audio_to_trim = False
+            trim_audio_buffer = 0.001
             fine_tuned_params = {
                 key: cast_type(self.session[key])
                 for key, cast_type in {
@@ -404,7 +400,11 @@ class TTSManager:
                 else models[self.session['tts_engine']][self.session['fine_tuned']]['voice'] if self.session['fine_tuned'] != 'internal'
                 else models[self.session['tts_engine']]['internal']['voice']
             )
+            if self.params['sentence'].endswith('-'):
+                self.params['sentence'] = self.params['sentence'][:-1]
+                audio_to_trim = True
             if self.session['tts_engine'] == XTTSv2:
+                trim_audio_buffer = 0.07
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     if self.params['current_voice_path'] != self.params['voice_path']:
                         msg = 'Computing speaker latents...'
@@ -441,6 +441,7 @@ class TTSManager:
                             **fine_tuned_params
                         )
             elif self.session['tts_engine'] == BARK:
+                trim_audio_buffer = 0.004
                 '''
                     [laughter]
                     [laughs]
@@ -611,6 +612,7 @@ class TTSManager:
                                 text=self.params['sentence']
                             )
             elif self.session['tts_engine'] == YOURTTS:
+                trim_audio_buffer = 0.004
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -629,8 +631,8 @@ class TTSManager:
                             **speaker_argument
                         )
             if audio_data is not None:
-                if self.params['sentence'].endswith('–'):
-                    audio_data = self._trim_end(audio_data, self.params['sample_rate'])
+                if audio_to_trim:
+                    audio_data = self._trim_audio(audio_data, self.params['sample_rate'],0.001,trim_audio_buffer)
                 sourceTensor = self._tensor_type(audio_data)
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, self.params['sample_rate'], format=default_audio_proc_format)
