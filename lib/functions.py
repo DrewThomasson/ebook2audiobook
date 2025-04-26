@@ -2784,11 +2784,6 @@ def web_interface(args):
             ''',
             outputs=[gr_read_data]
         )
-
-    # Bypass proxy settings for localhost
-    import os
-    os.environ['no_proxy'] = 'localhost,127.0.0.1'
-    
     try:
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
