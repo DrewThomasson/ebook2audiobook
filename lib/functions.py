@@ -650,7 +650,7 @@ def get_sentences(text, lang):
         end = ''
         if len(sentence) <= max_chars:
             if sentence[-1].isalpha():
-                end = "-"
+                end = ' -'
             return [sentence + end]
         if ',' in sentence:
             mid_index = len(sentence) // 2
@@ -684,13 +684,13 @@ def get_sentences(text, lang):
                 split_index = left_split
             else:
                 split_index = right_split if right_split != -1 else mid_index
-            end = '–'
+            end = ' –'
         else:
             split_index = len(sentence) // 2
-            end = '–'
+            end = ' –'
         if split_index == len(sentence):
             if sentence[-1].isalpha():
-                end = '–'
+                end = ' –'
             return [sentence + end]
         part1 = sentence[:split_index]
         part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
