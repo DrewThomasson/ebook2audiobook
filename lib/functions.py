@@ -650,13 +650,10 @@ def get_sentences(text, lang):
         end = ''
         sentence_length = len(sentence)
         if sentence_length <= max_chars:
-            if sentence[-1]:
+            if sentence:
                 if sentence[-1].isalpha():
-                    end = ' -'
-            else:
-                if sentence.isalpha():
                     end = ' -'               
-            return [sentence + end]
+                return [sentence + end]
         if ',' in sentence:
             mid_index = sentence_length // 2
             left_split = sentence.rfind(",", 0, mid_index)
