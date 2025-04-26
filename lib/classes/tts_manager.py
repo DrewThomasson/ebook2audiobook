@@ -378,6 +378,7 @@ class TTSManager:
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
+            audio_to_trim = False
             trim_audio_buffer = 0.007
             fine_tuned_params = {
                 key: cast_type(self.session[key])
@@ -399,6 +400,9 @@ class TTSManager:
                 else models[self.session['tts_engine']][self.session['fine_tuned']]['voice'] if self.session['fine_tuned'] != 'internal'
                 else models[self.session['tts_engine']]['internal']['voice']
             )
+            if self.params['sentence'].endswith('-'):
+                self.params['sentence'] = self.params['sentence'][:-1]
+                audio_to_trim = True
             if self.session['tts_engine'] == XTTSv2:
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     if self.params['current_voice_path'] != self.params['voice_path']:
@@ -627,7 +631,7 @@ class TTSManager:
                             **speaker_argument
                         )
             if audio_data is not None:
-                if self.params['sentence'].endswith('-'):
+                if audio_to_trim:
                     audio_data = self._trim_audio(audio_data, self.params['sample_rate'],0.001,trim_audio_buffer)
                 sourceTensor = self._tensor_type(audio_data)
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
