@@ -648,12 +648,13 @@ def get_sentences(text, lang):
 
     def split_sentence(sentence):
         end = ''
-        if len(sentence) <= max_chars:
+        sentence_length = len(sentence)
+        if sentence_length <= max_chars and sentence_length > 0:
             if sentence[-1].isalpha():
                 end = ' -'
             return [sentence + end]
         if ',' in sentence:
-            mid_index = len(sentence) // 2
+            mid_index = sentence_length // 2
             left_split = sentence.rfind(",", 0, mid_index)
             right_split = sentence.find(",", mid_index)
             if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
@@ -661,7 +662,7 @@ def get_sentences(text, lang):
             else:
                 split_index = right_split + 1 if right_split != -1 else mid_index
         elif ';' in sentence:
-            mid_index = len(sentence) // 2
+            mid_index = sentence_length // 2
             left_split = sentence.rfind(";", 0, mid_index)
             right_split = sentence.find(";", mid_index)
             if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
@@ -669,7 +670,7 @@ def get_sentences(text, lang):
             else:
                 split_index = right_split + 1 if right_split != -1 else mid_index
         elif ':' in sentence:
-            mid_index = len(sentence) // 2
+            mid_index = sentence_length // 2
             left_split = sentence.rfind(":", 0, mid_index)
             right_split = sentence.find(":", mid_index)
             if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
@@ -677,7 +678,7 @@ def get_sentences(text, lang):
             else:
                 split_index = right_split + 1 if right_split != -1 else mid_index
         elif ' ' in sentence:
-            mid_index = len(sentence) // 2
+            mid_index = sentence_length // 2
             left_split = sentence.rfind(" ", 0, mid_index)
             right_split = sentence.find(" ", mid_index)
             if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
@@ -686,9 +687,9 @@ def get_sentences(text, lang):
                 split_index = right_split if right_split != -1 else mid_index
             end = ' –'
         else:
-            split_index = len(sentence) // 2
+            split_index = sentence_length // 2
             end = ' –'
-        if split_index == len(sentence):
+        if split_index == sentence_length:
             if sentence[-1].isalpha():
                 end = ' –'
             return [sentence + end]
