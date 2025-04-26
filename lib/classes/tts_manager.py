@@ -379,7 +379,7 @@ class TTSManager:
         try:
             audio_data = None
             audio_to_trim = False
-            trim_audio_buffer = 0.007
+            trim_audio_buffer = 0.001
             fine_tuned_params = {
                 key: cast_type(self.session[key])
                 for key, cast_type in {
@@ -404,6 +404,7 @@ class TTSManager:
                 self.params['sentence'] = self.params['sentence'][:-1]
                 audio_to_trim = True
             if self.session['tts_engine'] == XTTSv2:
+                trim_audio_buffer = 0.009
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     if self.params['current_voice_path'] != self.params['voice_path']:
                         msg = 'Computing speaker latents...'
@@ -440,6 +441,7 @@ class TTSManager:
                             **fine_tuned_params
                         )
             elif self.session['tts_engine'] == BARK:
+                trim_audio_buffer = 0.004
                 '''
                     [laughter]
                     [laughs]
@@ -489,7 +491,6 @@ class TTSManager:
                             **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
-                trim_audio_buffer = 0.001
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -556,7 +557,6 @@ class TTSManager:
                                 **speaker_argument
                             )
             elif self.session['tts_engine'] == FAIRSEQ:
-                trim_audio_buffer = 0.001
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
