@@ -162,7 +162,17 @@ cd ebook2audiobook
      ```
    - **Windows Launcher**  
      Double click `ebook2audiobook.cmd`  
-2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks.
+
+   - **Manual Python Install**
+     
+     ```bash
+     REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rust" "sox")
+     REQUIRED_PYTHON_VERSION="3.12"
+     pip install -r requirements.txt  # Install Python Requirements
+     python app.py  # Run Ebook2Audiobook
+     ```
+   
+2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks. `http://localhost:7860/`
 3. **For Public Link**:
    `python app.py --share` (all OS)
    `./ebook2audiobook.sh --share` (Linux/MacOS)
