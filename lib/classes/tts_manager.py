@@ -404,7 +404,7 @@ class TTSManager:
                 self.params['sentence'] = self.params['sentence'][:-1]
                 audio_to_trim = True
             if self.session['tts_engine'] == XTTSv2:
-                trim_audio_buffer = 0.009
+                trim_audio_buffer = 0.011
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     if self.params['current_voice_path'] != self.params['voice_path']:
                         msg = 'Computing speaker latents...'
