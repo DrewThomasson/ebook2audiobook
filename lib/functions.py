@@ -425,8 +425,9 @@ def math2word(text, lang, lang_iso1, tts_engine):
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
     if lang in abbreviations_mapping:
-        pattern = r'\b(' + '|'.join(re.escape(k) for k in abbreviations_mapping[lang]) + r')\b'
-        text = re.sub(pattern, lambda match: abbreviations_mapping[lang].get(match.group(0), match.group(0)), text)
+        for abbr, replacement in abbreviations_mapping[lang].items():
+            pattern = r'\b' + re.escape(abbr) + r'(\s|$)'
+            text = re.sub(pattern, replacement + r'\1', text)
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
