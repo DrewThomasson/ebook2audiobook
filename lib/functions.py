@@ -1252,7 +1252,7 @@ def convert_ebook(args):
         info_session = None
         if args['language'] is not None:
             if not os.path.splitext(args['ebook'])[1]:
-                error = '{args['ebook']} needs a format extension.'
+                error = f"{args['ebook']} needs a format extension."
                 print(error)
                 return error, false
             if not os.path.exists(args['ebook']):
