@@ -1200,16 +1200,16 @@ def delete_unused_tmp_dirs(web_dir, days, session):
         if os.path.exists(dir_path) and os.path.isdir(dir_path):
             for dir in os.listdir(dir_path):
                 if dir in current_user_dirs:        
-                full_dir_path = os.path.join(dir_path, dir)
-                if os.path.isdir(full_dir_path):
-                    try:
-                        dir_mtime = os.path.getmtime(full_dir_path)
-                        dir_ctime = os.path.getctime(full_dir_path)
-                        if dir_mtime < threshold_time and dir_ctime < threshold_time:
-                            shutil.rmtree(full_dir_path, ignore_errors=True)
-                            print(f"Deleted expired session: {full_dir_path}")
-                    except Exception as e:
-                        print(f"Error deleting {full_dir_path}: {e}")
+                    full_dir_path = os.path.join(dir_path, dir)
+                    if os.path.isdir(full_dir_path):
+                        try:
+                            dir_mtime = os.path.getmtime(full_dir_path)
+                            dir_ctime = os.path.getctime(full_dir_path)
+                            if dir_mtime < threshold_time and dir_ctime < threshold_time:
+                                shutil.rmtree(full_dir_path, ignore_errors=True)
+                                print(f"Deleted expired session: {full_dir_path}")
+                        except Exception as e:
+                            print(f"Error deleting {full_dir_path}: {e}")
 
 def compare_file_metadata(f1, f2):
     if os.path.getsize(f1) != os.path.getsize(f2):
