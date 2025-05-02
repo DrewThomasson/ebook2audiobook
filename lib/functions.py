@@ -1197,22 +1197,19 @@ def delete_unused_tmp_dirs(web_dir, days, session):
     current_time = time.time()
     threshold_time = current_time - (days * 24 * 60 * 60)  # Convert days to seconds
     for dir_path in dir_array:
-        if not os.path.exists(dir_path) or not os.path.isdir(dir_path):
-            continue  
-        for dir in os.listdir(dir_path):
-            if dir in current_user_dirs:
-                continue           
-            full_dir_path = os.path.join(dir_path, dir)  # Use a new variable
-            if not os.path.isdir(full_dir_path):
-                continue
-            try:
-                dir_mtime = os.path.getmtime(full_dir_path)
-                dir_ctime = os.path.getctime(full_dir_path)
-                if dir_mtime < threshold_time and dir_ctime < threshold_time:
-                    shutil.rmtree(full_dir_path, ignore_errors=True)
-                    print(f"Deleted expired session: {full_dir_path}")
-            except Exception as e:
-                print(f"Error deleting {full_dir_path}: {e}")
+        if os.path.exists(dir_path) and os.path.isdir(dir_path):
+            for dir in os.listdir(dir_path):
+                if dir in current_user_dirs:        
+                    full_dir_path = os.path.join(dir_path, dir)
+                    if os.path.isdir(full_dir_path):
+                        try:
+                            dir_mtime = os.path.getmtime(full_dir_path)
+                            dir_ctime = os.path.getctime(full_dir_path)
+                            if dir_mtime < threshold_time and dir_ctime < threshold_time:
+                                shutil.rmtree(full_dir_path, ignore_errors=True)
+                                print(f"Deleted expired session: {full_dir_path}")
+                        except Exception as e:
+                            print(f"Error deleting {full_dir_path}: {e}")
 
 def compare_file_metadata(f1, f2):
     if os.path.getsize(f1) != os.path.getsize(f2):
@@ -1255,7 +1252,7 @@ def convert_ebook(args):
         info_session = None
         if args['language'] is not None:
             if not os.path.splitext(args['ebook'])[1]:
-                error = '{args['ebook']} needs a format extension.'
+                error = f"{args['ebook']} needs a format extension."
                 print(error)
                 return error, false
             if not os.path.exists(args['ebook']):
