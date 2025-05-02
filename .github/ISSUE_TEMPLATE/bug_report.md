@@ -14,6 +14,9 @@ assignees: ''
 **Script Mode**
 - Native, Docker, Unraid
 
+**Script Version**
+- in VERSION.txt or when run the script
+
 **Process Mode**
 - Gradio GUI, Headless
 
