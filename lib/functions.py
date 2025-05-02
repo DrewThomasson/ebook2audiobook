@@ -1254,17 +1254,14 @@ def convert_ebook(args):
         id = None
         info_session = None
         if args['language'] is not None:
-
             if not os.path.splitext(args['ebook'])[1]:
-                error = 'The selected ebook file has no extension. Please select a valid file.'
+                error = '{args['ebook']} needs a format extension.'
                 print(error)
-                return error
-
+                return error, false
             if not os.path.exists(args['ebook']):
-                error = 'The ebook path you provided does not exist'
+                error = 'File does not exist or Directory empty.'
                 print(error)
-                return error
-
+                return error, false
             try:
                 if len(args['language']) == 2:
                     lang_array = languages.get(part1=args['language'])
@@ -1284,7 +1281,7 @@ def convert_ebook(args):
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 print(error)
-                return error
+                return error, false
 
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
