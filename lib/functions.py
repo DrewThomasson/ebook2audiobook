@@ -424,14 +424,15 @@ def math2word(text, lang, lang_iso1, tts_engine):
     return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
+    if lang in abbreviations_mapping:
+        for abbr, replacement in abbreviations_mapping[lang].items():
+            pattern = r'\b' + re.escape(abbr) + r'(\s|$)'
+            text = re.sub(pattern, replacement + r'\1', text)
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
-    if lang in abbreviations_mapping:
-        pattern = r'\b(' + '|'.join(re.escape(k) for k in abbreviations_mapping[lang]) + r')\b'
-        text = re.sub(pattern, lambda match: abbreviations_mapping[lang].get(match.group(0), match.group(0)), text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r") with " . " as many times as they occur
     #text = re.sub('(\r\n|\n\n|\r\r|\n\r)+', lambda m: ' . ' * (m.group().count("\n") // 2 + m.group().count("\r") // 2), text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a single "\n"
@@ -648,12 +649,14 @@ def get_sentences(text, lang):
 
     def split_sentence(sentence):
         end = ''
-        if len(sentence) <= max_chars:
-            if sentence[-1].isalpha():
-                end = ' -'
-            return [sentence + end]
+        sentence_length = len(sentence)
+        if sentence_length <= max_chars:
+            if sentence:
+                if sentence[-1].isalpha():
+                    end = ' -'               
+                return [sentence + end]
         if ',' in sentence:
-            mid_index = len(sentence) // 2
+            mid_index = sentence_length // 2
             left_split = sentence.rfind(",", 0, mid_index)
             right_split = sentence.find(",", mid_index)
             if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
@@ -661,7 +664,7 @@ def get_sentences(text, lang):
             else:
                 split_index = right_split + 1 if right_split != -1 else mid_index
         elif ';' in sentence:
-            mid_index = len(sentence) // 2
+            mid_index = sentence_length // 2
             left_split = sentence.rfind(";", 0, mid_index)
             right_split = sentence.find(";", mid_index)
             if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
@@ -669,7 +672,7 @@ def get_sentences(text, lang):
             else:
                 split_index = right_split + 1 if right_split != -1 else mid_index
         elif ':' in sentence:
-            mid_index = len(sentence) // 2
+            mid_index = sentence_length // 2
             left_split = sentence.rfind(":", 0, mid_index)
             right_split = sentence.find(":", mid_index)
             if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
@@ -677,7 +680,7 @@ def get_sentences(text, lang):
             else:
                 split_index = right_split + 1 if right_split != -1 else mid_index
         elif ' ' in sentence:
-            mid_index = len(sentence) // 2
+            mid_index = sentence_length // 2
             left_split = sentence.rfind(" ", 0, mid_index)
             right_split = sentence.find(" ", mid_index)
             if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
@@ -686,12 +689,13 @@ def get_sentences(text, lang):
                 split_index = right_split if right_split != -1 else mid_index
             end = ' –'
         else:
-            split_index = len(sentence) // 2
+            split_index = sentence_length // 2
             end = ' –'
-        if split_index == len(sentence):
-            if sentence[-1].isalpha():
-                end = ' –'
-            return [sentence + end]
+        if split_index == sentence_length:
+            if sentence:
+                if sentence[-1].isalpha():
+                    end = ' –'
+                return [sentence + end]
         part1 = sentence[:split_index]
         part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
         return split_sentence(part1.strip()) + split_sentence(part2.strip())     
@@ -1250,17 +1254,14 @@ def convert_ebook(args):
         id = None
         info_session = None
         if args['language'] is not None:
-
             if not os.path.splitext(args['ebook'])[1]:
-                error = 'The selected ebook file has no extension. Please select a valid file.'
+                error = '{args['ebook']} needs a format extension.'
                 print(error)
-                return error
-
+                return error, false
             if not os.path.exists(args['ebook']):
-                error = 'The ebook path you provided does not exist'
+                error = 'File does not exist or Directory empty.'
                 print(error)
-                return error
-
+                return error, false
             try:
                 if len(args['language']) == 2:
                     lang_array = languages.get(part1=args['language'])
@@ -1280,7 +1281,7 @@ def convert_ebook(args):
             if args['language'] not in language_mapping.keys():
                 error = 'The language you provided is not (yet) supported'
                 print(error)
-                return error
+                return error, false
 
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
@@ -2789,6 +2790,7 @@ def web_interface(args):
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
         show_alert({"type": "info", "msg": msg})
+        os.environ['no_proxy'] = ' ,'.join(all_ips)
         interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
     except OSError as e:
         error = f'Connection error: {e}'
