@@ -627,12 +627,21 @@ def get_chapters(epubBook, session):
         return None, None
 
 def get_sentences(text, lang):
-    import re
-
     max_tokens = language_mapping[lang]['max_tokens']
     max_chars = (max_tokens * 10) - 4
     pattern_split = [re.escape(p) for p in punctuation_split]
     pattern = f"({'|'.join(pattern_split)})"
+
+    def combine_punctuation(tokens):
+        if not tokens:
+            return tokens
+        result = [tokens[0]]
+        for token in tokens[1:]:
+            if all(char in punctuation_split or char in string.punctuation for char in token):
+                result[-1] += token
+            else:
+                result.append(token)
+        return result
 
     def segment_ideogramms():
         if lang == 'zho':
@@ -698,6 +707,7 @@ def get_sentences(text, lang):
     # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
+        raw_list = combine_punctuation(raw_list)
         print(raw_list)
     else:
         raw_list = re.split(pattern, text)
