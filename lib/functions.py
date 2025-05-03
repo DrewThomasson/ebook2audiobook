@@ -440,7 +440,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'[\r\n]', ' ', text)
     # Replace multiple  and spaces with single space
-    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r'[     ]+', ' ', text)
     # replace roman numbers by digits
     text = replace_roman_numbers(text)
     # Escape special characters in the punctuation list for regex
@@ -697,7 +697,7 @@ def get_sentences(text, lang):
 
 	# Step 1: language-specific word segmentation
 	if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-		raw_list = segment_ideogramms()
+        raw_list = segment_ideogramms()
         print(raw_list)
 	else:
 		raw_list = re.split(pattern, text)
