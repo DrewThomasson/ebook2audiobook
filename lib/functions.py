@@ -1151,50 +1151,61 @@ def combine_audio_chapters(session):
         return False
 
 def replace_roman_numbers(text):
-    def roman_to_int(s):
-        try:
-            roman = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
-                     'IV': 4, 'IX': 9, 'XL': 40, 'XC': 90, 'CD': 400, 'CM': 900}   
-            i = 0
-            num = 0   
-            # Iterate over the string to calculate the integer value
-            while i < len(s):
-                # Check for two-character numerals (subtractive combinations)
-                if i + 1 < len(s) and s[i:i+2] in roman:
-                    num += roman[s[i:i+2]]
-                    i += 2
-                else:
-                    # Add the value of the single character
-                    num += roman[s[i]]
-                    i += 1   
-            return num
-        except Exception as e:
-            return s
+	def roman_to_int(s):
+		try:
+			roman = {
+				'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
+				'IV': 4, 'IX': 9, 'XL': 40, 'XC': 90, 'CD': 400, 'CM': 900
+			}
+			i = 0
+			num = 0
+			while i < len(s):
+				if i + 1 < len(s) and s[i:i+2] in roman:
+					num += roman[s[i:i+2]]
+					i += 2
+				else:
+					num += roman.get(s[i], 0)
+					i += 1
+			return num if num > 0 else s
+		except Exception:
+			return s
 
-    roman_chapter_pattern = re.compile(
-        r'\b(chapter|volume|chapitre|tome|capitolo|capítulo|volumen|Kapitel|глава|том|κεφάλαιο|τόμος|capitul|poglavlje)\s'
-        r'(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|[IVXLCDM]+)\b',
-        re.IGNORECASE
-    )
+	# Match e.g. "Chapter IV", "volume IX", "tome X"
+	roman_chapter_pattern = re.compile(
+		r'\b('
+		r'chapter|volume|chapitre|tome|capitolo|capítulo|volumen|Kapitel|глава|том|κεφάλαιο|τόμος|capitul|poglavlje'
+		r')\s+'
+		r'(?=[IVXLCDM])'
+		r'((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\b',
+		re.IGNORECASE
+	)
 
-    roman_numerals_with_period = re.compile(
-        r'^(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|[IVXLCDM])\.+'
-    )
+	# Match standalone Roman numeral followed by dot (e.g. "IX.")
+	roman_numerals_with_period = re.compile(
+		r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\.+',
+		re.IGNORECASE
+	)
 
-    def replace_chapter_match(match):
-        chapter_word = match.group(1)
-        roman_numeral = match.group(2)
-        integer_value = roman_to_int(roman_numeral.upper())
-        return f'{chapter_word.capitalize()} {integer_value}; '
+	def replace_chapter_match(match):
+		chapter_word = match.group(1)
+		roman_numeral = match.group(2)
+		if not roman_numeral:
+			return match.group(0)
+		integer_value = roman_to_int(roman_numeral.upper())
+		if isinstance(integer_value, int):
+			return f'{chapter_word.capitalize()} {integer_value}; '
+		return match.group(0)
 
-    def replace_numeral_with_period(match):
-        roman_numeral = match.group(1)
-        integer_value = roman_to_int(roman_numeral)
-        return f'{integer_value}. '
+	def replace_numeral_with_period(match):
+		roman_numeral = match.group(1)
+		integer_value = roman_to_int(roman_numeral.upper())
+		if isinstance(integer_value, int):
+			return f'{integer_value}. '
+		return match.group(0)
 
-    text = roman_chapter_pattern.sub(replace_chapter_match, text)
-    text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
-    return text
+	text = roman_chapter_pattern.sub(replace_chapter_match, text)
+	text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
+	return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
     dir_array = [
