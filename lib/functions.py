@@ -648,107 +648,106 @@ def get_sentences(text, lang):
             return word_tokenize(text, engine='newmm')
 
 r'''
-def split_sentence(sentence):
-	end = ''
-	sentence_length = len(sentence)
+    def split_sentence(sentence):
+        end = ''
+        sentence_length = len(sentence)
 
-	# Return as-is if already short enough
-	if sentence_length <= max_chars:
-		if sentence and sentence[-1].isalpha():
-			end = ' -'
-		return [sentence + end]
+        # Return as-is if already short enough
+        if sentence_length <= max_chars:
+            if sentence and sentence[-1].isalpha():
+                end = ' -'
+            return [sentence + end]
 
-	def find_best_split(sentence, delimiter):
-		mid = len(sentence) // 2
-		left = sentence.rfind(delimiter, 0, mid)
-		right = sentence.find(delimiter, mid)
-		if left != -1 and (right == -1 or mid - left < right - mid):
-			return left + 1
-		elif right != -1:
-			return right + 1
-		return -1
+        def find_best_split(sentence, delimiter):
+            mid = len(sentence) // 2
+            left = sentence.rfind(delimiter, 0, mid)
+            right = sentence.find(delimiter, mid)
+            if left != -1 and (right == -1 or mid - left < right - mid):
+                return left + 1
+            elif right != -1:
+                return right + 1
+            return -1
 
-	# Try splitting by preferred delimiters
-	split_index = -1
-	for delim in [',', ';', ':', ' ']:
-		split_index = find_best_split(sentence, delim)
-		if split_index != -1:
-			if delim == ' ':
-				end = ' –'
-			break
+        # Try splitting by preferred delimiters
+        split_index = -1
+        for delim in [',', ';', ':', ' ']:
+            split_index = find_best_split(sentence, delim)
+            if split_index != -1:
+                if delim == ' ':
+                    end = ' –'
+                break
 
-	# Fallback to mid if no split found
-	if split_index == -1:
-		split_index = sentence_length // 2
-		end = ' –'
+        # Fallback to mid if no split found
+        if split_index == -1:
+            split_index = sentence_length // 2
+            end = ' –'
 
-	# Ensure index is safe before accessing
-	if split_index >= sentence_length or split_index < 0:
-		if sentence and sentence[-1].isalpha():
-			end = ' –'
-		return [sentence + end]
+        # Ensure index is safe before accessing
+        if split_index >= sentence_length or split_index < 0:
+            if sentence and sentence[-1].isalpha():
+                end = ' –'
+            return [sentence + end]
 
-	part1 = sentence[:split_index].strip()
-	char_at_split = sentence[split_index] if split_index < sentence_length else ''
-	if char_at_split in [',', ';', ':', ' ']:
-		part2 = sentence[split_index + 1:] if (split_index + 1) < sentence_length else ''
-	else:
-		part2 = sentence[split_index:]
+        part1 = sentence[:split_index].strip()
+        char_at_split = sentence[split_index] if split_index < sentence_length else ''
+        if char_at_split in [',', ';', ':', ' ']:
+            part2 = sentence[split_index + 1:] if (split_index + 1) < sentence_length else ''
+        else:
+            part2 = sentence[split_index:]
 
-	# Recursive split of both parts
-	return split_sentence(part1) + split_sentence(part2.strip())
+        # Recursive split of both parts
+        return split_sentence(part1) + split_sentence(part2.strip())
 '''
 
-def split_sentence(sentence):
-	end = ''
-	sentence_length = len(sentence)
+    def split_sentence(sentence):
+        end = ''
+        sentence_length = len(sentence)
 
-	# Return as-is if already short enough
-	if sentence_length <= max_chars:
-		if sentence and sentence[-1].isalpha():
-			end = ' -'
-		return [sentence + end]
+        # Return as-is if already short enough
+        if sentence_length <= max_chars:
+            if sentence and sentence[-1].isalpha():
+                end = ' -'
+            return [sentence + end]
 
-	def find_best_split(sentence, delimiter):
-		mid = len(sentence) // 2
-		left = sentence.rfind(delimiter, 0, mid)
-		right = sentence.find(delimiter, mid)
-		if left != -1 and (right == -1 or mid - left < right - mid):
-			return left + 1
-		elif right != -1:
-			return right + 1
-		return -1
+        def find_best_split(sentence, delimiter):
+            mid = len(sentence) // 2
+            left = sentence.rfind(delimiter, 0, mid)
+            right = sentence.find(delimiter, mid)
+            if left != -1 and (right == -1 or mid - left < right - mid):
+                return left + 1
+            elif right != -1:
+                return right + 1
+            return -1
 
-	# Try splitting by preferred delimiters
-	split_index = -1
-	for delim in [',', ';', ':', ' ']:
-		split_index = find_best_split(sentence, delim)
-		if split_index != -1:
-			if delim == ' ':
-				end = ' –'
-			break
+        # Try splitting by preferred delimiters
+        split_index = -1
+        for delim in [',', ';', ':', ' ']:
+            split_index = find_best_split(sentence, delim)
+            if split_index != -1:
+                if delim == ' ':
+                    end = ' –'
+                break
 
-	# Fallback to mid if no split found
-	if split_index == -1:
-		split_index = sentence_length // 2
-		end = ' –'
+        # Fallback to mid if no split found
+        if split_index == -1:
+            split_index = sentence_length // 2
+            end = ' –'
 
-	# Ensure index is safe before accessing
-	if split_index >= sentence_length or split_index < 0:
-		if sentence and sentence[-1].isalpha():
-			end = ' –'
-		return [sentence + end]
+        # Ensure index is safe before accessing
+        if split_index >= sentence_length or split_index < 0:
+            if sentence and sentence[-1].isalpha():
+                end = ' –'
+            return [sentence + end]
 
-	part1 = sentence[:split_index].strip()
-	char_at_split = sentence[split_index] if split_index < sentence_length else ''
-	if char_at_split in [',', ';', ':', ' ']:
-		part2 = sentence[split_index + 1:] if (split_index + 1) < sentence_length else ''
-	else:
-		part2 = sentence[split_index:]
+        part1 = sentence[:split_index].strip()
+        char_at_split = sentence[split_index] if split_index < sentence_length else ''
+        if char_at_split in [',', ';', ':', ' ']:
+            part2 = sentence[split_index + 1:] if (split_index + 1) < sentence_length else ''
+        else:
+            part2 = sentence[split_index:]
 
-	# Recursive split of both parts
-	return split_sentence(part1) + split_sentence(part2.strip())
-
+        # Recursive split of both parts
+        return split_sentence(part1) + split_sentence(part2.strip())
 
 def get_vram():
     os_name = platform.system()
