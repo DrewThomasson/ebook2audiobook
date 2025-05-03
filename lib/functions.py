@@ -627,95 +627,95 @@ def get_chapters(epubBook, session):
         return None, None
 
 def get_sentences(text, lang):
-	import re
+    import re
 
-	max_tokens = language_mapping[lang]['max_tokens']
-	max_chars = (max_tokens * 10) - 4
-	pattern_split = [re.escape(p) for p in punctuation_split]
-	pattern = f"({'|'.join(pattern_split)})"
+    max_tokens = language_mapping[lang]['max_tokens']
+    max_chars = (max_tokens * 10) - 4
+    pattern_split = [re.escape(p) for p in punctuation_split]
+    pattern = f"({'|'.join(pattern_split)})"
 
-	def segment_ideogramms():
-		if lang == 'zho':
-			import jieba
-			return list(jieba.cut(text))
-		elif lang == 'jpn':
-			import MeCab
-			mecab = MeCab.Tagger()
-			return mecab.parse(text).split()
-		elif lang == 'kor':
-			from konlpy.tag import Kkma
-			kkma = Kkma()
-			return kkma.morphs(text)
-		elif lang in ['tha', 'lao', 'mya', 'khm']:
-			from pythainlp.tokenize import word_tokenize
-			return word_tokenize(text, engine='newmm')
+    def segment_ideogramms():
+        if lang == 'zho':
+            import jieba
+            return list(jieba.cut(text))
+        elif lang == 'jpn':
+            import MeCab
+            mecab = MeCab.Tagger()
+            return mecab.parse(text).split()
+        elif lang == 'kor':
+            from konlpy.tag import Kkma
+            kkma = Kkma()
+            return kkma.morphs(text)
+        elif lang in ['tha', 'lao', 'mya', 'khm']:
+            from pythainlp.tokenize import word_tokenize
+            return word_tokenize(text, engine='newmm')
 
-	def split_sentence(sentence):
-		sentence = sentence.strip()
-		length = len(sentence)
+    def split_sentence(sentence):
+        sentence = sentence.strip()
+        length = len(sentence)
 
-		if length <= max_chars:
-			if sentence and sentence[-1].isalpha():
-				return [sentence + ' -']
-			return [sentence]
+        if length <= max_chars:
+            if sentence and sentence[-1].isalpha():
+                return [sentence + ' -']
+            return [sentence]
 
-		def find_best_split(text):
-			mid = len(text) // 2
-			for delim in [',', ';', ':', ' ']:
-				left = text.rfind(delim, 0, mid)
-				right = text.find(delim, mid)
-				if left != -1 or right != -1:
-					if left != -1 and (right == -1 or mid - left <= right - mid):
-						return left + 1, delim
-					else:
-						return right + 1, delim
-			return mid, None  # fallback to mid
+        def find_best_split(text):
+            mid = len(text) // 2
+            for delim in [',', ';', ':', ' ']:
+                left = text.rfind(delim, 0, mid)
+                right = text.find(delim, mid)
+                if left != -1 or right != -1:
+                    if left != -1 and (right == -1 or mid - left <= right - mid):
+                        return left + 1, delim
+                    else:
+                        return right + 1, delim
+            return mid, None  # fallback to mid
 
-		split_index, delim_used = find_best_split(sentence)
-		end = ' -' if delim_used == ' ' else ''
+        split_index, delim_used = find_best_split(sentence)
+        end = ' -' if delim_used == ' ' else ''
 
-		part1 = sentence[:split_index].rstrip()
-		part2 = sentence[split_index:].lstrip(' ,;:')
+        part1 = sentence[:split_index].rstrip()
+        part2 = sentence[split_index:].lstrip(' ,;:')
 
-		result = []
-		if len(part1) <= max_chars:
-			if part1 and part1[-1].isalpha():
-				part1 += end
-			result.append(part1)
-		else:
-			result.extend(split_sentence(part1))
+        result = []
+        if len(part1) <= max_chars:
+            if part1 and part1[-1].isalpha():
+                part1 += end
+            result.append(part1)
+        else:
+            result.extend(split_sentence(part1))
 
-		if part2:
-			if len(part2) <= max_chars:
-				if part2[-1].isalpha():
-					part2 += ' -'
-				result.append(part2)
-			else:
-				result.extend(split_sentence(part2))
+        if part2:
+            if len(part2) <= max_chars:
+                if part2[-1].isalpha():
+                    part2 += ' -'
+                result.append(part2)
+            else:
+                result.extend(split_sentence(part2))
 
-		return result
+        return result
 
-	# Step 1: language-specific word segmentation
+    # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
         print(raw_list)
     else:
-		raw_list = re.split(pattern, text)
+        raw_list = re.split(pattern, text)
 
-	# Step 2: group punctuation with previous parts
-	if len(raw_list) > 1:
-		tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
-	else:
-		tmp_list = raw_list
+    # Step 2: group punctuation with previous parts
+    if len(raw_list) > 1:
+        tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
+    else:
+        tmp_list = raw_list
 
-	# Optional cleanup
-	if tmp_list and tmp_list[-1] == 'Start':
-		tmp_list.pop()
+    # Optional cleanup
+    if tmp_list and tmp_list[-1] == 'Start':
+        tmp_list.pop()
 
-	# Step 3: split each sentence fragment if needed
-	sentences = []
-	for sentence in tmp_list:
-		sentences.extend(split_sentence(sentence.strip()))
+    # Step 3: split each sentence fragment if needed
+    sentences = []
+    for sentence in tmp_list:
+        sentences.extend(split_sentence(sentence.strip()))
 
     #print(json.dumps(sentences, indent=4, ensure_ascii=False))
     return sentences
