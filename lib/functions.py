@@ -637,8 +637,7 @@ def get_sentences(text, lang):
             return tokens
         result = [tokens[0]]
         for token in tokens[1:]:
-            # Join if token has no alphabetic characters AND contains punctuation
-            if not any(char.isalpha() for char in token) and any(char in punctuation_list for char in token):
+            if not any(char.isalpha() for char in token) and all(char.isspace() or char in punctuation_list for char in token):
                 result[-1] += token
             else:
                 result.append(token)
