@@ -706,6 +706,7 @@ def get_sentences(text, lang):
         return result
 
     # Step 1: language-specific word segmentation
+    print(f"---------- {lang} -----------")
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
         raw_list = combine_punctuation(raw_list)
