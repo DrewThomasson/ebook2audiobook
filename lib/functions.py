@@ -596,9 +596,10 @@ def get_chapters(epubBook, session):
             ***************************************************************************************
                                             NOTE: THE WARNING
                                 "Character xx not found in the vocabulary."
-            MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE (AS WELL AS WRONG PUNCTUATION POSITION)
-            AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN
-            IMPROVE IT OR ASK TO A MODEL TRAINING DEVELOPER.
+            MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
+            (AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
+            TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
+            TO A MODEL TRAINING DEVELOPER.
             ***************************************************************************************
         '''
         print(msg)
@@ -650,74 +651,72 @@ def get_sentences(text, lang):
     def split_sentence(sentence):
         end = ''
         sentence_length = len(sentence)
-
         if sentence_length <= max_chars:
-            if sentence and sentence[-1].isalpha():
-                end = ' -'
-            return [sentence + end]
-
-        def find_best_split(sentence, delimiter):
-            mid_index = len(sentence) // 2
-            left_split = sentence.rfind(delimiter, 0, mid_index)
-            right_split = sentence.find(delimiter, mid_index)
-            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
-                return left_split + 1
-            elif right_split != -1:
-                return right_split + 1
-            return -1
-
+            if sentence:
+                if sentence[-1].isalpha():
+                    end = ' -'               
+                return [sentence + end]
         if ',' in sentence:
-            split_index = find_best_split(sentence, ',')
+            mid_index = sentence_length // 2
+            left_split = sentence.rfind(",", 0, mid_index)
+            right_split = sentence.find(",", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split + 1
+            else:
+                split_index = right_split + 1 if right_split != -1 else mid_index
         elif ';' in sentence:
-            split_index = find_best_split(sentence, ';')
+            mid_index = sentence_length // 2
+            left_split = sentence.rfind(";", 0, mid_index)
+            right_split = sentence.find(";", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split + 1
+            else:
+                split_index = right_split + 1 if right_split != -1 else mid_index
         elif ':' in sentence:
-            split_index = find_best_split(sentence, ':')
+            mid_index = sentence_length // 2
+            left_split = sentence.rfind(":", 0, mid_index)
+            right_split = sentence.find(":", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split + 1
+            else:
+                split_index = right_split + 1 if right_split != -1 else mid_index
         elif ' ' in sentence:
-            split_index = find_best_split(sentence, ' ')
+            mid_index = sentence_length // 2
+            left_split = sentence.rfind(" ", 0, mid_index)
+            right_split = sentence.find(" ", mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                split_index = left_split
+            else:
+                split_index = right_split if right_split != -1 else mid_index
             end = ' –'
         else:
             split_index = sentence_length // 2
             end = ' –'
-
-        # Safe fallback if split_index is invalid
-        if split_index >= sentence_length or split_index < 0:
-            if sentence and sentence[-1].isalpha():
-                end = ' –'
-            return [sentence + end]
-
-        part1 = sentence[:split_index].strip()
-        char_at_split = sentence[split_index] if split_index < sentence_length else ''
-        if char_at_split in [' ', ',', ';', ':']:
-            part2 = sentence[split_index + 1:] if (split_index + 1) < sentence_length else ''
-        else:
-            part2 = sentence[split_index:]
-
-        return split_sentence(part1) + split_sentence(part2.strip())
+        if split_index == sentence_length:
+            if sentence:
+                if sentence[-1].isalpha():
+                    end = ' –'
+                return [sentence + end]
+        part1 = sentence[:split_index]
+        part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
+        return split_sentence(part1.strip()) + split_sentence(part2.strip())     
 
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
     else:
         raw_list = re.split(pattern, text)
+
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
     else:
         tmp_list = raw_list
-    if tmp_list and tmp_list[-1] == 'Start':
+        
+    if tmp_list[-1] == 'Start':
         tmp_list.pop()
     sentences = []
     for sentence in tmp_list:
-        parts = split_sentence(sentence.strip())
-        merged = []
-        for s in parts:
-            s = s.strip()
-            if not s:
-                continue
-            if re.fullmatch(r'[.,;:!?–\-]', s):
-                if merged:
-                    merged[-1] += s  # append punctuation to previous sentence
-            else:
-                merged.append(s)
-        sentences.extend(merged)
+        sentences.extend(split_sentence(sentence.strip()))  
+    #print(json.dumps(sentences, indent=4, ensure_ascii=False))
     return sentences
 
 def get_vram():
