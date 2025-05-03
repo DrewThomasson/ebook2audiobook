@@ -651,37 +651,35 @@ def get_sentences(text, lang):
         end = ''
         sentence_length = len(sentence)
 
-        # Return as-is if already short enough
         if sentence_length <= max_chars:
             if sentence and sentence[-1].isalpha():
                 end = ' -'
             return [sentence + end]
 
         def find_best_split(sentence, delimiter):
-            mid = len(sentence) // 2
-            left = sentence.rfind(delimiter, 0, mid)
-            right = sentence.find(delimiter, mid)
-            if left != -1 and (right == -1 or mid - left < right - mid):
-                return left + 1
-            elif right != -1:
-                return right + 1
+            mid_index = len(sentence) // 2
+            left_split = sentence.rfind(delimiter, 0, mid_index)
+            right_split = sentence.find(delimiter, mid_index)
+            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
+                return left_split + 1
+            elif right_split != -1:
+                return right_split + 1
             return -1
 
-        # Try splitting by preferred delimiters
-        split_index = -1
-        for delim in [',', ';', ':', ' ']:
-            split_index = find_best_split(sentence, delim)
-            if split_index != -1:
-                if delim == ' ':
-                    end = ' –'
-                break
-
-        # Fallback to mid if no split found
-        if split_index == -1:
+        if ',' in sentence:
+            split_index = find_best_split(sentence, ',')
+        elif ';' in sentence:
+            split_index = find_best_split(sentence, ';')
+        elif ':' in sentence:
+            split_index = find_best_split(sentence, ':')
+        elif ' ' in sentence:
+            split_index = find_best_split(sentence, ' ')
+            end = ' –'
+        else:
             split_index = sentence_length // 2
             end = ' –'
 
-        # Ensure index is safe before accessing
+        # Safe fallback if split_index is invalid
         if split_index >= sentence_length or split_index < 0:
             if sentence and sentence[-1].isalpha():
                 end = ' –'
@@ -689,13 +687,33 @@ def get_sentences(text, lang):
 
         part1 = sentence[:split_index].strip()
         char_at_split = sentence[split_index] if split_index < sentence_length else ''
-        if char_at_split in [',', ';', ':', ' ']:
+        if char_at_split in [' ', ',', ';', ':']:
             part2 = sentence[split_index + 1:] if (split_index + 1) < sentence_length else ''
         else:
             part2 = sentence[split_index:]
 
-        # Recursive split of both parts
         return split_sentence(part1) + split_sentence(part2.strip())
+
+
+    # Main logic, no function wrapping
+    if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        raw_list = segment_ideogramms()
+    else:
+        raw_list = re.split(pattern, text)
+
+    if len(raw_list) > 1:
+        tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
+    else:
+        tmp_list = raw_list
+
+    if tmp_list and tmp_list[-1] == 'Start':
+        tmp_list.pop()
+
+    sentences = []
+    for sentence in tmp_list:
+        sentences.extend(split_sentence(sentence.strip()))
+
+    return sentences
 
 def get_vram():
     os_name = platform.system()
