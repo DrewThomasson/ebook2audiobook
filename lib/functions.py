@@ -699,7 +699,7 @@ def get_sentences(text, lang):
 	if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
         print(raw_list)
-	else:
+    else:
 		raw_list = re.split(pattern, text)
 
 	# Step 2: group punctuation with previous parts
