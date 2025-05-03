@@ -694,25 +694,30 @@ def get_sentences(text, lang):
 
         return split_sentence(part1) + split_sentence(part2.strip())
 
-
-    # Main logic, no function wrapping
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
     else:
         raw_list = re.split(pattern, text)
-
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
     else:
         tmp_list = raw_list
-
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
-
     sentences = []
     for sentence in tmp_list:
-        sentences.extend(split_sentence(sentence.strip()))
-
+        parts = split_sentence(sentence.strip())
+        merged = []
+        for s in parts:
+            s = s.strip()
+            if not s:
+                continue
+            if re.fullmatch(r'[.,;:!?–\-]', s):
+                if merged:
+                    merged[-1] += s  # append punctuation to previous sentence
+            else:
+                merged.append(s)
+        sentences.extend(merged)
     return sentences
 
 def get_vram():
