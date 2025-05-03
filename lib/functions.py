@@ -24,7 +24,6 @@ import regex as re
 import requests
 import shutil
 import socket
-import string
 import subprocess
 import sys
 import threading
@@ -638,7 +637,8 @@ def get_sentences(text, lang):
             return tokens
         result = [tokens[0]]
         for token in tokens[1:]:
-            if all(char in punctuation_split or char in string.punctuation for char in token):
+            # Join if token has no alphabetic characters AND contains punctuation
+            if not any(char.isalpha() for char in token) and any(char in punctuation_list for char in token):
                 result[-1] += token
             else:
                 result.append(token)
