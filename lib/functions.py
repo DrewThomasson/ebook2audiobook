@@ -696,7 +696,7 @@ def get_sentences(text, lang):
 		return result
 
 	# Step 1: language-specific word segmentation
-	if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+    if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
         print(raw_list)
     else:
