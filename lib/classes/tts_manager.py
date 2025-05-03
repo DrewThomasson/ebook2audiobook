@@ -311,7 +311,7 @@ class TTSManager:
     def _is_tts_active(self, tts):
         return any(obj is tts for obj in gc.get_objects())
 
-    def _unload_tts():
+    def _unload_tts(self):
          for key in list(loaded_tts.keys()):
             if key != default_vc_model:
                 del loaded_tts[key]
