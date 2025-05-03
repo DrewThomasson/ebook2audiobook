@@ -440,7 +440,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'[\r\n]', ' ', text)
     # Replace multiple  and spaces with single space
-    text = re.sub(r'[ \t]+', ' ', text)
+    text = re.sub(r'[     ]+', ' ', text)
     # replace roman numbers by digits
     text = replace_roman_numbers(text)
     # Escape special characters in the punctuation list for regex
@@ -596,9 +596,10 @@ def get_chapters(epubBook, session):
             ***************************************************************************************
                                             NOTE: THE WARNING
                                 "Character xx not found in the vocabulary."
-            MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE AN HALLUCINATION
-            TO IMPROVE THIS MODEL IT NEEDS TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL.
-            YOU CAN IMPROVE IT OR ASK TO A MODEL TRAINING DEVELOPER.
+            MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
+            (AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
+            TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
+            TO A MODEL TRAINING DEVELOPER.
             ***************************************************************************************
         '''
         print(msg)
@@ -631,6 +632,17 @@ def get_sentences(text, lang):
     pattern_split = [re.escape(p) for p in punctuation_split]
     pattern = f"({'|'.join(pattern_split)})"
 
+    def combine_punctuation(tokens):
+        if not tokens:
+            return tokens
+        result = [tokens[0]]
+        for token in tokens[1:]:
+            if not any(char.isalpha() for char in token) and all(char.isspace() or char in punctuation_list for char in token):
+                result[-1] += token
+            else:
+                result.append(token)
+        return result
+
     def segment_ideogramms():
         if lang == 'zho':
             import jieba
@@ -648,73 +660,76 @@ def get_sentences(text, lang):
             return word_tokenize(text, engine='newmm')
 
     def split_sentence(sentence):
-        end = ''
-        sentence_length = len(sentence)
-        if sentence_length <= max_chars:
-            if sentence:
-                if sentence[-1].isalpha():
-                    end = ' -'               
-                return [sentence + end]
-        if ',' in sentence:
-            mid_index = sentence_length // 2
-            left_split = sentence.rfind(",", 0, mid_index)
-            right_split = sentence.find(",", mid_index)
-            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
-                split_index = left_split + 1
-            else:
-                split_index = right_split + 1 if right_split != -1 else mid_index
-        elif ';' in sentence:
-            mid_index = sentence_length // 2
-            left_split = sentence.rfind(";", 0, mid_index)
-            right_split = sentence.find(";", mid_index)
-            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
-                split_index = left_split + 1
-            else:
-                split_index = right_split + 1 if right_split != -1 else mid_index
-        elif ':' in sentence:
-            mid_index = sentence_length // 2
-            left_split = sentence.rfind(":", 0, mid_index)
-            right_split = sentence.find(":", mid_index)
-            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
-                split_index = left_split + 1
-            else:
-                split_index = right_split + 1 if right_split != -1 else mid_index
-        elif ' ' in sentence:
-            mid_index = sentence_length // 2
-            left_split = sentence.rfind(" ", 0, mid_index)
-            right_split = sentence.find(" ", mid_index)
-            if left_split != -1 and (right_split == -1 or mid_index - left_split < right_split - mid_index):
-                split_index = left_split
-            else:
-                split_index = right_split if right_split != -1 else mid_index
-            end = ' –'
-        else:
-            split_index = sentence_length // 2
-            end = ' –'
-        if split_index == sentence_length:
-            if sentence:
-                if sentence[-1].isalpha():
-                    end = ' –'
-                return [sentence + end]
-        part1 = sentence[:split_index]
-        part2 = sentence[split_index + 1:] if sentence[split_index] in [' ', ',', ';', ':'] else sentence[split_index:]
-        return split_sentence(part1.strip()) + split_sentence(part2.strip())     
+        sentence = sentence.strip()
+        length = len(sentence)
 
+        if length <= max_chars:
+            if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                if sentence and sentence[-1].isalpha():
+                    return [sentence + ' -']
+            return [sentence]
+
+        def find_best_split(text):
+            mid = len(text) // 2
+            for delim in [',', ';', ':', ' ']:
+                left = text.rfind(delim, 0, mid)
+                right = text.find(delim, mid)
+                if left != -1 or right != -1:
+                    if left != -1 and (right == -1 or mid - left <= right - mid):
+                        return left + 1, delim
+                    else:
+                        return right + 1, delim
+            return mid, None  # fallback to mid
+
+        split_index, delim_used = find_best_split(sentence)
+        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            end = ''
+        else:
+            end = ' -' if delim_used == ' ' else ''
+
+        part1 = sentence[:split_index].rstrip()
+        part2 = sentence[split_index:].lstrip(' ,;:')
+
+        result = []
+        if len(part1) <= max_chars:
+            if part1 and part1[-1].isalpha():
+                part1 += end
+            result.append(part1)
+        else:
+            result.extend(split_sentence(part1))
+
+        if part2:
+            if len(part2) <= max_chars:
+                if part2[-1].isalpha():
+                    part2 += ' -'
+                result.append(part2)
+            else:
+                result.extend(split_sentence(part2))
+
+        return result
+
+    # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
+        raw_list = combine_punctuation(raw_list)
     else:
         raw_list = re.split(pattern, text)
 
+    # Step 2: group punctuation with previous parts
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
     else:
         tmp_list = raw_list
-        
-    if tmp_list[-1] == 'Start':
+
+    # Optional cleanup
+    if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
+
+    # Step 3: split each sentence fragment if needed
     sentences = []
     for sentence in tmp_list:
-        sentences.extend(split_sentence(sentence.strip()))  
+        sentences.extend(split_sentence(sentence.strip()))
+
     #print(json.dumps(sentences, indent=4, ensure_ascii=False))
     return sentences
 
@@ -1136,50 +1151,61 @@ def combine_audio_chapters(session):
         return False
 
 def replace_roman_numbers(text):
-    def roman_to_int(s):
-        try:
-            roman = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
-                     'IV': 4, 'IX': 9, 'XL': 40, 'XC': 90, 'CD': 400, 'CM': 900}   
-            i = 0
-            num = 0   
-            # Iterate over the string to calculate the integer value
-            while i < len(s):
-                # Check for two-character numerals (subtractive combinations)
-                if i + 1 < len(s) and s[i:i+2] in roman:
-                    num += roman[s[i:i+2]]
-                    i += 2
-                else:
-                    # Add the value of the single character
-                    num += roman[s[i]]
-                    i += 1   
-            return num
-        except Exception as e:
-            return s
+	def roman_to_int(s):
+		try:
+			roman = {
+				'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
+				'IV': 4, 'IX': 9, 'XL': 40, 'XC': 90, 'CD': 400, 'CM': 900
+			}
+			i = 0
+			num = 0
+			while i < len(s):
+				if i + 1 < len(s) and s[i:i+2] in roman:
+					num += roman[s[i:i+2]]
+					i += 2
+				else:
+					num += roman.get(s[i], 0)
+					i += 1
+			return num if num > 0 else s
+		except Exception:
+			return s
 
-    roman_chapter_pattern = re.compile(
-        r'\b(chapter|volume|chapitre|tome|capitolo|capítulo|volumen|Kapitel|глава|том|κεφάλαιο|τόμος|capitul|poglavlje)\s'
-        r'(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|[IVXLCDM]+)\b',
-        re.IGNORECASE
-    )
+	# Match e.g. "Chapter IV", "volume IX", "tome X"
+	roman_chapter_pattern = re.compile(
+		r'\b('
+		r'chapter|volume|chapitre|tome|capitolo|capítulo|volumen|Kapitel|глава|том|κεφάλαιο|τόμος|capitul|poglavlje'
+		r')\s+'
+		r'(?=[IVXLCDM])'
+		r'((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\b',
+		re.IGNORECASE
+	)
 
-    roman_numerals_with_period = re.compile(
-        r'^(M{0,4}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})|[IVXLCDM])\.+'
-    )
+	# Match standalone Roman numeral followed by dot (e.g. "IX.")
+	roman_numerals_with_period = re.compile(
+		r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\.+',
+		re.IGNORECASE
+	)
 
-    def replace_chapter_match(match):
-        chapter_word = match.group(1)
-        roman_numeral = match.group(2)
-        integer_value = roman_to_int(roman_numeral.upper())
-        return f'{chapter_word.capitalize()} {integer_value}; '
+	def replace_chapter_match(match):
+		chapter_word = match.group(1)
+		roman_numeral = match.group(2)
+		if not roman_numeral:
+			return match.group(0)
+		integer_value = roman_to_int(roman_numeral.upper())
+		if isinstance(integer_value, int):
+			return f'{chapter_word.capitalize()} {integer_value}; '
+		return match.group(0)
 
-    def replace_numeral_with_period(match):
-        roman_numeral = match.group(1)
-        integer_value = roman_to_int(roman_numeral)
-        return f'{integer_value}. '
+	def replace_numeral_with_period(match):
+		roman_numeral = match.group(1)
+		integer_value = roman_to_int(roman_numeral.upper())
+		if isinstance(integer_value, int):
+			return f'{integer_value}. '
+		return match.group(0)
 
-    text = roman_chapter_pattern.sub(replace_chapter_match, text)
-    text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
-    return text
+	text = roman_chapter_pattern.sub(replace_chapter_match, text)
+	text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
+	return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
     dir_array = [
