@@ -705,7 +705,7 @@ def get_sentences(text, lang):
                 result.extend(split_sentence(part2))
         return result
 
-    # protect acronysms to be splitted
+    # protect acronysm to be splitted
     text = re.sub(r'\b([A-Za-z])\.([A-Za-z])\.?', r'\1⸱\2⸱', text)
     text = re.sub(r'\b([A-Za-z])\.(?![A-Za-z])', r'\1⸱', text)
     # Step 1: language-specific word segmentation
