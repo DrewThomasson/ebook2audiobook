@@ -637,7 +637,6 @@ def get_sentences(text, lang):
             return tokens
         result = [tokens[0]]
         for token in tokens[1:]:
-            print(f"{token} = {len(token)}")
             if not any(char.isalpha() for char in token) and all(char.isspace() or char in punctuation_list for char in token):
                 result[-1] += token
             else:
@@ -706,7 +705,6 @@ def get_sentences(text, lang):
         return result
 
     # Step 1: language-specific word segmentation
-    print(f"---------- {lang} -----------")
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
         raw_list = combine_punctuation(raw_list)
