@@ -664,8 +664,9 @@ def get_sentences(text, lang):
         length = len(sentence)
 
         if length <= max_chars:
-            if sentence and sentence[-1].isalpha():
-                return [sentence + ' -']
+            if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                if sentence and sentence[-1].isalpha():
+                    return [sentence + ' -']
             return [sentence]
 
         def find_best_split(text):
@@ -681,7 +682,10 @@ def get_sentences(text, lang):
             return mid, None  # fallback to mid
 
         split_index, delim_used = find_best_split(sentence)
-        end = ' -' if delim_used == ' ' else ''
+        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            end = ''
+        else:
+            end = ' -' if delim_used == ' ' else ''
 
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:')
