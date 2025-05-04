@@ -312,8 +312,9 @@ class TTSManager:
     def _unload_tts(self):
         loaded_tts = {}
         gc.collect()
-        torch.cuda.empty_cache()
-        torch.cuda.synchronize()
+        if torch.cuda:
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
 
     def _tensor_type(self, audio_data):
         if isinstance(audio_data, torch.Tensor):
