@@ -514,6 +514,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     # Remove scripts and styles
     for script in soup(["script", "style"]):
         script.decompose()
+    # protect acronysm to be splitted
+    text = re.sub(r'\b([A-Za-z])\.([A-Za-z])\.?', r'\1⸱\2⸱', text)
+    text = re.sub(r'\b([A-Za-z])\.(?![A-Za-z])', r'\1⸱', text)
+    print(text)
     # Normalize lines and remove unnecessary spaces and switch special chars
     text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
     if tts_engine == XTTSv2:
@@ -705,9 +709,6 @@ def get_sentences(text, lang):
                 result.extend(split_sentence(part2))
         return result
 
-    # protect acronysm to be splitted
-    text = re.sub(r'\b([A-Za-z])\.([A-Za-z])\.?', r'\1⸱\2⸱', text)
-    text = re.sub(r'\b([A-Za-z])\.(?![A-Za-z])', r'\1⸱', text)
     # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
