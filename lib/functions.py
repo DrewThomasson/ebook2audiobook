@@ -526,7 +526,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         text = re.sub(punctuation_pattern_space, r' \1 ', text)
         # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
         comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-        #text = re.sub(comma_dot_pattern, r' \1 ', text)
+        text = re.sub(comma_dot_pattern, r' \1 ', text)
     if not text.strip():
         chapter_sentences = []
     else:
@@ -865,8 +865,8 @@ def convert_chapters_to_audio(session):
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
-                        if session['tts_engine'] == FAIRSEQ:
-                            tts_manager.params['sentence'] = sentence.replace('.', '…')
+                        if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
+                            tts_manager.params['sentence'] = sentence.replace('.', '—')
                         else:
                             tts_manager.params['sentence'] = sentence
                         if tts_manager.params['sentence'] != "":
