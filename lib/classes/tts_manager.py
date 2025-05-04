@@ -110,8 +110,7 @@ class TTSManager:
                             if tts_key in loaded_tts.keys():
                                 self.params['tts'] = loaded_tts[self.model_path]
                             else:
-                                if len(loaded_tts) >= max_tts_in_memory:
-                                    self._unload_tts()
+                                self._unload_tts()
                                 self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
@@ -142,6 +141,7 @@ class TTSManager:
                             else:
                                 error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
                                 print(error)
+                            self._unload_tts()
                         except Exception as e:
                             error = f'_build() builtin voice conversion error: {file_path}: {e}'
                             print(error)
