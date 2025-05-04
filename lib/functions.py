@@ -425,9 +425,11 @@ def math2word(text, lang, lang_iso1, tts_engine):
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
     if lang in abbreviations_mapping:
-        for abbr, replacement in abbreviations_mapping[lang].items():
-            pattern = r'\b' + re.escape(abbr) + r'(\s|$)'
-            text = re.sub(pattern, replacement + r'\1', text)
+        text = re.sub(r'\b(?:[a-zA-Z]+\.)+|[a-zA-Z]+', lambda m: {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping["eng"].items()}.get(m.group().replace('.', '').lower(), m.group()), text)
+	# This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
+	pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
+    # uppercase acronyms
+    text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
@@ -514,10 +516,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     # Remove scripts and styles
     for script in soup(["script", "style"]):
         script.decompose()
-    # protect acronysm to be splitted
-    text = re.sub(r'\b([A-Za-z])\.([A-Za-z])\.?', r'\1⸱\2⸱', soup.get_text().strip())
-    text = re.sub(r'\b([A-Za-z])\.(?![A-Za-z])', r'\1⸱', text)
-    print(text)
     # Normalize lines and remove unnecessary spaces and switch special chars
     text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
     if tts_engine == XTTSv2:
@@ -730,7 +728,6 @@ def get_sentences(text, lang):
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
-    sentences = [s.replace('⸱', '.') for s in sentences]
     #print(json.dumps(sentences, indent=4, ensure_ascii=False))
     return sentences
 
