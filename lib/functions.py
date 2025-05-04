@@ -523,7 +523,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         pattern_space = re.escape(''.join(punctuation_list))
         # Ensure space before and after punctuation (excluding `,` and `.`)
         punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-        #text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
         # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
         comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
         #text = re.sub(comma_dot_pattern, r' \1 ', text)
