@@ -865,10 +865,10 @@ def convert_chapters_to_audio(session):
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
-                        if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
-                            tts_manager.params['sentence'] = sentence.replace('.', '— ')
-                        else:
-                            tts_manager.params['sentence'] = sentence
+                        #if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
+                        tts_manager.params['sentence'] = sentence.replace('.', '—')
+                        #else:
+                        #    tts_manager.params['sentence'] = sentence
                         if tts_manager.params['sentence'] != "":
                             if tts_manager.convert_sentence_to_audio():                           
                                 percentage = (sentence_number / total_sentences) * 100
