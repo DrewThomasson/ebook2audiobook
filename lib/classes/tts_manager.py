@@ -102,16 +102,17 @@ class TTSManager:
                 voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.session['voice']))
                 if voice_key in default_xtts_settings['voices']:
                     if not f"/{self.session['language']}/" in self.session['voice']:
-                        msg = f"Converting xttsv2 builtin english voice to {self.session['language']}..."
-                        print(msg)
-                        self.model_path = models[XTTSv2]['internal']['repo']
-                        tts_key = self.model_path
-                        if tts_key in loaded_tts.keys():
-                            self.params['tts'] = loaded_tts[self.model_path]
-                        else:
-                            self._unload_tts()
-                            self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
                         try:
+                            msg = f"Converting xttsv2 builtin english voice to {self.session['language']}..."
+                            print(msg)
+                            self.model_path = models[XTTSv2]['internal']['repo']
+                            tts_key = self.model_path
+                            if tts_key in loaded_tts.keys():
+                                self.params['tts'] = loaded_tts[self.model_path]
+                            else:
+                                if len(loaded_tts) >= max_tts_in_memory:
+                                    self._unload_tts()
+                                self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                             base_dir = os.path.dirname(file_path)
@@ -169,7 +170,8 @@ class TTSManager:
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[hf_sub]
                 else:
-                    self._unload_tts()
+                    if len(loaded_tts) >= max_tts_in_memory:
+                        self._unload_tts()
                     self.params['tts'] = load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.session['device'])
             else:
                 msg = f"Loading TTS {models[self.session['tts_engine']][self.session['fine_tuned']]['repo']} model, it takes a while, please be patient..."
@@ -179,7 +181,8 @@ class TTSManager:
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.model_path]
                 else:
-                    self._unload_tts()
+                    if len(loaded_tts) >= max_tts_in_memory:
+                        self._unload_tts()
                     self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is not None:
@@ -194,7 +197,7 @@ class TTSManager:
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
-                        self.unload_tts()
+                        self._unload_tts()
                     self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
         elif self.session['tts_engine'] == VITS:
             if self.session['custom_model'] is not None:
@@ -216,7 +219,7 @@ class TTSManager:
                         self.params['tts'] = loaded_tts[tts_key]
                     else:
                         if len(loaded_tts) == max_tts_in_memory:
-                            self.unload_tts()
+                            self._unload_tts()
                         self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
                     if self.session['voice'] is not None:
                         tts_vc_key = default_vc_model
@@ -251,7 +254,7 @@ class TTSManager:
                         self.params['tts_vc'] = loaded_tts[tts_vc_key]
                     else:
                         if len(loaded_tts) == max_tts_in_memory:
-                            self.unload_tts()
+                            self._unload_tts()
                         self.params['tts_vc'] = load_coqui_tts_vc(self.session['device'])
         elif self.session['tts_engine'] == YOURTTS:
             if self.session['custom_model'] is not None:
@@ -266,7 +269,7 @@ class TTSManager:
                     self.params['tts'] = loaded_tts[self.model_path]
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
-                        self.unload_tts()
+                        self._unload_tts()
                     self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
         if self.params['tts'] is not None:
             loaded_tts[tts_key] = self.params['tts']
