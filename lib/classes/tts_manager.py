@@ -310,6 +310,8 @@ class TTSManager:
         return any(obj is tts for obj in gc.get_objects())
 
     def _unload_tts(self):
+        if self.params['tts'] is not None:
+            del self.params['tts']
         loaded_tts = {}
         gc.collect()
         if torch.cuda:
