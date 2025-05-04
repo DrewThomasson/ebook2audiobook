@@ -143,6 +143,8 @@ class TTSManager:
                         except Exception as e:
                             error = f'_build() builtin voice conversion error: {file_path}: {e}'
                             print(error)
+                        if self.params['tts']:
+                            self._unload_tts()
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
@@ -150,11 +152,10 @@ class TTSManager:
                 self.model_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'model.pth')
                 self.config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'config.json')
                 self.vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'vocab.json')
-                tts_key = self.session['custom_model']
+                tts_key = self.session['custom_model'] 
                 if self.session['custom_model'] in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.session['custom_model']]
                 else:
-                    self._unload_tts()
                     self.params['tts'] = load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.session['device'])
             elif self.session['fine_tuned'] != 'internal':
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
