@@ -718,7 +718,7 @@ def get_sentences(text, lang):
     # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         ideogramm_list = segment_ideogramms(text)
-        raw_list = list(join_ideogramms(ideogramm_list, max_chars))
+        raw_list = list(join_ideogramms(ideogramm_list))
     else:
         raw_list = re.split(pattern, text)
     raw_list = combine_punctuation(raw_list)
