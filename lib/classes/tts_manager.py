@@ -143,8 +143,6 @@ class TTSManager:
                         except Exception as e:
                             error = f'_build() builtin voice conversion error: {file_path}: {e}'
                             print(error)
-                        if torch.cuda.is_available():
-                            torch.cuda.empty_cache()
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
