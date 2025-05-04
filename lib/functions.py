@@ -661,7 +661,7 @@ def get_sentences(text, lang):
             from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
 
-    def join_ideogramms(idg_list)
+    def join_ideogramms(idg_list):
         buffer = ''
         for row in idg_list:
             if len(buffer) + len(row) > max_chars:
@@ -672,7 +672,7 @@ def get_sentences(text, lang):
         if buffer:
             yield buffer
 
-    def find_best_split(text):
+    def tune_split(text):
         mid = len(text) // 2
         for delim in [',', ';', ':', ' ']:
             left = text.rfind(delim, 0, mid)
@@ -692,7 +692,7 @@ def get_sentences(text, lang):
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-        split_index, delim_used = find_best_split(sentence)
+        split_index, delim_used = tune_split(sentence)
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             end = ''
         else:
