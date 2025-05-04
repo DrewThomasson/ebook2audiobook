@@ -526,7 +526,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         #text = re.sub(punctuation_pattern_space, r' \1 ', text)
         # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
         comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-        text = re.sub(comma_dot_pattern, r' \1 ', text)
+        #text = re.sub(comma_dot_pattern, r' \1 ', text)
     if not text.strip():
         chapter_sentences = []
     else:
