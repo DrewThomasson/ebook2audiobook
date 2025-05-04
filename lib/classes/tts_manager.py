@@ -107,11 +107,8 @@ class TTSManager:
                             print(msg)
                             self.model_path = models[XTTSv2]['internal']['repo']
                             tts_key = self.model_path
-                            if tts_key in loaded_tts.keys():
-                                self.params['tts'] = loaded_tts[self.model_path]
-                            else:
-                                self._unload_tts()
-                                self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
+                            self._unload_tts()
+                            self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                             base_dir = os.path.dirname(file_path)
