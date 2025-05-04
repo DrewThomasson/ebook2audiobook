@@ -1993,13 +1993,13 @@ def web_interface(args):
                 ebook_data = session['ebook']
             else:
                 ebook_data = None
-            #session['temperature'] = default_xtts_settings['temperature']
-            #session['length_penalty'] = default_xtts_settings['length_penalty']
+            session['temperature'] = session['temperature'] # default_xtts_settings['temperature']
+            session['length_penalty'] = session['length_penalty'] # default_xtts_settings['length_penalty']
             session['num_beams'] = default_xtts_settings['num_beams']
-            #session['repetition_penalty'] = default_xtts_settings['repetition_penalty']
-            #session['top_k'] = default_xtts_settings['top_k']
-            #session['top_p'] = default_xtts_settings['top_p']
-            #session['speed'] = default_xtts_settings['speed']
+            session['repetition_penalty'] = session['repetition_penalty'] # default_xtts_settings['repetition_penalty']
+            session['top_k'] = session['top_k'] # default_xtts_settings['top_k']
+            session['top_p'] = session['top_p'] # default_xtts_settings['top_p']
+            session['speed'] = session['speed'] # default_xtts_settings['speed']
             session['enable_text_splitting'] = default_xtts_settings['enable_text_splitting']
             return (
                 gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
