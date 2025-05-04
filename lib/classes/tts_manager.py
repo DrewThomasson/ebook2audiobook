@@ -107,8 +107,12 @@ class TTSManager:
                             print(msg)
                             self.model_path = models[XTTSv2]['internal']['repo']
                             tts_key = self.model_path
-                            self._unload_tts()
-                            self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
+                            if tts_key in loaded_tts.keys():
+                                elf.params['tts'] = loaded_tts[self.model_path]
+                            else:
+                                if len(loaded_tts) >= max_tts_in_memory:
+                                    self._unload_tts()
+                                self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                             base_dir = os.path.dirname(file_path)
@@ -138,7 +142,6 @@ class TTSManager:
                             else:
                                 error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
                                 print(error)
-                            self._unload_tts()
                         except Exception as e:
                             error = f'_build() builtin voice conversion error: {file_path}: {e}'
                             print(error)
@@ -153,6 +156,8 @@ class TTSManager:
                 if self.session['custom_model'] in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[self.session['custom_model']]
                 else:
+                    if len(loaded_tts) >= max_tts_in_memory:
+                        self._unload_tts()
                     self.params['tts'] = load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.session['device'])
             elif self.session['fine_tuned'] != 'internal':
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
@@ -242,6 +247,8 @@ class TTSManager:
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
+                    if len(loaded_tts) >= max_tts_in_memory:
+                        self._unload_tts()
                     self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
                 if self.session['voice'] is not None:
                     tts_vc_key = default_vc_model
@@ -310,9 +317,12 @@ class TTSManager:
         return any(obj is tts for obj in gc.get_objects())
 
     def _unload_tts(self):
+        if len(loaded_tts) > 0:
+            for key in list(loaded_tts.keys()):
+                if key != default_vc_model:
+                    del loaded_tts[key]
         if self.params['tts'] is not None:
             del self.params['tts']
-        loaded_tts = {}
         gc.collect()
         if torch.cuda:
             torch.cuda.empty_cache()

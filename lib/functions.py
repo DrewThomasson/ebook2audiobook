@@ -601,7 +601,7 @@ def get_chapters(epubBook, session):
             MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
             (AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
             TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
-            TO A MODEL TRAINING EXPERT.
+            TO A TRAINING MODEL EXPERT.
             ***************************************************************************************
         '''
         print(msg)
