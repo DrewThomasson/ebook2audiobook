@@ -687,18 +687,19 @@ def get_sentences(text, lang):
     def split_sentence(sentence):
         sentence = sentence.strip()
         length = len(sentence)
+        end = ''
         if length <= max_chars:
             if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-        split_index, delim_used = tune_split(sentence)
-        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-            end = ''
-        else:
-            end = ' -' if delim_used == ' ' else ''
+        split_index, delim_used = tune_split(sentence)      
+        if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            end = ' -' if delim_used == ' ' else end
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:')
+        if part1 == sentence:
+            return [sentence]
         result = []
         if len(part1) <= max_chars:
             if part1 and part1[-1].isalpha():
