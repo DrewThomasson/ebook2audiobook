@@ -425,9 +425,11 @@ def math2word(text, lang, lang_iso1, tts_engine):
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
     if lang in abbreviations_mapping:
-        for abbr, replacement in abbreviations_mapping[lang].items():
-            pattern = r'\b' + re.escape(abbr) + r'(\s|$)'
-            text = re.sub(pattern, replacement + r'\1', text)
+        text = re.sub(r'\b(?:[a-zA-Z]+\.)+|[a-zA-Z]+', lambda m: {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping["eng"].items()}.get(m.group().replace('.', '').lower(), m.group()), text)
+    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
+    pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
+    # uppercase acronyms
+    text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
@@ -599,7 +601,7 @@ def get_chapters(epubBook, session):
             MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
             (AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
             TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
-            TO A MODEL TRAINING DEVELOPER.
+            TO A MODEL TRAINING EXPERT.
             ***************************************************************************************
         '''
         print(msg)
@@ -686,10 +688,8 @@ def get_sentences(text, lang):
             end = ''
         else:
             end = ' -' if delim_used == ' ' else ''
-
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:')
-
         result = []
         if len(part1) <= max_chars:
             if part1 and part1[-1].isalpha():
@@ -705,15 +705,14 @@ def get_sentences(text, lang):
                 result.append(part2)
             else:
                 result.extend(split_sentence(part2))
-
         return result
 
     # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
-        raw_list = combine_punctuation(raw_list)
     else:
         raw_list = re.split(pattern, text)
+    raw_list = combine_punctuation(raw_list)
 
     # Step 2: group punctuation with previous parts
     if len(raw_list) > 1:
@@ -729,7 +728,6 @@ def get_sentences(text, lang):
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
-
     #print(json.dumps(sentences, indent=4, ensure_ascii=False))
     return sentences
 
@@ -867,16 +865,15 @@ def convert_chapters_to_audio(session):
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
-                        #if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
-                        if session['tts_engine'] == FAIRSEQ:
-                            tts_manager.params['sentence'] = sentence.replace('.', '…')
+                        if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
+                            tts_manager.params['sentence'] = sentence.replace('.', '— ')
                         else:
                             tts_manager.params['sentence'] = sentence
                         if tts_manager.params['sentence'] != "":
                             if tts_manager.convert_sentence_to_audio():                           
                                 percentage = (sentence_number / total_sentences) * 100
                                 t.set_description(f'Converting {percentage:.2f}%')
-                                msg = f'\nSentence: {sentence}'
+                                msg = f"\nSentence: {tts_manager.params['sentence']}"
                                 print(msg)
                             else:
                                 return False
