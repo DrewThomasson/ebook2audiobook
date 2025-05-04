@@ -515,7 +515,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     for script in soup(["script", "style"]):
         script.decompose()
     # protect acronysm to be splitted
-    text = re.sub(r'\b([A-Za-z])\.([A-Za-z])\.?', r'\1⸱\2⸱', text)
+    text = re.sub(r'\b([A-Za-z])\.([A-Za-z])\.?', r'\1⸱\2⸱', soup.get_text().strip())
     text = re.sub(r'\b([A-Za-z])\.(?![A-Za-z])', r'\1⸱', text)
     print(text)
     # Normalize lines and remove unnecessary spaces and switch special chars
