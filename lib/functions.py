@@ -710,9 +710,9 @@ def get_sentences(text, lang):
     # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         raw_list = segment_ideogramms()
-        raw_list = combine_punctuation(raw_list)
     else:
         raw_list = re.split(pattern, text)
+    raw_list = combine_punctuation(raw_list)
 
     # Step 2: group punctuation with previous parts
     if len(raw_list) > 1:
@@ -866,7 +866,7 @@ def convert_chapters_to_audio(session):
                             print(msg)
                         tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
                         if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
-                            tts_manager.params['sentence'] = sentence.replace('.', '—')
+                            tts_manager.params['sentence'] = sentence.replace('.', '— ')
                         else:
                             tts_manager.params['sentence'] = sentence
                         if tts_manager.params['sentence'] != "":
