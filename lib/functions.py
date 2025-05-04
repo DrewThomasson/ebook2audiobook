@@ -686,34 +686,37 @@ def get_sentences(text, lang):
     
     def split_sentence(sentence):
         sentence = sentence.strip()
-        length = len(sentence)
-        end = ''
-        if length <= max_chars:
-            if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        if len(sentence) <= max_chars:
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-        split_index, delim_used = tune_split(sentence)      
-        if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-            end = ' -' if delim_used == ' ' else end
-        part1 = sentence[:split_index].rstrip()
-        part2 = sentence[split_index:].lstrip(' ,;:')
-        if part1 == sentence:
-            return [sentence]
+        parts = [sentence]
         result = []
-        if len(part1) <= max_chars:
-            if part1 and part1[-1].isalpha():
-                part1 += end
-            result.append(part1)
-        else:
-            result.extend(split_sentence(part1))
-        if part2:
-            if len(part2) <= max_chars:
-                if part2[-1].isalpha():
-                    part2 += ' -'
-                result.append(part2)
+        while parts:
+            current = parts.pop(0).strip()
+            if len(current) <= max_chars:
+                if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                    if current and current[-1].isalpha():
+                        current += ' -'
+                result.append(current)
+                continue
+            split_index, delim_used = tune_split(current)
+            if split_index <= 0 or split_index >= len(current):
+                split_index = len(current) // 2  # fallback hard split
+            end = ''
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                end = ' -' if delim_used == ' ' else ''
+            part1 = current[:split_index].rstrip()
+            part2 = current[split_index:].lstrip(' ,;:')
+            if part1:
+                if part1 and part1[-1].isalpha():
+                    part1 += end
+                parts.insert(0, part2) if part2 else None
+                result.append(part1)
             else:
-                result.extend(split_sentence(part2))
+                # If nothing useful in part1, push rest back
+                result.append(current)
         return result
 
     # Step 1: language-specific word segmentation
