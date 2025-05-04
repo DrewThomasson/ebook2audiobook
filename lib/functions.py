@@ -645,7 +645,7 @@ def get_sentences(text, lang):
                 result.append(token)
         return result
 
-    def segment_ideogramms():
+    def segment_ideogramms(text):
         if lang == 'zho':
             import jieba
             return list(jieba.cut(text))
@@ -661,28 +661,37 @@ def get_sentences(text, lang):
             from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
 
+    def join_ideogramms(idg_list)
+        buffer = ''
+        for row in idg_list:
+            if len(buffer) + len(row) > max_chars:
+                yield buffer
+                buffer = row
+            else:
+                buffer += row
+        if buffer:
+            yield buffer
+
+    def find_best_split(text):
+        mid = len(text) // 2
+        for delim in [',', ';', ':', ' ']:
+            left = text.rfind(delim, 0, mid)
+            right = text.find(delim, mid)
+            if left != -1 or right != -1:
+                if left != -1 and (right == -1 or mid - left <= right - mid):
+                    return left + 1, delim
+                else:
+                    return right + 1, delim
+        return mid, None  # fallback to mid    
+    
     def split_sentence(sentence):
         sentence = sentence.strip()
         length = len(sentence)
-
         if length <= max_chars:
             if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-
-        def find_best_split(text):
-            mid = len(text) // 2
-            for delim in [',', ';', ':', ' ']:
-                left = text.rfind(delim, 0, mid)
-                right = text.find(delim, mid)
-                if left != -1 or right != -1:
-                    if left != -1 and (right == -1 or mid - left <= right - mid):
-                        return left + 1, delim
-                    else:
-                        return right + 1, delim
-            return mid, None  # fallback to mid
-
         split_index, delim_used = find_best_split(sentence)
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             end = ''
@@ -697,7 +706,6 @@ def get_sentences(text, lang):
             result.append(part1)
         else:
             result.extend(split_sentence(part1))
-
         if part2:
             if len(part2) <= max_chars:
                 if part2[-1].isalpha():
@@ -709,26 +717,23 @@ def get_sentences(text, lang):
 
     # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-        raw_list = segment_ideogramms()
+        ideogramm_list = segment_ideogramms(text)
+        raw_list = list(join_ideogramms(ideogramm_list, max_chars))
     else:
         raw_list = re.split(pattern, text)
     raw_list = combine_punctuation(raw_list)
-
     # Step 2: group punctuation with previous parts
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
     else:
         tmp_list = raw_list
-
     # Optional cleanup
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
-
     # Step 3: split each sentence fragment if needed
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
-    #print(json.dumps(sentences, indent=4, ensure_ascii=False))
     return sentences
 
 def get_vram():
