@@ -599,7 +599,7 @@ def get_chapters(epubBook, session):
             MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
             (AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
             TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
-            TO A MODEL TRAINING DEVELOPER.
+            TO A MODEL TRAINING EXPERT.
             ***************************************************************************************
         '''
         print(msg)
@@ -714,7 +714,6 @@ def get_sentences(text, lang):
         raw_list = combine_punctuation(raw_list)
     else:
         raw_list = re.split(pattern, text)
-    raw_list = [s.replace('⸱', '.') for s in raw_list]
 
     # Step 2: group punctuation with previous parts
     if len(raw_list) > 1:
@@ -730,7 +729,7 @@ def get_sentences(text, lang):
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
-
+    sentences = [s.replace('⸱', '.') for s in sentences]
     #print(json.dumps(sentences, indent=4, ensure_ascii=False))
     return sentences
 
