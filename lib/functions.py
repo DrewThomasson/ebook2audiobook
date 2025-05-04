@@ -425,7 +425,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
     if lang in abbreviations_mapping:
-    text = re.sub(r'\b(?:[a-zA-Z]+\.)+|[a-zA-Z]+', lambda m: {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping["eng"].items()}.get(m.group().replace('.', '').lower(), m.group()), text)
+        text = re.sub(r'\b(?:[a-zA-Z]+\.)+|[a-zA-Z]+', lambda m: {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping["eng"].items()}.get(m.group().replace('.', '').lower(), m.group()), text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
