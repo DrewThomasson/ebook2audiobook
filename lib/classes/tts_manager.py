@@ -109,6 +109,7 @@ class TTSManager:
                         if tts_key in loaded_tts.keys():
                             self.params['tts'] = loaded_tts[self.model_path]
                         else:
+                            self._unload_tts()
                             self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
                         try:
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
@@ -143,8 +144,6 @@ class TTSManager:
                         except Exception as e:
                             error = f'_build() builtin voice conversion error: {file_path}: {e}'
                             print(error)
-                        if self.params['tts']:
-                            self._unload_tts()
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
