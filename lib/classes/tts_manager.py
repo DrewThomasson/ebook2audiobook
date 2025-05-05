@@ -112,7 +112,8 @@ class TTSManager:
                             else:
                                 if len(loaded_tts) >= max_tts_in_memory:
                                     self._unload_tts()
-                                self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device']) 
+                                self.params['tts'] = load_coqui_tts_api(self.model_path, self.session['device'])
+                                loaded_tts[tts_key] = self.params['tts']
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                             base_dir = os.path.dirname(file_path)
