@@ -547,7 +547,7 @@ class TTSManager:
                                 try:
                                     cmd = [
                                         shutil.which('sox'), tmp_in_wav,
-                                        "-r", "22050", tmp_out_wav,
+                                        "-r", "16000", tmp_out_wav,
                                         "pitch", str(self.params['semitones'] * 100)
                                     ]
                                     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
