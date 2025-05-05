@@ -601,7 +601,7 @@ def get_chapters(epubBook, session):
             MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
             (AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
             TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
-            TO A MODEL TRAINING EXPERT.
+            TO A TRAINING MODEL EXPERT.
             ***************************************************************************************
         '''
         print(msg)
@@ -645,7 +645,7 @@ def get_sentences(text, lang):
                 result.append(token)
         return result
 
-    def segment_ideogramms():
+    def segment_ideogramms(text):
         if lang == 'zho':
             import jieba
             return list(jieba.cut(text))
@@ -661,74 +661,83 @@ def get_sentences(text, lang):
             from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
 
+    def join_ideogramms(idg_list):
+        buffer = ''
+        for row in idg_list:
+            if len(buffer) + len(row) > max_chars:
+                yield buffer
+                buffer = row
+            else:
+                buffer += row
+        if buffer:
+            yield buffer
+
+    def tune_split(text):
+        mid = len(text) // 2
+        for delim in [',', ';', ':', ' ']:
+            left = text.rfind(delim, 0, mid)
+            right = text.find(delim, mid)
+            if left != -1 or right != -1:
+                if left != -1 and (right == -1 or mid - left <= right - mid):
+                    return left + 1, delim
+                else:
+                    return right + 1, delim
+        return mid, None  # fallback to mid    
+    
     def split_sentence(sentence):
         sentence = sentence.strip()
-        length = len(sentence)
-
-        if length <= max_chars:
-            if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        if len(sentence) <= max_chars:
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-
-        def find_best_split(text):
-            mid = len(text) // 2
-            for delim in [',', ';', ':', ' ']:
-                left = text.rfind(delim, 0, mid)
-                right = text.find(delim, mid)
-                if left != -1 or right != -1:
-                    if left != -1 and (right == -1 or mid - left <= right - mid):
-                        return left + 1, delim
-                    else:
-                        return right + 1, delim
-            return mid, None  # fallback to mid
-
-        split_index, delim_used = find_best_split(sentence)
-        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-            end = ''
-        else:
-            end = ' -' if delim_used == ' ' else ''
-        part1 = sentence[:split_index].rstrip()
-        part2 = sentence[split_index:].lstrip(' ,;:')
+        parts = [sentence]
         result = []
-        if len(part1) <= max_chars:
-            if part1 and part1[-1].isalpha():
-                part1 += end
-            result.append(part1)
-        else:
-            result.extend(split_sentence(part1))
-
-        if part2:
-            if len(part2) <= max_chars:
-                if part2[-1].isalpha():
-                    part2 += ' -'
-                result.append(part2)
+        while parts:
+            current = parts.pop(0).strip()
+            if len(current) <= max_chars:
+                if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                    if current and current[-1].isalpha():
+                        current += ' -'
+                result.append(current)
+                continue
+            split_index, delim_used = tune_split(current)
+            if split_index <= 0 or split_index >= len(current):
+                split_index = len(current) // 2  # fallback hard split
+            end = ''
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                end = ' -' if delim_used == ' ' else ''
+            part1 = current[:split_index].rstrip()
+            part2 = current[split_index:].lstrip(' ,;:')
+            if part1:
+                if part1 and part1[-1].isalpha():
+                    part1 += end
+                parts.insert(0, part2) if part2 else None
+                result.append(part1)
             else:
-                result.extend(split_sentence(part2))
+                # If nothing useful in part1, push rest back
+                result.append(current)
         return result
 
     # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-        raw_list = segment_ideogramms()
+        ideogramm_list = segment_ideogramms(text)
+        raw_list = list(join_ideogramms(ideogramm_list))
     else:
         raw_list = re.split(pattern, text)
     raw_list = combine_punctuation(raw_list)
-
     # Step 2: group punctuation with previous parts
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
     else:
         tmp_list = raw_list
-
     # Optional cleanup
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
-
     # Step 3: split each sentence fragment if needed
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
-    #print(json.dumps(sentences, indent=4, ensure_ascii=False))
     return sentences
 
 def get_vram():
@@ -1988,14 +1997,14 @@ def web_interface(args):
                 ebook_data = session['ebook']
             else:
                 ebook_data = None
-            #session['temperature'] = default_xtts_settings['temperature']
-            #session['length_penalty'] = default_xtts_settings['length_penalty']
+            session['temperature'] = session['temperature'] # default_xtts_settings['temperature']
+            session['length_penalty'] = session['length_penalty'] # default_xtts_settings['length_penalty']
             session['num_beams'] = default_xtts_settings['num_beams']
-            #session['repetition_penalty'] = default_xtts_settings['repetition_penalty']
-            #session['top_k'] = default_xtts_settings['top_k']
-            #session['top_p'] = default_xtts_settings['top_p']
-            #session['speed'] = default_xtts_settings['speed']
-            #session['enable_text_splitting'] = default_xtts_settings['enable_text_splitting']
+            session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_xtts_settings['repetition_penalty']
+            session['top_k'] = session['top_k'] if session['top_k'] else default_xtts_settings['top_k']
+            session['top_p'] = session['top_p'] if session['top_p'] else default_xtts_settings['top_p']
+            session['speed'] = session['speed'] if session['speed'] else default_xtts_settings['speed']
+            session['enable_text_splitting'] = default_xtts_settings['enable_text_splitting']
             return (
                 gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
                 gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
