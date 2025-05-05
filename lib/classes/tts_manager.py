@@ -234,8 +234,7 @@ class TTSManager:
                             self.params['tts_vc'] = load_coqui_tts_vc(self.session['device'])
                 else:
                     msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
-                    print(msg)
-                    
+                    print(msg)                
         elif self.session['tts_engine'] == FAIRSEQ:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -413,6 +412,7 @@ class TTSManager:
                 if self.session.get(key) is not None
             }
             sample_rate = self.params['sample_rate']
+            convert_sample_rate = None
             self.params['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav') if self.session['custom_model'] is not None
@@ -565,6 +565,7 @@ class TTSManager:
                                 source_wav=tmp_out_wav,
                                 target_wav=self.params['voice_path']
                             )
+                            convert_sample_rate = 16000
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
@@ -652,8 +653,11 @@ class TTSManager:
             if audio_data is not None:
                 if audio_to_trim:
                     audio_data = self._trim_audio(audio_data, self.params['sample_rate'],0.001,trim_audio_buffer)
+                if convert_sample_rate is not None:
+                    resampler = torchaudio.transforms.Resample(orig_freq=convert_sample_rate, new_freq=self.params['sample_rate'])
+                    sourceTensor = resampler(sourceTensor)  
                 sourceTensor = self._tensor_type(audio_data)
-                audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()                  
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, self.params['sample_rate'], format=default_audio_proc_format)
                 del audio_data, sourceTensor, audio_tensor
             if self.session['device'] == 'cuda':
