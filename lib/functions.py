@@ -1774,7 +1774,7 @@ def web_interface(args):
                             gr_device = gr.Radio(label='Processor Unit', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], value=default_device)
                     with gr.Column(scale=3):
                         with gr.Group():
-                            gr_tts_engine_list = gr.Dropdown(label='TTS Base', choices=tts_engine_options, type='value', interactive=True)
+                            gr_tts_engine_list = gr.Dropdown(label='TTS Engine', choices=tts_engine_options, type='value', interactive=True)
                             gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models', choices=fine_tuned_options, type='value', interactive=True)
                         gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                         with gr_group_custom_model:
