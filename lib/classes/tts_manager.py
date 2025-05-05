@@ -412,6 +412,7 @@ class TTSManager:
                 }.items()
                 if self.session.get(key) is not None
             }
+            sample_rate = self.params['sample_rate']
             self.params['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav') if self.session['custom_model'] is not None
@@ -509,6 +510,7 @@ class TTSManager:
                             **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
+                sample_rate = "16000"
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -547,7 +549,7 @@ class TTSManager:
                                 try:
                                     cmd = [
                                         shutil.which('sox'), tmp_in_wav,
-                                        "-r", "16000", tmp_out_wav,
+                                        "-r", str(self.params['sample_rate']), tmp_out_wav,
                                         "pitch", str(self.params['semitones'] * 100)
                                     ]
                                     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -656,7 +658,7 @@ class TTSManager:
                     audio_data = self._trim_audio(audio_data, self.params['sample_rate'],0.001,trim_audio_buffer)
                 sourceTensor = self._tensor_type(audio_data)
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                torchaudio.save(self.params['sentence_audio_file'], audio_tensor, self.params['sample_rate'], format=default_audio_proc_format)
+                torchaudio.save(self.params['sentence_audio_file'], audio_tensor, sample_rate, format=default_audio_proc_format)
                 del audio_data, sourceTensor, audio_tensor
             if self.session['device'] == 'cuda':
                 torch.cuda.empty_cache()         
