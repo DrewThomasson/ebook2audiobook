@@ -234,8 +234,7 @@ class TTSManager:
                             self.params['tts_vc'] = load_coqui_tts_vc(self.session['device'])
                 else:
                     msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
-                    print(msg)
-                    
+                    print(msg)                
         elif self.session['tts_engine'] == FAIRSEQ:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -412,6 +411,8 @@ class TTSManager:
                 }.items()
                 if self.session.get(key) is not None
             }
+            sample_rate = self.params['sample_rate']
+            convert_sample_rate = None
             self.params['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav') if self.session['custom_model'] is not None
@@ -509,6 +510,7 @@ class TTSManager:
                             **speaker_argument
                         )
             elif self.session['tts_engine'] == VITS:
+                sample_rate = "16000"
                 if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
                     msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                     print(msg)
@@ -535,9 +537,7 @@ class TTSManager:
                                 self.params['current_voice_path'] = self.params['voice_path']
                                 self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
                                 self.params['voice_builtin_gender'] = self._detect_gender(tmp_in_wav)
-                                msg = f"Cloned voice seems to be {self.params['voice_path_gender']}"
-                                print(msg)
-                                msg = f"Builtin voice seems to be {self.params['voice_builtin_gender']}"
+                                msg = f"Cloned voice seems to be {self.params['voice_path_gender']}\nBuiltin voice seems to be {self.params['voice_builtin_gender']}"
                                 print(msg)
                                 if self.params['voice_builtin_gender'] != self.params['voice_path_gender']:
                                     self.params['semitones'] = -4 if self.params['voice_path_gender'] == 'male' else 4
@@ -565,6 +565,7 @@ class TTSManager:
                                 source_wav=tmp_out_wav,
                                 target_wav=self.params['voice_path']
                             )
+                            convert_sample_rate = 16000
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
@@ -586,14 +587,15 @@ class TTSManager:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            self.params['tts'].tts_to_file(text=self.params['sentence'], file_path=tmp_in_wav)
+                            self.params['tts'].tts_to_file(
+                                text=self.params['sentence'],
+                                file_path=tmp_in_wav
+                            )
                             if self.params['current_voice_path'] != self.params['voice_path']:
                                 self.params['current_voice_path'] = self.params['voice_path']
                                 self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
                                 self.params['voice_builtin_gender'] = self._detect_gender(tmp_in_wav)
-                                msg = f"Cloned voice seems to be {self.params['voice_path_gender']}"
-                                print(msg)
-                                msg = f"Builtin voice seems to be {self.params['voice_builtin_gender']}"
+                                msg = f"Cloned voice seems to be {self.params['voice_path_gender']}\nBuiltin voice seems to be {self.params['voice_builtin_gender']}"
                                 print(msg)
                                 if self.params['voice_builtin_gender'] != self.params['voice_path_gender']:
                                     self.params['semitones'] = -4 if self.params['voice_path_gender'] == 'male' else 4
@@ -650,9 +652,11 @@ class TTSManager:
                         )
             if audio_data is not None:
                 if audio_to_trim:
-                    audio_data = self._trim_audio(audio_data, self.params['sample_rate'],0.001,trim_audio_buffer)
+                    audio_data = self._trim_audio(audio_data, self.params['sample_rate'],0.001,trim_audio_buffer) 
                 sourceTensor = self._tensor_type(audio_data)
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                if convert_sample_rate is not None:
+                    self.params['sample_rate'] = convert_sample_rate
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, self.params['sample_rate'], format=default_audio_proc_format)
                 del audio_data, sourceTensor, audio_tensor
             if self.session['device'] == 'cuda':
