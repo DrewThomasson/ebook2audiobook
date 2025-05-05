@@ -545,13 +545,12 @@ class TTSManager:
                                 print(msg)
                             if 'semitones' in self.params:
                                 try:
-                                    #cmd = [
-                                    #    shutil.which('sox'), tmp_in_wav,
-                                    #    "-r", str(self.params['sample_rate']), tmp_out_wav,
-                                    #    "pitch", str(self.params['semitones'] * 100)
-                                    #]
-                                    tmp_out_wav = tmp_in_wav
-                                    #subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                    cmd = [
+                                        shutil.which('sox'), tmp_in_wav,
+                                        "-r", "22050", tmp_out_wav,
+                                        "pitch", str(self.params['semitones'] * 100)
+                                    ]
+                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                                 except subprocess.CalledProcessError as e:
                                     print(f"Subprocess error: {e.stderr}")
                                     DependencyError(e)
