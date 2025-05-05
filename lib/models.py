@@ -18,7 +18,7 @@ voice_conversion_models/multilingual/multi-dataset/openvoice_v2
 """
 default_vc_model = "voice_conversion_models/multilingual/multi-dataset/knnvc"
 
-max_tts_in_memory = 2 # TTS engines to keep in memory (1 model ~= 2GB RAM)
+max_tts_in_memory = 1 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM)
 max_custom_model = 10
 max_custom_voices = 100
 max_upload_size = '6GB'
