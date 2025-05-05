@@ -551,7 +551,7 @@ class TTSManager:
                                     #    "pitch", str(self.params['semitones'] * 100)
                                     #]
                                     tmp_out_wav = tmp_in_wav
-                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                    #subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                                 except subprocess.CalledProcessError as e:
                                     print(f"Subprocess error: {e.stderr}")
                                     DependencyError(e)
