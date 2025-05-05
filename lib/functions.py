@@ -875,14 +875,15 @@ def convert_chapters_to_audio(session):
                             tts_manager.params['sentence'] = sentence.replace('.', '— ')
                         else:
                             tts_manager.params['sentence'] = sentence
-                        if tts_manager.params['sentence'] != "":
-                            if tts_manager.convert_sentence_to_audio():                           
-                                percentage = (sentence_number / total_sentences) * 100
-                                t.set_description(f'Converting {percentage:.2f}%')
-                                msg = f"\nSentence: {tts_manager.params['sentence']}"
-                                print(msg)
-                            else:
-                                return False
+                        if tts_manager.params['sentence']:
+                            if tts_manager.params['sentence'] != "":
+                                if tts_manager.convert_sentence_to_audio():                           
+                                    percentage = (sentence_number / total_sentences) * 100
+                                    t.set_description(f'Converting {percentage:.2f}%')
+                                    msg = f"\nSentence: {tts_manager.params['sentence']}"
+                                    print(msg)
+                                else:
+                                    return False
                         t.update(1)
                     if progress_bar is not None:
                         progress_bar(sentence_number / total_sentences)
