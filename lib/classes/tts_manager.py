@@ -108,7 +108,7 @@ class TTSManager:
                             self.model_path = models[XTTSv2]['internal']['repo']
                             tts_key = self.model_path
                             if tts_key in loaded_tts.keys():
-                                elf.params['tts'] = loaded_tts[self.model_path]
+                                self.params['tts'] = loaded_tts[self.model_path]
                             else:
                                 if len(loaded_tts) >= max_tts_in_memory:
                                     self._unload_tts()
@@ -143,7 +143,7 @@ class TTSManager:
                                 error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
                                 print(error)
                         except Exception as e:
-                            error = f'_build() builtin voice conversion error: {file_path}: {e}'
+                            error = f'_build() builtin voice conversion error: {e}'
                             print(error)
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
