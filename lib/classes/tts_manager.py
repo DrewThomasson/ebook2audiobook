@@ -656,8 +656,7 @@ class TTSManager:
                 sourceTensor = self._tensor_type(audio_data)
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                 if convert_sample_rate is not None:
-                    resampler = torchaudio.transforms.Resample(orig_freq=convert_sample_rate, new_freq=self.params['sample_rate'])
-                    audio_tensor = resampler(audio_tensor)           
+                    self.params['sample_rate'] = convert_sample_rate
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, self.params['sample_rate'], format=default_audio_proc_format)
                 del audio_data, sourceTensor, audio_tensor
             if self.session['device'] == 'cuda':
