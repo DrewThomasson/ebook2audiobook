@@ -540,16 +540,17 @@ class TTSManager:
                                 msg = f"Builtin voice seems to be {self.params['voice_builtin_gender']}"
                                 print(msg)
                                 if self.params['voice_builtin_gender'] != self.params['voice_path_gender']:
-                                    self.params['semitones'] = -4 if self.params['voice_path_gender'] == 'male' else 4
+                                    self.params['semitones'] = 4 if self.params['voice_builtin_gender'] == 'male' else -4
                                     msg = f"Adapting builtin voice frequencies from the clone voice..."
                                 print(msg)
                             if 'semitones' in self.params:
                                 try:
-                                    cmd = [
-                                        shutil.which('sox'), tmp_in_wav,
-                                        "-r", str(self.params['sample_rate']), tmp_out_wav,
-                                        "pitch", str(self.params['semitones'] * 100)
-                                    ]
+                                    #cmd = [
+                                    #    shutil.which('sox'), tmp_in_wav,
+                                    #    "-r", str(self.params['sample_rate']), tmp_out_wav,
+                                    #    "pitch", str(self.params['semitones'] * 100)
+                                    #]
+                                    tmp_out_wav = tmp_in_wav
                                     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                                 except subprocess.CalledProcessError as e:
                                     print(f"Subprocess error: {e.stderr}")
