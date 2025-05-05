@@ -586,7 +586,10 @@ class TTSManager:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            self.params['tts'].tts_to_file(text=self.params['sentence'], file_path=tmp_in_wav)
+                            self.params['tts'].tts_to_file(
+                                text=self.params['sentence'],
+                                file_path=tmp_in_wav
+                            )
                             if self.params['current_voice_path'] != self.params['voice_path']:
                                 self.params['current_voice_path'] = self.params['voice_path']
                                 self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
