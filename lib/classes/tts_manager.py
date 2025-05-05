@@ -540,7 +540,7 @@ class TTSManager:
                                 msg = f"Cloned voice seems to be {self.params['voice_path_gender']}\nBuiltin voice seems to be {self.params['voice_builtin_gender']}"
                                 print(msg)
                                 if self.params['voice_builtin_gender'] != self.params['voice_path_gender']:
-                                    self.params['semitones'] = 4 if self.params['voice_builtin_gender'] == 'male' else -4
+                                    self.params['semitones'] = -4 if self.params['voice_path_gender'] == 'male' else 4
                                     msg = f"Adapting builtin voice frequencies from the clone voice..."
                                 print(msg)
                             if 'semitones' in self.params:
@@ -594,9 +594,7 @@ class TTSManager:
                                 self.params['current_voice_path'] = self.params['voice_path']
                                 self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
                                 self.params['voice_builtin_gender'] = self._detect_gender(tmp_in_wav)
-                                msg = f"Cloned voice seems to be {self.params['voice_path_gender']}"
-                                print(msg)
-                                msg = f"Builtin voice seems to be {self.params['voice_builtin_gender']}"
+                                msg = f"Cloned voice seems to be {self.params['voice_path_gender']}\nBuiltin voice seems to be {self.params['voice_builtin_gender']}"
                                 print(msg)
                                 if self.params['voice_builtin_gender'] != self.params['voice_path_gender']:
                                     self.params['semitones'] = -4 if self.params['voice_path_gender'] == 'male' else 4
