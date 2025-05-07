@@ -639,7 +639,11 @@ def get_sentences(text, lang):
             return tokens
         result = [tokens[0]]
         for token in tokens[1:]:
-            if not any(char.isalpha() for char in token) and all(char.isspace() or char in punctuation_list for char in token):
+            if (
+                not any(char.isalpha() for char in token)
+                and all(char.isspace() or char in punctuation_list for char in token)
+                and len(result[-1]) + len(token) <= max_chars
+            ):
                 result[-1] += token
             else:
                 result.append(token)
