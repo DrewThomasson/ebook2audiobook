@@ -528,7 +528,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     tags_length = len(tags)
     # Get visible text
     text = soup.get_text().strip()
-    text_lenght = len(text)
+    text_length = len(text)
     # Compare tags chars to real text chars count
     if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 10)):
         # Normalize lines and remove unnecessary spaces and switch special chars
