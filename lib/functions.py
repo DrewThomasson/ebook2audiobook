@@ -520,13 +520,15 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     # Remove scripts and styles
     for script in soup(["script", "style"]):
         script.decompose()
+    # get raw html doc
+    raw_html = soup
+    # Get non visible code tags only
+    tags = re.sub(r">(.*?)<", "><", raw_html, flags=re.DOTALL)
+    tags = re.sub(r"^[^<]*|[^>]*$", "", tags)
+    tags_length = len(tags)
     # Get visible text
     text = soup.get_text().strip()
     text_lenght = len(text)
-    # Get non visible code tags only
-    tags = re.sub(r">(.*?)<", "><", raw_html, flags=re.DOTALL)
-    tags = re.sub(r"^[^<]*|[^>]*$", "", tags_only_html)
-    tags_length = len(tags)
     # Compare tags chars to real text chars count
     if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 10)):
         # Normalize lines and remove unnecessary spaces and switch special chars
