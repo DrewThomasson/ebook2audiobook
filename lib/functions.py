@@ -515,42 +515,46 @@ def convert_to_epub(session):
         return False
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine):
-    chapter_sentences = None
-    raw_html = doc.get_body_content().decode("utf-8")
-    soup = BeautifulSoup(raw_html, 'html.parser')
-    # Remove scripts and styles
-    for script in soup(["script", "style"]):
-        script.decompose()
-    # Get non visible code tags only
-    tags = re.sub(r">(.*?)<", "><", raw_html, flags=re.DOTALL)
-    tags = re.sub(r"^[^<]*|[^>]*$", "", tags)
-    tags_length = len(tags)
-    # Get visible text
-    text = soup.get_text().strip()
-    text_length = len(text)
-    # Compare tags chars to real text chars count
-    if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 10)):
-        # Normalize lines and remove unnecessary spaces and switch special chars
-        text = normalize_text(text, lang, lang_iso1, tts_engine)
-        if tts_engine == XTTSv2:
-            # Ensure spaces before & after punctuation
-            pattern_space = re.escape(''.join(punctuation_list))
-            # Ensure space before and after punctuation (excluding `,` and `.`)
-            punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-            text = re.sub(punctuation_pattern_space, r' \1 ', text)
-            # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-            comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-            text = re.sub(comma_dot_pattern, r' \1 ', text)
-        # Replace special chars with words
-        specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
-        for char, word in specialchars.items():
-            text = text.replace(char, f" {word} ")
-        for char in specialchars_remove:
-            text = text.replace(char, ' ')
-        text = ' '.join(text.split())
-        if text.strip():
-            chapter_sentences = get_sentences(text, lang)
-    return chapter_sentences
+    try:
+        chapter_sentences = None
+        raw_html = doc.get_body_content().decode("utf-8")
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        # Remove scripts and styles
+        for script in soup(["script", "style"]):
+            script.decompose()
+        # Get non visible code tags only
+        tags = re.sub(r">(.*?)<", "><", raw_html, flags=re.DOTALL)
+        tags = re.sub(r"^[^<]*|[^>]*$", "", tags)
+        tags_length = len(tags)
+        # Get visible text
+        text = soup.get_text().strip()
+        text_length = len(text)
+        # Compare tags chars to real text chars count
+        if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 10)):
+            # Normalize lines and remove unnecessary spaces and switch special chars
+            text = normalize_text(text, lang, lang_iso1, tts_engine)
+            if tts_engine == XTTSv2:
+                # Ensure spaces before & after punctuation
+                pattern_space = re.escape(''.join(punctuation_list))
+                # Ensure space before and after punctuation (excluding `,` and `.`)
+                punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+                text = re.sub(punctuation_pattern_space, r' \1 ', text)
+                # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+                comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+                text = re.sub(comma_dot_pattern, r' \1 ', text)
+            # Replace special chars with words
+            specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+            for char, word in specialchars.items():
+                text = text.replace(char, f" {word} ")
+            for char in specialchars_remove:
+                text = text.replace(char, ' ')
+            text = ' '.join(text.split())
+            if text.strip():
+                chapter_sentences = get_sentences(text, lang)
+        return chapter_sentences
+    except Exception as e:
+        DependencyError(e)
+        return None
 
 def filter_doc(doc_patterns):
     pattern_counter = Counter(doc_patterns)
