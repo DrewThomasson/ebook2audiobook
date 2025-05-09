@@ -516,12 +516,13 @@ def convert_to_epub(session):
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine):
     chapter_sentences = None
-    soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
+    
+    raw_html = doc.get_body_content()
+    raw_html_length = len(raw_html)
+    soup = BeautifulSoup(raw_html, 'html.parser')
     # Remove scripts and styles
     for script in soup(["script", "style"]):
         script.decompose()
-    # get raw html doc
-    raw_html = soup
     # Get non visible code tags only
     tags = re.sub(r">(.*?)<", "><", raw_html, flags=re.DOTALL)
     tags = re.sub(r"^[^<]*|[^>]*$", "", tags)
