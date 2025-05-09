@@ -381,9 +381,9 @@ class TTSManager:
         try:
             subprocess.run(
                 ffmpeg_cmd,
+                env={},
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE,
-                env={},
                 encoding='utf-8',
                 errors='ignore'
             )
