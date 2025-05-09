@@ -516,9 +516,7 @@ def convert_to_epub(session):
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine):
     chapter_sentences = None
-    
-    raw_html = doc.get_body_content()
-    raw_html_length = len(raw_html)
+    raw_html = doc.get_body_content().decode("utf-8")
     soup = BeautifulSoup(raw_html, 'html.parser')
     # Remove scripts and styles
     for script in soup(["script", "style"]):
