@@ -383,9 +383,9 @@ class TTSManager:
                 ffmpeg_cmd,
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE,
-                check=True,
-                text=True,
-                encoding='utf-8'
+                env={},
+                encoding='utf-8',
+                errors='ignore'
             )
             return True
         except subprocess.CalledProcessError as e:

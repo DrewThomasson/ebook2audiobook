@@ -952,7 +952,8 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 env={},
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                encoding='utf-8'
+                encoding='utf-8',
+                errors='ignore'
             )
             for line in process.stdout:
                 print(line, end='')  # Print each line of stdout
@@ -996,7 +997,8 @@ def combine_audio_chapters(session):
                     env={},
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    encoding='utf-8'
+                    encoding='utf-8',
+                    errors='ignore'
                 )
                 for line in process.stdout:
                     print(line, end='')  # Print each line of stdout
@@ -1130,7 +1132,8 @@ def combine_audio_chapters(session):
                     env={},
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    encoding='utf-8'
+                    encoding='utf-8',
+                    errors='ignore'
                 )
                 for line in process.stdout:
                     print(line, end='')  # Print each line of stdout
