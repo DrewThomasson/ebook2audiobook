@@ -424,6 +424,9 @@ def math2word(text, lang, lang_iso1, tts_engine):
     return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
+    # Remove emojis
+    emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
+    emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
         text = re.sub(r'\b(?:[a-zA-Z]+\.)+|[a-zA-Z]+', lambda m: {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping["eng"].items()}.get(m.group().replace('.', '').lower(), m.group()), text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
@@ -527,6 +530,13 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
         comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
         text = re.sub(comma_dot_pattern, r' \1 ', text)
+    # Replace special chars with words
+    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+    for char, word in specialchars.items():
+        text = text.replace(char, f" {word} ")
+    for char in specialchars_remove:
+        text = text.replace(char, ' ')
+    text = ' '.join(text.split())
     if not text.strip():
         chapter_sentences = []
     else:
@@ -639,7 +649,11 @@ def get_sentences(text, lang):
             return tokens
         result = [tokens[0]]
         for token in tokens[1:]:
-            if not any(char.isalpha() for char in token) and all(char.isspace() or char in punctuation_list for char in token):
+            if (
+                not any(char.isalpha() for char in token)
+                and all(char.isspace() or char in punctuation_list for char in token)
+                and len(result[-1]) + len(token) <= max_chars
+            ):
                 result[-1] += token
             else:
                 result.append(token)
@@ -938,7 +952,8 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 env={},
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                encoding='utf-8'
+                encoding='utf-8',
+                errors='ignore'
             )
             for line in process.stdout:
                 print(line, end='')  # Print each line of stdout
@@ -982,7 +997,8 @@ def combine_audio_chapters(session):
                     env={},
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    encoding='utf-8'
+                    encoding='utf-8',
+                    errors='ignore'
                 )
                 for line in process.stdout:
                     print(line, end='')  # Print each line of stdout
@@ -1116,7 +1132,8 @@ def combine_audio_chapters(session):
                     env={},
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
-                    encoding='utf-8'
+                    encoding='utf-8',
+                    errors='ignore'
                 )
                 for line in process.stdout:
                     print(line, end='')  # Print each line of stdout
