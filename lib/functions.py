@@ -627,7 +627,7 @@ def get_chapters(epubBook, session):
         for doc in all_docs:
             chapter_sentences = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if chapter_sentences is not None:
-                doc_cache[doc] = chapter_sentences
+                doc_cache[doc.get_name()] = chapter_sentences
         # Step 4: Determine the most common pattern
         #doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
         #most_common_pattern = filter_doc(doc_patterns)
@@ -642,7 +642,7 @@ def get_chapters(epubBook, session):
         #]
         # Step 7: Extract parts from the final selected docs
         #chapters = [doc_cache[doc] for doc in final_selected_docs]
-        chapters = [doc_cache[doc] for doc in all_docs]
+        chapters = [doc_cache[doc.get_name()] for doc in all_docs]
         # Step 8: Return both TOC and Chapters separately
         return toc, chapters
     except Exception as e:
