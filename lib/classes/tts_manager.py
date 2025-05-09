@@ -383,9 +383,9 @@ class TTSManager:
                 ffmpeg_cmd,
                 stdout=subprocess.PIPE, 
                 stderr=subprocess.PIPE,
-                check=True,
-                text=True,
-                encoding='utf-8'
+                env={},
+                encoding='utf-8',
+                errors='ignore'
             )
             return True
         except subprocess.CalledProcessError as e:
@@ -492,8 +492,8 @@ class TTSManager:
                             voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
                             speaker_argument = {
                                 "voice_dir": bark_dir,
-                                "speaker": voice_key,
-                                "speaker_wav": os.path.join(os.path.dirname(bark_dir), f"{os.path.splitext(os.path.basename(default_bark_settings['voices']['KumarDahl']))[0]}.wav"),
+                                #"speaker": voice_key,
+                                #"speaker_wav": os.path.join(os.path.dirname(bark_dir), f"{os.path.splitext(os.path.basename(default_bark_settings['voices']['KumarDahl']))[0]}.wav"),
                                 "text_temp": 0.2
                             }                    
                     else:
