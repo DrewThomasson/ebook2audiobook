@@ -515,46 +515,33 @@ def convert_to_epub(session):
         return False
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine):
-    try:
-        chapter_sentences = None
-        raw_html = doc.get_body_content().decode("utf-8")
-        soup = BeautifulSoup(raw_html, 'html.parser')
-        # Remove scripts and styles
-        for script in soup(["script", "style"]):
-            script.decompose()
-        # Get non visible code tags only
-        tags = re.sub(r">(.*?)<", "><", raw_html, flags=re.DOTALL)
-        tags = re.sub(r"^[^<]*|[^>]*$", "", tags)
-        tags_length = len(tags)
-        # Get visible text
-        text = soup.get_text().strip()
-        text_length = len(text)
-        # Compare tags chars to real text chars count
-        if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 10)):
-            # Normalize lines and remove unnecessary spaces and switch special chars
-            text = normalize_text(text, lang, lang_iso1, tts_engine)
-            if tts_engine == XTTSv2:
-                # Ensure spaces before & after punctuation
-                pattern_space = re.escape(''.join(punctuation_list))
-                # Ensure space before and after punctuation (excluding `,` and `.`)
-                punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-                text = re.sub(punctuation_pattern_space, r' \1 ', text)
-                # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-                comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-                text = re.sub(comma_dot_pattern, r' \1 ', text)
-            # Replace special chars with words
-            specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
-            for char, word in specialchars.items():
-                text = text.replace(char, f" {word} ")
-            for char in specialchars_remove:
-                text = text.replace(char, ' ')
-            text = ' '.join(text.split())
-            if text.strip():
-                chapter_sentences = get_sentences(text, lang)
-        return chapter_sentences
-    except Exception as e:
-        DependencyError(e)
-        return None
+    soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
+    # Remove scripts and styles
+    for script in soup(["script", "style"]):
+        script.decompose()
+    # Normalize lines and remove unnecessary spaces and switch special chars
+    text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
+    if tts_engine == XTTSv2:
+        # Ensure spaces before & after punctuation
+        pattern_space = re.escape(''.join(punctuation_list))
+        # Ensure space before and after punctuation (excluding `,` and `.`)
+        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+        text = re.sub(comma_dot_pattern, r' \1 ', text)
+    # Replace special chars with words
+    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+    for char, word in specialchars.items():
+        text = text.replace(char, f" {word} ")
+    for char in specialchars_remove:
+        text = text.replace(char, ' ')
+    text = ' '.join(text.split())
+    if not text.strip():
+        chapter_sentences = []
+    else:
+        chapter_sentences = get_sentences(text, lang)
+    return chapter_sentences
 
 def filter_doc(doc_patterns):
     pattern_counter = Counter(doc_patterns)
@@ -600,17 +587,6 @@ def get_cover(epubBook, session):
 
 def get_chapters(epubBook, session):
     try:
-        msg = r'''
-            ***************************************************************************************
-                                            NOTE: THE WARNING
-                                "Character xx not found in the vocabulary."
-            MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
-            (AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
-            TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
-            TO A TRAINING MODEL EXPERT.
-            ***************************************************************************************
-        '''
-        print(msg)
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
@@ -628,25 +604,33 @@ def get_chapters(epubBook, session):
             return [], []        
         all_docs = all_docs[1:]  # Exclude the first document if needed
         doc_cache = {}
+        msg = r'''
+            ***************************************************************************************
+                                            NOTE: THE WARNING
+                                "Character xx not found in the vocabulary."
+            MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
+            (AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
+            TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
+            TO A TRAINING MODEL EXPERT.
+            ***************************************************************************************
+        '''
+        print(msg)
         for doc in all_docs:
-            chapter_sentences = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
-            if chapter_sentences is not None:
-                doc_cache[doc.get_name()] = chapter_sentences
+            doc_cache[doc] = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
         # Step 4: Determine the most common pattern
-        #doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
-        #most_common_pattern = filter_doc(doc_patterns)
+        doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
+        most_common_pattern = filter_doc(doc_patterns)
         # Step 5: Calculate average character length
-        #char_length = [len(content) for content in doc_cache.values()]
-        #average_char_length = sum(char_length) / len(char_length) if char_length else 0
+        char_length = [len(content) for content in doc_cache.values()]
+        average_char_length = sum(char_length) / len(char_length) if char_length else 0
         # Step 6: Filter docs based on character length or pattern
-        #final_selected_docs = [
-        #    doc for doc in all_docs
-        #    if doc in doc_cache and doc_cache[doc]
-        #    and (len(doc_cache[doc]) >= average_char_length or filter_pattern(str(doc)) == most_common_pattern)
-        #]
+        final_selected_docs = [
+            doc for doc in all_docs
+            if doc in doc_cache and doc_cache[doc]
+            and (len(doc_cache[doc]) >= average_char_length or filter_pattern(str(doc)) == most_common_pattern)
+        ]
         # Step 7: Extract parts from the final selected docs
-        #chapters = [doc_cache[doc] for doc in final_selected_docs]
-        chapters = [doc_cache[doc.get_name()] for doc in all_docs]
+        chapters = [doc_cache[doc] for doc in final_selected_docs]
         # Step 8: Return both TOC and Chapters separately
         return toc, chapters
     except Exception as e:
