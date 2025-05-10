@@ -217,7 +217,14 @@ abbreviations_mapping = {
         "д.": "дом",
         "т.": "телефон",
         "т.д.": "так далее",
-        "и т.п.": "и тому подобное"
+        "и т.п.": "и тому подобное",
+        "просп.": "проспект",
+        "пр.": "проспект",
+        "тел.": "телефон",
+        "тов.": "товарищ",
+        "бульв.": "бульвар",
+        "руб.": "Рубль",
+        "пл.": "площадь"
     },
     "zho": {
         "先生": "先生",
@@ -302,6 +309,31 @@ abbreviations_mapping = {
         "Bàbá": "Bàbá (Father)",
         "Ìyá": "Ìyá (Mother)"
     }
+}
+
+chapter_word_mapping = {
+    "eng": ["chapter", "part", "psalm", "section", "paragraph", "article", "tome"],
+    "fra": ["chapitre", "partie", "psaume", "section", "paragraphe", "article", "tome"],
+    "spa": ["capítulo", "parte", "salmo", "sección", "párrafo", "artículo", "tomo"],
+    "deu": ["Kapitel", "Teil", "Psalm", "Abschnitt", "Absatz", "Artikel", "Band"],
+    "ita": ["capitolo", "parte", "salmo", "sezione", "paragrafo", "articolo", "tomo"],
+    "rus": ["глава", "часть", "псалом", "раздел", "параграф", "статья", "том"],
+    "zho": ["章节", "部分", "诗篇", "节", "段落", "条款", "卷"],
+    "jpn": ["章", "部", "詩編", "節", "段落", "条項", "巻"],
+    "kor": ["장", "부분", "시편", "절", "단락", "조항", "권"],
+    "por": ["capítulo", "parte", "salmo", "seção", "parágrafo", "artigo", "tomo"],
+    "tur": ["bölüm", "parça", "mezmur", "kısım", "paragraf", "madde", "cilt"],
+    "hin": ["अध्याय", "भाग", "भजन", "अनुभाग", "अनुच्छेद", "धारा", "खंड"],
+    "ben": ["অধ্যায়", "অংশ", "গীত", "অনুচ্ছেদ", "ধারা", "ধারা", "খণ্ড"],
+    "ara": ["فصل", "جزء", "مزمور", "قسم", "فقرة", "مادة", "مجلد"],
+    "fas": ["فصل", "بخش", "مزمور", "قسمت", "بند", "ماده", "جلد"],
+    "hun": ["fejezet", "rész", "zsoltár", "szakasz", "bekezdés", "cikk", "kötet"],
+    "pol": ["rozdział", "część", "psalm", "sekcja", "akapit", "artykuł", "tom"],
+    "ind": ["bab", "bagian", "mazmur", "seksi", "paragraf", "artikel", "jilid"],
+    "jav": ["bab", "bagean", "mazmur", "bagéan", "paragraf", "artikel", "jilid"],
+    "tam": ["அத்தியாயம்", "பகுதி", "சங்கீதம்", "பிரிவு", "பத்தி", "அம்சம்", "தொகுதி"],
+    "tel": ["అధ్యాయం", "భాగం", "కీర్తన", "విభాగం", "పేరా", "ఆర్టికల్", "ఖండం"],
+    "yor": ["ori", "apa", "orin", "ipin", "abala", "abala", "iwe"]
 }
 
 specialchars_mapping = {
