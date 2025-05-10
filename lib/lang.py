@@ -119,7 +119,7 @@ punctuation_split = [
     # Punctuation used in Lao
     '໌', 'ໍ',
     # Miscellaneous punctuation (pause-inducing, used globally)
-    '—', '!', '?'
+    '—', '!', '?', ':', ';'
 ]
 
 emojis_array = [
