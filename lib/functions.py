@@ -447,7 +447,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace multiple  and spaces with single space
     text = re.sub(r'[     ]+', ' ', text)
     # replace roman numbers by digits
-    text = replace_roman_numbers(text)
+    text = replace_roman_numbers(text, lang)
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split))
     # Reduce multiple consecutive punctuations
@@ -514,51 +514,24 @@ def convert_to_epub(session):
         DependencyError(e)
         return False
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine):
-    soup = BeautifulSoup(doc.get_body_content(), 'html.parser')
-    # Remove scripts and styles
-    for script in soup(["script", "style"]):
-        script.decompose()
-    # Normalize lines and remove unnecessary spaces and switch special chars
-    text = normalize_text(soup.get_text().strip(), lang, lang_iso1, tts_engine)
-    if tts_engine == XTTSv2:
-        # Ensure spaces before & after punctuation
-        pattern_space = re.escape(''.join(punctuation_list))
-        # Ensure space before and after punctuation (excluding `,` and `.`)
-        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-        text = re.sub(punctuation_pattern_space, r' \1 ', text)
-        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-        text = re.sub(comma_dot_pattern, r' \1 ', text)
-    # Replace special chars with words
-    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
-    for char, word in specialchars.items():
-        text = text.replace(char, f" {word} ")
-    for char in specialchars_remove:
-        text = text.replace(char, ' ')
-    text = ' '.join(text.split())
-    if not text.strip():
-        chapter_sentences = []
-    else:
-        chapter_sentences = get_sentences(text, lang)
-    return chapter_sentences
-
-def filter_doc(doc_patterns):
-    pattern_counter = Counter(doc_patterns)
-    # Returns a list with one tuple: [(pattern, count)]
-    most_common = pattern_counter.most_common(1)
-    return most_common[0][0] if most_common else None
-
-def filter_pattern(doc_identifier):
-    docs = doc_identifier.split(':')
-    if len(docs) > 2:
-        segment = docs[1]
-        if re.search(r'[a-zA-Z]', segment) and re.search(r'\d', segment):
-            return ''.join([char for char in segment if char.isalpha()])
-        elif re.match(r'^[a-zA-Z]+$', segment):
-            return segment
-        elif re.match(r'^\d+$', segment):
-            return 'numbers'
+def get_ebook_title(epubBook, all_docs):
+    # 1. Try metadata (official EPUB title)
+    meta_title = epubBook.get_metadata("DC", "title")
+    if meta_title and meta_title[0][0].strip():
+        return meta_title[0][0].strip()
+    # 2. Try <title> in the head of the first XHTML document
+    if all_docs:
+        html = all_docs[0].get_content().decode("utf-8")
+        soup = BeautifulSoup(html, "html.parser")
+        title_tag = soup.select_one("head > title")
+        if title_tag and title_tag.text.strip():
+            return title_tag.text.strip()
+        # 3. Try <img alt="..."> if no visible <title>
+        img = soup.find("img", alt=True)
+        if img:
+            alt = img["alt"].strip()
+            if alt and "cover" not in alt.lower():
+                return alt
     return None
 
 def get_cover(epubBook, session):
@@ -587,6 +560,17 @@ def get_cover(epubBook, session):
 
 def get_chapters(epubBook, session):
     try:
+        msg = r'''
+***************************************************************************************
+                                NOTE: THE WARNING
+                    "Character xx not found in the vocabulary."
+MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
+(AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
+TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
+TO A TRAINING MODEL EXPERT.
+***************************************************************************************
+        '''
+        print(msg)
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
@@ -594,56 +578,85 @@ def get_chapters(epubBook, session):
         toc_list = []
         try:
             toc = epubBook.toc  # Extract TOC
-            toc_list = [normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine']) 
-                        for item in toc if hasattr(item, 'title')]  # Normalize TOC entries
+            toc_list = [normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine']) for item in toc if hasattr(item, 'title')]
         except Exception as toc_error:
             error = f"Error extracting TOC: {toc_error}"
             print(error)
         all_docs = list(epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT))
         if not all_docs:
-            return [], []        
-        all_docs = all_docs[1:]  # Exclude the first document if needed
-        doc_cache = {}
-        msg = r'''
-            ***************************************************************************************
-                                            NOTE: THE WARNING
-                                "Character xx not found in the vocabulary."
-            MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
-            (AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
-            TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
-            TO A TRAINING MODEL EXPERT.
-            ***************************************************************************************
-        '''
-        print(msg)
+            return [], []
+        title = get_ebook_title(epubBook, all_docs)
+        if title:
+            html = all_docs[0].get_content().decode("utf-8")
+            soup = BeautifulSoup(html, "html.parser")
+            body = soup.find("body")
+            if body:
+                h1 = soup.new_tag("h1")
+                h1.string = title
+                body.insert(0, h1)
+                all_docs[0].set_content(str(soup).encode("utf-8"))
+        chapters = []
         for doc in all_docs:
-            doc_cache[doc] = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
-        # Step 4: Determine the most common pattern
-        doc_patterns = [filter_pattern(str(doc)) for doc in all_docs if filter_pattern(str(doc))]
-        most_common_pattern = filter_doc(doc_patterns)
-        # Step 5: Calculate average character length
-        char_length = [len(content) for content in doc_cache.values()]
-        average_char_length = sum(char_length) / len(char_length) if char_length else 0
-        # Step 6: Filter docs based on character length or pattern
-        final_selected_docs = [
-            doc for doc in all_docs
-            if doc in doc_cache and doc_cache[doc]
-            and (len(doc_cache[doc]) >= average_char_length or filter_pattern(str(doc)) == most_common_pattern)
-        ]
-        # Step 7: Extract parts from the final selected docs
-        chapters = [doc_cache[doc] for doc in final_selected_docs]
-        # Step 8: Return both TOC and Chapters separately
+            sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
+            if sentences_array is not None:
+                chapters.append(sentences_array)
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
         return None, None
 
-def get_sentences(text, lang):
-    max_tokens = language_mapping[lang]['max_tokens']
-    max_chars = (max_tokens * 10) - 4
-    pattern_split = [re.escape(p) for p in punctuation_split]
-    pattern = f"({'|'.join(pattern_split)})"
+def filter_chapter(doc, lang, lang_iso1, tts_engine):
+    try:
+        chapter_sentences = None
+        raw_html = doc.get_body_content().decode("utf-8")
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        # Remove scripts and styles
+        for script in soup(["script", "style"]):
+            script.decompose()
+        # Get non visible code tags only
+        tags = re.sub(r">(.*?)<", "><", raw_html, flags=re.DOTALL)
+        tags = re.sub(r"^[^<]*|[^>]*$", "", tags)
+        tags_length = len(tags)
+        # Get visible text
+        text = soup.get_text().strip()
+        if text:
+            text_length = len(text)
+            # Compare tags chars to real text chars count
+            if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 10)):
+                # Normalize lines and remove unnecessary spaces and switch special chars
+                text = normalize_text(text, lang, lang_iso1, tts_engine)
+                if tts_engine == XTTSv2:
+                    # Ensure spaces before & after punctuation
+                    pattern_space = re.escape(''.join(punctuation_list))
+                    # Ensure space before and after punctuation (excluding `,` and `.`)
+                    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+                    text = re.sub(punctuation_pattern_space, r' \1 ', text)
+                    # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+                    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+                    text = re.sub(comma_dot_pattern, r' \1 ', text)
+                # Replace special chars with words
+                specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+                for char, word in specialchars.items():
+                    text = text.replace(char, f" {word} ")
+                for char in specialchars_remove:
+                    text = text.replace(char, ' ')
+                text = ' '.join(text.split())
+                if text.strip():
+                    # Add punctuation after numbers or Roman numerals at start of a chapter.
+                    roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
+                    arabic_pattern = r'^(\d+)(?=\s|$)'
+                    if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
+                        # Add punctuation if not already present (e.g. "II", "4")
+                        if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
+                            text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
+                    chapter_sentences = get_sentences(text, lang)
+        return chapter_sentences
+    except Exception as e:
+        DependencyError(e)
+        return None
 
+def get_sentences(text, lang):
     def combine_punctuation(tokens):
         if not tokens:
             return tokens
@@ -729,6 +742,11 @@ def get_sentences(text, lang):
             else:
                 result.extend(split_sentence(part2))
         return result
+
+    max_tokens = language_mapping[lang]['max_tokens']
+    max_chars = (max_tokens * 10) - 4
+    pattern_split = [re.escape(p) for p in punctuation_split]
+    pattern = f"({'|'.join(pattern_split)})"
 
     # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
@@ -1171,62 +1189,63 @@ def combine_audio_chapters(session):
         DependencyError(e)
         return False
 
-def replace_roman_numbers(text):
-	def roman_to_int(s):
-		try:
-			roman = {
-				'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
-				'IV': 4, 'IX': 9, 'XL': 40, 'XC': 90, 'CD': 400, 'CM': 900
-			}
-			i = 0
-			num = 0
-			while i < len(s):
-				if i + 1 < len(s) and s[i:i+2] in roman:
-					num += roman[s[i:i+2]]
-					i += 2
-				else:
-					num += roman.get(s[i], 0)
-					i += 1
-			return num if num > 0 else s
-		except Exception:
-			return s
+def replace_roman_numbers(text, lang):
+    def roman_to_int(s):
+        try:
+            roman = {
+                'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
+                'IV': 4, 'IX': 9, 'XL': 40, 'XC': 90, 'CD': 400, 'CM': 900
+            }
+            i = 0
+            num = 0
+            while i < len(s):
+                if i + 1 < len(s) and s[i:i+2] in roman:
+                    num += roman[s[i:i+2]]
+                    i += 2
+                else:
+                    num += roman.get(s[i], 0)
+                    i += 1
+            return num if num > 0 else s
+        except Exception:
+            return s
 
-	# Match e.g. "Chapter IV", "volume IX", "tome X"
-	roman_chapter_pattern = re.compile(
-		r'\b('
-		r'chapter|volume|chapitre|tome|capitolo|capítulo|volumen|Kapitel|глава|том|κεφάλαιο|τόμος|capitul|poglavlje'
-		r')\s+'
-		r'(?=[IVXLCDM])'
-		r'((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\b',
-		re.IGNORECASE
-	)
+    def replace_chapter_match(match):
+        chapter_word = match.group(1)
+        roman_numeral = match.group(2)
+        if not roman_numeral:
+            return match.group(0)
+        integer_value = roman_to_int(roman_numeral.upper())
+        if isinstance(integer_value, int):
+            return f'{chapter_word.capitalize()} {integer_value}; '
+        return match.group(0)
 
-	# Match standalone Roman numeral followed by dot (e.g. "IX.")
-	roman_numerals_with_period = re.compile(
-		r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\.+',
-		re.IGNORECASE
-	)
+    def replace_numeral_with_period(match):
+        roman_numeral = match.group(1)
+        integer_value = roman_to_int(roman_numeral.upper())
+        if isinstance(integer_value, int):
+            return f'{integer_value}. '
+        return match.group(0)
 
-	def replace_chapter_match(match):
-		chapter_word = match.group(1)
-		roman_numeral = match.group(2)
-		if not roman_numeral:
-			return match.group(0)
-		integer_value = roman_to_int(roman_numeral.upper())
-		if isinstance(integer_value, int):
-			return f'{chapter_word.capitalize()} {integer_value}; '
-		return match.group(0)
-
-	def replace_numeral_with_period(match):
-		roman_numeral = match.group(1)
-		integer_value = roman_to_int(roman_numeral.upper())
-		if isinstance(integer_value, int):
-			return f'{integer_value}. '
-		return match.group(0)
-
-	text = roman_chapter_pattern.sub(replace_chapter_match, text)
-	text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
-	return text
+    # Get language-specific chapter words
+    chapter_words = chapter_word_mapping.get(lang, [])
+    # Escape and join to form regex pattern
+    escaped_words = [re.escape(word) for word in chapter_words]
+    word_pattern = "|".join(escaped_words)
+    # Now build the full regex
+    roman_chapter_pattern = re.compile(
+        rf'\b({word_pattern})\s+'
+        r'(?=[IVXLCDM])'
+        r'((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\b',
+        re.IGNORECASE
+    )
+    # Roman numeral with trailing period
+    roman_numerals_with_period = re.compile(
+        r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\.+',
+        re.IGNORECASE
+    )
+    text = roman_chapter_pattern.sub(replace_chapter_match, text)
+    text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
+    return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
     dir_array = [
