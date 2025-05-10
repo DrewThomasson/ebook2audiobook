@@ -30,6 +30,10 @@ punctuation_switch = {
     '“': '"', '”': '"',  # Curly double quotes
     '‘': "'", '’': "'",  # Curly single quotes
     '„': '"',   # German-style quote
+
+    # Dashes, underscores & Hyphens that might cause weird pauses
+    '–': '-',  # En dash (Unicode U+2013)
+    '—': '-',  # Em dash (Unicode U+2014)
 	"_": " ",   # U+005F LOW LINE
 	"‗": " ",   # U+2017 DOUBLE LOW LINE
 	"¯": " ",   # U+00AF MACRON (technically an overline)
@@ -38,10 +42,6 @@ punctuation_switch = {
 	"﹎": " ",  # U+FE4E CENTRELINE LOW LINE
 	"﹏": " ",  # U+FE4F WAVY LOW LINE
 	"＿": " ",  # U+FF3F FULLWIDTH LOW LINE
-
-    # Dashes, underscores & Hyphens that might cause weird pauses
-    '–': '-',  # En dash (Unicode U+2013)
-    '—': '-',  # Em dash (Unicode U+2014)
 
     # Ellipsis (causes extreme long pauses in TTS)
     '...': '…',  # standard triple dots replaced with Unicode ellipsis (U+2026)
@@ -58,16 +58,18 @@ punctuation_switch = {
     '﹗': '!',   # Small form exclamation mark
     
     # Misinterpreted pauses
-    '۔': '.',   # Arabic full stop
+    '۔': '.',  # Arabic full stop
     '॥': '.',   # Devanagari double danda (used in Hindi, Bengali) -> Period
     '。': '.',  # Chinese full stop -> Period
     '።': '.',  # Ethiopic full stop
-    '།': '.',  # Tibetan shad
+    '།': '.',    # Tibetan shad
     
     # Miscellaneous
-    '፡': ':',   # Ethiopic colon
-    '፤': ';',   # Ethiopic semicolon
+    '፡': ':',  # Ethiopic colon
+    '፤': ';',  # Ethiopic semicolon
     '।': '.',   # Hindi period
+    '•': '—', # bullet (Unicode: U+2022
+    '›': ''   # Single Right-Pointing Angle Quotation Mark U+203A
 }
 
 punctuation_list = [
