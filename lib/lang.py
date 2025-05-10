@@ -29,9 +29,17 @@ punctuation_switch = {
     '«': '"', '»': '"',  # French-style quotes
     '“': '"', '”': '"',  # Curly double quotes
     '‘': "'", '’': "'",  # Curly single quotes
-    '„': '"',            # German-style quote
+    '„': '"',   # German-style quote
+	"_": " ",   # U+005F LOW LINE
+	"‗": " ",   # U+2017 DOUBLE LOW LINE
+	"¯": " ",   # U+00AF MACRON (technically an overline)
+	"ˍ": " ",   # U+02CD MODIFIER LETTER LOW MACRON
+	"﹍": " ",  # U+FE4D DASHED LOW LINE
+	"﹎": " ",  # U+FE4E CENTRELINE LOW LINE
+	"﹏": " ",  # U+FE4F WAVY LOW LINE
+	"＿": " ",  # U+FF3F FULLWIDTH LOW LINE
 
-    # Dashes & Hyphens that might cause weird pauses
+    # Dashes, underscores & Hyphens that might cause weird pauses
     '–': '-',  # En dash (Unicode U+2013)
     '—': '-',  # Em dash (Unicode U+2014)
 
