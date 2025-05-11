@@ -481,20 +481,15 @@ class TTSManager:
                         if self.params['current_voice_path'] != self.params['voice_path']:
                             self.params['current_voice_path'] = self.params['voice_path']
                             bark_dir = os.path.dirname(os.path.dirname(self.params['current_voice_path']))
-                            voice_key = re.sub(r'.npz$', '', os.path.basename(self.params['current_voice_path']))
-                            speaker_argument = {
-                                "voice_dir": bark_dir,
-                                "speaker": voice_key,
-                                "text_temp": 0.2
-                            }                    
+                            voice_key = re.sub(r'.npz$', '', os.path.basename(self.params['current_voice_path']))                   
                     else:
                         bark_dir = os.path.dirname(os.path.dirname(default_bark_settings['voices']['Jamie']))
                         voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
-                        speaker_argument = {
-                            "voice_dir": bark_dir,
-                            "speaker": voice_key,
-                            "text_temp": 0.2
-                        }                      
+                    speaker_argument = {
+                        "voice_dir": bark_dir,
+                        "speaker": voice_key,
+                        "text_temp": 0.2
+                    }                      
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
