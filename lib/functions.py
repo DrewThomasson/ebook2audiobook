@@ -593,20 +593,14 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         if not all_docs:
             return [], []
         title = get_ebook_title(epubBook, all_docs)
-        if title:
-            html = all_docs[0].get_content().decode("utf-8")
-            soup = BeautifulSoup(html, "html.parser")
-            body = soup.find("body")
-            if body:
-                p = soup.new_tag("p")
-                p.string = f'{title}.'
-                body.insert(0, p)
-                all_docs[0].set_content(str(soup).encode("utf-8"))
         chapters = []
         for doc in all_docs:
             sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_array is not None:
                 chapters.append(sentences_array)
+        if title:
+            if chapters[0][0]:
+                chapters[0][0] = f' - "{title}" . {chapters[0][0]}'
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
