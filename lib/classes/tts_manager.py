@@ -131,7 +131,7 @@ class TTSManager:
                                     if self._normalize_audio(file_path, output_file, samplerate):
                                         # for Bark
                                         if samplerate == 24000:
-                                            bark_dir = os.path.join(base_dir, 'bark')
+                                            bark_dir = os.path.join(os.path.dirname(os.path.dirname(file_path)), 'bark')
                                             npz_dir = os.path.join(bark_dir, voice_key)
                                             os.makedirs(npz_dir, exist_ok=True)
                                             npz_file = os.path.join(npz_dir, f'{voice_key}.npz')
@@ -480,7 +480,7 @@ class TTSManager:
                     if self.params['voice_path'] is not None:
                         if self.params['current_voice_path'] != self.params['voice_path']:
                             self.params['current_voice_path'] = self.params['voice_path']
-                            bark_dir = os.path.dirname(os.path.dirname(default_bark_settings['voices']['Jamie']))
+                            bark_dir = os.path.dirname(os.path.dirname(self.params['current_voice_path']))
                             voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
                             speaker_argument = {
                                 "voice_dir": bark_dir,
@@ -488,7 +488,7 @@ class TTSManager:
                                 "text_temp": 0.2
                             }                    
                     else:
-                        bark_dir = f"/{os.path.dirname(default_bark_settings['voices']['Jamie'])}"
+                        bark_dir = os.path.dirname(os.path.dirname(default_bark_settings['voices']['Jamie']))
                         voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
                         speaker_argument = {
                             "voice_dir": bark_dir,
