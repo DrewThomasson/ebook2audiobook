@@ -598,9 +598,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             soup = BeautifulSoup(html, "html.parser")
             body = soup.find("body")
             if body:
-                h1 = soup.new_tag("h1")
-                h1.string = title
-                body.insert(0, h1)
+                p = soup.new_tag("p")
+                p.string = f'{title}.'
+                body.insert(0, p)
                 all_docs[0].set_content(str(soup).encode("utf-8"))
         chapters = []
         for doc in all_docs:
