@@ -582,7 +582,14 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         except Exception as toc_error:
             error = f"Error extracting TOC: {toc_error}"
             print(error)
-        all_docs = list(epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT))
+        # Get spine item IDs
+        spine_ids = [item[0] for item in epubBook.spine]
+
+        # Filter only spine documents (i.e., reading order)
+        all_docs = [
+            item for item in epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT)
+            if item.id in spine_ids
+        ]
         if not all_docs:
             return [], []
         title = get_ebook_title(epubBook, all_docs)
