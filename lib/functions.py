@@ -623,7 +623,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         if text:
             text_length = len(text)
             # Compare tags chars to real text chars count
-            if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 10)):
+            if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 2)):
                 # Normalize lines and remove unnecessary spaces and switch special chars
                 text = normalize_text(text, lang, lang_iso1, tts_engine)
                 if tts_engine == XTTSv2:
