@@ -561,14 +561,14 @@ def get_cover(epubBook, session):
 def get_chapters(epubBook, session):
     try:
         msg = r'''
-***************************************************************************************
-                                NOTE: THE WARNING
-                    "Character xx not found in the vocabulary."
-MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE 
-(AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL IT NEEDS
-TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL. YOU CAN IMPROVE IT OR ASK 
-TO A TRAINING MODEL EXPERT.
-***************************************************************************************
+*******************************************************************************
+NOTE:
+The warning "Character xx not found in the vocabulary."
+MEANS THE MODEL CANNOT INTERPRET THE CHARACTER AND WILL MAYBE GENERATE
+(AS WELL AS WRONG PUNCTUATION POSITION) AN HALLUCINATION TO IMPROVE THIS MODEL,
+IT NEEDS TO ADD THIS CHARACTER INTO A NEW TRAINING MODEL.
+YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
+*******************************************************************************
         '''
         print(msg)
         if session['cancellation_requested']:

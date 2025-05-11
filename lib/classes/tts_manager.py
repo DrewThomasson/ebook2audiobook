@@ -480,20 +480,11 @@ class TTSManager:
                     if self.params['voice_path'] is not None:
                         if self.params['current_voice_path'] != self.params['voice_path']:
                             self.params['current_voice_path'] = self.params['voice_path']
-                            r"""
-                            voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
-                            bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark', voice_key)
-                            npz_file = os.path.join(bark_dir, f'{voice_key}.npz')
-                            if not os.path.exists(npz_file):
-                                os.makedirs(bark_dir, exist_ok=True)
-                                self._wav_to_npz(self.params['voice_path'], npz_file)
-                            """
-                            bark_dir = f"/{os.path.dirname(default_bark_settings['voices']['Jamie'])}"
+                            bark_dir = os.path.dirname(os.path.dirname(default_bark_settings['voices']['Jamie']))
                             voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
                             speaker_argument = {
                                 "voice_dir": bark_dir,
-                                #"speaker": voice_key,
-                                #"speaker_wav": os.path.join(os.path.dirname(bark_dir), f"{os.path.splitext(os.path.basename(default_bark_settings['voices']['KumarDahl']))[0]}.wav"),
+                                "speaker": voice_key,
                                 "text_temp": 0.2
                             }                    
                     else:
