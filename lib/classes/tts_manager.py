@@ -497,7 +497,7 @@ class TTSManager:
                                 "text_temp": 0.2
                             }                    
                     else:
-                        bark_dir = f"/{os.path.dirname(default_bark_settings['voices']['Jamie'])}"
+                        bark_dir = os.path.join(voices_dir, "eng", "adult", "male", "bark")
                         voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
                         speaker_argument = {
                             "voice_dir": bark_dir,
