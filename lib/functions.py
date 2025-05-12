@@ -598,7 +598,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             if sentences_array is not None:
                 chapters.append(sentences_array)
         if title:
-            if if chapters[0]:
+            if chapters[0]:
                 chapters[0].insert(0, f' — "{title}" . ')
         return toc, chapters
     except Exception as e:
