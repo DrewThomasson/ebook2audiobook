@@ -612,9 +612,21 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
         
+        # Get epub:type from <body> or outermost <section>
         epub_type = soup.body.get("epub:type", "").lower()
-        if "frontmatter" in epub_type or "backmatter" in epub_type:
-            return None  # or continue if inside a loop
+        if not epub_type:
+            section_tag = soup.find("section")
+            if section_tag and section_tag.get("epub:type"):
+                epub_type = section_tag.get("epub:type").lower()
+
+        # Skip known non-chapter types
+        excluded_types = {
+            "frontmatter", "backmatter", "toc", "titlepage", "colophon",
+            "acknowledgments", "dedication", "glossary", "index",
+            "appendix", "bibliography", "copyright-page", "landmark"
+        }
+        if any(part in epub_type for part in excluded_types):
+            return None
         
         for script in soup(["script", "style"]):
             script.decompose()
