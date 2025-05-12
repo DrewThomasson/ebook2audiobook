@@ -613,11 +613,35 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         soup = BeautifulSoup(raw_html, 'html.parser')
         for script in soup(["script", "style"]):
             script.decompose()
-        text = []
-        for tag in soup.find_all(['h1','h2','h3','h4','h5','h6','p']):
-            piece = tag.get_text(strip=True)
-            text.append(piece)
-        text = '\n\n'.join(text)
+        text_array = []
+        handled_tables = set()
+
+        # Walk in document order
+        for tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]):
+            if tag.name == "table":
+                # Ensure we don't process the same table multiple times
+                if tag in handled_tables:
+                    continue
+                handled_tables.add(tag)
+                rows = tag.find_all("tr")
+                if not rows:
+                    continue
+                header_cells = [td.get_text(strip=True) for td in rows[0].find_all(["td", "th"])]
+                for row in rows[1:]:
+                    cells = [td.get_text(strip=True).replace('\xa0', ' ') for td in row.find_all("td")]
+                    if len(cells) == len(header_cells):
+                        line = " — ".join(f"{header}: {cell}" for header, cell in zip(header_cells, cells))
+                    else:
+                        line = " — ".join(cells)
+                    if line:
+                        text_array.append(line)
+            elif tag.name == "p" and tag.find_parent("table"):
+                continue  # Already handled in the <table> section
+            else:
+                raw_text = tag.get_text(strip=True)
+                if raw_text:
+                    text_array.append(raw_text)
+        text = "\n".join(text_array)
         if text:
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine)
