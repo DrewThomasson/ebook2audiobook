@@ -611,11 +611,16 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         chapter_sentences = None
         raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
+        
+        epub_type = soup.body.get("epub:type", "").lower()
+        if "frontmatter" in epub_type or "backmatter" in epub_type:
+            return None  # or continue if inside a loop
+        
         for script in soup(["script", "style"]):
             script.decompose()
+
         text_array = []
         handled_tables = set()
-
         # Walk in document order
         for tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]):
             if tag.name == "table":
