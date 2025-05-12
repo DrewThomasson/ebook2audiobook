@@ -613,6 +613,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         soup = BeautifulSoup(raw_html, 'html.parser')
         for script in soup(["script", "style"]):
             script.decompose()
+        text = []
         for tag in soup.find_all(['h1','h2','h3','h4','h5','h6','p']):
             piece = tag.get_text(strip=True)
             text.append(piece)
