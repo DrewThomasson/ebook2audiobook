@@ -584,7 +584,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             print(error)
         # Get spine item IDs
         spine_ids = [item[0] for item in epubBook.spine]
-
         # Filter only spine documents (i.e., reading order)
         all_docs = [
             item for item in epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT)
@@ -621,11 +620,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         tags_length = len(tags)
         # Get visible text
         text = soup.get_text().strip()
-        print(f'-------------- {text} ------------')
         if text:
             text_length = len(text)
             # Compare tags chars to real text chars count
-            if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 2)):
+            if tags_length < text_length or (tags_length > text_length and text_length > int(tags_length / 10)):
                 # Normalize lines and remove unnecessary spaces and switch special chars
                 text = normalize_text(text, lang, lang_iso1, tts_engine)
                 if tts_engine == XTTSv2:
