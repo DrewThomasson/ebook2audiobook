@@ -1938,8 +1938,9 @@ def web_interface(args):
         gr_write_data = gr.JSON(visible=False)
         gr_conversion_progress = gr.Textbox(label='Progress')
         gr_group_audiobook_list = gr.Group(visible=False)
+        gr.WaveformOptions(show_waveform=False)
         with gr_group_audiobook_list:
-            gr_audiobook_player = gr.Audio(label='Audiobook', elem_id='audiobook_player', type='filepath', show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+            gr_audiobook_player = gr.Audio(label='Audiobook', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions, show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton('↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_list = gr.Dropdown(label='', choices=audiobook_options, type='value', interactive=True, scale=2)
