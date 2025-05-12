@@ -621,6 +621,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         tags_length = len(tags)
         # Get visible text
         text = soup.get_text().strip()
+        print(f'-------------- {text} ------------')
         if text:
             text_length = len(text)
             # Compare tags chars to real text chars count
