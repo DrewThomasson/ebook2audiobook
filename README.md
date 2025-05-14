@@ -164,7 +164,7 @@ cd ebook2audiobook
      Double click `ebook2audiobook.cmd`  
 
    - **Manual Python Install**
-     
+     (for experts only!)
      ```bash
      REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rust" "sox")
      REQUIRED_PYTHON_VERSION="3.12"
