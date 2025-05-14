@@ -2774,7 +2774,8 @@ def web_interface(args):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list],
+            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
+        )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
             inputs=[gr_audiobook_list, gr_session],
