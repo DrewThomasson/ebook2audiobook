@@ -146,10 +146,11 @@ cd ebook2audiobook
      ```bash
      ./ebook2audiobook.sh  # Run launch script
      ```
-     
+
    - **Mac Launcher**  
      Double click `Mac Ebook2Audiobook Launcher.command`
-     
+
+  
    - **Windows**  
      ```bash
      ebook2audiobook.cmd  # Run launch script or double click on it
@@ -157,7 +158,8 @@ cd ebook2audiobook
      
    - **Windows Launcher**  
      Double click `ebook2audiobook.cmd`
-     
+
+
    - **Manual Python Install**
      ```bash
      # (for experts only!)
@@ -167,8 +169,8 @@ cd ebook2audiobook
      python app.py  # Run Ebook2Audiobook
      ```
    
-2. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks. `http://localhost:7860/`
-3. **For Public Link**:
+1. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks. `http://localhost:7860/`
+2. **For Public Link**:
    `python app.py --share` (all OS)
    `./ebook2audiobook.sh --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
