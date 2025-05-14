@@ -1775,7 +1775,7 @@ def web_interface(args):
                 #component-56 {
                     height: 80px !important;
                 }
-                #component-64 {
+                #component-16, #component-64 {
                     height: 60px !important;
                 }
                 #component-9 span[data-testid="block-info"], #component-14 span[data-testid="block-info"],
