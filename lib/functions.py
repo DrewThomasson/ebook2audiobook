@@ -582,24 +582,24 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         except Exception as toc_error:
             error = f"Error extracting TOC: {toc_error}"
             print(error)
-        all_docs = list(epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT))
+        # Get spine item IDs
+        spine_ids = [item[0] for item in epubBook.spine]
+        # Filter only spine documents (i.e., reading order)
+        all_docs = [
+            item for item in epubBook.get_items_of_type(ebooklib.ITEM_DOCUMENT)
+            if item.id in spine_ids
+        ]
         if not all_docs:
             return [], []
         title = get_ebook_title(epubBook, all_docs)
-        if title:
-            html = all_docs[0].get_content().decode("utf-8")
-            soup = BeautifulSoup(html, "html.parser")
-            body = soup.find("body")
-            if body:
-                h1 = soup.new_tag("h1")
-                h1.string = title
-                body.insert(0, h1)
-                all_docs[0].set_content(str(soup).encode("utf-8"))
         chapters = []
         for doc in all_docs:
             sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_array is not None:
                 chapters.append(sentences_array)
+        if title:
+            if chapters[0]:
+                chapters[0].insert(0, f' — "{title}" . ')
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -611,46 +611,85 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         chapter_sentences = None
         raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
-        # Remove scripts and styles
+
+        if not soup.body or not soup.body.get_text(strip=True):
+            return None
+ 
+        # Get epub:type from <body> or outermost <section>
+        epub_type = soup.body.get("epub:type", "").lower()
+        if not epub_type:
+            section_tag = soup.find("section")
+            if section_tag and section_tag.get("epub:type"):
+                epub_type = section_tag.get("epub:type").lower()
+
+        # Skip known non-chapter types
+        excluded_types = {
+            "frontmatter", "backmatter", "toc", "titlepage", "colophon",
+            "acknowledgments", "dedication", "glossary", "index",
+            "appendix", "bibliography", "copyright-page", "landmark"
+        }
+        if any(part in epub_type for part in excluded_types):
+            return None
+        
         for script in soup(["script", "style"]):
             script.decompose()
-        # Get non visible code tags only
-        tags = re.sub(r">(.*?)<", "><", raw_html, flags=re.DOTALL)
-        tags = re.sub(r"^[^<]*|[^>]*$", "", tags)
-        tags_length = len(tags)
-        # Get visible text
-        text = soup.get_text().strip()
+
+        text_array = []
+        handled_tables = set()
+        # Walk in document order
+        for tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]):
+            if tag.name == "table":
+                # Ensure we don't process the same table multiple times
+                if tag in handled_tables:
+                    continue
+                handled_tables.add(tag)
+                rows = tag.find_all("tr")
+                if not rows:
+                    continue
+                header_cells = [td.get_text(strip=True) for td in rows[0].find_all(["td", "th"])]
+                for row in rows[1:]:
+                    cells = [td.get_text(strip=True).replace('\xa0', ' ') for td in row.find_all("td")]
+                    if len(cells) == len(header_cells):
+                        line = " — ".join(f"{header}: {cell}" for header, cell in zip(header_cells, cells))
+                    else:
+                        line = " — ".join(cells)
+                    if line:
+                        text_array.append(line)
+            elif tag.name == "p" and tag.find_parent("table"):
+                continue  # Already handled in the <table> section
+            else:
+                raw_text = tag.get_text(strip=True)
+                if raw_text:
+                    text_array.append(raw_text)
+        text = "\n".join(text_array)
         if text:
-            text_length = len(text)
-            # Compare tags chars to real text chars count
-            if tags_length < text_length or (tags_length > text_length and text_length < int(tags_length / 2)):
-                # Normalize lines and remove unnecessary spaces and switch special chars
-                text = normalize_text(text, lang, lang_iso1, tts_engine)
-                if tts_engine == XTTSv2:
-                    # Ensure spaces before & after punctuation
-                    pattern_space = re.escape(''.join(punctuation_list))
-                    # Ensure space before and after punctuation (excluding `,` and `.`)
-                    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-                    text = re.sub(punctuation_pattern_space, r' \1 ', text)
-                    # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-                    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-                    text = re.sub(comma_dot_pattern, r' \1 ', text)
-                # Replace special chars with words
-                specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
-                for char, word in specialchars.items():
-                    text = text.replace(char, f" {word} ")
-                for char in specialchars_remove:
-                    text = text.replace(char, ' ')
-                text = ' '.join(text.split())
-                if text.strip():
-                    # Add punctuation after numbers or Roman numerals at start of a chapter.
-                    roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
-                    arabic_pattern = r'^(\d+)(?=\s|$)'
-                    if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
-                        # Add punctuation if not already present (e.g. "II", "4")
-                        if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
-                            text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
-                    chapter_sentences = get_sentences(text, lang)
+            # Normalize lines and remove unnecessary spaces and switch special chars
+            text = normalize_text(text, lang, lang_iso1, tts_engine)
+            if tts_engine == XTTSv2:
+                # Ensure spaces before & after punctuation
+                pattern_space = re.escape(''.join(punctuation_list))
+                # Ensure space before and after punctuation (excluding `,` and `.`)
+                punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+                text = re.sub(punctuation_pattern_space, r' \1 ', text)
+                # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+                comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+                text = re.sub(comma_dot_pattern, r' \1 ', text)
+            # Replace special chars with words
+            specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+            for char, word in specialchars.items():
+                text = text.replace(char, f" {word} ")
+            for char in specialchars_remove:
+                text = text.replace(char, ' ')
+            text = ' '.join(text.split())
+            if text.strip():
+                # Add punctuation after numbers or Roman numerals at start of a chapter.
+                roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
+                arabic_pattern = r'^(\d+)(?=\s|$)'
+                if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
+                    # Add punctuation if not already present (e.g. "II", "4")
+                    if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
+                        text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
+                chapter_sentences = get_sentences(text, lang)
         return chapter_sentences
     except Exception as e:
         DependencyError(e)
@@ -1157,6 +1196,9 @@ def combine_audio_chapters(session):
                     print(line, end='')  # Print each line of stdout
                 process.wait()
                 if process.returncode == 0:
+                    vtt_temp_path = os.path.splitext(session['epub_path'])[0] + '.vtt'
+                    vtt_final_path = os.path.splitext(ffmpeg_final_file)[0] + '.vtt'
+                    shutil.copy(vtt_temp_path, vtt_final_path)
                     return True
                 else:
                     error = process.returncode
@@ -1477,6 +1519,7 @@ def convert_ebook(args):
                                     if convert_chapters_to_audio(session):
                                         final_file = combine_audio_chapters(session)               
                                         if final_file is not None:
+                                            r'''
                                             chapters_dirs = [
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
@@ -1502,6 +1545,7 @@ def convert_ebook(args):
                                                         shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
                                                 if os.path.exists(session['session_dir']):
                                                     shutil.rmtree(session['session_dir'], ignore_errors=True)
+                                            ''' 
                                             progress_status = f'Audiobook {os.path.basename(final_file)} created!'
                                             session['audiobook'] = final_file
                                             print(info_session)
@@ -1738,6 +1782,7 @@ def web_interface(args):
                 #component-33 span[data-testid="block-info"], #component-61 span[data-testid="block-info"] {
                     display: none !important;
                 }
+                ///////////////
                 #voice_player {
                     display: block !important;
                     margin: 0 !important;
@@ -1754,8 +1799,25 @@ def web_interface(args):
                     left: 15px !important;
                     top: 0 !important;
                 }
+                ///////////
                 #audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
+                }
+                #audiobook_player audio {
+                    width: 100% !important;
+                    padding-top: 10px !important;
+                    padding-bottom: 10px !important;
+                    border-radius: 0px !important;
+                    background-color: #f3f4f6 !important;
+                    color: #464c51 !important;
+                }
+                #audiobook_player audio::-webkit-media-controls-panel {
+                    width: 100% !important;
+                    padding-top: 10px !important;
+                    padding-bottom: 10px !important;
+                    border-radius: 0px !important;
+                    background-color: #f3f4f6 !important;
+                    color: #464c51 !important;
                 }
             </style>
             <script>
@@ -1903,7 +1965,8 @@ def web_interface(args):
         gr_conversion_progress = gr.Textbox(label='Progress')
         gr_group_audiobook_list = gr.Group(visible=False)
         with gr_group_audiobook_list:
-            gr_audiobook_player = gr.Audio(label='Audiobook', elem_id='audiobook_player', type='filepath', show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+            gr_audiobook_text = gr.Textbox(label='Ebook text', elem_id='audiobook_text', interactive=False, visible=True)
+            gr_audiobook_player = gr.Audio(label='Audiobook', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton('↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_list = gr.Dropdown(label='', choices=audiobook_options, type='value', interactive=True, scale=2)
@@ -1952,7 +2015,6 @@ def web_interface(args):
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
                     border: 2px solid #FFA500;
                     color: white;
-                    font-family: Arial, sans-serif;
                     position: relative;
                 }}
                 .modal-content p {{
@@ -1969,7 +2031,6 @@ def web_interface(args):
                     border-radius: 5px;
                     font-size: 16px;
                     cursor: pointer;
-                    font-weight: bold;
                 }}
                 .confirm-buttons .confirm_yes_btn {{
                     background-color: #28a745;
@@ -2713,7 +2774,7 @@ def web_interface(args):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
+            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list],
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,

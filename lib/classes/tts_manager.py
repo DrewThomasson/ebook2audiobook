@@ -87,9 +87,12 @@ class TTSManager:
         self.session = session
         self.is_gui_process = is_gui_process
         self.params = {}
+        self.sentences_total_time = 0.0
+        self.sentence_idx = 1
         self.model_path = None
         self.config_path = None
-        self.vocab_path = None      
+        self.vocab_path = None  
+        self.vtt_path = os.path.splitext(session['epub_path'])[0] + '.vtt'
         self._build()
  
     def _build(self):
@@ -392,6 +395,31 @@ class TTSManager:
             print(f"_normalize_audio() error: {input_file}: {e}")
             return False
 
+    def _append_sentence_to_vtt(self, sentence_obj, path):
+        def format_timestamp(seconds):
+            m, s = divmod(seconds, 60)
+            h, m = divmod(m, 60)
+            return f"{int(h):02}:{int(m):02}:{s:06.3f}".replace('.', ',')
+
+        index = 1
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                for line in lines:
+                    if "-->" in line:
+                        index += 1
+        if index > 1 and "resume_check" in sentence_obj and sentence_obj["resume_check"] < index:
+            return index  # Already written
+        if not os.path.exists(path):
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("WEBVTT\n\n")
+        with open(path, "a", encoding="utf-8") as f:
+            start = format_timestamp(sentence_obj["start"])
+            end = format_timestamp(sentence_obj["end"])
+            text = sentence_obj["text"].replace("\n", " ").strip()
+            f.write(f"{start} --> {end}\n{index}. {text}\n\n")
+        return index + 1
+
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
@@ -481,20 +509,15 @@ class TTSManager:
                         if self.params['current_voice_path'] != self.params['voice_path']:
                             self.params['current_voice_path'] = self.params['voice_path']
                             bark_dir = os.path.dirname(os.path.dirname(self.params['current_voice_path']))
-                            voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
-                            speaker_argument = {
-                                "voice_dir": bark_dir,
-                                "speaker": voice_key,
-                                "text_temp": 0.2
-                            }                    
+                            voice_key = re.sub(r'.npz$', '', os.path.basename(self.params['current_voice_path']))                   
                     else:
                         bark_dir = os.path.dirname(os.path.dirname(default_bark_settings['voices']['Jamie']))
                         voice_key = re.sub(r'.npz$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
-                        speaker_argument = {
-                            "voice_dir": bark_dir,
-                            "speaker": voice_key,
-                            "text_temp": 0.2
-                        }                      
+                    speaker_argument = {
+                        "voice_dir": bark_dir,
+                        "speaker": voice_key,
+                        "text_temp": 0.2
+                    }                      
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
@@ -648,6 +671,17 @@ class TTSManager:
                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                 if convert_sample_rate is not None:
                     self.params['sample_rate'] = convert_sample_rate
+                start_time = self.sentences_total_time
+                duration = audio_tensor.shape[-1] / self.params['sample_rate']
+                end_time = start_time + duration
+                self.sentences_total_time = end_time
+                sentence_obj = {
+                    "start": start_time,
+                    "end": end_time,
+                    "text": f"[{self.sentence_idx}] {self.params['sentence']}",
+                    "resume_check": self.sentence_idx
+                }
+                self.sentence_idx = self._append_sentence_to_vtt(sentence_obj, self.vtt_path)
                 torchaudio.save(self.params['sentence_audio_file'], audio_tensor, self.params['sample_rate'], format=default_audio_proc_format)
                 del audio_data, sourceTensor, audio_tensor
             if self.session['device'] == 'cuda':
