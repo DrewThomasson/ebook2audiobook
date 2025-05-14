@@ -611,7 +611,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         chapter_sentences = None
         raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
-        
+
+        if not soup.body or not soup.body.get_text(strip=True):
+            return None
+ 
         # Get epub:type from <body> or outermost <section>
         epub_type = soup.body.get("epub:type", "").lower()
         if not epub_type:
@@ -1193,6 +1196,9 @@ def combine_audio_chapters(session):
                     print(line, end='')  # Print each line of stdout
                 process.wait()
                 if process.returncode == 0:
+                    vtt_temp_path = os.path.splitext(session['epub_path'])[0] + '.vtt'
+                    vtt_final_path = os.path.splitext(ffmpeg_final_file)[0] + '.vtt'
+                    shutil.copy(vtt_temp_path, vtt_final_path)
                     return True
                 else:
                     error = process.returncode
@@ -1513,6 +1519,7 @@ def convert_ebook(args):
                                     if convert_chapters_to_audio(session):
                                         final_file = combine_audio_chapters(session)               
                                         if final_file is not None:
+                                            r'''
                                             chapters_dirs = [
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
@@ -1538,6 +1545,7 @@ def convert_ebook(args):
                                                         shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
                                                 if os.path.exists(session['session_dir']):
                                                     shutil.rmtree(session['session_dir'], ignore_errors=True)
+                                            ''' 
                                             progress_status = f'Audiobook {os.path.basename(final_file)} created!'
                                             session['audiobook'] = final_file
                                             print(info_session)
@@ -1774,6 +1782,7 @@ def web_interface(args):
                 #component-33 span[data-testid="block-info"], #component-61 span[data-testid="block-info"] {
                     display: none !important;
                 }
+                ///////////////
                 #voice_player {
                     display: block !important;
                     margin: 0 !important;
@@ -1790,8 +1799,25 @@ def web_interface(args):
                     left: 15px !important;
                     top: 0 !important;
                 }
+                ///////////
                 #audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
+                }
+                #audiobook_player audio {
+                    width: 100% !important;
+                    padding-top: 10px !important;
+                    padding-bottom: 10px !important;
+                    border-radius: 0px !important;
+                    background-color: #f3f4f6 !important;
+                    color: #464c51 !important;
+                }
+                #audiobook_player audio::-webkit-media-controls-panel {
+                    width: 100% !important;
+                    padding-top: 10px !important;
+                    padding-bottom: 10px !important;
+                    border-radius: 0px !important;
+                    background-color: #f3f4f6 !important;
+                    color: #464c51 !important;
                 }
             </style>
             <script>
@@ -1939,7 +1965,8 @@ def web_interface(args):
         gr_conversion_progress = gr.Textbox(label='Progress')
         gr_group_audiobook_list = gr.Group(visible=False)
         with gr_group_audiobook_list:
-            gr_audiobook_player = gr.Audio(label='Audiobook', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+            gr_audiobook_text = gr.Textbox(label='Ebook text', elem_id='audiobook_text', interactive=False, visible=True)
+            gr_audiobook_player = gr.Audio(label='Audiobook', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton('↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_list = gr.Dropdown(label='', choices=audiobook_options, type='value', interactive=True, scale=2)
@@ -1988,7 +2015,6 @@ def web_interface(args):
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
                     border: 2px solid #FFA500;
                     color: white;
-                    font-family: Arial, sans-serif;
                     position: relative;
                 }}
                 .modal-content p {{
@@ -2005,7 +2031,6 @@ def web_interface(args):
                     border-radius: 5px;
                     font-size: 16px;
                     cursor: pointer;
-                    font-weight: bold;
                 }}
                 .confirm-buttons .confirm_yes_btn {{
                     background-color: #28a745;
@@ -2749,7 +2774,7 @@ def web_interface(args):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
+            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list],
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
