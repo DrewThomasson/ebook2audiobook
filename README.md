@@ -54,7 +54,6 @@ https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea
 
 **Example**
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
-
 </details>
 
 ## README.md
@@ -134,7 +133,6 @@ to be sure your issue does not exist already.**
 **Lacking of any standards structure like what is a chapter, paragraph, preface etc.<br>
 you should first remove manually any text you don't want to be converted in audio.**
 
-
 ### Installation Instructions
 1. **Clone repo**
 ```bash
@@ -148,6 +146,7 @@ cd ebook2audiobook
      ```bash
      ./ebook2audiobook.sh  # Run launch script
      ```
+     
    - **Mac Launcher**  
      Double click `Mac Ebook2Audiobook Launcher.command`
      
@@ -155,6 +154,7 @@ cd ebook2audiobook
      ```bash
      ebook2audiobook.cmd  # Run launch script or double click on it
      ```
+     
    - **Windows Launcher**  
      Double click `ebook2audiobook.cmd`
      
