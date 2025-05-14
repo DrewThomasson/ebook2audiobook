@@ -636,7 +636,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
 
         text_array = []
         handled_tables = set()
-        # Walk in document order
         for tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]):
             if tag.name == "table":
                 # Ensure we don't process the same table multiple times
@@ -657,6 +656,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                         text_array.append(line)
             elif tag.name == "p" and tag.find_parent("table"):
                 continue  # Already handled in the <table> section
+            elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+                raw_text = tag.get_text(strip=True)
+                if raw_text:
+                    text_array.append(f'— "{raw_text}".')
             else:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
@@ -1808,16 +1811,21 @@ def web_interface(args):
                     padding-top: 10px !important;
                     padding-bottom: 10px !important;
                     border-radius: 0px !important;
-                    background-color: #f3f4f6 !important;
-                    color: #464c51 !important;
+                    background-color: #ebedf0 !important;
+                    color: #ffffff !important;
                 }
                 #audiobook_player audio::-webkit-media-controls-panel {
                     width: 100% !important;
                     padding-top: 10px !important;
                     padding-bottom: 10px !important;
                     border-radius: 0px !important;
-                    background-color: #f3f4f6 !important;
-                    color: #464c51 !important;
+                    background-color: #ebedf0 !important;
+                    color: #ffffff !important;
+                }
+                @media (prefers-color-scheme: dark) {
+                    #audiobook_player audio {
+                        filter: invert(1) hue-rotate(180deg) !important;
+                    }
                 }
             </style>
             <script>
@@ -1977,7 +1985,6 @@ def web_interface(args):
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn_hidden = gr.Button('', elem_id='confirm_yes_btn_hidden', visible=False)
         gr_confirm_no_btn_hidden = gr.Button('', elem_id='confirm_no_btn_hidden', visible=False)
-
         def show_alert(state):
             if isinstance(state, dict):
                 if state['type'] is not None:
