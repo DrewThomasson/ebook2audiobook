@@ -1965,7 +1965,7 @@ def web_interface(args):
         gr_conversion_progress = gr.Textbox(label='Progress')
         gr_group_audiobook_list = gr.Group(visible=False)
         with gr_group_audiobook_list:
-            gr_audiobook_text = gr.Textbox(label='Ebook text', elem_id='audiobook_text', interactive=False, visible=True)
+            gr_audiobook_text = gr.Textbox(label='Ebook Sentence', elem_id='audiobook_text', interactive=False, visible=True)
             gr_audiobook_player = gr.Audio(label='Audiobook', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton('↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
