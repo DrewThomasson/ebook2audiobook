@@ -18,7 +18,7 @@ voice_conversion_models/multilingual/multi-dataset/openvoice_v2
 """
 default_vc_model = "voice_conversion_models/multilingual/multi-dataset/knnvc"
 
-max_tts_in_memory = 1 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM)
+max_tts_in_memory = 1 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM) Xtts being selected if set on 1.
 max_custom_model = 10
 max_custom_voices = 100
 max_upload_size = '6GB'
@@ -88,7 +88,7 @@ models = {
         "internal": {
             "lang": "multi",
             "repo": "tts_models/multilingual/multi-dataset/xtts_v2",
-            "sub": "",
+            "sub": "coqui/XTTS-v2",
             "voice": default_xtts_settings['voices']['KumarDahl'],
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']

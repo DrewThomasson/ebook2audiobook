@@ -46,8 +46,6 @@ from collections.abc import Mapping
 from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
-from fastapi import FastAPI
-from fastapi import Request
 from glob import glob
 from iso639 import languages
 from multiprocessing import Manager, Event
@@ -181,7 +179,6 @@ class SessionContext:
             }, manager=self.manager)
         return self.sessions[id]
 
-app = FastAPI()
 lock = threading.Lock()
 context = SessionContext()
 is_gui_process = False
@@ -1638,7 +1635,6 @@ def get_all_ip_addresses():
     return ip_addresses
 
 def web_interface(args):
-    global app
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
@@ -2493,7 +2489,7 @@ def web_interface(args):
                     "output_format": output_format,
                     "temperature": float(temperature),
                     "length_penalty": float(length_penalty),
-                    "num_beams": int(num_beams),
+                    "num_beams": session['num_beams'],
                     "repetition_penalty": float(repetition_penalty),
                     "top_k": int(top_k),
                     "top_p": float(top_p),
@@ -2888,34 +2884,36 @@ def web_interface(args):
             js="""
             () => {
                 try{
-                    // Redirect to dark them if no theme selected
-                    const url = new URL(window.location);
-                    const theme = url.searchParams.get('__theme');
-                    if(!theme){
-                        url.searchParams.set('__theme', 'dark');
-                        window.location.href = url.href; 
-                        return
-                    }
                     setTimeout(()=>{
-                         if(theme){
-                            if(theme == 'dark'){
-                                const audio = document.querySelector('#audiobook_player audio');
-                                if(audio){
-                                    if(audio.style.filter == ''){
-                                        audio.style.filter = 'invert(1) hue-rotate(180deg)';
-                                    }
+                        const audio = document.querySelector('#audiobook_player audio');
+                         if(audio){
+                            const url = new URL(window.location);
+                            const theme = url.searchParams.get('__theme');
+                            let osTheme;
+                            let audioFilter = '';
+                            if(theme){
+                                if(theme == 'dark'){
+                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                }
+                            }else{
+                                osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
+                                if(osTheme){
+                                    audioFilter = 'invert(1) hue-rotate(180deg)';
                                 }
                             }
+                            if (!audio.style.transition) {
+                                audio.style.transition = 'filter 1s ease';
+                            }
+                            audio.style.filter = audioFilter;
                         }
-                    },3000);
-                    // Run once
+                    },5000);
                     /*
+                    // heartbeat, can be use for connection status
+                    // with gradio server side
                     if (!window.__checker_loaded__){
                         window.__checker_loaded__ = true;
                         setInterval(()=>{
                             try{
-                                // heartbeat, can be use for connection status
-                                // with gradio server side
                                 const data = window.localStorage.getItem('data');
                                 if (data) {
                                     const obj = JSON.parse(data);
@@ -2953,9 +2951,7 @@ def web_interface(args):
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
-        interface  = interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
-        app = gr.mount_gradio_app(app, interface, path="/")
-        uvicorn.run(app, host=interface_host, port=interface_port)
+        interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
         
     except OSError as e:
         error = f'Connection error: {e}'
