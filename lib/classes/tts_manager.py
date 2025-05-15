@@ -40,6 +40,20 @@ class TTSManager:
         self.config_path = None
         self.vocab_path = None  
         self.vtt_path = os.path.splitext(session['epub_path'])[0] + '.vtt'
+        self.fine_tuned_params = {
+            key: cast_type(self.session[key])
+            for key, cast_type in {
+                "temperature": float,
+                "length_penalty": float,
+                "num_beams": int,
+                "repetition_penalty": float,
+                "top_k": int,
+                "top_p": float,
+                "speed": float,
+                "enable_text_splitting": bool
+            }.items()
+            if self.session.get(key) is not None
+        }
         self._build()
  
     def _build(self):
@@ -53,29 +67,50 @@ class TTSManager:
                 if voice_key in default_xtts_settings['voices']:
                     if not f"/{self.session['language']}/" in self.session['voice']:
                         try:
-                            msg = f"Converting xttsv2 builtin english voice to {self.session['language']}..."
-                            print(msg)
-                            self.model_path = models[XTTSv2]['internal']['repo']
-                            tts_key = self.model_path
-                            if tts_key in loaded_tts.keys():
-                                self.params['tts'] = loaded_tts[self.model_path]
-                            else:
-                                if len(loaded_tts) >= max_tts_in_memory:
-                                    self._unload_tts()
-                                self.params['tts'] = self._load_coqui_tts_api(self.model_path, self.session['device'])
-                                loaded_tts[tts_key] = self.params['tts']
-                            lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
-                            file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
-                            base_dir = os.path.dirname(file_path)
                             default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                             if os.path.exists(default_text_file):
+                                msg = f"Converting xttsv2 builtin english voice to {self.session['language']}..."
+                                print(msg)
+                                self.model_path = models[XTTSv2]['internal']['repo']
+                                tts_key = f"{self.session['tts_engine']}-internal"
+                                if tts_key in loaded_tts.keys():
+                                    self.params['tts'] = loaded_tts[tts_key]
+                                else:
+                                    if len(loaded_tts) >= max_tts_in_memory:
+                                        self._unload_tts()
+                                    hf_repo = models[self.session['tts_engine']]['internal']]['repo']
+                                    hf_sub = f"{models[self.session['tts_engine']]['internal']['sub']}/"
+                                    cache_dir = os.path.join(models_dir,'tts')
+                                    self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=cache_dir)
+                                    self.model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=cache_dir)
+                                    self.config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=cache_dir)
+                                    self.vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=cache_dir)
+                                    self.params['tts'] = self._load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                                    loaded_tts[tts_key] = self.params['tts']
+                                lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
+                                file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
+                                base_dir = os.path.dirname(file_path)
                                 default_text = Path(default_text_file).read_text(encoding="utf-8")
-                                self.params['tts'].tts_to_file(
-                                    text=f"{default_xtts_settings['voices'][voice_key]}, {default_text}",
-                                    speaker=default_xtts_settings['voices'][voice_key],
-                                    language=self.session['language_iso1'],
-                                    file_path=file_path
-                                )
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].speaker_manager.speakers[voice_key].values() 
+                                with torch.no_grad():
+                                    result = self.params['tts'].inference(
+                                        text=default_text,
+                                        language=self.session['language_iso1'],
+                                        gpt_cond_latent=self.params['gpt_cond_latent'],
+                                        speaker_embedding=self.params['speaker_embedding'],
+                                        **self.fine_tuned_params
+                                    )
+                                audio_data = result.get('wav')
+                                if audio_data is not None:
+                                    audio_data = audio_data.tolist()
+                                else:
+                                    error = f'No audio waveform found in convert_sentence_to_audio() result: {result}'
+                                    print(error)
+                                    return False
+                                sourceTensor = self._tensor_type(audio_data)
+                                audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                                torchaudio.save(file_path, audio_tensor, 24000, format='wav')
+                                del audio_data, sourceTensor, audio_tensor  
                                 for samplerate in [16000, 24000]:
                                     output_file = file_path.replace('.wav', f'_{samplerate}.wav')
                                     if self._normalize_audio(file_path, output_file, samplerate):
@@ -97,25 +132,13 @@ class TTSManager:
                             error = f'_build() builtin voice conversion error: {e}'
                             print(error)
         if self.session['tts_engine'] == XTTSv2:
-            if self.session['voice'] is None:
-                msg = f"Loading TTS {models[self.session['tts_engine']][self.session['fine_tuned']]['sub']} model, it takes a while, please be patient..."
-                print(msg)
-                self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
-                hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                tts_key = hf_repo
-                if tts_key in loaded_tts.keys():
-                    self.params['tts'] = loaded_tts[tts_key]
-                else:
-                    if len(loaded_tts) >= max_tts_in_memory:
-                        self._unload_tts()
-                    self.params['tts'] = self._load_coqui_tts_api(self.model_path, self.session['device'])             
-            elif self.session['custom_model'] is not None:
+            if self.session['custom_model'] is not None:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
                 self.model_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'model.pth')
                 self.config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'config.json')
                 self.vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'vocab.json')
-                tts_key = self.session['custom_model'] 
+                tts_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
@@ -128,11 +151,11 @@ class TTSManager:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}/" if self.session['fine_tuned'] != 'internal' else ''
                 cache_dir = os.path.join(models_dir,'tts')
-                self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=cache_dir) if self.session['fine_tuned'] == 'internal' else None
+                self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=cache_dir)
                 self.model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=cache_dir)
                 self.config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=cache_dir)
                 self.vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=cache_dir)
-                tts_key = hf_repo
+                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
@@ -144,7 +167,7 @@ class TTSManager:
                 self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 msg = f"Loading TTS {self.model_path} model, it takes a while, please be patient..."
                 print(msg)
-                tts_key = self.model_path
+                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
@@ -164,7 +187,7 @@ class TTSManager:
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is not None:
                     self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
-                    tts_key = self.model_path
+                    tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                     print(msg)
                     if tts_key in loaded_tts.keys():
                         self.params['tts'] = loaded_tts[tts_key]
@@ -189,7 +212,7 @@ class TTSManager:
         elif self.session['tts_engine'] == FAIRSEQ:
             if self.session['custom_model'] is None:
                 self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
-                tts_key = self.model_path
+                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 msg = f"Loading TTS {tts_key} model, it takes a while, please be patient..."
                 print(msg)
                 if tts_key in loaded_tts.keys():
@@ -216,7 +239,7 @@ class TTSManager:
                 self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 msg = f"Loading TTS {self.model_path} model, it takes a while, please be patient..."
                 print(msg)
-                tts_key = self.model_path
+                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
@@ -423,20 +446,6 @@ class TTSManager:
             audio_data = None
             audio_to_trim = False
             trim_audio_buffer = 0.001
-            fine_tuned_params = {
-                key: cast_type(self.session[key])
-                for key, cast_type in {
-                    "temperature": float,
-                    "length_penalty": float,
-                    "num_beams": int,
-                    "repetition_penalty": float,
-                    "top_k": int,
-                    "top_p": float,
-                    "speed": float,
-                    "enable_text_splitting": bool
-                }.items()
-                if self.session.get(key) is not None
-            }
             sample_rate = self.params['sample_rate']
             convert_sample_rate = None
             self.params['voice_path'] = (
@@ -450,36 +459,29 @@ class TTSManager:
                 audio_to_trim = True
             if self.session['tts_engine'] == XTTSv2:
                 trim_audio_buffer = 0.07
-                if self.params['voice_path'] in default_xtts_settings['voices'].values():
-                    speaker_argument = {"speaker": self.params['voice_path']}
-                    with torch.no_grad():
-                        audio_data = self.params['tts'].tts(
-                            text=self.params['sentence'],
-                            language=self.session['language_iso1'],
-                            **speaker_argument,
-                            **fine_tuned_params
-                        )
-                else:
-                    if self.params['current_voice_path'] != self.params['voice_path']:
-                        msg = 'Computing speaker latents...'
-                        print(msg)
-                        self.params['current_voice_path'] = self.params['voice_path']
-                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].get_conditioning_latents(audio_path=[self.params['voice_path']])
-                    with torch.no_grad():
-                        result = self.params['tts'].inference(
-                            text=self.params['sentence'],
-                            language=self.session['language_iso1'],
-                            gpt_cond_latent=self.params['gpt_cond_latent'],
-                            speaker_embedding=self.params['speaker_embedding'],
-                            **fine_tuned_params
-                        )
-                    audio_data = result.get('wav')
-                    if audio_data is not None:
-                        audio_data = audio_data.tolist()
+                if self.params['current_voice_path'] != self.params['voice_path']:
+                    msg = 'Computing speaker latents...'
+                    print(msg)
+                    self.params['current_voice_path'] = self.params['voice_path']
+                    if self.params['voice_path'] in default_xtts_settings['voices'].values():
+                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].speaker_manager.speakers[self.params['voice_path']].values()
                     else:
-                        error = f'No audio waveform found in convert_sentence_to_audio() result: {result}'
-                        print(error)
-                        return False
+                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].get_conditioning_latents(audio_path=[self.params['voice_path']])  
+                with torch.no_grad():
+                    result = self.params['tts'].inference(
+                        text=self.params['sentence'],
+                        language=self.session['language_iso1'],
+                        gpt_cond_latent=self.params['gpt_cond_latent'],
+                        speaker_embedding=self.params['speaker_embedding'],
+                        **self.fine_tuned_params
+                    )
+                audio_data = result.get('wav')
+                if audio_data is not None:
+                    audio_data = audio_data.tolist()
+                else:
+                    error = f'No audio waveform found in convert_sentence_to_audio() result: {result}'
+                    print(error)
+                    return False
             elif self.session['tts_engine'] == BARK:
                 trim_audio_buffer = 0.004
                 '''
