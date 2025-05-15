@@ -87,8 +87,8 @@ models = {
     XTTSv2: {
         "internal": {
             "lang": "multi",
-            "repo": "tts_models/multilingual/multi-dataset/xtts_v2",
-            "sub": "coqui/XTTS-v2",
+            "repo": "coqui/XTTS-v2",
+            "sub": "tts_models/multilingual/multi-dataset/xtts_v2",
             "voice": default_xtts_settings['voices']['KumarDahl'],
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']

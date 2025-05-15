@@ -98,11 +98,11 @@ class TTSManager:
                             print(error)
         if self.session['tts_engine'] == XTTSv2:
             if self.session['voice'] is None:
-                msg = f"Loading TTS {models[self.session['tts_engine']][self.session['fine_tuned']]['repo']} model, it takes a while, please be patient..."
+                msg = f"Loading TTS {models[self.session['tts_engine']][self.session['fine_tuned']]['sub']} model, it takes a while, please be patient..."
                 print(msg)
-                self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
-                tts_key = hf_sub
+                self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
+                hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
+                tts_key = hf_repo
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
@@ -132,7 +132,7 @@ class TTSManager:
                 self.model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/model.pth", cache_dir=cache_dir)
                 self.config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/config.json", cache_dir=cache_dir)
                 self.vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/vocab.json", cache_dir=cache_dir)
-                tts_key = hf_sub
+                tts_key = hf_repo
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
