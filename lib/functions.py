@@ -31,6 +31,7 @@ import time
 import torch
 import urllib.request
 import uuid
+import uvicorn
 import zipfile
 import traceback
 import unicodedata
@@ -46,6 +47,7 @@ from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
 from fastapi import FastAPI
+from fastapi import Request
 from glob import glob
 from iso639 import languages
 from multiprocessing import Manager, Event
@@ -636,7 +638,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
 
         text_array = []
         handled_tables = set()
-        # Walk in document order
         for tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]):
             if tag.name == "table":
                 # Ensure we don't process the same table multiple times
@@ -657,6 +658,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                         text_array.append(line)
             elif tag.name == "p" and tag.find_parent("table"):
                 continue  # Already handled in the <table> section
+            elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+                raw_text = tag.get_text(strip=True)
+                if raw_text:
+                    text_array.append(f'— "{raw_text}".')
             else:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
@@ -1633,6 +1638,7 @@ def get_all_ip_addresses():
     return ip_addresses
 
 def web_interface(args):
+    global app
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
@@ -1665,8 +1671,8 @@ def web_interface(args):
     stop_event = threading.Event()
 
     theme = gr.themes.Origin(
-        primary_hue='amber',
-        secondary_hue='green',
+        primary_hue='green',
+        secondary_hue='orange',
         neutral_hue='gray',
         radius_size='lg',
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
@@ -1775,7 +1781,7 @@ def web_interface(args):
                 #component-56 {
                     height: 80px !important;
                 }
-                #component-64 {
+                #component-16, #component-64 {
                     height: 60px !important;
                 }
                 #component-9 span[data-testid="block-info"], #component-14 span[data-testid="block-info"],
@@ -1803,40 +1809,26 @@ def web_interface(args):
                 #audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
                 }
+                #audiobook_player label{
+                    display: none !important;
+                }
                 #audiobook_player audio {
                     width: 100% !important;
                     padding-top: 10px !important;
                     padding-bottom: 10px !important;
                     border-radius: 0px !important;
-                    background-color: #f3f4f6 !important;
-                    color: #464c51 !important;
+                    background-color: #ebedf0 !important;
+                    color: #ffffff !important;
                 }
                 #audiobook_player audio::-webkit-media-controls-panel {
                     width: 100% !important;
                     padding-top: 10px !important;
                     padding-bottom: 10px !important;
                     border-radius: 0px !important;
-                    background-color: #f3f4f6 !important;
-                    color: #464c51 !important;
+                    background-color: #ebedf0 !important;
+                    color: #ffffff !important;
                 }
             </style>
-            <script>
-            setInterval(() => {
-                const data = window.localStorage.getItem('data');
-                if(data){
-                    const obj = JSON.parse(data);
-                    if(typeof(obj.id) != 'undefined'){
-                        if(obj.id != null && obj.id != ""){
-                            fetch('/api/heartbeat', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ 'id': obj.id })
-                            });
-                        }
-                    }
-                }
-            }, 5000);
-            </script>
             '''
         )
         main_markdown = gr.Markdown(
@@ -1965,8 +1957,8 @@ def web_interface(args):
         gr_conversion_progress = gr.Textbox(label='Progress')
         gr_group_audiobook_list = gr.Group(visible=False)
         with gr_group_audiobook_list:
-            gr_audiobook_text = gr.Textbox(label='Ebook text', elem_id='audiobook_text', interactive=False, visible=True)
-            gr_audiobook_player = gr.Audio(label='Audiobook', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+            gr_audiobook_text = gr.Textbox(label='Audiobook', elem_id='audiobook_text', interactive=False, visible=True)
+            gr_audiobook_player = gr.Audio(label='', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton('↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_list = gr.Dropdown(label='', choices=audiobook_options, type='value', interactive=True, scale=2)
@@ -1977,7 +1969,7 @@ def web_interface(args):
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn_hidden = gr.Button('', elem_id='confirm_yes_btn_hidden', visible=False)
         gr_confirm_no_btn_hidden = gr.Button('', elem_id='confirm_no_btn_hidden', visible=False)
-
+        
         def show_alert(state):
             if isinstance(state, dict):
                 if state['type'] is not None:
@@ -2774,7 +2766,7 @@ def web_interface(args):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list],
+            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -2893,21 +2885,67 @@ def web_interface(args):
         )
         interface.load(
             fn=None,
-            js='''
+            js="""
             () => {
                 try{
+                    // Redirect to dark them if no theme selected
+                    const url = new URL(window.location);
+                    const theme = url.searchParams.get('__theme');
+                    if(!theme){
+                        url.searchParams.set('__theme', 'dark');
+                        window.location.href = url.href; 
+                        return
+                    }
+                    setTimeout(()=>{
+                         if(theme){
+                            if(theme == 'dark'){
+                                const audio = document.querySelector('#audiobook_player audio');
+                                if(audio){
+                                    if(audio.style.filter == ''){
+                                        audio.style.filter = 'invert(1) hue-rotate(180deg)';
+                                    }
+                                }
+                            }
+                        }
+                    },3000);
+                    // Run once
+                    /*
+                    if (!window.__checker_loaded__){
+                        window.__checker_loaded__ = true;
+                        setInterval(()=>{
+                            try{
+                                // heartbeat, can be use for connection status
+                                // with gradio server side
+                                const data = window.localStorage.getItem('data');
+                                if (data) {
+                                    const obj = JSON.parse(data);
+                                    if (obj.id) {
+                                        fetch('/api/heartbeat', {
+                                            method: 'POST',
+                                            headers: {'Content-Type': 'application/json'},
+                                            body: JSON.stringify({id: obj.id})
+                                        });
+                                    }
+                                }
+                            }catch(e){
+                                console.log('Interval error:', e);
+                            }
+                        },5000);
+                    }
+                    */
+                    // Return localStorage item to Python
                     const data = window.localStorage.getItem('data');
-                    if(data){
+                    if (data) {
                         const obj = JSON.parse(data);
                         console.log(obj);
                         return obj;
                     }
                 }catch(e){
-                    console.log('error: ',e)
+                    console.log('Return error:', e);
                 }
                 return null;
             }
-            ''',
+            """,
             outputs=[gr_read_data]
         )
     try:
@@ -2915,7 +2953,10 @@ def web_interface(args):
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
-        interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
+        interface  = interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
+        app = gr.mount_gradio_app(app, interface, path="/")
+        uvicorn.run(app, host=interface_host, port=interface_port)
+        
     except OSError as e:
         error = f'Connection error: {e}'
         alert_exception(error)

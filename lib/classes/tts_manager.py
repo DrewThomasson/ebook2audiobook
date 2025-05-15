@@ -399,7 +399,7 @@ class TTSManager:
         def format_timestamp(seconds):
             m, s = divmod(seconds, 60)
             h, m = divmod(m, 60)
-            return f"{int(h):02}:{int(m):02}:{s:06.3f}".replace('.', ',')
+            return f"{int(h):02}:{int(m):02}:{s:06.3f}"
 
         index = 1
         if os.path.exists(path):
@@ -412,7 +412,7 @@ class TTSManager:
             return index  # Already written
         if not os.path.exists(path):
             with open(path, "w", encoding="utf-8") as f:
-                f.write("WEBVTT\n\n")
+                f.write("WEBVTT\r\n\r\n")
         with open(path, "a", encoding="utf-8") as f:
             start = format_timestamp(sentence_obj["start"])
             end = format_timestamp(sentence_obj["end"])
@@ -678,7 +678,7 @@ class TTSManager:
                 sentence_obj = {
                     "start": start_time,
                     "end": end_time,
-                    "text": f"[{self.sentence_idx}] {self.params['sentence']}",
+                    "text": self.params['sentence'],
                     "resume_check": self.sentence_idx
                 }
                 self.sentence_idx = self._append_sentence_to_vtt(sentence_obj, self.vtt_path)
