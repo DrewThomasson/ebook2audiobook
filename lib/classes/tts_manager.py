@@ -78,7 +78,7 @@ class TTSManager:
                                 else:
                                     if len(loaded_tts) >= max_tts_in_memory:
                                         self._unload_tts()
-                                    hf_repo = models[self.session['tts_engine']]['internal']]['repo']
+                                    hf_repo = models[self.session['tts_engine']]['internal']['repo']
                                     hf_sub = f"{models[self.session['tts_engine']]['internal']['sub']}/"
                                     cache_dir = os.path.join(models_dir,'tts')
                                     self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=cache_dir)
