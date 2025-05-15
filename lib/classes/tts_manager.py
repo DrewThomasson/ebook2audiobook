@@ -237,7 +237,7 @@ class TTSManager:
                     tts.cuda()
                 else:
                     tts.to(device)
-                tts.synthesizer.tts_model.args.num_chars = 512
+                tts.num_chars = 512
             return tts
         except Exception as e:
             error = f'_load_coqui_tts_api() error: {e}'
