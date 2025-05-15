@@ -784,8 +784,7 @@ def get_sentences(text, lang):
                 result.extend(split_sentence(part2))
         return result
 
-    max_tokens = language_mapping[lang]['max_tokens']
-    max_chars = (max_tokens * 10) - 4
+    max_chars = language_mapping[lang]['max_chars'] - 2
     pattern_split = [re.escape(p) for p in punctuation_split]
     pattern = f"({'|'.join(pattern_split)})"
 
