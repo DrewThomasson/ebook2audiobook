@@ -126,7 +126,7 @@ class TTSManager:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub'] if self.session['fine_tuned'] != 'internal' : ''
+                hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub'] if self.session['fine_tuned'] != 'internal' else ''
                 cache_dir = os.path.join(models_dir,'tts')
                 self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/speakers_xtts.pth", cache_dir=cache_dir) if self.session['fine_tuned'] == 'internal' else None
                 self.model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}/model.pth", cache_dir=cache_dir)
