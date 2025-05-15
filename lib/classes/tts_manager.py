@@ -258,7 +258,7 @@ class TTSManager:
                     use_deepspeed=default_xtts_settings['use_deepspeed'],
                     eval=True
                 )
-                tts.synthesizer.tts_model.args.num_chars = 512
+                tts.num_chars = 512
                 if device == 'cuda':
                     tts.cuda()
                 else:
