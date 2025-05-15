@@ -415,7 +415,7 @@ class TTSManager:
             start = format_timestamp(sentence_obj["start"])
             end = format_timestamp(sentence_obj["end"])
             text = sentence_obj["text"].replace("\n", " ").strip()
-            f.write(f"{start} --> {end}\n{index}. {text}\n\n")
+            f.write(f"{start} --> {end}\n{text}\r\n\r\n")
         return index + 1
 
     def convert_sentence_to_audio(self):
