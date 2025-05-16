@@ -25,6 +25,7 @@ torch.backends.cudnn.benchmark = True
 
 lock = threading.Lock()
 loaded_tts = {}
+loaded_speakers = {}
 
 class TTSManager:
     def __init__(self, session, is_gui_process):   
@@ -67,7 +68,10 @@ class TTSManager:
             self.Xtts = Xtts
             cache_dir = os.path.join(models_dir,'tts')
             speakers_path = hf_hub_download(repo_id=models[self.session['tts_engine']]['internal']['repo'], filename="speakers_xtts.pth", cache_dir=cache_dir)
-            self.speakers = torch.load(speakers_path)
+            if self.session['tts_engine'] in loaded_speakers.keys():
+                self.speakers = loaded_speakers[self.session['tts_engine']]
+            else:
+                loaded_speakers[self.session['tts_engine']] = self.speakers = torch.load(speakers_path)
         tts_key = None
         self.params['tts'] = None
         self.params['current_voice_path'] = None
