@@ -470,9 +470,8 @@ class TTSManager:
                     msg = 'Computing speaker latents...'
                     print(msg)
                     self.params['current_voice_path'] = self.params['voice_path']
-                    voice_key = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.params['voice_path']))
-                    if voice_key in default_xtts_settings['voices']:
-                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = speakers[default_xtts_settings['voices'][voice_key]].values()
+                    if self.params['voice_path'] in default_xtts_settings['voices']:
+                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = speakers[default_xtts_settings['voices'][self.params['voice_path']]].values()
                     else:
                         self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].get_conditioning_latents(audio_path=[self.params['voice_path']])  
                 with torch.no_grad():
