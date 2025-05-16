@@ -15,9 +15,6 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
-from TTS.api import TTS as coquiAPI
-from TTS.tts.configs.xtts_config import XttsConfig
-from TTS.tts.models.xtts import Xtts
 
 from lib.models import *
 from lib.conf import voices_dir, models_dir, default_audio_proc_format
@@ -57,6 +54,11 @@ class TTSManager:
         self._build()
  
     def _build(self):
+        if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
+            from TTS.api import TTS as coquiAPI
+            from TTS.tts.configs.xtts_config import XttsConfig
+            from TTS.tts.models.xtts import Xtts
+            from TTS.utils.speaker_manager import SpeakerManager
         tts_key = None
         self.params['tts'] = None
         self.params['current_voice_path'] = None
