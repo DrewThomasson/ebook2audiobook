@@ -99,7 +99,7 @@ class TTSManager:
                                 base_dir = os.path.dirname(file_path)
                                 default_text = Path(default_text_file).read_text(encoding="utf-8")
                                 speakers = torch.load(self.speakers_path)
-                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = speakers[voice_key].values()
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = speakers[default_xtts_settings['voices'][voice_key]].values()
                                 with torch.no_grad():
                                     result = self.params['tts'].inference(
                                         text=default_text,
