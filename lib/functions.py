@@ -697,7 +697,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         DependencyError(e)
         return None
 
-def get_sentences_multilang(text, lang):
+def get_sentences(text, lang):
     def combine_punctuation(tokens):
         if not tokens:
             return tokens
