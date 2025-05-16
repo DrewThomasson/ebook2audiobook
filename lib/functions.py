@@ -1520,7 +1520,6 @@ def convert_ebook(args):
                                     if convert_chapters_to_audio(session):
                                         final_file = combine_audio_chapters(session)               
                                         if final_file is not None:
-                                            r'''
                                             chapters_dirs = [
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
@@ -1546,7 +1545,6 @@ def convert_ebook(args):
                                                         shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
                                                 if os.path.exists(session['session_dir']):
                                                     shutil.rmtree(session['session_dir'], ignore_errors=True)
-                                            ''' 
                                             progress_status = f'Audiobook {os.path.basename(final_file)} created!'
                                             session['audiobook'] = final_file
                                             print(info_session)
