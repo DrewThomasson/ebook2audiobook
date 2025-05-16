@@ -92,7 +92,7 @@ class TTSManager:
                                     self.model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=cache_dir)
                                     self.config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=cache_dir)
                                     self.vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=cache_dir)
-                                    self.params['tts'] = self._load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                                    self.params['tts'] = self._load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.speaker_path, self.session['device'])
                                     loaded_tts[tts_key] = self.params['tts']
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                                 file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
@@ -151,7 +151,7 @@ class TTSManager:
                 else:
                     if len(loaded_tts) >= max_tts_in_memory:
                         self._unload_tts()
-                    self.params['tts'] = self._load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                    self.params['tts'] = self._load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, None, self.session['device'])
             else:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
@@ -168,7 +168,7 @@ class TTSManager:
                 else:
                     if len(loaded_tts) >= max_tts_in_memory:
                         self._unload_tts()
-                    self.params['tts'] = self._load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, self.session['device'])
+                    self.params['tts'] = self._load_coqui_tts_checkpoint(self.model_path, self.config_path, self.vocab_path, None, self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is None:
                 self.model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
@@ -274,17 +274,23 @@ class TTSManager:
             print(error)
             return None
 
-    def _load_coqui_tts_checkpoint(self, model_path, config_path, vocab_path, device):
+    def _load_coqui_tts_checkpoint(self, model_path, config_path, vocab_path, speaker_path, device):
         try:
             config = self.XttsConfig()
             config.models_dir = os.path.join("models", "tts")
             config.load_json(config_path)
             tts = self.Xtts.init_from_config(config)
+            speaker_argument = {}
+            if speaker_path is not None:
+                speaker_argument = {
+                    "speaker_path": speaker_path
+                }
             with lock:
                 tts.load_checkpoint(
                     config,
                     checkpoint_path=model_path,
                     vocab_path=vocab_path,
+                    **speaker_argument,
                     use_deepspeed=default_xtts_settings['use_deepspeed'],
                     eval=True
                 )
