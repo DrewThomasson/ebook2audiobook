@@ -98,7 +98,7 @@ class TTSManager:
                                 file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                                 base_dir = os.path.dirname(file_path)
                                 default_text = Path(default_text_file).read_text(encoding="utf-8")
-                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].speakers[voice_key].values() 
+                                self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].speaker_manager.speakers[voice_key].values()
                                 with torch.no_grad():
                                     result = self.params['tts'].inference(
                                         text=default_text,
