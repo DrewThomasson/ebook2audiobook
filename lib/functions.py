@@ -476,7 +476,7 @@ def convert_to_epub(session):
             print(error)
             return False
         if file_ext == '.pdf':
-            msg = 'File input is a PDF. flatten it in MD format...'
+            msg = 'File input is a PDF. flatten it in MD and HTML...'
             print(msg)
             file_input = f"{os.path.splitext(session['epub_path'])[0]}.md"
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
