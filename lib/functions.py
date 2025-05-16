@@ -48,6 +48,7 @@ from datetime import datetime
 from ebooklib import epub
 from glob import glob
 from iso639 import languages
+from markdown import markdown
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
 from num2words import num2words
@@ -479,8 +480,9 @@ def convert_to_epub(session):
             print(msg)
             file_input = f"{os.path.splitext(session['epub_path'])[0]}.md"
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
-            with open(file_input, "w", encoding="utf-8") as md_file:
-                md_file.write(markdown_text)
+            html_content = markdown(markdown_text)
+            with open(file_input, "w", encoding="utf-8") as html_file:
+                html_file.write(markdown_text)
         msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
         print(msg)
         result = subprocess.run(
