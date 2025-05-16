@@ -51,6 +51,9 @@ class TTSManager:
             }.items()
             if self.session.get(key) is not None
         }
+        self.coquiAPI = None;
+        self.XttsConfig = None;
+        self.Xtts = None;
         self._build()
  
     def _build(self):
@@ -58,6 +61,9 @@ class TTSManager:
             from TTS.api import TTS as coquiAPI
             from TTS.tts.configs.xtts_config import XttsConfig
             from TTS.tts.models.xtts import Xtts
+            self.coquiAPI = coquiAPI
+            self.XttsConfig = XttsConfig
+            self.Xtts = Xtts
         tts_key = None
         self.params['tts'] = None
         self.params['current_voice_path'] = None
@@ -256,7 +262,7 @@ class TTSManager:
     def _load_coqui_tts_api(self, model_path, device):
         try:
             with lock:
-                tts = coquiAPI(model_path)
+                tts = self.coquiAPI(model_path)
                 if device == 'cuda':
                     tts.cuda()
                 else:
@@ -270,10 +276,10 @@ class TTSManager:
 
     def _load_coqui_tts_checkpoint(self, model_path, config_path, vocab_path, device):
         try:
-            config = XttsConfig()
+            config = self.XttsConfig()
             config.models_dir = os.path.join("models", "tts")
             config.load_json(config_path)
-            tts = Xtts.init_from_config(config)
+            tts = self.Xtts.init_from_config(config)
             with lock:
                 tts.load_checkpoint(
                     config,
@@ -296,7 +302,7 @@ class TTSManager:
     def _load_coqui_tts_vc(self, device):
         try:
             with lock:
-                tts = coquiAPI(default_vc_model).to(device)
+                tts = self.coquiAPI(default_vc_model).to(device)
             return tts
         except Exception as e:
             error = f'_load_coqui_tts_vc() error: {e}'
