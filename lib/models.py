@@ -33,7 +33,7 @@ default_xtts_settings = {
     "top_p": 0.85,
     "speed": 1.0,
     "enable_text_splitting": False,
-    # to enable_deepspeed, it must be installed manually.
+    # to enable deepspeed, you must install it first:
     # conda activate ./python_env (linux/mac) or .\python_env (windows)
     # pip install deepspeed
     # conda deactivate
@@ -65,7 +65,7 @@ default_xtts_settings = {
 default_bark_settings = {
     "samplerate": 24000,
     "files": ['coarse_2.pt'],
-    "voices": {"Jamie": os.path.join(voices_dir, "eng", "adult", "male", "bark","Jamie", "Jamie.npz")}
+    "voices": {"Jamie": os.path.join(voices_dir, "eng", "adult", "male", f"Jamie_{default_xtts_settings['samplerate']}.wav")}
 }
 default_vits_settings = {
     "samplerate": 22050,

@@ -438,8 +438,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r") with " . " as many times as they occur
-    #text = re.sub('(\r\n|\n\n|\r\r|\n\r)+', lambda m: ' . ' * (m.group().count("\n") // 2 + m.group().count("\r") // 2), text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a single "\n"
     text = re.sub(r'(\r\n|\r|\n)+', '\n', text)
     # Replace single newlines ("\n" or "\r") with spaces
@@ -455,8 +453,33 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     if tts_engine == XTTSv2:
         # Pattern 1: Add a space between UTF-8 characters and numbers
         text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    # Replace math symbols with words
-    text = math2word(text, lang, lang_iso1, tts_engine)
+    if tts_engine == XTTSv2:
+        pattern_space = re.escape(''.join(punctuation_list))
+        # Ensure space before and after punctuation (excluding `,` and `.`)
+        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+        text = re.sub(comma_dot_pattern, r' \1 ', text)
+    # Replace special chars with words
+    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+    for char, word in specialchars.items():
+        text = text.replace(char, f" {word} ")
+    for char in specialchars_remove:
+        text = text.replace(char, ' ')
+    text = ' '.join(text.split())
+    if text.strip():
+        # Add punctuation after numbers or Roman numerals at start of a chapter.
+        roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
+        arabic_pattern = r'^(\d+)(?=\s|$)'
+        if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
+            # Add punctuation if not already present (e.g. "II", "4")
+            if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
+                text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
+        # Replace math symbols with words
+        text = math2word(text, lang, lang_iso1, tts_engine)
+        # replace ### by [pause]
+        text = text.replace('###', '[pause]')
     return text
 
 def convert_to_epub(session):
@@ -666,33 +689,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                 if raw_text:
                     text_array.append(raw_text)
         text = "\n".join(text_array)
-        if text:
+        if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine)
-            if tts_engine == XTTSv2:
-                # Ensure spaces before & after punctuation
-                pattern_space = re.escape(''.join(punctuation_list))
-                # Ensure space before and after punctuation (excluding `,` and `.`)
-                punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-                text = re.sub(punctuation_pattern_space, r' \1 ', text)
-                # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-                comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-                text = re.sub(comma_dot_pattern, r' \1 ', text)
-            # Replace special chars with words
-            specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
-            for char, word in specialchars.items():
-                text = text.replace(char, f" {word} ")
-            for char in specialchars_remove:
-                text = text.replace(char, ' ')
-            text = ' '.join(text.split())
             if text.strip():
-                # Add punctuation after numbers or Roman numerals at start of a chapter.
-                roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
-                arabic_pattern = r'^(\d+)(?=\s|$)'
-                if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
-                    # Add punctuation if not already present (e.g. "II", "4")
-                    if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
-                        text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
                 chapter_sentences = get_sentences(text, lang)
         return chapter_sentences
     except Exception as e:
