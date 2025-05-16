@@ -59,7 +59,6 @@ class TTSManager:
         model_path = None
         config_path = None
         vocab_path = None
-        speakers_list = None
         if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
             from TTS.api import TTS as coquiAPI
             from TTS.tts.configs.xtts_config import XttsConfig
@@ -68,9 +67,6 @@ class TTSManager:
             self.XttsConfig = XttsConfig
             self.Xtts = Xtts
             cache_dir = os.path.join(models_dir,'tts')
-            speakers_path = hf_hub_download(repo_id=models[self.session['tts_engine']]['internal']['repo'], filename="speakers_xtts.pth", cache_dir=cache_dir)
-            if self.session['tts_engine'] not in loaded_builtin_speakers.keys():
-                loaded_builtin_speakers[self.session['tts_engine']] = torch.load(speakers_path)
         tts_key = None
         self.params['tts'] = None
         self.params['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
@@ -102,6 +98,10 @@ class TTSManager:
                                 file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                                 base_dir = os.path.dirname(file_path)
                                 default_text = Path(default_text_file).read_text(encoding="utf-8")
+                                if self.session['tts_engine'] not in loaded_builtin_speakers.keys():
+                                    speakers_path = hf_hub_download(repo_id=models[self.session['tts_engine']]['internal']['repo'], filename="speakers_xtts.pth", cache_dir=cache_dir)
+                                    loaded_builtin_speakers[self.session['tts_engine']] = torch.load(speakers_path)
+                                speakers_list = loaded_builtin_speakers[self.session['tts_engine']]
                                 self.params['gpt_cond_latent'], self.params['speaker_embedding'] = speakers_list[default_xtts_settings['voices'][speaker]].values()
                                 with torch.no_grad():
                                     result = self.params['tts'].inference(
@@ -457,7 +457,6 @@ class TTSManager:
             trim_audio_buffer = 0.001
             sample_rate = self.params['sample_rate']
             convert_sample_rate = None
-            speakers_list = None
             self.params['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'ref.wav') if self.session['custom_model'] is not None
@@ -466,9 +465,12 @@ class TTSManager:
             if self.params['sentence'].endswith('-'):
                 self.params['sentence'] = self.params['sentence'][:-1]
                 audio_to_trim = True
-            processed_voice_key = f"{self.session['tts_engine'}-{self.params['voice_path']}" if self.params['voice_path'] is not None else None
+            processed_voice_key = f"{self.session['tts_engine']}-{self.params['voice_path']}" if self.params['voice_path'] is not None else None
             if self.session['tts_engine'] == XTTSv2:
                 trim_audio_buffer = 0.07
+                if self.session['tts_engine'] not in loaded_builtin_speakers.keys():
+                    speakers_path = hf_hub_download(repo_id=models[self.session['tts_engine']]['internal']['repo'], filename="speakers_xtts.pth", cache_dir=cache_dir)
+                    loaded_builtin_speakers[self.session['tts_engine']] = torch.load(speakers_path)
                 speakers_list = loaded_builtin_speakers[self.session['tts_engine']]
                 if processed_voice_key in loaded_processed_voices.keys():
                     self.params['gpt_cond_latent'], self.params['speaker_embedding'] = loaded_processed_voices[processed_voice_key].values()
@@ -680,7 +682,7 @@ class TTSManager:
                             voice_key = self.params['voice_path']
                         else:
                             voice_key = default_yourtts_settings['voices']['ElectroMale-2']
-                            speaker_argument = {"speaker": voice_name}
+                            speaker_argument = {"speaker": voice_key}
                     with torch.no_grad():
                         audio_data = self.params['tts'].tts(
                             text=self.params['sentence'],
