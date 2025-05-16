@@ -268,7 +268,6 @@ class TTSManager:
                     tts.cuda()
                 else:
                     tts.to(device)
-                tts.num_chars = 512
             return tts
         except Exception as e:
             error = f'_load_coqui_tts_api() error: {e}'
@@ -289,7 +288,6 @@ class TTSManager:
                     use_deepspeed=default_xtts_settings['use_deepspeed'],
                     eval=True
                 )
-                tts.num_chars = 512
                 if device == 'cuda':
                     tts.cuda()
                 else:

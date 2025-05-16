@@ -697,7 +697,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         DependencyError(e)
         return None
 
-def get_sentences(text, lang):
+def get_sentences_multilang(text, lang):
     def combine_punctuation(tokens):
         if not tokens:
             return tokens
@@ -740,34 +740,49 @@ def get_sentences(text, lang):
         if buffer:
             yield buffer
 
-    def tune_split(text):
-        mid = len(text) // 2
-        for delim in [',', ';', ':', ' ']:
-            left = text.rfind(delim, 0, mid)
-            right = text.find(delim, mid)
-            if left != -1 or right != -1:
-                if left != -1 and (right == -1 or mid - left <= right - mid):
-                    return left + 1, delim
-                else:
-                    return right + 1, delim
-        return mid, None  # fallback to mid    
+    def find_best_split_point_prioritize_punct(sentence, max_chars):
+        best_index = -1
+        min_diff = float('inf')
+        punctuation_priority = '.!?,;:'
+        space_priority = ' '
+        # First: look for punctuation near center
+        for i in range(1, min(len(sentence), max_chars)):
+            if sentence[i] in punctuation_priority:
+                left_len = i
+                right_len = len(sentence) - i
+                diff = abs(left_len - right_len)
+                if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
+                    best_index = i + 1
+                    min_diff = diff
+        # Fallback: try space if punctuation isn't close enough
+        if best_index == -1:
+            for i in range(1, min(len(sentence), max_chars)):
+                if sentence[i] in space_priority:
+                    left_len = i
+                    right_len = len(sentence) - i
+                    diff = abs(left_len - right_len)
+                    if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
+                        best_index = i + 1
+                        min_diff = diff
+        return best_index
 
     def split_sentence(sentence):
         sentence = sentence.strip()
-        length = len(sentence)
-        end = ''
-        if length <= max_chars:
-            if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        if len(sentence) <= max_chars:
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-        split_index, delim_used = tune_split(sentence)      
-        if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+
+        split_index = find_best_split_point_prioritize_punct(sentence, max_chars)
+        if split_index == -1:
+            split_index = len(sentence) // 2
+        delim_used = sentence[split_index - 1] if split_index > 0 else None
+        end = ''
+        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             end = ' -' if delim_used == ' ' else end
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:')
-        if part1 == sentence:
-            return [sentence]
         result = []
         if len(part1) <= max_chars:
             if part1 and part1[-1].isalpha():
@@ -777,7 +792,7 @@ def get_sentences(text, lang):
             result.extend(split_sentence(part1))
         if part2:
             if len(part2) <= max_chars:
-                if part2[-1].isalpha():
+                if part2 and part2[-1].isalpha():
                     part2 += ' -'
                 result.append(part2)
             else:
@@ -787,23 +802,18 @@ def get_sentences(text, lang):
     max_chars = language_mapping[lang]['max_chars'] - 2
     pattern_split = [re.escape(p) for p in punctuation_split]
     pattern = f"({'|'.join(pattern_split)})"
-
-    # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         ideogramm_list = segment_ideogramms(text)
         raw_list = list(join_ideogramms(ideogramm_list))
     else:
         raw_list = re.split(pattern, text)
     raw_list = combine_punctuation(raw_list)
-    # Step 2: group punctuation with previous parts
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
     else:
         tmp_list = raw_list
-    # Optional cleanup
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
-    # Step 3: split each sentence fragment if needed
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
