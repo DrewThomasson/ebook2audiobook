@@ -92,6 +92,8 @@ class TTSManager:
                                     vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
                                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
                                     loaded_tts[tts_internal_key] = self.params['tts']
+                                if not self.params['tts']:
+                                    return
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                                 file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                                 base_dir = os.path.dirname(file_path)
@@ -155,6 +157,8 @@ class TTSManager:
                         self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
                     loaded_tts[tts_custom_key] = self.params['tts']
+                if not self.params['tts']:
+                    return
             else:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
@@ -170,6 +174,8 @@ class TTSManager:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
+                if not self.params['tts']:
+                    return
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is None:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
@@ -180,6 +186,8 @@ class TTSManager:
                 else:
                     self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
+                if not self.params['tts']:
+                    return
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -201,6 +209,8 @@ class TTSManager:
                         if len(loaded_tts) == max_tts_in_memory:
                             self._unload_tts(self.session['device'])
                         self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
+                    if not self.params['tts']:
+                        return
                     if self.session['voice'] is not None:
                         tts_vc_key = default_vc_model
                         msg = f"Loading vocoder {tts_vc_key} zeroshot model, it takes a while, please be patient..."
@@ -209,7 +219,11 @@ class TTSManager:
                             self.params['tts_vc'] = loaded_tts[tts_vc_key]
                         else:
                             self.params['tts_vc'] = self._load_coqui_tts_vc(self.session['device'])
+                            if self.params['tts_vc'] is None:
+                                return
                             loaded_tts[tts_vc_key] = self.params['tts_vc']
+                        if not self.params['tts_vc']:
+                            return
                 else:
                     msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                     print(msg)
@@ -227,6 +241,8 @@ class TTSManager:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
+                if not self.params['tts']:
+                    return
                 if self.session['voice'] is not None:
                     tts_vc_key = default_vc_model
                     msg = f"Loading TTS {tts_vc_key} zeroshot model, it takes a while, please be patient..."
@@ -237,6 +253,8 @@ class TTSManager:
                         if len(loaded_tts) == max_tts_in_memory:
                             self._unload_tts(self.session['device'])
                         self.params['tts_vc'] = self._load_coqui_tts_vc(self.session['device'])
+                    if not self.params['tts_vc']:
+                        return
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -251,6 +269,8 @@ class TTSManager:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
+                if not self.params['tts']:
+                    return
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -264,15 +284,16 @@ class TTSManager:
         try:
             with lock:
                 tts = self.coquiAPI(model_path)
-                if device == 'cuda':
-                    tts.cuda()
-                else:
-                    tts.to(device)
-            return tts
+                if tts:
+                    if device == 'cuda':
+                        tts.cuda()
+                    else:
+                        tts.to(device)
+                    return tts
         except Exception as e:
             error = f'_load_coqui_tts_api() error: {e}'
             print(error)
-            return None
+        return 0
 
     def _load_coqui_tts_checkpoint(self, model_path, config_path, vocab_path, device):
         try:
@@ -288,25 +309,27 @@ class TTSManager:
                     use_deepspeed=default_xtts_settings['use_deepspeed'],
                     eval=True
                 )
-                if device == 'cuda':
-                    tts.cuda()
-                else:
-                    tts.to(device)
-            return tts
+                if tts:
+                    if device == 'cuda':
+                        tts.cuda()
+                    else:
+                        tts.to(device)
+                    return tts
         except Exception as e:
             error = f'_load_coqui_tts_checkpoint() error: {e}'
             print(error)
-            return None
+        return 0
 
     def _load_coqui_tts_vc(self, device):
         try:
             with lock:
                 tts = self.coquiAPI(default_vc_model).to(device)
-            return tts
+                if tts:
+                    return tts
         except Exception as e:
             error = f'_load_coqui_tts_vc() error: {e}'
             print(error)
-            return None
+        return 0
           
     def _wav_to_npz(self, wav_path, npz_path):
         audio, sr = sf.read(wav_path)
