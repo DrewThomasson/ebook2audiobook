@@ -1500,23 +1500,22 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
                                 msg = 'GPU is not available on your device!'
                                 print(msg)
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
-                                os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
+                                os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
                                 msg = 'MPS is not available on your device!'
                                 print(msg)
                         else:
-                            os.environ["SUNO_OFFLOAD_CPU"] = 'True'
-                            os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
+                            os.environ["SUNO_OFFLOAD_CPU"] = 'true'
+                            os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
                         vram_avail = get_vram()
-                        print(f'==================={vram_avail} {get_ram()}===========')
                         if vram_avail <= 4:
-                            os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
+                            os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
                         msg = f"Available Processor Unit: {session['device'].upper()}"
                         print(msg)
                         if default_xtts_settings['use_deepspeed'] == True:
