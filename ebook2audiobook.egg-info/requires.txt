@@ -16,9 +16,8 @@ mecab-python3
 konlpy
 pythainlp
 m4b-util
-psutils
+nvidia-ml-py
 pydub
-pynvml
 PyOpenGL
 pypinyin
 ray
