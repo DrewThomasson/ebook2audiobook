@@ -256,6 +256,9 @@ class TTSManager:
                 print(msg)
         if 'tts' in self.params.keys():
             loaded_tts[tts_key] = self.params['tts']
+        else:
+            error = 'TTS engine could not be created!'
+            print(error)
           
     def _load_coqui_tts_api(self, model_path, device):
         try:
