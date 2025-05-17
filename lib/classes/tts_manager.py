@@ -483,7 +483,7 @@ class TTSManager:
                         speakers_path = hf_hub_download(repo_id=models[self.session['tts_engine']]['internal']['repo'], filename="speakers_xtts.pth", cache_dir=self.cache_dir)
                         loaded_builtin_speakers[self.session['tts_engine']] = torch.load(speakers_path)
                     speakers_list = loaded_builtin_speakers[self.session['tts_engine']]
-                    if processed_voice_key is not None and loaded_processed_voices[processed_voice_key]:
+                    if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
                         self.params['gpt_cond_latent'], self.params['speaker_embedding'] = loaded_processed_voices[processed_voice_key].values()
                     else:
                         msg = 'Computing speaker latents...'
@@ -526,7 +526,7 @@ class TTSManager:
                         msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                         print(msg)
                     else:
-                        if processed_voice_key is not None and loaded_processed_voices[processed_voice_key]:
+                        if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
                             bark_dir, speaker = loaded_processed_voices[processed_voice_key].values()
                         else:
                             if self.params['voice_path'] is not None:
@@ -568,7 +568,7 @@ class TTSManager:
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
-                            if processed_voice_key is not None and loaded_processed_voices[processed_voice_key]:
+                            if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
                                 self.params['semitones'] = loaded_processed_voices[processed_voice_key]
                             else:
                                 self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
@@ -630,7 +630,7 @@ class TTSManager:
                                 text=self.params['sentence'],
                                 file_path=tmp_in_wav
                             )
-                            if processed_voice_key is not None and loaded_processed_voices[processed_voice_key]:
+                            if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
                                 self.params['semitones'] = loaded_processed_voices[processed_voice_key]
                             else:
                                 self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
@@ -683,7 +683,7 @@ class TTSManager:
                     else:
                         speaker_argument = {}
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
-                        if processed_voice_key is not None and loaded_processed_voices[processed_voice_key]:
+                        if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
                             speaker_argument = loaded_processed_voices[processed_voice_key]
                         else:
                             if self.params['voice_path'] is not None:
