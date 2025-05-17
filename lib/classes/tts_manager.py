@@ -492,7 +492,7 @@ class TTSManager:
                             self.params['gpt_cond_latent'], self.params['speaker_embedding'] = speakers_list[self.params['voice_path']].values()
                         else:
                             self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].get_conditioning_latents(audio_path=[self.params['voice_path']])  
-                        loaded_processed_voices[processed_voice_key] = (self.params['gpt_cond_latent'], self.params['speaker_embedding'])
+                        loaded_processed_voices[processed_voice_key] = {self.params['gpt_cond_latent'], self.params['speaker_embedding']}
                     with torch.no_grad():
                         result = self.params['tts'].inference(
                             text=self.params['sentence'],
@@ -535,7 +535,7 @@ class TTSManager:
                             else:
                                 bark_dir = os.path.join(os.path.dirname(default_bark_settings['voices']['Jamie']), 'bark')
                                 speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
-                            loaded_processed_voices[processed_voice_key] = (bark_dir, speaker)
+                            loaded_processed_voices[processed_voice_key] = {bark_dir, speaker}
                         speaker_argument = {
                             "voice_dir": bark_dir,
                             "speaker": speaker,
