@@ -698,7 +698,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine)
-            if text.strip():
+            if text.strip() and len(text.strip()) > 1:
                 chapter_sentences = get_sentences(text, lang)
         return chapter_sentences
     except Exception as e:
@@ -706,8 +706,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         return None
 
 def get_sentences(text, lang):
-    if not text or len(text.strip()) < 2:
-        raise ValueError("Input sentence too short or empty.")
     def combine_punctuation(tokens):
         if not tokens:
             return tokens
@@ -839,65 +837,24 @@ def get_sentences(text, lang):
         sentences.extend(split_sentence(sentence.strip()))
     return sentences
 
+def get_system_ram():
+    vm = psutil.virtual_memory()
+    max_ram = vm.total // (1024 ** 3)  # GB
+    return max_ram
+
 def get_vram():
-    os_name = platform.system()
-    # NVIDIA (Cross-Platform: Windows, Linux, macOS)
-    try:
-        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
-        nvmlInit()
-        handle = nvmlDeviceGetHandleByIndex(0)  # First GPU
-        info = nvmlDeviceGetMemoryInfo(handle)
-        vram = info.total
-        return int(vram / (1024 ** 3))  # Convert to GB
-    except ImportError:
-        pass
-    except Exception as e:
-        pass
-    # AMD (Windows)
-    if os_name == "Windows":
-        try:
-            cmd = 'wmic path Win32_VideoController get AdapterRAM'
-            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
-            lines = output.stdout.splitlines()
-            vram_values = [int(line.strip()) for line in lines if line.strip().isdigit()]
-            if vram_values:
-                return int(vram_values[0] / (1024 ** 3))
-        except Exception as e:
-            pass
-    # AMD (Linux)
-    if os_name == "Linux":
-        try:
-            cmd = "lspci -v | grep -i 'VGA' -A 12 | grep -i 'preallocated' | awk '{print $2}'"
-            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
-            if output.stdout.strip().isdigit():
-                return int(output.stdout.strip()) // 1024
-        except Exception as e:
-            pass
-    # Intel (Linux Only)
-    intel_vram_paths = [
-        "/sys/kernel/debug/dri/0/i915_vram_total",  # Intel dedicated GPUs
-        "/sys/class/drm/card0/device/resource0"  # Some integrated GPUs
-    ]
-    for path in intel_vram_paths:
-        if os.path.exists(path):
-            try:
-                with open(path, "r") as f:
-                    vram = int(f.read().strip()) // (1024 ** 3)
-                    return vram
-            except Exception as e:
-                pass
-    # macOS (OpenGL Alternative)
-    if os_name == "Darwin":
-        try:
-            from OpenGL.GL import glGetIntegerv
-            from OpenGL.GLX import GLX_RENDERER_VIDEO_MEMORY_MB_MESA
-            vram = int(glGetIntegerv(GLX_RENDERER_VIDEO_MEMORY_MB_MESA) // 1024)
-            return vram
-        except ImportError:
-            pass
-        except Exception as e:
-            pass
-    return 0
+    pynvml.nvmlInit()
+    gpu_count = pynvml.nvmlDeviceGetCount()
+    max_vram = 0
+    calc = 0
+    for i in range(gpu_count):
+        handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+        mem_info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+        total_vram = mem_info.total
+        if total_vram > calc:
+            calc = total_vram
+            max_vram_gpu = total_vram // (1024 ** 3)  # GB
+    pynvml.nvmlShutdown()
 
 def get_sanitized(str, replacement="_"):
     str = str.replace('&', 'And')

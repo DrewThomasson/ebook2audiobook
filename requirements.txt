@@ -17,7 +17,8 @@ konlpy
 pythainlp
 m4b-util
 pydub
-nvidia-ml-py
+psutils
+pynvml
 PyOpenGL
 pypinyin
 ray
