@@ -18,6 +18,7 @@ import math
 import os
 import platform
 import psutil
+import pynvml
 import pymupdf4llm
 import random
 import regex as re
