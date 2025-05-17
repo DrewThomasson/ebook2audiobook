@@ -211,6 +211,7 @@ class TTSManager:
                             self.params['tts_vc'] = loaded_tts[tts_vc_key]
                         else:
                             self.params['tts_vc'] = self._load_coqui_tts_vc(self.session['device'])
+                            loaded_tts[tts_vc_key] = self.params['tts_vc']
                 else:
                     msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                     print(msg)
