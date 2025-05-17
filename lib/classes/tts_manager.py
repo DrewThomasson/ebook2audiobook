@@ -485,7 +485,7 @@ class TTSManager:
                         loaded_builtin_speakers[self.session['tts_engine']] = torch.load(speakers_path)
                     speakers_list = loaded_builtin_speakers[self.session['tts_engine']]
                     if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
-                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = loaded_processed_voices[processed_voice_key].values()
+                        self.params['gpt_cond_latent'], self.params['speaker_embedding'] = loaded_processed_voices[processed_voice_key]
                     else:
                         msg = 'Computing speaker latents...'
                         print(msg)
@@ -528,7 +528,7 @@ class TTSManager:
                         print(msg)
                     else:
                         if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
-                            bark_dir, speaker = loaded_processed_voices[processed_voice_key].values()
+                            bark_dir, speaker = loaded_processed_voices[processed_voice_key]
                         else:
                             if self.params['voice_path'] is not None:
                                 bark_dir = os.path.join(os.path.dirname(self.params['current_voice_path']), 'bark')
