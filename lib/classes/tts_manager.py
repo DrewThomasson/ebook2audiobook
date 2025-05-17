@@ -32,6 +32,7 @@ class TTSManager:
     def __init__(self, session, is_gui_process):   
         self.session = session
         self.is_gui_process = is_gui_process
+        self.cache_dir = os.path.join(models_dir,'tts')
         self.params = {}
         self.sentences_total_time = 0.0
         self.sentence_idx = 1
@@ -66,7 +67,6 @@ class TTSManager:
             self.coquiAPI = coquiAPI
             self.XttsConfig = XttsConfig
             self.Xtts = Xtts
-            cache_dir = os.path.join(models_dir,'tts')
         tts_key = None
         self.params['tts'] = None
         self.params['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
@@ -89,9 +89,9 @@ class TTSManager:
                                         self._unload_tts()
                                     hf_repo = models[self.session['tts_engine']]['internal']['repo']
                                     hf_sub = ''
-                                    model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=cache_dir)
-                                    config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=cache_dir)
-                                    vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=cache_dir)
+                                    model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
+                                    config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
+                                    vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
                                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
                                     loaded_tts[tts_key] = self.params['tts']
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
@@ -99,7 +99,7 @@ class TTSManager:
                                 base_dir = os.path.dirname(file_path)
                                 default_text = Path(default_text_file).read_text(encoding="utf-8")
                                 if self.session['tts_engine'] not in loaded_builtin_speakers.keys():
-                                    speakers_path = hf_hub_download(repo_id=models[self.session['tts_engine']]['internal']['repo'], filename="speakers_xtts.pth", cache_dir=cache_dir)
+                                    speakers_path = hf_hub_download(repo_id=models[self.session['tts_engine']]['internal']['repo'], filename="speakers_xtts.pth", cache_dir=self.cache_dir)
                                     loaded_builtin_speakers[self.session['tts_engine']] = torch.load(speakers_path)
                                 speakers_list = loaded_builtin_speakers[self.session['tts_engine']]
                                 self.params['gpt_cond_latent'], self.params['speaker_embedding'] = speakers_list[default_xtts_settings['voices'][speaker]].values()
@@ -161,11 +161,10 @@ class TTSManager:
                 print(msg)
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}/" if self.session['fine_tuned'] != 'internal' else ''
-                cache_dir = os.path.join(models_dir,'tts')
-                speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=cache_dir)
-                model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=cache_dir)
-                config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=cache_dir)
-                vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=cache_dir)
+                speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=self.cache_dir)
+                model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
+                config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
+                vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
                 tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
@@ -481,7 +480,7 @@ class TTSManager:
                 if self.session['tts_engine'] == XTTSv2:
                     trim_audio_buffer = 0.07
                     if self.session['tts_engine'] not in loaded_builtin_speakers.keys():
-                        speakers_path = hf_hub_download(repo_id=models[self.session['tts_engine']]['internal']['repo'], filename="speakers_xtts.pth", cache_dir=cache_dir)
+                        speakers_path = hf_hub_download(repo_id=models[self.session['tts_engine']]['internal']['repo'], filename="speakers_xtts.pth", cache_dir=self.cache_dir)
                         loaded_builtin_speakers[self.session['tts_engine']] = torch.load(speakers_path)
                     speakers_list = loaded_builtin_speakers[self.session['tts_engine']]
                     if processed_voice_key in loaded_processed_voices.keys():
