@@ -46,10 +46,9 @@ from collections.abc import Mapping
 from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
-from fastapi import FastAPI
-from fastapi import Request
 from glob import glob
 from iso639 import languages
+from markdown import markdown
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
 from num2words import num2words
@@ -181,7 +180,6 @@ class SessionContext:
             }, manager=self.manager)
         return self.sessions[id]
 
-app = FastAPI()
 lock = threading.Lock()
 context = SessionContext()
 is_gui_process = False
@@ -435,19 +433,23 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
+    # Replace ### and [pause] with ‡pause‡ (‡ = double dagger U+2021)
+    text = re.sub(r'(###|\[pause\])', '‡pause‡', text)
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r") with " . " as many times as they occur
-    #text = re.sub('(\r\n|\n\n|\r\r|\n\r)+', lambda m: ' . ' * (m.group().count("\n") // 2 + m.group().count("\r") // 2), text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a single "\n"
     text = re.sub(r'(\r\n|\r|\n)+', '\n', text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'[\r\n]', ' ', text)
     # Replace multiple  and spaces with single space
     text = re.sub(r'[     ]+', ' ', text)
+    # Replace ok by 'Owkey'
+    text = re.sub(r'\bok\b', '"Ok-hey"', text, flags=re.IGNORECASE)
+    # Replace parentheses with double quotes
+    text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # replace roman numbers by digits
     text = replace_roman_numbers(text, lang)
     # Escape special characters in the punctuation list for regex
@@ -457,8 +459,33 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     if tts_engine == XTTSv2:
         # Pattern 1: Add a space between UTF-8 characters and numbers
         text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    # Replace math symbols with words
-    text = math2word(text, lang, lang_iso1, tts_engine)
+    if tts_engine == XTTSv2:
+        pattern_space = re.escape(''.join(punctuation_list))
+        # Ensure space before and after punctuation (excluding `,` and `.`)
+        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+        text = re.sub(comma_dot_pattern, r' \1 ', text)
+    # Replace special chars with words
+    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+    for char, word in specialchars.items():
+        text = text.replace(char, f" {word} ")
+    for char in specialchars_remove:
+        text = text.replace(char, ' ')
+    text = ' '.join(text.split())
+    if text.strip():
+        # Add punctuation after numbers or Roman numerals at start of a chapter.
+        roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
+        arabic_pattern = r'^(\d+)(?=\s|$)'
+        if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
+            # Add punctuation if not already present (e.g. "II", "4")
+            if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
+                text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
+        # Replace math symbols with words
+        text = math2word(text, lang, lang_iso1, tts_engine)
+        # replace ### by [pause]
+        text = text.replace('###', '[pause]')
     return text
 
 def convert_to_epub(session):
@@ -478,12 +505,13 @@ def convert_to_epub(session):
             print(error)
             return False
         if file_ext == '.pdf':
-            msg = 'File input is a PDF. flatten it in MD format...'
+            msg = 'File input is a PDF. flatten it in MD and HTML...'
             print(msg)
             file_input = f"{os.path.splitext(session['epub_path'])[0]}.md"
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
-            with open(file_input, "w", encoding="utf-8") as md_file:
-                md_file.write(markdown_text)
+            html_content = markdown(markdown_text)
+            with open(file_input, "w", encoding="utf-8") as html_file:
+                html_file.write(markdown_text)
         msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
         print(msg)
         result = subprocess.run(
@@ -601,7 +629,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 chapters.append(sentences_array)
         if title:
             if chapters[0]:
-                chapters[0].insert(0, f' — "{title}" . ')
+                chapters[0][0] =  f' — "{title}" . {chapters[0][0]}'
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -661,39 +689,16 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
             elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
-                    text_array.append(f'— "{raw_text}".')
+                    text_array.append(f'— "{raw_text}". ‡pause‡')
             else:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
                     text_array.append(raw_text)
         text = "\n".join(text_array)
-        if text:
+        if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine)
-            if tts_engine == XTTSv2:
-                # Ensure spaces before & after punctuation
-                pattern_space = re.escape(''.join(punctuation_list))
-                # Ensure space before and after punctuation (excluding `,` and `.`)
-                punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-                text = re.sub(punctuation_pattern_space, r' \1 ', text)
-                # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-                comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-                text = re.sub(comma_dot_pattern, r' \1 ', text)
-            # Replace special chars with words
-            specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
-            for char, word in specialchars.items():
-                text = text.replace(char, f" {word} ")
-            for char in specialchars_remove:
-                text = text.replace(char, ' ')
-            text = ' '.join(text.split())
             if text.strip():
-                # Add punctuation after numbers or Roman numerals at start of a chapter.
-                roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
-                arabic_pattern = r'^(\d+)(?=\s|$)'
-                if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
-                    # Add punctuation if not already present (e.g. "II", "4")
-                    if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
-                        text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
                 chapter_sentences = get_sentences(text, lang)
         return chapter_sentences
     except Exception as e:
@@ -743,34 +748,57 @@ def get_sentences(text, lang):
         if buffer:
             yield buffer
 
-    def tune_split(text):
-        mid = len(text) // 2
-        for delim in [',', ';', ':', ' ']:
-            left = text.rfind(delim, 0, mid)
-            right = text.find(delim, mid)
-            if left != -1 or right != -1:
-                if left != -1 and (right == -1 or mid - left <= right - mid):
-                    return left + 1, delim
-                else:
-                    return right + 1, delim
-        return mid, None  # fallback to mid    
+    def find_best_split_point_prioritize_punct(sentence, max_chars):
+        best_index = -1
+        min_diff = float('inf')
+        punctuation_priority = '.!?,;:'
+        space_priority = ' '
+        for i in range(1, min(len(sentence), max_chars)):
+            if sentence[i] in punctuation_priority:
+                left_len = i
+                right_len = len(sentence) - i
+                diff = abs(left_len - right_len)
+                if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
+                    best_index = i + 1
+                    min_diff = diff
+        if best_index == -1:
+            for i in range(1, min(len(sentence), max_chars)):
+                if sentence[i] in space_priority:
+                    left_len = i
+                    right_len = len(sentence) - i
+                    diff = abs(left_len - right_len)
+                    if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
+                        best_index = i + 1
+                        min_diff = diff
+        return best_index
 
     def split_sentence(sentence):
         sentence = sentence.strip()
-        length = len(sentence)
-        end = ''
-        if length <= max_chars:
-            if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        # Handle ‡pause‡ as a sentence delimiter
+        if '‡pause‡' in sentence:
+            parts = sentence.split('‡pause‡')
+            result = []
+            for i, part in enumerate(parts):
+                part = part.strip()
+                if part:
+                    result.extend(split_sentence(part))
+                if i < len(parts) - 1:
+                    result.append('‡pause‡')
+            return result
+        if len(sentence) <= max_chars:
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-        split_index, delim_used = tune_split(sentence)      
-        if not lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        split_index = find_best_split_point_prioritize_punct(sentence, max_chars)
+        if split_index == -1:
+            split_index = len(sentence) // 2
+        delim_used = sentence[split_index - 1] if split_index > 0 else None
+        end = ''
+        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             end = ' -' if delim_used == ' ' else end
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:')
-        if part1 == sentence:
-            return [sentence]
         result = []
         if len(part1) <= max_chars:
             if part1 and part1[-1].isalpha():
@@ -780,34 +808,30 @@ def get_sentences(text, lang):
             result.extend(split_sentence(part1))
         if part2:
             if len(part2) <= max_chars:
-                if part2[-1].isalpha():
+                if part2 and part2[-1].isalpha():
                     part2 += ' -'
                 result.append(part2)
             else:
                 result.extend(split_sentence(part2))
         return result
 
-    max_tokens = language_mapping[lang]['max_tokens']
-    max_chars = (max_tokens * 10) - 4
+    max_chars = language_mapping[lang]['max_chars'] - 2
     pattern_split = [re.escape(p) for p in punctuation_split]
     pattern = f"({'|'.join(pattern_split)})"
-
-    # Step 1: language-specific word segmentation
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         ideogramm_list = segment_ideogramms(text)
         raw_list = list(join_ideogramms(ideogramm_list))
     else:
         raw_list = re.split(pattern, text)
     raw_list = combine_punctuation(raw_list)
-    # Step 2: group punctuation with previous parts
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
+        if len(raw_list) % 2 != 0:
+            tmp_list.append(raw_list[-1])
     else:
         tmp_list = raw_list
-    # Optional cleanup
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
-    # Step 3: split each sentence fragment if needed
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
@@ -1524,7 +1548,6 @@ def convert_ebook(args):
                                     if convert_chapters_to_audio(session):
                                         final_file = combine_audio_chapters(session)               
                                         if final_file is not None:
-                                            r'''
                                             chapters_dirs = [
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
@@ -1550,7 +1573,6 @@ def convert_ebook(args):
                                                         shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
                                                 if os.path.exists(session['session_dir']):
                                                     shutil.rmtree(session['session_dir'], ignore_errors=True)
-                                            ''' 
                                             progress_status = f'Audiobook {os.path.basename(final_file)} created!'
                                             session['audiobook'] = final_file
                                             print(info_session)
@@ -1638,7 +1660,6 @@ def get_all_ip_addresses():
     return ip_addresses
 
 def web_interface(args):
-    global app
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
@@ -1961,7 +1982,7 @@ def web_interface(args):
             gr_audiobook_player = gr.Audio(label='', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton('↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
-                gr_audiobook_list = gr.Dropdown(label='', choices=audiobook_options, type='value', interactive=True, scale=2)
+                gr_audiobook_list = gr.Dropdown(label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
                 gr_audiobook_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
         gr_convert_btn = gr.Button('📚', elem_classes='icon-btn', variant='primary', interactive=False)
         
@@ -2109,7 +2130,8 @@ def web_interface(args):
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
             session['audiobook'] = selected
-            visible = True if len(audiobook_options) else False
+            #visible = True if len(audiobook_options) else False
+            visible = True
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
 
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
@@ -2493,7 +2515,7 @@ def web_interface(args):
                     "output_format": output_format,
                     "temperature": float(temperature),
                     "length_penalty": float(length_penalty),
-                    "num_beams": int(num_beams),
+                    "num_beams": session['num_beams'],
                     "repetition_penalty": float(repetition_penalty),
                     "top_k": int(top_k),
                     "top_p": float(top_p),
@@ -2888,50 +2910,54 @@ def web_interface(args):
             js="""
             () => {
                 try{
-                    // Redirect to dark them if no theme selected
-                    const url = new URL(window.location);
-                    const theme = url.searchParams.get('__theme');
-                    if(!theme){
-                        url.searchParams.set('__theme', 'dark');
-                        window.location.href = url.href; 
-                        return
-                    }
-                    setTimeout(()=>{
-                         if(theme){
-                            if(theme == 'dark'){
-                                const audio = document.querySelector('#audiobook_player audio');
-                                if(audio){
-                                    if(audio.style.filter == ''){
-                                        audio.style.filter = 'invert(1) hue-rotate(180deg)';
+                    let intervalId = setInterval(()=>{
+                        try{
+                            const audio = document.querySelector('#audiobook_player audio');
+                             if(audio){
+                                const url = new URL(window.location);
+                                const theme = url.searchParams.get('__theme');
+                                let osTheme;
+                                let audioFilter = '';
+                                if(theme){
+                                    if(theme == 'dark'){
+                                        audioFilter = 'invert(1) hue-rotate(180deg)';
+                                    }
+                                }else{
+                                    osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
+                                    if(osTheme){
+                                        audioFilter = 'invert(1) hue-rotate(180deg)';
                                     }
                                 }
+                                if(!audio.style.transition){
+                                    audio.style.transition = 'filter 1s ease';
+                                }
+                                audio.style.filter = audioFilter;
+                                clearInterval(intervalId);
                             }
+                        }catch(e){
+                            console.log(' interface.load setInterval error:', e);
                         }
-                    },3000);
-                    // Run once
+                    },100);                        
                     /*
-                    if (!window.__checker_loaded__){
-                        window.__checker_loaded__ = true;
-                        setInterval(()=>{
-                            try{
-                                // heartbeat, can be use for connection status
-                                // with gradio server side
-                                const data = window.localStorage.getItem('data');
-                                if (data) {
-                                    const obj = JSON.parse(data);
-                                    if (obj.id) {
-                                        fetch('/api/heartbeat', {
-                                            method: 'POST',
-                                            headers: {'Content-Type': 'application/json'},
-                                            body: JSON.stringify({id: obj.id})
-                                        });
-                                    }
+                    // heartbeat, can be use for connection status
+                    // with gradio server side
+                    setInterval(()=>{
+                        try{
+                            const data = window.localStorage.getItem('data');
+                            if (data) {
+                                const obj = JSON.parse(data);
+                                if (obj.id) {
+                                    fetch('/api/heartbeat', {
+                                        method: 'POST',
+                                        headers: {'Content-Type': 'application/json'},
+                                        body: JSON.stringify({id: obj.id})
+                                    });
                                 }
-                            }catch(e){
-                                console.log('Interval error:', e);
                             }
-                        },5000);
-                    }
+                        }catch(e){
+                            console.log(' interface.load setInterval error:', e);
+                        }
+                    },5000);
                     */
                     // Return localStorage item to Python
                     const data = window.localStorage.getItem('data');
@@ -2953,9 +2979,7 @@ def web_interface(args):
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
-        interface  = interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
-        app = gr.mount_gradio_app(app, interface, path="/")
-        uvicorn.run(app, host=interface_host, port=interface_port)
+        interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
         
     except OSError as e:
         error = f'Connection error: {e}'

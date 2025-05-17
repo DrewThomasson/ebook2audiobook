@@ -18,7 +18,7 @@ voice_conversion_models/multilingual/multi-dataset/openvoice_v2
 """
 default_vc_model = "voice_conversion_models/multilingual/multi-dataset/knnvc"
 
-max_tts_in_memory = 1 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM)
+max_tts_in_memory = 1 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM) Xtts being selected if set on 1.
 max_custom_model = 10
 max_custom_voices = 100
 max_upload_size = '6GB'
@@ -33,7 +33,7 @@ default_xtts_settings = {
     "top_p": 0.85,
     "speed": 1.0,
     "enable_text_splitting": False,
-    # to enable_deepspeed, it must be installed manually.
+    # to enable deepspeed, you must install it first:
     # conda activate ./python_env (linux/mac) or .\python_env (windows)
     # pip install deepspeed
     # conda deactivate
@@ -65,7 +65,7 @@ default_xtts_settings = {
 default_bark_settings = {
     "samplerate": 24000,
     "files": ['coarse_2.pt'],
-    "voices": {"Jamie": os.path.join(voices_dir, "eng", "adult", "male", "bark","Jamie", "Jamie.npz")}
+    "voices": {"Jamie": os.path.join(voices_dir, "eng", "adult", "male", f"Jamie_{default_xtts_settings['samplerate']}.wav")}
 }
 default_vits_settings = {
     "samplerate": 22050,
@@ -87,8 +87,8 @@ models = {
     XTTSv2: {
         "internal": {
             "lang": "multi",
-            "repo": "tts_models/multilingual/multi-dataset/xtts_v2",
-            "sub": "",
+            "repo": "coqui/XTTS-v2",
+            "sub": "tts_models/multilingual/multi-dataset/xtts_v2",
             "voice": default_xtts_settings['voices']['KumarDahl'],
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
