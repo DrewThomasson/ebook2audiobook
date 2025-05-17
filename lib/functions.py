@@ -706,6 +706,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         return None
 
 def get_sentences(text, lang):
+    if not text or len(text.strip()) < 2:
+        raise ValueError("Input sentence too short or empty.")
     def combine_punctuation(tokens):
         if not tokens:
             return tokens
