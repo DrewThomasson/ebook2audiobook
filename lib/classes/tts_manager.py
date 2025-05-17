@@ -83,7 +83,7 @@ class TTSManager:
                                 if tts_internal_key in loaded_tts.keys():
                                     self.params['tts'] = loaded_tts[tts_internal_key]
                                 else:
-                                    if (len(loaded_tts) + 1) > max_tts_in_memory:
+                                    if len(loaded_tts) == max_tts_in_memory::
                                         self._unload_tts()
                                     hf_repo = models[self.session['tts_engine']]['internal']['repo']
                                     hf_sub = ''
@@ -151,7 +151,7 @@ class TTSManager:
                 if tts_custom_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_custom_key]
                 else:
-                    if (len(loaded_tts) + 1) > max_tts_in_memory:
+                    if len(loaded_tts) == max_tts_in_memory::
                         self._unload_tts()
                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
                     loaded_tts[tts_custom_key] = self.params['tts']
@@ -167,7 +167,7 @@ class TTSManager:
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
-                    if (len(loaded_tts) + 1) > max_tts_in_memory:
+                    if len(loaded_tts) == max_tts_in_memory::
                         self._unload_tts()
                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
         elif self.session['tts_engine'] == BARK:
@@ -224,7 +224,7 @@ class TTSManager:
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
-                    if (len(loaded_tts) + 1) > max_tts_in_memory:
+                    if len(loaded_tts) == max_tts_in_memory::
                         self._unload_tts()
                     self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
                 if self.session['voice'] is not None:

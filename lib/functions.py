@@ -915,7 +915,7 @@ def convert_chapters_to_audio(session):
             progress_bar = gr.Progress(track_tqdm=True)        
         tts_manager = TTSManager(session, is_gui_process)
         if 'tts' not in tts_manager.params.keys():
-            error = 'No TTS engine in tts_manager.params!'
+            error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/conf.py"ge
             print(error)
             return False
         resume_chapter = 0
@@ -1500,11 +1500,15 @@ def convert_ebook(args):
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
                                 os.environ["SUNO_OFFLOAD_CPU"] = 'True'
+                                os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
                                 msg = 'MPS is not available on your device!'
                                 print(msg)
                         else:
                             os.environ["SUNO_OFFLOAD_CPU"] = 'True'
-                        if get_vram() <= 4:
+                            os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
+                        vram_avail = get_vram()
+                        print(f'==================={vram_avail}===========')
+                        if vram_avail <= 4:
                             os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
                         msg = f"Available Processor Unit: {session['device'].upper()}"
                         print(msg)
