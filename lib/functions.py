@@ -1692,11 +1692,35 @@ def web_interface(args):
     stop_event = threading.Event()
 
     theme = gr.themes.Origin(
-        primary_hue='green',
-        secondary_hue='orange',
-        neutral_hue='gray',
-        radius_size='lg',
-        font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
+        radius_size="lg",
+        font_mono=["JetBrains Mono", "monospace", "Consolas", "Menlo", "Liberation Mono"],
+        neutral_hue='gray'
+    ).set(
+        colors={
+            # 🌿 Custom Primary (green)
+            "primary_50":  "#f2fbe5",
+            "primary_100": "#def4ba",
+            "primary_200": "#c9ec8f",
+            "primary_300": "#aede5a",
+            "primary_400": "#92cf2f",
+            "primary_500": "#68B30E",
+            "primary_600": "#55910b",
+            "primary_700": "#417008",
+            "primary_800": "#2d4f05",
+            "primary_900": "#1a2f02",
+
+            # 🍊 Custom Secondary (orange)
+            "secondary_50":  "#fff3e6",
+            "secondary_100": "#ffd9b8",
+            "secondary_200": "#ffbf8a",
+            "secondary_300": "#ffa55c",
+            "secondary_400": "#ff8a2e",
+            "secondary_500": "#FF751C",
+            "secondary_600": "#cc5f16",
+            "secondary_700": "#994911",
+            "secondary_800": "#66330b",
+            "secondary_900": "#331d06"
+        }
     )
     """
     def process_cleanup(state):
