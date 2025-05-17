@@ -198,6 +198,7 @@ class TTSManager:
                 if sub is not None:
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
+                    msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                     print(msg)
                     if tts_key in loaded_tts.keys():
                         self.params['tts'] = loaded_tts[tts_key]
