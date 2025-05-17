@@ -455,7 +455,7 @@ class TTSManager:
             audio_data = None
             audio_to_trim = False
             trim_audio_buffer = 0.001
-            convert_sample_rate = 16000 if self.session['tts_engine'] == VITS else None
+            convert_sample_rate = None
             if self.params['sentence'].endswith('‡pause‡'):
                 sample_rate = 16000 if self.session['tts_engine'] == VITS else self.params['sample_rate']
                  # 2 seconds of silence = sample_rate * 2 samples
