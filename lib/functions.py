@@ -915,7 +915,7 @@ def convert_chapters_to_audio(session):
             progress_bar = gr.Progress(track_tqdm=True)        
         tts_manager = TTSManager(session, is_gui_process)
         if 'tts' not in tts_manager.params.keys():
-            error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/conf.py"ge
+            error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/conf.py"
             print(error)
             return False
         resume_chapter = 0
