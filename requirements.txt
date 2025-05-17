@@ -6,7 +6,6 @@ demucs
 docker
 ebooklib
 fastapi
-gensim
 gradio
 hangul-romanize
 indic-nlp-library
@@ -28,6 +27,5 @@ translate
 tqdm
 unidic
 pymupdf4llm
-coqui-tts
-torchvision
+coqui-tts>=0.26.1
 torchvggish

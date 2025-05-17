@@ -25,7 +25,6 @@ dependencies = [
 	"docker",
 	"ebooklib",
 	"fastapi",
-	"gensim",
 	"gradio",
 	"hangul-romanize",
 	"indic-nlp-library",
@@ -47,8 +46,7 @@ dependencies = [
 	"tqdm",
 	"unidic",
 	"pymupdf4llm",
-	"coqui-tts==0.25.3",
-	"torchvision",
+	"coqui-tts>=0.26.1",
 	"torchvggish"
 ]
 readme = "README.md"
