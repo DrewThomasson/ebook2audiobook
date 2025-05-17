@@ -84,7 +84,7 @@ class TTSManager:
                                     self.params['tts'] = loaded_tts[tts_internal_key]
                                 else:
                                     if len(loaded_tts) == max_tts_in_memory:
-                                        self._unload_tts()
+                                        self._unload_tts(self.session['device'])
                                     hf_repo = models[self.session['tts_engine']]['internal']['repo']
                                     hf_sub = ''
                                     model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
@@ -152,7 +152,7 @@ class TTSManager:
                     self.params['tts'] = loaded_tts[tts_custom_key]
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
-                        self._unload_tts()
+                        self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
                     loaded_tts[tts_custom_key] = self.params['tts']
             else:
@@ -168,7 +168,7 @@ class TTSManager:
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
-                        self._unload_tts()
+                        self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is None:
@@ -178,7 +178,7 @@ class TTSManager:
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
-                    self._unload_tts()
+                    self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -199,7 +199,7 @@ class TTSManager:
                         self.params['tts'] = loaded_tts[tts_key]
                     else:
                         if len(loaded_tts) == max_tts_in_memory:
-                            self._unload_tts()
+                            self._unload_tts(self.session['device'])
                         self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
                     if self.session['voice'] is not None:
                         tts_vc_key = default_vc_model
@@ -225,7 +225,7 @@ class TTSManager:
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
-                        self._unload_tts()
+                        self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
                 if self.session['voice'] is not None:
                     tts_vc_key = default_vc_model
@@ -235,7 +235,7 @@ class TTSManager:
                         self.params['tts_vc'] = loaded_tts[tts_vc_key]
                     else:
                         if len(loaded_tts) == max_tts_in_memory:
-                            self._unload_tts()
+                            self._unload_tts(self.session['device'])
                         self.params['tts_vc'] = self._load_coqui_tts_vc(self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -249,7 +249,7 @@ class TTSManager:
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
-                        self._unload_tts()
+                        self._unload_tts(self.session['device'])
                     self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -343,12 +343,12 @@ class TTSManager:
             print(error)
             return None
 
-    def _unload_tts(self):
+    def _unload_tts(self, device):
         for key in list(loaded_tts.keys()):
             del loaded_tts[key]
         if 'tts' in self.params.keys():
             del self.params['tts']
-        if torch.cuda:
+        if device == 'cuda':
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
 
