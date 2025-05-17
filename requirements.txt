@@ -27,5 +27,6 @@ translate
 tqdm
 unidic
 pymupdf4llm
-coqui-tts>=0.26.1
+torch
+coqui-tts
 torchvggish
