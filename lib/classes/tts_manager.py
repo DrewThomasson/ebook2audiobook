@@ -455,7 +455,6 @@ class TTSManager:
             audio_data = None
             audio_to_trim = False
             trim_audio_buffer = 0.001
-            convert_sample_rate = None
             if self.params['sentence'].endswith('‡pause‡'):
                 sample_rate = 16000 if self.session['tts_engine'] == VITS else self.params['sample_rate']
                  # 2 seconds of silence = sample_rate * 2 samples
@@ -606,7 +605,7 @@ class TTSManager:
                                     source_wav=tmp_out_wav,
                                     target_wav=self.params['voice_path']
                                 )
-                            convert_sample_rate = 16000
+                            self.params['sample_rate'] = 16000
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
@@ -672,10 +671,10 @@ class TTSManager:
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
-                            else:
-                                audio_data = self.params['tts'].tts(
-                                    text=self.params['sentence']
-                                )
+                        else:
+                            audio_data = self.params['tts'].tts(
+                                text=self.params['sentence']
+                            )
                 elif self.session['tts_engine'] == YOURTTS:
                     trim_audio_buffer = 0.004
                     if self.session['custom_model'] is not None or self.session['fine_tuned'] != 'internal':
@@ -705,8 +704,6 @@ class TTSManager:
                         audio_data = self._trim_audio(audio_data, self.params['sample_rate'],0.001,trim_audio_buffer) 
                     sourceTensor = self._tensor_type(audio_data)
                     audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                    if convert_sample_rate is not None:
-                        self.params['sample_rate'] = convert_sample_rate
                     start_time = self.sentences_total_time
                     duration = audio_tensor.shape[-1] / self.params['sample_rate']
                     end_time = start_time + duration
