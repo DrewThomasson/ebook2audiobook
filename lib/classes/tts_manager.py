@@ -476,7 +476,7 @@ class TTSManager:
                 if self.params['sentence'].endswith('-'):
                     self.params['sentence'] = self.params['sentence'][:-1]
                     audio_to_trim = True
-                processed_voice_key = f"{self.session['tts_engine']}-{self.params['voice_path']}" if self.params['voice_path'] is not None else None
+                processed_voice_key = f"{self.session['tts_engine']}-{self.params['voice_path'].replace(' ','')}" if self.params['voice_path'] is not None else None
                 if self.session['tts_engine'] == XTTSv2:
                     trim_audio_buffer = 0.07
                     if self.session['tts_engine'] not in loaded_builtin_speakers.keys():
