@@ -1692,7 +1692,7 @@ def web_interface(args):
     stop_event = threading.Event()
 
     theme = gr.themes.Origin(
-        primary_hue='emerald',
+        primary_hue='green',
         secondary_hue='amber',
         neutral_hue='gray',
         radius_size='lg',
