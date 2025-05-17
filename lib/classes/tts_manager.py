@@ -260,7 +260,7 @@ class TTSManager:
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
-        if self.params['tts'] is not None:
+        if 'tts' in self.params.keys():
             loaded_tts[tts_key] = self.params['tts']
           
     def _load_coqui_tts_api(self, model_path, device):
@@ -354,7 +354,7 @@ class TTSManager:
             for key in list(loaded_tts.keys()):
                 if key != default_vc_model:
                     del loaded_tts[key]
-        if self.params['tts'] is not None:
+        if 'tts' in self.params.keys():
             del self.params['tts']
         gc.collect()
         if torch.cuda:
