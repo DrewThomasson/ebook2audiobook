@@ -518,8 +518,8 @@ class TTSManager:
                             bark_dir, speaker = loaded_processed_voices[processed_voice_key]
                         else:
                             if self.params['voice_path'] is not None:
-                                bark_dir = os.path.join(os.path.dirname(self.params['current_voice_path']), 'bark')
-                                speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(self.params['current_voice_path']))
+                                bark_dir = os.path.join(os.path.dirname(self.params['voice_path']), 'bark')
+                                speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(self.params['voice_path']))
                             else:
                                 bark_dir = os.path.join(os.path.dirname(default_bark_settings['voices']['Jamie']), 'bark')
                                 speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
