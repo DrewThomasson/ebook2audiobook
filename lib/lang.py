@@ -69,7 +69,10 @@ punctuation_switch = {
     '፤': ';',  # Ethiopic semicolon
     '।': '.',   # Hindi period
     '•': '—', # bullet (Unicode: U+2022
-    '›': ''   # Single Right-Pointing Angle Quotation Mark U+203A
+    '›': '',  # Single Right-Pointing Angle Quotation Mark U+203A
+    '#': '-', # hashtag by Em Dash
+    '†': '-', # Dagger (footnote marker) U+2020
+    '¶': '-'  # Pilcrow (paragraph mark) U+0086
 }
 
 punctuation_list = [
@@ -504,8 +507,8 @@ specialchars_mapping = {
 }
 
 specialchars_remove = [
-    "#", "\\", "|", "=", "<", ">", "©", "®", "™",
-    "*", "+", "~", "^", "`", "{", "}", "[", "]",
+    "\\", "|", "=", "<", ">", "©", "®", "™",
+    "*", "~", "^", "`", "{", "}", "[", "]",
     "(", ")", '"', "\u00A0"
 ]
 

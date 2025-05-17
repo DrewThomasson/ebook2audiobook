@@ -433,6 +433,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
+    # Replace ### and [pause] with ‡pause‡ (‡ = double dagger U+2021)
+    text = re.sub(r'(###|\[pause\])', '‡pause‡', text)
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
@@ -444,6 +446,10 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(r'[\r\n]', ' ', text)
     # Replace multiple  and spaces with single space
     text = re.sub(r'[     ]+', ' ', text)
+    # Replace ok by 'Owkey'
+    text = re.sub(r'\bok\b', '"Ok-hey"', text, flags=re.IGNORECASE)
+    # Replace parentheses with double quotes
+    text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # replace roman numbers by digits
     text = replace_roman_numbers(text, lang)
     # Escape special characters in the punctuation list for regex
@@ -683,7 +689,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
             elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
-                    text_array.append(f'— "{raw_text}".')
+                    text_array.append(f'— "{raw_text}". ‡pause‡')
             else:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
@@ -747,7 +753,6 @@ def get_sentences(text, lang):
         min_diff = float('inf')
         punctuation_priority = '.!?,;:'
         space_priority = ' '
-        # First: look for punctuation near center
         for i in range(1, min(len(sentence), max_chars)):
             if sentence[i] in punctuation_priority:
                 left_len = i
@@ -756,7 +761,6 @@ def get_sentences(text, lang):
                 if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
                     best_index = i + 1
                     min_diff = diff
-        # Fallback: try space if punctuation isn't close enough
         if best_index == -1:
             for i in range(1, min(len(sentence), max_chars)):
                 if sentence[i] in space_priority:
@@ -770,12 +774,22 @@ def get_sentences(text, lang):
 
     def split_sentence(sentence):
         sentence = sentence.strip()
+        # Handle ‡pause‡ as a sentence delimiter
+        if '‡pause‡' in sentence:
+            parts = sentence.split('‡pause‡')
+            result = []
+            for i, part in enumerate(parts):
+                part = part.strip()
+                if part:
+                    result.extend(split_sentence(part))
+                if i < len(parts) - 1:
+                    result.append('‡pause‡')
+            return result
         if len(sentence) <= max_chars:
             if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-
         split_index = find_best_split_point_prioritize_punct(sentence, max_chars)
         if split_index == -1:
             split_index = len(sentence) // 2
@@ -812,6 +826,8 @@ def get_sentences(text, lang):
     raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
+        if len(raw_list) % 2 != 0:
+            tmp_list.append(raw_list[-1])
     else:
         tmp_list = raw_list
     if tmp_list and tmp_list[-1] == 'Start':
@@ -819,7 +835,6 @@ def get_sentences(text, lang):
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
-    print(sentences)
     return sentences
 
 def get_vram():
@@ -1967,7 +1982,7 @@ def web_interface(args):
             gr_audiobook_player = gr.Audio(label='', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton('↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
-                gr_audiobook_list = gr.Dropdown(label='', choices=audiobook_options, type='value', interactive=True, scale=2)
+                gr_audiobook_list = gr.Dropdown(label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
                 gr_audiobook_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
         gr_convert_btn = gr.Button('📚', elem_classes='icon-btn', variant='primary', interactive=False)
         
@@ -2115,7 +2130,8 @@ def web_interface(args):
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
             session['audiobook'] = selected
-            visible = True if len(audiobook_options) else False
+            #visible = True if len(audiobook_options) else False
+            visible = True
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
 
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
@@ -2894,52 +2910,54 @@ def web_interface(args):
             js="""
             () => {
                 try{
-                    setTimeout(()=>{
-                        const audio = document.querySelector('#audiobook_player audio');
-                         if(audio){
-                            const url = new URL(window.location);
-                            const theme = url.searchParams.get('__theme');
-                            let osTheme;
-                            let audioFilter = '';
-                            if(theme){
-                                if(theme == 'dark'){
-                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                    let intervalId = setInterval(()=>{
+                        try{
+                            const audio = document.querySelector('#audiobook_player audio');
+                             if(audio){
+                                const url = new URL(window.location);
+                                const theme = url.searchParams.get('__theme');
+                                let osTheme;
+                                let audioFilter = '';
+                                if(theme){
+                                    if(theme == 'dark'){
+                                        audioFilter = 'invert(1) hue-rotate(180deg)';
+                                    }
+                                }else{
+                                    osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
+                                    if(osTheme){
+                                        audioFilter = 'invert(1) hue-rotate(180deg)';
+                                    }
                                 }
-                            }else{
-                                osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
-                                if(osTheme){
-                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                if(!audio.style.transition){
+                                    audio.style.transition = 'filter 1s ease';
                                 }
+                                audio.style.filter = audioFilter;
+                                clearInterval(intervalId);
                             }
-                            if (!audio.style.transition) {
-                                audio.style.transition = 'filter 1s ease';
-                            }
-                            audio.style.filter = audioFilter;
+                        }catch(e){
+                            console.log(' interface.load setInterval error:', e);
                         }
-                    },5000);
+                    },100);                        
                     /*
                     // heartbeat, can be use for connection status
                     // with gradio server side
-                    if (!window.__checker_loaded__){
-                        window.__checker_loaded__ = true;
-                        setInterval(()=>{
-                            try{
-                                const data = window.localStorage.getItem('data');
-                                if (data) {
-                                    const obj = JSON.parse(data);
-                                    if (obj.id) {
-                                        fetch('/api/heartbeat', {
-                                            method: 'POST',
-                                            headers: {'Content-Type': 'application/json'},
-                                            body: JSON.stringify({id: obj.id})
-                                        });
-                                    }
+                    setInterval(()=>{
+                        try{
+                            const data = window.localStorage.getItem('data');
+                            if (data) {
+                                const obj = JSON.parse(data);
+                                if (obj.id) {
+                                    fetch('/api/heartbeat', {
+                                        method: 'POST',
+                                        headers: {'Content-Type': 'application/json'},
+                                        body: JSON.stringify({id: obj.id})
+                                    });
                                 }
-                            }catch(e){
-                                console.log('Interval error:', e);
                             }
-                        },5000);
-                    }
+                        }catch(e){
+                            console.log(' interface.load setInterval error:', e);
+                        }
+                    },5000);
                     */
                     // Return localStorage item to Python
                     const data = window.localStorage.getItem('data');
