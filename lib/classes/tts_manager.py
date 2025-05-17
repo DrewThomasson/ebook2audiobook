@@ -179,8 +179,7 @@ class TTSManager:
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
-                    if len(loaded_tts) == max_tts_in_memory:
-                        self._unload_tts()
+                    self._unload_tts()
                     self.params['tts'] = self._load_coqui_tts_api(model_path, self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
