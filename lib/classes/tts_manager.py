@@ -155,6 +155,7 @@ class TTSManager:
                     if len(loaded_tts) >= max_tts_in_memory:
                         self._unload_tts()
                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
+                    loaded_tts[tts_custom_key] = self.params['tts']
             else:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
