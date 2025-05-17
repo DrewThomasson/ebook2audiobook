@@ -68,7 +68,6 @@ class TTSManager:
             self.XttsConfig = XttsConfig
             self.Xtts = Xtts
         tts_key = None
-        self.params['tts'] = None
         self.params['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
         if self.session['language'] in language_tts[XTTSv2].keys():
             if self.session['voice'] is not None and self.session['language'] != 'eng':
@@ -197,9 +196,9 @@ class TTSManager:
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is not None:
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
-                    tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                     msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                     print(msg)
+                    tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                     if tts_key in loaded_tts.keys():
                         self.params['tts'] = loaded_tts[tts_key]
                     else:
@@ -223,9 +222,9 @@ class TTSManager:
         elif self.session['tts_engine'] == FAIRSEQ:
             if self.session['custom_model'] is None:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
-                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 msg = f"Loading TTS {tts_key} model, it takes a while, please be patient..."
                 print(msg)
+                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
