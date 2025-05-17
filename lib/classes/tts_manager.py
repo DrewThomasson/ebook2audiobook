@@ -1,4 +1,3 @@
-import gc
 import numpy as np
 import os
 import regex as re
@@ -340,9 +339,6 @@ class TTSManager:
             error = f"_detect_gender() error: {voice_path}: {e}"
             print(error)
             return None
-            
-    def _is_tts_active(self, tts):
-        return any(obj is tts for obj in gc.get_objects())
 
     def _unload_tts(self):
         for key in list(loaded_tts.keys()):
@@ -352,7 +348,6 @@ class TTSManager:
         if torch.cuda:
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
-        #gc.collect()
 
     def _tensor_type(self, audio_data):
         if isinstance(audio_data, torch.Tensor):
