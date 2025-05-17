@@ -447,7 +447,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace multiple  and spaces with single space
     text = re.sub(r'[     ]+', ' ', text)
     # Replace ok by 'Owkey'
-    text = re.sub(r'\bok\b', '"Ok-hey"', text, flags=re.IGNORECASE)
+    text = re.sub(r'\bok\b', '"Okhey"', text, flags=re.IGNORECASE)
     # Replace parentheses with double quotes
     text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # replace roman numbers by digits
