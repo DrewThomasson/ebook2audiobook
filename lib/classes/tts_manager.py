@@ -67,7 +67,7 @@ class TTSManager:
             self.coquiAPI = coquiAPI
             self.XttsConfig = XttsConfig
             self.Xtts = Xtts
-        tts_key = None
+        tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
         self.params['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
         if self.session['language'] in language_tts[XTTSv2].keys():
             if self.session['voice'] is not None and self.session['language'] != 'eng':
@@ -80,9 +80,9 @@ class TTSManager:
                                 msg = f"Converting xttsv2 builtin english voice to {self.session['language']}..."
                                 print(msg)
                                 model_path = models[XTTSv2]['internal']['repo']
-                                tts_key = f"{self.session['tts_engine']}-internal"
-                                if tts_key in loaded_tts.keys():
-                                    self.params['tts'] = loaded_tts[tts_key]
+                                tts_internal_key = f"{self.session['tts_engine']}-internal"
+                                if tts_internal_key in loaded_tts.keys():
+                                    self.params['tts'] = loaded_tts[tts_internal_key]
                                 else:
                                     if len(loaded_tts) >= max_tts_in_memory:
                                         self._unload_tts()
@@ -92,7 +92,7 @@ class TTSManager:
                                     config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
                                     vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
                                     self.params['tts'] = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
-                                    loaded_tts[tts_key] = self.params['tts']
+                                    loaded_tts[tts_internal_key] = self.params['tts']
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                                 file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                                 base_dir = os.path.dirname(file_path)
@@ -148,9 +148,9 @@ class TTSManager:
                 model_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'model.pth')
                 config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'config.json')
                 vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'vocab.json')
-                tts_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
-                if tts_key in loaded_tts.keys():
-                    self.params['tts'] = loaded_tts[tts_key]
+                tts_custom_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
+                if tts_custom_key in loaded_tts.keys():
+                    self.params['tts'] = loaded_tts[tts_custom_key]
                 else:
                     if len(loaded_tts) >= max_tts_in_memory:
                         self._unload_tts()
@@ -164,7 +164,6 @@ class TTSManager:
                 model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
-                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
@@ -176,7 +175,6 @@ class TTSManager:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                 print(msg)
-                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
@@ -198,7 +196,6 @@ class TTSManager:
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                     print(msg)
-                    tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                     if tts_key in loaded_tts.keys():
                         self.params['tts'] = loaded_tts[tts_key]
                     else:
@@ -224,7 +221,6 @@ class TTSManager:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
                 msg = f"Loading TTS {tts_key} model, it takes a while, please be patient..."
                 print(msg)
-                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
@@ -249,7 +245,6 @@ class TTSManager:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                 print(msg)
-                tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
                 if tts_key in loaded_tts.keys():
                     self.params['tts'] = loaded_tts[tts_key]
                 else:
