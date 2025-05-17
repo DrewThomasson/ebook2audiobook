@@ -837,6 +837,12 @@ def get_sentences(text, lang):
         sentences.extend(split_sentence(sentence.strip()))
     return sentences
 
+import psutil
+
+def get_ram():
+    vm = psutil.virtual_memory()
+    return vm.total // (1024 ** 3)
+
 def get_vram():
     os_name = platform.system()
     # NVIDIA (Cross-Platform: Windows, Linux, macOS)
@@ -846,7 +852,7 @@ def get_vram():
         handle = nvmlDeviceGetHandleByIndex(0)  # First GPU
         info = nvmlDeviceGetMemoryInfo(handle)
         vram = info.total
-        return int(vram / (1024 ** 3))  # Convert to GB
+        return int(vram // (1024 ** 3))  # Convert to GB
     except ImportError:
         pass
     except Exception as e:
@@ -859,7 +865,7 @@ def get_vram():
             lines = output.stdout.splitlines()
             vram_values = [int(line.strip()) for line in lines if line.strip().isdigit()]
             if vram_values:
-                return int(vram_values[0] / (1024 ** 3))
+                return int(vram_values[0] // (1024 ** 3))
         except Exception as e:
             pass
     # AMD (Linux)
@@ -895,6 +901,7 @@ def get_vram():
             pass
         except Exception as e:
             pass
+    msg = 'Could not detect GPU VRAM Capacity!'
     return 0
 
 def get_sanitized(str, replacement="_"):
@@ -1507,7 +1514,7 @@ def convert_ebook(args):
                             os.environ["SUNO_OFFLOAD_CPU"] = 'True'
                             os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
                         vram_avail = get_vram()
-                        print(f'==================={vram_avail}===========')
+                        print(f'==================={vram_avail} {get_ram()}===========')
                         if vram_avail <= 4:
                             os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
                         msg = f"Available Processor Unit: {session['device'].upper()}"
