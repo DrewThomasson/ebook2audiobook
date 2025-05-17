@@ -131,6 +131,8 @@ Linux/Mac:
     ./ebook2audiobook.sh
     Headless mode:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file'
+    
+Tip: to add 2 seconds audio silence into your text just use "###" or "[pause]".
         ''',
         formatter_class=argparse.RawTextHelpFormatter
     )
