@@ -736,8 +736,6 @@ def get_sentences(text, lang):
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
-        else:
-            return list(text)
 
     def join_ideogramms(idg_list):
         buffer = ''
