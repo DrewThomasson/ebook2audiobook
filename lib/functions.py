@@ -482,8 +482,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
         # Replace math symbols with words
         text = math2word(text, lang, lang_iso1, tts_engine)
-        # replace ### by [pause]
-        text = text.replace('###', '[pause]')
     return text
 
 def convert_to_epub(session):
@@ -790,17 +788,6 @@ def get_sentences(text, lang):
 
     def split_sentence(sentence):
         sentence = sentence.strip()
-        # Handle ‡pause‡ as a sentence delimiter
-        if '‡pause‡' in sentence:
-            parts = sentence.split('‡pause‡')
-            result = []
-            for i, part in enumerate(parts):
-                part = part.strip()
-                if part:
-                    result.extend(split_sentence(part))
-                if i < len(parts) - 1:
-                    result.append('‡pause‡')
-            return result
         if len(sentence) <= max_chars:
             if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
@@ -995,20 +982,13 @@ def convert_chapters_to_audio(session):
                         if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
-                        tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
-                        if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
-                            tts_manager.params['sentence'] = sentence.replace('.', '— ')
+                        if tts_manager.convert_sentence_to_audio(sentence_number, sentence):                           
+                            percentage = (sentence_number / total_sentences) * 100
+                            t.set_description(f'Converting {percentage:.2f}%')
+                            msg = f"\nSentence: {sentence}"
+                            print(msg)
                         else:
-                            tts_manager.params['sentence'] = sentence
-                        if tts_manager.params['sentence']:
-                            if tts_manager.params['sentence'] != "":
-                                if tts_manager.convert_sentence_to_audio():                           
-                                    percentage = (sentence_number / total_sentences) * 100
-                                    t.set_description(f'Converting {percentage:.2f}%')
-                                    msg = f"\nSentence: {tts_manager.params['sentence']}"
-                                    print(msg)
-                                else:
-                                    return False
+                            return False
                         t.update(1)
                     if progress_bar is not None:
                         progress_bar(sentence_number / total_sentences)
