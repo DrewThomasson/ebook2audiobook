@@ -4,6 +4,8 @@ import torch
 from lib.classes.tts_engines.coqui import Coqui
 from lib.models import *
 
+torch.backends.cudnn.benchmark = True
+#torch.serialization.add_safe_globals(["numpy.core.multiarray.scalar"])
 _original_multinomial = torch.multinomial
 def _safe_multinomial(input, num_samples, replacement=False, *, generator=None, out=None):
 	with torch.no_grad():

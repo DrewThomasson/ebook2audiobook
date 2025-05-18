@@ -22,7 +22,9 @@ from lib.models import *
 from lib.conf import voices_dir, models_dir, default_audio_proc_format
 from lib.lang import language_tts
 
+lock = threading.Lock()
 loaded_builtin_speakers = {}
+loaded_processed_voices = {}
 
 class Coqui:
     def __init__(self, session):   
