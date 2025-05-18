@@ -627,9 +627,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_array is not None:
                 chapters.append(sentences_array)
-        #if title:
-        #    if chapters[0]:
-        #        chapters[0][0] =  f'{title} ### {chapters[0][0]}'
+        if title:
+            if chapters[0]:
+                chapters[0][0] =  f' — "{title}" . {chapters[0][0]}'
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -736,16 +736,32 @@ def get_sentences(text, lang):
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
+        else:
+            pattern_split = [re.escape(p) for p in punctuation_split_set]
+            pattern = f"({'|'.join(pattern_split)})"
+            return re.split(pattern, text)
 
     def join_ideogramms(idg_list):
         buffer = ''
-        for row in idg_list:
-            if len(buffer) + len(row) > max_chars:
-                yield buffer
-                buffer = row
-            else:
-                buffer += row
-        if buffer:
+        for token in idg_list:
+            if not token.strip():
+                continue
+            buffer += token
+            if token in punctuation_split_set:
+                if len(buffer) > max_chars:
+                    for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
+                        if part.strip() and not all(c in punctuation_split_set for c in part):
+                            yield part
+                    buffer = ''
+                else:
+                    if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+                        yield buffer
+                    buffer = ''
+            elif len(buffer) >= max_chars:
+                if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+                    yield buffer
+                buffer = ''
+        if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
             yield buffer
 
     def find_best_split_point_prioritize_punct(sentence, max_chars):
@@ -835,6 +851,7 @@ def get_sentences(text, lang):
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
+    print(sentences)
     return sentences
 
 import psutil
