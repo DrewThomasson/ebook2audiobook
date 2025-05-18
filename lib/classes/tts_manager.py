@@ -1,4 +1,5 @@
 import os
+import torch
 
 _original_multinomial = torch.multinomial
 
