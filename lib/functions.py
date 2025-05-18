@@ -746,12 +746,12 @@ def get_sentences(text, lang):
     def join_ideogramms(idg_list):
         buffer = ''
         for token in idg_list:
-            buffer_test = (len(buffer) + token)
+            buffer_test = (len(buffer) + len(token))
             if buffer_test > max_chars:
                 yield buffer
                 buffer = ''
             else:
-                buffer = buffer_test
+                buffer += token
         if buffer:
             yield buffer
 
