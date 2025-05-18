@@ -723,20 +723,16 @@ def get_sentences(text, lang):
 
     def segment_ideogramms(text):
         if lang == 'zho':
-            from snownlp import SnowNLP
             import jieba
-            sentences = SnowNLP(text).sentences
-            return [token for sentence in sentences for token in jieba.cut(sentence)]
+            return list(jieba.cut(text))
         elif lang == 'jpn':
             import MeCab
             mecab = MeCab.Tagger()
-            sentences = re.split(f"(?<=[{''.join(punctuation_split_set)}])", text)
-            return [token for sentence in sentences for token in mecab.parse(sentence).split()]
+            return mecab.parse(text).split()
         elif lang == 'kor':
             from konlpy.tag import Kkma
             kkma = Kkma()
-            sentences = re.split(f"(?<=[{''.join(punctuation_split_set)}])", text)
-            return [token for sentence in sentences for token in kkma.morphs(sentence)]
+            return kkma.morphs(text)
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
