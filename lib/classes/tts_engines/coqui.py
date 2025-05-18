@@ -438,10 +438,10 @@ class Coqui:
             audio_data = False
             audio_to_trim = False
             trim_audio_buffer = 0.001
-            out_path = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
+            out_path = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             sentence_parts = sentence.split('‡pause‡')
 
-            if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
+            if self.session['tts_engine'] == XTTSv2 or self.session['tts_engine'] == FAIRSEQ:
                 sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
 
             sample_rate = 16000 if self.session['tts_engine'] == VITS else self.params['sample_rate']
