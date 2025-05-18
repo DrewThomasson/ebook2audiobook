@@ -34,7 +34,6 @@ class TTSManager:
 
     def convert_sentence_to_audio(self, sentence_number, sentence):
         try:
-            audio_data = None
             if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
                 return Coqui.convert(sentence_number, sentence)
             else:
