@@ -746,12 +746,18 @@ def get_sentences(text, lang):
     def join_ideogramms(idg_list):
         buffer = ''
         for token in idg_list:
-            buffer_test = (len(buffer) + len(token))
-            if buffer_test > max_chars:
+            if token in punctuation_split_set:
+                if len(buffer) > max_chars:
+                    split_buffer = [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]
+                    for part in split_buffer[:-1]:
+                        yield part
+                    buffer = split_buffer[-1]
+                else:
+                    yield buffer
+                    buffer = token
+            elif len(buffer) >= max_chars:
                 yield buffer
-                buffer = ''
-            else:
-                buffer += token
+                buffer = token
         if buffer:
             yield buffer
 
