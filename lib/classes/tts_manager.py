@@ -45,7 +45,7 @@ class TTSManager:
         config_path = None
         vocab_path = None
         if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
-            from lib.classes.tts_manager import Coqui
+            from lib.classes.tts_engines.coqui import Coqui
             self.params['tts'] = Coqui(self.session)
         else:
             print('Other TTS engines coming soon!')
