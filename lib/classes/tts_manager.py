@@ -16,6 +16,7 @@ torch.multinomial = _safe_multinomial
 class TTSManager:
     def __init__(self, session):   
         self.session = session
+        self.active = False
         self._build()
  
     def _build(self):
@@ -24,7 +25,9 @@ class TTSManager:
             startTTS = Coqui(self.session)
         else:
             print('Other TTS engines coming soon!')
-        if startTTS is None:
+        if startTTS is not None:
+            self.active = True
+        else:
             error = 'TTS engine could not be created!'
             print(error)
 
