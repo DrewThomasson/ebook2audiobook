@@ -746,19 +746,12 @@ def get_sentences(text, lang):
     def join_ideogramms(idg_list):
         buffer = ''
         for token in idg_list:
-            buffer += token
-            if token in punctuation_split_set:
-                if len(buffer) > max_chars:
-                    split_buffer = [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]
-                    for part in split_buffer[:-1]:
-                        yield part
-                    buffer = split_buffer[-1]
-                else:
-                    yield buffer
-                    buffer = ''
-            elif len(buffer) >= max_chars:
+            buffer_test = (len(buffer) + token)
+            if buffer_test > max_chars:
                 yield buffer
                 buffer = ''
+            else:
+                buffer = buffer_test
         if buffer:
             yield buffer
 
@@ -833,8 +826,8 @@ def get_sentences(text, lang):
     pattern_split = [re.escape(p) for p in punctuation_split_set]
     pattern = f"({'|'.join(pattern_split)})"
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-        raw_list = segment_ideogramms(text)
-        #raw_list = list(join_ideogramms(ideogramm_list))
+        ideogramm_list = segment_ideogramms(text)
+        raw_list = list(join_ideogramms(ideogramm_list))
     else:
         raw_list = re.split(pattern, text)
     raw_list = combine_punctuation(raw_list)
