@@ -450,8 +450,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(r'\bok\b', '"Okhey"', text, flags=re.IGNORECASE)
     # Replace parentheses with double quotes
     text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
-    # replace roman numbers by digits
-    text = replace_roman_numbers(text, lang)
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split))
     # Reduce multiple consecutive punctuations
@@ -689,6 +687,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
             elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
+                    # replace roman numbers by digits
+                    raw_text = replace_roman_numbers(raw_text, lang)
                     text_array.append(f'— "{raw_text}". ‡pause‡')
             else:
                 raw_text = tag.get_text(strip=True)
@@ -937,7 +937,7 @@ def convert_chapters_to_audio(session):
         progress_bar = None
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
-        tts_manager = TTSManager(session, is_gui_process)
+        tts_manager = TTSManager(session)
         if not tts_manager.params['tts']:
             error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
             print(error)
