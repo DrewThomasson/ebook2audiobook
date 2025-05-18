@@ -508,6 +508,7 @@ class TTSManager:
                             self.params['gpt_cond_latent'], self.params['speaker_embedding'] = self.params['tts'].get_conditioning_latents(audio_path=[self.params['voice_path']])  
                         loaded_processed_voices[processed_voice_key] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
                     with torch.no_grad():
+                        print(f"------------{self.params['sentence']}-----------")
                         result = self.params['tts'].inference(
                             text=self.params['sentence'],
                             language=self.session['language_iso1'],

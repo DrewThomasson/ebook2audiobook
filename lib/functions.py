@@ -849,7 +849,6 @@ def get_sentences(text, lang):
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
-    print(sentences)
     return sentences
 
 import psutil
