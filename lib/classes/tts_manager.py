@@ -31,11 +31,11 @@ class TTSManager:
             error = 'TTS engine could not be created!'
             print(error)
 
-    def convert_sentence_to_audio(self):
+    def convert_sentence_to_audio(self, sentence_number, sentence):
         try:
             audio_data = None
             if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
-                return Coqui.convert()
+                return Coqui.convert(sentence_number, sentence)
             else:
                 print('Other TTS engines coming soon!')    
                 return False
