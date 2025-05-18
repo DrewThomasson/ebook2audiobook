@@ -730,12 +730,12 @@ def get_sentences(text, lang):
         elif lang == 'jpn':
             import MeCab
             mecab = MeCab.Tagger()
-            sentences = re.split(f"(?<=[{''.join(punctuation_split)}])", text)
+            sentences = re.split(f"(?<=[{''.join(punctuation_list)}])", text)
             return [token for sentence in sentences for token in mecab.parse(sentence).split()]
         elif lang == 'kor':
             from konlpy.tag import Kkma
             kkma = Kkma()
-            sentences = re.split(f"(?<=[{''.join(punctuation_split)}])", text)
+            sentences = re.split(f"(?<=[{''.join(punctuation_list)}])", text)
             return [token for sentence in sentences for token in kkma.morphs(sentence)]
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             from pythainlp.tokenize import word_tokenize
@@ -745,12 +745,20 @@ def get_sentences(text, lang):
 
     def join_ideogramms(idg_list):
         buffer = ''
-        for row in idg_list:
-            if len(buffer) + len(row) > max_chars:
+        for token in idg_list:
+            buffer += token
+            if token in punctuation_list:
+                if len(buffer) > max_chars:
+                    split_buffer = [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]
+                    for part in split_buffer[:-1]:
+                        yield part
+                    buffer = split_buffer[-1]
+                else:
+                    yield buffer
+                    buffer = ''
+            elif len(buffer) >= max_chars:
                 yield buffer
-                buffer = row
-            else:
-                buffer += row
+                buffer = ''
         if buffer:
             yield buffer
 
