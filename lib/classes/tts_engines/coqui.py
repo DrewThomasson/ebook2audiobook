@@ -43,22 +43,17 @@ class Coqui:
             }.items()
             if self.session.get(key) is not None
         }
-        self.coquiAPI = None
-        self.XttsConfig = None
-        self.Xtts = None
+        self.sentences_total_time = 0.0
+        self.sentence_idx = 1
+        self.vtt_path = os.path.splitext(session['epub_path'])[0] + '.vtt'
+        self.coquiAPI = coquiAPI
+        self.XttsConfig = XttsConfig
+        self.Xtts = Xtts
         self._build()
  
     def _build(self):
         model_path = None
         config_path = None
-        vocab_path = None
-        if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
-            from TTS.api import TTS as coquiAPI
-            from TTS.tts.configs.xtts_config import XttsConfig
-            from TTS.tts.models.xtts import Xtts
-            self.coquiAPI = coquiAPI
-            self.XttsConfig = XttsConfig
-            self.Xtts = Xtts
         tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
         self.params['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
         if self.session['language'] in language_tts[XTTSv2].keys():

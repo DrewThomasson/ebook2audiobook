@@ -16,22 +16,15 @@ torch.multinomial = _safe_multinomial
 class TTSManager:
     def __init__(self, session):   
         self.session = session
-        self.params = {}
-        self.sentences_total_time = 0.0
-        self.sentence_idx = 1
-        self.vtt_path = os.path.splitext(session['epub_path'])[0] + '.vtt'
         self._build()
  
     def _build(self):
-        model_path = None
-        config_path = None
-        vocab_path = None
         if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
             from lib.classes.tts_engines.coqui import Coqui
-            self.params['tts'] = Coqui(self.session)
+            startTTS = Coqui(self.session)
         else:
             print('Other TTS engines coming soon!')
-        if self.params['tts'] is None:
+        if startTTS is None:
             error = 'TTS engine could not be created!'
             print(error)
 
