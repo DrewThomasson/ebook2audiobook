@@ -1,6 +1,7 @@
 import os
 import torch
 
+from lib.classes.tts_engines.coqui import Coqui
 from lib.models import *
 
 _original_multinomial = torch.multinomial
