@@ -629,7 +629,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 chapters.append(sentences_array)
         if title:
             if chapters[0]:
-                chapters[0][0] =  f' — "{title}" . {chapters[0][0]}'
+                chapters[0][0] =  f'{title} ### {chapters[0][0]}'
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'

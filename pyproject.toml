@@ -41,7 +41,6 @@ dependencies = [
 	"pypinyin",
 	"ray",
 	"regex",
-	"snownlp",
 	"translate",
 	"tqdm",
 	"unidic",

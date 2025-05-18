@@ -22,7 +22,6 @@ PyOpenGL
 pypinyin
 ray
 regex
-snownlp
 translate
 tqdm
 unidic
