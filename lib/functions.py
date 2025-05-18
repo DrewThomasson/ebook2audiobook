@@ -2834,6 +2834,7 @@ def web_interface(args):
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
         ).then(
+            fn=None,
             js="()=>redraw_audiobook_player();"
         )
         gr_audiobook_del_btn.click(
