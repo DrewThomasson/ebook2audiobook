@@ -1858,6 +1858,42 @@ def web_interface(args):
                     color: #ffffff !important;
                 }
             </style>
+            <script>
+                function redraw_audiobook_player(){
+                    try{
+                        let intervalId = setInterval(()=>{
+                            try{
+                                const audio = document.querySelector('#audiobook_player audio');
+                                 if(audio){
+                                    const url = new URL(window.location);
+                                    const theme = url.searchParams.get('__theme');
+                                    let osTheme;
+                                    let audioFilter = '';
+                                    if(theme){
+                                        if(theme == 'dark'){
+                                            audioFilter = 'invert(1) hue-rotate(180deg)';
+                                        }
+                                    }else{
+                                        osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
+                                        if(osTheme){
+                                            audioFilter = 'invert(1) hue-rotate(180deg)';
+                                        }
+                                    }
+                                    if(!audio.style.transition){
+                                        audio.style.transition = 'filter 1s ease';
+                                    }
+                                    audio.style.filter = audioFilter;
+                                    clearInterval(intervalId);
+                                }
+                            }catch(e){
+                                console.log(' interface.load setInterval error:', e);
+                            }
+                        },100);
+                    }catch(e){
+                        console.log("redraw_audiobook_player error: "+e.toString());
+                    }
+                }
+            </script>
             '''
         )
         main_markdown = gr.Markdown(
@@ -2797,6 +2833,8 @@ def web_interface(args):
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
+        ).then(
+            js="()=>redraw_audiobook_player();"
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -2918,34 +2956,7 @@ def web_interface(args):
             js="""
             () => {
                 try{
-                    let intervalId = setInterval(()=>{
-                        try{
-                            const audio = document.querySelector('#audiobook_player audio');
-                             if(audio){
-                                const url = new URL(window.location);
-                                const theme = url.searchParams.get('__theme');
-                                let osTheme;
-                                let audioFilter = '';
-                                if(theme){
-                                    if(theme == 'dark'){
-                                        audioFilter = 'invert(1) hue-rotate(180deg)';
-                                    }
-                                }else{
-                                    osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
-                                    if(osTheme){
-                                        audioFilter = 'invert(1) hue-rotate(180deg)';
-                                    }
-                                }
-                                if(!audio.style.transition){
-                                    audio.style.transition = 'filter 1s ease';
-                                }
-                                audio.style.filter = audioFilter;
-                                clearInterval(intervalId);
-                            }
-                        }catch(e){
-                            console.log(' interface.load setInterval error:', e);
-                        }
-                    },100);                        
+                    redraw_audiobook_player();
                     /*
                     // heartbeat, can be use for connection status
                     // with gradio server side
