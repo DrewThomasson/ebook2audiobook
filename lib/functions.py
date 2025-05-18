@@ -746,19 +746,24 @@ def get_sentences(text, lang):
     def join_ideogramms(idg_list):
         buffer = ''
         for token in idg_list:
+            if not token.strip():
+                continue
+            buffer += token
             if token in punctuation_split_set:
                 if len(buffer) > max_chars:
-                    split_buffer = [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]
-                    for part in split_buffer[:-1]:
-                        yield part
-                    buffer = split_buffer[-1]
+                    for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
+                        if part.strip() and not all(c in punctuation_split_set for c in part):
+                            yield part
+                    buffer = ''
                 else:
-                    yield buffer
-                    buffer = token
+                    if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+                        yield buffer
+                    buffer = ''
             elif len(buffer) >= max_chars:
-                yield buffer
-                buffer = token
-        if buffer:
+                if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+                    yield buffer
+                buffer = ''
+        if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
             yield buffer
 
     def find_best_split_point_prioritize_punct(sentence, max_chars):
