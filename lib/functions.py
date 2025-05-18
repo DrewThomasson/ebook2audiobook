@@ -713,7 +713,7 @@ def get_sentences(text, lang):
         for token in tokens[1:]:
             if (
                 not any(char.isalpha() for char in token)
-                and all(char.isspace() or char in punctuation_list for char in token)
+                and all(char.isspace() or char in punctuation_list_set for char in token)
                 and len(result[-1]) + len(token) <= max_chars
             ):
                 result[-1] += token
@@ -723,28 +723,42 @@ def get_sentences(text, lang):
 
     def segment_ideogramms(text):
         if lang == 'zho':
+            from snownlp import SnowNLP
             import jieba
-            return list(jieba.cut(text))
+            sentences = SnowNLP(text).sentences
+            return [token for sentence in sentences for token in jieba.cut(sentence)]
         elif lang == 'jpn':
             import MeCab
             mecab = MeCab.Tagger()
-            return mecab.parse(text).split()
+            sentences = re.split(f"(?<=[{''.join(punctuation_split_set)}])", text)
+            return [token for sentence in sentences for token in mecab.parse(sentence).split()]
         elif lang == 'kor':
             from konlpy.tag import Kkma
             kkma = Kkma()
-            return kkma.morphs(text)
+            sentences = re.split(f"(?<=[{''.join(punctuation_split_set)}])", text)
+            return [token for sentence in sentences for token in kkma.morphs(sentence)]
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
+        else:
+            return list(text)
 
     def join_ideogramms(idg_list):
         buffer = ''
-        for row in idg_list:
-            if len(buffer) + len(row) > max_chars:
+        for token in idg_list:
+            buffer += token
+            if token in punctuation_split_set:
+                if len(buffer) > max_chars:
+                    split_buffer = [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]
+                    for part in split_buffer[:-1]:
+                        yield part
+                    buffer = split_buffer[-1]
+                else:
+                    yield buffer
+                    buffer = ''
+            elif len(buffer) >= max_chars:
                 yield buffer
-                buffer = row
-            else:
-                buffer += row
+                buffer = ''
         if buffer:
             yield buffer
 
@@ -816,7 +830,7 @@ def get_sentences(text, lang):
         return result
 
     max_chars = language_mapping[lang]['max_chars'] - 2
-    pattern_split = [re.escape(p) for p in punctuation_split]
+    pattern_split = [re.escape(p) for p in punctuation_split_set]
     pattern = f"({'|'.join(pattern_split)})"
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         ideogramm_list = segment_ideogramms(text)

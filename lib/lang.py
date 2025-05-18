@@ -99,6 +99,7 @@ punctuation_list = [
     # Miscellaneous punctuation (pause-inducing, used globally)
     '—', '‽'
 ]
+punctuation_list_set = set(punctuation_list)
 
 punctuation_split = [
     # Common punctuation in Western languages
@@ -124,6 +125,7 @@ punctuation_split = [
     # Miscellaneous punctuation (pause-inducing, used globally)
     '—', '!', '?', ':', ';'
 ]
+punctuation_split_set = set(punctuation_split)
 
 emojis_array = [
 	r"\U0001F600-\U0001F64F",  # Emoticons
