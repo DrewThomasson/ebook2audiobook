@@ -53,41 +53,6 @@ class TTSManager:
             error = 'TTS engine could not be created!'
             print(error)
 
-    def _tensor_type(self, audio_data):
-        if isinstance(audio_data, torch.Tensor):
-            return audio_data
-        elif isinstance(audio_data, np.ndarray):  
-            return torch.from_numpy(audio_data).float()
-        elif isinstance(audio_data, list):  
-            return torch.tensor(audio_data, dtype=torch.float32)
-        else:
-            raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
-
-    def _append_sentence_to_vtt(self, sentence_obj, path):
-        def format_timestamp(seconds):
-            m, s = divmod(seconds, 60)
-            h, m = divmod(m, 60)
-            return f"{int(h):02}:{int(m):02}:{s:06.3f}"
-
-        index = 1
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-                for line in lines:
-                    if "-->" in line:
-                        index += 1
-        if index > 1 and "resume_check" in sentence_obj and sentence_obj["resume_check"] < index:
-            return index  # Already written
-        if not os.path.exists(path):
-            with open(path, "w", encoding="utf-8") as f:
-                f.write("WEBVTT\r\n\r\n")
-        with open(path, "a", encoding="utf-8") as f:
-            start = format_timestamp(sentence_obj["start"])
-            end = format_timestamp(sentence_obj["end"])
-            text = sentence_obj["text"].replace("\n", " ").strip()
-            f.write(f"{start} --> {end}\n{text}\r\n\r\n")
-        return index + 1
-
     def convert_sentence_to_audio(self):
         try:
             audio_data = None
