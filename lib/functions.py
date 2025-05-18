@@ -2835,7 +2835,7 @@ def web_interface(args):
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
         ).then(
             fn=None,
-            js="()=>redraw_audiobook_player();"
+            js="()=>redraw_audiobook_player()"
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -2958,27 +2958,6 @@ def web_interface(args):
             () => {
                 try{
                     redraw_audiobook_player();
-                    /*
-                    // heartbeat, can be use for connection status
-                    // with gradio server side
-                    setInterval(()=>{
-                        try{
-                            const data = window.localStorage.getItem('data');
-                            if (data) {
-                                const obj = JSON.parse(data);
-                                if (obj.id) {
-                                    fetch('/api/heartbeat', {
-                                        method: 'POST',
-                                        headers: {'Content-Type': 'application/json'},
-                                        body: JSON.stringify({id: obj.id})
-                                    });
-                                }
-                            }
-                        }catch(e){
-                            console.log(' interface.load setInterval error:', e);
-                        }
-                    },5000);
-                    */
                     // Return localStorage item to Python
                     const data = window.localStorage.getItem('data');
                     if (data) {
