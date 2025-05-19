@@ -460,6 +460,21 @@ class Coqui:
             f.write(f"{start} --> {end}\n{text}\n\n")
         return index + 1
 
+    def _is_valid(self, audio_data):
+        if audio_data is None:
+            return False
+        if isinstance(audio_data, torch.Tensor):
+            return audio_data.numel() > 0
+        if isinstance(audio, (list, tuple)):
+            return len(audio_data) > 0
+        try:
+            import numpy as np
+            if isinstance(audio_data, np.ndarray):
+                return audio_data.size > 0
+        except ImportError:
+            pass
+        return False
+
     def convert(self, sentence_number, sentence):
         try:
             audio_data = False
@@ -697,7 +712,7 @@ class Coqui:
                             language=language,
                             **speaker_argument
                         )
-                if audio_part.numel() > 0:
+                if self._is_valid(audio_data):
                     sourceTensor = self._tensor_type(audio_part)
                     audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                     audio_segments.append(audio_tensor)
