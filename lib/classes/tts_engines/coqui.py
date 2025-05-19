@@ -597,8 +597,8 @@ class Coqui:
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
-                            if settings['voice_path'] in settings['semitomes'].keys():
-                                semitones = settings['semitomes'][settings['voice_path']]
+                            if settings['voice_path'] in settings['semitones'].keys():
+                                semitones = settings['semitones'][settings['voice_path']]
                             else:
                                 voice_path_gender = self._detect_gender(settings['voice_path'])
                                 voice_builtin_gender = self._detect_gender(tmp_in_wav)
@@ -610,7 +610,7 @@ class Coqui:
                                     print(msg)
                                 else:
                                     semitones = 0
-                                settings['semitomes'][settings['voice_path']] = semitones
+                                settings['semitones'][settings['voice_path']] = semitones
                             if semitones > 0:
                                 try:
                                     cmd = [
@@ -655,8 +655,8 @@ class Coqui:
                                 text=text_part,
                                 file_path=tmp_in_wav
                             )
-                            if settings['voice_path'] in settings['semitomes'].keys():
-                                semitones = settings['semitomes'][settings['voice_path']]
+                            if settings['voice_path'] in settings['semitones'].keys():
+                                semitones = settings['semitones'][settings['voice_path']]
                             else:
                                 voice_path_gender = self._detect_gender(settings['voice_path'])
                                 voice_builtin_gender = self._detect_gender(tmp_in_wav)
@@ -664,12 +664,11 @@ class Coqui:
                                 print(msg)
                                 if voice_builtin_gender != voice_path_gender:
                                     semitones = -4 if voice_path_gender == 'male' else 4
-                                    settings['latent_embedding'] = semitones
                                     msg = f"Adapting builtin voice frequencies from the clone voice..."
                                     print(msg)
                                 else:
                                     semitones = 0
-                                settings['semitomes'][settings['voice_path']] = semitones
+                                settings['semitones'][settings['voice_path']] = semitones
                             if semitones > 0:
                                 try:
                                     cmd = [
