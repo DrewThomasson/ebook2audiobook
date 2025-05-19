@@ -465,7 +465,7 @@ class Coqui:
             return False
         if isinstance(audio_data, torch.Tensor):
             return audio_data.numel() > 0
-        if isinstance(audio, (list, tuple)):
+        if isinstance(audio_data, (list, tuple)):
             return len(audio_data) > 0
         try:
             import numpy as np
@@ -712,7 +712,7 @@ class Coqui:
                             language=language,
                             **speaker_argument
                         )
-                if self._is_valid(audio_data):
+                if self._is_valid(audio_part):
                     sourceTensor = self._tensor_type(audio_part)
                     audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                     audio_segments.append(audio_tensor)
