@@ -32,9 +32,14 @@ def _safe_multinomial(input, num_samples, replacement=False, *, generator=None, 
 		input = torch.nan_to_num(input, nan=0.0, posinf=0.0, neginf=0.0)
 		input = torch.clamp(input, min=0.0)
 		sum_input = input.sum(dim=-1, keepdim=True)
-		input = input / (sum_input + 1e-9)  # Normalize
+		# Handle degenerate cases: fallback to uniform
+		mask = (sum_input <= 0)
+		if mask.any():
+			input[mask.expand_as(input)] = 1.0  # fallback to uniform distribution
+			sum_input = input.sum(dim=-1, keepdim=True)
+		input = input / sum_input
 	return _original_multinomial(input, num_samples, replacement=replacement, generator=generator, out=out)
-    
+
 torch.multinomial = _safe_multinomial
 
 lock = threading.Lock()
@@ -542,8 +547,8 @@ class Coqui:
                                 speaker_embedding=self.params['speaker_embedding'],
                                 **self.fine_tuned_params
                             )
-                        audio_part = result.get('wav')
-                        if audio_part is not None:
+                        if self._is_valid(audio_part):
+                            audio_part = result.get('wav')
                             audio_part = audio_part.tolist()
                     elif self.session['tts_engine'] == BARK:
                         trim_audio_buffer = 0.004
