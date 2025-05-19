@@ -2149,8 +2149,7 @@ def web_interface(args):
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
             session['audiobook'] = selected
-            #visible = True if len(audiobook_options) else False
-            visible = True
+            visible = True if len(audiobook_options) else False
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
 
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
