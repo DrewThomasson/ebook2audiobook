@@ -43,7 +43,7 @@ def _safe_multinomial(input, num_samples, replacement=False, *, generator=None, 
 torch.multinomial = _safe_multinomial
 
 lock = threading.Lock()
-xtts_builtin_speakers = {}
+xtts_builtin_speakers_list = None
 
 class Coqui:
     def __init__(self, session):   
@@ -70,7 +70,6 @@ class Coqui:
         self.sentences_total_time = 0.0
         self.sentence_idx = 1
         self.params = {XTTSv2: {"latent_embedding":{}}, BARK: {}, VITS: {"semitones": {}}, FAIRSEQ: {"semitones": {}}, YOURTTS: {}}  
-        self.xtts_builtin_speakers_list = None
         self.vtt_path = None
         self._build()
  
