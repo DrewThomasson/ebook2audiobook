@@ -158,6 +158,7 @@ class SessionContext:
                 "speed": default_xtts_settings['speed'],
                 "enable_text_splitting": default_xtts_settings['enable_text_splitting'],
                 "event": None,
+                "final_name": None,
                 "output_format": default_output_format,
                 "metadata": {
                     "title": None, 
@@ -447,11 +448,9 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace multiple  and spaces with single space
     text = re.sub(r'[     ]+', ' ', text)
     # Replace ok by 'Owkey'
-    text = re.sub(r'\bok\b', '"Ok-hey"', text, flags=re.IGNORECASE)
+    text = re.sub(r'\bok\b', '"Okhey"', text, flags=re.IGNORECASE)
     # Replace parentheses with double quotes
     text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
-    # replace roman numbers by digits
-    text = replace_roman_numbers(text, lang)
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split))
     # Reduce multiple consecutive punctuations
@@ -484,8 +483,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
         # Replace math symbols with words
         text = math2word(text, lang, lang_iso1, tts_engine)
-        # replace ### by [pause]
-        text = text.replace('###', '[pause]')
     return text
 
 def convert_to_epub(session):
@@ -627,9 +624,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_array is not None:
                 chapters.append(sentences_array)
-        if title:
-            if chapters[0]:
-                chapters[0][0] =  f' — "{title}" . {chapters[0][0]}'
+        #if title:
+        #    if chapters[0]:
+        #        chapters[0][0] =  f' — "{title}" . {chapters[0][0]}'
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -689,6 +686,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
             elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
+                    # replace roman numbers by digits
+                    raw_text = replace_roman_numbers(raw_text, lang)
                     text_array.append(f'— "{raw_text}". ‡pause‡')
             else:
                 raw_text = tag.get_text(strip=True)
@@ -698,7 +697,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine)
-            if text.strip():
+            if text.strip() and len(text.strip()) > 1:
                 chapter_sentences = get_sentences(text, lang)
         return chapter_sentences
     except Exception as e:
@@ -713,7 +712,7 @@ def get_sentences(text, lang):
         for token in tokens[1:]:
             if (
                 not any(char.isalpha() for char in token)
-                and all(char.isspace() or char in punctuation_list for char in token)
+                and all(char.isspace() or char in punctuation_list_set for char in token)
                 and len(result[-1]) + len(token) <= max_chars
             ):
                 result[-1] += token
@@ -736,16 +735,32 @@ def get_sentences(text, lang):
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
+        else:
+            pattern_split = [re.escape(p) for p in punctuation_split_set]
+            pattern = f"({'|'.join(pattern_split)})"
+            return re.split(pattern, text)
 
     def join_ideogramms(idg_list):
         buffer = ''
-        for row in idg_list:
-            if len(buffer) + len(row) > max_chars:
-                yield buffer
-                buffer = row
-            else:
-                buffer += row
-        if buffer:
+        for token in idg_list:
+            if not token.strip():
+                continue
+            buffer += token
+            if token in punctuation_split_set:
+                if len(buffer) > max_chars:
+                    for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
+                        if part.strip() and not all(c in punctuation_split_set for c in part):
+                            yield part
+                    buffer = ''
+                else:
+                    if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+                        yield buffer
+                    buffer = ''
+            elif len(buffer) >= max_chars:
+                if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+                    yield buffer
+                buffer = ''
+        if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
             yield buffer
 
     def find_best_split_point_prioritize_punct(sentence, max_chars):
@@ -774,17 +789,6 @@ def get_sentences(text, lang):
 
     def split_sentence(sentence):
         sentence = sentence.strip()
-        # Handle ‡pause‡ as a sentence delimiter
-        if '‡pause‡' in sentence:
-            parts = sentence.split('‡pause‡')
-            result = []
-            for i, part in enumerate(parts):
-                part = part.strip()
-                if part:
-                    result.extend(split_sentence(part))
-                if i < len(parts) - 1:
-                    result.append('‡pause‡')
-            return result
         if len(sentence) <= max_chars:
             if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
@@ -816,7 +820,7 @@ def get_sentences(text, lang):
         return result
 
     max_chars = language_mapping[lang]['max_chars'] - 2
-    pattern_split = [re.escape(p) for p in punctuation_split]
+    pattern_split = [re.escape(p) for p in punctuation_split_set]
     pattern = f"({'|'.join(pattern_split)})"
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         ideogramm_list = segment_ideogramms(text)
@@ -837,6 +841,12 @@ def get_sentences(text, lang):
         sentences.extend(split_sentence(sentence.strip()))
     return sentences
 
+import psutil
+
+def get_ram():
+    vm = psutil.virtual_memory()
+    return vm.total // (1024 ** 3)
+
 def get_vram():
     os_name = platform.system()
     # NVIDIA (Cross-Platform: Windows, Linux, macOS)
@@ -846,7 +856,7 @@ def get_vram():
         handle = nvmlDeviceGetHandleByIndex(0)  # First GPU
         info = nvmlDeviceGetMemoryInfo(handle)
         vram = info.total
-        return int(vram / (1024 ** 3))  # Convert to GB
+        return int(vram // (1024 ** 3))  # Convert to GB
     except ImportError:
         pass
     except Exception as e:
@@ -859,7 +869,7 @@ def get_vram():
             lines = output.stdout.splitlines()
             vram_values = [int(line.strip()) for line in lines if line.strip().isdigit()]
             if vram_values:
-                return int(vram_values[0] / (1024 ** 3))
+                return int(vram_values[0] // (1024 ** 3))
         except Exception as e:
             pass
     # AMD (Linux)
@@ -895,6 +905,7 @@ def get_vram():
             pass
         except Exception as e:
             pass
+    msg = 'Could not detect GPU VRAM Capacity!'
     return 0
 
 def get_sanitized(str, replacement="_"):
@@ -913,8 +924,10 @@ def convert_chapters_to_audio(session):
         progress_bar = None
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
-        tts_manager = TTSManager(session, is_gui_process)
-        if tts_manager.params['tts'] is None:
+        tts_manager = TTSManager(session)
+        if not tts_manager.active:
+            error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
+            print(error)
             return False
         resume_chapter = 0
         missing_chapters = []
@@ -951,7 +964,7 @@ def convert_chapters_to_audio(session):
         total_chapters = len(session['chapters'])
         total_sentences = sum(len(array) for array in session['chapters'])
         sentence_number = 0
-        with tqdm(total=total_sentences, desc='convertsion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+        with tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
             for x in range(0, total_chapters):
                 chapter_num = x + 1
@@ -970,20 +983,13 @@ def convert_chapters_to_audio(session):
                         if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
-                        tts_manager.params['sentence_audio_file'] = os.path.join(session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')      
-                        if session['tts_engine'] == XTTSv2 or session['tts_engine'] == FAIRSEQ:
-                            tts_manager.params['sentence'] = sentence.replace('.', '— ')
+                        if tts_manager.convert_sentence_to_audio(sentence_number, sentence):                           
+                            percentage = (sentence_number / total_sentences) * 100
+                            t.set_description(f'Converting {percentage:.2f}%')
+                            msg = f"\nSentence: {sentence}"
+                            print(msg)
                         else:
-                            tts_manager.params['sentence'] = sentence
-                        if tts_manager.params['sentence']:
-                            if tts_manager.params['sentence'] != "":
-                                if tts_manager.convert_sentence_to_audio():                           
-                                    percentage = (sentence_number / total_sentences) * 100
-                                    t.set_description(f'Converting {percentage:.2f}%')
-                                    msg = f"\nSentence: {tts_manager.params['sentence']}"
-                                    print(msg)
-                                else:
-                                    return False
+                            return False
                         t.update(1)
                     if progress_bar is not None:
                         progress_bar(sentence_number / total_sentences)
@@ -1225,9 +1231,6 @@ def combine_audio_chapters(session):
                     print(line, end='')  # Print each line of stdout
                 process.wait()
                 if process.returncode == 0:
-                    vtt_temp_path = os.path.splitext(session['epub_path'])[0] + '.vtt'
-                    vtt_final_path = os.path.splitext(ffmpeg_final_file)[0] + '.vtt'
-                    shutil.copy(vtt_temp_path, vtt_final_path)
                     return True
                 else:
                     error = process.returncode
@@ -1248,8 +1251,7 @@ def combine_audio_chapters(session):
             metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
             if assemble_segments():
                 if generate_ffmpeg_metadata():
-                    final_name = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
-                    final_file = os.path.join(session['audiobooks_dir'], final_name)                       
+                    final_file = os.path.join(session['audiobooks_dir'], session['final_name'])                       
                     if export_audio():
                         return final_file
         else:
@@ -1491,19 +1493,22 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
                                 msg = 'GPU is not available on your device!'
                                 print(msg)
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
+                                os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
                                 msg = 'MPS is not available on your device!'
                                 print(msg)
                         else:
-                            os.environ["SUNO_OFFLOAD_CPU"] = 'True'
-                        if get_vram() <= 4:
-                            os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
+                            os.environ["SUNO_OFFLOAD_CPU"] = 'true'
+                            os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
+                        vram_avail = get_vram()
+                        if vram_avail <= 4:
+                            os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
                         msg = f"Available Processor Unit: {session['device'].upper()}"
                         print(msg)
                         if default_xtts_settings['use_deepspeed'] == True:
@@ -1526,7 +1531,7 @@ def convert_ebook(args):
                                     for value, attributes in data:
                                         metadata[key] = value
                             metadata['language'] = session['language']
-                            metadata['title'] = os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ') if not metadata['title'] else metadata['title']
+                            metadata['title'] = metadata['title'] if metadata['title'] else os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ')
                             metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                             session['metadata'] = metadata
                             
@@ -1544,6 +1549,7 @@ def convert_ebook(args):
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters_to_audio(session):
                                         final_file = combine_audio_chapters(session)               
@@ -1693,7 +1699,7 @@ def web_interface(args):
 
     theme = gr.themes.Origin(
         primary_hue='green',
-        secondary_hue='orange',
+        secondary_hue='amber',
         neutral_hue='gray',
         radius_size='lg',
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
@@ -1790,8 +1796,23 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
+                .selected {
+                    color: orange !important;
+                }
+                #conversion_progress_bar div[role="progressbar"] {
+                    background-color: orange !important;
+                }
+                #slider_speed input[type=range]::-webkit-slider-runnable-track {
+                    background-color: orange !important;
+                }
+                #slider_speed input[type=range]::-moz-range-progress {
+                    background-color: orange !important;
+                }
+                #slider_speed input[type=range]::-moz-range-track {
+                    background-color: orange !important;
+                }
                 #component-8, #component-31, #component-15 {
-                    height: 140px !important;
+                    height: 140px !important !important;
                 }
                 #component-31 [aria-label="Clear"], #component-15 [aria-label="Clear"] {
                     display: none !important;
@@ -1857,14 +1878,13 @@ def web_interface(args):
             <h1 style="line-height: 0.7">Ebook2Audiobook v{prog_version}</h1>
             <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" style="line-height:0">https://github.com/DrewThomasson/ebook2audiobook</a>
             <div style="line-height: 1.3;">
-                Multiuser, multiprocessing tasks on a geo cluster to share the conversion to the Grid<br/>
+                Multiuser, multiprocessing TTS GUI and Headless application server<br/>
                 Convert eBooks into immersive audiobooks with realistic TTS model voices.<br/>
             </div>
             '''
         )
         with gr.Tabs():
-            gr_tab_main = gr.TabItem('Main Parameters')
-            
+            gr_tab_main = gr.TabItem('Main Parameters', elem_classes='tab_item')
             with gr_tab_main:
                 with gr.Row():
                     with gr.Column(scale=3):
@@ -1897,8 +1917,7 @@ def web_interface(args):
                         with gr.Group():
                             gr_session = gr.Textbox(label='Session', interactive=False)
                         gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
-            gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', visible=visible_gr_tab_preferences)
-            
+            gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', elem_classes='tab_item', visible=visible_gr_tab_preferences)           
             with gr_tab_preferences:
                 gr.Markdown(
                     '''
@@ -1961,7 +1980,8 @@ def web_interface(args):
                     minimum=0.5, 
                     maximum=3.0, 
                     step=0.1, 
-                    value=float(default_xtts_settings['speed']), 
+                    value=float(default_xtts_settings['speed']),
+                    elem_id='slider_speed',
                     info='Adjusts how fast the narrator will speak.'
                 )
                 gr_enable_text_splitting = gr.Checkbox(
@@ -1970,12 +1990,11 @@ def web_interface(args):
                     info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                     visible=False
                 )
-    
         gr_state = gr.State(value={"hash": None})
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
-        gr_conversion_progress = gr.Textbox(label='Progress')
+        gr_conversion_progress = gr.Textbox(label='Progress', elem_id="conversion_progress_bar")
         gr_group_audiobook_list = gr.Group(visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(label='Audiobook', elem_id='audiobook_text', interactive=False, visible=True)
@@ -2130,8 +2149,7 @@ def web_interface(args):
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
             session['audiobook'] = selected
-            #visible = True if len(audiobook_options) else False
-            visible = True
+            visible = True if len(audiobook_options) else False
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
 
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
@@ -2789,6 +2807,9 @@ def web_interface(args):
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
+        ).then(
+            fn=None,
+            js="()=>window.redraw_audiobook_player()"
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -2909,66 +2930,56 @@ def web_interface(args):
             fn=None,
             js="""
             () => {
-                try{
-                    let intervalId = setInterval(()=>{
-                        try{
+                // Define the global function ONCE
+                if (typeof window.redraw_audiobook_player !== 'function') {
+                    window.redraw_audiobook_player = () => {
+                        try {
                             const audio = document.querySelector('#audiobook_player audio');
-                             if(audio){
+                            if (audio) {
                                 const url = new URL(window.location);
                                 const theme = url.searchParams.get('__theme');
                                 let osTheme;
                                 let audioFilter = '';
-                                if(theme){
-                                    if(theme == 'dark'){
+                                if (theme) {
+                                    if (theme === 'dark') {
                                         audioFilter = 'invert(1) hue-rotate(180deg)';
-                                    }
-                                }else{
-                                    osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
-                                    if(osTheme){
+                                    } 
+                                } else {
+                                    osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                                    if (osTheme) {
                                         audioFilter = 'invert(1) hue-rotate(180deg)';
                                     }
                                 }
-                                if(!audio.style.transition){
+                                if (!audio.style.transition) {
                                     audio.style.transition = 'filter 1s ease';
                                 }
                                 audio.style.filter = audioFilter;
-                                clearInterval(intervalId);
                             }
-                        }catch(e){
-                            console.log(' interface.load setInterval error:', e);
+                        } catch (e) {
+                            console.log('redraw_audiobook_player error:', e);
                         }
-                    },100);                        
-                    /*
-                    // heartbeat, can be use for connection status
-                    // with gradio server side
-                    setInterval(()=>{
-                        try{
-                            const data = window.localStorage.getItem('data');
-                            if (data) {
-                                const obj = JSON.parse(data);
-                                if (obj.id) {
-                                    fetch('/api/heartbeat', {
-                                        method: 'POST',
-                                        headers: {'Content-Type': 'application/json'},
-                                        body: JSON.stringify({id: obj.id})
-                                    });
-                                }
-                            }
-                        }catch(e){
-                            console.log(' interface.load setInterval error:', e);
-                        }
-                    },5000);
-                    */
-                    // Return localStorage item to Python
-                    const data = window.localStorage.getItem('data');
-                    if (data) {
-                        const obj = JSON.parse(data);
-                        console.log(obj);
-                        return obj;
-                    }
-                }catch(e){
-                    console.log('Return error:', e);
+                    };
                 }
+
+                // Now safely call it after the audio element is available
+                const tryRun = () => {
+                    const audio = document.querySelector('#audiobook_player audio');
+                    if (audio && typeof window.redraw_audiobook_player === 'function') {
+                        window.redraw_audiobook_player();
+                    } else {
+                        setTimeout(tryRun, 100);
+                    }
+                };
+                tryRun();
+
+                // Return localStorage data if needed
+                try {
+                    const data = window.localStorage.getItem('data');
+                    if (data) return JSON.parse(data);
+                } catch (e) {
+                    console.log("JSON parse error:", e);
+                }
+
                 return null;
             }
             """,
