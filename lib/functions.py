@@ -1798,17 +1798,20 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
+                #conversion_progress_bar div[role="progressbar"] {
+                    background-color: #00cc99 !important;
+                }
                 #slider_speed input[type=range]::-webkit-slider-runnable-track {
-                    background: linear-gradient(to right, #00cc99 var(--progress), #e0e0e0 var(--progress));
+                    background: linear-gradient(to right, #00cc99 var(--progress), #e0e0e0 var(--progress)) !important;
                 }
                 #slider_speed input[type=range]::-moz-range-progress {
-                    background-color: #00cc99;
+                    background-color: #00cc99 !important;
                 }
                 #slider_speed input[type=range]::-moz-range-track {
-                    background-color: #e0e0e0;
+                    background-color: #e0e0e0 !important;
                 }
                 #component-8, #component-31, #component-15 {
-                    height: 140px !important;
+                    height: 140px !important !important;
                 }
                 #component-31 [aria-label="Clear"], #component-15 [aria-label="Clear"] {
                     display: none !important;
@@ -1990,7 +1993,7 @@ def web_interface(args):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
-        gr_conversion_progress = gr.Textbox(label='Progress', variant='secondary')
+        gr_conversion_progress = gr.Textbox(label='Progress', elem_id="conversion_progress_bar")
         gr_group_audiobook_list = gr.Group(visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(label='Audiobook', elem_id='audiobook_text', interactive=False, visible=True)
