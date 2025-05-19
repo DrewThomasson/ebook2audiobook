@@ -242,7 +242,8 @@ usage: app.py [-h] [--script_mode SCRIPT_MODE] [--session SESSION] [--share]
               [--speed SPEED] [--enable_text_splitting] [--output_dir OUTPUT_DIR]
               [--version]
 
-Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
+Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch
+the Gradio interface or run the script in headless mode for direct conversion.
 
 options:
   -h, --help            show this help message and exit
@@ -259,48 +260,53 @@ options:
   --ebook EBOOK         Path to the ebook file for conversion. Cannot be used when --ebooks_dir is present.
   --ebooks_dir EBOOKS_DIR
                         Relative or absolute path of the directory containing the files to convert. 
-                            Cannot be used when --ebook is present.
+                        Cannot be used when --ebook is present.
   --language LANGUAGE   Language of the e-book. Default language is set 
-                            in ./lib/lang.py sed as default if not present. All compatible language codes are in ./lib/lang.py
+						in ./lib/lang.py sed as default if not present. 
+						All compatible language codes are in ./lib/lang.py
 
 optional parameters:
   --voice VOICE         (Optional) Path to the voice cloning file for TTS engine. 
-                            Uses the default voice if not present.
+                        Uses the default voice if not present.
   --device {cpu,gpu,mps}
                         (Optional) Pprocessor unit type for the conversion. 
                             Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.
   --tts_engine {xtts,bark,vits,fairseq,yourtts}
                         (Optional) Preferred TTS engine (available are: ['xtts', 'bark', 'vits', 'fairseq', 'yourtts'].
-                            Default depends on the selected language. The tts engine should be compatible with the chosen language
+						Default depends on the selected language. 
+						The tts engine should be compatible with the chosen language
   --custom_model CUSTOM_MODEL
                         (Optional) Path to the custom model zip file cntaining mandatory model files. 
-                            Please refer to ./lib/models.py
+                        Please refer to ./lib/models.py
   --fine_tuned FINE_TUNED
                         (Optional) Fine tuned model path. Default is builtin model.
   --output_format OUTPUT_FORMAT
                         (Optional) Output audio format. Default is set in ./lib/conf.py
   --temperature TEMPERATURE
                         (xtts only, optional) Temperature for the model. 
-                            Default to config.json model. Higher temperatures lead to more creative outputs.
+                        Default to config.json model. Higher temperatures lead to more creative outputs.
   --length_penalty LENGTH_PENALTY
                         (xtts only, optional) A length penalty applied to the autoregressive decoder. 
-                            Default to config.json model. Not applied to custom models.
+                        Default to config.json model. Not applied to custom models.
   --num_beams NUM_BEAMS
-                        (xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
-                            Default to config.json model.
+                        (xtts only, optional) Controls how many alternative sequences the model explores. 
+						Must be equal or greater than length penalty. Default to config.json model.
   --repetition_penalty REPETITION_PENALTY
-                        (xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
-                            Default to config.json model.
+                        (xtts only, optional) A penalty that prevents the autoregressive 
+						decoder from repeating itself. 
+                        Default to config.json model.
   --top_k TOP_K         (xtts only, optional) Top-k sampling. 
-                            Lower values mean more likely outputs and increased audio generation speed. 
-                            Default to config.json model.
+						Lower values mean more likely outputs and increased audio generation speed. 
+						Default to config.json model.
   --top_p TOP_P         (xtts only, optional) Top-p sampling. 
-                            Lower values mean more likely outputs and increased audio generation speed. Default to 0.85
+						Lower values mean more likely outputs and increased audio generation speed. 
+						Default to 0.85
   --speed SPEED         (xtts only, optional) Speed factor for the speech generation. 
-                            Default to config.json model.
+                        Default to config.json model.
   --enable_text_splitting
-                        (xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
-                            Default to config.json model.
+                        (xtts only, optional) Enable TTS text splitting. 
+						This option is known to not be very efficient. 
+                        Default to config.json model.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
   --version             Show the version of the script and exit
