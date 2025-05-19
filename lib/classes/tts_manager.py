@@ -22,7 +22,7 @@ class TTSManager:
             error = 'TTS engine could not be created!'
             print(error)
 
-    def convert_sentence_to_audio(self, sentence_number, sentence):
+    def convert_sentence2audio(self, sentence_number, sentence):
         try:
             if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
                 return self.tts.convert(sentence_number, sentence)
@@ -30,6 +30,6 @@ class TTSManager:
                 print('Other TTS engines coming soon!')    
                 return False
         except Exception as e:
-            error = f'convert_sentence_to_audio(): {e}'
+            error = f'convert_sentence2audio(): {e}'
             raise ValueError(e)
             return False

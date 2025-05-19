@@ -1,4 +1,5 @@
 import os
+import gc
 import numpy as np
 import regex as re
 import shutil
@@ -128,7 +129,7 @@ class Coqui:
                                 if audio_data is not None:
                                     audio_data = audio_data.tolist()
                                 else:
-                                    error = f'No audio waveform found in convert_sentence_to_audio() result: {result}'
+                                    error = f'No audio waveform found in convert_sentence2audio() result: {result}'
                                     print(error)
                                     return None
                                 sourceTensor = self._tensor_type(audio_data)
@@ -138,13 +139,11 @@ class Coqui:
                                 for samplerate in [16000, 24000]:
                                     output_file = file_path.replace('.wav', f'_{samplerate}.wav')
                                     if self._normalize_audio(file_path, output_file, samplerate):
-                                        # for Bark
-                                        if samplerate == 24000:
-                                            bark_dir = os.path.join(os.path.dirname(os.path.dirname(file_path)), 'bark')
-                                            npz_dir = os.path.join(bark_dir, speaker)
-                                            os.makedirs(npz_dir, exist_ok=True)
-                                            npz_file = os.path.join(npz_dir, f'{speaker}.npz')
-                                            self._wav_to_npz(output_file, npz_file)
+                                        bark_dir = os.path.join(os.path.dirname(os.path.dirname(file_path)), 'bark')
+                                        npz_dir = os.path.join(bark_dir, speaker)
+                                        os.makedirs(npz_dir, exist_ok=True)
+                                        npz_file = os.path.join(npz_dir, f'{speaker}.npz')
+                                        self._wav2npz(output_file, npz_file, sample_rate)
                                     else:
                                         break
                                 if os.path.exists(file_path):
@@ -175,7 +174,8 @@ class Coqui:
                 print(msg)
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}/" if self.session['fine_tuned'] != 'internal' else ''
-                speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=self.cache_dir)
+                if self.session['fine_tuned'] == 'internal':
+                    speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=self.cache_dir)
                 model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
@@ -291,6 +291,8 @@ class Coqui:
             loaded_tts[tts_key] = self.tts
             return self.tts
         else:
+            self._unload_tts(self.session['device'])
+            gc.collect()
             error = 'TTS engine could not be created!'
             print(error)
             return None
@@ -349,9 +351,9 @@ class Coqui:
             print(error)
         return 0
           
-    def _wav_to_npz(self, wav_path, npz_path):
+    def _wav2npz(self, wav_path, npz_path, sample_rate):
         audio, sr = sf.read(wav_path)
-        np.savez(npz_path, audio=audio, sample_rate=24000)
+        np.savez(npz_path, audio=audio, sample_rate=sample_rate)
         msg = f"Saved NPZ file: {npz_path}"
         print(msg)
         
@@ -389,6 +391,9 @@ class Coqui:
             del loaded_tts[key]
         if self.tts:
             del self.tts
+        if self.tts_vc:
+            del self.tts_vc
+        self.tts = self.tts_vc = None
         if device == 'cuda':
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
@@ -457,7 +462,7 @@ class Coqui:
             print(f"_normalize_audio() error: {input_file}: {e}")
             return False
 
-    def _append_sentence_to_vtt(self, sentence_obj, path):
+    def _append_sentence2vtt(self, sentence_obj, path):
         def format_timestamp(seconds):
             m, s = divmod(seconds, 60)
             h, m = divmod(m, 60)
@@ -501,13 +506,13 @@ class Coqui:
         global xtts_builtin_speakers_list
         try:
             audio_data = False
-            audio_to_trim = False
+            audio2trim = False
             trim_audio_buffer = 0.001
             settings = self.params[self.session['tts_engine']]
             final_sentence = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             if sentence.endswith('-'):
                 sentence = sentence[:-1]
-                audio_to_trim = True
+                audio2trim = True
             settings['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
@@ -727,7 +732,7 @@ class Coqui:
 
                 if audio_segments:
                     audio_tensor = torch.cat(audio_segments, dim=-1)
-                    if audio_to_trim:
+                    if audio2trim:
                         audio_tensor = self._trim_audio(audio_tensor.squeeze(), sample_rate, 0.001, trim_audio_buffer).unsqueeze(0)
                     start_time = self.sentences_total_time
                     duration = audio_tensor.shape[-1] / sample_rate
@@ -739,7 +744,7 @@ class Coqui:
                         "text": sentence,
                         "resume_check": self.sentence_idx
                     }
-                    self.sentence_idx = self._append_sentence_to_vtt(sentence_obj, self.vtt_path)
+                    self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)
                     torchaudio.save(final_sentence, audio_tensor, sample_rate, format=default_audio_proc_format)
                     del audio_tensor
                 if self.session['device'] == 'cuda':
@@ -755,6 +760,6 @@ class Coqui:
                 print(error)
                 return False               
         except Exception as e:
-            error = f'convert_sentence_to_audio(): {e}'
+            error = f'convert_sentence2audio(): {e}'
             raise ValueError(e)
             return False
