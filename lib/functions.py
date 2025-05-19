@@ -1230,7 +1230,9 @@ def combine_audio_chapters(session):
                 for line in process.stdout:
                     print(line, end='')  # Print each line of stdout
                 process.wait()
-                if process.returncode != 0:
+                if process.returncode == 0:
+                    return True
+                else:
                     error = process.returncode
                     print(error, ffmpeg_cmd)
                     return False
