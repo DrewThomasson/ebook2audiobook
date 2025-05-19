@@ -388,6 +388,9 @@ class Coqui:
             del loaded_tts[key]
         if self.tts:
             del self.tts
+        if self.tts_vc:
+            del self.tts_vc
+        self.tts = self.tts_vc = None
         if device == 'cuda':
             torch.cuda.empty_cache()
             torch.cuda.synchronize()
