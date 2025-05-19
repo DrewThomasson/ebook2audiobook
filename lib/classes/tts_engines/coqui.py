@@ -46,8 +46,6 @@ lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
 class Coqui:
-    global lock
-    global xtts_builtin_speakers_list
     def __init__(self, session):   
         self.session = session
         self.cache_dir = os.path.join(models_dir,'tts')  
@@ -77,6 +75,7 @@ class Coqui:
         self._build()
  
     def _build(self):
+        global xtts_builtin_speakers_list
         model_path = None
         config_path = None
         if xtts_builtin_speakers_list is None:
@@ -297,6 +296,7 @@ class Coqui:
             return None
           
     def _load_coqui_tts_api(self, model_path, device):
+        global lock
         try:
             with lock:
                 tts = self.coquiAPI(model_path)
@@ -312,6 +312,7 @@ class Coqui:
         return 0
 
     def _load_coqui_tts_checkpoint(self, model_path, config_path, vocab_path, device):
+        global lock
         try:
             config = self.XttsConfig()
             config.models_dir = os.path.join("models", "tts")
@@ -337,6 +338,7 @@ class Coqui:
         return 0
 
     def _load_coqui_tts_vc(self, device):
+        global lock
         try:
             with lock:
                 tts = self.coquiAPI(default_vc_model).to(device)
@@ -496,6 +498,7 @@ class Coqui:
         return False
 
     def convert(self, sentence_number, sentence):
+        global xtts_builtin_speakers_list
         try:
             audio_data = False
             audio_to_trim = False
