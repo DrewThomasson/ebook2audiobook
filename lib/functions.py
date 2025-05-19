@@ -1865,14 +1865,13 @@ def web_interface(args):
             <h1 style="line-height: 0.7">Ebook2Audiobook v{prog_version}</h1>
             <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" style="line-height:0">https://github.com/DrewThomasson/ebook2audiobook</a>
             <div style="line-height: 1.3;">
-                Multiuser, multiprocessing tasks on a geo cluster to share the conversion to the Grid<br/>
+                Multiuser, multiprocessing TTS GUI and Headless application server<br/>
                 Convert eBooks into immersive audiobooks with realistic TTS model voices.<br/>
             </div>
             '''
         )
         with gr.Tabs():
-            gr_tab_main = gr.TabItem('Main Parameters')
-            
+            gr_tab_main = gr.TabItem('Main Parameters', variant='secondary')
             with gr_tab_main:
                 with gr.Row():
                     with gr.Column(scale=3):
@@ -1905,8 +1904,7 @@ def web_interface(args):
                         with gr.Group():
                             gr_session = gr.Textbox(label='Session', interactive=False)
                         gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
-            gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', visible=visible_gr_tab_preferences)
-            
+            gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', variant='secondary', visible=visible_gr_tab_preferences)           
             with gr_tab_preferences:
                 gr.Markdown(
                     '''
@@ -1969,7 +1967,8 @@ def web_interface(args):
                     minimum=0.5, 
                     maximum=3.0, 
                     step=0.1, 
-                    value=float(default_xtts_settings['speed']), 
+                    value=float(default_xtts_settings['speed']),
+                    variant='secondary',
                     info='Adjusts how fast the narrator will speak.'
                 )
                 gr_enable_text_splitting = gr.Checkbox(
@@ -1978,12 +1977,11 @@ def web_interface(args):
                     info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                     visible=False
                 )
-    
         gr_state = gr.State(value={"hash": None})
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
-        gr_conversion_progress = gr.Textbox(label='Progress')
+        gr_conversion_progress = gr.Textbox(label='Progress', variant='secondary')
         gr_group_audiobook_list = gr.Group(visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(label='Audiobook', elem_id='audiobook_text', interactive=False, visible=True)
