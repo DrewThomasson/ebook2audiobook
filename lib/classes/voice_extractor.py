@@ -73,7 +73,7 @@ class VoiceExtractor:
         
     def _wav2npz(self):
         try:
-            npz_dir = os.path.join(os.path.dirname(os.path.dirname(self.final_files[1])), 'bark', self.voice_name)
+            npz_dir = os.path.join(self.output_dir, 'bark', self.voice_name)
             os.makedirs(npz_dir, exist_ok=True)
             npz_file = os.path.join(npz_dir, f'{self.voice_name}.npz')
             audio, sr = sf.read(self.final_files[1]) # final_file a 24000hz
