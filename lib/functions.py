@@ -1799,7 +1799,7 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
-                #tab_item button[role="tab"]{
+                #tab_item button[role="tab"][aria-selected="true"] {
                     color: orange;
                 }
                 #conversion_progress_bar div[role="progressbar"] {
