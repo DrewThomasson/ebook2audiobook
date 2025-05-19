@@ -693,7 +693,7 @@ class Coqui:
                         loaded_processed_voices[processed_voice_key] = speaker_argument
                     with torch.no_grad():
                         audio_part = self.params['tts'].tts(
-                            text=sentence],
+                            text=sentence,
                             language=language,
                             **speaker_argument
                         )
