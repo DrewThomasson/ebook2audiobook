@@ -1798,8 +1798,14 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
-                #tab_item {
-                    color: oragne !important;
+                #slider_speed input[type=range]::-webkit-slider-runnable-track {
+                    background: linear-gradient(to right, #00cc99 var(--progress), #e0e0e0 var(--progress));
+                }
+                #slider_speed input[type=range]::-moz-range-progress {
+                    background-color: #00cc99;
+                }
+                #slider_speed input[type=range]::-moz-range-track {
+                    background-color: #e0e0e0;
                 }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important;
@@ -1971,7 +1977,7 @@ def web_interface(args):
                     maximum=3.0, 
                     step=0.1, 
                     value=float(default_xtts_settings['speed']),
-                    variant='secondary',
+                    elem_id='slider_speed',
                     info='Adjusts how fast the narrator will speak.'
                 )
                 gr_enable_text_splitting = gr.Checkbox(
