@@ -46,6 +46,8 @@ lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
 class Coqui:
+    global lock
+    global xtts_builtin_speakers_list
     def __init__(self, session):   
         self.session = session
         self.cache_dir = os.path.join(models_dir,'tts')  
