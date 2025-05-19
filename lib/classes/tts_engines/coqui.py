@@ -83,7 +83,7 @@ class Coqui:
         tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
         settings = self.params[self.session['tts_engine']]
         settings['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
-        self.vtt_path = os.path.join(self.session['audiobooks_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')
+        self.vtt_path = os.path.splitext(self.session['final_name'])[0] + '.vtt'
         if self.session['language'] in language_tts[XTTSv2].keys():
             if self.session['voice'] is not None and self.session['language'] != 'eng':
                 speaker = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.session['voice']))
