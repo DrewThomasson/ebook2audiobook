@@ -1798,6 +1798,9 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
+                #tab_item {
+                    color: oragne !important;
+                }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important;
                 }
@@ -1871,7 +1874,7 @@ def web_interface(args):
             '''
         )
         with gr.Tabs():
-            gr_tab_main = gr.TabItem('Main Parameters', variant='secondary')
+            gr_tab_main = gr.TabItem('Main Parameters', elem_classes='tab_item')
             with gr_tab_main:
                 with gr.Row():
                     with gr.Column(scale=3):
@@ -1904,7 +1907,7 @@ def web_interface(args):
                         with gr.Group():
                             gr_session = gr.Textbox(label='Session', interactive=False)
                         gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
-            gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', variant='secondary', visible=visible_gr_tab_preferences)           
+            gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', elem_classes='tab_item', visible=visible_gr_tab_preferences)           
             with gr_tab_preferences:
                 gr.Markdown(
                     '''
