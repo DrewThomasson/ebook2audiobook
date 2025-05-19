@@ -574,25 +574,25 @@ class Coqui:
                             **speaker_argument
                         )
                         if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
-                            self.params['semitones'] = loaded_processed_voices[processed_voice_key]
+                            semitones = loaded_processed_voices[processed_voice_key]
                         else:
                             self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
                             self.params['voice_builtin_gender'] = self._detect_gender(tmp_in_wav)
                             msg = f"Cloned voice seems to be {self.params['voice_path_gender']}\nBuiltin voice seems to be {self.params['voice_builtin_gender']}"
                             print(msg)
                             if self.params['voice_builtin_gender'] != self.params['voice_path_gender']:
-                                self.params['semitones'] = -4 if self.params['voice_path_gender'] == 'male' else 4
-                                loaded_processed_voices[processed_voice_key] = self.params['semitones']
+                                semitones = -4 if self.params['voice_path_gender'] == 'male' else 4
+                                loaded_processed_voices[processed_voice_key] = semitones
                                 msg = f"Adapting builtin voice frequencies from the clone voice..."
                                 print(msg)
                             else:
-                                loaded_processed_voices[processed_voice_key] = self.params['semitones'] = None
-                        if self.params['semitones'] is not None:
+                                loaded_processed_voices[processed_voice_key] = semitones = None
+                        if semitones is not None:
                             try:
                                 cmd = [
                                     shutil.which('sox'), tmp_in_wav,
                                     "-r", str(self.params['sample_rate']), tmp_out_wav,
-                                    "pitch", str(self.params['semitones'] * 100)
+                                    "pitch", str(semitones * 100)
                                 ]
                                 subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             except subprocess.CalledProcessError as e:
@@ -632,25 +632,25 @@ class Coqui:
                             file_path=tmp_in_wav
                         )
                         if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
-                            self.params['semitones'] = loaded_processed_voices[processed_voice_key]
+                            semitones = loaded_processed_voices[processed_voice_key]
                         else:
                             self.params['voice_path_gender'] = self._detect_gender(self.params['voice_path'])
                             self.params['voice_builtin_gender'] = self._detect_gender(tmp_in_wav)
                             msg = f"Cloned voice seems to be {self.params['voice_path_gender']}\nBuiltin voice seems to be {self.params['voice_builtin_gender']}"
                             print(msg)
                             if self.params['voice_builtin_gender'] != self.params['voice_path_gender']:
-                                self.params['semitones'] = -4 if self.params['voice_path_gender'] == 'male' else 4
-                                loaded_processed_voices[processed_voice_key] = self.params['semitones']
+                                semitones = -4 if self.params['voice_path_gender'] == 'male' else 4
+                                loaded_processed_voices[processed_voice_key] = semitones
                                 msg = f"Adapting builtin voice frequencies from the clone voice..."
                                 print(msg)
                             else:
-                                loaded_processed_voices[processed_voice_key] = self.params['semitones'] = None
-                        if self.params['semitones'] is not None:
+                                loaded_processed_voices[processed_voice_key] = semitones = None
+                        if semitones is not None:
                             try:
                                 cmd = [
                                     shutil.which('sox'), tmp_in_wav,
                                     "-r", str(self.params['sample_rate']), tmp_out_wav,
-                                    "pitch", str(self.params['semitones'] * 100)
+                                    "pitch", str(semitones * 100)
                                 ]
                                 subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                             except subprocess.CalledProcessError as e:
@@ -697,7 +697,7 @@ class Coqui:
                             language=language,
                             **speaker_argument
                         )
-                if audio_part:
+                if audio_part.numel() > 0:
                     sourceTensor = self._tensor_type(audio_part)
                     audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                     audio_segments.append(audio_tensor)
