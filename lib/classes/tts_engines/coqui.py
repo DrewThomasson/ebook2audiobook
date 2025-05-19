@@ -546,8 +546,8 @@ class Coqui:
                                 speaker_embedding=settings['speaker_embedding'],
                                 **self.fine_tuned_params
                             )
+                        audio_part = result.get('wav')
                         if self._is_valid(audio_part):
-                            audio_part = result.get('wav')
                             audio_part = audio_part.tolist()
                     elif self.session['tts_engine'] == BARK:
                         trim_audio_buffer = 0.004
