@@ -66,4 +66,4 @@ ebook_formats = ['.epub', '.mobi', '.azw3', '.fb2', '.lrf', '.rb', '.snb', '.tcr
 voice_formats = ['.mp4', '.m4b', '.m4a', '.mp3', '.wav', '.aac', '.flac', '.alac', '.ogg', '.aiff', '.aif', '.wma', '.dsd', '.opus', '.pcmu', '.pcma', '.gsm'] # Add or remove the format you wish
 output_formats = ['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']
 default_audio_proc_format = 'flac' # or 'wav', 'mp3', 'aac', 'm4a', 'm4b', 'amr', '3gp', 'alac'
-default_output_format = 'm4b' # or 'wav', 'pcm', 'ieee', 'ogg', 'nist', 'mp3', 'aiff', 'aac', 'wma', 'mp4', 'm4a', 'flac', 'amr', '3gp', 'webm', 'alac'
+default_output_format = 'm4b' # or 'm4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac'
