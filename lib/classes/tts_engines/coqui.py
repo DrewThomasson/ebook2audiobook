@@ -456,7 +456,7 @@ class Coqui:
         with open(path, "a", encoding="utf-8") as f:
             start = format_timestamp(sentence_obj["start"])
             end = format_timestamp(sentence_obj["end"])
-            text = sentence_obj["text"].replace("\n", " ").strip()
+            text = re.sub(r'[\r\n]+', ' ', sentence_obj["text"]).strip()
             f.write(f"{start} --> {end}\n{text}\n\n")
         return index + 1
 
