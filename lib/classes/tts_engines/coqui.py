@@ -71,6 +71,7 @@ class Coqui:
         self.sentence_idx = 1
         self.params = {XTTSv2: {"latent_embedding":{}}, BARK: {}, VITS: {"semitones": {}}, FAIRSEQ: {"semitones": {}}, YOURTTS: {}}  
         self.xtts_builtin_speakers_list = None
+        self.vtt_path = None
         self._build()
  
     def _build(self):
@@ -82,6 +83,7 @@ class Coqui:
         tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
         settings = self.params[self.session['tts_engine']]
         settings['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
+        self.vtt_path = os.path.join(self.session['audiobooks_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')
         if self.session['language'] in language_tts[XTTSv2].keys():
             if self.session['voice'] is not None and self.session['language'] != 'eng':
                 speaker = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(self.session['voice']))
@@ -737,8 +739,7 @@ class Coqui:
                         "text": sentence,
                         "resume_check": self.sentence_idx
                     }
-                    vtt_path = os.path.splitext(self.session['epub_path'])[0] + '.vtt'
-                    self.sentence_idx = self._append_sentence_to_vtt(sentence_obj, vtt_path)
+                    self.sentence_idx = self._append_sentence_to_vtt(sentence_obj, self.vtt_path)
                     torchaudio.save(final_sentence, audio_tensor, sample_rate, format=default_audio_proc_format)
                     del audio_tensor
                 if self.session['device'] == 'cuda':

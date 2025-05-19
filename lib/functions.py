@@ -158,6 +158,7 @@ class SessionContext:
                 "speed": default_xtts_settings['speed'],
                 "enable_text_splitting": default_xtts_settings['enable_text_splitting'],
                 "event": None,
+                "final_name": None,
                 "output_format": default_output_format,
                 "metadata": {
                     "title": None, 
@@ -1253,8 +1254,7 @@ def combine_audio_chapters(session):
             metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
             if assemble_segments():
                 if generate_ffmpeg_metadata():
-                    final_name = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
-                    final_file = os.path.join(session['audiobooks_dir'], final_name)                       
+                    final_file = os.path.join(session['audiobooks_dir'], session['final_name'])                       
                     if export_audio():
                         return final_file
         else:
@@ -1534,7 +1534,7 @@ def convert_ebook(args):
                                     for value, attributes in data:
                                         metadata[key] = value
                             metadata['language'] = session['language']
-                            metadata['title'] = os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ') if not metadata['title'] else metadata['title']
+                            metadata['title'] = metadata['title'] if metadata['title'] else os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ') if not metadata['title']
                             metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                             session['metadata'] = metadata
                             
@@ -1552,6 +1552,7 @@ def convert_ebook(args):
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters_to_audio(session):
                                         final_file = combine_audio_chapters(session)               
