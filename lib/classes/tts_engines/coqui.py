@@ -77,9 +77,9 @@ class Coqui:
     def _build(self):
         model_path = None
         config_path = None
-        if self.xtts_builtin_speakers_list is None:
+        if xtts_builtin_speakers_list is None:
             speakers_path = hf_hub_download(repo_id=models['xtts']['internal']['repo'], filename="speakers_xtts.pth", cache_dir=self.cache_dir)
-            self.xtts_builtin_speakers_list = torch.load(speakers_path)
+            xtts_builtin_speakers_list = torch.load(speakers_path)
         tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
         settings = self.params[self.session['tts_engine']]
         settings['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
@@ -114,7 +114,7 @@ class Coqui:
                                 file_path = self.session['voice'].replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                                 base_dir = os.path.dirname(file_path)
                                 default_text = Path(default_text_file).read_text(encoding="utf-8")
-                                settings['gpt_cond_latent'], settings['speaker_embedding'] = self.xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
+                                settings['gpt_cond_latent'], settings['speaker_embedding'] = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
                                 with torch.no_grad():
                                     result = self.tts.inference(
                                         text=default_text,
@@ -529,7 +529,7 @@ class Coqui:
                             msg = 'Computing speaker latents...'
                             print(msg)
                             if settings['voice_path'] in default_xtts_settings['voices'].values():
-                                settings['gpt_cond_latent'], settings['speaker_embedding'] = self.xtts_builtin_speakers_list[settings['voice_path']].values()
+                                settings['gpt_cond_latent'], settings['speaker_embedding'] = xtts_builtin_speakers_list[settings['voice_path']].values()
                             else:
                                 settings['gpt_cond_latent'], settings['speaker_embedding'] = self.tts.get_conditioning_latents(audio_path=[settings['voice_path']])  
                             settings['latent_embedding'][settings['voice_path']] = settings['gpt_cond_latent'], settings['speaker_embedding']
