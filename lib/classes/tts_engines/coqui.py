@@ -480,35 +480,28 @@ class Coqui:
             audio_data = False
             audio_to_trim = False
             trim_audio_buffer = 0.001
-            out_path = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
-            sentence_parts = sentence.split('‡pause‡')
-
-            if self.session['tts_engine'] == XTTSv2 or self.session['tts_engine'] == FAIRSEQ:
-                sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
-
-            sample_rate = 16000 if self.session['tts_engine'] == VITS else self.params['sample_rate']
-            silence_tensor = torch.zeros(1, sample_rate * 2)
-            audio_segments = []
-
+            final_sentence = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             if sentence.endswith('-'):
                 sentence = sentence[:-1]
                 audio_to_trim = True
-
+            self.params['voice_path'] = (
+                self.session['voice'] if self.session['voice'] is not None 
+                else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
+                else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
+            )
+            processed_voice_key = f"{self.session['tts_engine']}-{self.params['voice_path'].replace(' ','')}" if self.params['voice_path'] is not None else None
+            sentence_parts = sentence.split('‡pause‡')
+            if self.session['tts_engine'] == XTTSv2 or self.session['tts_engine'] == FAIRSEQ:
+                sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
+            sample_rate = 16000 if self.session['tts_engine'] == VITS and self.session['voice'] is not None else self.params['sample_rate']
+            silence_tensor = torch.zeros(1, sample_rate * 2)
+            audio_segments = []
             for text_part in sentence_parts:
                 text_part = text_part.strip()
                 if not text_part:
                     audio_segments.append(silence_tensor.clone())
                     continue
-
-                self.params['voice_path'] = (
-                    self.session['voice'] if self.session['voice'] is not None 
-                    else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
-                    else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
-                )
-
-                processed_voice_key = f"{self.session['tts_engine']}-{self.params['voice_path'].replace(' ','')}" if self.params['voice_path'] is not None else None
                 audio_part = None
-
                 if self.session['tts_engine'] == XTTSv2:
                     trim_audio_buffer = 0.07
                     if self.session['tts_engine'] not in loaded_builtin_speakers.keys():
@@ -736,14 +729,14 @@ class Coqui:
                     "resume_check": self.sentence_idx
                 }
                 self.sentence_idx = self._append_sentence_to_vtt(sentence_obj, self.vtt_path)
-                torchaudio.save(out_path, audio_tensor, sample_rate, format=default_audio_proc_format)
+                torchaudio.save(final_sentence, audio_tensor, sample_rate, format=default_audio_proc_format)
                 del audio_tensor
             if self.session['device'] == 'cuda':
                 torch.cuda.empty_cache()
-            if os.path.exists(out_path):
+            if os.path.exists(final_sentence):
                 return True
             else:
-                error = f"Cannot create {out_path}"
+                error = f"Cannot create {final_sentence}"
                 print(error)
                 return False
         except Exception as e:
