@@ -25,6 +25,7 @@ class VoiceExtractor:
         self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', os.path.splitext(os.path.basename(self.voice_file))[0])
+        self.final_files = [] 
 
     def _validate_format(self):
         file_extension = os.path.splitext(self.voice_file)[1].lower()
@@ -34,7 +35,7 @@ class VoiceExtractor:
         error = f'Unsupported file format: {file_extension}. Supported formats are: {", ".join(voice_formats)}'
         return False, error
 
-    def _convert_to_wav(self):
+    def _convert2wav(self):
         try:
             self.wav_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
             ffmpeg_cmd = [
@@ -55,20 +56,35 @@ class VoiceExtractor:
                 print(line, end='')  # Print each line of stdout
             process.wait()
             if process.returncode != 0:
-                error = f'_convert_to_wav(): process.returncode: {process.returncode}'
+                error = f'_convert2wav(): process.returncode: {process.returncode}'
             elif not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
-                error = f'_convert_to_wav output error: {self.wav_file} was not created or is empty.'                
+                error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'                
             else:
                 msg = 'Conversion to .wav format for processing successful'
                 return True, msg
         except subprocess.CalledProcessError as e:
-            error = f'convert_to_wav fmpeg.Error: {e.stderr.decode()}'
+            error = f'convert2wav fmpeg.Error: {e.stderr.decode()}'
             raise ValueError(error)
         except Exception as e:
-            error = f'_convert_to_wav() error: {e}'
+            error = f'_convert2wav() error: {e}'
             raise ValueError(error)
         return False, error
         
+    def _wav2npz(self):
+        try:
+            npz_dir = os.path.join(os.path.dirname(os.path.dirname(file_path)), 'bark', speaker)
+            os.makedirs(npz_dir, exist_ok=True)
+            npz_file = os.path.join(npz_dir, f'{self.voice_name}.npz')
+            audio, sr = sf.read(self.final_files[1]) # final_file a 24000hz
+            np.savez(npz_file, audio=audio, sample_rate=self.samplerate)
+            msg = f"Saved NPZ file: {npz_file}"
+            if os.path.exists(npz_file):
+                return True, msg
+        except Exception as e:
+            error = f'_wav2npz() error: {e}'
+            raise ValueError(error)   
+        return False, error
+
     def _detect_background(self):
         try:
             torch_home = os.path.join(self.models_dir, 'hub')
@@ -252,6 +268,8 @@ class VoiceExtractor:
                     elif not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
                         error = f'_normalize_audio() error: {output_file} was not created or is empty.'
                         break
+                    else:
+                        self.final_files.append(output_file)
                 except subprocess.CalledProcessError as e:
                     error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
                     break
@@ -276,7 +294,7 @@ class VoiceExtractor:
             success, msg = self._validate_format()
             print(msg)
             if success:
-                success, msg = self._convert_to_wav()
+                success, msg = self._convert2wav()
                 print(msg)
                 if success:
                     success, status, msg = self._detect_background()
@@ -293,6 +311,9 @@ class VoiceExtractor:
                             if success:
                                 success, msg = self._normalize_audio()
                                 print(msg)
+                                if success:
+                                    success, msg = self._wav2npz()
+                                    print(msg)
         except Exception as e:
             msg = f'extract_voice() error: {e}'
             raise ValueError(msg)
