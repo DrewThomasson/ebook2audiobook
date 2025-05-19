@@ -2291,7 +2291,8 @@ def web_interface(args):
                         pattern = re.sub(r'_(24000|16000)\.wav$', '_*.wav', voice)
                         files2remove = glob(pattern)
                         for file in files2remove:
-                            os.remove(file)                           
+                            os.remove(file)
+                        rmtree(os.path.join(os.path.dirname(voice), 'bark', selected_name), ignore_errors=True)
                         msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
