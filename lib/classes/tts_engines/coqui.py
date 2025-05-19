@@ -512,7 +512,7 @@ class Coqui:
                         loaded_processed_voices[processed_voice_key] = self.params['gpt_cond_latent'], self.params['speaker_embedding']
                     with torch.no_grad():
                         result = self.params['tts'].inference(
-                            text=sentence,
+                            text=text_part,
                             language=self.session['language_iso1'],
                             gpt_cond_latent=self.params['gpt_cond_latent'],
                             speaker_embedding=self.params['speaker_embedding'],
@@ -552,7 +552,7 @@ class Coqui:
                     }                      
                     with torch.no_grad():
                         audio_part = self.params['tts'].tts(
-                            text=sentence,
+                            text=text_part,
                             **speaker_argument
                         )
                 elif self.session['tts_engine'] == VITS:
@@ -569,7 +569,7 @@ class Coqui:
                         tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                         tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                         self.params['tts'].tts_to_file(
-                            text=sentence,
+                            text=text_part,
                             file_path=tmp_in_wav,
                             **speaker_argument
                         )
@@ -617,7 +617,7 @@ class Coqui:
                             os.remove(tmp_out_wav)
                     else:
                         audio_part = self.params['tts'].tts(
-                            text=sentence,
+                            text=text_part,
                             **speaker_argument
                         )
                 elif self.session['tts_engine'] == FAIRSEQ:
@@ -628,7 +628,7 @@ class Coqui:
                         tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                         tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                         self.params['tts'].tts_to_file(
-                            text=sentence,
+                            text=text_part,
                             file_path=tmp_in_wav
                         )
                         if processed_voice_key is not None and processed_voice_key in loaded_processed_voices.keys():
@@ -674,7 +674,7 @@ class Coqui:
                             os.remove(tmp_out_wav)
                     else:
                         audio_part = self.params['tts'].tts(
-                            text=sentence
+                            text=text_part
                         )
                 elif self.session['tts_engine'] == YOURTTS:
                     trim_audio_buffer = 0.004
@@ -693,7 +693,7 @@ class Coqui:
                         loaded_processed_voices[processed_voice_key] = speaker_argument
                     with torch.no_grad():
                         audio_part = self.params['tts'].tts(
-                            text=sentence,
+                            text=text_part,
                             language=language,
                             **speaker_argument
                         )
@@ -719,7 +719,7 @@ class Coqui:
                 sentence_obj = {
                     "start": start_time,
                     "end": end_time,
-                    "text": sentence,
+                    "text": text_part,
                     "resume_check": self.sentence_idx
                 }
                 self.sentence_idx = self._append_sentence_to_vtt(sentence_obj, self.vtt_path)
