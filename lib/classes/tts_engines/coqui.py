@@ -452,12 +452,12 @@ class Coqui:
             return index  # Already written
         if not os.path.exists(path):
             with open(path, "w", encoding="utf-8") as f:
-                f.write("WEBVTT\r\n\r\n")
+                f.write("WEBVTT\n\n")
         with open(path, "a", encoding="utf-8") as f:
             start = format_timestamp(sentence_obj["start"])
             end = format_timestamp(sentence_obj["end"])
             text = sentence_obj["text"].replace("\n", " ").strip()
-            f.write(f"{start} --> {end}\n{text}\r\n\r\n")
+            f.write(f"{start} --> {end}\n{text}\n\n")
         return index + 1
 
     def convert(self, sentence_number, sentence):
