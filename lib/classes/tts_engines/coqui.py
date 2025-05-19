@@ -708,10 +708,8 @@ class Coqui:
 
             if audio_segments:
                 audio_tensor = torch.cat(audio_segments, dim=-1)
-
                 if audio_to_trim:
                     audio_tensor = self._trim_audio(audio_tensor.squeeze(), sample_rate, 0.001, trim_audio_buffer).unsqueeze(0)
-
                 start_time = self.sentences_total_time
                 duration = audio_tensor.shape[-1] / sample_rate
                 end_time = start_time + duration
@@ -719,16 +717,14 @@ class Coqui:
                 sentence_obj = {
                     "start": start_time,
                     "end": end_time,
-                    "text": text_part,
+                    "text": sentence,
                     "resume_check": self.sentence_idx
                 }
                 self.sentence_idx = self._append_sentence_to_vtt(sentence_obj, self.vtt_path)
                 torchaudio.save(out_path, audio_tensor, sample_rate, format=default_audio_proc_format)
                 del audio_tensor
-
             if self.session['device'] == 'cuda':
                 torch.cuda.empty_cache()
-
             if os.path.exists(out_path):
                 return True
             else:

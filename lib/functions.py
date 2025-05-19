@@ -963,7 +963,7 @@ def convert_chapters_to_audio(session):
         total_chapters = len(session['chapters'])
         total_sentences = sum(len(array) for array in session['chapters'])
         sentence_number = 0
-        with tqdm(total=total_sentences, desc='convertsion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+        with tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
             for x in range(0, total_chapters):
                 chapter_num = x + 1
@@ -2930,7 +2930,6 @@ def web_interface(args):
                                 const theme = url.searchParams.get('__theme');
                                 let osTheme;
                                 let audioFilter = '';
-
                                 if (theme === 'dark') {
                                     audioFilter = 'invert(1) hue-rotate(180deg)';
                                 } else {
@@ -2939,11 +2938,9 @@ def web_interface(args):
                                         audioFilter = 'invert(1) hue-rotate(180deg)';
                                     }
                                 }
-
                                 if (!audio.style.transition) {
                                     audio.style.transition = 'filter 1s ease';
                                 }
-
                                 audio.style.filter = audioFilter;
                             }
                         } catch (e) {
