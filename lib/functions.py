@@ -1799,11 +1799,11 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
-                .tab_item {
+                #tab_item button[role="tab"]{
                     color: orange;
                 }
                 #conversion_progress_bar div[role="progressbar"] {
-                    background-color: #00cc99 !important;
+                    background-color: orange !important;
                 }
                 #slider_speed input[type=range]::-webkit-slider-runnable-track {
                     background-color: orange !important;
