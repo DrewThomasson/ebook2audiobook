@@ -1,4 +1,5 @@
 import os
+import gc
 import numpy as np
 import regex as re
 import shutil
@@ -291,6 +292,7 @@ class Coqui:
             return self.tts
         else:
             self._unload_tts(self.session['device'])
+            gc.collect()
             error = 'TTS engine could not be created!'
             print(error)
             return None
