@@ -1534,7 +1534,7 @@ def convert_ebook(args):
                                     for value, attributes in data:
                                         metadata[key] = value
                             metadata['language'] = session['language']
-                            metadata['title'] = metadata['title'] if metadata['title'] else os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ') if not metadata['title']
+                            metadata['title'] = metadata['title'] if metadata['title'] else os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ')
                             metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                             session['metadata'] = metadata
                             
