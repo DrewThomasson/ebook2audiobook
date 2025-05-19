@@ -1800,7 +1800,7 @@ def web_interface(args):
                     overflow: auto !important;
                 }
                 #tab_item button[role="tab"][aria-selected="true"] {
-                    color: orange;
+                    color: orange !important;
                 }
                 #conversion_progress_bar div[role="progressbar"] {
                     background-color: orange !important;
