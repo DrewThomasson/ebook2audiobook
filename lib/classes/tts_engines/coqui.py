@@ -601,7 +601,7 @@ class Coqui:
                                 voice_builtin_gender = self._detect_gender(tmp_in_wav)
                                 msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
                                 print(msg)
-                                if settings['voice_builtin_settings['voice_path']gender'] != voice_path_gender:
+                                if voice_builtin_gender != voice_path_gender:
                                     semitones = -4 if voice_path_gender == 'male' else 4
                                     msg = f"Adapting builtin voice frequencies from the clone voice..."
                                     print(msg)
