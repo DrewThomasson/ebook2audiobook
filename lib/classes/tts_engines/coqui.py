@@ -737,7 +737,7 @@ class Coqui:
                         "text": sentence,
                         "resume_check": self.sentence_idx
                     }
-                    vtt_path = os.path.splitext(session['epub_path'])[0] + '.vtt'
+                    vtt_path = os.path.splitext(self.session['epub_path'])[0] + '.vtt'
                     self.sentence_idx = self._append_sentence_to_vtt(sentence_obj, vtt_path)
                     torchaudio.save(final_sentence, audio_tensor, sample_rate, format=default_audio_proc_format)
                     del audio_tensor
