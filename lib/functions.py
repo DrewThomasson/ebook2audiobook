@@ -1859,38 +1859,31 @@ def web_interface(args):
                 }
             </style>
             <script>
-                window.redraw_audiobook_player = function(){
+                function redraw_audiobook_player(){
                     try{
-                        let intervalId = setInterval(()=>{
-                            try{
-                                const audio = document.querySelector('#audiobook_player audio');
-                                 if(audio){
-                                    const url = new URL(window.location);
-                                    const theme = url.searchParams.get('__theme');
-                                    let osTheme;
-                                    let audioFilter = '';
-                                    if(theme){
-                                        if(theme == 'dark'){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
-                                        }
-                                    }else{
-                                        osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
-                                        if(osTheme){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
-                                        }
-                                    }
-                                    if(!audio.style.transition){
-                                        audio.style.transition = 'filter 1s ease';
-                                    }
-                                    audio.style.filter = audioFilter;
-                                    clearInterval(intervalId);
+                        const audio = document.querySelector('#audiobook_player audio');
+                         if(audio){
+                            const url = new URL(window.location);
+                            const theme = url.searchParams.get('__theme');
+                            let osTheme;
+                            let audioFilter = '';
+                            if(theme){
+                                if(theme == 'dark'){
+                                    audioFilter = 'invert(1) hue-rotate(180deg)';
                                 }
-                            }catch(e){
-                                console.log(' interface.load setInterval error:', e);
+                            }else{
+                                osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
+                                if(osTheme){
+                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                }
                             }
-                        },100);
+                            if(!audio.style.transition){
+                                audio.style.transition = 'filter 1s ease';
+                            }
+                            audio.style.filter = audioFilter;
+                        }
                     }catch(e){
-                        console.log("window.redraw_audiobook_player error: "+e.toString());
+                        console.log(' interface.load setInterval error:', e);
                     }
                 }
             </script>
@@ -2835,7 +2828,7 @@ def web_interface(args):
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
         ).then(
             fn=None,
-            js="() => window.redraw_audiobook_player()"
+            js="()=>redraw_audiobook_player()"
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -2957,7 +2950,17 @@ def web_interface(args):
             js="""
             () => {
                 try{
-                    window.redraw_audiobook_player();
+                    let intervalId = setInterval(()=>{
+                        try{
+                            const audio = document.querySelector('#audiobook_player audio');
+                             if(audio){
+                                redraw_audiobook_player();
+                                clearInterval(intervalId);
+                            }
+                        }catch(e){
+                            console.log(' interface.load setInterval error:', e);
+                        }
+                    },100);
                     // Return localStorage item to Python
                     const data = window.localStorage.getItem('data');
                     if (data) {
