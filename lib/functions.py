@@ -2916,64 +2916,66 @@ def web_interface(args):
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
             outputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_modal]
         )
-        interface.load(
-            fn=None,
-            js="""
-            () => {
-                function redraw_audiobook_player(){
-                    try{
+    interface.load(
+        fn=None,
+        js="""
+        () => {
+            // Define the global function ONCE
+            if (typeof window.redraw_audiobook_player !== 'function') {
+                window.redraw_audiobook_player = () => {
+                    try {
                         const audio = document.querySelector('#audiobook_player audio');
-                         if(audio){
+                        if (audio) {
                             const url = new URL(window.location);
                             const theme = url.searchParams.get('__theme');
                             let osTheme;
                             let audioFilter = '';
-                            if(theme){
-                                if(theme == 'dark'){
-                                    audioFilter = 'invert(1) hue-rotate(180deg)';
-                                }
-                            }else{
-                                osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
-                                if(osTheme){
+
+                            if (theme === 'dark') {
+                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                            } else {
+                                osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                                if (osTheme) {
                                     audioFilter = 'invert(1) hue-rotate(180deg)';
                                 }
                             }
-                            if(!audio.style.transition){
+
+                            if (!audio.style.transition) {
                                 audio.style.transition = 'filter 1s ease';
                             }
+
                             audio.style.filter = audioFilter;
                         }
-                    }catch(e){
-                        console.log(' interface.load setInterval error:', e);
+                    } catch (e) {
+                        console.log('redraw_audiobook_player error:', e);
                     }
-                }
-                try{
-                    let intervalId = setInterval(()=>{
-                        try{
-                            const audio = document.querySelector('#audiobook_player audio');
-                             if(audio){
-                                redraw_audiobook_player();
-                                clearInterval(intervalId);
-                            }
-                        }catch(e){
-                            console.log(' interface.load setInterval error:', e);
-                        }
-                    },100);
-                    // Return localStorage item to Python
-                    const data = window.localStorage.getItem('data');
-                    if (data) {
-                        const obj = JSON.parse(data);
-                        console.log(obj);
-                        return obj;
-                    }
-                }catch(e){
-                    console.log('Return error:', e);
-                }
-                return null;
+                };
             }
-            """,
-            outputs=[gr_read_data]
-        )
+
+            // Now safely call it after the audio element is available
+            const tryRun = () => {
+                const audio = document.querySelector('#audiobook_player audio');
+                if (audio && typeof window.redraw_audiobook_player === 'function') {
+                    window.redraw_audiobook_player();
+                } else {
+                    setTimeout(tryRun, 100);
+                }
+            };
+            tryRun();
+
+            // Return localStorage data if needed
+            try {
+                const data = window.localStorage.getItem('data');
+                if (data) return JSON.parse(data);
+            } catch (e) {
+                console.log("JSON parse error:", e);
+            }
+
+            return null;
+        }
+        """,
+        outputs=[gr_read_data]
+    )
     try:
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
