@@ -290,6 +290,7 @@ class Coqui:
             loaded_tts[tts_key] = self.tts
             return self.tts
         else:
+            self._unload_tts(self.session['device'])
             error = 'TTS engine could not be created!'
             print(error)
             return None
