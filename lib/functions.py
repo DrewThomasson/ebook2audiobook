@@ -1230,12 +1230,7 @@ def combine_audio_chapters(session):
                 for line in process.stdout:
                     print(line, end='')  # Print each line of stdout
                 process.wait()
-                if process.returncode == 0:
-                    vtt_temp_path = os.path.splitext(session['epub_path'])[0] + '.vtt'
-                    vtt_final_path = os.path.splitext(ffmpeg_final_file)[0] + '.vtt'
-                    shutil.copy(vtt_temp_path, vtt_final_path)
-                    return True
-                else:
+                if process.returncode !== 0:
                     error = process.returncode
                     print(error, ffmpeg_cmd)
                     return False
