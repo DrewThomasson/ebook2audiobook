@@ -1798,17 +1798,20 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
+                .tab_item {
+                    color: orange;
+                }
                 #conversion_progress_bar div[role="progressbar"] {
                     background-color: #00cc99 !important;
                 }
                 #slider_speed input[type=range]::-webkit-slider-runnable-track {
-                    background: linear-gradient(to right, #00cc99 var(--progress), #e0e0e0 var(--progress)) !important;
+                    background-color: orange !important;
                 }
                 #slider_speed input[type=range]::-moz-range-progress {
-                    background-color: #00cc99 !important;
+                    background-color: orange !important;
                 }
                 #slider_speed input[type=range]::-moz-range-track {
-                    background-color: #e0e0e0 !important;
+                    background-color: orange !important;
                 }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important !important;
