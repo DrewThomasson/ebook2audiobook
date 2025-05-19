@@ -2941,8 +2941,10 @@ def web_interface(args):
                                 const theme = url.searchParams.get('__theme');
                                 let osTheme;
                                 let audioFilter = '';
-                                if (theme === 'dark') {
-                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                if (theme) {
+                                    if (theme === 'dark') {
+                                        audioFilter = 'invert(1) hue-rotate(180deg)';
+                                    } 
                                 } else {
                                     osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                     if (osTheme) {
