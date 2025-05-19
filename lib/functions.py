@@ -2919,34 +2919,34 @@ def web_interface(args):
         interface.load(
             fn=None,
             js="""
-            function redraw_audiobook_player(){
-                try{
-                    const audio = document.querySelector('#audiobook_player audio');
-                     if(audio){
-                        const url = new URL(window.location);
-                        const theme = url.searchParams.get('__theme');
-                        let osTheme;
-                        let audioFilter = '';
-                        if(theme){
-                            if(theme == 'dark'){
-                                audioFilter = 'invert(1) hue-rotate(180deg)';
-                            }
-                        }else{
-                            osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
-                            if(osTheme){
-                                audioFilter = 'invert(1) hue-rotate(180deg)';
-                            }
-                        }
-                        if(!audio.style.transition){
-                            audio.style.transition = 'filter 1s ease';
-                        }
-                        audio.style.filter = audioFilter;
-                    }
-                }catch(e){
-                    console.log(' interface.load setInterval error:', e);
-                }
-            }
             () => {
+                function redraw_audiobook_player(){
+                    try{
+                        const audio = document.querySelector('#audiobook_player audio');
+                         if(audio){
+                            const url = new URL(window.location);
+                            const theme = url.searchParams.get('__theme');
+                            let osTheme;
+                            let audioFilter = '';
+                            if(theme){
+                                if(theme == 'dark'){
+                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                }
+                            }else{
+                                osTheme = (window.matchMedia) ? window.matchMedia('(prefers-color-scheme: dark)').matches : undefined;
+                                if(osTheme){
+                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                }
+                            }
+                            if(!audio.style.transition){
+                                audio.style.transition = 'filter 1s ease';
+                            }
+                            audio.style.filter = audioFilter;
+                        }
+                    }catch(e){
+                        console.log(' interface.load setInterval error:', e);
+                    }
+                }
                 try{
                     let intervalId = setInterval(()=>{
                         try{
