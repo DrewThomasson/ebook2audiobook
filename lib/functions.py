@@ -2954,8 +2954,10 @@ def web_interface(args):
                         try{
                             const audio = document.querySelector('#audiobook_player audio');
                              if(audio){
-                                redraw_audiobook_player();
-                                clearInterval(intervalId);
+                                if(typeof(redraw_audiobook_player) == 'function'){
+                                    redraw_audiobook_player();
+                                    clearInterval(intervalId);
+                                }
                             }
                         }catch(e){
                             console.log(' interface.load setInterval error:', e);
