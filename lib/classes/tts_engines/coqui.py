@@ -53,6 +53,7 @@ class Coqui:
         self.XttsConfig = XttsConfig
         self.Xtts = Xtts
         self.tts = None
+        self.tts_vc = None
         self.fine_tuned_params = {
             key: cast_type(self.session[key])
             for key, cast_type in {
@@ -168,9 +169,6 @@ class Coqui:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
                     self.tts = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
-                    loaded_tts[tts_custom_key] = self.tts
-                if not self.tts:
-                    return None
             else:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
@@ -186,8 +184,6 @@ class Coqui:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
                     self.tts = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
-                if not self.tts:
-                    return None
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is None:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
@@ -198,8 +194,6 @@ class Coqui:
                 else:
                     self._unload_tts(self.session['device'])
                     self.tts = self._load_coqui_tts_api(model_path, self.session['device'])
-                if not self.tts:
-                    return None
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -229,12 +223,15 @@ class Coqui:
                         msg = f"Loading vocoder {tts_vc_key} zeroshot model, it takes a while, please be patient..."
                         print(msg)
                         if tts_vc_key in loaded_tts.keys():
-                            settings['tts_vc'] = loaded_tts[tts_vc_key]
+                            self.tts_vc = loaded_tts[tts_vc_key]
                         else:
-                            settings['tts_vc'] = self._load_coqui_tts_vc(self.session['device'])
-                            loaded_tts[tts_vc_key] = settings['tts_vc']
-                        if not settings['tts_vc']:
-                            return None
+                            self.tts_vc = self._load_coqui_tts_vc(self.session['device'])
+                            if self.tts_vc:
+                                loaded_tts[tts_vc_key] = self.tts_vc
+                            else:
+                                error = 'TTS VC engine could not be created!'
+                                print(error)
+                                return None
                 else:
                     msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                     print(msg)
@@ -254,20 +251,22 @@ class Coqui:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
                     self.tts = self._load_coqui_tts_api(model_path, self.session['device'])
-                if not self.tts:
-                    return None
                 if self.session['voice'] is not None:
                     tts_vc_key = default_vc_model
                     msg = f"Loading TTS {tts_vc_key} zeroshot model, it takes a while, please be patient..."
                     print(msg)
                     if tts_vc_key in loaded_tts.keys():
-                        settings['tts_vc'] = loaded_tts[tts_vc_key]
+                        self.tts_vc = loaded_tts[tts_vc_key]
                     else:
                         if len(loaded_tts) == max_tts_in_memory:
                             self._unload_tts(self.session['device'])
-                        settings['tts_vc'] = self._load_coqui_tts_vc(self.session['device'])
-                    if not settings['tts_vc']:
-                        return None
+                        self.tts_vc = self._load_coqui_tts_vc(self.session['device'])
+                        if self.tts_vc:
+                            loaded_tts[tts_vc_key] = self.tts_vc
+                        else:
+                            error = 'TTS VC engine could not be created!'
+                            print(error)
+                            return None
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -283,8 +282,6 @@ class Coqui:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
                     self.tts = self._load_coqui_tts_api(model_path, self.session['device'])
-                if not self.tts:
-                    return None
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -628,7 +625,7 @@ class Coqui:
                             else:
                                 tmp_out_wav = tmp_in_wav
                             with torch.no_grad():
-                                audio_part = settings['tts_vc'].voice_conversion(
+                                audio_part = self.tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
                                     target_wav=settings['voice_path']
                                 )
@@ -687,7 +684,7 @@ class Coqui:
                             else:
                                 tmp_out_wav = tmp_in_wav
                             with torch.no_grad():
-                                audio_part = settings['tts_vc'].voice_conversion(
+                                audio_part = self.tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
                                     target_wav=settings['voice_path']
                                 )
