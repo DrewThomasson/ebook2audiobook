@@ -1859,7 +1859,7 @@ def web_interface(args):
                 }
             </style>
             <script>
-                function redraw_audiobook_player(){
+                window.redraw_audiobook_player = function(){
                     try{
                         let intervalId = setInterval(()=>{
                             try{
@@ -1890,7 +1890,7 @@ def web_interface(args):
                             }
                         },100);
                     }catch(e){
-                        console.log("redraw_audiobook_player error: "+e.toString());
+                        console.log("window.redraw_audiobook_player error: "+e.toString());
                     }
                 }
             </script>
@@ -2835,7 +2835,7 @@ def web_interface(args):
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
         ).then(
             fn=None,
-            js="()=>redraw_audiobook_player()"
+            js="() => window.redraw_audiobook_player()"
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -2957,7 +2957,7 @@ def web_interface(args):
             js="""
             () => {
                 try{
-                    redraw_audiobook_player();
+                    window.redraw_audiobook_player();
                     // Return localStorage item to Python
                     const data = window.localStorage.getItem('data');
                     if (data) {
