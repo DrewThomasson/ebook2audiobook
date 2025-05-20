@@ -1795,11 +1795,14 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
-                .progress-bar.svelte-ls20lj {
+                .progress-container {
+                    position: relative;
+                    overflow: hidden;
                     background: linear-gradient(to right, orange, green);
-                    background-size: 100% 100%;
-                    background-position: left top;
-                    background-repeat: no-repeat;
+                    border-radius: 4px;
+                }
+                .progress-bar.svelte-ls20lj {
+                    background: none; /* remove its own background */
                 }
                 .selected {
                     color: orange !important;
