@@ -1795,6 +1795,9 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
+                .progress-bar.svelte-ls20lj {
+                    background-color: oranage !important;
+                }
                 .selected {
                     color: orange !important;
                 }
