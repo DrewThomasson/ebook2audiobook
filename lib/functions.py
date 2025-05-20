@@ -1796,7 +1796,7 @@ def web_interface(args):
                     overflow: auto !important;
                 }
                 .progress-bar.svelte-ls20lj {
-                    background-color: oranage !important;
+                    background: linear-gradient(to right, orange, green) !important;
                 }
                 .selected {
                     color: orange !important;
