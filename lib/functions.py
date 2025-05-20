@@ -1868,12 +1868,9 @@ def web_interface(args):
         )
         main_markdown = gr.Markdown(
             f'''
-            <h1 style="line-height: 0.7">Ebook2Audiobook v{prog_version}</h1>
-            <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" style="line-height:0">https://github.com/DrewThomasson/ebook2audiobook</a>
-            <div style="line-height: 1.3;">
-                Multiuser, multiprocessing TTS GUI and Headless application server<br/>
-                Convert eBooks into immersive audiobooks with realistic TTS model voices.<br/>
-            </div>
+            <h3 style="line-height: 0.7">Ebook2Audiobook</h1>
+            <h5>v{prog_version}</h5>
+            <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" style="line-height:0; text-align: right">https://github.com/DrewThomasson/ebook2audiobook</a>
             '''
         )
         with gr.Tabs():
