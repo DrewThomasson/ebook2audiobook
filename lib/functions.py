@@ -1801,8 +1801,8 @@ def web_interface(args):
                 .progress-bar.svelte-ls20lj {
                     background: linear-gradient(to right, orange, orange);
                 }
-                #slider_speed .slider_input_container.svelte-10lj3xl {
-                    background: linear-gradient(to right, orange, orange);
+                #range_id_6 {
+                    accent-color: orange;
                 }
                 #component-2 {
                     position:absolute; 
