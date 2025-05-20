@@ -1804,6 +1804,10 @@ def web_interface(args):
                 #slider_speed .slider_input_container.svelte-10lj3xl {
                     background: linear-gradient(to right, orange, orange);
                 }
+                #component-2 {
+                    position:absolute; 
+                    text-align:center;
+                }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important !important;
                 }
@@ -1868,9 +1872,7 @@ def web_interface(args):
         )
         main_markdown = gr.Markdown(
             f'''
-            <div style="position:absolute;margin:auto;padding:0text-align:center><h2 style="line-height:0">Ebook2Audiobook</h2><br/>
-                <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank">v{prog_version}</a>
-            </div>
+            <h2 style="display:inline;line-height:0.6">Ebook2Audiobook</h2><a href="https://github.com/DrewThomasson/ebook2audiobook" style="float:right" target="_blank">v{prog_version}</a>
             '''
         )
         with gr.Tabs():
