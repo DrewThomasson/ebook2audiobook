@@ -1798,14 +1798,11 @@ def web_interface(args):
                 .selected {
                     color: orange !important;
                 }
-                #slider_speed input[type="range"] {
-                     background: var(--input-background-fill) !important;
-                     background-image: linear-gradient(var(--primary-500),var(--primary-500)) !important;
-                     background-size: 0% 100% !important;
-                     background-repeat: no-repeat !important;
-                }
                 .progress-bar.svelte-ls20lj {
                     background: orange;
+                }
+                #slider_speed input[type="range"] {
+                     background: orange;
                 }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important !important;
