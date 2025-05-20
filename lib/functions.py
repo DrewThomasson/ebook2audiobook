@@ -1799,7 +1799,7 @@ def web_interface(args):
                     color: orange !important;
                 }
                 .progress-bar.svelte-ls20lj {
-                    background: orange;
+                    background: linear-gradient(to right, orange, orange);
                 }
                 #slider_speed input[type="range"] {
                      background: orange;
