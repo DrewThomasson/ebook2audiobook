@@ -576,7 +576,7 @@ class Coqui:
                             speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
                         if not os.path.exists(bark_dir):
                             npz_dir = os.path.join(bark_dir, speaker)
-                            makedirs(npz_dir)
+                            os.makedirs(npz_dir)
                             npz_file = os.path.join(npz_dir, f'{speaker}.npz')
                             self._wav2npz(settings['voice_path'], npz_file, sample_rate)
                         speaker_argument = {
