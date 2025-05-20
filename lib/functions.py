@@ -1795,26 +1795,15 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
-                .progress-bar.svelte-ls20lj {
-                    position: relative !important;
-                    overflow: hidden !important;
-                    background: none !important;
-                }
-                .progress-bar.svelte-ls20lj::before {
-                    content: '' !important;
-                    position: absolute !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                    height: 100% !important;
-                    width: 100vw !important;
-                    background: linear-gradient(to right, orange, green) !important;
-                    z-index: -1 !important;
-                }
+
                 .selected {
                     color: orange !important;
                 }
-                #range_id_6 .svelte-10lj3xl {
-                    background-color: orange !important;
+                #slider_speed input[type="range"] {
+                     background: var(--input-background-fill);
+                     background-image: linear-gradient(var(--primary-500),var(--primary-500));
+                     background-size: 0% 100%;
+                     background-repeat: no-repeat;
                 }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important !important;
