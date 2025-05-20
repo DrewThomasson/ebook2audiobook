@@ -1801,9 +1801,6 @@ def web_interface(args):
                 .progress-bar.svelte-ls20lj {
                     background: orange !important;
                 }
-                .svelte-10lj3xl {
-                    accent-color: orange !important;
-                }
                 #component-2 {
                     position:absolute; 
                     text-align:center;
@@ -1866,6 +1863,26 @@ def web_interface(args):
                     border-radius: 0px !important;
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
+                }
+                /////////// Intro
+                .intro-overlay {
+                    position: fixed;
+                    inset: 0;
+                    background: rgba(0, 0, 0, 0.6); /* black with 60% opacity */
+                    color: white;
+                    font-size: 3rem;
+                    font-weight: bold;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    animation: fadeOut 1.5s ease-out 1s forwards;
+                    pointer-events: none;
+                    user-select: none;
+                }
+                @keyframes fadeOut {
+                    from { opacity: 1; }
+                    to   { opacity: 0; visibility: hidden; }
                 }
             </style>
             '''
@@ -2918,6 +2935,12 @@ def web_interface(args):
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
             outputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_modal]
+        )
+        gr_intro = gr.HTML('''
+            <div class="intro-overlay">
+                <div class="intro-text">Ebook2Audiobook</div>
+            </div>
+            '''
         )
         interface.load(
             fn=None,
