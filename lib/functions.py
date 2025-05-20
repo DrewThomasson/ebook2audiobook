@@ -1804,17 +1804,8 @@ def web_interface(args):
                 .selected {
                     color: orange !important;
                 }
-                #conversion_progress_bar div[role="progressbar"] {
-                    background-color: orange !important;
-                }
-                #slider_speed input[type=range]::-webkit-slider-runnable-track {
-                    background-color: orange !important;
-                }
-                #slider_speed input[type=range]::-moz-range-progress {
-                    background-color: orange !important;
-                }
-                #slider_speed input[type=range]::-moz-range-track {
-                    background-color: orange !important;
+                #range_id_6 .svelte-10lj3xl {
+                    background-color: orange;
                 }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important !important;
