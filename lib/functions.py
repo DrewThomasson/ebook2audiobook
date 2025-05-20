@@ -1795,14 +1795,20 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
-                .progress-container {
+                .progress-bar.svelte-ls20lj {
                     position: relative !important;
                     overflow: hidden !important;
-                    background: linear-gradient(to right, orange, green) !important;
-                    border-radius: 4px !important;
-                }
-                .progress-bar.svelte-ls20lj {
                     background: none !important;
+                }
+                .progress-bar.svelte-ls20lj::before {
+                    content: '' !important;
+                    position: absolute !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    height: 100% !important;
+                    width: 100vw !important;
+                    background: linear-gradient(to right, orange, green) !important;
+                    z-index: -1 !important;
                 }
                 .selected {
                     color: orange !important;
