@@ -1796,19 +1796,19 @@ def web_interface(args):
                     overflow: auto !important;
                 }
                 .progress-container {
-                    position: relative;
-                    overflow: hidden;
-                    background: linear-gradient(to right, orange, green);
-                    border-radius: 4px;
+                    position: relative !important;
+                    overflow: hidden !important;
+                    background: linear-gradient(to right, orange, green) !important;
+                    border-radius: 4px !important;
                 }
                 .progress-bar.svelte-ls20lj {
-                    background: none; /* remove its own background */
+                    background: none !important;
                 }
                 .selected {
                     color: orange !important;
                 }
                 #range_id_6 .svelte-10lj3xl {
-                    background-color: orange;
+                    background-color: orange !important;
                 }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important !important;
