@@ -1801,7 +1801,7 @@ def web_interface(args):
                 .progress-bar.svelte-ls20lj {
                     background: orange !important;
                 }
-                #range_id_6 {
+                .svelte-10lj3xl {
                     accent-color: orange !important;
                 }
                 #component-2 {
