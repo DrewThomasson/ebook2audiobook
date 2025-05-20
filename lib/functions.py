@@ -1795,15 +1795,23 @@ def web_interface(args):
                     height: 116px !important;
                     overflow: auto !important;
                 }
-
                 .selected {
                     color: orange !important;
                 }
                 #slider_speed input[type="range"] {
-                     background: var(--input-background-fill);
-                     background-image: linear-gradient(var(--primary-500),var(--primary-500));
-                     background-size: 0% 100%;
-                     background-repeat: no-repeat;
+                     background: var(--input-background-fill) !important;
+                     background-image: linear-gradient(var(--primary-500),var(--primary-500)) !important;
+                     background-size: 0% 100% !important;
+                     background-repeat: no-repeat !important;
+                }
+                div[class*="progress-bar"] {
+                    background: linear-gradient(to right, orange, green) !important;
+                    background-size: 100% 100% !important;
+                    background-repeat: no-repeat !important;
+                    background-position: left center !important;
+                    -webkit-mask-image: linear-gradient(to right, black, black) !important;
+                    mask-image: linear-gradient(to right, black, black) !important;
+                    mask-size: 100% 100% !important;
                 }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important !important;
