@@ -1868,8 +1868,9 @@ def web_interface(args):
         )
         main_markdown = gr.Markdown(
             f'''
-            <h3 style="line-height: 0.7">Ebook2Audiobook</h1>
-            <div style="position:absolute;float:right;text-align:right><a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank">Github repository</a></div>
+            <div style="margin:0 auto;text-align:center><font style="font-size:24px; font-weight:bold;line-height:0">Ebook2Audiobook</font><br/>
+                <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank">v{prog_version}</a>
+            </div>
             '''
         )
         with gr.Tabs():
