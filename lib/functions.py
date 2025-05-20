@@ -1804,14 +1804,8 @@ def web_interface(args):
                      background-size: 0% 100% !important;
                      background-repeat: no-repeat !important;
                 }
-                div[class*="progress-bar"] {
-                    background: linear-gradient(to right, orange, green) !important;
-                    background-size: 100% 100% !important;
-                    background-repeat: no-repeat !important;
-                    background-position: left center !important;
-                    -webkit-mask-image: linear-gradient(to right, black, black) !important;
-                    mask-image: linear-gradient(to right, black, black) !important;
-                    mask-size: 100% 100% !important;
+                .progress-bar.svelte-ls20lj {
+                    background: orange;
                 }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important !important;
