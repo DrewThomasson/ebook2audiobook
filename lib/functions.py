@@ -1799,21 +1799,10 @@ def web_interface(args):
                     color: orange !important;
                 }
                 .progress-bar.svelte-ls20lj {
-                    background: linear-gradient(to right, orange, orange);
+                    background: orange !important;
                 }
-                input[type="range"]::-webkit-slider-thumb {
-                    background-color: orange;
-                    border: 2px solid #aa5500;
-                }
-                input[type="range"]::-moz-range-thumb {
-                    background-color: orange;
-                    border: 2px solid #aa5500;
-                }
-                input[type="range"]::-webkit-slider-runnable-track {
-                    background-color: #ffe5cc;
-                }
-                input[type="range"]::-moz-range-track {
-                    background-color: #ffe5cc;
+                #range_id_6 {
+                    accent-color: orange !important;
                 }
                 #component-2 {
                     position:absolute; 
