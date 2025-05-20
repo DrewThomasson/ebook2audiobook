@@ -1868,7 +1868,7 @@ def web_interface(args):
         )
         main_markdown = gr.Markdown(
             f'''
-            <div style="margin:0 auto;text-align:center><font style="font-size:24px; font-weight:bold;line-height:0">Ebook2Audiobook</font><br/>
+            <div style="position:absolute;margin:auto;padding:0text-align:center><h2 style="line-height:0">Ebook2Audiobook</h2><br/>
                 <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank">v{prog_version}</a>
             </div>
             '''
