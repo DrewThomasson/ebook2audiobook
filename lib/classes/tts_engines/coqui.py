@@ -570,15 +570,15 @@ class Coqui:
                         '''
                         if settings['voice_path'] is not None:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
-                            speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))
-                            if not os.path.exists(bark_dir):
-                                npz_dir = os.path.join(bark_dir, speaker)
-                                makedirs(npz_dir)
-                                npz_file = os.path.join(npz_dir, f'{speaker}.npz')
-                                self._wav2npz(settings['voice_path'], npz_file, sample_rate)                                
+                            speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))                               
                         else:
                             bark_dir = os.path.join(os.path.dirname(default_bark_settings['voices']['Jamie']), 'bark')
                             speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
+                        if not os.path.exists(bark_dir):
+                            npz_dir = os.path.join(bark_dir, speaker)
+                            makedirs(npz_dir)
+                            npz_file = os.path.join(npz_dir, f'{speaker}.npz')
+                            self._wav2npz(settings['voice_path'], npz_file, sample_rate)
                         speaker_argument = {
                             "voice_dir": bark_dir,
                             "speaker": speaker,
