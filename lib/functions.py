@@ -333,7 +333,7 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def proxy_to_dict(proxy_obj):
+def proxy2dict(proxy_obj):
     def recursive_copy(source, visited):
         # Handle circular references by tracking visited objects
         if id(source) in visited:
@@ -485,7 +485,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
         text = math2word(text, lang, lang_iso1, tts_engine)
     return text
 
-def convert_to_epub(session):
+def convert2epub(session):
     if session['cancellation_requested']:
         print('Cancel requested')
         return False
@@ -916,7 +916,7 @@ def get_sanitized(str, replacement="_"):
     sanitized = sanitized.strip("_")
     return sanitized
 
-def convert_chapters_to_audio(session):
+def convert_chapters2audio(session):
     try:
         if session['cancellation_requested']:
             print('Cancel requested')
@@ -983,7 +983,7 @@ def convert_chapters_to_audio(session):
                         if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
-                        if tts_manager.convert_sentence_to_audio(sentence_number, sentence):                           
+                        if tts_manager.convert_sentence2audio(sentence_number, sentence):                           
                             percentage = (sentence_number / total_sentences) * 100
                             t.set_description(f'Converting {percentage:.2f}%')
                             msg = f"\nSentence: {sentence}"
@@ -1263,7 +1263,7 @@ def combine_audio_chapters(session):
         return False
 
 def replace_roman_numbers(text, lang):
-    def roman_to_int(s):
+    def roman2int(s):
         try:
             roman = {
                 'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
@@ -1287,14 +1287,14 @@ def replace_roman_numbers(text, lang):
         roman_numeral = match.group(2)
         if not roman_numeral:
             return match.group(0)
-        integer_value = roman_to_int(roman_numeral.upper())
+        integer_value = roman2int(roman_numeral.upper())
         if isinstance(integer_value, int):
             return f'{chapter_word.capitalize()} {integer_value}; '
         return match.group(0)
 
     def replace_numeral_with_period(match):
         roman_numeral = match.group(1)
-        integer_value = roman_to_int(roman_numeral.upper())
+        integer_value = roman2int(roman_numeral.upper())
         if isinstance(integer_value, int):
             return f'{integer_value}. '
         return match.group(0)
@@ -1360,7 +1360,6 @@ def compare_file_metadata(f1, f2):
 def get_compatible_tts_engines(language):
     compatible_engines = [
         tts for tts in models.keys()
-        #if language in language_tts.get(tts, {}) and tts != BARK
         if language in language_tts.get(tts, {})
     ]
     return compatible_engines
@@ -1522,7 +1521,7 @@ def convert_ebook(args):
                                 msg = 'deepspeed is detected!'
                                 print(msg)
                         session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
-                        if convert_to_epub(session):
+                        if convert2epub(session):
                             epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
                             metadata = dict(session['metadata'])
                             for key, value in metadata.items():
@@ -1551,7 +1550,7 @@ def convert_ebook(args):
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
-                                    if convert_chapters_to_audio(session):
+                                    if convert_chapters2audio(session):
                                         final_file = combine_audio_chapters(session)               
                                         if final_file is not None:
                                             chapters_dirs = [
@@ -1586,13 +1585,13 @@ def convert_ebook(args):
                                         else:
                                             error = 'combine_audio_chapters() error: final_file not created!'
                                     else:
-                                        error = 'convert_chapters_to_audio() failed!'
+                                        error = 'convert_chapters2audio() failed!'
                                 else:
                                     error = 'get_chapters() failed!'
                             else:
                                 error = 'get_cover() failed!'
                         else:
-                            error = 'convert_to_epub() failed!'
+                            error = 'convert2epub() failed!'
                     else:
                         error = f"Temporary directory {session['process_dir']} not removed due to failure."
         else:
@@ -2290,9 +2289,10 @@ def web_interface(args):
                     if method == 'confirm_voice_del':
                         selected_name = os.path.basename(voice)
                         pattern = re.sub(r'_(24000|16000)\.wav$', '_*.wav', voice)
-                        files_to_remove = glob(pattern)
-                        for file in files_to_remove:
-                            os.remove(file)                           
+                        files2remove = glob(pattern)
+                        for file in files2remove:
+                            os.remove(file)
+                        rmtree(os.path.join(os.path.dirname(voice), 'bark', selected_name), ignore_errors=True)
                         msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
@@ -2680,7 +2680,7 @@ def web_interface(args):
                 previous_hash = state['hash']
                 new_hash = hash_proxy_dict(MappingProxyType(session))
                 state['hash'] = new_hash
-                session_dict = proxy_to_dict(session)
+                session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
                 return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id'])
             except Exception as e:
@@ -2703,7 +2703,7 @@ def web_interface(args):
                                     return gr.update(), gr.update(), gr.update()
                                 else:
                                     state['hash'] = new_hash
-                                    session_dict = proxy_to_dict(session)
+                                    session_dict = proxy2dict(session)
                             if session['status'] == 'converting':
                                 if session['progress'] != len(audiobook_options):
                                     session['progress'] = len(audiobook_options)
