@@ -1703,16 +1703,7 @@ def web_interface(args):
         radius_size='lg',
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
     )
-    """
-    def process_cleanup(state):
-        try:
-            print('***************PROCESS CLEANING REQUESTED*****************')
-            if state['id'] in context.sessions:
-                del context.sessions[state['id']]
-        except Exception as e:
-            error = f'process_cleanup(): {e}'
-            alert_exception(error)
-    """
+
     with gr.Blocks(theme=theme, delete_cache=(86400, 86400)) as interface:
         main_html = gr.HTML(
             '''
@@ -1864,32 +1855,11 @@ def web_interface(args):
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
                 }
-                /////////// Intro
-                .intro-overlay {
-                    position: fixed;
-                    inset: 0;
-                    background: rgba(0, 0, 0, 0.6); /* black with 60% opacity */
-                    color: white;
-                    font-size: 3rem;
-                    font-weight: bold;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    z-index: 9999;
-                    animation: fadeOut 1.5s ease-out 1s forwards;
-                    pointer-events: none;
-                    user-select: none;
-                }
-                @keyframes fadeOut {
-                    from { opacity: 1; }
-                    to   { opacity: 0; visibility: hidden; }
-                }
-            </style>
             '''
         )
         main_markdown = gr.Markdown(
             f'''
-            <h2 style="display:inline;line-height:0.6">Ebook2Audiobook</h2><a href="https://github.com/DrewThomasson/ebook2audiobook" style="float:right" target="_blank">v{prog_version}</a>
+            <span style="float:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3><a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:20px" target="_blank">v{prog_version}</a></span>
             '''
         )
         with gr.Tabs():
@@ -2935,12 +2905,6 @@ def web_interface(args):
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
             outputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_modal]
-        )
-        gr_intro = gr.HTML('''
-            <div class="intro-overlay">
-                <div class="intro-text">Ebook2Audiobook</div>
-            </div>
-            '''
         )
         interface.load(
             fn=None,
