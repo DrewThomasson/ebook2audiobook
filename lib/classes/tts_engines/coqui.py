@@ -579,6 +579,12 @@ class Coqui:
                             os.makedirs(npz_dir)
                             npz_file = os.path.join(npz_dir, f'{speaker}.npz')
                             self._wav2npz(settings['voice_path'], npz_file, sample_rate)
+                            
+                            
+                            npz_dir = os.path.join(bark_dir, speaker)
+                            os.makedirs(npz_dir, exist_ok=True)
+                            npz_file = os.path.join(npz_dir, f'{speaker}.npz')
+                            self._wav2npz(output_file, npz_file, sample_rate)
                         speaker_argument = {
                             "voice_dir": bark_dir,
                             "speaker": speaker,
