@@ -574,9 +574,8 @@ class Coqui:
                         else:
                             bark_dir = os.path.join(os.path.dirname(default_bark_settings['voices']['Jamie']), 'bark')
                             speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
-                        print(bark_dir, speaker)
+                        npz_dir = os.path.join(bark_dir, speaker)
                         if not os.path.exists(bark_dir):
-                            npz_dir = os.path.join(bark_dir, speaker)
                             os.makedirs(npz_dir, exist_ok=True)
                             npz_file = os.path.join(npz_dir, f'{speaker}.npz')
                             print(npz_file)
