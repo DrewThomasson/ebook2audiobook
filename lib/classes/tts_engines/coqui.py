@@ -108,7 +108,7 @@ class Coqui:
                                     model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
                                     config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
                                     vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
-                                    self.tts = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
+                                    self.tts = self._load_checkpoint(model_path, config_path, vocab_path, self.session['device'])
                                     loaded_tts[tts_internal_key] = self.tts
                                 if not self.tts:
                                     return None
@@ -168,7 +168,7 @@ class Coqui:
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
-                    self.tts = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
+                    self.tts = self._load_checkpoint(model_path, config_path, vocab_path, self.session['device'])
             else:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
@@ -184,7 +184,7 @@ class Coqui:
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
-                    self.tts = self._load_coqui_tts_checkpoint(model_path, config_path, vocab_path, self.session['device'])
+                    self.tts = self._load_checkpoint(model_path, config_path, vocab_path, self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is None:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
@@ -194,7 +194,7 @@ class Coqui:
                     self.tts = loaded_tts[tts_key]
                 else:
                     self._unload_tts(self.session['device'])
-                    self.tts = self._load_coqui_tts_api(model_path, self.session['device'])
+                    self.tts = self._load_api(model_path, self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -216,7 +216,7 @@ class Coqui:
                     else:
                         if len(loaded_tts) == max_tts_in_memory:
                             self._unload_tts(self.session['device'])
-                        self.tts = self._load_coqui_tts_api(model_path, self.session['device'])
+                        self.tts = self._load_api(model_path, self.session['device'])
                     if not self.tts:
                         return None
                     if self.session['voice'] is not None:
@@ -226,7 +226,7 @@ class Coqui:
                         if tts_vc_key in loaded_tts.keys():
                             self.tts_vc = loaded_tts[tts_vc_key]
                         else:
-                            self.tts_vc = self._load_coqui_tts_vc(self.session['device'])
+                            self.tts_vc = self._load_api_vc(self.session['device'])
                             if self.tts_vc:
                                 loaded_tts[tts_vc_key] = self.tts_vc
                             else:
@@ -251,7 +251,7 @@ class Coqui:
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
-                    self.tts = self._load_coqui_tts_api(model_path, self.session['device'])
+                    self.tts = self._load_api(model_path, self.session['device'])
                 if self.session['voice'] is not None:
                     tts_vc_key = default_vc_model
                     msg = f"Loading TTS {tts_vc_key} zeroshot model, it takes a while, please be patient..."
@@ -261,7 +261,7 @@ class Coqui:
                     else:
                         if len(loaded_tts) == max_tts_in_memory:
                             self._unload_tts(self.session['device'])
-                        self.tts_vc = self._load_coqui_tts_vc(self.session['device'])
+                        self.tts_vc = self._load_api_vc(self.session['device'])
                         if self.tts_vc:
                             loaded_tts[tts_vc_key] = self.tts_vc
                         else:
@@ -282,7 +282,7 @@ class Coqui:
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
-                    self.tts = self._load_coqui_tts_api(model_path, self.session['device'])
+                    self.tts = self._load_api(model_path, self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -297,7 +297,7 @@ class Coqui:
             print(error)
             return None
           
-    def _load_coqui_tts_api(self, model_path, device):
+    def _load_api(self, model_path, device):
         global lock
         try:
             with lock:
@@ -309,11 +309,11 @@ class Coqui:
                         tts.to(device)
                     return tts
         except Exception as e:
-            error = f'_load_coqui_tts_api() error: {e}'
+            error = f'_load_api() error: {e}'
             print(error)
         return 0
 
-    def _load_coqui_tts_checkpoint(self, model_path, config_path, vocab_path, device):
+    def _load_checkpoint(self, model_path, config_path, vocab_path, device):
         global lock
         try:
             config = self.XttsConfig()
@@ -335,11 +335,11 @@ class Coqui:
                         tts.to(device)
                     return tts
         except Exception as e:
-            error = f'_load_coqui_tts_checkpoint() error: {e}'
+            error = f'_load_checkpoint() error: {e}'
             print(error)
         return 0
 
-    def _load_coqui_tts_vc(self, device):
+    def _load_api_vc(self, device):
         global lock
         try:
             with lock:
@@ -347,7 +347,7 @@ class Coqui:
                 if tts:
                     return tts
         except Exception as e:
-            error = f'_load_coqui_tts_vc() error: {e}'
+            error = f'_load_api_vc() error: {e}'
             print(error)
         return 0
           
@@ -555,7 +555,7 @@ class Coqui:
                         if self._is_valid(audio_part):
                             audio_part = audio_part.tolist()
                     elif self.session['tts_engine'] == BARK:
-                        trim_audio_buffer = 0.004
+                        trim_audio_buffer = 0.001
                         '''
                             [laughter]
                             [laughs]
@@ -570,10 +570,16 @@ class Coqui:
                         '''
                         if settings['voice_path'] is not None:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
-                            speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))
+                            speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))                               
                         else:
                             bark_dir = os.path.join(os.path.dirname(default_bark_settings['voices']['Jamie']), 'bark')
                             speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
+                        npz_dir = os.path.join(bark_dir, speaker)
+                        if not os.path.exists(npz_dir):
+                            os.makedirs(npz_dir, exist_ok=True)
+                            npz_file = os.path.join(npz_dir, f'{speaker}.npz')
+                            print(npz_file)
+                            self._wav2npz(settings['voice_path'], npz_file, sample_rate)
                         speaker_argument = {
                             "voice_dir": bark_dir,
                             "speaker": speaker,
