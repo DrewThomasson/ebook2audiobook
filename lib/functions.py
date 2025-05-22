@@ -1492,22 +1492,24 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
                                 msg = 'GPU is not available on your device!'
                                 print(msg)
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
-                                os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
                                 msg = 'MPS is not available on your device!'
                                 print(msg)
-                        else:
-                            os.environ["SUNO_OFFLOAD_CPU"] = 'true'
-                            os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
+                        if session['device'] == 'cpu':
+                            if session['tts_engine'] == BARK:
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
+                                msg = '\nSwitch Bark to CPU'
+                                print(msg)
                         vram_avail = get_vram()
                         if vram_avail <= 4:
-                            os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
+                            msg = 'VRAM capacity could not be detected' if vram_avail == 0 else 'VRAM under 4GB'
+                            if session['tts_engine'] == BARK:
+                                msg += '\nSwitch Bark to SMALL models'
+                                os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
                         msg = f"Available Processor Unit: {session['device'].upper()}"
                         print(msg)
                         if default_xtts_settings['use_deepspeed'] == True:
@@ -1703,16 +1705,7 @@ def web_interface(args):
         radius_size='lg',
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
     )
-    """
-    def process_cleanup(state):
-        try:
-            print('***************PROCESS CLEANING REQUESTED*****************')
-            if state['id'] in context.sessions:
-                del context.sessions[state['id']]
-        except Exception as e:
-            error = f'process_cleanup(): {e}'
-            alert_exception(error)
-    """
+
     with gr.Blocks(theme=theme, delete_cache=(86400, 86400)) as interface:
         main_html = gr.HTML(
             '''
@@ -1798,17 +1791,12 @@ def web_interface(args):
                 .selected {
                     color: orange !important;
                 }
-                #conversion_progress_bar div[role="progressbar"] {
-                    background-color: orange !important;
+                .progress-bar.svelte-ls20lj {
+                    background: orange !important;
                 }
-                #slider_speed input[type=range]::-webkit-slider-runnable-track {
-                    background-color: orange !important;
-                }
-                #slider_speed input[type=range]::-moz-range-progress {
-                    background-color: orange !important;
-                }
-                #slider_speed input[type=range]::-moz-range-track {
-                    background-color: orange !important;
+                #component-2 {
+                    position:absolute; 
+                    text-align:center;
                 }
                 #component-8, #component-31, #component-15 {
                     height: 140px !important !important;
@@ -1869,17 +1857,11 @@ def web_interface(args):
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
                 }
-            </style>
             '''
         )
         main_markdown = gr.Markdown(
             f'''
-            <h1 style="line-height: 0.7">Ebook2Audiobook v{prog_version}</h1>
-            <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" style="line-height:0">https://github.com/DrewThomasson/ebook2audiobook</a>
-            <div style="line-height: 1.3;">
-                Multiuser, multiprocessing TTS GUI and Headless application server<br/>
-                Convert eBooks into immersive audiobooks with realistic TTS model voices.<br/>
-            </div>
+            <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
             '''
         )
         with gr.Tabs():

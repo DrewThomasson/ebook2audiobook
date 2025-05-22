@@ -204,8 +204,9 @@ jobs:
             command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine xtts --fine_tuned AiExplained'   
           - name: "English XTTS headless fine-tuned XTTS model batch test"
             command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --fine_tuned AiExplained'
-          #- name: "English Bark headless single test"
-          #  command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark'
+          # -----TO IMPLEMENT LATER------  
+          - name: "English Bark headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine bark'
           #- name: "English Bark Custom-Voice headless batch test" # Marked out as it takes too long
           #  command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine bark --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
           #- name: "English Bark Custom-Voice headless single test"
@@ -265,3 +266,25 @@ jobs:
   #       run: docker run ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:dev_v25 --headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine xtts --custom_model "custom_xtts_test.zip"
 
 
+
+
+
+
+
+
+
+
+  
+  Verify-test:
+      runs-on: ubuntu-latest
+      needs: run_tests
+      steps:
+        - name: Checkout repository for VERSION.txt
+          uses: actions/checkout@v3
+          with:
+            path: source
+    
+        - name: print out some message
+          run: |
+            
+            echo "This is a test message, hopefully by including this it will make a thing error out"
