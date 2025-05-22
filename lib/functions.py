@@ -1492,22 +1492,24 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
                                 msg = 'GPU is not available on your device!'
                                 print(msg)
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
-                                os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
                                 msg = 'MPS is not available on your device!'
                                 print(msg)
-                        else:
-                            os.environ["SUNO_OFFLOAD_CPU"] = 'true'
-                            os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
+                        if session['device'] == 'cpu':
+                            if session['tts_engine'] == BARK:
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
+                                msg = '\nSwitch Bark to CPU'
+                                print(msg)
                         vram_avail = get_vram()
                         if vram_avail <= 4:
-                            os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
+                            msg = 'VRAM capacity could not be detected' if vram_avail == 0 else 'VRAM under 4GB'
+                            if session['tts_engine'] == BARK:
+                                msg += '\nSwitch Bark to SMALL models'
+                                os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
                         msg = f"Available Processor Unit: {session['device'].upper()}"
                         print(msg)
                         if default_xtts_settings['use_deepspeed'] == True:
