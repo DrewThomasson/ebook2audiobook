@@ -43,6 +43,7 @@ dependencies = [
 	"regex",
 	"translate",
 	"tqdm",
+	"suno-bark",
 	"unidic",
 	"pymupdf4llm",
 	"torch",
