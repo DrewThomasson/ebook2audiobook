@@ -10,6 +10,7 @@ set "FULL_DOCKER=full_docker"
 set "SCRIPT_MODE=%NATIVE%"
 set "SCRIPT_DIR=%~dp0"
 
+set "ARCH=%PROCESSOR_ARCHITECTURE%"
 set "PYTHON_VERSION=3.12"
 set "PYTHON_ENV=python_env"
 set "PYTHONUTF8=1"
@@ -43,6 +44,11 @@ set "PROGRAMS_CHECK=0"
 set "DOCKER_CHECK=0"
 
 set "HELP_FOUND=%ARGS:--help=%"
+
+if /I "%ARCH%"=="x86" (
+    echo Error: 32-bit (x86) architecture is not supported.
+    goto failed
+)
 
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (

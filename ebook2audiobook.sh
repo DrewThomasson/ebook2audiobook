@@ -7,6 +7,7 @@ fi
 
 unset SWITCHED_TO_ZSH
 
+ARCH=$(uname -m)
 PYTHON_VERSION="3.12"
 
 export PYTHONUTF8="1"
@@ -56,19 +57,22 @@ if [[ "$OSTYPE" != "linux"* && "$OSTYPE" != "darwin"* ]]; then
 	exit 1;
 fi
 
-ARCH=$(uname -m)
-
 if [[ "$OSTYPE" = "darwin"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
 	CONFIG_FILE="$HOME/.zshrc"
+	if [[ "$ARCH" == "x86_64" ]]; then
+		PYTHON_VERSION="3.11"
+	fi
 elif [[ "$OSTYPE" = "linux"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
 	CONFIG_FILE="$HOME/.bashrc"
 fi
+
 CONDA_INSTALLER="/tmp/Miniforge3.sh"
 CONDA_INSTALL_DIR="$HOME/Miniforge3"
 CONDA_PATH="$CONDA_INSTALL_DIR/bin"
 CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
+
 export TMPDIR="$SCRIPT_DIR/.cache"
 export PATH="$CONDA_PATH:$PATH"
 
