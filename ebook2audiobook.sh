@@ -296,8 +296,9 @@ else
 			conda init > /dev/null 2>&1
 			source $CONDA_ENV
 			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
+			python -m pip cache purge
 			python -m pip install --upgrade pip
-			python -m pip install --upgrade --no-cache-dir --progress-bar=on < requirements.txt
+			python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on < requirements.txt
 			conda deactivate
 		fi
 		return 0

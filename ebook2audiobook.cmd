@@ -219,7 +219,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		call python -m pip install --upgrade pip
 		for /f "usebackq delims=" %%p in ("requirements.txt") do (
 			echo Installing %%p...
-			call python -m pip install --upgrade --no-cache-dir --progress-bar=on "%%p"
+			call python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on "%%p"
 		)
 		echo All required packages are installed.
 	) else (
