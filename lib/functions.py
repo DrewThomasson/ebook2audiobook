@@ -2459,11 +2459,13 @@ def web_interface(args):
                 visible = True
                 if session['fine_tuned'] != 'internal':
                     visible = False
-                return gr.update(visible=visible_gr_tab_preferences), gr.update(visible=visible), update_gr_fine_tuned_list(id), 
-                                 gr.update(label=f"*Upload {session['tts_engine']} Fine Tuned Model:", 
-                                 gr.update(f"Should be a ZIP file with {models[session['tts_engine']][default_fine_tuned]['files']}")
+                return (
+                       gr.update(visible=visible_gr_tab_preferences), gr.update(visible=visible), update_gr_fine_tuned_list(id),
+                       gr.update(label=f"Upload {session['tts_engine']} Fine Tuned Model:"),
+                       gr.update(f"Should be a ZIP file with {models[session['tts_engine']][default_fine_tuned]['files']}")
+                )
             else:
-                return gr.update(visible=False), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']", gr.update(''))
+                return gr.update(visible=False), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update('')
                 
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
