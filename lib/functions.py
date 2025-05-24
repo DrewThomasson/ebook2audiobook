@@ -965,6 +965,9 @@ def convert_chapters2audio(session):
         total_chapters = len(session['chapters'])
         total_sentences = sum(len(array) for array in session['chapters'])
         sentence_number = 0
+        if session['tts_engine'] == BARK:
+            original_tqdm = tqdm.tqdm
+            tqdm.tqdm = SilentTqdm
         with tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
             for x in range(0, total_chapters):

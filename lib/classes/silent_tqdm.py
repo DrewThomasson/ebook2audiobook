@@ -1,18 +1,8 @@
-import tqdm.auto
+import tqdm
 import io
-from contextlib import contextmanager
 
-class SilentTqdm(tqdm.auto.tqdm):
+# Redirect all tqdm output to null stream for Bark
+class SilentTqdm(tqdm.tqdm):
 	def __init__(self, *args, **kwargs):
 		kwargs['file'] = io.StringIO()
 		super().__init__(*args, **kwargs)
-
-	@staticmethod
-	@contextmanager
-	def suppress_bark():
-		original = tqdm.auto.tqdm
-		tqdm.auto.tqdm = SilentTqdm
-		try:
-			yield
-		finally:
-			tqdm.auto.tqdm = original
