@@ -28,6 +28,7 @@ import subprocess
 import sys
 import threading
 import time
+import tqdm
 import torch
 import urllib.request
 import uuid
@@ -56,7 +57,6 @@ from pathlib import Path
 from pydub import AudioSegment
 from queue import Queue, Empty
 from starlette.requests import ClientDisconnect
-from tqdm import tqdm
 from types import MappingProxyType
 from urllib.parse import urlparse
 
@@ -278,7 +278,7 @@ def extract_custom_model(file_src, session, required_files=None):
                 print(f'{model_path} already exists, bypassing files extraction')
                 return model_path
             os.makedirs(model_path, exist_ok=True)
-            with tqdm(total=files_length, unit='files') as t:
+            with tqdm.tqdm(total=files_length, unit='files') as t:
                 for f in files:
                     if f in required_files:
                         zip_ref.extract(f, model_path)
@@ -968,7 +968,7 @@ def convert_chapters2audio(session):
         if session['tts_engine'] == BARK:
             original_tqdm = tqdm.tqdm
             tqdm.tqdm = SilentTqdm
-        with tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+        with tqdm.tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
             for x in range(0, total_chapters):
                 chapter_num = x + 1
