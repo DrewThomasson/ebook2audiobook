@@ -64,6 +64,7 @@ from urllib.parse import urlparse
 from lib.classes.voice_extractor import VoiceExtractor
 #from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
+from lib.classes.silent_tqdm import SilentTqdm
 
 def inject_configs(target_namespace):
     # Extract variables from both modules and inject them into the target namespace
@@ -964,6 +965,9 @@ def convert_chapters2audio(session):
         total_chapters = len(session['chapters'])
         total_sentences = sum(len(array) for array in session['chapters'])
         sentence_number = 0
+        if session['tts_engine'] == BARK:
+            original_tqdm = tqdm.tqdm
+            tqdm.tqdm = SilentTqdm
         with tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
             for x in range(0, total_chapters):
@@ -1010,6 +1014,8 @@ def convert_chapters2audio(session):
                         msg = 'combine_audio_sentences() failed!'
                         print(msg)
                         return False
+        if session['tts_engine'] == BARK:
+            tqdm.tqdm = original_tqdm
         return True
     except Exception as e:
         DependencyError(e)

@@ -45,11 +45,6 @@ set "DOCKER_CHECK=0"
 
 set "HELP_FOUND=%ARGS:--help=%"
 
-if /I "%ARCH%"=="x86" (
-    echo Error: 32-bit (x86) architecture is not supported.
-    goto failed
-)
-
 :: Refresh environment variables (append registry Path to current PATH)
 for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" /v Path') do (
     set "PATH=%%B;%PATH%"
@@ -57,22 +52,27 @@ for /f "tokens=2,*" %%A in ('reg query "HKLM\SYSTEM\CurrentControlSet\Control\Se
 
 cd /d "%SCRIPT_DIR%"
 
+if "%ARCH%"=="x86" (
+	echo Error: 32-bit architecture is not supported.
+	goto :failed
+)
+
 :: Check if running inside Docker
 if defined CONTAINER (
 	set "SCRIPT_MODE=%FULL_DOCKER%"
-	goto main
+	goto :main
 )
 
-goto scoop_check
+goto :scoop_check
 
 :scoop_check
 where /Q scoop
 if %errorlevel% neq 0 (
 	echo Scoop is not installed. 
 	set "SCOOP_CHECK=1"
-	goto install_components
+	goto :install_components
 )
-goto conda_check
+goto :conda_check
 exit /b
 
 :conda_check
@@ -81,7 +81,7 @@ if %errorlevel% neq 0 (
 	call rmdir /s /q "%CONDA_INSTALL_DIR%" 2>nul
 	echo Miniforge3 is not installed. 
 	set "CONDA_CHECK=1"
-	goto install_components
+	goto :install_components
 )
 :: Check if running in a Conda environment
 if defined CONDA_DEFAULT_ENV (
@@ -107,9 +107,9 @@ for /f "delims=" %%i in ('where /Q python') do (
 if not "%CURRENT_ENV%"=="" (
 	echo Current python virtual environment detected: %CURRENT_ENV%. 
 	echo This script runs with its own virtual env and must be out of any other virtual environment when it's launched.
-	goto failed
+	goto :failed
 )
-goto programs_check
+goto :programs_check
 exit /b
 
 :programs_check
@@ -126,9 +126,9 @@ for %%p in (%PROGRAMS_LIST%) do (
 )
 if not "%missing_prog_array%"=="" (
     set "PROGRAMS_CHECK=1"
-    goto install_components
+    goto :install_components
 )
-goto dispatch
+goto :dispatch
 exit /b
 
 :install_components
@@ -156,7 +156,7 @@ if not "%CONDA_CHECK%"=="0" (
 	where /Q conda
 	if !errorlevel! neq 0 (
 		echo Conda installation failed.
-		goto failed
+		goto :failed
 	)
 	call conda config --set auto_activate_base false
 	call conda update conda -y
@@ -184,7 +184,7 @@ if not "%PROGRAMS_CHECK%"=="0" (
 		where /Q !prog!
 		if !errorlevel! neq 0 (
 			echo %%p installation failed...
-			goto failed
+			goto :failed
 		)
     )
 	call powershell -command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + '%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;', 'User')"
@@ -192,7 +192,7 @@ if not "%PROGRAMS_CHECK%"=="0" (
     set "PROGRAMS_CHECK=0"
     set "missing_prog_array="
 )
-goto dispatch
+goto :dispatch
 exit /b
 
 :dispatch
@@ -200,9 +200,9 @@ if "%SCOOP_CHECK%"=="0" (
 	if "%PROGRAMS_CHECK%"=="0" (
 		if "%CONDA_CHECK%"=="0" (
 			if "%DOCKER_CHECK%"=="0" (
-				goto main
+				goto :main
 			) else (
-				goto failed
+				goto :failed
 			)
 		)
 	)
@@ -210,7 +210,7 @@ if "%SCOOP_CHECK%"=="0" (
 echo PROGRAMS_CHECK: %PROGRAMS_CHECK%
 echo CONDA_CHECK: %CONDA_CHECK%
 echo DOCKER_CHECK: %DOCKER_CHECK%
-goto install_components
+goto :install_components
 exit /b
 
 :main
