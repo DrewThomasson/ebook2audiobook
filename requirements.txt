@@ -24,8 +24,10 @@ ray
 regex
 translate
 tqdm
+suno-bark
 unidic
 pymupdf4llm
 torch
 coqui-tts
 torchvggish
+transformers==4.51.3

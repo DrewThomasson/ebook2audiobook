@@ -64,6 +64,7 @@ from urllib.parse import urlparse
 from lib.classes.voice_extractor import VoiceExtractor
 #from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
+from lib.classes.silent_tqdm import SilentTqdm
 
 def inject_configs(target_namespace):
     # Extract variables from both modules and inject them into the target namespace
@@ -1010,6 +1011,8 @@ def convert_chapters2audio(session):
                         msg = 'combine_audio_sentences() failed!'
                         print(msg)
                         return False
+        if session['tts_engine'] == BARK:
+            tqdm.tqdm = original_tqdm
         return True
     except Exception as e:
         DependencyError(e)
@@ -1887,14 +1890,14 @@ def web_interface(args):
                     with gr.Column(scale=3):
                         with gr.Group():
                             gr_tts_engine_list = gr.Dropdown(label='TTS Engine', choices=tts_engine_options, type='value', interactive=True)
-                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models', choices=fine_tuned_options, type='value', interactive=True)
-                        gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
-                        with gr_group_custom_model:
-                            gr_custom_model_file = gr.File(label=f"*Custom Model Zip File", value=None, file_types=['.zip'], height=140)
-                            with gr.Row():
-                                gr_custom_model_list = gr.Dropdown(label='', choices=custom_model_options, type='value', interactive=True, scale=2)
-                                gr_custom_model_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                            gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
+                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', choices=fine_tuned_options, type='value', interactive=True)
+                            gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
+                            with gr_group_custom_model:
+                                gr_custom_model_file = gr.File(label=f"Upload Fine Tuned Model", value=None, file_types=['.zip'], height=140)
+                                with gr.Row():
+                                    gr_custom_model_list = gr.Dropdown(label='', choices=custom_model_options, type='value', interactive=True, scale=2)
+                                    gr_custom_model_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                gr_custom_model_markdown = gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
                             gr_session = gr.Textbox(label='Session', interactive=False)
                         gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
@@ -2453,9 +2456,13 @@ def web_interface(args):
                 visible = True
                 if session['fine_tuned'] != 'internal':
                     visible = False
-                return gr.update(visible=visible_gr_tab_preferences), gr.update(visible=visible), update_gr_fine_tuned_list(id), gr.update(label=f"*Custom Model Zip File (Mandatory files {models[session['tts_engine']][default_fine_tuned]['files']})")
+                return (
+                       gr.update(visible=visible_gr_tab_preferences), gr.update(visible=visible), update_gr_fine_tuned_list(id),
+                       gr.update(label=f"*Upload {session['tts_engine']} Fine Tuned Model"),
+                       gr.update(label=f"Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])}")
+                )
             else:
-                return gr.update(visible=False), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Custom Model Zip File (Mandatory files {models[session['tts_engine']][default_fine_tuned]['files']})")
+                return gr.update(visible=False), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
@@ -2748,7 +2755,7 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tab_preferences, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file] 
+            outputs=[gr_tab_preferences, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,

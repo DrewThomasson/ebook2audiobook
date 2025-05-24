@@ -583,7 +583,7 @@ class Coqui:
                         speaker_argument = {
                             "voice_dir": bark_dir,
                             "speaker": speaker,
-                            #"text_temp": 0.2
+                            "text_temp": 0.2
                         }                      
                         with torch.no_grad():
                             audio_part = self.tts.tts(
@@ -712,7 +712,7 @@ class Coqui:
                                 text=text_part
                             )
                     elif self.session['tts_engine'] == YOURTTS:
-                        trim_audio_buffer = 0.004
+                        trim_audio_buffer = 0.005
                         speaker_argument = {}
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                         if settings['voice_path'] is not None:
