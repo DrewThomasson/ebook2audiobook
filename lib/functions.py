@@ -984,12 +984,7 @@ def convert_chapters2audio(session):
                         if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
-                        if session['tts_engine'] == BARK:
-                            with SilentTqdm.suppress_bark():
-                                success = tts_manager.convert_sentence2audio(sentence_number, sentence)
-                        else:
-                            success = tts_manager.convert_sentence2audio(sentence_number, sentence)
-                        if success:                           
+                        if tts_manager.convert_sentence2audio(sentence_number, sentence):                           
                             percentage = (sentence_number / total_sentences) * 100
                             t.set_description(f'Converting {percentage:.2f}%')
                             msg = f"\nSentence: {sentence}"
@@ -1016,6 +1011,8 @@ def convert_chapters2audio(session):
                         msg = 'combine_audio_sentences() failed!'
                         print(msg)
                         return False
+        if session['tts_engine'] == BARK:
+            tqdm.tqdm = original_tqdm
         return True
     except Exception as e:
         DependencyError(e)
