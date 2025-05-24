@@ -48,7 +48,8 @@ dependencies = [
 	"pymupdf4llm",
 	"torch",
 	"coqui-tts",
-	"torchvggish"
+	"torchvggish",
+	"transformers==4.51.3"
 ]
 readme = "README.md"
 requires-python = ">3.9,<3.13"

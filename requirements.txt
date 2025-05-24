@@ -30,3 +30,4 @@ pymupdf4llm
 torch
 coqui-tts
 torchvggish
+transformers==4.51.3
