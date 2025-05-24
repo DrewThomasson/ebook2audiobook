@@ -583,7 +583,7 @@ class Coqui:
                         speaker_argument = {
                             "voice_dir": bark_dir,
                             "speaker": speaker,
-                            #"text_temp": 0.2
+                            "text_temp": 0.2
                         }                      
                         with torch.no_grad():
                             audio_part = self.tts.tts(
