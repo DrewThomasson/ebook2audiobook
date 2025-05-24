@@ -1900,7 +1900,7 @@ def web_interface(args):
                                 with gr.Row():
                                     gr_custom_model_list = gr.Dropdown(label='', choices=custom_model_options, type='value', interactive=True, scale=2)
                                     gr_custom_model_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                                gr_custom_model_markdown = gr.Markdown('')
+                                gr_custom_model_markdown = gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
                             gr_session = gr.Textbox(label='Session', interactive=False)
                         gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
@@ -2461,11 +2461,11 @@ def web_interface(args):
                     visible = False
                 return (
                        gr.update(visible=visible_gr_tab_preferences), gr.update(visible=visible), update_gr_fine_tuned_list(id),
-                       gr.update(label=f"Upload {session['tts_engine']} Fine Tuned Model:"),
-                       gr.update(value=f"Should be a ZIP file with {models[session['tts_engine']][default_fine_tuned]['files']}")
+                       gr.update(label=f"*Upload {session['tts_engine']} Fine Tuned Model"),
+                       gr.update(label=f"Should be a ZIP file with {models[session['tts_engine']][default_fine_tuned]['files']}")
                 )
             else:
-                return gr.update(visible=False), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(value='')
+                return gr.update(visible=False), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
@@ -2758,7 +2758,7 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tab_preferences, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_markdown] 
+            outputs=[gr_tab_preferences, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
