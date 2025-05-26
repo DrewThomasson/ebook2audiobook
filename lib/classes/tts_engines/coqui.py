@@ -616,14 +616,18 @@ class Coqui:
                         '''
                         bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
                         speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))                               
-                        if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, None):                     
-                           fine_tuned_params = {
+                        if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, None):      
+                            # text_temp: generation temperature (1.0 more diverse, 0.0 more conservative)
+                            # waveform_temp: generation temperature (1.0 more diverse, 0.0 more conservative)                            
+                            fine_tuned_params = {
                                 key: cast_type(self.session[key])
                                 for key, cast_type in {
-                                    "text_temp": float
+                                    "text_temp": float,
+                                    "waveform_temp": float
                                 }.items()
                                 if self.session.get(key) is not None
                             }
+                            fine_tuned_params['text_temp'] /= 10
                             with torch.no_grad():
                                 result = self.tts.synthesize(
                                     text_part,

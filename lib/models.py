@@ -66,6 +66,8 @@ default_xtts_settings = {
 }
 default_bark_settings = {
     "samplerate": 24000,
+    "text_temp": 0.33,
+    "waveform_temp": 0.33,
     "files": ['coarse_2.pt'],
     "voices": {}
 }

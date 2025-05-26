@@ -157,6 +157,8 @@ class SessionContext:
                 "top_p": default_xtts_settings['top_k'],
                 "speed": default_xtts_settings['speed'],
                 "enable_text_splitting": default_xtts_settings['enable_text_splitting'],
+                "text_temp": default_bark_settings['text_temp'],
+                "waveform_temp": default_bark_settings['waveform_temp'],
                 "event": None,
                 "final_name": None,
                 "output_format": default_output_format,
@@ -1440,6 +1442,8 @@ def convert_ebook(args):
             session['top_p'] = args['top_p']
             session['speed'] = args['speed']
             session['enable_text_splitting'] = args['enable_text_splitting']
+            session['text_temp'] =  args['text_temp']
+            session['waveform_temp'] =  args['waveform_temp']
             session['audiobooks_dir'] = args['audiobooks_dir']
             session['voice'] = args['voice']
             
@@ -1688,7 +1692,8 @@ def web_interface(args):
     src_label_file = 'Select a File'
     src_label_dir = 'Select a Directory'
     
-    visible_gr_tab_preferences = interface_component_options['gr_tab_preferences']
+    visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
+    visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
     visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
     visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
     
@@ -1899,15 +1904,15 @@ def web_interface(args):
                         with gr.Group():
                             gr_session = gr.Textbox(label='Session', interactive=False)
                         gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
-            gr_tab_preferences = gr.TabItem('Fine Tuned Parameters', elem_classes='tab_item', visible=visible_gr_tab_preferences)           
-            with gr_tab_preferences:
+            gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
+            with gr_tab_xtts_params:
                 gr.Markdown(
                     '''
-                    ### Customize Audio Generation Parameters
+                    ### Customize XTTSv2 Parameters
                     Adjust the settings below to influence how the audio is generated. You can control the creativity, speed, repetition, and more.
                     '''
                 )
-                gr_temperature = gr.Slider(
+                gr_xtts_temperature = gr.Slider(
                     label='Temperature', 
                     minimum=0.1, 
                     maximum=10.0, 
@@ -1915,7 +1920,7 @@ def web_interface(args):
                     value=float(default_xtts_settings['temperature']),
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
                 )
-                gr_length_penalty = gr.Slider(
+                gr_xtts_length_penalty = gr.Slider(
                     label='Length Penalty', 
                     minimum=0.3, 
                     maximum=5.0, 
@@ -1924,7 +1929,7 @@ def web_interface(args):
                     info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
                     visible=False
                 )
-                gr_num_beams = gr.Slider(
+                gr_xtts_num_beams = gr.Slider(
                     label='Number Beams', 
                     minimum=1, 
                     maximum=10, 
@@ -1933,7 +1938,7 @@ def web_interface(args):
                     info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
                     visible=False
                 )
-                gr_repetition_penalty = gr.Slider(
+                gr_xtts_repetition_penalty = gr.Slider(
                     label='Repetition Penalty', 
                     minimum=1.0, 
                     maximum=10.0, 
@@ -1941,7 +1946,7 @@ def web_interface(args):
                     value=float(default_xtts_settings['repetition_penalty']), 
                     info='Penalizes repeated phrases. Higher values reduce repetition.'
                 )
-                gr_top_k = gr.Slider(
+                gr_xtts_top_k = gr.Slider(
                     label='Top-k Sampling', 
                     minimum=10, 
                     maximum=100, 
@@ -1949,7 +1954,7 @@ def web_interface(args):
                     value=int(default_xtts_settings['top_k']), 
                     info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
                 )
-                gr_top_p = gr.Slider(
+                gr_xtts_top_p = gr.Slider(
                     label='Top-p Sampling', 
                     minimum=0.1, 
                     maximum=1.0, 
@@ -1957,7 +1962,7 @@ def web_interface(args):
                     value=float(default_xtts_settings['top_p']), 
                     info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
                 )
-                gr_speed = gr.Slider(
+                gr_xtts_speed = gr.Slider(
                     label='Speed', 
                     minimum=0.5, 
                     maximum=3.0, 
@@ -1966,11 +1971,35 @@ def web_interface(args):
                     elem_id='slider_speed',
                     info='Adjusts how fast the narrator will speak.'
                 )
-                gr_enable_text_splitting = gr.Checkbox(
+                gr_xtts_enable_text_splitting = gr.Checkbox(
                     label='Enable Text Splitting', 
                     value=default_xtts_settings['enable_text_splitting'],
                     info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                     visible=False
+                )
+            gr_tab_bark_params = gr.TabItem('BARK fine Tuned Parameters', elem_classes='tab_item', visible=visible_gr_tab_bark_params)           
+            with gr_tab_bark_params:
+                gr.Markdown(
+                    '''
+                    ### Customize BARK Parameters
+                    Adjust the settings below to influence how the audio is generated, emotional and voice behavior random or more conservative
+                    '''
+                )
+                gr_bark_text_temp = gr.Slider(
+                    label='Text Temperature', 
+                    minimum=0.0, 
+                    maximum=1.0, 
+                    step=0.01, 
+                    value=float(default_bark_settings['text_temp']),
+                    info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
+                )
+                gr_bark_waveform_temp = gr.Slider(
+                    label='Waveform Temperature', 
+                    minimum=0.0, 
+                    maximum=1.0, 
+                    step=0.01, 
+                    value=float(default_bark_settings['waveform_temp']),
+                    info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
         gr_state = gr.State(value={"hash": None})
         gr_state_alert = gr.State(value={"type": None,"msg": None})
@@ -2106,21 +2135,25 @@ def web_interface(args):
                 ebook_data = session['ebook']
             else:
                 ebook_data = None
-            session['temperature'] = session['temperature'] # default_xtts_settings['temperature']
-            session['length_penalty'] = session['length_penalty'] # default_xtts_settings['length_penalty']
+            ### XTTSv2 Params
+            session['temperature'] = session['temperature'] if session['temperature'] else default_xtts_settings['temperature']
+            session['length_penalty'] = default_xtts_settings['length_penalty']
             session['num_beams'] = default_xtts_settings['num_beams']
             session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_xtts_settings['repetition_penalty']
             session['top_k'] = session['top_k'] if session['top_k'] else default_xtts_settings['top_k']
             session['top_p'] = session['top_p'] if session['top_p'] else default_xtts_settings['top_p']
             session['speed'] = session['speed'] if session['speed'] else default_xtts_settings['speed']
             session['enable_text_splitting'] = default_xtts_settings['enable_text_splitting']
+            ### BARK Params
+            session['text_temp'] = session['text_temp'] if session['text_temp'] else default_bark_settings['text_temp']
+            session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_bark_settings['waveform_temp']
             return (
                 gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
                 gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
                 update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
                 gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
                 gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
-                gr.update(value=bool(session['enable_text_splitting'])), gr.update(active=True)
+                gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), gr.update(active=True)
             )
 
         def refresh_interface(id):
@@ -2451,16 +2484,19 @@ def web_interface(args):
             session = context.get_session(id)
             session['tts_engine'] = engine
             if session['tts_engine'] == XTTSv2:
-                visible = True
+                visible_custom_model = True
                 if session['fine_tuned'] != 'internal':
-                    visible = False
+                    visible_custom_model = False
                 return (
-                       gr.update(visible=visible_gr_tab_preferences), gr.update(visible=visible), update_gr_fine_tuned_list(id),
+                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible), update_gr_fine_tuned_list(id),
                        gr.update(label=f"*Upload {session['tts_engine']} Fine Tuned Model"),
                        gr.update(label=f"Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])}")
                 )
             else:
-                return gr.update(visible=False), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
+                bark_visible = False
+                if session['tts_engine'] == BARK:
+                    bark_visible = visible_gr_tab_bark_params
+                return gr.update(visible=False), gr.update(visible=bark_visible), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
@@ -2753,7 +2789,7 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tab_preferences, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
+            outputs=[gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
@@ -2803,49 +2839,59 @@ def web_interface(args):
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_confirm_field_hidden, gr_modal]
         )
-        ########## Parameters
-        gr_temperature.change(
+        ########### XTTSv2 Params
+        gr_xtts_temperature.change(
             fn=lambda val, id: change_param('temperature', val, id),
-            inputs=[gr_temperature, gr_session],
+            inputs=[gr_xtts_temperature, gr_session],
             outputs=None
         )
-        gr_length_penalty.change(
+        gr_xtts_length_penalty.change(
             fn=lambda val, id, val2: change_param('length_penalty', val, id, val2),
-            inputs=[gr_length_penalty, gr_session, gr_num_beams],
+            inputs=[gr_xtts_length_penalty, gr_session, gr_xtts_num_beams],
             outputs=None,
         )
-        gr_num_beams.change(
+        gr_xtts_num_beams.change(
             fn=lambda val, id, val2: change_param('num_beams', val, id, val2),
-            inputs=[gr_num_beams, gr_session, gr_length_penalty],
+            inputs=[gr_xtts_num_beams, gr_session, gr_xtts_length_penalty],
             outputs=None,
         )
-        gr_repetition_penalty.change(
+        gr_xtts_repetition_penalty.change(
             fn=lambda val, id: change_param('repetition_penalty', val, id),
-            inputs=[gr_repetition_penalty, gr_session],
+            inputs=[gr_xtts_repetition_penalty, gr_session],
             outputs=None
         )
-        gr_top_k.change(
+        gr_xtts_top_k.change(
             fn=lambda val, id: change_param('top_k', val, id),
-            inputs=[gr_top_k, gr_session],
+            inputs=[gr_xtts_top_k, gr_session],
             outputs=None
         )
-        gr_top_p.change(
+        gr_xtts_top_p.change(
             fn=lambda val, id: change_param('top_p', val, id),
-            inputs=[gr_top_p, gr_session],
+            inputs=[gr_xtts_top_p, gr_session],
             outputs=None
         )
-        gr_speed.change(
+        gr_xtts_speed.change(
             fn=lambda val, id: change_param('speed', val, id),
-            inputs=[gr_speed, gr_session],
+            inputs=[gr_xtts_speed, gr_session],
             outputs=None
         )
-        gr_enable_text_splitting.change(
+        gr_xtts_enable_text_splitting.change(
             fn=lambda val, id: change_param('enable_text_splitting', val, id),
-            inputs=[gr_enable_text_splitting, gr_session],
+            inputs=[gr_xtts_enable_text_splitting, gr_session],
             outputs=None
         )
-        ##########
-        # Timer to save session to localStorage
+        ########### BARK Params
+        gr_bark_text_temp.change(
+            fn=lambda val, id: change_param('text_temp', val, id),
+            inputs=[gr_bark_text_temp, gr_session],
+            outputs=None
+        )
+        gr_bark_waveform_temp.change(
+            fn=lambda val, id: change_param('gr_bark_waveform_temp', val, id),
+            inputs=[gr_bark_waveform_temp, gr_session],
+            outputs=None
+        )
+        ############ Timer to save session to localStorage
         gr_timer = gr.Timer(10, active=False)
         gr_timer.tick(
             fn=save_session,
@@ -2864,8 +2910,9 @@ def web_interface(args):
             fn=submit_convert_btn,
             inputs=[
                 gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_voice_list, gr_language, 
-                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, gr_temperature, gr_length_penalty,
-                gr_num_beams, gr_repetition_penalty, gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting
+                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
+                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
+                gr_bark_text_temp, gr_bark_waveform_temp
             ],
             outputs=[gr_conversion_progress]
         ).then(
@@ -2899,8 +2946,8 @@ def web_interface(args):
                 gr_ebook_file, gr_ebook_mode, gr_device, gr_language, gr_voice_list,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
                 gr_output_format_list, gr_audiobook_list,
-                gr_temperature, gr_length_penalty, gr_num_beams, gr_repetition_penalty,
-                gr_top_k, gr_top_p, gr_speed, gr_enable_text_splitting, gr_timer
+                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
+                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp, gr_bark_waveform_temp, gr_timer
             ]
         )
         gr_confirm_yes_btn_hidden.click(
