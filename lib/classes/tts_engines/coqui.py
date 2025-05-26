@@ -389,7 +389,7 @@ class Coqui:
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                     default_text = default_text
                     output_dict = model.synthesize(
-                        text,
+                        default_text,
                         config,
                         speaker_id=speaker,
                         voice_dirs=bark_dir,
