@@ -86,7 +86,7 @@ class Coqui:
         settings['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
         self.vtt_path = os.path.splitext(self.session['final_name'])[0] + '.vtt'
         if self.session['voice'] is not None:
-            if not self._check_builtin_speakers(settings):
+            if not self._check_builtin_speakers(voice_path):
                 msg = f"Could not create the builtin XTTSv2 speaker example in {self.session['language']}"
                 print(msg)
                 return None
