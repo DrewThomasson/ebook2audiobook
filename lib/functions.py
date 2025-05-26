@@ -1973,7 +1973,7 @@ def web_interface(args):
                     minimum=0.5, 
                     maximum=3.0, 
                     step=0.1, 
-                    value=float(default_xtts_settings['speed']),,
+                    value=float(default_xtts_settings['speed']),
                     elem_id='speed',
                     info='Adjusts how fast the narrator will speak.'
                 )
