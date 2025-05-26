@@ -176,7 +176,7 @@ class Coqui:
                 if tts_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_key]
                 else:
-                    self._load_api(model_path, self.session['device'])
+                    self.tts = self._load_api(model_path, self.session['device'])
                 if self.session['voice'] is not None:
                     tts_vc_key = default_vc_model
                     msg = f"Loading TTS {tts_vc_key} zeroshot model, it takes a while, please be patient..."
@@ -203,7 +203,7 @@ class Coqui:
                 if tts_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_key]
                 else:
-                    self._load_api(model_path, self.session['device'])
+                    self.tts = self._load_api(model_path, self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
