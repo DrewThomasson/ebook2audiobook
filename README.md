@@ -41,18 +41,22 @@ Use this tool responsibly and in accordance with all applicable laws.
 ## Demos
 
 **New Default Voice Demo**  
+
 https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea  
 
 <details>
   <summary>More Demos</summary>
 
 **Rainy Day Voice**  
+
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
-**David Attenborough Voice**  
+**David Attenborough Voice** 
+
 https://github.com/user-attachments/assets/0d437a41-0b0d-48ed-8c9b-02763d5e48ea  
 
 **Example**
+
 ![Example](https://github.com/DrewThomasson/VoxNovel/blob/dc5197dff97252fa44c391dc0596902d71278a88/readme_files/example_in_app.jpeg)
 </details>
 
