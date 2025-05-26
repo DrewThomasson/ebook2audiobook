@@ -67,7 +67,7 @@ default_xtts_settings = {
 default_bark_settings = {
     "samplerate": 24000,
     "files": ['coarse_2.pt'],
-    "voices": {"Jamie": os.path.join(voices_dir, "eng", "adult", "male", f"Jamie_{default_xtts_settings['samplerate']}.wav")}
+    "voices": {}
 }
 default_vits_settings = {
     "samplerate": 22050,
@@ -84,7 +84,6 @@ default_yourtts_settings = {
     "files": ['config.json', 'model_file.pth'],
     "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'}
 }
-
 models = {
     XTTSv2: {
         "internal": {
