@@ -615,12 +615,8 @@ class Coqui:
                             CAPITALIZATION for emphasis of a word
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
-                        if settings['voice_path'] is not None:
-                            bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
-                            speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))                               
-                        else:
-                            bark_dir = os.path.join(os.path.dirname(default_bark_settings['voices']['Jamie']), 'bark')
-                            speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(default_bark_settings['voices']['Jamie']))
+                        bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
+                        speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))                               
                         if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, None):
                             speaker_argument = {
                                 "voice_dir": bark_dir,
