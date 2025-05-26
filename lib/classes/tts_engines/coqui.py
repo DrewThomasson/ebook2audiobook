@@ -627,7 +627,6 @@ class Coqui:
                                 }.items()
                                 if self.session.get(key) is not None
                             }
-                            fine_tuned_params['text_temp'] /= 10
                             with torch.no_grad():
                                 result = self.tts.synthesize(
                                     text_part,
