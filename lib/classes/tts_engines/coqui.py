@@ -52,9 +52,6 @@ class Coqui:
     def __init__(self, session):   
         self.session = session
         self.cache_dir = os.path.join(models_dir,'tts')  
-        self.coquiAPI = coquiAPI
-        self.XttsConfig = XttsConfig
-        self.Xtts = Xtts
         self.tts = None
         self.tts_vc = None
         self.fine_tuned_params = {
@@ -102,7 +99,7 @@ class Coqui:
                 if tts_custom_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_custom_key]
                 else:
-                    self.tts = self._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
+                    sself._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
             else:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
@@ -116,7 +113,7 @@ class Coqui:
                 if tts_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_key]
                 else:
-                    self.tts = self._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
+                    sself._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is None:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
@@ -125,7 +122,7 @@ class Coqui:
                 if tts_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_key]
                 else:
-                    self.tts = self._load_checkpoint(BARK, model_path, None, None, self.session['device'])
+                    sself._load_checkpoint(BARK, model_path, None, None, self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -145,7 +142,7 @@ class Coqui:
                     if tts_key in loaded_tts.keys():
                         self.tts = loaded_tts[tts_key]
                     else:
-                        self.tts = self._load_api(model_path, self.session['device'])
+                        sself._load_api(model_path, self.session['device'])
                     if not self.tts:
                         return None
                     if self.session['voice'] is not None:
@@ -178,7 +175,7 @@ class Coqui:
                 if tts_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_key]
                 else:
-                    self.tts = self._load_api(model_path, self.session['device'])
+                    sself._load_api(model_path, self.session['device'])
                 if self.session['voice'] is not None:
                     tts_vc_key = default_vc_model
                     msg = f"Loading TTS {tts_vc_key} zeroshot model, it takes a while, please be patient..."
@@ -205,7 +202,7 @@ class Coqui:
                 if tts_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_key]
                 else:
-                    self.tts = self._load_api(model_path, self.session['device'])
+                    sself._load_api(model_path, self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -226,17 +223,15 @@ class Coqui:
             if len(loaded_tts) == max_tts_in_memory:
                 self._unload_tts(self.session['device'])
             with lock:
-                tts = self.coquiAPI(model_path)
+                self.tts = coquiAPI(model_path)
                 if tts:
                     if device == 'cuda':
-                        tts.cuda()
+                        self.tts.cuda()
                     else:
-                        tts.to(device)
-                    return tts
+                        self.tts.to(device)
         except Exception as e:
             error = f'_load_api() error: {e}'
             print(error)
-        return 0
 
     def _load_checkpoint(self, tts_engine, model_path, config_path, vocab_path, device):
         global lock
@@ -245,12 +240,12 @@ class Coqui:
                 if tts_engine == XTTSv2:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
-                    config = self.XttsConfig()
-                    config.models_dir = os.path.join("models", "tts")
-                    config.load_json(config_path)
-                    tts = self.Xtts.init_from_config(config)                   
-                    tts.load_checkpoint(
-                        config,
+                    self.config = XttsConfig()
+                    self.config.models_dir = os.path.join("models", "tts")
+                    self.config.load_json(config_path)
+                    self.tts = Xtts.init_from_config(self.config)                   
+                    self.tts.load_checkpoint(
+                        self.config,
                         checkpoint_path=model_path,
                         vocab_path=vocab_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
@@ -258,12 +253,12 @@ class Coqui:
                     )
                 elif tts_engine == BARK:
                     self._unload_tts(self.session['device'])
-                    config = BarkConfig()
-                    config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    config.CACHE_DIR = os.path.join(models_dir, 'tts', 'suno', 'bark')
-                    tts = Bark.init_from_config(config)
-                    tts.load_checkpoint(
-                        config,
+                    self.config = BarkConfig()
+                    self.config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
+                    self.config.CACHE_DIR = os.path.join(models_dir, 'tts', 'suno', 'bark')
+                    self.tts = Bark.init_from_config(self.config)
+                    self.tts.load_checkpoint(
+                        self.config,
                         checkpoint_dir=model_path,
                         eval=True
                     )
@@ -272,26 +267,21 @@ class Coqui:
                         self._unload_tts(self.session['device'])
                 if tts:
                     if device == 'cuda':
-                        tts.cuda()
+                        self.tts.cuda()
                     else:
-                        tts.to(device)
-                    return tts
+                        self.tts.to(device)
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
-            print(error)
-        return 0
 
     def _load_api_vc(self, device):
         global lock
         try:
             with lock:
-                tts = self.coquiAPI(default_vc_model).to(device)
-                if tts:
-                    return tts
+                self.tts = coquiAPI(default_vc_model).to(device)
         except Exception as e:
             error = f'_load_api_vc() error: {e}'
             print(error)
-        return 0
+
     def _check_builtin_speakers(self, voice_path):
         try:
             if f"/{self.session['language']}/" in voice_path:
@@ -378,20 +368,26 @@ class Coqui:
                     os.makedirs(npz_dir, exist_ok=True)     
                     if self.session['tts_engine'] != BARK:
                         self._unload_tts(self.session['device'])
-                        self.tts = self._load_checkpoint(BARK, models[BARK]['internal']['repo'], None, None, self.session['device'])
+                        config = BarkConfig()
+                        config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
+                        config.CACHE_DIR = os.path.join(models_dir, 'tts', 'suno', 'bark')
+                        self.tts = Bark.init_from_config(config)
+                        self.tts = self._load_checkpoint(BARK, models[BARK]['internal']['repo'], config, None, self.session['device'])
+ 
                     voice_path_temp = os.path.splitext(npz_file)[0]+'.wav'
                     shutil.copy(os.path.dirname(voice_path, voice_path_temp))
                     if default_text is None:
                         default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                     default_text = default_text
-                    output_dict = self.tts.synthesize(
-                        default_text,
-                        config,
-                        speaker_id=speaker,
-                        voice_dirs=bark_dir,
-                        temperature=0.85
-                    )
+                    with torch.no_grad():
+                        audio_data = self.tts.synthesize(
+                            default_text,
+                            config,
+                            speaker_id=speaker,
+                            voice_dirs=bark_dir,
+                            temperature=0.85
+                        )
                     os.remove(voice_path_temp)
                     msg = f"Saved NPZ file: {npz_file}"
                     print(msg)
@@ -628,9 +624,12 @@ class Coqui:
                                 "text_temp": 0.85
                             }                      
                             with torch.no_grad():
-                                audio_part = self.tts.tts(
-                                    text=text_part,
-                                    **speaker_argument
+                                audio_data = self.tts.synthesize(
+                                    text_part,
+                                    self.config,
+                                    speaker_id=speaker,
+                                    voice_dirs=bark_dir,
+                                    temperature=0.85
                                 )
                         else:
                             error = 'Could not create npz file!'
