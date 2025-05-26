@@ -375,7 +375,7 @@ class Coqui:
                         self.tts = self._load_checkpoint(BARK, models[BARK]['internal']['repo'], config, None, self.session['device'])
  
                     voice_path_temp = os.path.splitext(npz_file)[0]+'.wav'
-                    shutil.copy(os.path.dirname(voice_path, voice_path_temp))
+                    shutil.copy(voice_path, voice_path_temp)
                     if default_text is None:
                         default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
