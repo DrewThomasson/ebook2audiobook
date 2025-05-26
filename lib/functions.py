@@ -28,7 +28,6 @@ import subprocess
 import sys
 import threading
 import time
-import tqdm
 import torch
 import urllib.request
 import uuid
@@ -41,6 +40,7 @@ import lib.conf as conf
 import lib.lang as lang
 import lib.models as mod
 
+from tqdm import tqdm
 from bs4 import BeautifulSoup
 from collections import Counter
 from collections.abc import Mapping
@@ -278,7 +278,7 @@ def extract_custom_model(file_src, session, required_files=None):
                 print(f'{model_path} already exists, bypassing files extraction')
                 return model_path
             os.makedirs(model_path, exist_ok=True)
-            with tqdm.tqdm(total=files_length, unit='files') as t:
+            with tqdm(total=files_length, unit='files') as t:
                 for f in files:
                     if f in required_files:
                         zip_ref.extract(f, model_path)
@@ -965,7 +965,7 @@ def convert_chapters2audio(session):
         total_chapters = len(session['chapters'])
         total_sentences = sum(len(array) for array in session['chapters'])
         sentence_number = 0
-        with tqdm.tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+        with tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
             for x in range(0, total_chapters):
                 chapter_num = x + 1
