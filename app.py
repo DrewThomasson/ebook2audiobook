@@ -191,9 +191,9 @@ Tip: to add of silence (2 seconds) into your text just use "###" or "[pause]".
     Default to {default_bark_settings['text_temp']}. Higher temperatures lead to more creative outputs.""")
     headless_optional_group.add_argument(options[22], type=float, default=None, help=f"""(bark only, optional) Waveform Temperature for the model. 
     Default to {default_bark_settings['waveform_temp']}. Higher temperatures lead to more creative outputs.""")
-    headless_optional_group.add_argument(options[22], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[23], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
-    headless_optional_group.add_argument(options[24], action='store_true', help=argparse.SUPPRESS)
+    headless_optional_group.add_argument(options[23], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
+    headless_optional_group.add_argument(options[24], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
+    headless_optional_group.add_argument(options[25], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:
