@@ -1918,6 +1918,7 @@ def web_interface(args):
                     maximum=10.0, 
                     step=0.1, 
                     value=float(default_xtts_settings['temperature']),
+                    elem_id='temperature',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
                 )
                 gr_xtts_length_penalty = gr.Slider(
@@ -1926,6 +1927,7 @@ def web_interface(args):
                     maximum=5.0, 
                     step=0.1,
                     value=float(default_xtts_settings['length_penalty']),
+                    elem_id='length_penalty',
                     info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
                     visible=False
                 )
@@ -1935,6 +1937,7 @@ def web_interface(args):
                     maximum=10, 
                     step=1, 
                     value=int(default_xtts_settings['num_beams']),
+                    elem_id='num_beams',
                     info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
                     visible=False
                 )
@@ -1943,7 +1946,8 @@ def web_interface(args):
                     minimum=1.0, 
                     maximum=10.0, 
                     step=0.1, 
-                    value=float(default_xtts_settings['repetition_penalty']), 
+                    value=float(default_xtts_settings['repetition_penalty']),
+                    elem_id='repetition_penalty',
                     info='Penalizes repeated phrases. Higher values reduce repetition.'
                 )
                 gr_xtts_top_k = gr.Slider(
@@ -1951,7 +1955,8 @@ def web_interface(args):
                     minimum=10, 
                     maximum=100, 
                     step=1, 
-                    value=int(default_xtts_settings['top_k']), 
+                    value=int(default_xtts_settings['top_k']),
+                    elem_id='top_k',
                     info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
                 )
                 gr_xtts_top_p = gr.Slider(
@@ -1960,6 +1965,7 @@ def web_interface(args):
                     maximum=1.0, 
                     step=0.01, 
                     value=float(default_xtts_settings['top_p']), 
+                    elem_id='top_p',
                     info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
                 )
                 gr_xtts_speed = gr.Slider(
@@ -1967,13 +1973,14 @@ def web_interface(args):
                     minimum=0.5, 
                     maximum=3.0, 
                     step=0.1, 
-                    value=float(default_xtts_settings['speed']),
-                    elem_id='slider_speed',
+                    value=float(default_xtts_settings['speed']),,
+                    elem_id='speed',
                     info='Adjusts how fast the narrator will speak.'
                 )
                 gr_xtts_enable_text_splitting = gr.Checkbox(
                     label='Enable Text Splitting', 
                     value=default_xtts_settings['enable_text_splitting'],
+                    elem_id='enable_text_splitting',
                     info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                     visible=False
                 )
@@ -1991,6 +1998,7 @@ def web_interface(args):
                     maximum=1.0, 
                     step=0.01, 
                     value=float(default_bark_settings['text_temp']),
+                    elem_id='text_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
                 gr_bark_waveform_temp = gr.Slider(
@@ -1999,6 +2007,7 @@ def web_interface(args):
                     maximum=1.0, 
                     step=0.01, 
                     value=float(default_bark_settings['waveform_temp']),
+                    elem_id='waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
         gr_state = gr.State(value={"hash": None})
