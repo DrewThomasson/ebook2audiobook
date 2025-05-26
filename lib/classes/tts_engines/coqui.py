@@ -55,7 +55,7 @@ class Coqui:
         self.config = None
         self.tts = None
         self.tts_vc = None
-        self.fine_tuned_params = {
+        self.xtts_fine_tuned_params = {
             key: cast_type(self.session[key])
             for key, cast_type in {
                 "temperature": float,
@@ -100,7 +100,7 @@ class Coqui:
                 if tts_custom_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_custom_key]
                 else:
-                    self._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
+                    self.tts = self._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
             else:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
@@ -114,7 +114,7 @@ class Coqui:
                 if tts_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_key]
                 else:
-                    self._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
+                    self.tts = self._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is None:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
@@ -123,7 +123,7 @@ class Coqui:
                 if tts_key in loaded_tts.keys():
                     self.tts = loaded_tts[tts_key]
                 else:
-                    self._load_checkpoint(BARK, model_path, None, None, self.session['device'])
+                    self.tts = self._load_checkpoint(BARK, model_path, None, None, self.session['device'])
             else:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
@@ -143,7 +143,7 @@ class Coqui:
                     if tts_key in loaded_tts.keys():
                         self.tts = loaded_tts[tts_key]
                     else:
-                        self._load_api(model_path, self.session['device'])
+                        self.tts = self._load_api(model_path, self.session['device'])
                     if not self.tts:
                         return None
                     if self.session['voice'] is not None:
@@ -186,7 +186,7 @@ class Coqui:
                     else:
                         self.tts_vc = self._load_api_vc(self.session['device'])
                         if self.tts_vc:
-                            loaded_tts[tts_vc_key] = self.tts_vc
+                            self.tts_vc = loaded_tts[tts_vc_key] = self.tts_vc
                         else:
                             error = 'TTS VC engine could not be created!'
                             print(error)
@@ -224,15 +224,17 @@ class Coqui:
             if len(loaded_tts) == max_tts_in_memory:
                 self._unload_tts(self.session['device'])
             with lock:
-                self.tts = coquiAPI(model_path)
-                if self.tts:
+                tts = coquiAPI(model_path)
+                if tts:
                     if device == 'cuda':
-                        self.tts.cuda()
+                        tts.cuda()
                     else:
-                        self.tts.to(device)
+                        tts.to(device)
+                return tts
         except Exception as e:
             error = f'_load_api() error: {e}'
             print(error)
+        return False
 
     def _load_checkpoint(self, tts_engine, model_path, config_path, vocab_path, device):
         global lock
@@ -244,8 +246,8 @@ class Coqui:
                     self.config = XttsConfig()
                     self.config.models_dir = os.path.join("models", "tts")
                     self.config.load_json(config_path)
-                    self.tts = Xtts.init_from_config(self.config)                   
-                    self.tts.load_checkpoint(
+                    tts = Xtts.init_from_config(self.config)                   
+                    tts.load_checkpoint(
                         self.config,
                         checkpoint_dir=model_path,
                         vocab_path=vocab_path,
@@ -257,8 +259,8 @@ class Coqui:
                     self.config = BarkConfig()
                     self.config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
                     self.config.CACHE_DIR = os.path.join(models_dir, 'tts', 'suno', 'bark')
-                    self.tts = Bark.init_from_config(self.config)
-                    self.tts.load_checkpoint(
+                    tts = Bark.init_from_config(self.config)
+                    tts.load_checkpoint(
                         self.config,
                         checkpoint_dir=model_path,
                         eval=True
@@ -266,19 +268,21 @@ class Coqui:
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
-                if self.tts:
+                if tts:
                     if device == 'cuda':
-                        self.tts.cuda()
+                        tts.cuda()
                     else:
-                        self.tts.to(device)
+                        tts.to(device)
+                    return tts
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
+        return False
 
     def _load_api_vc(self, device):
         global lock
         try:
             with lock:
-                self.tts = coquiAPI(default_vc_model).to(device)
+                tts = coquiAPI(default_vc_model).to(device)
         except Exception as e:
             error = f'_load_api_vc() error: {e}'
             print(error)
@@ -322,7 +326,7 @@ class Coqui:
                                     language=self.session['language_iso1'],
                                     gpt_cond_latent=gpt_cond_latent,
                                     speaker_embedding=speaker_embedding,
-                                    **self.fine_tuned_params
+                                    **self.xtts_fine_tuned_params
                                 )
                             audio_data = result.get('wav')
                             if audio_data is not None:
@@ -592,7 +596,7 @@ class Coqui:
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=settings['gpt_cond_latent'],
                                 speaker_embedding=settings['speaker_embedding'],
-                                **self.fine_tuned_params
+                                **self.xtts_fine_tuned_params
                             )
                         audio_part = result.get('wav')
                         if self._is_valid(audio_part):
