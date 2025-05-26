@@ -624,13 +624,16 @@ class Coqui:
                                 "text_temp": 0.85
                             }                      
                             with torch.no_grad():
-                                audio_data = self.tts.synthesize(
+                                result = self.tts.synthesize(
                                     text_part,
                                     self.config,
                                     speaker_id=speaker,
                                     voice_dirs=bark_dir,
                                     temperature=0.85
                                 )
+                            audio_part = result.get('wav')
+                            if self._is_valid(audio_part):
+                                audio_part = audio_part.tolist()
                         else:
                             error = 'Could not create npz file!'
                             print(error)
