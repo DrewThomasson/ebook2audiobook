@@ -225,7 +225,7 @@ class Coqui:
                 self._unload_tts(self.session['device'])
             with lock:
                 self.tts = coquiAPI(model_path)
-                if tts:
+                if self.tts:
                     if device == 'cuda':
                         self.tts.cuda()
                     else:
@@ -266,7 +266,7 @@ class Coqui:
                 else:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(self.session['device'])
-                if tts:
+                if self.tts:
                     if device == 'cuda':
                         self.tts.cuda()
                     else:
