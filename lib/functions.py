@@ -2547,7 +2547,7 @@ def web_interface(args):
                         show_alert(state)
             return
 
-        def submit_convert_btn(id, device, ebook_file, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting):
+        def submit_convert_btn(id, device, ebook_file, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp):
             try:
                 session = context.get_session(id)
                 args = {
@@ -2571,6 +2571,8 @@ def web_interface(args):
                     "top_p": float(top_p),
                     "speed": float(speed),
                     "enable_text_splitting": enable_text_splitting,
+                    "text_temp": float(text_temp),
+                    "waveform_temp": float(waveform_temp),
                     "fine_tuned": fine_tuned
                 }
                 error = None
