@@ -82,7 +82,7 @@ class Coqui:
         self.vtt_path = os.path.splitext(self.session['final_name'])[0] + '.vtt'
         if self.session['voice'] is not None:
             if not self._check_builtin_speakers(self.session['voice']):
-                msg = f"Could not create the builtin XTTSv2 speaker example in {self.session['language']}"
+                msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                 print(msg)
                 return None
         if self.session['tts_engine'] == XTTSv2:
@@ -284,6 +284,7 @@ class Coqui:
 
     def _check_builtin_speakers(self, voice_path):
         try:
+            print(voice_path)
             if f"/{self.session['language']}/" in voice_path:
                 return True
             else:
@@ -346,16 +347,17 @@ class Coqui:
                             speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(voice_path)) 
                             if self._check_bark_npz(voice_path, bark_dir, speaker, default_text):
                                 return True
-                            else:
-                                return False
                         else:
                             error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
                             print(error)
-                            return False
+                    else:
+                        msg = f"The language selected ({self.session['language']}) is not in the {XTTSv2} language map. keeping the voice cloned in English"
+                        print(msg)
+                        return True
         except Exception as e:
             error = f'_check_builtin_speakers() error: {e}'
             print(error)
-            return False
+        return False
 
     def _check_bark_npz(self, voice_path, bark_dir, speaker, default_text=None):
         try:
