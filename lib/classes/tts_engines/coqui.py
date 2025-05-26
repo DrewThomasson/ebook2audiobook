@@ -368,11 +368,11 @@ class Coqui:
                     os.makedirs(npz_dir, exist_ok=True)     
                     if self.session['tts_engine'] != BARK:
                         self._unload_tts(self.session['device'])
-                        config = BarkConfig()
-                        config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                        config.CACHE_DIR = os.path.join(models_dir, 'tts', 'suno', 'bark')
-                        self.tts = Bark.init_from_config(config)
-                        self.tts = self._load_checkpoint(BARK, models[BARK]['internal']['repo'], config, None, self.session['device'])
+                        self.config = BarkConfig()
+                        self.config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
+                        self.config.CACHE_DIR = os.path.join(models_dir, 'tts', 'suno', 'bark')
+                        self.tts = Bark.init_from_config(self.config)
+                        self.tts = self._load_checkpoint(BARK, models[BARK]['internal']['repo'], self.config, None, self.session['device'])
  
                     voice_path_temp = os.path.splitext(npz_file)[0]+'.wav'
                     shutil.copy(voice_path, voice_path_temp)
@@ -383,7 +383,7 @@ class Coqui:
                     with torch.no_grad():
                         audio_data = self.tts.synthesize(
                             default_text,
-                            config,
+                            self.config,
                             speaker_id=speaker,
                             voice_dirs=bark_dir,
                             temperature=0.85
