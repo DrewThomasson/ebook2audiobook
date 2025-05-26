@@ -2488,7 +2488,7 @@ def web_interface(args):
                 if session['fine_tuned'] != 'internal':
                     visible_custom_model = False
                 return (
-                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible), update_gr_fine_tuned_list(id),
+                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
                        gr.update(label=f"*Upload {session['tts_engine']} Fine Tuned Model"),
                        gr.update(label=f"Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])}")
                 )
