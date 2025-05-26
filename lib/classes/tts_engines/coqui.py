@@ -82,11 +82,9 @@ class Coqui:
         model_path = None
         config_path = None
         tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
-        settings = self.params[self.session['tts_engine']]
-        settings['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
         self.vtt_path = os.path.splitext(self.session['final_name'])[0] + '.vtt'
         if self.session['voice'] is not None:
-            if not self._check_builtin_speakers(voice_path):
+            if not self._check_builtin_speakers(self.session['voice']):
                 msg = f"Could not create the builtin XTTSv2 speaker example in {self.session['language']}"
                 print(msg)
                 return None
@@ -557,6 +555,7 @@ class Coqui:
             audio2trim = False
             trim_audio_buffer = 0.001
             settings = self.params[self.session['tts_engine']]
+            settings['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             final_sentence = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             if sentence.endswith('-'):
                 sentence = sentence[:-1]
