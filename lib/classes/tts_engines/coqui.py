@@ -96,9 +96,9 @@ class Coqui:
                 model_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'model.pth')
                 config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'config.json')
                 vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],'vocab.json')
-                tts_custom_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
-                if tts_custom_key in loaded_tts.keys():
-                    self.tts = loaded_tts[tts_custom_key]
+                tts_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
+                if tts_key in loaded_tts.keys():
+                    self.tts = loaded_tts[tts_key]
                 else:
                     self.tts = self._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
             else:
@@ -246,10 +246,10 @@ class Coqui:
                     self.config = XttsConfig()
                     self.config.models_dir = os.path.join("models", "tts")
                     self.config.load_json(config_path)
-                    tts = Xtts.init_from_config(self.config)                   
+                    tts = Xtts.init_from_config(self.config)          
                     tts.load_checkpoint(
                         self.config,
-                        checkpoint_dir=model_path,
+                        checkpoint_path=model_path,
                         vocab_path=vocab_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
