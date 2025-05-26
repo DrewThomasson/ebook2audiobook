@@ -55,20 +55,6 @@ class Coqui:
         self.config = None
         self.tts = None
         self.tts_vc = None
-        self.xtts_fine_tuned_params = {
-            key: cast_type(self.session[key])
-            for key, cast_type in {
-                "temperature": float,
-                "length_penalty": float,
-                "num_beams": int,
-                "repetition_penalty": float,
-                "top_k": int,
-                "top_p": float,
-                "speed": float,
-                "enable_text_splitting": bool
-            }.items()
-            if self.session.get(key) is not None
-        }
         self.sentences_total_time = 0.0
         self.sentence_idx = 1
         self.params = {XTTSv2: {"latent_embedding":{}}, BARK: {}, VITS: {"semitones": {}}, FAIRSEQ: {"semitones": {}}, YOURTTS: {}}  
@@ -326,7 +312,6 @@ class Coqui:
                                     language=self.session['language_iso1'],
                                     gpt_cond_latent=gpt_cond_latent,
                                     speaker_embedding=speaker_embedding,
-                                    **self.xtts_fine_tuned_params
                                 )
                             audio_data = result.get('wav')
                             if audio_data is not None:
@@ -590,13 +575,27 @@ class Coqui:
                             else:
                                 settings['gpt_cond_latent'], settings['speaker_embedding'] = self.tts.get_conditioning_latents(audio_path=[settings['voice_path']])  
                             settings['latent_embedding'][settings['voice_path']] = settings['gpt_cond_latent'], settings['speaker_embedding']
+                        fine_tuned_params = {
+                            key: cast_type(self.session[key])
+                            for key, cast_type in {
+                                "temperature": float,
+                                "length_penalty": float,
+                                "num_beams": int,
+                                "repetition_penalty": float,
+                                "top_k": int,
+                                "top_p": float,
+                                "speed": float,
+                                "enable_text_splitting": bool
+                            }.items()
+                            if self.session.get(key) is not None
+                        }
                         with torch.no_grad():
                             result = self.tts.inference(
                                 text=text_part,
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=settings['gpt_cond_latent'],
                                 speaker_embedding=settings['speaker_embedding'],
-                                **self.xtts_fine_tuned_params
+                                **fine_tuned_params
                             )
                         audio_part = result.get('wav')
                         if self._is_valid(audio_part):
@@ -617,19 +616,21 @@ class Coqui:
                         '''
                         bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
                         speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))                               
-                        if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, None):
-                            speaker_argument = {
-                                "voice_dir": bark_dir,
-                                "speaker": speaker,
-                                "text_temp": 0.85
-                            }                      
+                        if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, None):                     
+                           fine_tuned_params = {
+                                key: cast_type(self.session[key])
+                                for key, cast_type in {
+                                    "text_temp": float
+                                }.items()
+                                if self.session.get(key) is not None
+                            }
                             with torch.no_grad():
                                 result = self.tts.synthesize(
                                     text_part,
                                     self.config,
                                     speaker_id=speaker,
                                     voice_dirs=bark_dir,
-                                    temperature=0.85
+                                    **fine_tuned_params
                                 )
                             audio_part = result.get('wav')
                             if self._is_valid(audio_part):
