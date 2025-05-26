@@ -247,7 +247,7 @@ class Coqui:
                     self.tts = Xtts.init_from_config(self.config)                   
                     self.tts.load_checkpoint(
                         self.config,
-                        checkpoint_path=model_path,
+                        checkpoint_dir=model_path,
                         vocab_path=vocab_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
@@ -285,7 +285,6 @@ class Coqui:
 
     def _check_builtin_speakers(self, voice_path):
         try:
-            print(voice_path)
             if f"/{self.session['language']}/" in voice_path:
                 return True
             else:
@@ -295,29 +294,27 @@ class Coqui:
                 else:
                     if self.session['language'] in language_tts[XTTSv2].keys():
                         default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
-                        default_text = Path(default_text_file).read_text(encoding="utf-8")
                         if os.path.exists(default_text_file):
-                            msg = f"Converting xttsv2 builtin english voice to {self.session['language']}..."
+                            msg = f"Converting builtin english voice to {self.session['language']}..."
                             print(msg)
+                            default_text = Path(default_text_file).read_text(encoding="utf-8")
                             model_path = models[XTTSv2]['internal']['repo']
                             tts_internal_key = f"{self.session['tts_engine']}-internal"
                             if tts_internal_key in loaded_tts.keys():
                                 self.tts = loaded_tts[tts_internal_key]
                             else:
-                                if len(loaded_tts) == max_tts_in_memory:
-                                    self._unload_tts(self.session['device'])
                                 hf_repo = models[self.session['tts_engine']]['internal']['repo']
                                 hf_sub = ''
                                 model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
                                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
                                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
                                 self.tts = self._load_checkpoint(XTTSv2, model_path, config_path, vocab_path, self.session['device'])
-                                loaded_tts[tts_internal_key] = self.tts
-                            if not self.tts:
-                                return False
+                                if self.tts:
+                                    loaded_tts[tts_internal_key] = self.tts
+                                else:
+                                    return False
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
-
                             gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
                             with torch.no_grad():
                                 result = self.tts.inference(
