@@ -262,7 +262,7 @@ class Coqui:
                     self._unload_tts(self.session['device'])
                     config = BarkConfig()
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    config.CACHE_DIR = os.path.join('models', 'tts', 'suno', 'bark_v0')
+                    config.CACHE_DIR = os.path.join(models_dir, 'tts', 'suno', 'bark')
                     tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
                         config,
@@ -377,18 +377,17 @@ class Coqui:
                 if os.path.exists(npz_file):
                     return True
                 else:
-                    os.makedirs(npz_dir, exist_ok=True)         
-                    config = BarkConfig()
-                    model = Bark.init_from_config(config)
-                    model.load_checkpoint(config, checkpoint_dir=models[BARK]['internal']['repo'], eval=True)
-                    model.to(device)
+                    os.makedirs(npz_dir, exist_ok=True)     
+                    if self.session['tts_engine'] != BARK:
+                        self._unload_tts(self.session['device'])
+                        self.tts = self._load_checkpoint(BARK, models[BARK]['internal']['repo'], None, None, self.session['device'])
                     voice_path_temp = os.path.splitext(npz_file)[0]+'.wav'
                     shutil.copy(os.path.dirname(voice_path, voice_path_temp))
                     if default_text is None:
                         default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                     default_text = default_text
-                    output_dict = model.synthesize(
+                    output_dict = self.tts.synthesize(
                         default_text,
                         config,
                         speaker_id=speaker,
