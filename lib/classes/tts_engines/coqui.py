@@ -328,7 +328,7 @@ class Coqui:
                             if audio_data is not None:
                                 audio_data = audio_data.tolist()
                             else:
-                                error = f'No audio waveform found in convert_sentence2audio() result: {result}'
+                                error = f'No audio waveform found in Coqui.convert() result: {result}'
                                 print(error)
                                 return False
                             sourceTensor = self._tensor_type(audio_data)
@@ -809,6 +809,6 @@ class Coqui:
                 print(error)
                 return False               
         except Exception as e:
-            error = f'convert_sentence2audio(): {e}'
+            error = f'Coquit.convert(): {e}'
             raise ValueError(e)
             return False

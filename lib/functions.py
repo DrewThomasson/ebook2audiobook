@@ -64,7 +64,6 @@ from urllib.parse import urlparse
 from lib.classes.voice_extractor import VoiceExtractor
 #from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
-from lib.classes.silent_tqdm import SilentTqdm
 
 def inject_configs(target_namespace):
     # Extract variables from both modules and inject them into the target namespace
@@ -984,12 +983,7 @@ def convert_chapters2audio(session):
                         if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
-
-                        if session['tts_engine'] == BARK:
-                            with SilentTqdm.suppress_bark():
-                                success = tts_manager.convert_sentence2audio(sentence_number, sentence)
-                        else:
-                            success = tts_manager.convert_sentence2audio(sentence_number, sentence)
+                        success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                         if success:                           
                             percentage = (sentence_number / total_sentences) * 100
                             t.set_description(f'Converting {percentage:.2f}%')
