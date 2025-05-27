@@ -1493,40 +1493,36 @@ def convert_ebook(args):
                     session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                     session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
                     if prepare_dirs(args['ebook'], session):
+                        msg = ''
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg = 'GPU is not available on your device!'
-                                print(msg)
+                                msg += 'GPU is not available on your device!'
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg = 'MPS is not available on your device!'
-                                print(msg)
+                                msg += '\nMPS is not available on your device!'
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_OFFLOAD_CPU"] = 'true'
                                 msg = '\nSwitch Bark to CPU'
-                                print(msg)
                         vram_avail = get_vram()
                         if vram_avail <= 4:
-                            msg = 'VRAM capacity could not be detected' if vram_avail == 0 else 'VRAM under 4GB'
+                            msg += '\nVRAM capacity could not be detected' if vram_avail == 0 else 'VRAM under 4GB'
                             if session['tts_engine'] == BARK:
                                 msg += '\nSwitch Bark to SMALL models'
                                 os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
-                        msg = f"Available Processor Unit: {session['device'].upper()}"
-                        print(msg)
+                        msg += f"\nAvailable Processor Unit: {session['device'].upper()}"
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
                                 import deepspeed
                             except:
                                 default_xtts_settings['use_deepspeed'] = False
-                                msg = 'deepseed not installed or package is broken. set to False'
-                                print(msg)
+                                msg += 'deepseed not installed or package is broken. set to False'
                             else: 
-                                msg = 'deepspeed is detected!'
-                                print(msg)
+                                msg += 'deepspeed is detected!'
+                        print(msg)
                         session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
                         if convert2epub(session):
                             epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
