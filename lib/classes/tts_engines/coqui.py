@@ -244,7 +244,7 @@ class Coqui:
                     self._unload_tts(self.session['device'])
                     self.config = BarkConfig()
                     self.config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    self.config.CACHE_DIR = os.path.join(models_dir, 'tts', 'suno', 'bark')
+                    self.config.CACHE_DIR = self.cache_dir
                     tts = Bark.init_from_config(self.config)
                     tts.load_checkpoint(
                         self.config,
@@ -359,7 +359,7 @@ class Coqui:
                         self._unload_tts(self.session['device'])
                         self.config = BarkConfig()
                         self.config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                        self.config.CACHE_DIR = os.path.join(models_dir, 'tts', 'suno', 'bark')
+                        self.config.CACHE_DIR = self.cache_dir
                         self.tts = Bark.init_from_config(self.config)
                         self.tts = self._load_checkpoint(BARK, models[BARK]['internal']['repo'], self.config, None, self.session['device'])
  
