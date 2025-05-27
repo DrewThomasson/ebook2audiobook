@@ -362,7 +362,6 @@ class Coqui:
                         self.config.CACHE_DIR = self.cache_dir
                         self.tts = Bark.init_from_config(self.config)
                         self.tts = self._load_checkpoint(BARK, models[BARK]['internal']['repo'], self.config, None, self.session['device'])
- 
                     voice_path_temp = os.path.splitext(npz_file)[0]+'.wav'
                     shutil.copy(voice_path, voice_path_temp)
                     if default_text is None:
@@ -628,6 +627,7 @@ class Coqui:
                                 if self.session.get(key) is not None
                             }
                             with torch.no_grad():
+                                torch.manual_seed(678787)
                                 result = self.tts.synthesize(
                                     text_part,
                                     self.config,
