@@ -1522,6 +1522,8 @@ def convert_ebook(args):
                                 msg += 'deepseed not installed or package is broken. set to False'
                             else: 
                                 msg += 'deepspeed is detected!'
+                        if is_gui_process:
+                            yield show_alert({"type": "warning", "msg": msg})
                         print(msg)
                         session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
                         if convert2epub(session):
