@@ -2895,7 +2895,7 @@ def web_interface(args):
             outputs=None
         )
         gr_bark_waveform_temp.change(
-            fn=lambda val, id: change_param('gr_bark_waveform_temp', val, id),
+            fn=lambda val, id: change_param('waveform_temp', val, id),
             inputs=[gr_bark_waveform_temp, gr_session],
             outputs=None
         )
