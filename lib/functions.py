@@ -1831,12 +1831,12 @@ def web_interface(args):
                     display: none !important;
                 }
                 ///////////////
-                #gr_voice_player {
+                #gr_voice_player, #component-16 {
                     display: block !important;
                     margin: 0 !important;
                     padding: 0 !important;
                     width: 60px !important;
-                    height: auto !important;
+                    height: 60px !important;
                 }
                 #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
                     display: none !important;
