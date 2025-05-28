@@ -1810,27 +1810,21 @@ def web_interface(args):
                 .progress-bar.svelte-ls20lj {
                     background: orange !important;
                 }
-                #component-2 {
+                #repo_header {
                     position:absolute; 
                     text-align:center;
                 }
-                #component-8, #component-31, #component-15 {
+                #ebook_file, #custom_model_list, #voice_list {
                     height: 140px !important !important;
                 }
-                #component-31 [aria-label="Clear"], #component-15 [aria-label="Clear"] {
+                #custom_model_list [aria-label="Clear"], #voice_list [aria-label="Clear"] {
                     display: none !important;
                 }               
-                #component-27, #component-28 {
+                #tts_engine, #fine_tuned_list {
                     height: 95px !important;
                 }
-                #component-56 {
-                    height: 80px !important;
-                }
-                #component-16, #component-64 {
-                    height: 60px !important;
-                }
-                #component-9 span[data-testid="block-info"], #component-14 span[data-testid="block-info"],
-                #component-33 span[data-testid="block-info"], #component-61 span[data-testid="block-info"] {
+                #language span[data-testid="block-info"], #language_container span[data-testid="block-info"],
+                span[data-testid="block-info"] {
                     display: none !important;
                 }
                 ///////////////
@@ -1876,7 +1870,8 @@ def web_interface(args):
             '''
         )
         main_markdown = gr.Markdown(
-            f'''
+            elem_id='repo_header', 
+            value=f'''
             <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
             '''
         )
@@ -1886,29 +1881,29 @@ def web_interface(args):
                 with gr.Row():
                     with gr.Column(scale=3):
                         with gr.Group():
-                            gr_ebook_file = gr.File(label=src_label_file, file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
-                            gr_ebook_mode = gr.Radio(label='', choices=[('File','single'), ('Directory','directory')], value='single', interactive=True)
+                            gr_ebook_file = gr.File(label=src_label_file, elem_id='ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
+                            gr_ebook_mode = gr.Radio(label='', elem_id='ebook_mode', choices=[('File','single'), ('Directory','directory')], value='single', interactive=True)
                         with gr.Group():
-                            gr_language = gr.Dropdown(label='Language', choices=language_options, value=default_language_code, type='value', interactive=True)
-                        gr_group_voice_file = gr.Group(visible=visible_gr_group_voice_file)
+                            gr_language = gr.Dropdown(label='Language', elem_id='language', choices=language_options, value=default_language_code, type='value', interactive=True)
+                        gr_group_voice_file = gr.Group(elem_id='language_container', visible=visible_gr_group_voice_file)
                         with gr_group_voice_file:
                             gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie', file_types=voice_formats, value=None, height=140)
                             with gr.Row():
                                 gr_voice_player = gr.Audio(elem_id='voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
-                                gr_voice_list = gr.Dropdown(label='', choices=voice_options, type='value', interactive=True, scale=2)
+                                gr_voice_list = gr.Dropdown(label='', elem_id='voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                 gr_voice_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
                             gr_device = gr.Radio(label='Processor Unit', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], value=default_device)
                     with gr.Column(scale=3):
                         with gr.Group():
-                            gr_tts_engine_list = gr.Dropdown(label='TTS Engine', choices=tts_engine_options, type='value', interactive=True)
-                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', choices=fine_tuned_options, type='value', interactive=True)
+                            gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='tts_engine', choices=tts_engine_options, type='value', interactive=True)
+                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                             gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                             with gr_group_custom_model:
                                 gr_custom_model_file = gr.File(label=f"Upload Fine Tuned Model", value=None, file_types=['.zip'], height=140)
                                 with gr.Row():
-                                    gr_custom_model_list = gr.Dropdown(label='', choices=custom_model_options, type='value', interactive=True, scale=2)
+                                    gr_custom_model_list = gr.Dropdown(label='', elem_id='custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                     gr_custom_model_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 gr_custom_model_markdown = gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
