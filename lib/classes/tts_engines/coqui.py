@@ -627,7 +627,7 @@ class Coqui:
                                 if self.session.get(key) is not None
                             }
                             with torch.no_grad():
-                                #torch.manual_seed(678787)
+                                torch.manual_seed(67878789)
                                 result = self.tts.synthesize(
                                     text_part,
                                     self.config,
