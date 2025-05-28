@@ -1669,6 +1669,18 @@ def get_all_ip_addresses():
                 ip_addresses.append(address.address)  
     return ip_addresses
 
+def show_alert(state):
+    if isinstance(state, dict):
+        if state['type'] is not None:
+            if state['type'] == 'error':
+                gr.Error(state['msg'])
+            elif state['type'] == 'warning':
+                gr.Warning(state['msg'])
+            elif state['type'] == 'info':
+                gr.Info(state['msg'])
+            elif state['type'] == 'success':
+                gr.Success(state['msg'])
+
 def web_interface(args):
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
@@ -2027,18 +2039,6 @@ def web_interface(args):
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn_hidden = gr.Button('', elem_id='confirm_yes_btn_hidden', visible=False)
         gr_confirm_no_btn_hidden = gr.Button('', elem_id='confirm_no_btn_hidden', visible=False)
-        
-        def show_alert(state):
-            if isinstance(state, dict):
-                if state['type'] is not None:
-                    if state['type'] == 'error':
-                        gr.Error(state['msg'])
-                    elif state['type'] == 'warning':
-                        gr.Warning(state['msg'])
-                    elif state['type'] == 'info':
-                        gr.Info(state['msg'])
-                    elif state['type'] == 'success':
-                        gr.Success(state['msg'])
 
         def show_modal(type, msg):
             return f'''
