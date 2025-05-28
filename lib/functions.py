@@ -1820,10 +1820,10 @@ def web_interface(args):
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
                 }               
-                #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
+                #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list, #gr_group_voice_file {
                     height: 95px !important;
                 }
-                #gr_voice_list, #gr_group_voice_file {
+                #gr_voice_list {
                     height: 60px !important;
                 }
                 #gr_voice_list span[data-testid="block-info"], 
