@@ -1523,7 +1523,7 @@ def convert_ebook(args):
                             else: 
                                 msg += 'deepspeed is detected!'
                         if is_gui_process:
-                            yield show_alert({"type": "warning", "msg": msg})
+                            show_alert({"type": "warning", "msg": msg})
                         print(msg)
                         session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
                         if convert2epub(session):
