@@ -1498,30 +1498,30 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += 'GPU is not available on your device!'
+                                msg += f"{session['device'].upper()} is not available on your device!"
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += '\nMPS is not available on your device!'
+                                msg += f" - {session['device'].upper()}} is not available on your device!"
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_OFFLOAD_CPU"] = 'true'
-                                msg += '\nSwitch Bark to CPU.'
+                                msg += f" - Switch {session['tts_engine'].upper()} to CPU."
                         vram_avail = get_vram()
                         if vram_avail <= 4:
-                            msg += '\nVRAM capacity could not be detected.' if vram_avail == 0 else 'VRAM under 4GB'
+                            msg += ' - VRAM capacity could not be detected.' if vram_avail == 0 else 'VRAM under 4GB'
                             if session['tts_engine'] == BARK:
-                                msg += '\nSwitching Bark to SMALL models.'
                                 os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
-                        msg += f"\nAvailable Processor Unit: {session['device'].upper()}."
+                                msg += " - Switching {session['tts_engine'].upper()} to SMALL models."
+                        msg += f" - Available Processor Unit: {session['device'].upper()}."
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
                                 import deepspeed
                             except:
                                 default_xtts_settings['use_deepspeed'] = False
-                                msg += '\ndeepseed not installed or package is broken. set to False.'
+                                msg += ' - deepseed not installed or package is broken. set to False.'
                             else: 
-                                msg += '\ndeepspeed is detected!'
+                                msg += ' - deepspeed is detected!'
                         if is_gui_process:
                             show_alert({"type": "warning", "msg": msg})
                         print(msg)
