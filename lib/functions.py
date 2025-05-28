@@ -1826,9 +1826,6 @@ def web_interface(args):
                 #gr_voice_list {
                     height: 60px !important;
                 }
-                #gr_group_voice_file {
-                    height: auto !important;
-                }
                 #gr_voice_list span[data-testid="block-info"], 
                 #gr_audiobook_list span[data-testid="block-info"] {
                     display: none !important;
@@ -1839,7 +1836,7 @@ def web_interface(args):
                     margin: 0 !important;
                     padding: 0 !important;
                     width: 60px !important;
-                    height: 60px !important;
+                    height: auto !important;
                 }
                 #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
                     display: none !important;
