@@ -1831,7 +1831,10 @@ def web_interface(args):
                     display: none !important;
                 }
                 ///////////////
-                #gr_voice_player, #component-16 {
+                #component-16 {
+                    height: 60px !important;
+                }
+                #gr_voice_player {
                     display: block !important;
                     margin: 0 !important;
                     padding: 0 !important;
