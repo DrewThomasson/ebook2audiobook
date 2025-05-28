@@ -1823,7 +1823,7 @@ def web_interface(args):
                 #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
                     height: 95px !important;
                 }
-                #gr_voice_list {
+                #gr_voice_list, #gr_group_voice_file {
                     height: 60px !important;
                 }
                 #gr_voice_list span[data-testid="block-info"], 
