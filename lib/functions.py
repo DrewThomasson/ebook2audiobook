@@ -1831,10 +1831,7 @@ def web_interface(args):
                     display: none !important;
                 }
                 ///////////////
-                #component-16 {
-                    height: 60px !important;
-                }
-                #gr_voice_player {
+                #gr_voice_player, gr_row_voice_player {
                     display: block !important;
                     margin: 0 !important;
                     padding: 0 !important;
@@ -1892,6 +1889,7 @@ def web_interface(args):
                         gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
                         with gr_group_voice_file:
                             gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
+                            gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                             with gr.Row():
                                 gr_voice_player = gr.Audio(elem_id='gr_voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
                                 gr_voice_list = gr.Dropdown(label='', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
