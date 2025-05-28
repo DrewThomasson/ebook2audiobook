@@ -1502,7 +1502,7 @@ def convert_ebook(args):
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += f" - {session['device'].upper()}} is not available on your device!"
+                                msg += f" - {session['device'].upper()} is not available on your device!"
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_OFFLOAD_CPU"] = 'true'
