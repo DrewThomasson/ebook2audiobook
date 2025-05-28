@@ -275,7 +275,8 @@ class Coqui:
 
     def _check_builtin_speakers(self, voice_path):
         try:
-            if f"/{self.session['language']}/" in voice_path:
+            voice_parts = Path(voice_path).parts
+            if self.session['language'] in voice_parts:
                 return True
             else:
                 speaker = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(voice_path))

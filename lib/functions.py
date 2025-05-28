@@ -1498,7 +1498,7 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += f"{session['device'].upper()} is not available on your device!"
+                                msg += f"GPU is not available or not recognized! Switching to {session['device']}"
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
@@ -1810,27 +1810,24 @@ def web_interface(args):
                 .progress-bar.svelte-ls20lj {
                     background: orange !important;
                 }
-                #component-2 {
+                #gr_logo_markdown {
                     position:absolute; 
                     text-align:center;
                 }
-                #ebook_file, #component-31, #component-15 {
+                #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                     height: 140px !important !important;
                 }
-                #component-31 [aria-label="Clear"], #component-15 [aria-label="Clear"] {
+                #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
                 }               
-                #component-27, #component-28 {
+                #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
                     height: 95px !important;
                 }
-                #component-56 {
-                    height: 80px !important;
-                }
-                #component-16, #component-64 {
+                #gr_voice_list {
                     height: 60px !important;
                 }
-                #component-9 span[data-testid="block-info"], #component-14 span[data-testid="block-info"],
-                #component-33 span[data-testid="block-info"], #component-61 span[data-testid="block-info"] {
+                #gr_voice_list span[data-testid="block-info"], 
+                #gr_audiobook_list span[data-testid="block-info"] {
                     display: none !important;
                 }
                 ///////////////
@@ -1851,13 +1848,13 @@ def web_interface(args):
                     top: 0 !important;
                 }
                 ///////////
-                #audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
+                #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
                 }
-                #audiobook_player label{
+                #gr_audiobook_player label{
                     display: none !important;
                 }
-                #audiobook_player audio {
+                #gr_audiobook_player audio {
                     width: 100% !important;
                     padding-top: 10px !important;
                     padding-bottom: 10px !important;
@@ -1865,7 +1862,7 @@ def web_interface(args):
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
                 }
-                #audiobook_player audio::-webkit-media-controls-panel {
+                #gr_audiobook_player audio::-webkit-media-controls-panel {
                     width: 100% !important;
                     padding-top: 10px !important;
                     padding-bottom: 10px !important;
@@ -1875,8 +1872,7 @@ def web_interface(args):
                 }
             '''
         )
-        main_markdown = gr.Markdown(
-            f'''
+        gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
             <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
             '''
         )
@@ -1887,33 +1883,33 @@ def web_interface(args):
                     with gr.Column(scale=3):
                         with gr.Group():
                             gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
-                            gr_ebook_mode = gr.Radio(label='', choices=[('File','single'), ('Directory','directory')], value='single', interactive=True)
+                            gr_ebook_mode = gr.Radio(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], value='single', interactive=True)
                         with gr.Group():
-                            gr_language = gr.Dropdown(label='Language', choices=language_options, value=default_language_code, type='value', interactive=True)
+                            gr_language = gr.Dropdown(label='Language', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
                         gr_group_voice_file = gr.Group(visible=visible_gr_group_voice_file)
                         with gr_group_voice_file:
-                            gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie', file_types=voice_formats, value=None, height=140)
+                            gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
                             with gr.Row():
                                 gr_voice_player = gr.Audio(elem_id='voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
-                                gr_voice_list = gr.Dropdown(label='', choices=voice_options, type='value', interactive=True, scale=2)
-                                gr_voice_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                gr_voice_list = gr.Dropdown(label='', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
+                                gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
-                            gr_device = gr.Radio(label='Processor Unit', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], value=default_device)
+                            gr_device = gr.Radio(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], value=default_device)
                     with gr.Column(scale=3):
                         with gr.Group():
-                            gr_tts_engine_list = gr.Dropdown(label='TTS Engine', choices=tts_engine_options, type='value', interactive=True)
-                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', choices=fine_tuned_options, type='value', interactive=True)
+                            gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
+                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                             gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                             with gr_group_custom_model:
-                                gr_custom_model_file = gr.File(label=f"Upload Fine Tuned Model", value=None, file_types=['.zip'], height=140)
+                                gr_custom_model_file = gr.File(label=f"Upload Fine Tuned Model", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=140)
                                 with gr.Row():
-                                    gr_custom_model_list = gr.Dropdown(label='', choices=custom_model_options, type='value', interactive=True, scale=2)
-                                    gr_custom_model_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                    gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
+                                    gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 gr_custom_model_markdown = gr.Markdown('<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group():
-                            gr_session = gr.Textbox(label='Session', interactive=False)
-                        gr_output_format_list = gr.Dropdown(label='Output format', choices=output_formats, type='value', value=default_output_format, interactive=True)
+                            gr_session = gr.Textbox(label='Session', elem_id='gr_session', interactive=False)
+                        gr_output_format_list = gr.Dropdown(label='Output format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True)
             gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
             with gr_tab_xtts_params:
                 gr.Markdown(
@@ -1928,7 +1924,7 @@ def web_interface(args):
                     maximum=10.0, 
                     step=0.1, 
                     value=float(default_xtts_settings['temperature']),
-                    elem_id='temperature',
+                    elem_id='gr_xtts_temperature',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
                 )
                 gr_xtts_length_penalty = gr.Slider(
@@ -1937,7 +1933,7 @@ def web_interface(args):
                     maximum=5.0, 
                     step=0.1,
                     value=float(default_xtts_settings['length_penalty']),
-                    elem_id='length_penalty',
+                    elem_id='gr_xtts_length_penalty',
                     info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
                     visible=False
                 )
@@ -1947,7 +1943,7 @@ def web_interface(args):
                     maximum=10, 
                     step=1, 
                     value=int(default_xtts_settings['num_beams']),
-                    elem_id='num_beams',
+                    elem_id='gr_xtts_num_beams',
                     info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
                     visible=False
                 )
@@ -1957,7 +1953,7 @@ def web_interface(args):
                     maximum=10.0, 
                     step=0.1, 
                     value=float(default_xtts_settings['repetition_penalty']),
-                    elem_id='repetition_penalty',
+                    elem_id='gr_xtts_repetition_penalty',
                     info='Penalizes repeated phrases. Higher values reduce repetition.'
                 )
                 gr_xtts_top_k = gr.Slider(
@@ -1966,7 +1962,7 @@ def web_interface(args):
                     maximum=100, 
                     step=1, 
                     value=int(default_xtts_settings['top_k']),
-                    elem_id='top_k',
+                    elem_id='gr_xtts_top_k',
                     info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
                 )
                 gr_xtts_top_p = gr.Slider(
@@ -1975,7 +1971,7 @@ def web_interface(args):
                     maximum=1.0, 
                     step=0.01, 
                     value=float(default_xtts_settings['top_p']), 
-                    elem_id='top_p',
+                    elem_id='gr_xtts_top_p',
                     info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
                 )
                 gr_xtts_speed = gr.Slider(
@@ -1984,13 +1980,13 @@ def web_interface(args):
                     maximum=3.0, 
                     step=0.1, 
                     value=float(default_xtts_settings['speed']),
-                    elem_id='speed',
+                    elem_id='gr_xtts_speed',
                     info='Adjusts how fast the narrator will speak.'
                 )
                 gr_xtts_enable_text_splitting = gr.Checkbox(
                     label='Enable Text Splitting', 
                     value=default_xtts_settings['enable_text_splitting'],
-                    elem_id='enable_text_splitting',
+                    elem_id='gr_xtts_enable_text_splitting',
                     info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                     visible=False
                 )
@@ -2008,7 +2004,7 @@ def web_interface(args):
                     maximum=1.0, 
                     step=0.01, 
                     value=float(default_bark_settings['text_temp']),
-                    elem_id='text_temp',
+                    elem_id='gr_bark_text_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
                 gr_bark_waveform_temp = gr.Slider(
@@ -2017,7 +2013,7 @@ def web_interface(args):
                     maximum=1.0, 
                     step=0.01, 
                     value=float(default_bark_settings['waveform_temp']),
-                    elem_id='waveform_temp',
+                    elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
         gr_state = gr.State(value={"hash": None})
@@ -2027,13 +2023,13 @@ def web_interface(args):
         gr_conversion_progress = gr.Textbox(label='Progress', elem_id="conversion_progress_bar")
         gr_group_audiobook_list = gr.Group(visible=False)
         with gr_group_audiobook_list:
-            gr_audiobook_text = gr.Textbox(label='Audiobook', elem_id='audiobook_text', interactive=False, visible=True)
-            gr_audiobook_player = gr.Audio(label='', elem_id='audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+            gr_audiobook_text = gr.Textbox(label='Audiobook', elem_id='gr_audiobook_text', interactive=False, visible=True)
+            gr_audiobook_player = gr.Audio(label='', elem_id='gr_audiobook_player', type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
-                gr_audiobook_download_btn = gr.DownloadButton('↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
-                gr_audiobook_list = gr.Dropdown(label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
-                gr_audiobook_del_btn = gr.Button('🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
-        gr_convert_btn = gr.Button('📚', elem_classes='icon-btn', variant='primary', interactive=False)
+                gr_audiobook_download_btn = gr.DownloadButton('↧', elem_id='gr_audiobook_download_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
+                gr_audiobook_list = gr.Dropdown(label='', elem_id='gr_audiobook_list', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
+                gr_audiobook_del_btn = gr.Button('🗑', elem_id='gr_audiobook_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
+        gr_convert_btn = gr.Button('📚', elem_id='gr_convert_btn', elem_classes='icon-btn', variant='primary', interactive=False)
         
         gr_modal = gr.HTML(visible=False)
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
@@ -2977,7 +2973,7 @@ def web_interface(args):
                 if (typeof window.redraw_audiobook_player !== 'function') {
                     window.redraw_audiobook_player = () => {
                         try {
-                            const audio = document.querySelector('#audiobook_player audio');
+                            const audio = document.querySelector('#gr_audiobook_player audio');
                             if (audio) {
                                 const url = new URL(window.location);
                                 const theme = url.searchParams.get('__theme');
@@ -3006,7 +3002,7 @@ def web_interface(args):
 
                 // Now safely call it after the audio element is available
                 const tryRun = () => {
-                    const audio = document.querySelector('#audiobook_player audio');
+                    const audio = document.querySelector('#gr_audiobook_player audio');
                     if (audio && typeof window.redraw_audiobook_player === 'function') {
                         window.redraw_audiobook_player();
                     } else {
