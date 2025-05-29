@@ -700,13 +700,13 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine)
             if text.strip() and len(text.strip()) > 1:
-                chapter_sentences = get_sentences(text, lang)
+                chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
     except Exception as e:
         DependencyError(e)
         return None
 
-def get_sentences(text, lang):
+def get_sentences(text, lang, tts_engine):
     def combine_punctuation(tokens):
         if not tokens:
             return tokens
@@ -792,7 +792,7 @@ def get_sentences(text, lang):
     def split_sentence(sentence):
         sentence = sentence.strip()
         if len(sentence) <= max_chars:
-            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine not BARK:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
