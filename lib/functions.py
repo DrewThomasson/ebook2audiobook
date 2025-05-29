@@ -792,7 +792,7 @@ def get_sentences(text, lang, tts_engine):
     def split_sentence(sentence):
         sentence = sentence.strip()
         if len(sentence) <= max_chars:
-            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine not BARK:
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
@@ -812,7 +812,7 @@ def get_sentences(text, lang, tts_engine):
                     split_index = before if (mid - before) <= (after - mid) else after
         delim_used = sentence[split_index - 1] if split_index > 0 else None
         end = ''
-        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != BARK:
             end = ' -' if delim_used == ' ' else end
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:')
@@ -826,7 +826,8 @@ def get_sentences(text, lang, tts_engine):
         if part2:
             if len(part2) <= max_chars:
                 if part2 and part2[-1].isalpha():
-                    part2 += ' -'
+                    if tts_engine not BARK:
+                        part2 += ' -'
                 result.append(part2)
             else:
                 result.extend(split_sentence(part2))
