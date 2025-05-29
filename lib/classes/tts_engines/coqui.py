@@ -235,7 +235,7 @@ class Coqui:
                     tts = Xtts.init_from_config(self.config)          
                     tts.load_checkpoint(
                         self.config,
-                        checkpoint_path=model_path,
+                        checkpoint_dir=model_path,
                         vocab_path=vocab_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
