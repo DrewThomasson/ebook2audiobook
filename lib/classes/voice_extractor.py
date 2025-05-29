@@ -12,7 +12,7 @@ from pydub import AudioSegment
 from torchvggish import vggish, vggish_input
 
 from lib.conf import voice_formats
-from lib.models import XTTSv2, models
+from lib.models import *
 
 class VoiceExtractor:
 
@@ -159,7 +159,7 @@ class VoiceExtractor:
             silence_threshold = -60
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
-            min_required_duration = 20000 if self.session['tts_engine'] == BARK else 12000 if self.session['tts_engine'] in ("VITS", "FAIRSEQ", "YOURTTS") else 6000
+            min_required_duration = 20000 if self.session['tts_engine'] == BARK else 12000 if self.session['tts_engine'] in (VITS, FAIRSEQ, YOURTTS) else 6000
             if total_duration <= min_required_duration:
                 msg = f"Audio is only {total_duration/1000:.2f}s long; skipping trimming."
                 self._remove_silences(audio, silence_threshold)
