@@ -608,7 +608,7 @@ class Coqui:
                         if self._is_valid(audio_part):
                             audio_part = audio_part.tolist()
                     elif self.session['tts_engine'] == BARK:
-                        trim_audio_buffer = 0.001
+                        trim_audio_buffer = 0.004
                         '''
                             [laughter]
                             [laughs]
