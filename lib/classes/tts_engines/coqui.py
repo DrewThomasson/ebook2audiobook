@@ -269,9 +269,16 @@ class Coqui:
         try:
             with lock:
                 tts = coquiAPI(default_vc_model).to(device)
+                if tts:
+                    if device == 'cuda':
+                        tts.cuda()
+                    else:
+                        tts.to(device)
+                return tts            
         except Exception as e:
             error = f'_load_api_vc() error: {e}'
             print(error)
+        return False
 
     def _check_builtin_speakers(self, voice_path):
         try:
