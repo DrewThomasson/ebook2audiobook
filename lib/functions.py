@@ -1511,15 +1511,15 @@ def convert_ebook(args):
                             msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
-                                msg_extra += f"Switching {session['tts_engine'].upper()} to SMALL models - "
+                                msg_extra += f"Switching BARK to SMALL models - "
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += f"GPU is not available or not recognized! Switching to {session['device']} - "
+                                msg += f"GPU is not available or not recognized! Switching to CPU - "
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += f"{session['device'].upper()} is not available on your device! - "
+                                msg += f"MPS is not available on your device! - "
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_OFFLOAD_CPU"] = 'true'
@@ -1533,7 +1533,7 @@ def convert_ebook(args):
                             else: 
                                 msg_extra += 'deepspeed detected and ready!'
                         if msg == '':
-                            msg = f"{session['device'].upper()} is available on your system! - "
+                            msg = f"{session['device'].upper()} is detected! - "
                         msg += msg_extra
                         if is_gui_process:
                             show_alert({"type": "warning", "msg": msg})
