@@ -91,7 +91,7 @@ class Coqui:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                hf_sub = f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}/" if self.session['fine_tuned'] != 'internal' else ''
+                hf_sub = f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}/"
                 if self.session['fine_tuned'] == 'internal':
                     speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=self.cache_dir)
                 model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
@@ -302,7 +302,7 @@ class Coqui:
                                 self.tts = loaded_tts[tts_internal_key]
                             else:
                                 hf_repo = models[self.session['tts_engine']]['internal']['repo']
-                                hf_sub = ''
+                                hf_sub = f"{models[self.session['tts_engine']]['internal']['sub']}/"
                                 model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
                                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
                                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
