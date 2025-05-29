@@ -140,8 +140,8 @@ Tip: to add of silence (2 seconds) into your text just use "###" or "[pause]".
         '--script_mode', '--session', '--share', '--headless', 
         '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
         '--custom_model', '--fine_tuned', '--output_format',
-        '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty',
-        '--top_k', '--top_p', '--speed', '--enable_text_splitting', 
+        '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', '--top_k', '--top_p', '--speed', '--enable_text_splitting',
+        '--text_temp', '--waveform_temp',
         '--output_dir', '--version', '--workflow', '--help'
     ]
     #tts_engine_list = [k for k in models.keys() if k != BARK]
@@ -186,10 +186,14 @@ Tip: to add of silence (2 seconds) into your text just use "###" or "[pause]".
     headless_optional_group.add_argument(options[19], type=float, default=None, help=f"""(xtts only, optional) Speed factor for the speech generation. 
     Default to config.json model.""")
     headless_optional_group.add_argument(options[20], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
-    Default to config.json model.""")                     
-    headless_optional_group.add_argument(options[21], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[22], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
-    headless_optional_group.add_argument(options[23], action='store_true', help=argparse.SUPPRESS)
+    Default to config.json model.""")
+    headless_optional_group.add_argument(options[21], type=float, default=None, help=f"""(bark only, optional) Text Temperature for the model. 
+    Default to {default_bark_settings['text_temp']}. Higher temperatures lead to more creative outputs.""")
+    headless_optional_group.add_argument(options[22], type=float, default=None, help=f"""(bark only, optional) Waveform Temperature for the model. 
+    Default to {default_bark_settings['waveform_temp']}. Higher temperatures lead to more creative outputs.""")
+    headless_optional_group.add_argument(options[23], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
+    headless_optional_group.add_argument(options[24], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
+    headless_optional_group.add_argument(options[25], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:

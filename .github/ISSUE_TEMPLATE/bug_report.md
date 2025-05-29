@@ -1,8 +1,8 @@
 ---
 name: Bug report
-about: Create a report to help us improve
-title: ''
-labels: ''
+about: Info requested for each issue
+title: 'Issue Report'
+labels: 'Issue Report'
 assignees: ''
 
 ---
@@ -15,19 +15,19 @@ assignees: ''
 - Native, Docker, Unraid
 
 **Script Version**
-- in VERSION.txt or when run the script
+- in VERSION.txt or on the terminal when the script starts
 
 **Process Mode**
-- Gradio GUI, Headless
-
-**Command Line (headless mode only)**
-- provide the exact command line
+- Gradio, Headless
   
 **Operating System:**
  - Windows, Linux, MacOS
+ 
+**Command Line used to start ebook2audiobook**
+- provide the exact command line
 
 **Describe the bug**
 A clear and concise description of what the bug is.
 
 **Terminal log**
-Provide the full terminal log from the command line until the error
+Provide the full terminal log from the command line
