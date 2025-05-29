@@ -1503,35 +1503,38 @@ def convert_ebook(args):
                     session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                     session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
                     if prepare_dirs(args['ebook'], session):
-                        msg = ''
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
+                        msg = ''
+                        msg_extra = ''
+                        vram_avail = get_vram()
+                        if vram_avail <= 4:
+                            msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
+                            if session['tts_engine'] == BARK:
+                                os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
+                                msg_extra += f"Switching {session['tts_engine'].upper()} to SMALL models - "
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += f"GPU is not available or not recognized! Switching to {session['device']}"
+                                msg += f"GPU is not available or not recognized! Switching to {session['device']} - "
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += f" - {session['device'].upper()} is not available on your device!"
+                                msg += f"{session['device'].upper()} is not available on your device! - "
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_OFFLOAD_CPU"] = 'true'
-                                msg += f" - Switch {session['tts_engine'].upper()} to CPU."
-                        vram_avail = get_vram()
-                        if vram_avail <= 4:
-                            msg += ' - VRAM capacity could not be detected.' if vram_avail == 0 else 'VRAM under 4GB'
-                            if session['tts_engine'] == BARK:
-                                os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
-                                msg += f" - Switching {session['tts_engine'].upper()} to SMALL models."
-                        msg += f" - Available Processor Unit: {session['device'].upper()}."
+                                msg += f"Switch {session['tts_engine'].upper()} to CPU - "
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
                                 import deepspeed
                             except:
                                 default_xtts_settings['use_deepspeed'] = False
-                                msg += ' - deepseed not installed or package is broken. set to False.'
+                                msg_extra += 'deepseed not installed or package is broken. set to False - '
                             else: 
-                                msg += ' - deepspeed is detected!'
+                                msg_extra += 'deepspeed detected and ready!'
+                        if msg == '':
+                            msg = f"{session['device'].upper()} is available on your system! - "
+                        msg += msg_extra
                         if is_gui_process:
                             show_alert({"type": "warning", "msg": msg})
                         print(msg)
