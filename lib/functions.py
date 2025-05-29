@@ -826,7 +826,7 @@ def get_sentences(text, lang, tts_engine):
         if part2:
             if len(part2) <= max_chars:
                 if part2 and part2[-1].isalpha():
-                    if tts_engine not BARK:
+                    if tts_engine != BARK:
                         part2 += ' -'
                 result.append(part2)
             else:
