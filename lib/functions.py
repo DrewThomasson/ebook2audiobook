@@ -1512,7 +1512,7 @@ def convert_ebook(args):
                             msg += ' - VRAM capacity could not be detected.' if vram_avail == 0 else 'VRAM under 4GB'
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
-                                msg += " - Switching {session['tts_engine'].upper()} to SMALL models."
+                                msg += f" - Switching {session['tts_engine'].upper()} to SMALL models."
                         msg += f" - Available Processor Unit: {session['device'].upper()}."
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
