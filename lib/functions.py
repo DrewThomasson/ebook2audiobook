@@ -798,7 +798,18 @@ def get_sentences(text, lang):
             return [sentence]
         split_index = find_best_split_point_prioritize_punct(sentence, max_chars)
         if split_index == -1:
-            split_index = len(sentence) // 2
+            mid = len(sentence) // 2
+            before = sentence.rfind(' ', 0, mid)
+            after = sentence.find(' ', mid)
+            if before == -1 and after == -1:
+                split_index = mid
+            else:
+                if before == -1:
+                    split_index = after
+                elif after == -1:
+                    split_index = before
+                else:
+                    split_index = before if (mid - before) <= (after - mid) else after
         delim_used = sentence[split_index - 1] if split_index > 0 else None
         end = ''
         if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
@@ -842,8 +853,6 @@ def get_sentences(text, lang):
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
     return sentences
-
-import psutil
 
 def get_ram():
     vm = psutil.virtual_memory()
