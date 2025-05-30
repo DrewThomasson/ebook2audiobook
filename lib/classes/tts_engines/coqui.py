@@ -52,7 +52,7 @@ class Coqui:
     def __init__(self, session):   
         self.session = session
         self.cache_dir = os.path.join(models_dir,'tts')
-        self.config = None
+        self.configBark = None
         self.tts = None
         self.tts_vc = None
         self.sentences_total_time = 0.0
@@ -236,12 +236,12 @@ class Coqui:
                 if tts_engine == XTTSv2:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(device)
-                    self.config = XttsConfig()
-                    self.config.models_dir = os.path.join("models", "tts")
-                    self.config.load_json(config_path)
-                    tts = Xtts.init_from_config(self.config)          
+                    config = XttsConfig()
+                    config.models_dir = os.path.join("models", "tts")
+                    config.load_json(config_path)
+                    tts = Xtts.init_from_config(config)          
                     tts.load_checkpoint(
-                        self.config,
+                        config,
                         checkpoint_path=model_path,
                         vocab_path=vocab_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
@@ -250,12 +250,12 @@ class Coqui:
                 elif tts_engine == BARK:
                     if len(loaded_tts) == max_tts_in_memory:
                         self._unload_tts(device)
-                    self.config = BarkConfig()
-                    self.config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    self.config.CACHE_DIR = self.cache_dir
-                    tts = Bark.init_from_config(self.config)
+                    self.configBark = BarkConfig()
+                    self.configBark.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
+                    self.configBark.CACHE_DIR = self.cache_dir
+                    tts = Bark.init_from_config(self.configBark)
                     tts.load_checkpoint(
-                        self.config,
+                        self.configBark,
                         checkpoint_dir=checkpoint_dir,
                         text_model_path=text_model_path,
                         coarse_model_path=coarse_model_path,
@@ -386,7 +386,7 @@ class Coqui:
                     with torch.no_grad():
                         audio_data = self.tts.synthesize(
                             default_text,
-                            self.config,
+                            self.configBark,
                             speaker_id=speaker,
                             voice_dirs=bark_dir,
                             temperature=0.85
@@ -645,7 +645,7 @@ class Coqui:
                                 torch.manual_seed(67878789)
                                 result = self.tts.synthesize(
                                     text_part,
-                                    self.config,
+                                    self.configBark,
                                     speaker_id=speaker,
                                     voice_dirs=bark_dir,
                                     **fine_tuned_params
