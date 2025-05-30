@@ -13,7 +13,6 @@ class TTSManager:
         if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
             from lib.classes.tts_engines.coqui import Coqui
             self.tts = Coqui(self.session)
-            print(f"--------------{self.tts}------------")
             if self.tts:
                 return True
             else:
