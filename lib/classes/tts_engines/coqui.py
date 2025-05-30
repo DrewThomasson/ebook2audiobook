@@ -69,7 +69,7 @@ class Coqui:
             if not self._check_builtin_speakers(self.session['voice']):
                 msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                 print(msg)
-                return None
+                return False
         msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
         print(msg)
         if self.session['tts_engine'] == XTTSv2:
@@ -95,7 +95,7 @@ class Coqui:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
-                return None
+                return False
             else:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
@@ -108,7 +108,7 @@ class Coqui:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)     
-                return None
+                return False
             else:
                 iso_dir = self.session['language_iso1']
                 sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
@@ -122,7 +122,7 @@ class Coqui:
                     print(msg)
                     tts = self._load_api(self.tts_key, model_path, self.session['device'])
                     if not tts:
-                        return None
+                        return False
                     if self.session['voice'] is not None:
                         msg = f"Loading vocoder {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
                         print(msg)
@@ -135,16 +135,16 @@ class Coqui:
                             else:
                                 error = 'TTS VC engine could not be created!'
                                 print(error)
-                                return None
+                                return False
                 else:
                     msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                     print(msg)
-                    return None
+                    return False
         elif self.session['tts_engine'] == FAIRSEQ:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
-                return None
+                return False
             else:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
                 tts = self._load_api(self.tts_key, model_path, self.session['device'])
@@ -160,12 +160,12 @@ class Coqui:
                         else:
                             error = 'TTS VC engine could not be created!'
                             print(error)
-                            return None
+                            return False
         elif self.session['tts_engine'] == YOURTTS:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
-                return None
+                return False
             else:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 tts = self._load_api(self.tts_key, model_path, self.session['device'])
