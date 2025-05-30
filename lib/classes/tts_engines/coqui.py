@@ -193,7 +193,7 @@ class Coqui:
         except Exception as e:
             error = f'_load_api() error: {e}'
             print(error)
-        return None
+        return False
 
     def _load_checkpoint(self, **kwargs):
         global lock
@@ -254,7 +254,7 @@ class Coqui:
                     print(error)
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
-        return None
+        return False
 
     def _check_builtin_speakers(self, voice_path):
         try:
@@ -283,10 +283,6 @@ class Coqui:
                                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
                                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
                                 tts = self._load_checkpoint(tts_engine=XTTSv2, config_path=config_path, model_path=model_path, vocab_path=vocab_path, device=self.session['device'])
-                                if tts:
-                                    loaded_tts[tts_internal_key]['engine'] = tts
-                                else:
-                                    return False
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                             gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
