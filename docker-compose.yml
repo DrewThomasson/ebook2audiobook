@@ -14,7 +14,7 @@ services:
       context: .
       args:
         TORCH_VERSION: cuda11 # Available tags: [cuda12, cuda11, cuda128, rocm, xpu, cpu]
-        SKIP_XTTS_TEST: "true"
+        SKIP_XTTS_TEST: "true" # (Saves space by not baking xtts model into docker image)
     # To update ebook2audiobook to the latest you may have to rebuild  
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here
