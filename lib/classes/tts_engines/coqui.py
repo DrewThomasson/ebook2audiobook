@@ -85,7 +85,7 @@ class Coqui:
             else:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
-                checkpoint_dir = hf_repo
+                checkpoint_dir = hf_sub
                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_xtts_settings['files'][0]}", cache_dir=self.cache_dir)
                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_xtts_settings['files'][2]}", cache_dir=self.cache_dir)
                 tts = self._load_checkpoint(tts_engine=XTTSv2, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, speakers_path=speakers_path if self.session['fine_tuned'] == 'internal' else None, device=self.session['device'])
@@ -199,16 +199,17 @@ class Coqui:
             tts_engine = kwargs.get('tts_engine')
             if self.tts_key in loaded_tts.keys():
                 return loaded_tts[self.tts_key]['engine']
-            # XTTSv2
             checkpoint_dir = kwargs.get('checkpoint_dir')
+            # XTTSv2
             config_path = kwargs.get('config_path')
             vocab_path = kwargs.get('vocab_path')
             speakers_path = kwargs.get('speakers_path')
+            ###
             # BARK
-            checkpoint_dir = kwargs.get('checkpoint_dir')
             text_model_path = kwargs.get('text_model_path')
             coarse_model_path = kwargs.get('coarse_model_path')
             fine_model_path = kwargs.get('fine_model_path')
+            ###
             device = kwargs.get('device')
             with lock:
                 if tts_engine == XTTSv2:
@@ -272,9 +273,8 @@ class Coqui:
                         if os.path.exists(default_text_file):
                             msg = f"Converting builtin english voice to {self.session['language']}..."
                             print(msg)
-                            default_text = Path(default_text_file).read_text(encoding="utf-8")
-                            checkpoint_dir = models[XTTSv2]['internal']['repo']
                             tts_internal_key = f"{self.session['tts_engine']}-internal"
+                            default_text = Path(default_text_file).read_text(encoding="utf-8")
                             if tts_internal_key in loaded_tts.keys():
                                 tts = loaded_tts[tts_internal_key]
                             else:
