@@ -10,10 +10,12 @@ x-gpu-disabled: &gpu-disabled
 
 services:
   ebook2audiobook:
-    # Docker GPU Options
-    # Available tags: latest (CUDA 11), cpu, rocm, cuda11, cuda12, xpu (x86 only), lite
-    image: docker.io/athomasson2/ebook2audiobook:lite
-    pull_policy: always
+    build:
+      context: .
+      args:
+        TORCH_VERSION: cuda11 # Available tags: [cuda12, cuda11, cuda128, rocm, xpu, cpu]
+        SKIP_XTTS_TEST: "true"
+    # To update ebook2audiobook to the latest you may have to rebuild  
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here
     tty: true
@@ -24,23 +26,7 @@ services:
       resources:
         reservations:
           <<: *gpu-disabled # Use *gpu-enabled if you have an NVIDIA GPU.
-          # --- CPU Memory (RAM) Reservation ---
-          # memory: 4g   # Uncomment to reserve 4GB of system RAM (minimum required by the container).
-          # --- GPU VRAM (Indirect Control) ---
-          # devices:     # Uncomment and configure to limit GPU VRAM (requires GPU-enabled above).
-          #   - driver: nvidia
-          #     count: 1 # Use fractional GPU count (e.g., 0.5) to indirectly limit VRAM.
-          #     capabilities:
-          #       - gpu
         limits: {} # Keeps limits as an empty mapping to avoid errors. Uncomment and configure below.
-          # --- CPU Memory (RAM) Limit ---
-          # memory: 4g   # Uncomment to set a 4GB upper limit on system RAM usage by the container.
-          # --- GPU Memory (VRAM) Limits ---
-          # devices:     # Uncomment and configure to limit GPU VRAM (requires GPU-enabled above).
-          #   - driver: nvidia
-          #     count: 1 # Use fractional GPU count (e.g., 0.5) to indirectly limit VRAM.
-          #     capabilities:
-          #       - gpu
     volumes:
       - ./:/app  # Maps the local directory to the container.
 
@@ -52,12 +38,3 @@ services:
 # After: nothing needed  or just -> `docker run athomasson2/ebook2audiobook`
 # Extra arguments after app.py can still be added to the -> command: [] 
 # Example adding extra arguments -> command: ["--share"] or -> command: ["--help"]
-
-
-
-# Additional Notes:
-# - "CPU Memory (RAM)" refers to the system RAM used by the container.
-# - "GPU VRAM" refers to the graphics memory allocated to the container's GPU tasks.
-# - To enable GPU VRAM limits, ensure the NVIDIA Docker runtime is installed and active.
-# - The `memory` options (RAM) use units like 'm' (megabytes) or 'g' (gigabytes).
-# - The `count` parameter for GPU limits controls how much of the GPU (and indirectly VRAM) is accessible.
