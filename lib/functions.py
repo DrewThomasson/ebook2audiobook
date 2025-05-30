@@ -2163,7 +2163,7 @@ def web_interface(args):
                     color = "#F44336"  # Red = high
                 return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
             return f"""
-            <div style='font-size:12px; line-height:0px; height:auto; display:inline; border: none; gap:0px; align-items:center'>
+            <div style='margin:0; padding:0; font-size:12px; line-height:0; height:auto; display:inline; border: none; gap:0px; align-items:center'>
                 <span style='padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
                 <span style='padding:0 10px'><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
                 <span style='padding:0 10px'><b>RAM:</b> {color_box(rating["RAM"])}</span>
