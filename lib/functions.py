@@ -1523,7 +1523,6 @@ def convert_ebook(args):
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_OFFLOAD_CPU"] = 'true'
-                                msg += f"Switch {session['tts_engine'].upper()} to CPU - "
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
                                 import deepspeed
