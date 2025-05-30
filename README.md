@@ -334,6 +334,8 @@ TIP: if it needs some more pauses, just add '###' or '[pause]' between the words
 #### Docker GPU Options
 
 Available tags: `latest` (CUDA 11), `cpu`, `rocm`, `cuda11`, `cuda12`, `cuda128`, `xpu` (x86 only)
+#### Edit: IF GPU isn't detected then you'll have to build the image -> [Building the Docker Container](#building-the-docker-container)
+
 
 
 #### Running the Docker Container
@@ -348,14 +350,20 @@ docker run --pull always --rm -p 7860:7860 athomasson2/ebook2audiobook
 docker run --pull always --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
 ```
 
+This command will start the Gradio interface on port 7860.(localhost:7860)
+- For more options add the parameter `--help`
+
 
 #### Building the Docker Container
 - You can build the docker image with the command:
 ```powershell
 docker build -t athomasson2/ebook2audiobook .
 ```
-This command will start the Gradio interface on port 7860.(localhost:7860)
-- For more options add the parameter `--help`
+#### Avalible Docker Build Arguments
+
+`--build-arg TORCH_VERSION=cuda11` Available tags: [cuda12, cuda11, cuda128, rocm, xpu, cpu]
+
+`--build-arg SKIP_XTTS_TEST=true` (Saves space by not baking xtts model into docker image)
 
 
 ## Docker container file locations
