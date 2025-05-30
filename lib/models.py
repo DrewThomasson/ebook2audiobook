@@ -62,29 +62,34 @@ default_xtts_settings = {
         "AaronDreschner": "Aaron Dreschner", "KumarDahl": "Kumar Dahl", "EugenioMataracı": "Eugenio Mataracı",
         "FerranSimen": "Ferran Simen", "XavierHayasaka": "Xavier Hayasaka", "LuisMoray": "Luis Moray",
         "MarcosRudaski": "Marcos Rudaski"
-    }
+    },
+    "rating": {"GPU VRAM": 4, "CPU": 3, "RAM": 8}
 }
 default_bark_settings = {
     "samplerate": 24000,
-    "text_temp": 0.88,
-    "waveform_temp": 0.88,
+    "text_temp": 0.85,
+    "waveform_temp": 0.85,
     "files": ['coarse_2.pt'],
-    "voices": {}
+    "voices": {},
+	"rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16}
 }
 default_vits_settings = {
     "samplerate": 22050,
     "files": ['config.json', 'model_file.pth', 'language_ids.json'],
-    "voices": {}
+    "voices": {},
+    "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4}
 }
 default_fairseq_settings = {
     "samplerate": 16000,
     "files": ['config.json', 'G_100000.pth', 'vocab.json'],
-    "voices": {}
+    "voices": {},
+	"rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4}
 }
 default_yourtts_settings = {
     "samplerate": 16000,
     "files": ['config.json', 'model_file.pth'],
-    "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'}
+    "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
+	"rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 4}
 }
 models = {
     XTTSv2: {
@@ -309,7 +314,7 @@ models = {
         "internal": {
             "lang": "multi",
             "repo": "rsxdalv/suno", # tts_models/multilingual/multi-dataset/bark
-            "sub": "",
+            "sub": "big-pth/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDahl_{default_bark_settings['samplerate']}.wav"),
             "files": default_bark_settings['files'],
             "samplerate": default_bark_settings['samplerate']

@@ -1914,6 +1914,7 @@ def web_interface(args):
                     with gr.Column(scale=3):
                         with gr.Group():
                             gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
+                            gr_tts_rating = gr.HTML()
                             gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                             gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                             with gr_group_custom_model:
@@ -2129,7 +2130,7 @@ def web_interface(args):
                 </div>
             </div>
             '''
-          
+
         def show_confirm():
             return '''
             <div class="confirm-buttons">
@@ -2137,6 +2138,37 @@ def web_interface(args):
                 <button class="confirm_no_btn" onclick="document.querySelector('#confirm_no_btn_hidden').click()">⨉</button>
             </div>
             '''
+
+        def show_rating(tts_engine):
+            if tts_engine == XTTSv2:
+                rating = default_xtts_settings['rating']
+            elif tts_engine == BARK:
+                rating = default_bark_settings['rating']
+            elif tts_engine == VITS:
+                rating = default_vits_settings['rating']
+            elif tts_engine == FAIRSEQ:
+                rating = default_fairseq_settings['rating']
+            elif tts_engine == YOURTTS:
+                rating = default_yourtts_settings['rating']
+            def yellow_stars(n):
+                return "".join(
+                    "<span style='color:#FFD700;font-size:12px'>★</span>" for _ in range(n)
+                )
+            def color_box(value):
+                if value <= 4:
+                    color = "#4CAF50"  # Green = low
+                elif value <= 8:
+                    color = "#FF9800"  # Orange = medium
+                else:
+                    color = "#F44336"  # Red = high
+                return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
+            return f"""
+            <div style='font-size:12px; line-height:0px; height:auto; display:inline; border: none; gap:0px; align-items:center'>
+                <span style='padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
+                <span style='padding:0 10px'><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
+                <span style='padding:0 10px'><b>RAM:</b> {color_box(rating["RAM"])}</span>
+            </div>
+            """
 
         def alert_exception(error):
             gr.Error(error)
@@ -2506,6 +2538,7 @@ def web_interface(args):
                 if session['fine_tuned'] != 'internal':
                     visible_custom_model = False
                 return (
+                       gr.update(value=show_rating(session['tts_engine'])), 
                        gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
                        gr.update(label=f"*Upload {session['tts_engine']} Fine Tuned Model"),
                        gr.update(label=f"Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])}")
@@ -2514,7 +2547,7 @@ def web_interface(args):
                 bark_visible = False
                 if session['tts_engine'] == BARK:
                     bark_visible = visible_gr_tab_bark_params
-                return gr.update(visible=False), gr.update(visible=bark_visible), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
+                return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
@@ -2809,7 +2842,7 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
+            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
