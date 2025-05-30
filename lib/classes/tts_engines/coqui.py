@@ -131,7 +131,7 @@ class Coqui:
                         else:
                             tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
                             if tts_vc:
-                                loaded_tts[self.tts_vc_key]['engine'] = tts_vc
+                                loaded_tts[self.tts_vc_key] = {"engine": tts_vc}
                             else:
                                 error = 'TTS VC engine could not be created!'
                                 print(error)
@@ -156,7 +156,7 @@ class Coqui:
                     else:
                         tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
                         if tts_vc:
-                            tts_vc = loaded_tts[self.tts_vc_key]['engine'] = tts_vc
+                            tts_vc = loaded_tts[self.tts_vc_key] = {"engine": tts_vc}
                         else:
                             error = 'TTS VC engine could not be created!'
                             print(error)
