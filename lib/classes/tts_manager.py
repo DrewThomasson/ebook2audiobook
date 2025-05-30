@@ -16,7 +16,7 @@ class TTSManager:
             self.tts = Coqui(self.session)
         else:
             print('Other TTS engines coming soon!')
-        if self.tts is not None:
+        if self.tts:
             self.active = True
         else:
             error = 'TTS engine could not be created!'
@@ -25,7 +25,7 @@ class TTSManager:
     def convert_sentence2audio(self, sentence_number, sentence):
         try:
             if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
-                conversion = self.tts.convert(sentence_number, sentence)
+                return self.tts.convert(sentence_number, sentence)
             else:
                 print('Other TTS engines coming soon!')    
                 return False
