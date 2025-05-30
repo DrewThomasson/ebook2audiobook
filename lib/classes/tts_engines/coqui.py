@@ -273,7 +273,7 @@ class Coqui:
                             msg = f"Converting builtin english voice to {self.session['language']}..."
                             print(msg)
                             default_text = Path(default_text_file).read_text(encoding="utf-8")
-                            model_path = models[XTTSv2]['internal']['repo']
+                            checkpoint_dir = models[XTTSv2]['internal']['repo']
                             tts_internal_key = f"{self.session['tts_engine']}-internal"
                             if tts_internal_key in loaded_tts.keys():
                                 tts = loaded_tts[tts_internal_key]
