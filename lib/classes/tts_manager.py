@@ -3,8 +3,6 @@ import os
 from lib.classes.tts_engines.coqui import Coqui
 from lib.models import *
 
-loaded_tts = {}
-
 class TTSManager:
     def __init__(self, session):   
         self.session = session

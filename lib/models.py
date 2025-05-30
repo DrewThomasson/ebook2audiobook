@@ -1,5 +1,7 @@
 import os
+
 from lib.conf import voices_dir
+loaded_tts = {}
 
 XTTSv2 = 'xtts'
 BARK = 'bark'
