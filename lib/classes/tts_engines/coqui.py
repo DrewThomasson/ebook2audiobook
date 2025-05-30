@@ -61,6 +61,7 @@ class Coqui:
         self._build()
  
     def _build(self):
+        global loaded_tts
         global xtts_builtin_speakers_list
         tts = None
         tts_vc = None
@@ -173,6 +174,7 @@ class Coqui:
        
     def _load_api(self, tts_key, model_path, device):
         global lock
+        global loaded_tts
         try:
             if len(loaded_tts) == max_tts_in_memory:
                 self._unload_tts(self.session['device'])
@@ -199,6 +201,7 @@ class Coqui:
 
     def _load_checkpoint(self, **kwargs):
         global lock
+        global loaded_tts
         try:
             tts_engine = kwargs.get('tts_engine')
             if self.tts_key in loaded_tts.keys():
@@ -267,6 +270,7 @@ class Coqui:
         return False
 
     def _check_builtin_speakers(self, voice_path):
+        global loaded_tts
         try:
             voice_parts = Path(voice_path).parts
             if self.session['language'] in voice_parts:
@@ -336,6 +340,7 @@ class Coqui:
         return False
 
     def _check_bark_npz(self, voice_path, bark_dir, speaker, default_text=None):
+        global loaded_tts
         try:
             if self.session['language'] in language_tts[BARK].keys():
                 npz_dir = os.path.join(bark_dir, speaker)
@@ -406,6 +411,7 @@ class Coqui:
             return None
 
     def _unload_tts(self, device):
+        global loaded_tts
         for key in list(loaded_tts.keys()):
             if key != self.tts_vc_key:
                 del loaded_tts[key]
@@ -518,6 +524,7 @@ class Coqui:
         return False
 
     def convert(self, sentence_number, sentence):
+        global loaded_tts
         global xtts_builtin_speakers_list
         try:
             audio_data = False
