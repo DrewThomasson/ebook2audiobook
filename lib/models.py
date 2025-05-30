@@ -99,7 +99,7 @@ models = {
         "AiExplained": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/AiExplained",
+            "sub": "xtts-v2/eng/AiExplained/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"AiExplained_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -107,7 +107,7 @@ models = {
         "BobOdenkirk": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/BobOdenkirk",
+            "sub": "xtts-v2/eng/BobOdenkirk/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"BobOdenkirk_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -115,7 +115,7 @@ models = {
         "BobRoss": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/BobRoss",
+            "sub": "xtts-v2/eng/BobRoss/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"BobRoss_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -123,7 +123,7 @@ models = {
         "BrinaPalencia": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/BrinaPalencia",
+            "sub": "xtts-v2/eng/BrinaPalencia/",
             "voice": os.path.join(voices_dir, "eng", "adult", "female", f"BrinaPalencia_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -131,7 +131,7 @@ models = {
         "BryanCranston": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/BryanCranston",
+            "sub": "xtts-v2/eng/BryanCranston/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"BryanCranston_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -139,7 +139,7 @@ models = {
         "DavidAttenborough": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/DavidAttenborough",
+            "sub": "xtts-v2/eng/DavidAttenborough/",
             "voice": os.path.join(voices_dir, "eng", "elder", "male", f"DavidAttenborough_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -147,7 +147,7 @@ models = {
         "DeathPussInBoots": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/DeathPussInBoots",
+            "sub": "xtts-v2/eng/DeathPussInBoots/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"DeathPussInBoots_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -155,7 +155,7 @@ models = {
         "DermotCrowley": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/DermotCrowley",
+            "sub": "xtts-v2/eng/DermotCrowley/",
             "voice": os.path.join(voices_dir, "eng", "elder", "male", f"DermotCrowley_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -163,7 +163,7 @@ models = {
         "EvaSeymour": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/EvaSeymour",
+            "sub": "xtts-v2/eng/EvaSeymour/",
             "voice": os.path.join(voices_dir, "eng", "adult", "female", f"EvaSeymour_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -171,7 +171,7 @@ models = {
         "GideonOfnirEldenRing": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/GideonOfnirEldenRing",
+            "sub": "xtts-v2/eng/GideonOfnirEldenRing/",
             "voice": os.path.join(voices_dir, "eng", "elder", "male", f"GideonOfnirEldenRing_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -179,7 +179,7 @@ models = {
         "GhostMW2": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/GhostMW2",
+            "sub": "xtts-v2/eng/GhostMW2/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"GhostMW2_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -187,7 +187,7 @@ models = {
         "JhonButlerASMR": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/JhonButlerASMR",
+            "sub": "xtts-v2/eng/JhonButlerASMR/",
             "voice": os.path.join(voices_dir, "eng", "elder", "male", f"JhonButlerASMR_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -195,7 +195,7 @@ models = {
         "JhonMulaney": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/JhonMulaney",
+            "sub": "xtts-v2/eng/JhonMulaney/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"JhonMulaney_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -203,7 +203,7 @@ models = {
         "JillRedfield": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/JillRedfield",
+            "sub": "xtts-v2/eng/JillRedfield/",
             "voice": os.path.join(voices_dir, "eng", "adult", "female", f"JillRedfield_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -211,7 +211,7 @@ models = {
         "JuliaWhenlan": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/JuliaWhenlan",
+            "sub": "xtts-v2/eng/JuliaWhenlan/",
             "voice": os.path.join(voices_dir, "eng", "adult", "female", f"JuliaWhenlan_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -219,7 +219,7 @@ models = {
         "LeeHorsley": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/LeeHorsley",
+            "sub": "xtts-v2/eng/LeeHorsley/",
             "voice": os.path.join(voices_dir, "eng", "elder", "male", f"LeeHorsley_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -227,7 +227,7 @@ models = {
         "MelinaEldenRing": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/MelinaEldenRing",
+            "sub": "xtts-v2/eng/MelinaEldenRing/",
             "voice": os.path.join(voices_dir, "eng", "adult", "female", f"MelinaEldenRing_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -235,7 +235,7 @@ models = {
         "MorganFreeman": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/MorganFreeman",
+            "sub": "xtts-v2/eng/MorganFreeman/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"MorganFreeman_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -243,7 +243,7 @@ models = {
         "NeilGaiman": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/NeilGaiman",
+            "sub": "xtts-v2/eng/NeilGaiman/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"NeilGaiman_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -251,7 +251,7 @@ models = {
         "RainyDayHeadSpace": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/RainyDayHeadSpace",
+            "sub": "xtts-v2/eng/RainyDayHeadSpace/",
             "voice": os.path.join(voices_dir, "eng", "elder", "male", f"RainyDayHeadSpace_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -259,7 +259,7 @@ models = {
         "RayPorter": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/RayPorter",
+            "sub": "xtts-v2/eng/RayPorter/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"RayPorter_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -267,7 +267,7 @@ models = {
         "RelaxForAWhile": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/RelaxForAWhile",
+            "sub": "xtts-v2/eng/RelaxForAWhile/",
             "voice": os.path.join(voices_dir, "eng", "adult", "female", f"RelaxForAWhile_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -275,7 +275,7 @@ models = {
         "RosamundPike": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/RosamundPike",
+            "sub": "xtts-v2/eng/RosamundPike/",
             "voice": os.path.join(voices_dir, "eng", "adult", "female", f"RosamundPike_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -283,7 +283,7 @@ models = {
         "ScarlettJohansson": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/ScarlettJohansson",
+            "sub": "xtts-v2/eng/ScarlettJohansson/",
             "voice": os.path.join(voices_dir, "eng", "adult", "female", f"ScarlettJohansson_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -291,7 +291,7 @@ models = {
         "StanleyParable": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/StanleyParable",
+            "sub": "xtts-v2/eng/StanleyParable/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"StanleyParable_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -299,7 +299,7 @@ models = {
         "WhisperSalemASMR": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/WhisperSalemASMR",
+            "sub": "xtts-v2/eng/WhisperSalemASMR/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"WhisperSalemASMR_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
@@ -320,15 +320,15 @@ models = {
             "lang": "multi",
             "repo": "tts_models/[lang_iso1]/[xxx]",
             "sub": {
-                "css10/vits": ['es','hu','fi','fr','nl','ru','el'],
-                "custom/vits": ['ca'],
-                "custom/vits-female": ['bn', 'fa'],
-                "cv/vits":['bg','cs','da','et','ga','hr','lt','lv','mt','pt','ro','sk','sl','sv'],
-                "mai/vits": ['uk'],
-                "mai_female/vits": ['pl'],
-                "openbible/vits": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
-                "thorsten/tacotron2-DDC": ['de'],
-                "vctk/vits": ['en']
+                "css10/vits/": ['es','hu','fi','fr','nl','ru','el'],
+                "custom/vits/": ['ca'],
+                "custom/vits-female/": ['bn', 'fa'],
+                "cv/vits/":['bg','cs','da','et','ga','hr','lt','lv','mt','pt','ro','sk','sl','sv'],
+                "mai/vits/": ['uk'],
+                "mai_female/vits/": ['pl'],
+                "openbible/vits/": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
+                "thorsten/tacotron2-DDC/": ['de'],
+                "vctk/vits/": ['en']
             },
             "voice": None,
             "files": default_vits_settings['files'],

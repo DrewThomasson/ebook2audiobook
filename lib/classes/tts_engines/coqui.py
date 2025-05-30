@@ -91,7 +91,7 @@ class Coqui:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                hf_sub = f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}/"
+                hf_sub = f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}"
                 if self.session['fine_tuned'] == 'internal':
                     speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}speakers_xtts.pth", cache_dir=self.cache_dir)
                 model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
@@ -302,7 +302,7 @@ class Coqui:
                                 self.tts = loaded_tts[tts_internal_key]
                             else:
                                 hf_repo = models[self.session['tts_engine']]['internal']['repo']
-                                hf_sub = f"{models[self.session['tts_engine']]['internal']['sub']}/"
+                                hf_sub = f"{models[self.session['tts_engine']]['internal']['sub']}"
                                 model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}model.pth", cache_dir=self.cache_dir)
                                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}config.json", cache_dir=self.cache_dir)
                                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}vocab.json", cache_dir=self.cache_dir)
@@ -652,10 +652,10 @@ class Coqui:
                             return False
                     elif self.session['tts_engine'] == VITS:
                         speaker_argument = {}
-                        if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
+                        if self.session['language'] == 'eng' and 'vctk/vits/' in models[self.session['tts_engine']]['internal']['sub']:
                             if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['vctk/vits']:
                                 speaker_argument = {"speaker": 'p262'}
-                        elif self.session['language'] == 'cat' and 'custom/vits' in models[self.session['tts_engine']]['internal']['sub']:
+                        elif self.session['language'] == 'cat' and 'custom/vits/' in models[self.session['tts_engine']]['internal']['sub']:
                             if self.session['language'] in models[self.session['tts_engine']]['internal']['sub']['custom/vits'] or self.session['language_iso1'] in models[self.session['tts_engine']]['internal']['sub']['custom/vits']:
                                 speaker_argument = {"speaker": '09901'}
                         if settings['voice_path'] is not None:
