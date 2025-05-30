@@ -284,7 +284,7 @@ class Coqui:
                             tts_internal_key = f"{self.session['tts_engine']}-internal"
                             default_text = Path(default_text_file).read_text(encoding="utf-8")
                             if tts_internal_key in loaded_tts.keys():
-                                tts = loaded_tts[tts_internal_key]
+                                tts = loaded_tts[tts_internal_key]['engine']
                             else:
                                 hf_repo = models[self.session['tts_engine']]['internal']['repo']
                                 hf_sub = models[self.session['tts_engine']]['internal']['sub']
@@ -346,7 +346,7 @@ class Coqui:
                     os.makedirs(npz_dir, exist_ok=True)
                     tts_internal_key = f"{BARK}-internal"
                     if tts_internal_key in loaded_tts.keys():
-                        tts = loaded_tts[tts_internal_key]
+                        tts = loaded_tts[tts_internal_key]['engine']
                     else:
                         self._unload_tts(self.session['device'])
                         tts = self._load_checkpoint(tts_engine=BARK, checkpoint_dir=models[BARK]['internal']['repo'], device=self.session['device'])
@@ -540,7 +540,6 @@ class Coqui:
             sample_rate = 16000 if self.session['tts_engine'] == VITS and self.session['voice'] is not None else settings['sample_rate']
             silence_tensor = torch.zeros(1, sample_rate * 2)
             audio_segments = []
-            print(loaded_tts)
             tts = loaded_tts.get(self.tts_key, {}).get('engine')
             tts_vc = loaded_tts.get(self.tts_vc_key, {}).get('engine')
             for text_part in sentence_parts:
