@@ -937,7 +937,7 @@ def convert_chapters2audio(session):
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
         tts_manager = TTSManager(session)
-        if not tts_manager.active:
+        if not tts_manager:
             error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
             print(error)
             return False
