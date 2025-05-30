@@ -18,8 +18,6 @@ voice_conversion_models/multilingual/multi-dataset/openvoice_v2
 """
 default_vc_model = "voice_conversion_models/multilingual/multi-dataset/knnvc"
 
-loaded_tts = {} # must be empty
-
 max_tts_in_memory = 2 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM) Xtts being selected if set on 1.
 max_custom_model = 10
 max_custom_voices = 100
@@ -69,7 +67,7 @@ default_bark_settings = {
     "samplerate": 24000,
     "text_temp": 0.85,
     "waveform_temp": 0.85,
-    "files": ['coarse_2.pt'],
+    "files": ["text.safetensors", "coarse.safetensors", "fine.safetensors"],
     "voices": {},
 	"rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16}
 }
@@ -314,7 +312,7 @@ models = {
         "internal": {
             "lang": "multi",
             "repo": "rsxdalv/suno", # tts_models/multilingual/multi-dataset/bark
-            "sub": "big-pth/",
+            "sub": "big/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDahl_{default_bark_settings['samplerate']}.wav"),
             "files": default_bark_settings['files'],
             "samplerate": default_bark_settings['samplerate']
