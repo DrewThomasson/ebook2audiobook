@@ -40,7 +40,7 @@ default_xtts_settings = {
     # pip install deepspeed
     # conda deactivate
     "use_deepspeed": False,
-    "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav'],
+    "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav', 'speakers_xtts.pth'],
     "voices": {
         "ClaribelDervla": "Claribel Dervla", "DaisyStudious": "Daisy Studious", "GracieWise": "Gracie Wise",
         "TammieEma": "Tammie Ema", "AlisonDietlinde": "Alison Dietlinde", "AnaFlorence": "Ana Florence",
