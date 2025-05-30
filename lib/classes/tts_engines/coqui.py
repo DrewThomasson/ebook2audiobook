@@ -184,6 +184,8 @@ class Coqui:
                     else:
                         tts.to(device)
                     loaded_tts[tts_key] = {"engine": tts}
+                    msg = f'{model_path} Loaded!'
+                    print(msg)
                     return tts
                 else:
                     self._unload_tts(device)
@@ -252,6 +254,8 @@ class Coqui:
                     else:
                         tts.to(device)
                     loaded_tts[self.tts_key] = {"engine": tts, "config": config}
+                    msg = f'{tts_engine} Loaded!'
+                    print(msg)
                     return tts
                 else:
                     self._unload_tts(device)
