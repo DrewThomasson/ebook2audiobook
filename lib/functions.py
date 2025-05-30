@@ -1532,7 +1532,7 @@ def convert_ebook(args):
                             else: 
                                 msg_extra += 'deepspeed detected and ready!'
                         if msg == '':
-                            msg = f"{session['device'].upper()} is detected! - "
+                            msg = f"Using {session['device'].upper()} - "
                         msg += msg_extra
                         if is_gui_process:
                             show_alert({"type": "warning", "msg": msg})
