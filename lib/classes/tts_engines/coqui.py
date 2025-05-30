@@ -120,7 +120,7 @@ class Coqui:
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                     print(msg)
-                    tts = self._load_api(model_path, self.session['device'])
+                    tts = self._load_api(self.tts_key, model_path, self.session['device'])
                     if not tts:
                         return None
                     if self.session['voice'] is not None:
@@ -129,7 +129,7 @@ class Coqui:
                         if self.tts_vc_key in loaded_tts.keys():
                             tts_vc = loaded_tts[self.tts_vc_key]['engine']
                         else:
-                            tts_vc = self._load_api(default_vc_model, self.session['device'])
+                            tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
                             if tts_vc:
                                 loaded_tts[self.tts_vc_key]['engine'] = tts_vc
                             else:
@@ -147,14 +147,14 @@ class Coqui:
                 return None
             else:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
-                tts = self._load_api(model_path, self.session['device'])
+                tts = self._load_api(self.tts_key, model_path, self.session['device'])
                 if self.session['voice'] is not None:
                     msg = f"Loading TTS {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
                     print(msg)
                     if self.tts_vc_key in loaded_tts.keys():
                         tts_vc = loaded_tts[self.tts_vc_key]['engine']
                     else:
-                        tts_vc = self._load_api(default_vc_model, self.session['device'])
+                        tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
                         if tts_vc:
                             tts_vc = loaded_tts[self.tts_vc_key]['engine'] = tts_vc
                         else:
@@ -168,10 +168,10 @@ class Coqui:
                 return None
             else:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                tts = self._load_api(model_path, self.session['device'])
+                tts = self._load_api(self.tts_key, model_path, self.session['device'])
         return tts
        
-    def _load_api(self, model_path, device):
+    def _load_api(self, tts_key, model_path, device):
         global lock
         try:
             if len(loaded_tts) == max_tts_in_memory:
@@ -183,6 +183,7 @@ class Coqui:
                         tts.cuda()
                     else:
                         tts.to(device)
+                    loaded_tts[tts_key] = {"engine": tts}
                     return tts
                 else:
                     self._unload_tts(device)
@@ -245,8 +246,7 @@ class Coqui:
                         tts.cuda()
                     else:
                         tts.to(device)
-                    loaded_tts[self.tts_key]['engine'] = tts
-                    loaded_tts[self.tts_key]['config'] = config
+                    loaded_tts[self.tts_key] = {"engine": tts, "config": config}
                     return tts
                 else:
                     self._unload_tts(device)
