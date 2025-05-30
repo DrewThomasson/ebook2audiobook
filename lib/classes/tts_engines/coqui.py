@@ -200,8 +200,8 @@ class Coqui:
             if self.tts_key in loaded_tts.keys():
                 return loaded_tts[self.tts_key]['engine']
             # XTTSv2
+            checkpoint_dir = kwargs.get('checkpoint_dir')
             config_path = kwargs.get('config_path')
-            model_path = kwargs.get('model_path')
             vocab_path = kwargs.get('vocab_path')
             speakers_path = kwargs.get('speakers_path')
             # BARK
