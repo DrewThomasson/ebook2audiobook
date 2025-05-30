@@ -74,7 +74,7 @@ class Coqui:
         print(msg)
         if self.session['tts_engine'] == XTTSv2:
             if xtts_builtin_speakers_list is None:
-                speakers_path = hf_hub_download(repo_id=models['xtts']['internal']['repo'], filename=f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}{default_xtts_settings['files'][3]}", cache_dir=self.cache_dir)
+                speakers_path = hf_hub_download(repo_id=models['xtts']['internal']['repo'], filename=f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}{default_xtts_settings['files'][4]}", cache_dir=self.cache_dir)
                 xtts_builtin_speakers_list = torch.load(speakers_path)
             if self.session['custom_model'] is not None:
                 checkpoint_dir = self.session['custom_model_dir']
