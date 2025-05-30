@@ -235,7 +235,7 @@ class Coqui:
             with lock:
                 if tts_engine == XTTSv2:
                     if len(loaded_tts) == max_tts_in_memory:
-                        self._unload_tts(self.session['device'])
+                        self._unload_tts(device)
                     self.config = XttsConfig()
                     self.config.models_dir = os.path.join("models", "tts")
                     self.config.load_json(config_path)
@@ -248,7 +248,8 @@ class Coqui:
                         eval=True
                     )
                 elif tts_engine == BARK:
-                    self._unload_tts(self.session['device'])
+                    if len(loaded_tts) == max_tts_in_memory:
+                        self._unload_tts(device)
                     self.config = BarkConfig()
                     self.config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
                     self.config.CACHE_DIR = self.cache_dir
@@ -261,9 +262,6 @@ class Coqui:
                         fine_model_path=fine_model_path,
                         eval=True
                     )
-                else:
-                    if len(loaded_tts) == max_tts_in_memory:
-                        self._unload_tts(self.session['device'])
                 if tts:
                     if device == 'cuda':
                         tts.cuda()
