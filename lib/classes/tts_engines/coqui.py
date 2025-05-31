@@ -153,6 +153,7 @@ class Coqui:
 
     def _load_api(self, key, model_path, device):
         global lock
+        global loaded_tts
         try:
             if key in loaded_tts.keys():
                 msg = f'{key} already in memory...'
@@ -181,6 +182,7 @@ class Coqui:
 
     def _load_checkpoint(self, **kwargs):
         global lock
+        global loaded_tts
         try:
             key = kwargs.get('key')
             if key in loaded_tts.keys():
