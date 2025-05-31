@@ -151,7 +151,7 @@ class Coqui:
     def _load_api(self, tts_key, model_path, device):
         global lock
         try:
-            if len(loaded_tts) == max_tts_in_memory and tts_key != self.tts_vc_key:
+            if len(loaded_tts) >= max_tts_in_memory and tts_key != self.tts_vc_key:
                 self._unload_tts(self.session['device'])
             with lock:
                 tts = coquiAPI(model_path)
@@ -193,7 +193,7 @@ class Coqui:
             device = kwargs.get('device')
             with lock:
                 if tts_engine == XTTSv2:
-                    if len(loaded_tts) == max_tts_in_memory:
+                    if len(loaded_tts) >= max_tts_in_memory:
                         self._unload_tts(device)
                     config = XttsConfig()
                     config.models_dir = os.path.join("models", "tts")
@@ -209,7 +209,7 @@ class Coqui:
                         eval=True
                     )
                 elif tts_engine == BARK:
-                    if len(loaded_tts) == max_tts_in_memory:
+                    if len(loaded_tts) >= max_tts_in_memory:
                         self._unload_tts(device)
                     config = BarkConfig()
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
