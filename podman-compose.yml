@@ -1,10 +1,8 @@
 x-gpu-enabled: &gpu-enabled
   devices:
-    - driver: nvidia
-      count: all
-      capabilities:
-        - gpu # Enables GPU access for the container.
-
+    - /dev/nvidia0:/dev/nvidia0
+    - /dev/nvidiactl:/dev/nvidiactl
+    - /dev/nvidia-uvm:/dev/nvidia-uvm
 x-gpu-disabled: &gpu-disabled
   devices: [] # Disables GPU access (default for systems without an NVIDIA GPU).
 
@@ -22,11 +20,7 @@ services:
     stdin_open: true
     ports:
       - 7860:7860 # Maps container's port 7860 to the host's port 7860.
-    deploy:
-      resources:
-        reservations:
-          <<: *gpu-disabled # Use *gpu-enabled if you have an NVIDIA GPU.
-        limits: {} # Keeps limits as an empty mapping to avoid errors. Uncomment and configure below.
+    <<: *gpu-disabled # Use *gpu-enabled if you have an NVIDIA GPU.
     volumes:
       - ./:/app  # Maps the local directory to the container.
 
@@ -34,7 +28,7 @@ services:
 # --> `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory`
 # Removed all post arguments as CMD was replaced with ENTRYPOINT in the Dockerfile  
 # Example correction:  
-# Before: command: ["python", "app.py", "--script_mode", "full_docker"] or -> `docker run athomasson2/ebook2audiobook python app.py --script_mode full_docker`
-# After: nothing needed  or just -> `docker run athomasson2/ebook2audiobook`
+# Before: command: ["python", "app.py", "--script_mode", "full_docker"] or -> `podman run athomasson2/ebook2audiobook python app.py --script_mode full_docker`
+# After: nothing needed  or just -> `podman run athomasson2/ebook2audiobook`
 # Extra arguments after app.py can still be added to the -> command: [] 
 # Example adding extra arguments -> command: ["--share"] or -> command: ["--help"]
