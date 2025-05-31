@@ -147,7 +147,7 @@ class Coqui:
             else:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 self._load_api(self.tts_key, model_path, self.session['device'])
-        return loaded_tts[self.tts_key]['engine']
+        return (loaded_tts.get(self.tts_key) or {}).get('engine', False)
 
     def _load_api(self, tts_key, model_path, device):
         global lock
