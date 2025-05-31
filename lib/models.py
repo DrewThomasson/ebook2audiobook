@@ -96,7 +96,7 @@ models = {
         "internal": {
             "lang": "multi",
             "repo": "coqui/XTTS-v2",
-            "sub": "tts_models/multilingual/multi-dataset/xtts_v2",
+            "sub": "tts_models/multilingual/multi-dataset/xtts_v2/",
             "voice": default_xtts_settings['voices']['KumarDahl'],
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
