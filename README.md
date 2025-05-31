@@ -339,7 +339,6 @@ Available tags: `latest` (CUDA 11), `cpu`, `rocm`, `cuda11`, `cuda12`, `cuda128`
 
 
 #### Running the Docker Container
-To run the Docker container and start the Gradio interface, use the following command:
 
  -Run with CPU only
 ```powershell
