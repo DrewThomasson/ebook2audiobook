@@ -158,7 +158,7 @@ class Coqui:
                 msg = f'{key} already in memory...'
                 print(msg)
                 return loaded_tts[key]['engine']
-            self._unload_tts(self.session['device'])
+            #self._unload_tts(self.session['device'])
             with lock:
                 tts = coquiAPI(model_path)
                 if tts:
@@ -201,20 +201,19 @@ class Coqui:
             fine_model_path = kwargs.get('fine_model_path')
             ###
             device = kwargs.get('device')
-            self._unload_tts(device)
+            #self._unload_tts(device)
             with lock:
                 if tts_engine == XTTSv2:
-                    print(kwargs)
                     config = XttsConfig()
                     config.models_dir = os.path.join("models", "tts")
                     config.load_json(config_path)
                     tts = Xtts.init_from_config(config)          
                     tts.load_checkpoint(
                         config,
-                        #checkpoint_dir=checkpoint_dir,
+                        checkpoint_dir=checkpoint_dir,
                         checkpoint_path=checkpoint_path,
-                        #vocab_path=vocab_path,
-                        #speakers_path=speakers_path,
+                        vocab_path=vocab_path,
+                        speakers_path=speakers_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
                     )
@@ -227,9 +226,9 @@ class Coqui:
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
-                        #text_model_path=text_model_path,
-                        #coarse_model_path=coarse_model_path,
-                        #fine_model_path=fine_model_path,
+                        text_model_path=text_model_path,
+                        coarse_model_path=coarse_model_path,
+                        fine_model_path=fine_model_path,
                         eval=True
                     )
                 else:
