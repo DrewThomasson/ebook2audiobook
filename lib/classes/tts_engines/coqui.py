@@ -123,6 +123,7 @@ class Coqui:
                     if self.session['voice'] is not None:
                         msg = f"Loading vocoder {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
                         print(msg)
+                        tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
                 else:
                     msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                     print(msg)
