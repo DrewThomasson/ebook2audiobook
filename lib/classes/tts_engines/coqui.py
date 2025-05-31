@@ -119,8 +119,6 @@ class Coqui:
                     msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                     print(msg)
                     self._load_api(self.tts_key, model_path, self.session['device'])
-                    if not tts:
-                        return False
                     if self.session['voice'] is not None:
                         msg = f"Loading vocoder {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
                         print(msg)
