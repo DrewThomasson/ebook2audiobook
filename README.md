@@ -419,6 +419,10 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
     ```bash
     docker-compose up -d
     ```
+   **If using podman**
+    ```bash
+    podman compose -f podman-compose.yml up -d
+    ```
 4. **Access the service:**
   The service will be available at http://localhost:7860.
 
