@@ -85,10 +85,10 @@ class Coqui:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 checkpoint_dir = hf_repo
-                checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_xtts_settings['files'][1]}", cache_dir=self.cache_dir)
-                config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_xtts_settings['files'][0]}", cache_dir=self.cache_dir)
-                vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_xtts_settings['files'][2]}", cache_dir=self.cache_dir)
-                speakers_path = hf_hub_download(repo_id=models['xtts']['internal']['repo'], filename=f"{models[self.session['tts_engine']][self.session['fine_tuned']]['sub']}{default_xtts_settings['files'][4]}", cache_dir=self.cache_dir)
+                checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
+                config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
+                vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
+                speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.session['tts_engine']][self.session['fine_tuned']]['files'][4]}", cache_dir=self.cache_dir) if self.session['fine_tuned'] == 'internal' else None
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=speakers_path if self.session['fine_tuned'] == 'internal' else None, device=self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is not None:
@@ -190,24 +190,23 @@ class Coqui:
             tts_engine = kwargs.get('tts_engine')
             checkpoint_dir = kwargs.get('checkpoint_dir')
             checkpoint_path = kwargs.get('checkpoint_path')
-            # XTTSv2
+            device = kwargs.get('device')
+            ### XTTSv2
             config_path = kwargs.get('config_path')
             vocab_path = kwargs.get('vocab_path')
             speakers_path = kwargs.get('speakers_path')
-            ###
-            # BARK
+            ### BARK
             text_model_path = kwargs.get('text_model_path')
             coarse_model_path = kwargs.get('coarse_model_path')
             fine_model_path = kwargs.get('fine_model_path')
             ###
-            device = kwargs.get('device')
             #self._unload_tts(device)
             with lock:
                 if tts_engine == XTTSv2:
                     config = XttsConfig()
                     config.models_dir = os.path.join("models", "tts")
                     config.load_json(config_path)
-                    tts = Xtts.init_from_config(config)          
+                    tts = Xtts.init_from_config(config)     
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
