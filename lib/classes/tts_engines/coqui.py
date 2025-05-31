@@ -154,8 +154,7 @@ class Coqui:
     def _load_api(self, tts_key, model_path, device):
         global lock
         try:
-            if len(loaded_tts) >= max_tts_in_memory and tts_key != self.tts_vc_key:
-                self._unload_tts(self.session['device'])
+            self._unload_tts(self.session['device'])
             with lock:
                 tts = coquiAPI(model_path)
                 if tts:
@@ -168,7 +167,6 @@ class Coqui:
                     print(msg)
                     return tts
                 else:
-                    self._unload_tts(device)
                     gc.collect()
                     error = 'TTS engine could not be created!'
                     print(error)
@@ -197,10 +195,9 @@ class Coqui:
             fine_model_path = kwargs.get('fine_model_path')
             ###
             device = kwargs.get('device')
+            self._unload_tts(device)
             with lock:
                 if tts_engine == XTTSv2:
-                    if len(loaded_tts) >= max_tts_in_memory:
-                        self._unload_tts(device)
                     config = XttsConfig()
                     config.models_dir = os.path.join("models", "tts")
                     config.load_json(config_path)
@@ -215,8 +212,6 @@ class Coqui:
                         eval=True
                     )
                 elif tts_engine == BARK:
-                    if len(loaded_tts) >= max_tts_in_memory:
-                        self._unload_tts(device)
                     config = BarkConfig()
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
                     config.CACHE_DIR = self.cache_dir
@@ -239,7 +234,6 @@ class Coqui:
                     print(msg)
                     return tts
                 else:
-                    self._unload_tts(device)
                     gc.collect()
                     error = 'TTS engine could not be created!'
                     print(error)
@@ -330,11 +324,7 @@ class Coqui:
                 else:
                     os.makedirs(npz_dir, exist_ok=True)
                     tts_internal_key = f"{BARK}-internal"
-                    if tts_internal_key not in loaded_tts.keys():
-                        self._unload_tts(self.session['device'])
-                        tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=models[BARK]['internal']['repo'], device=self.session['device'])
-                    else:
-                        tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
+                    tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=models[BARK]['internal']['repo'], device=self.session['device'])
                     if tts:
                         voice_path_temp = os.path.splitext(npz_file)[0]+'.wav'
                         shutil.copy(voice_path, voice_path_temp)
@@ -395,12 +385,13 @@ class Coqui:
             return None
 
     def _unload_tts(self, device):
-        for key in list(loaded_tts.keys()):
-            if key != self.tts_vc_key:
-                del loaded_tts[key]
-        if device == 'cuda':
-            torch.cuda.empty_cache()
-            torch.cuda.synchronize()
+        if len(loaded_tts) >= max_tts_in_memory:
+            for key in list(loaded_tts.keys()):
+                if key != self.tts_vc_key:
+                    del loaded_tts[key]
+            if device == 'cuda':
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
 
     def _tensor_type(self, audio_data):
         if isinstance(audio_data, torch.Tensor):
