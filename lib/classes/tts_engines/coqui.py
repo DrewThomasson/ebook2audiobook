@@ -217,7 +217,7 @@ class Coqui:
                         config,
                         #checkpoint_dir=checkpoint_dir,
                         checkpoint_path=checkpoint_path,
-                        #vocab_path=vocab_path,
+                        vocab_path=vocab_path,
                         #speakers_path=speakers_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
