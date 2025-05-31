@@ -668,7 +668,7 @@ class Coqui:
                             else:
                                 tmp_out_wav = tmp_in_wav
                             with torch.no_grad():
-                                if tts_vc is not None:
+                                if tts_vc:
                                     audio_part = tts_vc.voice_conversion(
                                         source_wav=tmp_out_wav,
                                         target_wav=settings['voice_path']
@@ -731,7 +731,7 @@ class Coqui:
                             else:
                                 tmp_out_wav = tmp_in_wav
                             with torch.no_grad():
-                                if tts_vc is not None:
+                                if tts_vc:
                                     audio_part = tts_vc.voice_conversion(
                                         source_wav=tmp_out_wav,
                                         target_wav=settings['voice_path']
