@@ -520,7 +520,6 @@ class Coqui:
             sample_rate = 16000 if self.session['tts_engine'] == VITS and self.session['voice'] is not None else settings['sample_rate']
             silence_tensor = torch.zeros(1, sample_rate * 2)
             audio_segments = []
-            print(f'----------{self.tts_key}--------')
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', None)
             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', None)
             if tts is not None:
