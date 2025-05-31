@@ -213,9 +213,9 @@ class Coqui:
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
-                        checkpoint_path=checkpoint_path,
-                        vocab_path=vocab_path,
-                        speakers_path=speakers_path,
+                        #checkpoint_path=checkpoint_path,
+                        #vocab_path=vocab_path,
+                        #speakers_path=speakers_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
                     )
@@ -228,9 +228,9 @@ class Coqui:
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
-                        text_model_path=text_model_path,
-                        coarse_model_path=coarse_model_path,
-                        fine_model_path=fine_model_path,
+                        #text_model_path=text_model_path,
+                        #coarse_model_path=coarse_model_path,
+                        #fine_model_path=fine_model_path,
                         eval=True
                     )
                 else:
