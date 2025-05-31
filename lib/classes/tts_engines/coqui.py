@@ -207,38 +207,39 @@ class Coqui:
             fine_model_path = kwargs.get('fine_model_path')
             ###
             #self._unload_tts(device)
-            #with lock:
-            if tts_engine == XTTSv2:
-                config = XttsConfig()
-                config.models_dir = os.path.join("models", "tts")
-                config.load_json(config_path)
-                tts = Xtts.init_from_config(config)     
-                tts.load_checkpoint(
-                    config,
-                    checkpoint_dir=checkpoint_dir,
-                    checkpoint_path=checkpoint_path,
-                    vocab_path=vocab_path,
-                    speakers_path=speakers_path,
-                    use_deepspeed=default_xtts_settings['use_deepspeed'],
-                    eval=True
-                )
-            elif tts_engine == BARK:
-                config = BarkConfig()
-                config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                config.CACHE_DIR = self.cache_dir
-                tts = Bark.init_from_config(config)
-                tts.load_checkpoint(
-                    config,
-                    checkpoint_dir=checkpoint_dir,
-                    text_model_path=text_model_path,
-                    coarse_model_path=coarse_model_path,
-                    fine_model_path=fine_model_path,
-                    eval=True
-                )
-            else:
-                error = 'Could not recognize the name of TTS engine!'
-                print(error)
-                return False
+            with lock:
+                if tts_engine == XTTSv2:
+                    config = XttsConfig()
+                    config.models_dir = os.path.join("models", "tts")
+                    config.load_json(config_path)
+                    tts = Xtts.init_from_config(config)     
+                    print(config, tts)
+                    tts.load_checkpoint(
+                        config,
+                        checkpoint_dir=checkpoint_dir,
+                        checkpoint_path=checkpoint_path,
+                        vocab_path=vocab_path,
+                        speakers_path=speakers_path,
+                        use_deepspeed=default_xtts_settings['use_deepspeed'],
+                        eval=True
+                    )
+                elif tts_engine == BARK:
+                    config = BarkConfig()
+                    config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
+                    config.CACHE_DIR = self.cache_dir
+                    tts = Bark.init_from_config(config)
+                    tts.load_checkpoint(
+                        config,
+                        checkpoint_dir=checkpoint_dir,
+                        text_model_path=text_model_path,
+                        coarse_model_path=coarse_model_path,
+                        fine_model_path=fine_model_path,
+                        eval=True
+                    )
+                else:
+                    error = 'Could not recognize the name of TTS engine!'
+                    print(error)
+                    return False
             if tts:
                 if device == 'cuda':
                     tts.cuda()
