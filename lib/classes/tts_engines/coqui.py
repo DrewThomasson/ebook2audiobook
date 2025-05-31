@@ -322,7 +322,7 @@ class Coqui:
                                 if self._check_bark_npz(voice_path, bark_dir, speaker, default_text):
                                     return True
                             else:
-                                error = f'_check_builtin_speakers() error: {self.session['tts_engine']} is None'
+                                error = f"_check_builtin_speakers() error: {self.session['tts_engine']} is None"
                                 print(error)
                         else:
                             error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
