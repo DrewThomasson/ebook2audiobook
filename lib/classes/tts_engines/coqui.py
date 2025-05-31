@@ -179,7 +179,6 @@ class Coqui:
         global lock
         try:
             key = kwargs.get('key')
-            print(f'============{key}==========')
             if key in loaded_tts.keys():
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
@@ -263,15 +262,12 @@ class Coqui:
                             print(msg)
                             tts_internal_key = f"{self.session['tts_engine']}-internal"
                             default_text = Path(default_text_file).read_text(encoding="utf-8")
-                            if tts_internal_key not in loaded_tts.keys():
-                                hf_repo = models[self.session['tts_engine']]['internal']['repo']
-                                hf_sub = models[self.session['tts_engine']]['internal']['sub']
-                                checkpoint_dir = hf_repo
-                                config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                                vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']]['internal']['files'][2]}", cache_dir=self.cache_dir)
-                                tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
-                            else:
-                                tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
+                            hf_repo = models[self.session['tts_engine']]['internal']['repo']
+                            hf_sub = models[self.session['tts_engine']]['internal']['sub']
+                            checkpoint_dir = hf_repo
+                            config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                            vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                            tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
                             if tts:
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                                 file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
