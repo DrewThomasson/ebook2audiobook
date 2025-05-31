@@ -182,12 +182,12 @@ class Coqui:
     def _load_checkpoint(self, **kwargs):
         global lock
         try:
-            print('ooooooooooooookkkkkkkkkkkkkk')
             key = kwargs.get('key')
             if key in loaded_tts.keys():
                 msg = f'{key} already in memory...'
                 print(msg)
                 return loaded_tts[key]['engine']
+            print('1')
             tts_engine = kwargs.get('tts_engine')
             checkpoint_dir = kwargs.get('checkpoint_dir')
             checkpoint_path = kwargs.get('checkpoint_path')
@@ -205,6 +205,7 @@ class Coqui:
             self._unload_tts(device)
             with lock:
                 if tts_engine == XTTSv2:
+                    print('2')
                     config = XttsConfig()
                     config.models_dir = os.path.join("models", "tts")
                     config.load_json(config_path)
@@ -218,6 +219,7 @@ class Coqui:
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
                     )
+                    print('3')
                 elif tts_engine == BARK:
                     config = BarkConfig()
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
@@ -241,6 +243,7 @@ class Coqui:
                 else:
                     tts.to(device)
                 loaded_tts[key] = {"engine": tts, "config": config}
+                print(loaded_tts.keys())
                 msg = f'{tts_engine} Loaded!'
                 print(msg)
                 return tts
