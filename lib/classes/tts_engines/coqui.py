@@ -187,7 +187,7 @@ class Coqui:
                 msg = f'{key} already in memory...'
                 print(msg)
                 return loaded_tts[key]['engine']
-            print('1')
+            print(kwargs)
             tts_engine = kwargs.get('tts_engine')
             checkpoint_dir = kwargs.get('checkpoint_dir')
             checkpoint_path = kwargs.get('checkpoint_path')
@@ -212,8 +212,8 @@ class Coqui:
                     tts = Xtts.init_from_config(config)          
                     tts.load_checkpoint(
                         config,
-                        checkpoint_dir=checkpoint_dir,
-                        #checkpoint_path=checkpoint_path,
+                        #checkpoint_dir=checkpoint_dir,
+                        checkpoint_path=checkpoint_path,
                         #vocab_path=vocab_path,
                         #speakers_path=speakers_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
