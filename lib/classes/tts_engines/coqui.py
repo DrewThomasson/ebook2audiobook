@@ -151,7 +151,7 @@ class Coqui:
         print(f'----------{loaded_tts.keys()}---------')
         return (loaded_tts.get(self.tts_key) or {}).get('engine', False)
 
-    def _load_api(self, tts_key, model_path, device):
+    def _load_api(self, key, model_path, device):
         global lock
         try:
             self._unload_tts(self.session['device'])
@@ -162,7 +162,7 @@ class Coqui:
                         tts.cuda()
                     else:
                         tts.to(device)
-                    loaded_tts[tts_key] = {"engine": tts, "config": None}
+                    loaded_tts[key] = {"engine": tts, "config": None}
                     msg = f'{model_path} Loaded!'
                     print(msg)
                     return tts
@@ -179,6 +179,7 @@ class Coqui:
         global lock
         try:
             key = kwargs.get('key')
+            print(f'============{key}==========')
             if key in loaded_tts.keys():
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
