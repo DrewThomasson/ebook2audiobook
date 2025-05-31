@@ -224,6 +224,10 @@ class Coqui:
                         fine_model_path=fine_model_path,
                         eval=True
                     )
+                else:
+                    error = 'Could not recognize the name of TTS engine!'
+                    print(error)
+                    return False
                 if tts:
                     if device == 'cuda':
                         tts.cuda()
