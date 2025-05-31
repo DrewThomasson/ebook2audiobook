@@ -187,7 +187,6 @@ class Coqui:
                 msg = f'{key} already in memory...'
                 print(msg)
                 return loaded_tts[key]['engine']
-            print(kwargs)
             tts_engine = kwargs.get('tts_engine')
             checkpoint_dir = kwargs.get('checkpoint_dir')
             checkpoint_path = kwargs.get('checkpoint_path')
@@ -205,7 +204,7 @@ class Coqui:
             self._unload_tts(device)
             with lock:
                 if tts_engine == XTTSv2:
-                    print('2')
+                    print(kwargs)
                     config = XttsConfig()
                     config.models_dir = os.path.join("models", "tts")
                     config.load_json(config_path)
