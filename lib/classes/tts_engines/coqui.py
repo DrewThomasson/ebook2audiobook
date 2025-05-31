@@ -180,6 +180,8 @@ class Coqui:
         try:
             key = kwargs.get('key')
             if key in loaded_tts.keys():
+                msg = f'{key} already in memory...'
+                print(msg)
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
             checkpoint_dir = kwargs.get('checkpoint_dir')
