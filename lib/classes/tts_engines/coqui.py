@@ -151,7 +151,7 @@ class Coqui:
     def _load_api(self, tts_key, model_path, device):
         global lock
         try:
-            if len(loaded_tts) == max_tts_in_memory:
+            if len(loaded_tts) == max_tts_in_memory and tts_key != self.tts_vc_key:
                 self._unload_tts(self.session['device'])
             with lock:
                 tts = coquiAPI(model_path)
@@ -163,7 +163,6 @@ class Coqui:
                     loaded_tts[tts_key] = {"engine": tts, "config": None}
                     msg = f'{model_path} Loaded!'
                     print(msg)
-                    return tts
                 else:
                     self._unload_tts(device)
                     gc.collect()
@@ -172,7 +171,6 @@ class Coqui:
         except Exception as e:
             error = f'_load_api() error: {e}'
             print(error)
-        return False
 
     def _load_checkpoint(self, **kwargs):
         global lock
@@ -233,7 +231,6 @@ class Coqui:
                     loaded_tts[self.tts_key] = {"engine": tts, "config": config}
                     msg = f'{tts_engine} Loaded!'
                     print(msg)
-                    return True
                 else:
                     self._unload_tts(device)
                     gc.collect()
@@ -241,7 +238,6 @@ class Coqui:
                     print(error)
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
-        return False
 
     def _check_builtin_speakers(self, voice_path):
         try:
