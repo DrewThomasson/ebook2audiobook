@@ -154,6 +154,10 @@ class Coqui:
     def _load_api(self, key, model_path, device):
         global lock
         try:
+        if key in loaded_tts.keys():
+            msg = f'{key} already in memory...'
+            print(msg)
+            return loaded_tts[key]['engine']
             self._unload_tts(self.session['device'])
             with lock:
                 tts = coquiAPI(model_path)
