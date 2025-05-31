@@ -83,7 +83,7 @@ class Coqui:
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
             else:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                if self.session['fine_tuned'] == 'internal'
+                if self.session['fine_tuned'] == 'internal':
                     hf_sub = ''
                     speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][4]}", cache_dir=self.cache_dir)
                 else:
