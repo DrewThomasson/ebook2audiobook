@@ -153,7 +153,6 @@ class Coqui:
 
     def _load_api(self, key, model_path, device):
         global lock
-        global loaded_tts
         try:
             if key in loaded_tts.keys():
                 msg = f'{key} already in memory...'
@@ -182,7 +181,6 @@ class Coqui:
 
     def _load_checkpoint(self, **kwargs):
         global lock
-        global loaded_tts
         try:
             key = kwargs.get('key')
             if key in loaded_tts.keys():
@@ -236,19 +234,19 @@ class Coqui:
                     error = 'Could not recognize the name of TTS engine!'
                     print(error)
                     return False
-                if tts:
-                    if device == 'cuda':
-                        tts.cuda()
-                    else:
-                        tts.to(device)
-                    loaded_tts[key] = {"engine": tts, "config": config}
-                    msg = f'{tts_engine} Loaded!'
-                    print(msg)
-                    return tts
+            if tts:
+                if device == 'cuda':
+                    tts.cuda()
                 else:
-                    gc.collect()
-                    error = 'TTS engine could not be created!'
-                    print(error)
+                    tts.to(device)
+                loaded_tts[key] = {"engine": tts, "config": config}
+                msg = f'{tts_engine} Loaded!'
+                print(msg)
+                return tts
+            else:
+                gc.collect()
+                error = 'TTS engine could not be created!'
+                print(error)
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
         return False
