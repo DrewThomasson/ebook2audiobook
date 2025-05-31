@@ -812,7 +812,7 @@ class Coqui:
                     error = f"Cannot create {final_sentence}"
                     print(error)
             else:
-                error = f'convert() error: {self.session['tts_engine']} is None'
+                error = f"convert() error: {self.session['tts_engine']} is None"
                 print(error)
         except Exception as e:
             error = f'Coquit.convert(): {e}'
