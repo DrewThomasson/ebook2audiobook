@@ -213,7 +213,7 @@ class Coqui:
                     config.models_dir = os.path.join("models", "tts")
                     config.load_json(config_path)
                     tts = Xtts.init_from_config(config)     
-                    print(config, tts)
+                    print(tts)
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
