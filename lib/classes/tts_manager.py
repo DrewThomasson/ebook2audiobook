@@ -28,8 +28,7 @@ class TTSManager:
                 return self.tts.convert(sentence_number, sentence)
             else:
                 print('Other TTS engines coming soon!')    
-                return False
         except Exception as e:
             error = f'convert_sentence2audio(): {e}'
             raise ValueError(e)
-            return False
+        return False
