@@ -122,16 +122,6 @@ class Coqui:
                     if self.session['voice'] is not None:
                         msg = f"Loading vocoder {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
                         print(msg)
-                        if self.tts_vc_key in loaded_tts.keys():
-                            tts_vc = loaded_tts[self.tts_vc_key]['engine']
-                        else:
-                            tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
-                            if tts_vc:
-                                loaded_tts[self.tts_vc_key] = {"engine": tts_vc}
-                            else:
-                                error = 'TTS VC engine could not be created!'
-                                print(error)
-                                return False
                 else:
                     msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                     print(msg)
@@ -147,16 +137,7 @@ class Coqui:
                 if self.session['voice'] is not None:
                     msg = f"Loading TTS {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
                     print(msg)
-                    if self.tts_vc_key in loaded_tts.keys():
-                        tts_vc = loaded_tts[self.tts_vc_key]['engine']
-                    else:
-                        tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
-                        if tts_vc:
-                            tts_vc = loaded_tts[self.tts_vc_key] = {"engine": tts_vc}
-                        else:
-                            error = 'TTS VC engine could not be created!'
-                            print(error)
-                            return False
+                    self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
         elif self.session['tts_engine'] == YOURTTS:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -166,7 +147,7 @@ class Coqui:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 self._load_api(self.tts_key, model_path, self.session['device'])
         return True
-       
+
     def _load_api(self, tts_key, model_path, device):
         global lock
         try:
@@ -182,7 +163,7 @@ class Coqui:
                     loaded_tts[tts_key] = {"engine": tts, "config": None}
                     msg = f'{model_path} Loaded!'
                     print(msg)
-                    return True
+                    return tts
                 else:
                     self._unload_tts(device)
                     gc.collect()
