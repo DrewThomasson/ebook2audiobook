@@ -85,17 +85,17 @@ class Coqui:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 checkpoint_dir = hf_repo
-                checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.session['tts_engine'][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
-                config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.session['tts_engine'][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
-                vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.session['tts_engine'][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
-                speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{self.session['tts_engine'][self.session['fine_tuned']]['files'][4]}", cache_dir=self.cache_dir) if self.session['fine_tuned'] == 'internal' else None
+                checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
+                config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
+                vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
+                speakers_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][4]}", cache_dir=self.cache_dir) if self.session['fine_tuned'] == 'internal' else None
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=speakers_path if self.session['fine_tuned'] == 'internal' else None, device=self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
                 return False
-            else:self.session['tts_engine'][self.session['fine_tuned']]['files']
+            else:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 checkpoint_dir = hf_repo
