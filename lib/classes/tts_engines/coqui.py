@@ -53,7 +53,7 @@ class Coqui:
         self.session = session
         self.cache_dir = os.path.join(models_dir,'tts')
         self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
-        self.tts_vc_key = default_vc_model
+        self.tts_vc_key = default_vc_model.rsplit('/', 1)[-1]
         self.sentences_total_time = 0.0
         self.sentence_idx = 1
         self.params = {XTTSv2: {"latent_embedding":{}}, BARK: {}, VITS: {"semitones": {}}, FAIRSEQ: {"semitones": {}}, YOURTTS: {}}  
