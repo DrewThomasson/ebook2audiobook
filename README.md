@@ -417,11 +417,11 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
   To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
 3. **Start the service:**
     ```bash
-    docker-compose up -d
-    ```
-   **If using podman**
-    ```bash
-    podman compose -f podman-compose.yml up -d
+    # Docker
+    docker-compose up -d # To update add --build
+
+    # Podman
+    podman compose -f podman-compose.yml up -d # To update add --build
     ```
 4. **Access the service:**
   The service will be available at http://localhost:7860.
