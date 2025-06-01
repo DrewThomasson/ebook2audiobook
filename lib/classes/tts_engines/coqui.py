@@ -65,6 +65,10 @@ class Coqui:
         global xtts_builtin_speakers_list
         self.vtt_path = os.path.splitext(self.session['final_name'])[0] + '.vtt'
         if self.session['voice'] is not None:
+            if xtts_builtin_speakers_list is None:
+                if self.session['tts_engine'] == XTTSv2:
+                    self.speakers_path = hf_hub_download(repo_id=models['xtts']['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
+                    xtts_builtin_speakers_list = torch.load(self.speakers_path)
             if not self._check_builtin_speakers(self.session['voice'], self.session['device']):
                 msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                 print(msg)
@@ -72,9 +76,6 @@ class Coqui:
         msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
         print(msg)
         if self.session['tts_engine'] == XTTSv2:
-            if xtts_builtin_speakers_list is None:
-                self.speakers_path = hf_hub_download(repo_id=models['xtts']['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
-                xtts_builtin_speakers_list = torch.load(self.speakers_path)
             if self.session['custom_model'] is not None:
                 checkpoint_dir = self.session['custom_model_dir']
                 checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][1])
@@ -244,7 +245,6 @@ class Coqui:
                 else:
                     tts.to(device)
                 loaded_tts[key] = {"engine": tts, "config": config}
-                print(loaded_tts.keys())
                 msg = f'{tts_engine} Loaded!'
                 print(msg)
                 return tts
@@ -274,12 +274,17 @@ class Coqui:
                             tts_internal_key = f"{self.session['tts_engine']}-internal"
                             default_text = Path(default_text_file).read_text(encoding="utf-8")
                             hf_repo = models[XTTSv2]['internal']['repo']
-                            hf_sub = models[XTTSv2]['internal']['sub']
+                            hf_sub = ''
                             checkpoint_dir = hf_repo
                             config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
                             vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                             tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=device)
-                           
+                            
+                            checkpoint_dir = hf_repo
+                            checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
+                            config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                            vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                            tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=device)
                             if tts:
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                                 file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
