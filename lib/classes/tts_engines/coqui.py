@@ -320,8 +320,8 @@ class Coqui:
 
     def _check_bark_npz(self, voice_path, bark_dir, speaker, device):
         try:
-            if self.session['language'] in language_tts[BARK].keys():
-                npz_dir = os.path.join(bark_dir, speaker)
+            if self.session['language'] in language_tts[BARK].keys() and if f"/{self.session['language']}/" not in voice_path:
+                npz_dir = os.path.join(bark_dir.replace(f"/eng/",f"/{self.session['language']}/"), speaker)
                 npz_file = os.path.join(npz_dir, f'{speaker}.npz')
                 if not os.path.exists(npz_file):
                     os.makedirs(npz_dir, exist_ok=True)
