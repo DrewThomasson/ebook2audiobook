@@ -430,10 +430,10 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
-	if lang in abbreviations_mapping:
-		abbr_map = {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping[lang].items()}
-		pattern = re.compile(r'\b(' + '|'.join(re.escape(k).replace('\\.', '') for k in abbreviations_mapping[lang].keys()) + r')\.?\b', re.IGNORECASE)
-		text = pattern.sub(lambda m: abbr_map.get(m.group(1).lower(), m.group()), text)
+    if lang in abbreviations_mapping:
+        abbr_map = {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping[lang].items()}
+        pattern = re.compile(r'\b(' + '|'.join(re.escape(k).replace('\\.', '') for k in abbreviations_mapping[lang].keys()) + r')\.?\b', re.IGNORECASE)
+        text = pattern.sub(lambda m: abbr_map.get(m.group(1).lower(), m.group()), text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
