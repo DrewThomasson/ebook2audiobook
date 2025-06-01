@@ -273,11 +273,11 @@ class Coqui:
                             print(msg)
                             tts_internal_key = f"{self.session['tts_engine']}-internal"
                             default_text = Path(default_text_file).read_text(encoding="utf-8")
-                            hf_repo = models[self.session['tts_engine']]['internal']['repo']
-                            hf_sub = models[self.session['tts_engine']]['internal']['sub']
+                            hf_repo = models[XTTSv2]['internal']['repo']
+                            hf_sub = models[XTTSv2]['internal']['sub']
                             checkpoint_dir = hf_repo
-                            config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                            vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                            config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                            vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                             tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=device)
                            
                             if tts:
@@ -313,7 +313,7 @@ class Coqui:
                                 if self._check_bark_npz(voice_path, bark_dir, speaker, device, default_text):
                                     return True
                             else:
-                                error = f"_check_builtin_speakers() error: {self.session['tts_engine']} is None"
+                                error = f"_check_builtin_speakers() error: {XTTSv2} is None"
                                 print(error)
                         else:
                             error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
@@ -338,7 +338,7 @@ class Coqui:
                     os.makedirs(npz_dir, exist_ok=True)
                     tts_internal_key = f"{BARK}-internal"
                     hf_repo = models[BARK]['internal']['repo']
-                    hf_sub = ''
+                    hf_sub = models[BARK]['internal']['sub']
                     checkpoint_dir = hf_repo
                     text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
                     coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
