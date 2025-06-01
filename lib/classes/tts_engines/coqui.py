@@ -258,7 +258,7 @@ class Coqui:
             if speaker in default_xtts_settings['voices'] and self.session['language'] in language_tts[XTTSv2].keys():
                 default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                 if os.path.exists(default_text_file):
-                    msg = f"Converting builtin english voice to {self.session['language']}..."
+                    msg = f"Converting builtin eng voice to {self.session['language']}..."
                     print(msg)
                     tts_internal_key = f"{self.session['tts_engine']}-internal"
                     default_text = Path(default_text_file).read_text(encoding="utf-8")
@@ -295,7 +295,7 @@ class Coqui:
                             self._unload_tts(device)
                         for samplerate in [16000, 24000]:
                             output_file = file_path.replace('.wav', f'_{samplerate}.wav')
-                            if self._normalize_audio(file_path, output_file, samplerate):
+                            if not self._normalize_audio(file_path, output_file, samplerate):
                                 break
                         if os.path.exists(file_path):
                             os.remove(file_path)
@@ -320,9 +320,7 @@ class Coqui:
             if self.session['language'] in language_tts[BARK].keys():
                 npz_dir = os.path.join(bark_dir, speaker)
                 npz_file = os.path.join(npz_dir, f'{speaker}.npz')
-                if os.path.exists(npz_file):
-                    return True
-                else:
+                if not os.path.exists(npz_file):
                     os.makedirs(npz_dir, exist_ok=True)
                     tts_internal_key = f"{BARK}-internal"
                     hf_repo = models[BARK]['internal']['repo']
@@ -355,7 +353,9 @@ class Coqui:
                         return True
                     else:
                         error = f'_check_bark_npz() error: {tts_internal_key} is None'
-                        print(error)                       
+                        print(error) 
+                else:
+                    return True
             else:
                 return True
         except Exception as e:
