@@ -69,10 +69,6 @@ class Coqui:
                 if self.session['tts_engine'] == XTTSv2:
                     self.speakers_path = hf_hub_download(repo_id=models['xtts']['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
                     xtts_builtin_speakers_list = torch.load(self.speakers_path)
-            if not self._check_builtin_speakers(self.session['voice'], self.session['device']):
-                msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
-                print(msg)
-                return False
         msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
         print(msg)
         if self.session['tts_engine'] == XTTSv2:
@@ -275,11 +271,6 @@ class Coqui:
                             default_text = Path(default_text_file).read_text(encoding="utf-8")
                             hf_repo = models[XTTSv2]['internal']['repo']
                             hf_sub = ''
-                            checkpoint_dir = hf_repo
-                            config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                            vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
-                            tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=device)
-                            
                             checkpoint_dir = hf_repo
                             checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
                             config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
@@ -538,6 +529,10 @@ class Coqui:
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
                 else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
             )
+            if not self._check_builtin_speakers(settings['voice_path'], self.session['device']):
+                msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
+                print(msg)
+                return False
             sentence_parts = sentence.split('‡pause‡')
             if self.session['tts_engine'] == XTTSv2 or self.session['tts_engine'] == FAIRSEQ:
                 sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
