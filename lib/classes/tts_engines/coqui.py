@@ -65,7 +65,7 @@ class Coqui:
         global xtts_builtin_speakers_list
         self.vtt_path = os.path.splitext(self.session['final_name'])[0] + '.vtt'
         if self.session['voice'] is not None:
-            if not self._check_builtin_speakers(self.session['voice']):
+            if not self._check_builtin_speakers(self.session['voice'], self.session['device']):
                 msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                 print(msg)
                 return False
@@ -256,7 +256,7 @@ class Coqui:
             error = f'_load_checkpoint() error: {e}'
         return False
 
-    def _check_builtin_speakers(self, voice_path):
+    def _check_builtin_speakers(self, voice_path, device):
         try:
             voice_parts = Path(voice_path).parts
             if self.session['language'] in voice_parts:
@@ -278,7 +278,8 @@ class Coqui:
                             checkpoint_dir = hf_repo
                             config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']]['internal']['files'][0]}", cache_dir=self.cache_dir)
                             vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']]['internal']['files'][2]}", cache_dir=self.cache_dir)
-                            tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
+                            tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=device)
+                           
                             if tts:
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                                 file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
@@ -309,7 +310,7 @@ class Coqui:
                                     os.remove(file_path)
                                 bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
                                 speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(voice_path)) 
-                                if self._check_bark_npz(voice_path, bark_dir, speaker, default_text):
+                                if self._check_bark_npz(voice_path, bark_dir, speaker, device, default_text):
                                     return True
                             else:
                                 error = f"_check_builtin_speakers() error: {self.session['tts_engine']} is None"
@@ -326,7 +327,7 @@ class Coqui:
             print(error)
         return False
 
-    def _check_bark_npz(self, voice_path, bark_dir, speaker, default_text=None):
+    def _check_bark_npz(self, voice_path, bark_dir, speaker, device, default_text=None):
         try:
             if self.session['language'] in language_tts[BARK].keys():
                 npz_dir = os.path.join(bark_dir, speaker)
@@ -336,7 +337,13 @@ class Coqui:
                 else:
                     os.makedirs(npz_dir, exist_ok=True)
                     tts_internal_key = f"{BARK}-internal"
-                    tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=models[BARK]['internal']['repo'], device=self.session['device'])
+                    hf_repo = models[BARK]['internal']['repo']
+                    hf_sub = ''
+                    checkpoint_dir = hf_repo
+                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
+                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
+                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
+                    tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=device)
                     if tts:
                         voice_path_temp = os.path.splitext(npz_file)[0]+'.wav'
                         shutil.copy(voice_path, voice_path_temp)
@@ -348,7 +355,7 @@ class Coqui:
                             torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
                                 default_text,
-                                loaded_tts[self.tts_key]['config'],
+                                loaded_tts[tts_internal_key]['config'],
                                 speaker_id=speaker,
                                 voice_dirs=bark_dir,
                                 temperature=0.85
@@ -594,7 +601,7 @@ class Coqui:
                         '''
                         bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
                         speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))                               
-                        if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, None):      
+                        if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device'], None):      
                             # text_temp: generation temperature (1.0 more diverse, 0.0 more conservative)
                             # waveform_temp: generation temperature (1.0 more diverse, 0.0 more conservative)                            
                             fine_tuned_params = {
