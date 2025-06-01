@@ -435,6 +435,8 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
 
 ## Common Docker Issues
 
+- My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
+
 - `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory` (Just remove all post arguments as I replaced the `CMD` with `ENTRYPOINT` in the [Dockerfile](Dockerfile))
   - Example: `docker run --pull always athomasson2/ebook2audiobook app.py --script_mode full_docker` - > corrected - > `docker run --pull always athomasson2/ebook2audiobook`
   - Arguments can be easily added like this now `docker run --pull always athomasson2/ebook2audiobook --share`
@@ -482,6 +484,7 @@ For an XTTS custom model a ref audio clip of the voice reference is mandatory:
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
 
 ## Common Issues:
+- My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 -  CPU is slow (better on server smp CPU) while NVIDIA GPU can have almost real time conversion.
    [Discussion about this](https://github.com/DrewThomasson/ebook2audiobook/discussions/19#discussioncomment-10879846)
    For faster multilingual generation I would suggest my other
