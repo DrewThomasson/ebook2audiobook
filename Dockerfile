@@ -54,34 +54,44 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
             TORCHAUDIO_SPEC="torchaudio"; \
         fi && \
         \
-        case "$TORCH_VERSION" in \
-            "cuda12") \
-                pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cu121 \
-                ;; \
-            "cuda128") \
-                #pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/nightly/cu128 \
-                echo "Installing PyTorch nightly for CUDA 12.8 (cu128)" && \
-                pip install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128 \
-                ;; \
-            "cuda11") \
-                pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cu118 \
-                ;; \
-            "rocm") \
-                # Using the correct syntax for ROCm PyTorch installation
-                pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/rocm6.2 \
-                ;; \
-            "xpu") \
-                # Install PyTorch with Intel XPU support through IPEX
-                pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC && \
-                pip install --no-cache-dir intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/ \
-                ;; \
-            "cpu") \
-                pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cpu \
-                ;; \
-            *) \
-                pip install --no-cache-dir $TORCH_VERSION \
-                ;; \
-        esac && \
+        # Check if TORCH_VERSION contains "cuda" and extract version number
+        if echo "$TORCH_VERSION" | grep -q "cuda"; then \
+            CUDA_VERSION=$(echo "$TORCH_VERSION" | sed 's/cuda//g') && \
+            echo "Detected CUDA version: $CUDA_VERSION" && \
+            echo "Attempting to install PyTorch nightly for CUDA $CUDA_VERSION..." && \
+            if ! pip install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
+                echo "❌ Nightly build for CUDA $CUDA_VERSION not available or failed" && \
+                echo "🔄 Trying stable release for CUDA $CUDA_VERSION..." && \
+                if pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
+                    echo "✅ Successfully installed stable PyTorch for CUDA $CUDA_VERSION"; \
+                else \
+                    echo "❌ Both nightly and stable builds failed for CUDA $CUDA_VERSION"; \
+                    echo "💡 This CUDA version may not be supported by PyTorch"; \
+                    exit 1; \
+                fi; \
+            else \
+                echo "✅ Successfully installed nightly PyTorch for CUDA $CUDA_VERSION"; \
+            fi; \
+        else \
+            # Handle non-CUDA cases (existing functionality)
+            case "$TORCH_VERSION" in \
+                "rocm") \
+                    # Using the correct syntax for ROCm PyTorch installation
+                    pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/rocm6.2 \
+                    ;; \
+                "xpu") \
+                    # Install PyTorch with Intel XPU support through IPEX
+                    pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC && \
+                    pip install --no-cache-dir intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/ \
+                    ;; \
+                "cpu") \
+                    pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cpu \
+                    ;; \
+                *) \
+                    pip install --no-cache-dir $TORCH_VERSION \
+                    ;; \
+            esac; \
+        fi && \
         # Install remaining requirements, skipping torch packages that might be there
         grep -v -E "^torch==|^torchvision==|^torchaudio==|^torchvision$" requirements.txt > requirements_no_torch.txt && \
         pip install --no-cache-dir --upgrade -r requirements_no_torch.txt && \
