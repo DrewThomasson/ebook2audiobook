@@ -254,60 +254,63 @@ class Coqui:
 
     def _check_xtts_builtin_speakers(self, voice_path, device):
         try:
-            speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(voice_path)) 
-            if speaker in default_xtts_settings['voices'] and self.session['language'] in language_tts[XTTSv2].keys():
-                default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
-                if os.path.exists(default_text_file):
-                    msg = f"Converting builtin eng voice to {self.session['language']}..."
-                    print(msg)
-                    tts_internal_key = f"{self.session['tts_engine']}-internal"
-                    default_text = Path(default_text_file).read_text(encoding="utf-8")
-                    hf_repo = models[XTTSv2]['internal']['repo']
-                    hf_sub = ''
-                    checkpoint_dir = hf_repo
-                    checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
-                    config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                    vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
-                    tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=device)
-                    if tts:
-                        lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
-                        file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
-                        gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()                           
-                        with torch.no_grad():
-                            result = tts.inference(
-                                text=default_text,
-                                language=self.session['language_iso1'],
-                                gpt_cond_latent=gpt_cond_latent,
-                                speaker_embedding=speaker_embedding,
-                            )
-                        audio_data = result.get('wav')
-                        if audio_data is not None:
-                            audio_data = audio_data.tolist()
+            if f"/{self.session['language']}/" not in voice_path:
+                speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(voice_path)) 
+                if speaker in default_xtts_settings['voices'] and self.session['language'] in language_tts[XTTSv2].keys():
+                    default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
+                    if os.path.exists(default_text_file):
+                        msg = f"Converting builtin eng voice to {self.session['language']}..."
+                        print(msg)
+                        tts_internal_key = f"{self.session['tts_engine']}-internal"
+                        default_text = Path(default_text_file).read_text(encoding="utf-8")
+                        hf_repo = models[XTTSv2]['internal']['repo']
+                        hf_sub = ''
+                        checkpoint_dir = hf_repo
+                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
+                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                        tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=device)
+                        if tts:
+                            lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
+                            file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
+                            gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()                           
+                            with torch.no_grad():
+                                result = tts.inference(
+                                    text=default_text,
+                                    language=self.session['language_iso1'],
+                                    gpt_cond_latent=gpt_cond_latent,
+                                    speaker_embedding=speaker_embedding,
+                                )
+                            audio_data = result.get('wav')
+                            if audio_data is not None:
+                                audio_data = audio_data.tolist()
+                            else:
+                                error = f'No audio waveform found in Coqui.convert() result: {result}'
+                                print(error)
+                                return False
+                            sourceTensor = self._tensor_type(audio_data)
+                            audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                            torchaudio.save(file_path, audio_tensor, 24000, format='wav')
+                            del audio_data, sourceTensor, audio_tensor  
+                            if self.session['tts_engine'] != XTTSv2:
+                                self._unload_tts(device)
+                            for samplerate in [16000, 24000]:
+                                output_file = file_path.replace('.wav', f'_{samplerate}.wav')
+                                if not self._normalize_audio(file_path, output_file, samplerate):
+                                    break
+                            if os.path.exists(file_path):
+                                os.remove(file_path)
+                            bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
+                            if self._check_bark_npz(voice_path, bark_dir, speaker, device):
+                                return True
                         else:
-                            error = f'No audio waveform found in Coqui.convert() result: {result}'
+                            error = f"_check_xtts_builtin_speakers() error: {XTTSv2} is None"
                             print(error)
-                            return False
-                        sourceTensor = self._tensor_type(audio_data)
-                        audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                        torchaudio.save(file_path, audio_tensor, 24000, format='wav')
-                        del audio_data, sourceTensor, audio_tensor  
-                        if self.session['tts_engine'] != XTTSv2:
-                            self._unload_tts(device)
-                        for samplerate in [16000, 24000]:
-                            output_file = file_path.replace('.wav', f'_{samplerate}.wav')
-                            if not self._normalize_audio(file_path, output_file, samplerate):
-                                break
-                        if os.path.exists(file_path):
-                            os.remove(file_path)
-                        bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
-                        if self._check_bark_npz(voice_path, bark_dir, speaker, device):
-                            return True
                     else:
-                        error = f"_check_xtts_builtin_speakers() error: {XTTSv2} is None"
+                        error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
                         print(error)
                 else:
-                    error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
-                    print(error)
+                    return True
             else:
                 return True
         except Exception as e:
