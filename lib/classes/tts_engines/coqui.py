@@ -154,7 +154,6 @@ class Coqui:
             else:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 tts = self._load_api(self.tts_key, model_path, self.session['device'])
-        print(f'----------{loaded_tts.keys()}---------')
         return (loaded_tts.get(self.tts_key) or {}).get('engine', False)
 
     def _load_api(self, key, model_path, device):
@@ -533,7 +532,6 @@ class Coqui:
             sample_rate = 16000 if self.session['tts_engine'] == VITS and self.session['voice'] is not None else settings['sample_rate']
             silence_tensor = torch.zeros(1, sample_rate * 2)
             audio_segments = []
-            print(f'----------{loaded_tts.keys()}---------')
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
             if tts:
