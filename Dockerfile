@@ -59,10 +59,12 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
             CUDA_VERSION=$(echo "$TORCH_VERSION" | sed 's/cuda//g') && \
             echo "Detected CUDA version: $CUDA_VERSION" && \
             echo "Attempting to install PyTorch nightly for CUDA $CUDA_VERSION..." && \
+            #if ! pip install --no-cache-dir --pre $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
             if ! pip install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
                 echo "❌ Nightly build for CUDA $CUDA_VERSION not available or failed" && \
                 echo "🔄 Trying stable release for CUDA $CUDA_VERSION..." && \
-                if pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
+                #if pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
+                if pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
                     echo "✅ Successfully installed stable PyTorch for CUDA $CUDA_VERSION"; \
                 else \
                     echo "❌ Both nightly and stable builds failed for CUDA $CUDA_VERSION"; \
