@@ -213,18 +213,15 @@ class Coqui:
                     config.models_dir = os.path.join("models", "tts")
                     config.load_json(config_path)
                     tts = Xtts.init_from_config(config)
-                    '''
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
                         checkpoint_path=checkpoint_path,
                         vocab_path=vocab_path,
-                        speakers_path=speakers_path,
+                        speaker_file_path=speakers_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
                     )
-                    '''
-                    print(tts)
                 elif tts_engine == BARK:
                     config = BarkConfig()
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
