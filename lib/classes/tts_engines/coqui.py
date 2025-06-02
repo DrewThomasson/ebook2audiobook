@@ -258,10 +258,14 @@ class Coqui:
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
             voice_parts = Path(voice_path).parts
+            print('1')
             if self.session['language'] not in voice_parts:
+                print('2')
                 if speaker in default_xtts_settings['voices'].keys() and self.session['language'] in language_tts[XTTSv2].keys():
+                    print('3')
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     if os.path.exists(default_text_file):
+                        print('4')
                         msg = f"Converting builtin eng voice to {self.session['language']}..."
                         print(msg)
                         tts_internal_key = f"{self.session['tts_engine']}-internal"
@@ -275,6 +279,7 @@ class Coqui:
                         #tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=device)
                         tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
+                            print('5')
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                             gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()                           
@@ -534,6 +539,7 @@ class Coqui:
                 else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
             )          
             if settings['voice_path'] is not None:
+                print('voice_path not none...')
                 speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))
                 if not self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device']):
                     msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
