@@ -294,7 +294,7 @@ class Coqui:
                                 del audio_data, sourceTensor, audio_tensor  
                                 if self.session['tts_engine'] != XTTSv2:
                                     del tts
-                                    self._unload_tts(XTTSv2, device)
+                                    self._unload_tts(device, XTTSv2)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
                                     bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
@@ -354,7 +354,7 @@ class Coqui:
                         del audio_data
                         if self.session['tts_engine'] != BARK:
                             del tts
-                            self._unload_tts(tts_internal_key, device)
+                            self._unload_tts(device, tts_internal_key)
                         msg = f"Saved NPZ file: {npz_file}"
                         print(msg)
                         return True
@@ -399,7 +399,7 @@ class Coqui:
             print(error)
             return None
 
-    def _unload_tts(self, tts_key=None, device):
+    def _unload_tts(self, device, tts_key=None):
         if len(loaded_tts) >= max_tts_in_memory:
             if tts_key is not None:
                 del loaded_tts[tts_key]
@@ -407,7 +407,7 @@ class Coqui:
                 for key in list(loaded_tts.keys()):
                     if key != self.tts_vc_key:
                         del loaded_tts[key]
-                if device == 'cuda':
+                if device != 'cpu':
                     torch.cuda.empty_cache()
                     torch.cuda.synchronize()
 
