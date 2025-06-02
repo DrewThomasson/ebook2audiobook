@@ -335,7 +335,7 @@ models = {
         "internal": {
             "lang": "multi",
             "repo": "rsxdalv/suno", # tts_models/multilingual/multi-dataset/bark
-            "sub": , { # or "" if tts_models/multilingual/multi-dataset/bark
+            "sub": { # or "" if tts_models/multilingual/multi-dataset/bark
                 "big-bf16": "big-bf16/",
                 "small-bf16": "small-bf16/",
                 "big": "big/",
