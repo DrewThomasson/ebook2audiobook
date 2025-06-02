@@ -334,8 +334,8 @@ models = {
     BARK: {
         "internal": {
             "lang": "multi",
-            "repo": "rsxdalv/suno", # tts_models/multilingual/multi-dataset/bark
-            "sub": "big/",
+            "repo": "tts_models/multilingual/multi-dataset/bark", # rsxdalv/suno
+            "sub": "", # big-bf16/ big-pth/ big/ small-bf16/ small-pth/ small/
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDhal_{default_bark_settings['samplerate']}.wav"),
             "files": default_bark_settings['files'],
             "samplerate": default_bark_settings['samplerate']
