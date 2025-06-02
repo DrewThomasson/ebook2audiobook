@@ -401,8 +401,8 @@ class Coqui:
     def _unload_tts(self, device, tts_key=None):
         if len(loaded_tts) >= max_tts_in_memory:
             if tts_key is not None:
-                if tts_key in loaded_tts.keys()
-                del loaded_tts[tts_key]
+                if tts_key in loaded_tts.keys():
+                    del loaded_tts[tts_key]
             else:
                 for key in list(loaded_tts.keys()):
                     if key != self.tts_vc_key:
