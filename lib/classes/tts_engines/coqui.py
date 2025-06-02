@@ -203,8 +203,7 @@ class Coqui:
             coarse_model_path = kwargs.get('coarse_model_path', None)
             fine_model_path = kwargs.get('fine_model_path', None)
             ###
-            #self._unload_tts(device)
-            print(kwargs)
+            self._unload_tts(device)
             with lock:
                 if tts_engine == XTTSv2:
                     config = XttsConfig()
@@ -297,8 +296,8 @@ class Coqui:
                                     if not self._normalize_audio(file_path, output_file, samplerate):
                                         break
                                 del audio_data, sourceTensor, audio_tensor  
-                                #if self.session['tts_engine'] != XTTSv2:
-                                #    self._unload_tts(device)
+                                if self.session['tts_engine'] != XTTSv2:
+                                    self._unload_tts(device)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
                                     bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
@@ -355,8 +354,8 @@ class Coqui:
                             )
                         os.remove(voice_temp)
                         del audio_data
-                        #if self.session['tts_engine'] != BARK:
-                        #    self._unload_tts(device)
+                        if self.session['tts_engine'] != BARK:
+                            self._unload_tts(device)
                         msg = f"Saved NPZ file: {npz_file}"
                         print(msg)
                         return True
