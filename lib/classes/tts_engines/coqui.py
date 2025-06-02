@@ -282,7 +282,6 @@ class Coqui:
                                 )
                             audio_data = result.get('wav')
                             if audio_data is not None:
-                                print(f'------------OK------------')
                                 audio_data = audio_data.tolist()
                                 sourceTensor = self._tensor_type(audio_data)
                                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
