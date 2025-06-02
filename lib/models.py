@@ -63,7 +63,7 @@ default_xtts_settings = {
         "FerranSimen": "Ferran Simen", "XavierHayasaka": "Xavier Hayasaka", "LuisMoray": "Luis Moray",
         "MarcosRudaski": "Marcos Rudaski"
     },
-    "rating": {"GPU VRAM": 4, "CPU": 3, "RAM": 8}
+    "rating": {"GPU VRAM": 4, "CPU": 3, "RAM": 8, "Emotions": 3}
 }
 default_bark_settings = {
     "samplerate": 24000,
@@ -92,25 +92,25 @@ default_bark_settings = {
         "FerranSimen": "Ferran Simen", "XavierHayasaka": "Xavier Hayasaka", "LuisMoray": "Luis Moray",
         "MarcosRudaski": "Marcos Rudaski"
     },
-	"rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16}
+	"rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Emotions": 4}
 }
 default_vits_settings = {
     "samplerate": 22050,
     "files": ['config.json', 'model_file.pth', 'language_ids.json'],
     "voices": {},
-    "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4}
+    "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Emotions": 2}
 }
 default_fairseq_settings = {
     "samplerate": 16000,
     "files": ['config.json', 'G_100000.pth', 'vocab.json'],
     "voices": {},
-	"rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4}
+	"rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Emotions": 2}
 }
 default_yourtts_settings = {
     "samplerate": 16000,
     "files": ['config.json', 'model_file.pth'],
     "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
-	"rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 4}
+	"rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 4, "Emotions": 1}
 }
 models = {
     XTTSv2: {
