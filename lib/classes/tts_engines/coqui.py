@@ -214,10 +214,10 @@ class Coqui:
                     tts = Xtts.init_from_config(config)
                     tts.load_checkpoint(
                         config,
-                        #checkpoint_dir=checkpoint_dir,
+                        checkpoint_dir=checkpoint_dir,
                         checkpoint_path=checkpoint_path,
                         vocab_path=vocab_path,
-                        #speaker_file_path=speakers_path,
+                        speaker_file_path=speakers_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
                     )
@@ -265,7 +265,7 @@ class Coqui:
                     if os.path.exists(default_text_file):
                         msg = f"Converting builtin eng voice to {self.session['language']}..."
                         print(msg)
-                        tts_internal_key = f"{self.session['tts_engine']}-internal"
+                        tts_internal_key = f"{XTTSv2}-internal"
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         hf_repo = models[XTTSv2]['internal']['repo']
                         hf_sub = ''
@@ -274,6 +274,7 @@ class Coqui:
                         checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                         #tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=device)
+                        rint(f'------------checkpoint------------')
                         tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
