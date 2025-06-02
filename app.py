@@ -13,7 +13,6 @@ from lib.conf import *
 from lib.models import *
 from lib.lang import install_info, default_language_code
 
-`# Core utility functions for environment, version, and dependency checks` 😄
 def check_virtual_env(script_mode):
     current_version = sys.version_info[:2]  # (major, minor)
     if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
