@@ -257,7 +257,8 @@ class Coqui:
 
     def _check_xtts_builtin_speakers(self, voice_path, device):
         try:
-            if f"/{self.session['language']}/" not in voice_path:
+            voice_parts = Path(voice_path).parts
+            if self.session['language'] not in voice_parts:
                 speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(voice_path)) 
                 if speaker in default_xtts_settings['voices'] and self.session['language'] in language_tts[XTTSv2].keys():
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
@@ -324,7 +325,8 @@ class Coqui:
 
     def _check_bark_npz(self, voice_path, bark_dir, speaker, device):
         try:
-            npz_dir = os.path.join(bark_dir.replace(f"/eng/",f"/{self.session['language']}/"), speaker)
+            bark_dir = bark_dir.replace(f"/eng/",f"/{self.session['language']}/").replace(f"\\eng\\",f"\\{self.session['language']}\\")
+            npz_dir = os.path.join(bark_dir, speaker)
             npz_file = os.path.join(npz_dir, f'{speaker}.npz')
             if self.session['language'] in language_tts[BARK].keys() and not os.path.exists(npz_file):
                 if not os.path.exists(npz_file):
