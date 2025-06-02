@@ -255,11 +255,10 @@ class Coqui:
             error = f'_load_checkpoint() error: {e}'
         return False
 
-    def _check_xtts_builtin_speakers(self, voice_path, device):
+    def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
             voice_parts = Path(voice_path).parts
             if self.session['language'] not in voice_parts:
-                speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(voice_path))
                 if speaker in default_xtts_settings['voices'] and self.session['language'] in language_tts[XTTSv2].keys():
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     if os.path.exists(default_text_file):
@@ -520,6 +519,7 @@ class Coqui:
     def convert(self, sentence_number, sentence):
         global xtts_builtin_speakers_list
         try:
+            speaker = None
             audio_data = False
             audio2trim = False
             trim_audio_buffer = 0.001
@@ -533,9 +533,10 @@ class Coqui:
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
                 else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
-            )
+            )          
             if settings['voice_path'] is not None:
-                if not self._check_xtts_builtin_speakers(settings['voice_path'], self.session['device']):
+                speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))
+                if not self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device']):
                     msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                     print(msg)
                     return False
@@ -561,8 +562,8 @@ class Coqui:
                         else:
                             msg = 'Computing speaker latents...'
                             print(msg)
-                            if settings['voice_path'] in default_xtts_settings['voices'].values():
-                                settings['gpt_cond_latent'], settings['speaker_embedding'] = xtts_builtin_speakers_list[settings['voice_path']].values()
+                            if speaker in default_xtts_settings['voices'].keys():
+                                settings['gpt_cond_latent'], settings['speaker_embedding'] = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
                             else:
                                 settings['gpt_cond_latent'], settings['speaker_embedding'] = tts.get_conditioning_latents(audio_path=[settings['voice_path']])  
                             settings['latent_embedding'][settings['voice_path']] = settings['gpt_cond_latent'], settings['speaker_embedding']
@@ -605,8 +606,7 @@ class Coqui:
                             CAPITALIZATION for emphasis of a word
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
-                        bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')         
-                        speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))              
+                        bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')                       
                         if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):      
                             # text_temp: generation temperature (1.0 more diverse, 0.0 more conservative)
                             # waveform_temp: generation temperature (1.0 more diverse, 0.0 more conservative)                            

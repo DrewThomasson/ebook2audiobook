@@ -118,7 +118,7 @@ models = {
             "lang": "multi",
             "repo": "coqui/XTTS-v2",
             "sub": "tts_models/multilingual/multi-dataset/xtts_v2/",
-            "voice": default_xtts_settings['voices']['KumarDahl'],
+            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDhal_{default_xtts_settings['samplerate']}.wav"),
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
         },
@@ -336,7 +336,7 @@ models = {
             "lang": "multi",
             "repo": "rsxdalv/suno", # tts_models/multilingual/multi-dataset/bark
             "sub": "big/",
-            "voice": default_xtts_settings['voices']['KumarDahl'],
+            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDhal_{default_bark_settings['samplerate']}.wav"),
             "files": default_bark_settings['files'],
             "samplerate": default_bark_settings['samplerate']
         }
