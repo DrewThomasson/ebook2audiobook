@@ -306,7 +306,9 @@ class Coqui:
                                 self._unload_tts(device)
                             if os.path.exists(file_path):
                                 os.remove(file_path)
-                                return True
+                                bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
+                                if self._check_bark_npz(voice_path, bark_dir, speaker, device):
+                                    return True
                         else:
                             error = f"_check_xtts_builtin_speakers() error: {XTTSv2} is None"
                             print(error)
