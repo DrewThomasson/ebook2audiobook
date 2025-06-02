@@ -292,8 +292,9 @@ class Coqui:
                                     if not self._normalize_audio(file_path, output_file, samplerate):
                                         break
                                 del audio_data, sourceTensor, audio_tensor  
-                                if self.session['tts_engine'] != XTTSv2:
-                                    self._unload_tts(device)
+                                if self.session['tts_engine'] != XTTSv2
+                                    del tts
+                                    self._unload_tts(XTTSv2, device)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
                                     bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
@@ -351,6 +352,9 @@ class Coqui:
                             )
                         os.remove(voice_temp)
                         del audio_data
+                        if self.session['tts_engine'] != BARK:
+                            del tts
+                            self._unload_tts(tts_internal_key, device)
                         msg = f"Saved NPZ file: {npz_file}"
                         print(msg)
                         return True
@@ -395,14 +399,17 @@ class Coqui:
             print(error)
             return None
 
-    def _unload_tts(self, device):
+    def _unload_tts(self, tts_key=None, device):
         if len(loaded_tts) >= max_tts_in_memory:
-            for key in list(loaded_tts.keys()):
-                if key != self.tts_vc_key:
-                    del loaded_tts[key]
-            if device == 'cuda':
-                torch.cuda.empty_cache()
-                torch.cuda.synchronize()
+            if tts_key is not None:
+                del loaded_tts[tts_key]
+            else:
+                for key in list(loaded_tts.keys()):
+                    if key != self.tts_vc_key:
+                        del loaded_tts[key]
+                if device == 'cuda':
+                    torch.cuda.empty_cache()
+                    torch.cuda.synchronize()
 
     def _tensor_type(self, audio_data):
         if isinstance(audio_data, torch.Tensor):
