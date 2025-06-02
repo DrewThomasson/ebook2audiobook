@@ -286,19 +286,19 @@ class Coqui:
                             if audio_data is not None:
                                 audio_data = audio_data.tolist()
                             else:
-                                error = f'No audio waveform found in Coqui.convert() result: {result}'
+                                error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
                                 print(error)
                                 return False
                             sourceTensor = self._tensor_type(audio_data)
                             audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                             torchaudio.save(file_path, audio_tensor, 24000, format='wav')
-                            del audio_data, sourceTensor, audio_tensor  
-                            if self.session['tts_engine'] != XTTSv2:
-                                self._unload_tts(device)
                             for samplerate in [16000, 24000]:
                                 output_file = file_path.replace('.wav', f'_{samplerate}.wav')
                                 if not self._normalize_audio(file_path, output_file, samplerate):
                                     break
+                            del audio_data, sourceTensor, audio_tensor  
+                            if self.session['tts_engine'] != XTTSv2:
+                                self._unload_tts(device)
                             if os.path.exists(file_path):
                                 os.remove(file_path)
                             bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
