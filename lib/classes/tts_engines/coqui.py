@@ -232,10 +232,6 @@ class Coqui:
                         fine_model_file=fine_model_path,
                         eval=True
                     )
-                else:
-                    error = 'Could not recognize the name of TTS engine!'
-                    print(error)
-                    return False
             if tts:
                 if device == 'cuda':
                     tts.cuda()
@@ -355,8 +351,6 @@ class Coqui:
                             )
                         os.remove(voice_temp)
                         del audio_data
-                        if self.session['tts_engine'] != BARK:
-                            self._unload_tts(device)
                         msg = f"Saved NPZ file: {npz_file}"
                         print(msg)
                         return True
