@@ -64,11 +64,9 @@ class Coqui:
     def _build(self):
         global xtts_builtin_speakers_list
         self.vtt_path = os.path.splitext(self.session['final_name'])[0] + '.vtt'
-        if self.session['voice'] is not None:
-            if xtts_builtin_speakers_list is None:
-                if self.session['tts_engine'] == XTTSv2:
-                    self.speakers_path = hf_hub_download(repo_id=models['xtts']['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
-                    xtts_builtin_speakers_list = torch.load(self.speakers_path)
+        if xtts_builtin_speakers_list is None:
+            self.speakers_path = hf_hub_download(repo_id=models[XTTSv2]['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
+            xtts_builtin_speakers_list = torch.load(self.speakers_path)
         msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
         print(msg)
         if self.session['tts_engine'] == XTTSv2:
