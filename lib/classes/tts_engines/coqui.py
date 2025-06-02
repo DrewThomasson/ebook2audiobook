@@ -55,6 +55,7 @@ class Coqui:
         self.speakers_path = None
         self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
         self.tts_vc_key = default_vc_model.rsplit('/', 1)[-1]
+        self.is_bf16 = True if self.session['device'] == 'cuda' and torch.cuda.is_bf16_supported() == True else False
         self.sentences_total_time = 0.0
         self.sentence_idx = 1
         self.params = {XTTSv2: {"latent_embedding":{}}, BARK: {}, VITS: {"semitones": {}}, FAIRSEQ: {"semitones": {}}, YOURTTS: {}}  
@@ -76,7 +77,6 @@ class Coqui:
                 checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][1])
                 vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],default_xtts_settings['files'][2])
                 self.tts_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
-                #tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
             else:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
@@ -86,12 +86,9 @@ class Coqui:
                         self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
                 else:
                     hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
-                    self.speakers_path = None
-                #checkpoint_dir = hf_repo
-                checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
+                checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
-                #tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=self.session['device'])
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is not None:
@@ -100,13 +97,21 @@ class Coqui:
                 return False
             else:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
+                if os.environ["SUNO_USE_SMALL_MODELS"] == 'true':
+                    if self.is_bf16:
+                        hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small-bf16']
+                    else:
+                        hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small']
+                else:
+                    if self.is_bf16:
+                        hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big-bf16']
+                    else:
+                        hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big']
                 checkpoint_dir = hf_repo
-                #text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
-                #coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
-                #fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
-                #tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=self.session['device'])
-                tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, device=self.session['device'])
+                text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
+                coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
+                fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
+                tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=self.session['device'])
         elif self.session['tts_engine'] == VITS:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -227,9 +232,9 @@ class Coqui:
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
-                        text_model_file=text_model_path,
-                        coarse_model_file=coarse_model_path,
-                        fine_model_file=fine_model_path,
+                        text_model_path=text_model_path,
+                        coarse_model_path=coarse_model_path,
+                        fine_model_path=fine_model_path,
                         eval=True
                     )
             if tts:
