@@ -292,7 +292,7 @@ class Coqui:
                                     if not self._normalize_audio(file_path, output_file, samplerate):
                                         break
                                 del audio_data, sourceTensor, audio_tensor  
-                                if self.session['tts_engine'] != XTTSv2
+                                if self.session['tts_engine'] != XTTSv2:
                                     del tts
                                     self._unload_tts(XTTSv2, device)
                                 if os.path.exists(file_path):
