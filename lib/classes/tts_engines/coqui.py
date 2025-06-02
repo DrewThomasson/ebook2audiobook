@@ -330,44 +330,41 @@ class Coqui:
                 bark_dir = bark_dir.replace(f"/eng/",f"/{self.session['language']}/").replace(f"\\eng\\",f"\\{self.session['language']}\\")
                 npz_dir = os.path.join(bark_dir, speaker)
                 npz_file = os.path.join(npz_dir, f'{speaker}.npz')
-                if os.path.exists(npz_file):
-                    if not os.path.exists(npz_file):
-                        os.makedirs(npz_dir, exist_ok=True)
-                        tts_internal_key = f"{BARK}-internal"
-                        hf_repo = models[BARK]['internal']['repo']
-                        hf_sub = models[BARK]['internal']['sub']
-                        checkpoint_dir = hf_repo
-                        #text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
-                        #coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
-                        #fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
-                        #tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=device)
-                        tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, device=device)
-                        if tts:
-                            voice_temp = os.path.splitext(npz_file)[0]+'.wav'
-                            shutil.copy(voice_path, voice_temp)
-                            default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
-                            default_text = Path(default_text_file).read_text(encoding="utf-8")
-                            with torch.no_grad():
-                                torch.manual_seed(67878789)
-                                audio_data = tts.synthesize(
-                                    default_text,
-                                    loaded_tts[tts_internal_key]['config'],
-                                    speaker_id=speaker,
-                                    voice_dirs=bark_dir,
-                                    temperature=0.85
-                                )
-                            os.remove(voice_temp)
-                            del audio_data
-                            if self.session['tts_engine'] != BARK:
-                                self._unload_tts(device)
-                            msg = f"Saved NPZ file: {npz_file}"
-                            print(msg)
-                            return True
-                        else:
-                            error = f'_check_bark_npz() error: {tts_internal_key} is None'
-                            print(error)
-                    else:
+                if not os.path.exists(npz_file):
+                    os.makedirs(npz_dir, exist_ok=True)
+                    tts_internal_key = f"{BARK}-internal"
+                    hf_repo = models[BARK]['internal']['repo']
+                    hf_sub = models[BARK]['internal']['sub']
+                    checkpoint_dir = hf_repo
+                    #text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
+                    #coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
+                    #fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
+                    #tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=device)
+                    tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, device=device)
+                    if tts:
+                        voice_temp = os.path.splitext(npz_file)[0]+'.wav'
+                        shutil.copy(voice_path, voice_temp)
+                        default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
+                        default_text = Path(default_text_file).read_text(encoding="utf-8")
+                        with torch.no_grad():
+                            torch.manual_seed(67878789)
+                            audio_data = tts.synthesize(
+                                default_text,
+                                loaded_tts[tts_internal_key]['config'],
+                                speaker_id=speaker,
+                                voice_dirs=bark_dir,
+                                temperature=0.85
+                            )
+                        os.remove(voice_temp)
+                        del audio_data
+                        if self.session['tts_engine'] != BARK:
+                            self._unload_tts(device)
+                        msg = f"Saved NPZ file: {npz_file}"
+                        print(msg)
                         return True
+                    else:
+                        error = f'_check_bark_npz() error: {tts_internal_key} is None'
+                        print(error)
                 else:
                     return True
             else:
