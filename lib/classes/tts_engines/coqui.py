@@ -89,12 +89,12 @@ class Coqui:
                 else:
                     hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                     self.speakers_path = None
-                #checkpoint_dir = hf_repo
-                checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
+                checkpoint_dir = hf_repo
+                #checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
                 #tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=self.session['device'])
-                tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
+                tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
         elif self.session['tts_engine'] == BARK:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -193,17 +193,17 @@ class Coqui:
                 print(msg)
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
-            checkpoint_dir = kwargs.get('checkpoint_dir')
-            checkpoint_path = kwargs.get('checkpoint_path')
+            checkpoint_dir = kwargs.get('checkpoint_dir', None)
+            checkpoint_path = kwargs.get('checkpoint_path', None)
             device = kwargs.get('device')
             ### XTTSv2
-            config_path = kwargs.get('config_path')
-            vocab_path = kwargs.get('vocab_path')
-            speakers_path = kwargs.get('speakers_path')
+            config_path = kwargs.get('config_path', None)
+            vocab_path = kwargs.get('vocab_path', None)
+            speakers_path = kwargs.get('speakers_path', None)
             ### BARK
-            text_model_path = kwargs.get('text_model_path')
-            coarse_model_path = kwargs.get('coarse_model_path')
-            fine_model_path = kwargs.get('fine_model_path')
+            text_model_path = kwargs.get('text_model_path', None)
+            coarse_model_path = kwargs.get('coarse_model_path', None)
+            fine_model_path = kwargs.get('fine_model_path', None)
             ###
             self._unload_tts(device)
             with lock:
@@ -215,9 +215,9 @@ class Coqui:
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
-                        #checkpoint_path=checkpoint_path,
+                        checkpoint_path=checkpoint_path,
                         vocab_path=vocab_path,
-                        #speaker_file_path=speakers_path,
+                        speaker_file_path=speakers_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
                     )
@@ -229,9 +229,9 @@ class Coqui:
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
-                        #text_model_file=text_model_path,
-                        #coarse_model_file=coarse_model_path,
-                        #fine_model_file=fine_model_path,
+                        text_model_file=text_model_path,
+                        coarse_model_file=coarse_model_path,
+                        fine_model_file=fine_model_path,
                         eval=True
                     )
                 else:
@@ -268,12 +268,12 @@ class Coqui:
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         hf_repo = models[XTTSv2]['internal']['repo']
                         hf_sub = ''
-                        #checkpoint_dir = hf_repo
-                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
+                        checkpoint_dir = hf_repo
+                        #checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                         #tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=device)
-                        tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
+                        tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
