@@ -286,6 +286,7 @@ class Coqui:
                                 )
                             audio_data = result.get('wav')
                             if audio_data is not None:
+                                print(f'------------OK------------')
                                 audio_data = audio_data.tolist()
                                 sourceTensor = self._tensor_type(audio_data)
                                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
@@ -301,6 +302,7 @@ class Coqui:
                                     os.remove(file_path)
                                     bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
                                     if self._check_bark_npz(voice_path, bark_dir, speaker, device):
+                                        self.session['voice'] = voice_path
                                         return True
                             else:
                                 error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
