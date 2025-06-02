@@ -214,10 +214,10 @@ class Coqui:
                     tts = Xtts.init_from_config(config)
                     tts.load_checkpoint(
                         config,
-                        checkpoint_dir=checkpoint_dir,
+                        #checkpoint_dir=checkpoint_dir,
                         checkpoint_path=checkpoint_path,
                         vocab_path=vocab_path,
-                        speaker_file_path=speakers_path,
+                        #speaker_file_path=speakers_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
                     )
@@ -260,7 +260,8 @@ class Coqui:
             voice_parts = Path(voice_path).parts
             if self.session['language'] not in voice_parts:               
                 if speaker in default_xtts_settings['voices'].keys() and self.session['language'] in language_tts[XTTSv2].keys():
-                    voice_path = voice_path.replace(f"/eng/",f"/{self.session['language']}/").replace(f"\\eng\\",f"\\{self.session['language']}\\")
+                    lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
+                    voice_path = voice_path.replace('/eng/',f'/{lang_dir}/').replace('\\eng\\',f'\\{lang_dir}\\')
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     if os.path.exists(default_text_file):
                         msg = f"Converting builtin eng voice to {self.session['language']}..."
@@ -274,12 +275,11 @@ class Coqui:
                         checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                         #tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=device)
-                        print(f'------------checkpoint------------')
                         tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
-                            lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                             gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()                           
+                            print(f"--------------{default_xtts_settings['voices'][speaker]}-----------")
                             with torch.no_grad():
                                 result = tts.inference(
                                     text=default_text,
