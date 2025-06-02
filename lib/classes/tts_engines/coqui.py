@@ -258,8 +258,10 @@ class Coqui:
     def _check_xtts_builtin_speakers(self, voice_path, device):
         try:
             voice_parts = Path(voice_path).parts
+            print(f'------------{voice_parts}------------')
             if self.session['language'] not in voice_parts:
-                speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(voice_path)) 
+                speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(voice_path))
+                print(f'------------{speaker}------------')
                 if speaker in default_xtts_settings['voices'] and self.session['language'] in language_tts[XTTSv2].keys():
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     if os.path.exists(default_text_file):
@@ -274,7 +276,7 @@ class Coqui:
                         config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                         #tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=device)
-                        tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=device)
+                        tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_dir=checkpoint_dir, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
                             lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                             file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
@@ -289,6 +291,7 @@ class Coqui:
                             audio_data = result.get('wav')
                             if audio_data is not None:
                                 audio_data = audio_data.tolist()
+                                print(f'------------OK------------')
                             else:
                                 error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
                                 print(error)
