@@ -206,6 +206,7 @@ class Coqui:
             fine_model_path = kwargs.get('fine_model_path', None)
             ###
             #self._unload_tts(device)
+            print(kwargs)
             with lock:
                 if tts_engine == XTTSv2:
                     config = XttsConfig()
@@ -276,7 +277,6 @@ class Coqui:
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                         #tts = self._load_checkpoint(tts_engine=XTTSv2, key=self.tts_key, checkpoint_dir=checkpoint_dir, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, speakers_path=self.speakers_path, device=device)
                         tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
-                        print(f"--------------{tts}-----------")
                         if tts:
                             file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
                             gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()                           
