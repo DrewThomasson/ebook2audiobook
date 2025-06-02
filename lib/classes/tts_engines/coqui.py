@@ -259,7 +259,7 @@ class Coqui:
         try:
             voice_parts = Path(voice_path).parts
             if self.session['language'] not in voice_parts:
-                if speaker in default_xtts_settings['voices'] and self.session['language'] in language_tts[XTTSv2].keys():
+                if speaker in default_xtts_settings['voices'].keys() and self.session['language'] in language_tts[XTTSv2].keys():
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     if os.path.exists(default_text_file):
                         msg = f"Converting builtin eng voice to {self.session['language']}..."
