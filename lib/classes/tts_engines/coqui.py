@@ -259,7 +259,7 @@ class Coqui:
                         config.REMOTE_MODEL_PATHS['coarse']['path'] = remote_coarse_model_file
                         config.REMOTE_MODEL_PATHS['coarse']['checksum'] = self._md5(remote_coarse_model_file)
                         config.REMOTE_MODEL_PATHS['fine']['path'] = remote_fine_model_file
-                        config.REMOTE_MODEL_PATHS['fine']['checksum = self._md5(remote_fine_model_file)
+                        config.REMOTE_MODEL_PATHS['fine']['checksum'] = self._md5(remote_fine_model_file)
                         config.LOCAL_MODEL_PATHS['text'] = os.path.join(config.CACHE_DIR, text_model_file)
                         config.LOCAL_MODEL_PATHS['coarse'] = os.path.join(config.CACHE_DIR, coarse_model_file)
                         config.LOCAL_MODEL_PATHS['fine'] = os.path.join(config.CACHE_DIR, fine_model_file)
