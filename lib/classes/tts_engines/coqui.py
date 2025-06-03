@@ -112,7 +112,7 @@ class Coqui:
                 text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
                 coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
                 fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
-                tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=self.session['device'])
+                tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], hf_repo=hf_repo, hf_sub=hf_sub, key=self.tts_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=self.session['device'])
         elif self.session['tts_engine'] == VITS:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -213,6 +213,8 @@ class Coqui:
             vocab_path = kwargs.get('vocab_path', None)
             speakers_path = kwargs.get('speakers_path', None)
             ### BARK
+            hf_repo = kwargs.get('hf_repo', None)
+            hf_sub = kwargs.get('hf_sub', None)
             text_model_path = kwargs.get('text_model_path', None)
             coarse_model_path = kwargs.get('coarse_model_path', None)
             fine_model_path = kwargs.get('fine_model_path', None)
@@ -236,31 +238,42 @@ class Coqui:
                 elif tts_engine == BARK:
                     from TTS.tts.configs.bark_config import BarkConfig
                     from TTS.tts.models.bark import Bark
-                    config = BarkConfig()
-                    config.CACHE_DIR = self.cache_dir
-                    print(text_model_path, coarse_model_path, fine_model_path)
-                    config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    config.REMOTE_MODEL_PATHS.text.path = text_model_path
-                    config.REMOTE_MODEL_PATHS.text.checksum = self._md5(text_model_path)
-                    config.REMOTE_MODEL_PATHS.coarse.path = coarse_model_path
-                    config.REMOTE_MODEL_PATHS.coarse.checksum = self._md5(coarse_model_path)
-                    config.REMOTE_MODEL_PATHS.fine.path = fine_model_path
-                    config.REMOTE_MODEL_PATHS.fine.checksum = self._md5(fine_model_path)
-                    config.SMALL_REMOTE_MODEL_PATHS.text = text_model_path
-                    config.SMALL_REMOTE_MODEL_PATHS.coarse = coarse_model_path
-                    config.SMALL_REMOTE_MODEL_PATHS.fine = fine_model_path
-                    config.LOCAL_MODEL_PATHS.text = os.path.join(config.CACHE_DIR, os.path.basename(text_model_path))
-                    config.LOCAL_MODEL_PATHS.coarse = os.path.join(config.CACHE_DIR, os.path.basename(coarse_model_path))
-                    config.LOCAL_MODEL_PATHS.fine = os.path.join(config.CACHE_DIR, os.path.basename(fine_model_path))
-                    tts = Bark.init_from_config(config)
-                    tts.load_checkpoint(
-                        config,
-                        checkpoint_dir=checkpoint_dir,
-                        text_model_path=text_model_path,
-                        coarse_model_path=coarse_model_path,
-                        fine_model_path=fine_model_path,
-                        eval=True
-                    )
+                    if hf_repo is not None and hf_sub is not None:
+                        text_model_file = os.path.basename(text_model_path)
+                        coarse_model_file = os.path.basename(coarse_model_path)
+                        fine_model_file = os.path.basename(fine_model_path)
+                        config = BarkConfig()
+                        config.REMOTE_BASE_URL = f'https://huggingface.co/{hf_repo}/tree/main/{hf_sub}'
+                        remote_text_model_file = os.path.join(config.REMOTE_BASE_URL, text_model_file)
+                        remote_coarse_model_file = os.path.join(config.REMOTE_BASE_URL, coarse_model_file)
+                        remote_fine_model_file = os.path.join(config.REMOTE_BASE_URL, fine_model_file)
+                        config.CACHE_DIR = self.cache_dir
+                        config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
+                        if config.USE_SMALLER_MODELS:
+                            config.SMALL_REMOTE_MODEL_PATHS.text = remote_text_model_file
+                            config.SMALL_REMOTE_MODEL_PATHS.coarse = remote_coarse_model_file
+                            config.SMALL_REMOTE_MODEL_PATHS.fine = remote_fine_model_file
+                        config.REMOTE_MODEL_PATHS.text.path = remote_text_model_file
+                        config.REMOTE_MODEL_PATHS.text.checksum = self._md5(remote_text_model_file)
+                        config.REMOTE_MODEL_PATHS.coarse.path = remote_coarse_model_file
+                        config.REMOTE_MODEL_PATHS.coarse.checksum = self._md5(remote_coarse_model_file)
+                        config.REMOTE_MODEL_PATHS.fine.path = remote_fine_model_file
+                        config.REMOTE_MODEL_PATHS.fine.checksum = self._md5(remote_fine_model_file)
+                        config.LOCAL_MODEL_PATHS.text = os.path.join(config.CACHE_DIR, text_model_file)
+                        config.LOCAL_MODEL_PATHS.coarse = os.path.join(config.CACHE_DIR, coarse_model_file)
+                        config.LOCAL_MODEL_PATHS.fine = os.path.join(config.CACHE_DIR, fine_model_file)
+                        tts = Bark.init_from_config(config)
+                        tts.load_checkpoint(
+                            config,
+                            checkpoint_dir=checkpoint_dir,
+                            text_model_path=text_model_path,
+                            coarse_model_path=coarse_model_path,
+                            fine_model_path=fine_model_path,
+                            eval=True
+                        )
+                    else:
+                        error = '_load_checkpoint() error: hf_repo and hf_sub are missing!'
+                        print(error)                       
             if tts:
                 if device == 'cuda':
                     tts.cuda()
@@ -369,7 +382,7 @@ class Coqui:
                     text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
                     coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
                     fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
-                    tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=device)
+                    tts = self._load_checkpoint(tts_engine=BARK, hf_repo=hf_repo, hf_sub=hf_sub, key=tts_internal_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=device)
                     if tts:
                         voice_temp = os.path.splitext(npz_file)[0]+'.wav'
                         shutil.copy(voice_path, voice_temp)
