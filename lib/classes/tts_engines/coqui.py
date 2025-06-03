@@ -68,7 +68,6 @@ class Coqui:
         print(msg)
         if self.session['tts_engine'] == XTTSv2:
             if self.session['custom_model'] is not None:
-                #checkpoint_dir = self.session['custom_model_dir']
                 config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][0])
                 checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][1])
                 vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],default_xtts_settings['files'][2])
@@ -245,14 +244,14 @@ class Coqui:
                         config = BarkConfig()
                         config.CACHE_DIR = self.cache_dir
                         config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                        #config.REMOTE_BASE_URL = f'https://huggingface.co/{hf_repo}/resolve/main/{hf_sub}'
-                        #remote_text_model_file = os.path.join(config.REMOTE_BASE_URL, text_model_file)
-                        #remote_coarse_model_file = os.path.join(config.REMOTE_BASE_URL, coarse_model_file)
-                        #remote_fine_model_file = os.path.join(config.REMOTE_BASE_URL, fine_model_file)
-                        #if config.USE_SMALLER_MODELS:
-                        #    config.SMALL_REMOTE_MODEL_PATHS['text'] = remote_text_model_file
-                        #    config.SMALL_REMOTE_MODEL_PATHS['coarse'] = remote_coarse_model_file
-                        #    config.SMALL_REMOTE_MODEL_PATHS['fine'] = remote_fine_model_file
+                        config.REMOTE_BASE_URL = f'https://huggingface.co/{hf_repo}/resolve/main/{hf_sub}'
+                        remote_text_model_file = os.path.join(config.REMOTE_BASE_URL, text_model_file)
+                        remote_coarse_model_file = os.path.join(config.REMOTE_BASE_URL, coarse_model_file)
+                        remote_fine_model_file = os.path.join(config.REMOTE_BASE_URL, fine_model_file)
+                        if config.USE_SMALLER_MODELS:
+                            config.SMALL_REMOTE_MODEL_PATHS['text'] = remote_text_model_file
+                            config.SMALL_REMOTE_MODEL_PATHS['coarse'] = remote_coarse_model_file
+                            config.SMALL_REMOTE_MODEL_PATHS['fine'] = remote_fine_model_file
                         #config.REMOTE_MODEL_PATHS['text']['path'] = remote_text_model_file
                         #config.REMOTE_MODEL_PATHS['text']['checksum'] = self._md5(remote_text_model_file)
                         #config.REMOTE_MODEL_PATHS['coarse']['path'] = remote_coarse_model_file
@@ -267,9 +266,9 @@ class Coqui:
                         tts.load_checkpoint(
                             config,
                             checkpoint_dir=checkpoint_dir,
-                            #text_model_path=text_model_path,
-                            #coarse_model_path=coarse_model_path,
-                            #fine_model_path=fine_model_path,
+                            text_model_path=text_model_path,
+                            coarse_model_path=coarse_model_path,
+                            fine_model_path=fine_model_path,
                             eval=True
                         )
                     else:
