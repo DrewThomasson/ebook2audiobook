@@ -100,12 +100,12 @@ class Coqui:
                         if self.is_bf16:
                             hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small-bf16']
                         else:
-                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small']
+                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small-pth']
                     else:
                         if self.is_bf16:
                             hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big-bf16']
                         else:
-                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big']
+                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big-pth']
                     msg = f'Using {hf_sub} bark models'
                     print(msg)              
                 checkpoint_dir = hf_repo
@@ -373,12 +373,12 @@ class Coqui:
                         if self.is_bf16:
                             hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small-bf16']
                         else:
-                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small']
+                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small-pth']
                     else:
                         if self.is_bf16:
                             hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big-bf16']
                         else:
-                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big']
+                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big-pth']
                     checkpoint_dir = hf_repo
                     text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
                     coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
