@@ -329,7 +329,7 @@ Linux/Mac:
 ```
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
-TIP: if it needs some more pauses, just add '###' or '[pause]' between the words you wish more pause. one [pause] equals to 1.4 seconds
+TIP: if it needs some more pauses, just add '###' or '[pause]' between the words you wish more pause. one [pause] equals to 2 seconds
 
 #### Docker GPU Options
 
