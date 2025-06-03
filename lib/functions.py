@@ -431,7 +431,9 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
-        text = re.sub(r'\b(?:[a-zA-Z]+\.)+|[a-zA-Z]+', lambda m: {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping["eng"].items()}.get(m.group().replace('.', '').lower(), m.group()), text)
+        abbr_map = {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping[lang].items()}
+        pattern = re.compile(r'\b(' + '|'.join(re.escape(k).replace('\\.', '') for k in abbreviations_mapping[lang].keys()) + r')\.?\b', re.IGNORECASE)
+        text = pattern.sub(lambda m: abbr_map.get(m.group(1).lower(), m.group()), text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
@@ -443,14 +445,14 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a single "\n"
-    text = re.sub(r'(\r\n|\r|\n)+', '\n', text)
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 2sec
+    text = re.sub(r'(\r\n|\r|\n)+', '‡pause‡', text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'[\r\n]', ' ', text)
     # Replace multiple  and spaces with single space
     text = re.sub(r'[     ]+', ' ', text)
     # Replace ok by 'Owkey'
-    text = re.sub(r'\bok\b', '"Okhey"', text, flags=re.IGNORECASE)
+    text = re.sub(r'\bok\b', '"O.K."', text, flags=re.IGNORECASE)
     # Replace parentheses with double quotes
     text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # Escape special characters in the punctuation list for regex
@@ -937,7 +939,7 @@ def convert_chapters2audio(session):
         if is_gui_process:
             progress_bar = gr.Progress(track_tqdm=True)        
         tts_manager = TTSManager(session)
-        if not tts_manager.active:
+        if not tts_manager:
             error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
             print(error)
             return False
@@ -1511,19 +1513,18 @@ def convert_ebook(args):
                             msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
-                                msg_extra += f"Switching {session['tts_engine'].upper()} to SMALL models - "
+                                msg_extra += f"Switching BARK to SMALL models - "
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += f"GPU is not available or not recognized! Switching to {session['device']} - "
+                                msg += f"GPU is not available or not recognized! Switching to CPU - "
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += f"{session['device'].upper()} is not available on your device! - "
+                                msg += f"MPS is not available on your device! - Switching to CPU - "
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
                                 os.environ["SUNO_OFFLOAD_CPU"] = 'true'
-                                msg += f"Switch {session['tts_engine'].upper()} to CPU - "
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
                                 import deepspeed
@@ -1533,7 +1534,7 @@ def convert_ebook(args):
                             else: 
                                 msg_extra += 'deepspeed detected and ready!'
                         if msg == '':
-                            msg = f"{session['device'].upper()} is available on your system! - "
+                            msg = f"Using {session['device'].upper()} - "
                         msg += msg_extra
                         if is_gui_process:
                             show_alert({"type": "warning", "msg": msg})
@@ -1915,6 +1916,7 @@ def web_interface(args):
                     with gr.Column(scale=3):
                         with gr.Group():
                             gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
+                            gr_tts_rating = gr.HTML()
                             gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                             gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                             with gr_group_custom_model:
@@ -2130,7 +2132,7 @@ def web_interface(args):
                 </div>
             </div>
             '''
-          
+
         def show_confirm():
             return '''
             <div class="confirm-buttons">
@@ -2138,6 +2140,38 @@ def web_interface(args):
                 <button class="confirm_no_btn" onclick="document.querySelector('#confirm_no_btn_hidden').click()">⨉</button>
             </div>
             '''
+
+        def show_rating(tts_engine):
+            if tts_engine == XTTSv2:
+                rating = default_xtts_settings['rating']
+            elif tts_engine == BARK:
+                rating = default_bark_settings['rating']
+            elif tts_engine == VITS:
+                rating = default_vits_settings['rating']
+            elif tts_engine == FAIRSEQ:
+                rating = default_fairseq_settings['rating']
+            elif tts_engine == YOURTTS:
+                rating = default_yourtts_settings['rating']
+            def yellow_stars(n):
+                return "".join(
+                    "<span style='color:#FFD700;font-size:12px'>★</span>" for _ in range(n)
+                )
+            def color_box(value):
+                if value <= 4:
+                    color = "#4CAF50"  # Green = low
+                elif value <= 8:
+                    color = "#FF9800"  # Orange = medium
+                else:
+                    color = "#F44336"  # Red = high
+                return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
+            return f"""
+            <div style='margin:0; padding:0; font-size:12px; line-height:0; height:auto; display:inline; border: none; gap:0px; align-items:center'>
+                <span style='padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
+                <span style='padding:0 10px'><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
+                <span style='padding:0 10px'><b>RAM:</b> {color_box(rating["RAM"])}</span>
+                <span style='padding:0 10px'><b>Emotions:</b> {yellow_stars(rating["Emotions"])}</span>
+            </div>
+            """
 
         def alert_exception(error):
             gr.Error(error)
@@ -2327,7 +2361,7 @@ def web_interface(args):
                         files2remove = glob(pattern)
                         for file in files2remove:
                             os.remove(file)
-                        rmtree(os.path.join(os.path.dirname(voice), 'bark', selected_name), ignore_errors=True)
+                        shutil.rmtree(os.path.join(os.path.dirname(voice), 'bark', selected_name), ignore_errors=True)
                         msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
@@ -2507,15 +2541,16 @@ def web_interface(args):
                 if session['fine_tuned'] != 'internal':
                     visible_custom_model = False
                 return (
+                       gr.update(value=show_rating(session['tts_engine'])), 
                        gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
-                       gr.update(label=f"*Upload {session['tts_engine']} Fine Tuned Model"),
-                       gr.update(label=f"Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])}")
+                       gr.update(label=f"*Upload {session['tts_engine']} Model (Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
+                       gr.update(label=f"My {session['tts_engine']} custom models")
                 )
             else:
                 bark_visible = False
                 if session['tts_engine'] == BARK:
                     bark_visible = visible_gr_tab_bark_params
-                return gr.update(visible=False), gr.update(visible=bark_visible), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
+                return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
@@ -2810,7 +2845,7 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
+            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
