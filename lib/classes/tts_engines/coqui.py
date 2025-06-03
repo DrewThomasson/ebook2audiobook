@@ -15,11 +15,6 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
-from TTS.api import TTS as coquiAPI
-from TTS.tts.configs.xtts_config import XttsConfig
-from TTS.tts.configs.bark_config import BarkConfig
-from TTS.tts.models.xtts import Xtts
-from TTS.tts.models.bark import Bark
 
 from lib.models import *
 from lib.conf import voices_dir, models_dir, default_audio_proc_format
@@ -165,6 +160,7 @@ class Coqui:
         return (loaded_tts.get(self.tts_key) or {}).get('engine', False)
 
     def _load_api(self, key, model_path, device):
+        from TTS.api import TTS as coquiAPI
         global lock
         try:
             if key in loaded_tts.keys():
@@ -216,6 +212,8 @@ class Coqui:
             self._unload_tts(device)
             with lock:
                 if tts_engine == XTTSv2:
+                    from TTS.tts.configs.xtts_config import XttsConfig
+                    from TTS.tts.models.xtts import Xtts
                     config = XttsConfig()
                     config.models_dir = os.path.join("models", "tts")
                     config.load_json(config_path)
@@ -230,6 +228,8 @@ class Coqui:
                         eval=True
                     )
                 elif tts_engine == BARK:
+                    from TTS.tts.configs.bark_config import BarkConfig
+                    from TTS.tts.models.bark import Bark
                     config = BarkConfig()
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
                     config.CACHE_DIR = self.cache_dir
