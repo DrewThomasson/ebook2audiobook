@@ -243,9 +243,8 @@ class Coqui:
                         coarse_model_file = os.path.basename(coarse_model_path)
                         fine_model_file = os.path.basename(fine_model_path)
                         config = BarkConfig()
-                        config.REMOTE_BASE_URL = f'https://huggingface.co/{hf_repo}/tree/main/{hf_sub}'
+                        config.REMOTE_BASE_URL = f'https://huggingface.co/{hf_repo}/resolve/main/{hf_sub}'
                         remote_text_model_file = os.path.join(config.REMOTE_BASE_URL, text_model_file)
-                        print(f'remote_text_model_file: {remote_text_model_file}')
                         remote_coarse_model_file = os.path.join(config.REMOTE_BASE_URL, coarse_model_file)
                         remote_fine_model_file = os.path.join(config.REMOTE_BASE_URL, fine_model_file)
                         config.CACHE_DIR = self.cache_dir
@@ -268,9 +267,9 @@ class Coqui:
                         tts.load_checkpoint(
                             config,
                             checkpoint_dir=checkpoint_dir,
-                            #text_model_path=text_model_file,
-                            #coarse_model_path=coarse_model_file,
-                            #fine_model_path=remote_fine_model_file,
+                            text_model_path=text_model_file,
+                            coarse_model_path=coarse_model_file,
+                            fine_model_path=remote_fine_model_file,
                             eval=True
                         )
                     else:
