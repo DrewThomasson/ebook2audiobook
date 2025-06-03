@@ -237,6 +237,8 @@ class Coqui:
                     from TTS.tts.configs.bark_config import BarkConfig
                     from TTS.tts.models.bark import Bark
                     config = BarkConfig()
+                    config.CACHE_DIR = self.cache_dir
+                    print(text_model_path, coarse_model_path, fine_model_path)
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
                     config.REMOTE_MODEL_PATHS.text.path = text_model_path
                     config.REMOTE_MODEL_PATHS.text.checksum = self._md5(text_model_path)
@@ -244,7 +246,9 @@ class Coqui:
                     config.REMOTE_MODEL_PATHS.coarse.checksum = self._md5(coarse_model_path)
                     config.REMOTE_MODEL_PATHS.fine.path = fine_model_path
                     config.REMOTE_MODEL_PATHS.fine.checksum = self._md5(fine_model_path)
-                    config.CACHE_DIR = self.cache_dir
+                    config.LOCAL_MODEL_PATHS.text = os.path.join(config.CACHE_DIR, os.path.basename(text_model_path))
+                    config.LOCAL_MODEL_PATHS.coarse = os.path.join(config.CACHE_DIR, os.path.basename(coarse_model_path))
+                    config.LOCAL_MODEL_PATHS.fine = os.path.join(config.CACHE_DIR, os.path.basename(fine_model_path))
                     tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
                         config,
