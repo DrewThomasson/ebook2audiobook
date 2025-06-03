@@ -251,18 +251,18 @@ class Coqui:
                         config.CACHE_DIR = self.cache_dir
                         config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
                         if config.USE_SMALLER_MODELS:
-                            config.SMALL_REMOTE_MODEL_PATHS.text = remote_text_model_file
-                            config.SMALL_REMOTE_MODEL_PATHS.coarse = remote_coarse_model_file
-                            config.SMALL_REMOTE_MODEL_PATHS.fine = remote_fine_model_file
-                        config.REMOTE_MODEL_PATHS.text.path = remote_text_model_file
-                        config.REMOTE_MODEL_PATHS.text.checksum = self._md5(remote_text_model_file)
-                        config.REMOTE_MODEL_PATHS.coarse.path = remote_coarse_model_file
-                        config.REMOTE_MODEL_PATHS.coarse.checksum = self._md5(remote_coarse_model_file)
-                        config.REMOTE_MODEL_PATHS.fine.path = remote_fine_model_file
-                        config.REMOTE_MODEL_PATHS.fine.checksum = self._md5(remote_fine_model_file)
-                        config.LOCAL_MODEL_PATHS.text = os.path.join(config.CACHE_DIR, text_model_file)
-                        config.LOCAL_MODEL_PATHS.coarse = os.path.join(config.CACHE_DIR, coarse_model_file)
-                        config.LOCAL_MODEL_PATHS.fine = os.path.join(config.CACHE_DIR, fine_model_file)
+                            config.SMALL_REMOTE_MODEL_PATHS['text'] = remote_text_model_file
+                            config.SMALL_REMOTE_MODEL_PATHS['coarse'] = remote_coarse_model_file
+                            config.SMALL_REMOTE_MODEL_PATHS['fine'] = remote_fine_model_file
+                        config.REMOTE_MODEL_PATHS['text']['path'] = remote_text_model_file
+                        config.REMOTE_MODEL_PATHS['text']['checksum'] = self['_md5(remote_text_model_file)
+                        config.REMOTE_MODEL_PATHS['coarse']['path'] = remote_coarse_model_file
+                        config.REMOTE_MODEL_PATHS['coarse']['checksum'] = self._md5(remote_coarse_model_file)
+                        config.REMOTE_MODEL_PATHS['fine']['path = remote_fine_model_file
+                        config.REMOTE_MODEL_PATHS['fine']['checksum = self._md5(remote_fine_model_file)
+                        config.LOCAL_MODEL_PATHS['text'] = os.path.join(config.CACHE_DIR, text_model_file)
+                        config.LOCAL_MODEL_PATHS['coarse'] = os.path.join(config.CACHE_DIR, coarse_model_file)
+                        config.LOCAL_MODEL_PATHS['fine'] = os.path.join(config.CACHE_DIR, fine_model_file)
                         print(config)
                         tts = Bark.init_from_config(config)
                         tts.load_checkpoint(
