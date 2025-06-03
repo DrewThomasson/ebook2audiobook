@@ -252,12 +252,12 @@ class Coqui:
                         #   config.SMALL_REMOTE_MODEL_PATHS['text'] = remote_text_model_file
                         #    config.SMALL_REMOTE_MODEL_PATHS['coarse'] = remote_coarse_model_file
                         #    config.SMALL_REMOTE_MODEL_PATHS['fine'] = remote_fine_model_file
-                        config.REMOTE_MODEL_PATHS['text']['path'] = remote_text_model_file
-                        config.REMOTE_MODEL_PATHS['text']['checksum'] = self._md5(remote_text_model_file)
-                        config.REMOTE_MODEL_PATHS['coarse']['path'] = remote_coarse_model_file
-                        onfig.REMOTE_MODEL_PATHS['coarse']['checksum'] = self._md5(remote_coarse_model_file)
-                        config.REMOTE_MODEL_PATHS['fine']['path'] = remote_fine_model_file
-                        config.REMOTE_MODEL_PATHS['fine']['checksum'] = self._md5(remote_fine_model_file)
+                        #config.REMOTE_MODEL_PATHS['text']['path'] = remote_text_model_file
+                        #config.REMOTE_MODEL_PATHS['text']['checksum'] = self._md5(remote_text_model_file)
+                        #config.REMOTE_MODEL_PATHS['coarse']['path'] = remote_coarse_model_file
+                        #onfig.REMOTE_MODEL_PATHS['coarse']['checksum'] = self._md5(remote_coarse_model_file)
+                        #config.REMOTE_MODEL_PATHS['fine']['path'] = remote_fine_model_file
+                        #config.REMOTE_MODEL_PATHS['fine']['checksum'] = self._md5(remote_fine_model_file)
                         #config.LOCAL_MODEL_PATHS['text'] = text_model_path
                         #config.LOCAL_MODEL_PATHS['coarse'] = coarse_model_path
                         #config.LOCAL_MODEL_PATHS['fine'] = fine_model_path
@@ -266,9 +266,9 @@ class Coqui:
                         tts.load_checkpoint(
                             config,
                             checkpoint_dir=checkpoint_dir,
-                            text_model_path=text_model_path,
-                            coarse_model_path=coarse_model_path,
-                            fine_model_path=fine_model_path,
+                            text_model_path=os.path.join(checkpoint_dir, text_model_file),
+                            coarse_model_path=os.path.join(checkpoint_dir, coarse_model_file),
+                            fine_model_path=os.path.join(checkpoint_dir, fine_model_file),
                             eval=True
                         )
                     else:
