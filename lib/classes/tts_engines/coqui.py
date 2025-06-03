@@ -559,7 +559,7 @@ class Coqui:
             if self.session['tts_engine'] == XTTSv2 or self.session['tts_engine'] == FAIRSEQ:
                 sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
             sample_rate = 16000 if self.session['tts_engine'] == VITS and self.session['voice'] is not None else settings['sample_rate']
-            silence_tensor = torch.zeros(1, sample_rate * 2)
+            silence_tensor = torch.zeros(1, int(sample_rate * 1.4)) # 1.4 seconds
             audio_segments = []
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
