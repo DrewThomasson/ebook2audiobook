@@ -245,6 +245,7 @@ class Coqui:
                         config = BarkConfig()
                         config.REMOTE_BASE_URL = f'https://huggingface.co/{hf_repo}/tree/main/{hf_sub}'
                         remote_text_model_file = os.path.join(config.REMOTE_BASE_URL, text_model_file)
+                        print(f'remote_text_model_file: {remote_text_model_file}')
                         remote_coarse_model_file = os.path.join(config.REMOTE_BASE_URL, coarse_model_file)
                         remote_fine_model_file = os.path.join(config.REMOTE_BASE_URL, fine_model_file)
                         config.CACHE_DIR = self.cache_dir
