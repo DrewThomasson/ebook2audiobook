@@ -1,5 +1,6 @@
 import os
 import gc
+import hashlib
 import numpy as np
 import regex as re
 import shutil
@@ -188,6 +189,13 @@ class Coqui:
             print(error)
         return False
 
+    def _md5(fname):
+        hash_md5 = hashlib.md5()
+        with open(fname, "rb") as f:
+            for chunk in iter(lambda: f.read(4096), b""):
+                hash_md5.update(chunk)
+        return hash_md5.hexdigest()
+
     def _load_checkpoint(self, **kwargs):
         global lock
         try:
@@ -220,10 +228,8 @@ class Coqui:
                     tts = Xtts.init_from_config(config)
                     tts.load_checkpoint(
                         config,
-                        #checkpoint_dir=checkpoint_dir,
                         checkpoint_path=checkpoint_path,
                         vocab_path=vocab_path,
-                        #speaker_file_path=speakers_path,
                         use_deepspeed=default_xtts_settings['use_deepspeed'],
                         eval=True
                     )
@@ -232,14 +238,20 @@ class Coqui:
                     from TTS.tts.models.bark import Bark
                     config = BarkConfig()
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
+                    config.REMOTE_MODEL_PATHS.text.path = text_model_path
+                    config.REMOTE_MODEL_PATHS.text.checksum = self._md5(text_model_path)
+                    config.REMOTE_MODEL_PATHS.coarse.path = coarse_model_path
+                    config.REMOTE_MODEL_PATHS.coarse.checksum = self._md5(coarse_model_path)
+                    config.REMOTE_MODEL_PATHS.fine.path = fine_model_path
+                    config.REMOTE_MODEL_PATHS.fine.checksum = self._md5(fine_model_path)
                     config.CACHE_DIR = self.cache_dir
                     tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
-                        text_model_file=text_model_path,
-                        coarse_model_file=coarse_model_path,
-                        fine_model_file=fine_model_path,
+                        text_model_path=text_model_path,
+                        coarse_model_path=coarse_model_path,
+                        fine_model_path=fine_model_path,
                         eval=True
                     )
             if tts:
