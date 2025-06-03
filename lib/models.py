@@ -69,7 +69,7 @@ default_bark_settings = {
     "samplerate": 24000,
     "text_temp": 0.40,
     "waveform_temp": 0.40,
-    "files": ["text.safetensors", "coarse.safetensors", "fine.safetensors"],
+    "files": ["text.pth", "coarse.pth", "fine.pth"],
     "voices": {
         "ClaribelDervla": "Claribel Dervla", "DaisyStudious": "Daisy Studious", "GracieWise": "Gracie Wise",
         "TammieEma": "Tammie Ema", "AlisonDietlinde": "Alison Dietlinde", "AnaFlorence": "Ana Florence",
@@ -338,8 +338,8 @@ models = {
             "sub": { # or "" if tts_models/multilingual/multi-dataset/bark
                 "big-bf16": "big-bf16/",
                 "small-bf16": "small-bf16/",
-                "big": "big/",
-                "small": "small/"
+                "big-pth": "big-pth/",
+                "small-pth": "small-pth/"
             },
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDahl_{default_bark_settings['samplerate']}.wav"),
             "files": default_bark_settings['files'],
