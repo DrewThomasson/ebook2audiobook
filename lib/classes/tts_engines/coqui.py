@@ -110,7 +110,7 @@ class Coqui:
                 text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
                 coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
                 fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
-                checkpoint_dir = os.path.join(self.cache_dir, hf_repo, hf_sub)
+                checkpoint_dir = os.path.basename(text_model_path)
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=self.session['device'])
         elif self.session['tts_engine'] == VITS:
             if self.session['custom_model'] is not None:
@@ -205,6 +205,7 @@ class Coqui:
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
             checkpoint_dir = kwargs.get('checkpoint_dir', None)
+            print(f'----------{checkpoint_dir}---------')
             checkpoint_path = kwargs.get('checkpoint_path', None)
             device = kwargs.get('device')
             ### XTTSv2
@@ -215,7 +216,6 @@ class Coqui:
             text_model_path = kwargs.get('text_model_path', None)
             coarse_model_path = kwargs.get('coarse_model_path', None)
             fine_model_path = kwargs.get('fine_model_path', None)
-            print(f'----------{text_model_path}---------')
             ###
             self._unload_tts(device)
             with lock:
@@ -355,7 +355,7 @@ class Coqui:
                     text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
                     coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
                     fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
-                    checkpoint_dir = os.path.join(self.cache_dir, hf_repo, hf_sub)
+                    checkpoint_dir = os.path.basename(text_model_path
                     tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=device)
                     if tts:
                         voice_temp = os.path.splitext(npz_file)[0]+'.wav'
