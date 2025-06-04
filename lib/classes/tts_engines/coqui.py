@@ -186,23 +186,15 @@ class Coqui:
                 print(msg)
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
-            checkpoint_dir = kwargs.get('checkpoint_dir', None)
-            checkpoint_path = kwargs.get('checkpoint_path', None)
             device = kwargs.get('device')
-            ### XTTSv2
-            config_path = kwargs.get('config_path', None)
-            vocab_path = kwargs.get('vocab_path', None)
-            speakers_path = kwargs.get('speakers_path', None)
-            ### BARK
-            text_model_path = kwargs.get('text_model_path', None)
-            coarse_model_path = kwargs.get('coarse_model_path', None)
-            fine_model_path = kwargs.get('fine_model_path', None)
-            ###
             self._unload_tts(device)
             with lock:
                 if tts_engine == XTTSv2:
                     from TTS.tts.configs.xtts_config import XttsConfig
                     from TTS.tts.models.xtts import Xtts
+                    checkpoint_path = kwargs.get('checkpoint_path')
+                    config_path = kwargs.get('config_path', None)
+                    vocab_path = kwargs.get('vocab_path', None)
                     config = XttsConfig()
                     config.models_dir = os.path.join("models", "tts")
                     config.load_json(config_path)
@@ -217,20 +209,15 @@ class Coqui:
                 elif tts_engine == BARK:
                     from TTS.tts.configs.bark_config import BarkConfig
                     from TTS.tts.models.bark import Bark
+                    checkpoint_dir = kwargs.get('checkpoint_dir')
                     config = BarkConfig()
                     config.CACHE_DIR = self.cache_dir
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    #config.LOCAL_MODEL_PATHS['text'] = text_model_path
-                    #config.LOCAL_MODEL_PATHS['coarse'] = coarse_model_path
-                    #config.LOCAL_MODEL_PATHS['fine'] = fine_model_path
                     print(config)
                     tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
-                        #text_model_path=text_model_path,
-                        #coarse_model_path=coarse_model_path,
-                        #fine_model_path=fine_model_path,
                         eval=True
                     )                    
             if tts:
@@ -327,21 +314,8 @@ class Coqui:
                     os.makedirs(npz_dir, exist_ok=True)
                     tts_internal_key = f"{BARK}-internal"
                     hf_repo = models[BARK]['internal']['repo']
-                    if os.environ["SUNO_USE_SMALL_MODELS"] == 'true':
-                        if self.is_bf16:
-                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small-bf16']
-                        else:
-                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['small']
-                    else:
-                        if self.is_bf16:
-                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big-bf16']
-                        else:
-                            hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big']
-                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
-                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
-                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
-                    checkpoint_dir = os.path.dirname(text_model_path)
-                    tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=device)
+                    checkpoint_dir = os.path.join(self.cache_dir, hf_repo)
+                    tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, device=device)
                     if tts:
                         voice_temp = os.path.splitext(npz_file)[0]+'.wav'
                         shutil.copy(voice_path, voice_temp)
