@@ -1,7 +1,7 @@
 import os
 import platform
 
-models_dir = os.path.abspath('models')
+models_dir = f"{os.path.abspath('models')}/"
 ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 
