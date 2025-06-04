@@ -608,10 +608,9 @@ class Coqui:
                                 #    voice_dirs=bark_dir,
                                 #    **fine_tuned_params
                                 #)
-                                print(f"-------------{os.path.join(bark_dir, speaker, f'{speaker}.npz')}")
                                 result = tts.generate_audio(
                                     text_part,
-                                    history_prompt=os.path.join(bark_dir, speaker, f'{speaker}.npz'),
+                                    history_prompt=os.path.join(bark_dir, speaker, speaker),
                                     silent=True,
                                     **fine_tuned_params
                                 )                                
