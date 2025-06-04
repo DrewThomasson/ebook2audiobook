@@ -327,7 +327,8 @@ class Coqui:
                                 loaded_tts[tts_internal_key]['config'],
                                 speaker_id=speaker,
                                 voice_dirs=bark_dir,
-                                temperature=0.85,
+                                text_temp=default_bark_settings['text_temp'],
+                                wavefrom_temp=default_bark_settings['waveform_temp'],
                                 silent=True
                             )
                         os.remove(voice_temp)
