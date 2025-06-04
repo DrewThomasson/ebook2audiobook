@@ -205,7 +205,6 @@ class Coqui:
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
             checkpoint_dir = kwargs.get('checkpoint_dir', None)
-            print(f'----------{checkpoint_dir}---------')
             checkpoint_path = kwargs.get('checkpoint_path', None)
             device = kwargs.get('device')
             ### XTTSv2
@@ -216,6 +215,7 @@ class Coqui:
             text_model_path = kwargs.get('text_model_path', None)
             coarse_model_path = kwargs.get('coarse_model_path', None)
             fine_model_path = kwargs.get('fine_model_path', None)
+            print(f'----------{text_model_path}---------')
             ###
             self._unload_tts(device)
             with lock:
