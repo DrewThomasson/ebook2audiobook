@@ -238,6 +238,9 @@ class Coqui:
                     config = BarkConfig()
                     config.CACHE_DIR = self.cache_dir
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
+                    config.LOCAL_MODEL_PATHS['text'] = text_model_path
+                    config.LOCAL_MODEL_PATHS['coarse'] = coarse_model_path
+                    config.LOCAL_MODEL_PATHS['fine'] = fine_model_path
                     print(config)
                     tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
