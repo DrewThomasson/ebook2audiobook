@@ -2,16 +2,30 @@ import os
 
 install_info = '''
 After the first run, you are free to use your command line with:
+# go into ebook2audiobook folder then:
 ----------------------------------
-ebook2audiobook.[sh|cmd] [options]
+# Linux/Mac
+ebook2audiobook.sh [options]
+# Windows
+ebook2audiobook.cmd [options]
 ----------------------------------
 or
 ----------------------------------
-conda activate [./|.\\]python_env
+# Linux/Mac
+conda activate ./python_env
+# Windows
+conda activate .\python_env
+
 python app.py [options]
 conda deactivate
 ----------------------------------
-Available command options, ebook2audiobook.[sh|cmd] --help
+Available command options, type:
+# Linux/Mac
+./ebook2audiobook.sh --help
+# Windows:
+ebook2audiobook.cmd --help
+# or if conda ./python_env activated:
+python app.py --help
 '''
 
 default_language_code = 'eng' # ISO-639-3
