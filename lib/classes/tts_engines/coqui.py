@@ -62,7 +62,7 @@ class Coqui:
         global xtts_builtin_speakers_list
         self.vtt_path = os.path.splitext(self.session['final_name'])[0] + '.vtt'
         if xtts_builtin_speakers_list is None:
-            self.speakers_path = hf_hub_download(repo_id=models[XTTSv2]['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
+            self.speakers_path = hf_hub_download(repo_id=models[XTTSv2]['internal']['repo'], filename=default_xtts_settings['files'][4])
             xtts_builtin_speakers_list = torch.load(self.speakers_path)
         msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
         print(msg)
@@ -265,9 +265,9 @@ class Coqui:
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         hf_repo = models[XTTSv2]['internal']['repo']
                         hf_sub = ''
-                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
-                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}")
+                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}")
+                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}")
                         tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
                             file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
@@ -337,9 +337,9 @@ class Coqui:
                             hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big-bf16']
                         else:
                             hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big']
-                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
-                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
-                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
+                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}")
+                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}")
+                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}")
                     checkpoint_dir = os.path.dirname(text_model_path)
                     tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=device)
                     if tts:
