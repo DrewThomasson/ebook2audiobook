@@ -355,7 +355,7 @@ class Coqui:
                     text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
                     coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
                     fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
-                    checkpoint_dir = os.path.basename(text_model_path
+                    checkpoint_dir = os.path.basename(text_model_path)
                     tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=device)
                     if tts:
                         voice_temp = os.path.splitext(npz_file)[0]+'.wav'
