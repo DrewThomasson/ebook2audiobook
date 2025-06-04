@@ -338,8 +338,8 @@ models = {
             "sub": { # or "" if tts_models/multilingual/multi-dataset/bark
                 "big-bf16": "big-bf16/",
                 "small-bf16": "small-bf16/",
-                "big-pth": "big-pth/",
-                "small-pth": "small-pth/"
+                "big": "big/",
+                "small": "small/"
             },
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDahl_{default_bark_settings['samplerate']}.wav"),
             "files": default_bark_settings['files'],
