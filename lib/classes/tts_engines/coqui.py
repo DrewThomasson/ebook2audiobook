@@ -608,16 +608,9 @@ class Coqui:
                                 #    voice_dirs=bark_dir,
                                 #    **fine_tuned_params
                                 #)
-                                speaker_npz_path = os.path.join(bark_dir, speaker, f'{speaker}.npz')
-                                clone_data = np.load(speaker_npz_path, allow_pickle=True)
-                                history_prompt = {
-                                    "semantic_prompt": clone_data["semantic_prompt"],
-                                    "coarse_prompt": clone_data["coarse_prompt"],
-                                    "fine_prompt": clone_data["fine_prompt"]
-                                }
                                 result = tts.generate_audio(
                                     text_part,
-                                    history_prompt=history_prompt,
+                                    history_prompt=os.path.join(bark_dir, speaker, f'{speaker}.npz'),
                                     silent=True,
                                     **fine_tuned_params
                                 )                                
