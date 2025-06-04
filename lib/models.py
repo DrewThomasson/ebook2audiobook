@@ -69,7 +69,7 @@ default_bark_settings = {
     "samplerate": 24000,
     "text_temp": 0.40,
     "waveform_temp": 0.40,
-    "files": ["text.safetensors", "coarse.safetensors", "fine.safetensors"],
+    "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
     "voices": {
         "ClaribelDervla": "Claribel Dervla", "DaisyStudious": "Daisy Studious", "GracieWise": "Gracie Wise",
         "TammieEma": "Tammie Ema", "AlisonDietlinde": "Alison Dietlinde", "AnaFlorence": "Ana Florence",

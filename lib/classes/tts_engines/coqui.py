@@ -213,7 +213,6 @@ class Coqui:
                     config = BarkConfig()
                     config.CACHE_DIR = self.cache_dir
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    print(config)
                     tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
                         config,
@@ -328,7 +327,8 @@ class Coqui:
                                 loaded_tts[tts_internal_key]['config'],
                                 speaker_id=speaker,
                                 voice_dirs=bark_dir,
-                                temperature=0.85
+                                temperature=0.85,
+                                silent=True
                             )
                         os.remove(voice_temp)
                         del audio_data
@@ -600,13 +600,19 @@ class Coqui:
                             }
                             with torch.no_grad():
                                 torch.manual_seed(67878789)
-                                result = tts.synthesize(
+                                #result = tts.synthesize(
+                                #    text_part,
+                                #    loaded_tts[self.tts_key]['config'],
+                                #    speaker_id=speaker,
+                                #    voice_dirs=bark_dir,
+                                #    **fine_tuned_params
+                                #)
+                                result = tts.generate_audio(
                                     text_part,
-                                    loaded_tts[self.tts_key]['config'],
-                                    speaker_id=speaker,
-                                    voice_dirs=bark_dir,
+                                    history_prompt=os.path.join(bark_dir, speaker, speaker)
+                                    silent=True,
                                     **fine_tuned_params
-                                )
+                                )                                
                             audio_part = result.get('wav')
                             if self._is_valid(audio_part):
                                 audio_part = audio_part.tolist()
