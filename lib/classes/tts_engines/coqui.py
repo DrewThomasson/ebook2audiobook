@@ -205,7 +205,6 @@ class Coqui:
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
             checkpoint_dir = kwargs.get('checkpoint_dir', None)
-            print(f'----------{checkpoint_dir}---------')
             checkpoint_path = kwargs.get('checkpoint_path', None)
             device = kwargs.get('device')
             ### XTTSv2
@@ -239,11 +238,12 @@ class Coqui:
                     config = BarkConfig()
                     config.CACHE_DIR = self.cache_dir
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
+                    print(config)
                     tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
-                        text_model_path=text_model_path,
+                        #text_model_path=text_model_path,
                         #coarse_model_path=coarse_model_path,
                         #fine_model_path=fine_model_path,
                         eval=True
