@@ -609,7 +609,7 @@ class Coqui:
                                 #)
                                 result = tts.generate_audio(
                                     text_part,
-                                    #history_prompt=os.path.join(bark_dir, speaker, speaker),
+                                    history_prompt="v2/en_speaker_1",
                                     silent=True,
                                     **fine_tuned_params
                                 )                                
