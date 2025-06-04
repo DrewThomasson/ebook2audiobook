@@ -248,10 +248,10 @@ class Coqui:
                         remote_text_model_file = os.path.join(config.REMOTE_BASE_URL, text_model_file)
                         remote_coarse_model_file = os.path.join(config.REMOTE_BASE_URL, coarse_model_file)
                         remote_fine_model_file = os.path.join(config.REMOTE_BASE_URL, fine_model_file)
-                        #if config.USE_SMALLER_MODELS:
-                        #   config.SMALL_REMOTE_MODEL_PATHS['text'] = remote_text_model_file
-                        #    config.SMALL_REMOTE_MODEL_PATHS['coarse'] = remote_coarse_model_file
-                        #    config.SMALL_REMOTE_MODEL_PATHS['fine'] = remote_fine_model_file
+                        if config.USE_SMALLER_MODELS:
+                            config.SMALL_REMOTE_MODEL_PATHS['text'] = remote_text_model_file
+                            config.SMALL_REMOTE_MODEL_PATHS['coarse'] = remote_coarse_model_file
+                            config.SMALL_REMOTE_MODEL_PATHS['fine'] = remote_fine_model_file
                         config.REMOTE_MODEL_PATHS['text']['path'] = remote_text_model_file
                         config.REMOTE_MODEL_PATHS['text']['checksum'] = self._md5(remote_text_model_file)
                         config.REMOTE_MODEL_PATHS['coarse']['path'] = remote_coarse_model_file
