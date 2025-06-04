@@ -249,7 +249,7 @@ class Coqui:
                         tts = Bark.init_from_config(config)
                         tts.load_checkpoint(
                             config,
-                            checkpoint_dir='caca',
+                            #checkpoint_dir='caca',
                             #text_model_path=text_model_path,
                             #coarse_model_path=coarse_model_path,
                             #fine_model_path=fine_model_path,
