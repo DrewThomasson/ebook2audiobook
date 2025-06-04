@@ -107,11 +107,13 @@ class Coqui:
                             hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']['big']
                     msg = f'Using {hf_sub} bark models'
                     print(msg)
-                text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
-                coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
-                fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
-                checkpoint_dir = os.path.dirname(text_model_path)
-                tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=self.session['device'])
+                #text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][0]}", cache_dir=self.cache_dir)
+                #coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][1]}", cache_dir=self.cache_dir)
+                #fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{default_bark_settings['files'][2]}", cache_dir=self.cache_dir)
+                #checkpoint_dir = os.path.dirname(text_model_path)
+                #tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, text_model_path=text_model_path, coarse_model_path=coarse_model_path, fine_model_path=fine_model_path, device=self.session['device'])
+                checkpoint_dir = hf_repo
+                tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, device=self.session['device'])
         elif self.session['tts_engine'] == VITS:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -238,9 +240,9 @@ class Coqui:
                     config = BarkConfig()
                     config.CACHE_DIR = self.cache_dir
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    config.LOCAL_MODEL_PATHS['text'] = text_model_path
-                    config.LOCAL_MODEL_PATHS['coarse'] = coarse_model_path
-                    config.LOCAL_MODEL_PATHS['fine'] = fine_model_path
+                    #config.LOCAL_MODEL_PATHS['text'] = text_model_path
+                    #config.LOCAL_MODEL_PATHS['coarse'] = coarse_model_path
+                    #config.LOCAL_MODEL_PATHS['fine'] = fine_model_path
                     print(config)
                     tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
