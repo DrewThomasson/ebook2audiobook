@@ -620,7 +620,7 @@ class Coqui:
                                             self.npz_data["coarse_prompt"],
                                             self.npz_data["fine_prompt"]
                                     ]
-                                result = tts.generate_audio(
+                                result, _ = tts.generate_audio(
                                     text_part,
                                     history_prompt=history_prompt,
                                     silent=True,
