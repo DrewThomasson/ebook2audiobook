@@ -622,13 +622,12 @@ class Coqui:
                                             self.npz_data["coarse_prompt"],
                                             self.npz_data["fine_prompt"]
                                     ]
-                                result, _ = tts.generate_audio(
+                                audio_part, _ = tts.generate_audio(
                                     text_part,
                                     history_prompt=history_prompt,
                                     silent=True,
                                     **fine_tuned_params
                                 )                                
-                            audio_part = result.get('wav')
                             if self._is_valid(audio_part):
                                 audio_part = audio_part.tolist()
                         else:
