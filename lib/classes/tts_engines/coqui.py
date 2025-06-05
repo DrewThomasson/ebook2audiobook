@@ -330,6 +330,14 @@ class Coqui:
                         shutil.copy(voice_path, voice_temp)
                         default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
+                        fine_tuned_params = {
+                            key: cast_type(self.session[key])
+                            for key, cast_type in {
+                                "text_temp": float,
+                                "waveform_temp": float
+                            }.items()
+                            if self.session.get(key) is not None
+                        }
                         with torch.no_grad():
                             torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
@@ -339,7 +347,8 @@ class Coqui:
                                 voice_dirs=bark_dir,
                                 text_temp=default_bark_settings['text_temp'],
                                 wavefrom_temp=default_bark_settings['waveform_temp'],
-                                silent=True
+                                silent=True,
+                                **fine_tuned_params
                             )
                         os.remove(voice_temp)
                         del audio_data
@@ -612,16 +621,14 @@ class Coqui:
                             with torch.no_grad():
                                 torch.manual_seed(67878789)
                                 npz = os.path.join(bark_dir, speaker, f'{speaker}.npz')
-                                if self.npz_path is not None and self.npz_path == npz:
-                                    history_prompt = self.npz_data
-                                else:
+                                if self.npz_path is None or self.npz_path != npz:
                                     self.npz_path = npz
                                     self.npz_data = np.load(self.npz_path)
-                                    history_prompt = [
-                                            self.npz_data["semantic_prompt"],
-                                            self.npz_data["coarse_prompt"],
-                                            self.npz_data["fine_prompt"]
-                                    ]
+                                history_prompt = [
+                                        self.npz_data["semantic_prompt"],
+                                        self.npz_data["coarse_prompt"],
+                                        self.npz_data["fine_prompt"]
+                                ]
                                 audio_part, _ = tts.generate_audio(
                                     text_part,
                                     history_prompt=history_prompt,
