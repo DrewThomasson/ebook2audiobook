@@ -623,7 +623,7 @@ class Coqui:
                                 npz = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                                 if self.npz_path is None or self.npz_path != npz:
                                     self.npz_path = npz
-                                    self.npz_data = np.load(self.npz_path)
+                                    self.npz_data = np.load(self.npz_path, allow_pickle=True)
                                 history_prompt = [
                                         self.npz_data["semantic_prompt"],
                                         self.npz_data["coarse_prompt"],
