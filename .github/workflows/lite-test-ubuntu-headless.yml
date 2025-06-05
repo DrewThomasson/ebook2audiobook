@@ -68,16 +68,17 @@ on:
         required: false
         default: ''
         type: string
-  push:
-    branches:
-      - v25
-    paths-ignore:
-      - CODE_OF_CONDUCT.md
-      - LICENSE
-      - README.md
-      - readme/**
-      - dockerfiles/**
-      - Notebooks/**
+  # Comment out these lines to disable auto-trigger on push:
+  # push:
+  #   branches:
+  #     - v25
+  #   paths-ignore:
+  #     - CODE_OF_CONDUCT.md
+  #     - LICENSE
+  #     - README.md
+  #     - readme/**
+  #     - dockerfiles/**
+  #     - Notebooks/**
 
 jobs:
   build:
