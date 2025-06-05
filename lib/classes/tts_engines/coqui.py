@@ -345,8 +345,6 @@ class Coqui:
                                 loaded_tts[tts_internal_key]['config'],
                                 speaker_id=speaker,
                                 voice_dirs=bark_dir,
-                                text_temp=default_bark_settings['text_temp'],
-                                wavefrom_temp=default_bark_settings['waveform_temp'],
                                 silent=True,
                                 **fine_tuned_params
                             )
