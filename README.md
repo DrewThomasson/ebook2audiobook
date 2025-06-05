@@ -340,7 +340,7 @@ TIP: if it needs some more pauses, just add '###' or '[pause]' between the words
 
 #### Docker GPU Options
 
-Available tags: `latest` (CUDA 11.8), `cpu`, `rocm`, `cuda118`, `cuda121`, `cuda128`, `xpu` (x86 only)
+Available tags: `latest` (CUDA 11.8), `cpu`
 #### Edit: IF GPU isn't detected then you'll have to build the image -> [Building the Docker Container](#building-the-docker-container)
 
 
@@ -367,7 +367,9 @@ docker build -t athomasson2/ebook2audiobook .
 ```
 #### Avalible Docker Build Arguments
 
-`--build-arg TORCH_VERSION=cuda11` Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu]
+`--build-arg TORCH_VERSION=cuda118` Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] 
+
+All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
 
 `--build-arg SKIP_XTTS_TEST=true` (Saves space by not baking xtts model into docker image)
 

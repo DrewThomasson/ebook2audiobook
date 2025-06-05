@@ -130,6 +130,14 @@ models = {
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
         },
+        "AsmrRacoon": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/AsmrRacoon",
+            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"AsmrRacoon_{default_xtts_settings['samplerate']}.wav"),
+            "files": default_xtts_settings['files'],
+            "samplerate": default_xtts_settings['samplerate']
+        },
         "BobOdenkirk": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
