@@ -23,11 +23,11 @@ os.environ['HF_DATASETS_CACHE'] = tts_dir
 os.environ['TTS_CACHE'] = tts_dir
 os.environ['TORCH_HOME'] = tts_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
-os.environ["ARGOS_TRANSLATE_PACKAGE_PATH"] = os.path.join(models_dir, 'argostranslate')
+os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
 os.environ['HF_TOKEN_PATH'] = os.path.join(os.path.expanduser('~'), '.huggingface_token')
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
-os.environ["SUNO_OFFLOAD_CPU"] = 'false' # BARK option: False needs A GPU
-os.environ["SUNO_USE_SMALL_MODELS"] = 'false' # BARK option: False needs a GPU with VRAM > 4GB
+os.environ['SUNO_OFFLOAD_CPU'] = 'false' # BARK option: False needs A GPU
+os.environ['SUNO_USE_SMALL_MODELS'] = 'false' # BARK option: False needs a GPU with VRAM > 4GB
 if platform.system() == 'Windows':
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
 
@@ -42,7 +42,8 @@ FULL_DOCKER = 'full_docker'
 debug_mode = True
 
 device_list = ['cpu', 'gpu', 'mps']
-default_device = "cuda"
+default_device = 'cpu'
+default_gpu_wiki = 'https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES'
 
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))

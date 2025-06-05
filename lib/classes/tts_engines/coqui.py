@@ -94,7 +94,7 @@ class Coqui:
                 return False
             else:
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
-                checkpoint_dir = hf_repo
+                checkpoint_dir = checkpoint_dir = f'models/{hf_repo}'
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, device=self.session['device'])
         elif self.session['tts_engine'] == VITS:
             if self.session['custom_model'] is not None:
@@ -315,7 +315,7 @@ class Coqui:
                     os.makedirs(npz_dir, exist_ok=True)
                     tts_internal_key = f"{BARK}-internal"
                     hf_repo = models[BARK]['internal']['repo']
-                    checkpoint_dir = hf_repo
+                    checkpoint_dir = f'models/{hf_repo}'
                     tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, device=device)
                     if tts:
                         voice_temp = os.path.splitext(npz_file)[0]+'.wav'
