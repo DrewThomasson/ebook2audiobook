@@ -1517,7 +1517,7 @@ def convert_ebook(args):
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
-                                msg += f"GPU is not available or not recognized! Switching to CPU - "
+                                msg += f"GPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
                         elif session['device'] == 'mps':
                             session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                             if session['device'] == 'cpu':
