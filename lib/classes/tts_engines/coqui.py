@@ -60,7 +60,7 @@ class Coqui:
  
     def _build(self):
         global xtts_builtin_speakers_list
-        self.vtt_path = os.path.splitext(self.session['final_name'])[0] + '.vtt'
+        self.vtt_path = os.path.join(self.session['session_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')
         if xtts_builtin_speakers_list is None:
             self.speakers_path = hf_hub_download(repo_id=models[XTTSv2]['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
             xtts_builtin_speakers_list = torch.load(self.speakers_path)
@@ -611,7 +611,7 @@ class Coqui:
                                 result = tts.generate_audio(
                                     text_part,
                                     history_prompt=os.path.join(bark_dir, speaker, f'{speaker}.npz'),
-                                    #silent=True,
+                                    silent=True,
                                     **fine_tuned_params
                                 )                                
                             audio_part = result.get('wav')
