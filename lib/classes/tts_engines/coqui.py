@@ -52,6 +52,8 @@ class Coqui:
         self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
         self.tts_vc_key = default_vc_model.rsplit('/', 1)[-1]
         self.is_bf16 = True if self.session['device'] == 'cuda' and torch.cuda.is_bf16_supported() == True else False
+        self.npz_path = None
+        self.npz_data = None
         self.sentences_total_time = 0.0
         self.sentence_idx = 1
         self.params = {XTTSv2: {"latent_embedding":{}}, BARK: {}, VITS: {"semitones": {}}, FAIRSEQ: {"semitones": {}}, YOURTTS: {}}  
@@ -209,11 +211,11 @@ class Coqui:
                 elif tts_engine == BARK:
                     from TTS.tts.configs.bark_config import BarkConfig
                     from TTS.tts.models.bark import Bark
-                    checkpoint_dir = kwargs.get('checkpoint_dir')
+                    checkpoint_dir = f"models--{kwargs.get('checkpoint_dir').replace('/', '--')}"
                     config = BarkConfig()
                     config.CACHE_DIR = self.cache_dir
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    tts = Bark.init_from_config(config)
+                    tts = Bark(config)
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
@@ -601,16 +603,20 @@ class Coqui:
                             }
                             with torch.no_grad():
                                 torch.manual_seed(67878789)
-                                #result = tts.synthesize(
-                                #    text_part,
-                                #    loaded_tts[self.tts_key]['config'],
-                                #    speaker_id=speaker,
-                                #    voice_dirs=bark_dir,
-                                #    **fine_tuned_params
-                                #)
+                                npz = os.path.join(bark_dir, speaker, f'{speaker}.npz')
+                                if self.npz_path is not None and self.npz_path == npz:
+                                    history_prompt = self.npz_data
+                                else:
+                                    self.npz_path = npz
+                                    self.npz_data = np.load(self.npz_path)
+                                    history_prompt = [
+                                            self.npz_data["semantic_prompt"],
+                                            self.npz_data["coarse_prompt"],
+                                            self.npz_data["fine_prompt"]
+                                    ]
                                 result = tts.generate_audio(
                                     text_part,
-                                    history_prompt=os.path.join(bark_dir, speaker, f'{speaker}.npz'),
+                                    history_prompt=history_prompt,
                                     silent=True,
                                     **fine_tuned_params
                                 )                                
