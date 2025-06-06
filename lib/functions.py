@@ -5,6 +5,18 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
+import builtins
+import traceback
+
+def fake_open(file, *args, **kwargs):
+	if isinstance(file, str) and "jpn.tar.gz" in file:
+		print(f"\n❌ Attempt to open: {file}")
+		traceback.print_stack()
+	return open_orig(file, *args, **kwargs)
+
+open_orig = builtins.open
+builtins.open = fake_open
+
 import argparse
 import asyncio
 import csv
@@ -632,9 +644,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_array is not None:
                 chapters.append(sentences_array)
-        #if title:
-        #    if chapters[0]:
-        #        chapters[0][0] =  f' — "{title}" . {chapters[0][0]}'
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -735,7 +744,7 @@ def get_sentences(text, lang, tts_engine):
         elif lang == 'jpn':
             from sudachipy import dictionary, tokenizer
             sudachi = dictionary.Dictionary().create()
-            mode = tokenizer.Tokenizer.SplitMode.C  # Use longest segmentation
+            mode = tokenizer.Tokenizer.SplitMode.C
             return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'kor':
             from konlpy.tag import Kkma
