@@ -69,6 +69,7 @@ default_bark_settings = {
     "samplerate": 24000,
     "text_temp": 0.40,
     "waveform_temp": 0.40,
+    "lang_tags": {"eng": "[ENGLISH]", "deu": "[GERMAN]", "spa": "[SPANISH]", "fra": "[FRENCH]", "ita": "[ITALIAN]", "por": "[PORTUGUESE]", "pol": "[POLISH]", "tur": "[TURKISH]", "rus": "[RUSSIAN]", "nld": "[DUTCH]", "swe": "[SWEDISH]", "fin": "[FINNISH]", "nor": "[NORWEGIAN]", "dan": "[DANISH]", "ukr": "[UKRAINIAN]", "ces": "[CZECH]", "ara": "[ARABIC]", "hin": "[HINDI]", "zho": "[CHINESE]", "jpn": "[JAPANESE]", "kor": "[KOREAN]", "vie": "[VIETNAMESE]", "tha": "[THAI]", "ind": "[INDONESIAN]"},
     "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
     "voices": {
         "ClaribelDervla": "Claribel Dervla", "DaisyStudious": "Daisy Studious", "GracieWise": "Gracie Wise",
