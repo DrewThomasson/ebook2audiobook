@@ -843,7 +843,6 @@ def get_sentences(text, lang, tts_engine):
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         ideogramm_list = segment_ideogramms(text)
         raw_list = list(join_ideogramms(ideogramm_list))
-        print(F'---------------{raw_list}------------')
     else:
         raw_list = re.split(pattern, text)
     raw_list = combine_punctuation(raw_list)
@@ -855,6 +854,7 @@ def get_sentences(text, lang, tts_engine):
         tmp_list = raw_list
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
+    print(F'---------------{tmp_list}------------')
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
