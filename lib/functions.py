@@ -745,7 +745,7 @@ def get_sentences(text, lang, tts_engine):
             from sudachipy import dictionary, tokenizer
             sudachi = dictionary.Dictionary().create()
             mode = tokenizer.Tokenizer.SplitMode.C
-            return [m.surface() for m in sudachi.tokenize(text, mode)]
+            return [m.surface() for m in sudachi.tokenize(mode, text)]
         elif lang == 'kor':
             from konlpy.tag import Kkma
             kkma = Kkma()
