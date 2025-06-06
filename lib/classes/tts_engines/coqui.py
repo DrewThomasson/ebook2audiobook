@@ -535,6 +535,7 @@ class Coqui:
                     msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                     print(msg)
                     return False
+            sentence_parts = sentence.split('‡pause‡')
             if self.session['tts_engine'] == XTTSv2 or self.session['tts_engine'] == FAIRSEQ:
                 sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
             sample_rate = 16000 if self.session['tts_engine'] == VITS and self.session['voice'] is not None else settings['sample_rate']
