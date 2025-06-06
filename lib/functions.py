@@ -735,7 +735,7 @@ def get_sentences(text, lang, tts_engine):
         elif lang == 'jpn':
             from sudachipy import dictionary, tokenizer
             sudachi = dictionary.Dictionary().create()
-            mode = tokenizer.Tokenizer.SplitMode.C  # C = longest segmentation
+            mode = tokenizer.Tokenizer.SplitMode.C  # Use longest segmentation
             return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'kor':
             from konlpy.tag import Kkma
