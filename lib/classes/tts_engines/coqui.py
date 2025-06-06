@@ -287,10 +287,7 @@ class Coqui:
                                     self._unload_tts(device, XTTSv2)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
-                                    bark_dir = os.path.join(os.path.dirname(voice_path), 'bark')
-                                    if self._check_bark_npz(voice_path, bark_dir, speaker, device):
-                                        self.session['voice'] = voice_path
-                                        return True
+                                    return voice_path
                             else:
                                 error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
                                 print(error)
@@ -301,7 +298,7 @@ class Coqui:
                         error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
                         print(error)
                 else:
-                    return True
+                    return voice_path
             else:
                 return True
         except Exception as e:
@@ -312,7 +309,6 @@ class Coqui:
     def _check_bark_npz(self, voice_path, bark_dir, speaker, device):
         try:
             if self.session['language'] in language_tts[BARK].keys():
-                bark_dir = bark_dir.replace(f"/eng/",f"/{self.session['language']}/").replace(f"\\eng\\",f"\\{self.session['language']}\\")
                 npz_dir = os.path.join(bark_dir, speaker)
                 npz_file = os.path.join(npz_dir, f'{speaker}.npz')
                 if not os.path.exists(npz_file):
@@ -534,11 +530,12 @@ class Coqui:
             )          
             if settings['voice_path'] is not None:
                 speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))
-                if not self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device']):
+                settings['voice_path'] = self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device'])
+                if not settings['voice_path']:
                     msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                     print(msg)
                     return False
-            sentence_parts = sentence.split('‡pause‡')
+                if _check_bark_npz
             if self.session['tts_engine'] == XTTSv2 or self.session['tts_engine'] == FAIRSEQ:
                 sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
             sample_rate = 16000 if self.session['tts_engine'] == VITS and self.session['voice'] is not None else settings['sample_rate']
