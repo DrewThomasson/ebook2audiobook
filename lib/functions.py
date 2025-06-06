@@ -5,18 +5,6 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import builtins
-import traceback
-
-def fake_open(file, *args, **kwargs):
-	if isinstance(file, str) and "jpn.tar.gz" in file:
-		print(f"\n❌ Attempt to open: {file}")
-		traceback.print_stack()
-	return open_orig(file, *args, **kwargs)
-
-open_orig = builtins.open
-builtins.open = fake_open
-
 import argparse
 import asyncio
 import csv
