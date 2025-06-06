@@ -300,7 +300,7 @@ class Coqui:
                 else:
                     return voice_path
             else:
-                return True
+                return voice_path
         except Exception as e:
             error = f'_check_xtts_builtin_speakers() error: {e}'
             print(error)
