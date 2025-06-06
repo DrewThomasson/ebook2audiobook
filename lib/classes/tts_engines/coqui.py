@@ -152,7 +152,6 @@ class Coqui:
         global lock
         try:
             if key in loaded_tts.keys():
-                msg = f'{key} already in memory...'
                 print(msg)
                 return loaded_tts[key]['engine']
             self._unload_tts(self.session['device'])
@@ -188,7 +187,6 @@ class Coqui:
         try:
             key = kwargs.get('key')
             if key in loaded_tts.keys():
-                msg = f'{key} already in memory...'
                 print(msg)
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
