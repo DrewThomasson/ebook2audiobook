@@ -500,6 +500,10 @@ def convert2epub(session):
             print(error)
             return False
         file_input = session['ebook']
+        if os.path.getsize(file_input) == 0:
+            error = f"Input file is empty: {file_input}"
+            print(error)
+            return False
         file_ext = os.path.splitext(file_input)[1].lower()
         if file_ext not in ebook_formats:
             error = f'Unsupported file format: {file_ext}'
@@ -639,12 +643,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine):
     try:
-        try:
-            raw_html = doc.get_body_content().decode("utf-8")
-        except Exception as e:
-            raw_html = doc.get_body_content()
-
         chapter_sentences = None
+        raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
 
         if not soup.body or not soup.body.get_text(strip=True):
