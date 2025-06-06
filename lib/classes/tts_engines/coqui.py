@@ -226,7 +226,7 @@ class Coqui:
                         eval=True
                     )                    
             if tts:
-                print(tts.languages)
+                #print(tts.languages)
                 if device == 'cuda':
                     tts.cuda()
                 else:
