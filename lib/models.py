@@ -362,6 +362,7 @@ models = {
                 "mai_female/vits": ['pl'],
                 "openbible/vits": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
                 "thorsten/tacotron2-DDC": ['de'],
+                "kokoro/tacotron2-DDC": ['ja'],
                 "vctk/vits": ['en']
             },
             "voice": None,
