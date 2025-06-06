@@ -639,8 +639,12 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine):
     try:
+        try:
+            raw_html = doc.get_body_content().decode("utf-8")
+        except Exception as e:
+            raw_html = doc.get_body_content()
+
         chapter_sentences = None
-        raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
 
         if not soup.body or not soup.body.get_text(strip=True):
