@@ -31,6 +31,8 @@ python app.py --help
 default_language_code = 'eng' # ISO-639-3
 
 language_tts = {
+    #"xtts": {"eng": "en", "spa": "es", "fra": "fr", "deu": "de", "ita": "it", "por": "pt", "pol": "pl", "tur": "tr", "rus": "ru", "jpn": "ja", "hin": "hi", "zho": "zh-cn", "kor": "ko", "nld": "nl", "ces": "cs", "ara": "ar", "hun": "hu"},
+    #"bark": {"eng": "en", "spa": "es", "fra": "fr", "deu": "de", "ita": "it", "por": "pt", "pol": "pl", "tur": "tr", "rus": "ru", "jpn": "ja", "hin": "hi", "zho": "zh-cn", "kor": "ko"},
     "xtts": {"eng": "en", "spa": "es", "fra": "fr", "deu": "de", "ita": "it", "por": "pt", "pol": "pl", "tur": "tr", "rus": "ru", "jpn": "ja", "hin": "hi", "zho": "zh-cn", "kor": "ko", "nld": "nl", "ces": "cs", "ara": "ar", "hun": "hu", "swe": "sv", "fin": "fi", "nor": "no", "dan": "da", "vie": "vi", "tha": "th", "ind": "id"},
     "bark": {"eng": "en", "spa": "es", "fra": "fr", "deu": "de", "ita": "it", "por": "pt", "pol": "pl", "tur": "tr", "rus": "ru", "jpn": "ja", "hin": "hi", "zho": "zh-cn", "kor": "ko", "nld": "nl", "ces": "cs", "ara": "ar", "hun": "hu", "swe": "sv", "fin": "fi", "nor": "no", "dan": "da", "vie": "vi", "tha": "th", "ind": "id"},
     "vits": {"bul": "bg", "ben": "bn", "cat": "ca", "ces": "cs", "dan": "da", "deu": "de", "eng": "en", "est": "et", "ewe": "ewe", "fas": "fa", "hau": "hau", "gle": "ga", "spa": "es", "fra": "fr", "lin": "lin", "nld": "nl", "hun": "hu", "ell": "el", "fin": "fi", "hrv": "hr", "lit": "lt", "lav": "lv", "mlt": "mt", "pol": "pl", "por": "pt", "rom": "ro", "slk": "sk", "sln": "sl", "swe": "sv", "ukr": "uk", "yor": "yor", "tw_akuapem": "tw_akuapem", "tw_asante": "tw_asante"},
