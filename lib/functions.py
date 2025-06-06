@@ -733,9 +733,7 @@ def get_sentences(text, lang, tts_engine):
             from sudachipy import dictionary, tokenizer
             sudachi = dictionary.Dictionary().create()
             mode = tokenizer.Tokenizer.SplitMode.C
-            tokens = [m.surface() for m in sudachi.tokenize(text, mode)]
-            print("✅ USING segment_ideogramms() FOR JAPANESE. Tokens:", tokens)
-            return tokens
+            return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'kor':
             from konlpy.tag import Kkma
             kkma = Kkma()
@@ -847,7 +845,7 @@ def get_sentences(text, lang, tts_engine):
         raw_list = list(join_ideogramms(ideogramm_list))
     else:
         raw_list = re.split(pattern, text)
-    raw_list = combine_punctuation(raw_list)
+    #raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
         if len(raw_list) % 2 != 0:
