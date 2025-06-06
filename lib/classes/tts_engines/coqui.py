@@ -341,7 +341,7 @@ class Coqui:
                         with torch.no_grad():
                             torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
-                                f"{default_bark_settings['lang_tags'][self.session['language']]}{default_text}",
+                                f"{default_bark_settings['lang_tags'] [self.session['language']]}{default_text}",
                                 loaded_tts[tts_internal_key]['config'],
                                 speaker_id=speaker,
                                 voice_dirs=bark_dir,
@@ -628,7 +628,7 @@ class Coqui:
                                         self.npz_data["fine_prompt"]
                                 ]
                                 audio_part, _ = tts.generate_audio(
-                                    f"{default_bark_settings['lang_tags'][self.session['language']]}{text_part}",
+                                    f"{default_bark_settings['lang_tags'] [self.session['language']]}{text_part}",
                                     history_prompt=history_prompt,
                                     silent=True,
                                     **fine_tuned_params
