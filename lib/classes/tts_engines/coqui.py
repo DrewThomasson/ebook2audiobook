@@ -400,7 +400,7 @@ class Coqui:
                     del loaded_tts[tts_key]
             else:
                 for key in list(loaded_tts.keys()):
-                    if key != self.tts_vc_key:
+                    if key != self.tts_vc_key and key != self.tts_key:
                         del loaded_tts[key]
                 if device != 'cpu':
                     torch.cuda.empty_cache()
