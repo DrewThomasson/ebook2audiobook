@@ -1516,7 +1516,7 @@ def convert_ebook(args):
                         if vram_avail <= 4:
                             msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
                             if session['tts_engine'] == BARK:
-                                os.environ["SUNO_USE_SMALL_MODELS"] = 'true'
+                                os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
                                 msg_extra += f"Switching BARK to SMALL models - "
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
@@ -1528,7 +1528,7 @@ def convert_ebook(args):
                                 msg += f"MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'true'
+                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
                                 import deepspeed
