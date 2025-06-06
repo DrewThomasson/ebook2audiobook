@@ -218,7 +218,7 @@ class Coqui:
                     checkpoint_dir = kwargs.get('checkpoint_dir')
                     config = BarkConfig()
                     config.CACHE_DIR = self.cache_dir
-                    config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'True'
+                    config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
                     tts = Bark(config)
                     tts.load_checkpoint(
                         config,

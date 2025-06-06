@@ -733,9 +733,10 @@ def get_sentences(text, lang, tts_engine):
             import jieba
             return list(jieba.cut(text))
         elif lang == 'jpn':
-            import MeCab
-            mecab = MeCab.Tagger()
-            return mecab.parse(text).split()
+            from sudachipy import dictionary, tokenizer
+            sudachi = dictionary.Dictionary().create()
+            mode = tokenizer.Tokenizer.SplitMode.C  # C = longest segmentation
+            return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'kor':
             from konlpy.tag import Kkma
             kkma = Kkma()
