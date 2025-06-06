@@ -854,10 +854,10 @@ def get_sentences(text, lang, tts_engine):
         tmp_list = raw_list
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
-    print(F'---------------{tmp_list}------------')
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
+    print(F'---------------{sentences}------------')
     return sentences
 
 def get_ram():
