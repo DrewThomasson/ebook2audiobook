@@ -309,7 +309,10 @@ class Coqui:
             if self.session['language'] in language_tts[BARK].keys():
                 npz_dir = os.path.join(bark_dir, speaker)
                 npz_file = os.path.join(npz_dir, f'{speaker}.npz')
-                if not os.path.exists(npz_file):
+                print(f'-----------{npz_file}-----------')
+                if os.path.exists(npz_file):
+                    return True
+                else:
                     os.makedirs(npz_dir, exist_ok=True)
                     tts_internal_key = f"{BARK}-internal"
                     hf_repo = models[BARK]['internal']['repo']
@@ -353,8 +356,6 @@ class Coqui:
                     else:
                         error = f'_check_bark_npz() error: {tts_internal_key} is None'
                         print(error)
-                else:
-                    return True
             else:
                 return True
         except Exception as e:
