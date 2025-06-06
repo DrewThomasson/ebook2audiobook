@@ -530,7 +530,7 @@ class Coqui:
             )          
             if settings['voice_path'] is not None:
                 speaker = re.sub(r'(_16000|_24000).wav$', '', os.path.basename(settings['voice_path']))
-                settings['voice_path'] = self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device'])
+                self.session['voice'] = settings['voice_path'] = self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device'])
                 if not settings['voice_path']:
                     msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                     print(msg)
