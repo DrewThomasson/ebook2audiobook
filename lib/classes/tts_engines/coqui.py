@@ -116,6 +116,7 @@ class Coqui:
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                     print(msg)
+                    self.tts_key = model_path
                     tts = self._load_api(self.tts_key, model_path, self.session['device'])
                     if self.session['voice'] is not None:
                         msg = f"Loading vocoder {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
@@ -141,6 +142,7 @@ class Coqui:
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                     print(msg)
+                    self.tts_key = model_path
                     tts = self._load_api(self.tts_key, model_path, self.session['device'])
                     if self.session['voice'] is not None:
                         msg = f"Loading vocoder {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
@@ -157,6 +159,7 @@ class Coqui:
                 return False
             else:
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
+                self.tts_key = model_path
                 tts = self._load_api(self.tts_key, model_path, self.session['device'])
                 if self.session['voice'] is not None:
                     msg = f"Loading TTS {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
