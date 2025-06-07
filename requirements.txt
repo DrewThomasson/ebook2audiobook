@@ -27,6 +27,8 @@ tqdm
 suno-bark
 unidic
 pymupdf4llm
+sudachipy
+sudachidict_core
 torch
 coqui-tts
 torchvggish
