@@ -309,7 +309,6 @@ class Coqui:
             if self.session['language'] in language_tts[BARK].keys():
                 npz_dir = os.path.join(bark_dir, speaker)
                 npz_file = os.path.join(npz_dir, f'{speaker}.npz')
-                print(f'-----------{npz_file}-----------')
                 if os.path.exists(npz_file):
                     return True
                 else:
