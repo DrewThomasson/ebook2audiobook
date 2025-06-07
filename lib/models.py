@@ -358,22 +358,6 @@ models = {
             "samplerate": default_bark_settings['samplerate']
         }
     },
-    TACOTRON2: {
-       "internal": {
-            "lang": "multi",
-            "repo": "tts_models/[lang_iso1]/[xxx]",
-            "sub": {
-                "mai/tacotron2-DDC": ['nl', 'fr', 'es'],
-                "thorsten/tacotron2-DDC": ['de'],
-                "kokoro/tacotron2-DDC": ['ja'],
-                "ljspeech/tacotron2-DDC": ['en'],
-                "baker/tacotron2-DDC-GST": ['zh-CN']              
-            },
-            "voice": None,
-            "files": default_tacotron_settings['files'],
-            "samplerate": default_tacotron_settings['samplerate']
-        }
-    },
     VITS: {
         "internal": {
             "lang": "multi",
@@ -402,6 +386,22 @@ models = {
             "voice": None,
             "files": default_fairseq_settings['files'],
             "samplerate": default_fairseq_settings['samplerate']
+        }
+    },
+    TACOTRON2: {
+       "internal": {
+            "lang": "multi",
+            "repo": "tts_models/[lang_iso1]/[xxx]",
+            "sub": {
+                "mai/tacotron2-DDC": ['nl', 'fr', 'es'],
+                "thorsten/tacotron2-DDC": ['de'],
+                "kokoro/tacotron2-DDC": ['ja'],
+                "ljspeech/tacotron2-DDC": ['en'],
+                "baker/tacotron2-DDC-GST": ['zh-CN']              
+            },
+            "voice": None,
+            "files": default_tacotron_settings['files'],
+            "samplerate": default_tacotron_settings['samplerate']
         }
     },
     YOURTTS: {
