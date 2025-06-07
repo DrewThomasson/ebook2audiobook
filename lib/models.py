@@ -5,6 +5,7 @@ loaded_tts = {}
 
 XTTSv2 = 'xtts'
 BARK = 'bark'
+#TACOTRON2 = 'tacotron'
 VITS = 'vits'
 FAIRSEQ = 'fairseq'
 YOURTTS = 'yourtts'
@@ -69,7 +70,7 @@ default_bark_settings = {
     "samplerate": 24000,
     "text_temp": 0.40,
     "waveform_temp": 0.40,
-    "files": ["text.safetensors", "coarse.safetensors", "fine.safetensors"],
+    "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
     "voices": {
         "ClaribelDervla": "Claribel Dervla", "DaisyStudious": "Daisy Studious", "GracieWise": "Gracie Wise",
         "TammieEma": "Tammie Ema", "AlisonDietlinde": "Alison Dietlinde", "AnaFlorence": "Ana Florence",
@@ -93,6 +94,12 @@ default_bark_settings = {
         "MarcosRudaski": "Marcos Rudaski"
     },
 	"rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Emotions": 4}
+}
+default_tacotron2_settings = {
+    "samplerate": 24000,
+    "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
+    "voices": {},
+    "rating": {"GPU VRAM": 3, "CPU": 3, "RAM": 4, "Emotions": 3}
 }
 default_vits_settings = {
     "samplerate": 22050,
@@ -342,18 +349,31 @@ models = {
     BARK: {
         "internal": {
             "lang": "multi",
-            "repo": "rsxdalv/suno", # tts_models/multilingual/multi-dataset/bark
-            "sub": { # or "" if tts_models/multilingual/multi-dataset/bark
-                "big-bf16": "big-bf16/",
-                "small-bf16": "small-bf16/",
-                "big": "big/",
-                "small": "small/"
-            },
+            "repo": "suno/bark", # rsxdalv/suno, tts_models/multilingual/multi-dataset/bark
+            "sub": "", # {"big-bf16": "big-bf16/", "small-bf16": "small-bf16/", "big": "big/", "small": "small/"}
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDahl_{default_bark_settings['samplerate']}.wav"),
             "files": default_bark_settings['files'],
             "samplerate": default_bark_settings['samplerate']
         }
     },
+    #TACOTRON2: {
+    #   "internal": {
+    #        "lang": "multi",
+    #        "repo": "tts_models/[lang_iso1]/[xxx]",
+    #        "sub": {
+    #            "mai/tacotron2-DDC": ['nl'],
+    #            "mai/tacotron2-DDC": ['fr'],
+    #            "mai/tacotron2-DDC": ['es'],
+    #            "thorsten/tacotron2-DDC": ['de'],
+    #            "kokoro/tacotron2-DDC": ['ja'],
+    #            "ljspeech/tacotron2-DDC": ['en'],
+    #            "baker/tacotron2-DDC-GST": ['zh-CN']              
+    #        },
+    #        "voice": None,
+    #        "files": default_tacontron2_settings['files'],
+    #        "samplerate": default_tacontron2_settings['samplerate']
+    #    }
+    #},
     VITS: {
         "internal": {
             "lang": "multi",
@@ -366,8 +386,8 @@ models = {
                 "mai/vits": ['uk'],
                 "mai_female/vits": ['pl'],
                 "openbible/vits": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
-                "thorsten/tacotron2-DDC": ['de'],
-                "vctk/vits": ['en']
+                "vctk/vits": ['en'],
+                "thorsten/vits": ['de']
             },
             "voice": None,
             "files": default_vits_settings['files'],
