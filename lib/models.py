@@ -367,7 +367,7 @@ models = {
                 "thorsten/tacotron2-DDC": ['de'],
                 "kokoro/tacotron2-DDC": ['ja'],
                 "ljspeech/tacotron2-DDC": ['en'],
-                "baker/tacotron2-DDC-GST": ['zh-CN']              
+                "baker/tacotron2-DDC-GST": ['zh-cn']              
             },
             "voice": None,
             "files": default_tacotron_settings['files'],
