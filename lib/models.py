@@ -373,7 +373,7 @@ models = {
             "files": default_tacontron2_settings['files'],
             "samplerate": default_tacontron2_settings['samplerate']
         }
-    }
+    },
     VITS: {
         "internal": {
             "lang": "multi",
