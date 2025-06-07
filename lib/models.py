@@ -5,6 +5,7 @@ loaded_tts = {}
 
 XTTSv2 = 'xtts'
 BARK = 'bark'
+#TACOTRON2 = 'tacotron'
 VITS = 'vits'
 FAIRSEQ = 'fairseq'
 YOURTTS = 'yourtts'
@@ -93,6 +94,12 @@ default_bark_settings = {
         "MarcosRudaski": "Marcos Rudaski"
     },
 	"rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Emotions": 4}
+}
+default_tacotron2_settings = {
+    "samplerate": 24000,
+    "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
+    "voices": {},
+    "rating": {"GPU VRAM": 3, "CPU": 3, "RAM": 4, "Emotions": 3}
 }
 default_vits_settings = {
     "samplerate": 22050,
@@ -349,6 +356,24 @@ models = {
             "samplerate": default_bark_settings['samplerate']
         }
     },
+    TACOTRON2: {
+        "internal": {
+            "lang": "multi",
+            "repo": "tts_models/[lang_iso1]/[xxx]",
+            "sub": {
+                "mai/tacotron2-DDC": ['nl'],
+                "mai/tacotron2-DDC": ['fr'],
+                "mai/tacotron2-DDC": ['es'],
+                "thorsten/tacotron2-DDC": ['de'],
+                "kokoro/tacotron2-DDC": ['ja'],
+                "ljspeech/tacotron2-DDC": ['en'],
+                "baker/tacotron2-DDC-GST": ['zh-CN']              
+            },
+            "voice": None,
+            "files": default_tacontron2_settings['files'],
+            "samplerate": default_tacontron2_settings['samplerate']
+        }
+    }
     VITS: {
         "internal": {
             "lang": "multi",
@@ -361,9 +386,8 @@ models = {
                 "mai/vits": ['uk'],
                 "mai_female/vits": ['pl'],
                 "openbible/vits": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
-                "thorsten/tacotron2-DDC": ['de'],
-                "kokoro/tacotron2-DDC": ['ja'],
-                "vctk/vits": ['en']
+                "vctk/vits": ['en'],
+                "thorsten/vits": ['de']
             },
             "voice": None,
             "files": default_vits_settings['files'],
