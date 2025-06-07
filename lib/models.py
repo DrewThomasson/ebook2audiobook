@@ -5,13 +5,15 @@ loaded_tts = {}
 
 XTTSv2 = 'xtts'
 BARK = 'bark'
-#TACOTRON2 = 'tacotron'
+TACOTRON2 = 'tacotron'
 VITS = 'vits'
 FAIRSEQ = 'fairseq'
 YOURTTS = 'yourtts'
 
 default_tts_engine = 'xtts'
 default_fine_tuned = 'internal'
+
+active_tts_engines = [XTTSv2, BARK, TACOTRON2, VITS, FAIRSEQ, YOURTTS]
 
 r"""
 voice_conversion_models/multilingual/vctk/freevc24
@@ -95,7 +97,7 @@ default_bark_settings = {
     },
 	"rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Emotions": 4}
 }
-default_tacotron2_settings = {
+default_tacotron_settings = {
     "samplerate": 24000,
     "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
     "voices": {},
@@ -356,24 +358,22 @@ models = {
             "samplerate": default_bark_settings['samplerate']
         }
     },
-    #TACOTRON2: {
-    #   "internal": {
-    #        "lang": "multi",
-    #        "repo": "tts_models/[lang_iso1]/[xxx]",
-    #        "sub": {
-    #            "mai/tacotron2-DDC": ['nl'],
-    #            "mai/tacotron2-DDC": ['fr'],
-    #            "mai/tacotron2-DDC": ['es'],
-    #            "thorsten/tacotron2-DDC": ['de'],
-    #            "kokoro/tacotron2-DDC": ['ja'],
-    #            "ljspeech/tacotron2-DDC": ['en'],
-    #            "baker/tacotron2-DDC-GST": ['zh-CN']              
-    #        },
-    #        "voice": None,
-    #        "files": default_tacontron2_settings['files'],
-    #        "samplerate": default_tacontron2_settings['samplerate']
-    #    }
-    #},
+    TACOTRON2: {
+       "internal": {
+            "lang": "multi",
+            "repo": "tts_models/[lang_iso1]/[xxx]",
+            "sub": {
+                "mai/tacotron2-DDC": ['nl', 'fr', 'es'],
+                "thorsten/tacotron2-DDC": ['de'],
+                "kokoro/tacotron2-DDC": ['ja'],
+                "ljspeech/tacotron2-DDC": ['en'],
+                "baker/tacotron2-DDC-GST": ['zh-CN']              
+            },
+            "voice": None,
+            "files": default_tacotron_settings['files'],
+            "samplerate": default_tacotron_settings['samplerate']
+        }
+    },
     VITS: {
         "internal": {
             "lang": "multi",
@@ -382,7 +382,7 @@ models = {
                 "css10/vits": ['es','hu','fi','fr','nl','ru','el'],
                 "custom/vits": ['ca'],
                 "custom/vits-female": ['bn', 'fa'],
-                "cv/vits":['bg','cs','da','et','ga','hr','lt','lv','mt','pt','ro','sk','sl','sv'],
+                "cv/vits": ['bg','cs','da','et','ga','hr','lt','lv','mt','pt','ro','sk','sl','sv'],
                 "mai/vits": ['uk'],
                 "mai_female/vits": ['pl'],
                 "openbible/vits": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
