@@ -376,7 +376,7 @@ class Coqui:
                             if self.session.get(key) is not None
                         }
                         with torch.no_grad():
-                            #torch.manual_seed(67878789)
+                            torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
                                 default_text,
                                 loaded_tts[tts_internal_key]['config'],
@@ -653,7 +653,7 @@ class Coqui:
                                 if self.session.get(key) is not None
                             }
                             with torch.no_grad():
-                                #torch.manual_seed(67878789)
+                                torch.manual_seed(67878789)
                                 npz = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                                 if self.npz_path is None or self.npz_path != npz:
                                     self.npz_path = npz
