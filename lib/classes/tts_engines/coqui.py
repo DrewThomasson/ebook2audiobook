@@ -106,7 +106,7 @@ class Coqui:
                 print(msg)     
                 return False
             else:
-                iso_dir = self.session['language_iso1']
+                iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
                 sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is None:
@@ -132,7 +132,7 @@ class Coqui:
                 print(msg)     
                 return False
             else:
-                iso_dir = self.session['language_iso1']
+                iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
                 sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                 if sub is None:
