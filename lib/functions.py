@@ -411,7 +411,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
     # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
     number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
-    if tts_engine == VITS or tts_engine == FAIRSEQ or tts_engine == YOURTTS:
+    if tts_engine in [TACOTRON2, VITS, FAIRSEQ, YOURTTS]:
         if is_num2words_compat:
             # Pattern 2: Split big numbers into groups of 4
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
@@ -2148,6 +2148,8 @@ def web_interface(args):
                 rating = default_xtts_settings['rating']
             elif tts_engine == BARK:
                 rating = default_bark_settings['rating']
+            elif tts_engine == TACOTRON2:
+                rating = default_tacotron_settings['rating']
             elif tts_engine == VITS:
                 rating = default_vits_settings['rating']
             elif tts_engine == FAIRSEQ:
