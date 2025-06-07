@@ -286,21 +286,36 @@ class Coqui:
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                         tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
-                            file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
-                            gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()                           
+                            file_path = voice_path.replace('_24000.wav', '.wav')
+                            gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
+                            fine_tuned_params = {
+                                key: cast_type(self.session[key])
+                                for key, cast_type in {
+                                    "temperature": float,
+                                    "length_penalty": float,
+                                    "num_beams": int,
+                                    "repetition_penalty": float,
+                                    "top_k": int,
+                                    "top_p": float,
+                                    "speed": float,
+                                    "enable_text_splitting": bool
+                                }.items()
+                                if self.session.get(key) is not None
+                            }
                             with torch.no_grad():
                                 result = tts.inference(
                                     text=default_text,
                                     language=self.session['language_iso1'],
                                     gpt_cond_latent=gpt_cond_latent,
                                     speaker_embedding=speaker_embedding,
+                                    **fine_tuned_params
                                 )
                             audio_data = result.get('wav')
                             if audio_data is not None:
                                 audio_data = audio_data.tolist()
                                 sourceTensor = self._tensor_type(audio_data)
                                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                                torchaudio.save(file_path, audio_tensor, 24000, format='wav')
+                                torchaudio.save(file_path, audio_tensor, default_xtts_settings['samplerate'], format='wav')
                                 for samplerate in [16000, 24000]:
                                     output_file = file_path.replace('.wav', f'_{samplerate}.wav')
                                     if not self._normalize_audio(file_path, output_file, samplerate):
