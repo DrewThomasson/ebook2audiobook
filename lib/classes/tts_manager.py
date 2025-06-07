@@ -24,7 +24,7 @@ class TTSManager:
 
     def convert_sentence2audio(self, sentence_number, sentence):
         try:
-            if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
+            if self.session['tts_engine'] in active_tts_engines:
                 return self.tts.convert(sentence_number, sentence)
             else:
                 print('Other TTS engines coming soon!')    

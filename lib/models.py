@@ -13,6 +13,8 @@ YOURTTS = 'yourtts'
 default_tts_engine = 'xtts'
 default_fine_tuned = 'internal'
 
+active_tts_engines = [XTTSv2, BARK, TACOTRON2, VITS, FAIRSEQ, YOURTTS]
+
 r"""
 voice_conversion_models/multilingual/vctk/freevc24
 voice_conversion_models/multilingual/multi-dataset/knnvc
