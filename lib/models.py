@@ -5,15 +5,15 @@ loaded_tts = {}
 
 XTTSv2 = 'xtts'
 BARK = 'bark'
-TACOTRON2 = 'tacotron'
 VITS = 'vits'
 FAIRSEQ = 'fairseq'
+TACOTRON2 = 'tacotron'
 YOURTTS = 'yourtts'
 
 default_tts_engine = 'xtts'
 default_fine_tuned = 'internal'
 
-active_tts_engines = [XTTSv2, BARK, TACOTRON2, VITS, FAIRSEQ, YOURTTS]
+active_tts_engines = [XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS]
 
 r"""
 voice_conversion_models/multilingual/vctk/freevc24
@@ -98,7 +98,7 @@ default_bark_settings = {
 	"rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Emotions": 4}
 }
 default_tacotron_settings = {
-    "samplerate": 24000,
+    "samplerate": 22050,
     "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
     "voices": {},
     "rating": {"GPU VRAM": 3, "CPU": 3, "RAM": 4, "Emotions": 3}
