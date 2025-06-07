@@ -10,7 +10,7 @@ class TTSManager:
         self._build()
  
     def _build(self):
-        if self.session['tts_engine'] in (XTTSv2, BARK, VITS, FAIRSEQ, YOURTTS):
+        if self.session['tts_engine'] in active_tts_engines:
             from lib.classes.tts_engines.coqui import Coqui
             self.tts = Coqui(self.session)
             if self.tts:
