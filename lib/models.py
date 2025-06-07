@@ -101,7 +101,7 @@ default_tacotron_settings = {
     "samplerate": 22050,
     "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
     "voices": {},
-    "rating": {"GPU VRAM": 3, "CPU": 3, "RAM": 4, "Emotions": 3}
+    "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Emotions": 2}
 }
 default_vits_settings = {
     "samplerate": 22050,
