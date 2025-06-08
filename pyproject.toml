@@ -49,9 +49,8 @@ dependencies = [
 	"sudachipy",
 	"sudachidict_core",
 	"torch",
-	"coqui-tts",
-	"torchvggish",
-	"transformers<=4.51.3"
+	"coqui-tts>=0.26.2",
+	"torchvggish"
 ]
 readme = "README.md"
 requires-python = ">3.9,<3.13"
