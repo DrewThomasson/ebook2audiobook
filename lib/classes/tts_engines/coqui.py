@@ -286,29 +286,14 @@ class Coqui:
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                         tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
-                            file_path = voice_path.replace('_24000.wav', '.wav')
-                            gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
-                            fine_tuned_params = {
-                                key: cast_type(self.session[key])
-                                for key, cast_type in {
-                                    "temperature": float,
-                                    "length_penalty": float,
-                                    "num_beams": int,
-                                    "repetition_penalty": float,
-                                    "top_k": int,
-                                    "top_p": float,
-                                    "speed": float,
-                                    "enable_text_splitting": bool
-                                }.items()
-                                if self.session.get(key) is not None
-                            }
+                            file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
+                            gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()                           
                             with torch.no_grad():
                                 result = tts.inference(
                                     text=default_text,
                                     language=self.session['language_iso1'],
                                     gpt_cond_latent=gpt_cond_latent,
                                     speaker_embedding=speaker_embedding,
-                                    **fine_tuned_params
                                 )
                             audio_data = result.get('wav')
                             if audio_data is not None:
@@ -376,7 +361,7 @@ class Coqui:
                             if self.session.get(key) is not None
                         }
                         with torch.no_grad():
-                            torch.manual_seed(67878789)
+                            #torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
                                 default_text,
                                 loaded_tts[tts_internal_key]['config'],
@@ -653,7 +638,7 @@ class Coqui:
                                 if self.session.get(key) is not None
                             }
                             with torch.no_grad():
-                                torch.manual_seed(67878789)
+                                #torch.manual_seed(67878789)
                                 npz = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                                 if self.npz_path is None or self.npz_path != npz:
                                     self.npz_path = npz
