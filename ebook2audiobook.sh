@@ -300,7 +300,6 @@ else
 			conda init > /dev/null 2>&1
 			source $CONDA_ENV
 			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
-			python -m pip cache purge
 			python -m pip install --upgrade pip
 			python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on < requirements.txt
 			tts_version=$(python -c "import importlib.metadata; print(importlib.metadata.version('coqui-tts'))" 2>/dev/null)
