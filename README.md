@@ -331,7 +331,7 @@ Linux/Mac:
     Headless mode:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file'
     
-Tip: to add of silence (2 seconds) into your text just use "###" or "[pause]".
+Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
 ```
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
