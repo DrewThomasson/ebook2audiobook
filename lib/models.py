@@ -98,7 +98,7 @@ default_bark_settings = {
 	"rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Emotions": 4}
 }
 default_tacotron_settings = {
-    "samplerate": 22050,
+    "samplerate": 16000,
     "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
     "voices": {},
     "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Emotions": 2}
