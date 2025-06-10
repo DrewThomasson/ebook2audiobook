@@ -134,10 +134,7 @@ class Coqui:
             else:
                 iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
                 sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
-                sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-                if sub is None:
-                    iso_dir = self.session['language']
-                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+                sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
                 if sub is not None:
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
