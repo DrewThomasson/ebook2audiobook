@@ -368,7 +368,7 @@ models = {
                 "custom/vits-female": ['bn', 'fa'],
                 "cv/vits": ['bg','cs','da','et','ga','hr','lt','lv','mt','pt','ro','sk','sl','sv'],
                 "mai/vits": ['uk'],
-                "mai_female/vits": ['pl'],
+                "mai_female/vits": ['pl', 'it'],
                 "openbible/vits": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
                 "vctk/vits": ['en'],
                 "thorsten/vits": ['de']
