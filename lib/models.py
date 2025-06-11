@@ -383,7 +383,7 @@ models = {
                 "cv/vits": default_vits_settings['samplerate'],
                 "mai/vits": default_vits_settings['samplerate'],
                 "mai_female/vits": 24000,
-                "mai_male/vits": default_vits_settings['samplerate'],
+                "mai_male/vits": 16000,
                 "openbible/vits": default_vits_settings['samplerate'],
                 "vctk/vits": default_vits_settings['samplerate'],
                 "thorsten/vits": default_vits_settings['samplerate']
