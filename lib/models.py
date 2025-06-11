@@ -369,7 +369,7 @@ models = {
                 "cv/vits": ['bg','cs','da','et','ga','hr','lt','lv','mt','pt','ro','sk','sl','sv'],
                 "mai/vits": ['uk'],
                 "mai_female/vits": ['pl'],
-                "mai_male/vits": ['ita'],
+                "mai_male/vits": ['it'],
                 "openbible/vits": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
                 "vctk/vits": ['en'],
                 "thorsten/vits": ['de']
