@@ -104,7 +104,7 @@ default_tacotron_settings = {
     "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Emotions": 2}
 }
 default_vits_settings = {
-    "samplerate": 16000,
+    "samplerate": 22050,
     "files": ['config.json', 'model_file.pth', 'language_ids.json'],
     "voices": {},
     "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Emotions": 2}
@@ -376,7 +376,18 @@ models = {
             },
             "voice": None,
             "files": default_vits_settings['files'],
-            "samplerate": default_vits_settings['samplerate']
+            "samplerate": {
+                "css10/vits": default_vits_settings['samplerate'],
+                "custom/vits": default_vits_settings['samplerate'],
+                "custom/vits-female": default_vits_settings['samplerate'],
+                "cv/vits": default_vits_settings['samplerate'],
+                "mai/vits": default_vits_settings['samplerate'],
+                "mai_female/vits": default_vits_settings['samplerate'],
+                "mai_male/vits": default_vits_settings['samplerate'],
+                "openbible/vits": default_vits_settings['samplerate'],
+                "vctk/vits": default_vits_settings['samplerate'],
+                "thorsten/vits": default_vits_settings['samplerate']
+            }
         }
     },
     FAIRSEQ: {
@@ -402,7 +413,13 @@ models = {
             },
             "voice": None,
             "files": default_tacotron_settings['files'],
-            "samplerate": default_tacotron_settings['samplerate']
+            "samplerate": {
+                "mai/tacotron2-DDC": default_tacotron_settings['samplerate'],
+                "thorsten/tacotron2-DDC": default_tacotron_settings['samplerate'],
+                "kokoro/tacotron2-DDC": default_tacotron_settings['samplerate'],
+                "ljspeech/tacotron2-DDC": default_tacotron_settings['samplerate'],
+                "baker/tacotron2-DDC-GST": default_tacotron_settings['samplerate']              
+            },
         }
     },
     YOURTTS: {

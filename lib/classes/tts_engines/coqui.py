@@ -69,6 +69,7 @@ class Coqui:
         msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
         print(msg)
         if self.session['tts_engine'] == XTTSv2:
+            self.params[XTTSv2]['sample_rate'] = models[XTTSv2][self.session['fine_tuned']]['samplerate']
             if self.session['custom_model'] is not None:
                 config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][0])
                 checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][1])
@@ -87,12 +88,13 @@ class Coqui:
                 checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][1]}", cache_dir=self.cache_dir)
                 vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
-        elif self.session['tts_engine'] == BARK:
+        elif self.session['tts_engine'] == BARK:      
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
                 return False
             else:
+                self.params[BARK]['sample_rate'] = models[BARK][self.session['fine_tuned']]['samplerate']
                 hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
@@ -100,32 +102,6 @@ class Coqui:
                 fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][2]}", cache_dir=self.cache_dir)
                 checkpoint_dir = os.path.dirname(text_model_path)
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_dir=checkpoint_dir, device=self.session['device'])
-        elif self.session['tts_engine'] == TACOTRON2:
-            if self.session['custom_model'] is not None:
-                msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                print(msg)     
-                return False
-            else:
-                iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
-                sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
-                sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-                if sub is None:
-                    iso_dir = self.session['language']
-                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-                if sub is not None:
-                    model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
-                    msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
-                    print(msg)
-                    self.tts_key = model_path
-                    tts = self._load_api(self.tts_key, model_path, self.session['device'])
-                    if self.session['voice'] is not None:
-                        msg = f"Loading vocoder {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
-                        print(msg)
-                        tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
-                else:
-                    msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
-                    print(msg)
-                    return False
         elif self.session['tts_engine'] == VITS:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
@@ -136,6 +112,7 @@ class Coqui:
                 sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
                 if sub is not None:
+                    self.params[VITS]['sample_rate'] = models[VITS][self.session['fine_tuned']]['samplerate'][sub]
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                     msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                     print(msg)
@@ -155,6 +132,7 @@ class Coqui:
                 print(msg)
                 return False
             else:
+                self.params[FAIRSEQ]['sample_rate'] = models[FAIRSEQ][self.session['fine_tuned']]['samplerate']
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
                 self.tts_key = model_path
                 tts = self._load_api(self.tts_key, model_path, self.session['device'])
@@ -162,12 +140,40 @@ class Coqui:
                     msg = f"Loading TTS {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
                     print(msg)
                     tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
+        elif self.session['tts_engine'] == TACOTRON2:
+            if self.session['custom_model'] is not None:
+                msg = f"{self.session['tts_engine']} custom model not implemented yet!"
+                print(msg)     
+                return False
+            else:
+                iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
+                sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
+                sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+                self.params[TACOTRON2]['sample_rate'] = models[TACOTRON2][self.session['fine_tuned']]['samplerate'][sub]
+                if sub is None:
+                    iso_dir = self.session['language']
+                    sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
+                if sub is not None:
+                    model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
+                    msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
+                    print(msg)
+                    self.tts_key = model_path
+                    tts = self._load_api(self.tts_key, model_path, self.session['device'])
+                    if self.session['voice'] is not None:
+                        msg = f"Loading vocoder {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
+                        print(msg)
+                        tts_vc = self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
+                else:
+                    msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
+                    print(msg)
+                    return False
         elif self.session['tts_engine'] == YOURTTS:
             if self.session['custom_model'] is not None:
                 msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                 print(msg)
                 return False
             else:
+                self.params[YOURTTS]['sample_rate'] = models[YOURTTS][self.session['fine_tuned']]['samplerate']
                 model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                 tts = self._load_api(self.tts_key, model_path, self.session['device'])
         return (loaded_tts.get(self.tts_key) or {}).get('engine', False)
@@ -539,7 +545,6 @@ class Coqui:
             audio2trim = False
             trim_audio_buffer = 0.001
             settings = self.params[self.session['tts_engine']]
-            settings['sample_rate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             final_sentence = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             if sentence.endswith('-'):
                 sentence = sentence[:-1]
