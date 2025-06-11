@@ -382,7 +382,7 @@ models = {
                 "custom/vits-female": default_vits_settings['samplerate'],
                 "cv/vits": default_vits_settings['samplerate'],
                 "mai/vits": default_vits_settings['samplerate'],
-                "mai_female/vits": default_vits_settings['samplerate'],
+                "mai_female/vits": 24000,
                 "mai_male/vits": default_vits_settings['samplerate'],
                 "openbible/vits": default_vits_settings['samplerate'],
                 "vctk/vits": default_vits_settings['samplerate'],
