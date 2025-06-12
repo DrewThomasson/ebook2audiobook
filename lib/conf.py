@@ -1,13 +1,13 @@
 import os
 import platform
 
+tmp_dir = os.path.abspath('tmp')
+tmp_expire = 7 # days
+
 models_dir = os.path.abspath('models')
 ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
-
-tmp_dir = os.path.abspath('tmp')
-tmp_expire = 7 # days
 
 os.environ['PYTHONUTF8'] = '1'
 os.environ['PYTHONIOENCODING'] = 'utf-8'
