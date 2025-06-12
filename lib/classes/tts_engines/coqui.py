@@ -186,7 +186,7 @@ class Coqui:
                 return loaded_tts[key]['engine']
             self._unload_tts(self.session['device'])
             with lock:
-                tts = coquiAPI(api_name=model_path, cache_dir=tts_dir)
+                tts = coquiAPI(model_path, cache_dir=tts_dir)
                 if tts:
                     if device == 'cuda':
                         tts.cuda()
