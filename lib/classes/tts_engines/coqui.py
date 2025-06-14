@@ -23,8 +23,6 @@ from lib.lang import language_tts
 
 torch.backends.cudnn.benchmark = True
 #torch.serialization.add_safe_globals(["numpy.core.multiarray.scalar"])
-layer = torch.nn.Linear(20, 10)
-torch.nn.utils.parametrizations.weight_norm(layer)
 
 _original_multinomial = torch.multinomial
 lock = threading.Lock()
