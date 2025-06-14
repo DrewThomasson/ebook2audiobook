@@ -1,13 +1,13 @@
 import os
 import platform
 
+tmp_dir = os.path.abspath('tmp')
+tmp_expire = 7 # days
+
 models_dir = os.path.abspath('models')
 ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
-
-tmp_dir = os.path.abspath('tmp')
-tmp_expire = 7 # days
 
 os.environ['PYTHONUTF8'] = '1'
 os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -22,6 +22,7 @@ os.environ['HF_HOME'] = tts_dir
 os.environ['HF_DATASETS_CACHE'] = tts_dir
 os.environ['TTS_CACHE'] = tts_dir
 os.environ['TORCH_HOME'] = tts_dir
+os.environ['TTS_HOME'] = models_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
 os.environ['HF_TOKEN_PATH'] = os.path.join(os.path.expanduser('~'), '.huggingface_token')
