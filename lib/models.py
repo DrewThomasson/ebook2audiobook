@@ -369,13 +369,25 @@ models = {
                 "cv/vits": ['bg','cs','da','et','ga','hr','lt','lv','mt','pt','ro','sk','sl','sv'],
                 "mai/vits": ['uk'],
                 "mai_female/vits": ['pl'],
+                "mai_male/vits": ['it'],
                 "openbible/vits": ['ewe','hau','lin','tw_akuapem','tw_asante','yor'],
                 "vctk/vits": ['en'],
                 "thorsten/vits": ['de']
             },
             "voice": None,
             "files": default_vits_settings['files'],
-            "samplerate": default_vits_settings['samplerate']
+            "samplerate": {
+                "css10/vits": default_vits_settings['samplerate'],
+                "custom/vits": default_vits_settings['samplerate'],
+                "custom/vits-female": default_vits_settings['samplerate'],
+                "cv/vits": default_vits_settings['samplerate'],
+                "mai/vits": default_vits_settings['samplerate'],
+                "mai_female/vits": 24000,
+                "mai_male/vits": 16000,
+                "openbible/vits": default_vits_settings['samplerate'],
+                "vctk/vits": default_vits_settings['samplerate'],
+                "thorsten/vits": default_vits_settings['samplerate']
+            }
         }
     },
     FAIRSEQ: {
@@ -401,7 +413,13 @@ models = {
             },
             "voice": None,
             "files": default_tacotron_settings['files'],
-            "samplerate": default_tacotron_settings['samplerate']
+            "samplerate": {
+                "mai/tacotron2-DDC": default_tacotron_settings['samplerate'],
+                "thorsten/tacotron2-DDC": default_tacotron_settings['samplerate'],
+                "kokoro/tacotron2-DDC": default_tacotron_settings['samplerate'],
+                "ljspeech/tacotron2-DDC": default_tacotron_settings['samplerate'],
+                "baker/tacotron2-DDC-GST": default_tacotron_settings['samplerate']              
+            },
         }
     },
     YOURTTS: {

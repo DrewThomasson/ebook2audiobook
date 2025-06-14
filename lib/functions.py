@@ -445,8 +445,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 2sec
-    text = re.sub(r'(\r\n|\r|\n)+', '‡pause‡', text)
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
+    text = re.sub(r'(\r\n|\r|\n){2,}', '‡pause‡', text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'[\r\n]', ' ', text)
     # Replace multiple  and spaces with single space
