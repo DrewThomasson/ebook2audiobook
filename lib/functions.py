@@ -669,7 +669,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
 
         text_array = []
         handled_tables = set()
-        print(soup)
         for tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]):
             if tag.name == "table":
                 # Ensure we don't process the same table multiple times
@@ -690,6 +689,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                         text_array.append(line)
             elif tag.name == "p" and tag.find_parent("table"):
                 continue  # Already handled in the <table> section
+            elif tag.name == "p" and "whitespace" in (tag.get("class") or []):
+                if tag.get_text(strip=True) == '\xa0' or not tag.get_text(strip=True):
+                    text_array.append("[pause]")
             elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
