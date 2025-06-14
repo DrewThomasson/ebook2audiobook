@@ -27,7 +27,7 @@ torch.backends.cudnn.benchmark = True
 _original_multinomial = torch.multinomial
 
 def _safe_multinomial(input, num_samples, replacement=False, *, generator=None, out=None):
-	#with torch.no_grad():
+    #with torch.no_grad():
     input = torch.nan_to_num(input, nan=0.0, posinf=0.0, neginf=0.0)
     input = torch.clamp(input, min=0.0)
     sum_input = input.sum(dim=-1, keepdim=True)
@@ -37,7 +37,7 @@ def _safe_multinomial(input, num_samples, replacement=False, *, generator=None, 
         input[mask.expand_as(input)] = 1.0  # fallback to uniform distribution
         sum_input = input.sum(dim=-1, keepdim=True)
     input = input / sum_input
-	return _original_multinomial(input, num_samples, replacement=replacement, generator=generator, out=out)
+    return _original_multinomial(input, num_samples, replacement=replacement, generator=generator, out=out)
 
 torch.multinomial = _safe_multinomial
 
