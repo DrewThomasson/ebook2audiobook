@@ -694,10 +694,15 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                 if raw_text:
                     # replace roman numbers by digits
                     raw_text = replace_roman_numbers(raw_text, lang)
-                    text_array.append(f'— "{raw_text}". ‡pause‡')
+                    text_array.append(f'{raw_text}.[pause]')
             else:
-                raw_text = tag.get_text(strip=True)
+                raw_text = tag.get_text(strip=False)
                 if raw_text:
+                    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
+                    pattern = r'(?:\r\n|\r|\n){2,}'
+                    raw_text = re.sub(pattern, '‡pause‡', raw_text)
+                    # Replace single newlines ("\n" or "\r") with spaces
+                    raw_text = re.sub(r'\r\n|\r|\n', ' ', raw_text)
                     text_array.append(raw_text)
         text = "\n".join(text_array)
         if text.strip():
