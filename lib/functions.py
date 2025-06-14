@@ -669,6 +669,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
 
         text_array = []
         handled_tables = set()
+        print(soup)
         for tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]):
             if tag.name == "table":
                 # Ensure we don't process the same table multiple times
@@ -696,13 +697,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                     raw_text = replace_roman_numbers(raw_text, lang)
                     text_array.append(f'{raw_text}.[pause]')
             else:
-                raw_text = tag.get_text(strip=False)
+                raw_text = tag.get_text(strip=True)
                 if raw_text:
-                    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
-                    pattern = r'(?:\r\n|\r|\n){2,}'
-                    raw_text = re.sub(pattern, '‡pause‡', raw_text)
-                    # Replace single newlines ("\n" or "\r") with spaces
-                    raw_text = re.sub(r'\r\n|\r|\n', ' ', raw_text)
                     text_array.append(raw_text)
         text = "\n".join(text_array)
         if text.strip():
