@@ -440,15 +440,16 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Replace ### and [pause] with ‡pause‡ (‡ = double dagger U+2021)
     text = re.sub(r'(###|\[pause\])', '‡pause‡', text)
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
+    pattern = r'(?:\r\n|\r|\n){2,}'
+    text = re.sub(pattern, '‡pause‡', text)
+    # Replace single newlines ("\n" or "\r") with spaces
+    text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
-    text = re.sub(r'(\r\n|\r|\n){2,}', '‡pause‡', text)
-    # Replace single newlines ("\n" or "\r") with spaces
-    text = re.sub(r'[\r\n]', ' ', text)
     # Replace multiple  and spaces with single space
     text = re.sub(r'[     ]+', ' ', text)
     # Replace ok by 'Owkey'
@@ -688,12 +689,15 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                         text_array.append(line)
             elif tag.name == "p" and tag.find_parent("table"):
                 continue  # Already handled in the <table> section
+            elif tag.name == "p" and "whitespace" in (tag.get("class") or []):
+                if tag.get_text(strip=True) == '\xa0' or not tag.get_text(strip=True):
+                    text_array.append("[pause]")
             elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
                     # replace roman numbers by digits
                     raw_text = replace_roman_numbers(raw_text, lang)
-                    text_array.append(f'— "{raw_text}". ‡pause‡')
+                    text_array.append(f'{raw_text}.[pause]')
             else:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:

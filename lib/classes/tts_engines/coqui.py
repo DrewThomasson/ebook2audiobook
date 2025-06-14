@@ -25,6 +25,8 @@ torch.backends.cudnn.benchmark = True
 #torch.serialization.add_safe_globals(["numpy.core.multiarray.scalar"])
 
 _original_multinomial = torch.multinomial
+lock = threading.Lock()
+xtts_builtin_speakers_list = None
 
 def _safe_multinomial(input, num_samples, replacement=False, *, generator=None, out=None):
     #with torch.no_grad():
@@ -40,9 +42,6 @@ def _safe_multinomial(input, num_samples, replacement=False, *, generator=None, 
     return _original_multinomial(input, num_samples, replacement=replacement, generator=generator, out=out)
 
 torch.multinomial = _safe_multinomial
-
-lock = threading.Lock()
-xtts_builtin_speakers_list = None
 
 class Coqui:
     def __init__(self, session):   
