@@ -156,6 +156,14 @@ jobs:
         test:
           - name: "Help command test"
             command: "--help"
+          - name: "English Tacotron headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine tacotron'
+          - name: "English Tacotron headless batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine tacotron'
+          - name: "English Tacotron Custom-Voice headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine tacotron --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English Tacotron Custom-Voice headless batch test"
+            command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine tacotron --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
           - name: "English Fairseq headless single test"
             command: "--headless --script_mode full_docker --language eng --ebook \"tools/workflow-testing/test1.txt\" --tts_engine fairseq"
           - name: "English Fairseq headless batch test"
