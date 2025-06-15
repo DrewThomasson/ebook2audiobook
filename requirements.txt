@@ -14,7 +14,7 @@ jieba
 mecab
 mecab-python3
 pythainlp
-soynlp
+python-mecab-ko
 m4b-util
 nvidia-ml-py
 pydub

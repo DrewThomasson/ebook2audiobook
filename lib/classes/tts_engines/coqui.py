@@ -244,7 +244,7 @@ class Coqui:
                     config = BarkConfig()
                     config.CACHE_DIR = self.cache_dir
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    tts = Bark(config)
+                    tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
@@ -337,7 +337,7 @@ class Coqui:
                                 error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
                                 print(error)
                         else:
-                            error = f"_check_xtts_builtin_speakers() error: {XTTSv2} is None"
+                            error = f"_check_xtts_builtin_speakers() error: {XTTSv2} is False"
                             print(error)
                     else:
                         error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
@@ -402,7 +402,7 @@ class Coqui:
                         print(msg)
                         return True
                     else:
-                        error = f'_check_bark_npz() error: {tts_internal_key} is None'
+                        error = f'_check_bark_npz() error: {tts_internal_key} is False'
                         print(error)
             else:
                 return True
