@@ -13,8 +13,8 @@ iso-639
 jieba 
 mecab
 mecab-python3
-konlpy
 pythainlp
+soynlp
 m4b-util
 nvidia-ml-py
 pydub
