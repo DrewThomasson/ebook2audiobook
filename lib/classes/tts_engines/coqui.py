@@ -327,7 +327,7 @@ class Coqui:
                                 del audio_data, sourceTensor, audio_tensor  
                                 if self.session['tts_engine'] != XTTSv2:
                                     del tts
-                                    self._unload_tts(device, XTTSv2)
+                                    self._unload_tts(device, tts_internal_key)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
                                     return new_voice_path
