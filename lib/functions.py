@@ -739,9 +739,9 @@ def get_sentences(text, lang, tts_engine):
             mode = tokenizer.Tokenizer.SplitMode.C
             return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'kor':
-            import mecab
-            tagger = mecab.MeCab()
-            return tagger.morphs(text)
+            from soynlp.tokenizer import LTokenizer
+            ltokenizer = LTokenizer()
+            return ltokenizer.tokenize(text)
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')

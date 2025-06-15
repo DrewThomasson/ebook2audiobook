@@ -10,9 +10,8 @@ gradio
 hangul-romanize
 indic-nlp-library
 iso-639
-jieba 
-mecab
-python-mecab-ko
+jieba
+soynlp
 pythainlp
 m4b-util
 nvidia-ml-py
@@ -23,7 +22,6 @@ ray
 regex
 translate
 tqdm
-suno-bark
 unidic
 pymupdf4llm
 sudachipy
