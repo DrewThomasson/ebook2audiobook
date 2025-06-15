@@ -64,10 +64,10 @@ class Coqui:
         if xtts_builtin_speakers_list is None:
             self.speakers_path = hf_hub_download(repo_id=models[XTTSv2]['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
             xtts_builtin_speakers_list = torch.load(self.speakers_path)
-        msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
-        print(msg)
         if self.session['tts_engine'] == XTTSv2:
             self.params[XTTSv2]['sample_rate'] = models[XTTSv2][self.session['fine_tuned']]['samplerate']
+            msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
+            print(msg)
             if self.session['custom_model'] is not None:
                 config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][0])
                 checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][1])
