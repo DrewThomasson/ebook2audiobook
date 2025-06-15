@@ -8,6 +8,7 @@
 import argparse
 import asyncio
 import csv
+import jieba
 import ebooklib
 import fnmatch
 import gc
@@ -41,6 +42,8 @@ import lib.lang as lang
 import lib.models as mod
 
 from soynlp.tokenizer import LTokenizer
+from pythainlp.tokenize import word_tokenize
+from sudachipy import dictionary, tokenizer
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -732,10 +735,8 @@ def get_sentences(text, lang, tts_engine):
 
     def segment_ideogramms(text):
         if lang == 'zho':
-            import jieba
             return list(jieba.cut(text))
         elif lang == 'jpn':
-            from sudachipy import dictionary, tokenizer
             sudachi = dictionary.Dictionary().create()
             mode = tokenizer.Tokenizer.SplitMode.C
             return [m.surface() for m in sudachi.tokenize(text, mode)]
@@ -743,7 +744,6 @@ def get_sentences(text, lang, tts_engine):
             ltokenizer = LTokenizer()
             return ltokenizer.tokenize(text)
         elif lang in ['tha', 'lao', 'mya', 'khm']:
-            from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
         else:
             pattern_split = [re.escape(p) for p in punctuation_split_set]
