@@ -40,6 +40,7 @@ import lib.conf as conf
 import lib.lang as lang
 import lib.models as mod
 
+from soynlp.tokenizer import LTokenizer
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -739,7 +740,6 @@ def get_sentences(text, lang, tts_engine):
             mode = tokenizer.Tokenizer.SplitMode.C
             return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'kor':
-            from soynlp.tokenizer import LTokenizer
             ltokenizer = LTokenizer()
             return ltokenizer.tokenize(text)
         elif lang in ['tha', 'lao', 'mya', 'khm']:
