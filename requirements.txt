@@ -15,6 +15,7 @@ soynlp
 pythainlp
 m4b-util
 nvidia-ml-py
+phonemizer-fork
 pydub
 PyOpenGL
 pypinyin
