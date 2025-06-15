@@ -182,7 +182,7 @@ class Coqui:
         try:
             if key in loaded_tts.keys():
                 return loaded_tts[key]['engine']
-            self._unload_tts(self.session['device'])
+            #self._unload_tts(self.session['device'])
             with lock:
                 tts = coquiAPI(model_path)
                 if tts:
@@ -218,7 +218,7 @@ class Coqui:
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
             device = kwargs.get('device')
-            self._unload_tts(device)
+            #self._unload_tts(device)
             with lock:
                 if tts_engine == XTTSv2:
                     from TTS.tts.configs.xtts_config import XttsConfig
@@ -327,7 +327,7 @@ class Coqui:
                                 del audio_data, sourceTensor, audio_tensor  
                                 if self.session['tts_engine'] != XTTSv2:
                                     del tts
-                                    self._unload_tts(device, tts_internal_key)
+                                    #self._unload_tts(device, tts_internal_key)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
                                     return new_voice_path
@@ -393,7 +393,7 @@ class Coqui:
                         del audio_data
                         if self.session['tts_engine'] != BARK:
                             del tts
-                            self._unload_tts(device, tts_internal_key)
+                            #self._unload_tts(device, tts_internal_key)
                         msg = f"Saved NPZ file: {npz_file}"
                         print(msg)
                         return True
