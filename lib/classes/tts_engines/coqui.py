@@ -282,10 +282,12 @@ class Coqui:
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         hf_repo = models[XTTSv2]['internal']['repo']
                         hf_sub = ''
-                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
-                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
-                        tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
+                        tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
+                        if not tts:
+                            config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                            checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
+                            vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                            tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
                             file_path = new_voice_path.replace('_24000.wav', '.wav')
                             if speaker in default_xtts_settings['voices'].keys():
@@ -361,11 +363,13 @@ class Coqui:
                     tts_internal_key = f"{BARK}-internal"
                     hf_repo = models[BARK]['internal']['repo']
                     hf_sub =models[BARK]['internal']['sub']
-                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][1]}", cache_dir=self.cache_dir)
-                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][2]}", cache_dir=self.cache_dir)
-                    checkpoint_dir = os.path.dirname(text_model_path)
-                    tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, device=device)
+                    tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
+                    if not tts:
+                        text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                        coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][1]}", cache_dir=self.cache_dir)
+                        fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                        checkpoint_dir = os.path.dirname(text_model_path)
+                        tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, device=device)
                     if tts:
                         voice_temp = os.path.splitext(npz_file)[0]+'.wav'
                         shutil.copy(voice_path, voice_temp)
