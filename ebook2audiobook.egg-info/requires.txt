@@ -12,9 +12,8 @@ indic-nlp-library
 iso-639
 jieba 
 mecab
-mecab-python3
+python-mecab-ko
 pythainlp
-soynlp
 m4b-util
 nvidia-ml-py
 pydub
