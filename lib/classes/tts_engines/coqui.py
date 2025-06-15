@@ -271,9 +271,9 @@ class Coqui:
         try:
             voice_parts = Path(voice_path).parts
             if self.session['language'] not in voice_parts:               
-                if speaker in default_xtts_settings['voices'].keys() and self.session['language'] in language_tts[XTTSv2].keys():
+                if self.session['language'] in language_tts[XTTSv2].keys():
                     lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
-                    voice_path = voice_path.replace('/eng/',f'/{lang_dir}/').replace('\\eng\\',f'\\{lang_dir}\\')
+                    new_voice_path = voice_path.replace('/eng/',f'/{lang_dir}/').replace('\\eng\\',f'\\{lang_dir}\\')
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     if os.path.exists(default_text_file):
                         msg = f"Converting builtin eng voice to {self.session['language']}..."
@@ -287,8 +287,11 @@ class Coqui:
                         vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
                         tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
-                            file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
-                            gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()                           
+                            file_path = new_voice_path.replace('_24000.wav', '.wav')
+                            if speaker in default_xtts_settings['voices'].keys():
+                                gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
+                            else:
+                                gpt_cond_latent, speaker_embedding = tts.get_conditioning_latents(audio_path=[voice_path])
                             fine_tuned_params = {
                                 key: cast_type(self.session[key])
                                 for key, cast_type in {
@@ -327,7 +330,7 @@ class Coqui:
                                     self._unload_tts(device, XTTSv2)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
-                                    return voice_path
+                                    return new_voice_path
                             else:
                                 error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
                                 print(error)
