@@ -29,7 +29,6 @@ lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
 def _safe_multinomial(input, num_samples, replacement=False, *, generator=None, out=None):
-    #with torch.no_grad():
     input = torch.nan_to_num(input, nan=0.0, posinf=0.0, neginf=0.0)
     input = torch.clamp(input, min=0.0)
     sum_input = input.sum(dim=-1, keepdim=True)
@@ -65,10 +64,10 @@ class Coqui:
         if xtts_builtin_speakers_list is None:
             self.speakers_path = hf_hub_download(repo_id=models[XTTSv2]['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
             xtts_builtin_speakers_list = torch.load(self.speakers_path)
-        msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
-        print(msg)
         if self.session['tts_engine'] == XTTSv2:
             self.params[XTTSv2]['sample_rate'] = models[XTTSv2][self.session['fine_tuned']]['samplerate']
+            msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
+            print(msg)
             if self.session['custom_model'] is not None:
                 config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][0])
                 checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][1])
@@ -245,7 +244,7 @@ class Coqui:
                     config = BarkConfig()
                     config.CACHE_DIR = self.cache_dir
                     config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS', '').lower() == 'true'
-                    tts = Bark(config)
+                    tts = Bark.init_from_config(config)
                     tts.load_checkpoint(
                         config,
                         checkpoint_dir=checkpoint_dir,
@@ -272,9 +271,9 @@ class Coqui:
         try:
             voice_parts = Path(voice_path).parts
             if self.session['language'] not in voice_parts:               
-                if speaker in default_xtts_settings['voices'].keys() and self.session['language'] in language_tts[XTTSv2].keys():
+                if self.session['language'] in language_tts[XTTSv2].keys():
                     lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
-                    voice_path = voice_path.replace('/eng/',f'/{lang_dir}/').replace('\\eng\\',f'\\{lang_dir}\\')
+                    new_voice_path = voice_path.replace('/eng/',f'/{lang_dir}/').replace('\\eng\\',f'\\{lang_dir}\\')
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     if os.path.exists(default_text_file):
                         msg = f"Converting builtin eng voice to {self.session['language']}..."
@@ -283,20 +282,40 @@ class Coqui:
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         hf_repo = models[XTTSv2]['internal']['repo']
                         hf_sub = ''
-                        config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                        checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
-                        vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
-                        tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
+                        tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
+                        if not tts:
+                            config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                            checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][1]}", cache_dir=self.cache_dir)
+                            vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[XTTSv2]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                            tts = self._load_checkpoint(tts_engine=XTTSv2, key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
-                            file_path = voice_path.replace('_24000.wav', '.wav').replace('/eng/', f'/{lang_dir}/').replace('\\eng\\', f'\\{lang_dir}\\')
-                            gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()                           
-                            #with torch.no_grad():
-                            result = tts.inference(
-                                text=default_text,
-                                language=self.session['language_iso1'],
-                                gpt_cond_latent=gpt_cond_latent,
-                                speaker_embedding=speaker_embedding,
-                            )
+                            file_path = new_voice_path.replace('_24000.wav', '.wav')
+                            if speaker in default_xtts_settings['voices'].keys():
+                                gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
+                            else:
+                                gpt_cond_latent, speaker_embedding = tts.get_conditioning_latents(audio_path=[voice_path])
+                            fine_tuned_params = {
+                                key: cast_type(self.session[key])
+                                for key, cast_type in {
+                                    "temperature": float,
+                                    "length_penalty": float,
+                                    "num_beams": int,
+                                    "repetition_penalty": float,
+                                    "top_k": int,
+                                    "top_p": float,
+                                    "speed": float,
+                                    "enable_text_splitting": bool
+                                }.items()
+                                if self.session.get(key) is not None
+                            }
+                            with torch.no_grad():
+                                result = tts.inference(
+                                    text=default_text,
+                                    language=self.session['language_iso1'],
+                                    gpt_cond_latent=gpt_cond_latent,
+                                    speaker_embedding=speaker_embedding,
+                                    **fine_tuned_params
+                                )
                             audio_data = result.get('wav')
                             if audio_data is not None:
                                 audio_data = audio_data.tolist()
@@ -310,15 +329,15 @@ class Coqui:
                                 del audio_data, sourceTensor, audio_tensor  
                                 if self.session['tts_engine'] != XTTSv2:
                                     del tts
-                                    self._unload_tts(device, XTTSv2)
+                                    self._unload_tts(device, tts_internal_key)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
-                                    return voice_path
+                                    return new_voice_path
                             else:
                                 error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
                                 print(error)
                         else:
-                            error = f"_check_xtts_builtin_speakers() error: {XTTSv2} is None"
+                            error = f"_check_xtts_builtin_speakers() error: {XTTSv2} is False"
                             print(error)
                     else:
                         error = f'The translated {default_text_file} could not be found! Voice cloning file will stay in English.'
@@ -344,11 +363,13 @@ class Coqui:
                     tts_internal_key = f"{BARK}-internal"
                     hf_repo = models[BARK]['internal']['repo']
                     hf_sub =models[BARK]['internal']['sub']
-                    text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][0]}", cache_dir=self.cache_dir)
-                    coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][1]}", cache_dir=self.cache_dir)
-                    fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][2]}", cache_dir=self.cache_dir)
-                    checkpoint_dir = os.path.dirname(text_model_path)
-                    tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, device=device)
+                    tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
+                    if not tts:
+                        text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                        coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][1]}", cache_dir=self.cache_dir)
+                        fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[BARK]['internal']['files'][2]}", cache_dir=self.cache_dir)
+                        checkpoint_dir = os.path.dirname(text_model_path)
+                        tts = self._load_checkpoint(tts_engine=BARK, key=tts_internal_key, checkpoint_dir=checkpoint_dir, device=device)
                     if tts:
                         voice_temp = os.path.splitext(npz_file)[0]+'.wav'
                         shutil.copy(voice_path, voice_temp)
@@ -362,16 +383,16 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        #with torch.no_grad():
-                        torch.manual_seed(67878789)
-                        audio_data = tts.synthesize(
-                            default_text,
-                            loaded_tts[tts_internal_key]['config'],
-                            speaker_id=speaker,
-                            voice_dirs=bark_dir,
-                            silent=True,
-                            **fine_tuned_params
-                        )
+                        with torch.no_grad():
+                            torch.manual_seed(67878789)
+                            audio_data = tts.synthesize(
+                                default_text,
+                                loaded_tts[tts_internal_key]['config'],
+                                speaker_id=speaker,
+                                voice_dirs=bark_dir,
+                                silent=True,
+                                **fine_tuned_params
+                            )
                         os.remove(voice_temp)
                         del audio_data
                         if self.session['tts_engine'] != BARK:
@@ -381,7 +402,7 @@ class Coqui:
                         print(msg)
                         return True
                     else:
-                        error = f'_check_bark_npz() error: {tts_internal_key} is None'
+                        error = f'_check_bark_npz() error: {tts_internal_key} is False'
                         print(error)
             else:
                 return True
@@ -601,14 +622,14 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        #ith torch.no_grad():
-                        result = tts.inference(
-                            text=text_part,
-                            language=self.session['language_iso1'],
-                            gpt_cond_latent=settings['gpt_cond_latent'],
-                            speaker_embedding=settings['speaker_embedding'],
-                            **fine_tuned_params
-                        )
+                        with torch.no_grad():
+                            result = tts.inference(
+                                text=text_part,
+                                language=self.session['language_iso1'],
+                                gpt_cond_latent=settings['gpt_cond_latent'],
+                                speaker_embedding=settings['speaker_embedding'],
+                                **fine_tuned_params
+                            )
                         audio_part = result.get('wav')
                         if self._is_valid(audio_part):
                             audio_part = audio_part.tolist()
@@ -627,9 +648,7 @@ class Coqui:
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
                         bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')                       
-                        if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):      
-                            # text_temp: generation temperature (1.0 more diverse, 0.0 more conservative)
-                            # waveform_temp: generation temperature (1.0 more diverse, 0.0 more conservative)                            
+                        if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):                                 
                             fine_tuned_params = {
                                 key: cast_type(self.session[key])
                                 for key, cast_type in {
@@ -638,8 +657,6 @@ class Coqui:
                                 }.items()
                                 if self.session.get(key) is not None
                             }
-                            #with torch.no_grad():
-                            torch.manual_seed(67878789)
                             npz = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                             if self.npz_path is None or self.npz_path != npz:
                                 self.npz_path = npz
@@ -649,82 +666,20 @@ class Coqui:
                                     self.npz_data["coarse_prompt"],
                                     self.npz_data["fine_prompt"]
                             ]
-                            audio_part, _ = tts.generate_audio(
-                                text_part,
-                                history_prompt=history_prompt,
-                                silent=True,
-                                **fine_tuned_params
-                            )                                
+                            with torch.no_grad():
+                                torch.manual_seed(67878789)
+                                audio_part, _ = tts.generate_audio(
+                                    text_part,
+                                    history_prompt=history_prompt,
+                                    silent=True,
+                                    **fine_tuned_params
+                                )                                
                             if self._is_valid(audio_part):
                                 audio_part = audio_part.tolist()
                         else:
                             error = 'Could not create npz file!'
                             print(error)
                             return False
-                    elif self.session['tts_engine'] == TACOTRON2:
-                        speaker_argument = {}
-                        if settings['voice_path'] is not None:
-                            proc_dir = os.path.join(self.session['voice_dir'], 'proc')
-                            os.makedirs(proc_dir, exist_ok=True)
-                            tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            tts.tts_to_file(
-                                text=text_part,
-                                file_path=tmp_in_wav,
-                                **speaker_argument
-                            )
-                            if settings['voice_path'] in settings['semitones'].keys():
-                                semitones = settings['semitones'][settings['voice_path']]
-                            else:
-                                voice_path_gender = self._detect_gender(settings['voice_path'])
-                                voice_builtin_gender = self._detect_gender(tmp_in_wav)
-                                msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
-                                print(msg)
-                                if voice_builtin_gender != voice_path_gender:
-                                    semitones = -4 if voice_path_gender == 'male' else 4
-                                    msg = f"Adapting builtin voice frequencies from the clone voice..."
-                                    print(msg)
-                                else:
-                                    semitones = 0
-                                settings['semitones'][settings['voice_path']] = semitones
-                            if semitones > 0:
-                                try:
-                                    cmd = [
-                                        shutil.which('sox'), tmp_in_wav,
-                                        "-r", str(settings['sample_rate']), tmp_out_wav,
-                                        "pitch", str(semitones * 100)
-                                    ]
-                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                except subprocess.CalledProcessError as e:
-                                    print(f"Subprocess error: {e.stderr}")
-                                    DependencyError(e)
-                                    return False
-                                except FileNotFoundError as e:
-                                    print(f"File not found: {e}")
-                                    DependencyError(e)
-                                    return False
-                            else:
-                                tmp_out_wav = tmp_in_wav
-                            #with torch.no_grad():
-                            if tts_vc:
-                                audio_part = tts_vc.voice_conversion(
-                                    source_wav=tmp_out_wav,
-                                    target_wav=settings['voice_path']
-                                )
-                            else:
-                                error = f'Engine {self.tts_vc_key} is None'
-                                print(error)
-                                return False
-                            settings['sample_rate'] = 16000
-                            if os.path.exists(tmp_in_wav):
-                                os.remove(tmp_in_wav)
-                            if os.path.exists(tmp_out_wav):
-                                os.remove(tmp_out_wav)
-                        else:
-                            audio_part = tts.tts(
-                                text=text_part,
-                                **speaker_argument
-                            )
                     elif self.session['tts_engine'] == VITS:
                         speaker_argument = {}
                         if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
@@ -775,7 +730,6 @@ class Coqui:
                                     return False
                             else:
                                 tmp_out_wav = tmp_in_wav
-                            #with torch.no_grad():
                             if tts_vc:
                                 audio_part = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
@@ -838,7 +792,6 @@ class Coqui:
                                     return False
                             else:
                                 tmp_out_wav = tmp_in_wav
-                            #with torch.no_grad():
                             if tts_vc:
                                 audio_part = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
@@ -856,6 +809,69 @@ class Coqui:
                             audio_part = tts.tts(
                                 text=text_part
                             )
+                    elif self.session['tts_engine'] == TACOTRON2:
+                        speaker_argument = {}
+                        if settings['voice_path'] is not None:
+                            proc_dir = os.path.join(self.session['voice_dir'], 'proc')
+                            os.makedirs(proc_dir, exist_ok=True)
+                            tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
+                            tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
+                            tts.tts_to_file(
+                                text=text_part,
+                                file_path=tmp_in_wav,
+                                **speaker_argument
+                            )
+                            if settings['voice_path'] in settings['semitones'].keys():
+                                semitones = settings['semitones'][settings['voice_path']]
+                            else:
+                                voice_path_gender = self._detect_gender(settings['voice_path'])
+                                voice_builtin_gender = self._detect_gender(tmp_in_wav)
+                                msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
+                                print(msg)
+                                if voice_builtin_gender != voice_path_gender:
+                                    semitones = -4 if voice_path_gender == 'male' else 4
+                                    msg = f"Adapting builtin voice frequencies from the clone voice..."
+                                    print(msg)
+                                else:
+                                    semitones = 0
+                                settings['semitones'][settings['voice_path']] = semitones
+                            if semitones > 0:
+                                try:
+                                    cmd = [
+                                        shutil.which('sox'), tmp_in_wav,
+                                        "-r", str(settings['sample_rate']), tmp_out_wav,
+                                        "pitch", str(semitones * 100)
+                                    ]
+                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                except subprocess.CalledProcessError as e:
+                                    print(f"Subprocess error: {e.stderr}")
+                                    DependencyError(e)
+                                    return False
+                                except FileNotFoundError as e:
+                                    print(f"File not found: {e}")
+                                    DependencyError(e)
+                                    return False
+                            else:
+                                tmp_out_wav = tmp_in_wav
+                            if tts_vc:
+                                audio_part = tts_vc.voice_conversion(
+                                    source_wav=tmp_out_wav,
+                                    target_wav=settings['voice_path']
+                                )
+                            else:
+                                error = f'Engine {self.tts_vc_key} is None'
+                                print(error)
+                                return False
+                            settings['sample_rate'] = 16000
+                            if os.path.exists(tmp_in_wav):
+                                os.remove(tmp_in_wav)
+                            if os.path.exists(tmp_out_wav):
+                                os.remove(tmp_out_wav)
+                        else:
+                            audio_part = tts.tts(
+                                text=text_part,
+                                **speaker_argument
+                            )
                     elif self.session['tts_engine'] == YOURTTS:
                         trim_audio_buffer = 0.005
                         speaker_argument = {}
@@ -866,12 +882,12 @@ class Coqui:
                         else:
                             voice_key = default_yourtts_settings['voices']['ElectroMale-2']
                             speaker_argument = {"speaker": voice_key}
-                        #with torch.no_grad():
-                        audio_part = tts.tts(
-                            text=text_part,
-                            language=language,
-                            **speaker_argument
-                        )
+                        with torch.no_grad():
+                            audio_part = tts.tts(
+                                text=text_part,
+                                language=language,
+                                **speaker_argument
+                            )
                     if self._is_valid(audio_part):
                         sourceTensor = self._tensor_type(audio_part)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
