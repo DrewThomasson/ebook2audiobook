@@ -856,12 +856,12 @@ def get_sentences(text, lang, tts_engine):
             tmp_list.append(raw_list[-1])
     else:
         tmp_list = raw_list
-    print(tmp_list)
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
+    print(sentences)
     return sentences
 
 def get_ram():
