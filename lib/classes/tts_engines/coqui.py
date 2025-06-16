@@ -557,6 +557,22 @@ class Coqui:
             pass
         return False
 
+    def force_string(self, text):rpheme,
+        if isinstance(text, str):
+            return text
+        if hasattr(text, '__iter__') and not isinstance(text, str):
+            try:
+                return ''.join(
+                    m.surface() if hasattr(m, "surface") and callable(m.surface) else str(m)
+                    for m in text
+                )
+            except Exception:
+                try:
+                    return ''.join(str(m) for m in text)
+                except Exception:
+                    return str(text)
+        return str(text)
+
     def convert(self, sentence_number, sentence):
         global xtts_builtin_speakers_list
         try:
@@ -565,6 +581,7 @@ class Coqui:
             audio2trim = False
             trim_audio_buffer = 0.001
             settings = self.params[self.session['tts_engine']]
+            sentence = force_string(sentence)
             final_sentence = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             if sentence.endswith('-'):
                 sentence = sentence[:-1]
@@ -816,10 +833,6 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            if self.session['language'] == 'jpn':
-                                text_part = ''.join(m.surface() for m in text_part)
-                            else:
-                                text_part = str(text_part)
                             tts.tts_to_file(
                                 text=text_part,
                                 file_path=tmp_in_wav,
