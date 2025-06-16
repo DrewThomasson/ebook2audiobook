@@ -560,7 +560,6 @@ class Coqui:
     def convert(self, sentence_number, sentence):
         global xtts_builtin_speakers_list
         try:
-            print(sentence)
             speaker = None
             audio_data = False
             audio2trim = False
@@ -591,6 +590,7 @@ class Coqui:
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
             if tts:
+                print(sentence_parts)
                 for text_part in sentence_parts:
                     text_part = text_part.strip()
                     if not text_part:
