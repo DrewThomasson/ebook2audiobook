@@ -712,6 +712,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
             text = normalize_text(text, lang, lang_iso1, tts_engine)
             if text.strip() and len(text.strip()) > 1:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
+        print(chapter_sentences)
         return chapter_sentences
     except Exception as e:
         DependencyError(e)
@@ -861,7 +862,6 @@ def get_sentences(text, lang, tts_engine):
     sentences = []
     for sentence in tmp_list:
         sentences.extend(split_sentence(sentence.strip()))
-    print(sentences)
     return sentences
 
 def get_ram():
