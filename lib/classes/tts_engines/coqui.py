@@ -680,69 +680,6 @@ class Coqui:
                             error = 'Could not create npz file!'
                             print(error)
                             return False
-                    elif self.session['tts_engine'] == TACOTRON2:
-                        speaker_argument = {}
-                        if settings['voice_path'] is not None:
-                            proc_dir = os.path.join(self.session['voice_dir'], 'proc')
-                            os.makedirs(proc_dir, exist_ok=True)
-                            tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            tts.tts_to_file(
-                                text=text_part,
-                                file_path=tmp_in_wav,
-                                **speaker_argument
-                            )
-                            if settings['voice_path'] in settings['semitones'].keys():
-                                semitones = settings['semitones'][settings['voice_path']]
-                            else:
-                                voice_path_gender = self._detect_gender(settings['voice_path'])
-                                voice_builtin_gender = self._detect_gender(tmp_in_wav)
-                                msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
-                                print(msg)
-                                if voice_builtin_gender != voice_path_gender:
-                                    semitones = -4 if voice_path_gender == 'male' else 4
-                                    msg = f"Adapting builtin voice frequencies from the clone voice..."
-                                    print(msg)
-                                else:
-                                    semitones = 0
-                                settings['semitones'][settings['voice_path']] = semitones
-                            if semitones > 0:
-                                try:
-                                    cmd = [
-                                        shutil.which('sox'), tmp_in_wav,
-                                        "-r", str(settings['sample_rate']), tmp_out_wav,
-                                        "pitch", str(semitones * 100)
-                                    ]
-                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                                except subprocess.CalledProcessError as e:
-                                    print(f"Subprocess error: {e.stderr}")
-                                    DependencyError(e)
-                                    return False
-                                except FileNotFoundError as e:
-                                    print(f"File not found: {e}")
-                                    DependencyError(e)
-                                    return False
-                            else:
-                                tmp_out_wav = tmp_in_wav
-                            if tts_vc:
-                                audio_part = tts_vc.voice_conversion(
-                                    source_wav=tmp_out_wav,
-                                    target_wav=settings['voice_path']
-                                )
-                            else:
-                                error = f'Engine {self.tts_vc_key} is None'
-                                print(error)
-                                return False
-                            settings['sample_rate'] = 16000
-                            if os.path.exists(tmp_in_wav):
-                                os.remove(tmp_in_wav)
-                            if os.path.exists(tmp_out_wav):
-                                os.remove(tmp_out_wav)
-                        else:
-                            audio_part = tts.tts(
-                                text=text_part,
-                                **speaker_argument
-                            )
                     elif self.session['tts_engine'] == VITS:
                         speaker_argument = {}
                         if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
@@ -871,6 +808,69 @@ class Coqui:
                         else:
                             audio_part = tts.tts(
                                 text=text_part
+                            )
+                    elif self.session['tts_engine'] == TACOTRON2:
+                        speaker_argument = {}
+                        if settings['voice_path'] is not None:
+                            proc_dir = os.path.join(self.session['voice_dir'], 'proc')
+                            os.makedirs(proc_dir, exist_ok=True)
+                            tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
+                            tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
+                            tts.tts_to_file(
+                                text=text_part,
+                                file_path=tmp_in_wav,
+                                **speaker_argument
+                            )
+                            if settings['voice_path'] in settings['semitones'].keys():
+                                semitones = settings['semitones'][settings['voice_path']]
+                            else:
+                                voice_path_gender = self._detect_gender(settings['voice_path'])
+                                voice_builtin_gender = self._detect_gender(tmp_in_wav)
+                                msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
+                                print(msg)
+                                if voice_builtin_gender != voice_path_gender:
+                                    semitones = -4 if voice_path_gender == 'male' else 4
+                                    msg = f"Adapting builtin voice frequencies from the clone voice..."
+                                    print(msg)
+                                else:
+                                    semitones = 0
+                                settings['semitones'][settings['voice_path']] = semitones
+                            if semitones > 0:
+                                try:
+                                    cmd = [
+                                        shutil.which('sox'), tmp_in_wav,
+                                        "-r", str(settings['sample_rate']), tmp_out_wav,
+                                        "pitch", str(semitones * 100)
+                                    ]
+                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                                except subprocess.CalledProcessError as e:
+                                    print(f"Subprocess error: {e.stderr}")
+                                    DependencyError(e)
+                                    return False
+                                except FileNotFoundError as e:
+                                    print(f"File not found: {e}")
+                                    DependencyError(e)
+                                    return False
+                            else:
+                                tmp_out_wav = tmp_in_wav
+                            if tts_vc:
+                                audio_part = tts_vc.voice_conversion(
+                                    source_wav=tmp_out_wav,
+                                    target_wav=settings['voice_path']
+                                )
+                            else:
+                                error = f'Engine {self.tts_vc_key} is None'
+                                print(error)
+                                return False
+                            settings['sample_rate'] = 16000
+                            if os.path.exists(tmp_in_wav):
+                                os.remove(tmp_in_wav)
+                            if os.path.exists(tmp_out_wav):
+                                os.remove(tmp_out_wav)
+                        else:
+                            audio_part = tts.tts(
+                                text=text_part,
+                                **speaker_argument
                             )
                     elif self.session['tts_engine'] == YOURTTS:
                         trim_audio_buffer = 0.005

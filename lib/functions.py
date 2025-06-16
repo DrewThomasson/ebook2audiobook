@@ -846,6 +846,7 @@ def get_sentences(text, lang, tts_engine):
     pattern = f"({'|'.join(pattern_split)})"
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         ideogramm_list = segment_ideogramms(text)
+        print(ideogramm_list)
         raw_list = list(join_ideogramms(ideogramm_list))
     else:
         raw_list = re.split(pattern, text)
