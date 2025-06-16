@@ -418,7 +418,7 @@ models = {
                 "thorsten/tacotron2-DDC": default_tacotron_settings['samplerate'],
                 "kokoro/tacotron2-DDC": default_tacotron_settings['samplerate'],
                 "ljspeech/tacotron2-DDC": default_tacotron_settings['samplerate'],
-                "baker/tacotron2-DDC-GST": default_tacotron_settings['samplerate']              
+                "baker/tacotron2-DDC-GST": default_tacotron_settings['samplerate']
             },
         }
     },

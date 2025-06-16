@@ -8,6 +8,7 @@
 import argparse
 import asyncio
 import csv
+import jieba
 import ebooklib
 import fnmatch
 import gc
@@ -40,6 +41,9 @@ import lib.conf as conf
 import lib.lang as lang
 import lib.models as mod
 
+from soynlp.tokenizer import LTokenizer
+from pythainlp.tokenize import word_tokenize
+from sudachipy import dictionary, tokenizer
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -453,7 +457,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace multiple  and spaces with single space
     text = re.sub(r'[     ]+', ' ', text)
     # Replace ok by 'Owkey'
-    text = re.sub(r'\bok\b', '"O.K."', text, flags=re.IGNORECASE)
+    text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
     # Replace parentheses with double quotes
     text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # Escape special characters in the punctuation list for regex
@@ -731,19 +735,15 @@ def get_sentences(text, lang, tts_engine):
 
     def segment_ideogramms(text):
         if lang == 'zho':
-            import jieba
             return list(jieba.cut(text))
         elif lang == 'jpn':
-            from sudachipy import dictionary, tokenizer
             sudachi = dictionary.Dictionary().create()
             mode = tokenizer.Tokenizer.SplitMode.C
             return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'kor':
-            from konlpy.tag import Kkma
-            kkma = Kkma()
-            return kkma.morphs(text)
+            ltokenizer = LTokenizer()
+            return ltokenizer.tokenize(text)
         elif lang in ['tha', 'lao', 'mya', 'khm']:
-            from pythainlp.tokenize import word_tokenize
             return word_tokenize(text, engine='newmm')
         else:
             pattern_split = [re.escape(p) for p in punctuation_split_set]
@@ -994,6 +994,7 @@ def convert_chapters2audio(session):
                 start = sentence_number
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
+                print(sentences)
                 for i, sentence in enumerate(sentences):
                     if session['cancellation_requested']:
                         msg = 'Cancel requested'
