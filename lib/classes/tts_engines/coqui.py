@@ -557,7 +557,7 @@ class Coqui:
             pass
         return False
 
-    def force_string(self, text):
+    def _force_string(self, text):
         if isinstance(text, str):
             return text
         if hasattr(text, '__iter__') and not isinstance(text, str):
@@ -581,7 +581,7 @@ class Coqui:
             audio2trim = False
             trim_audio_buffer = 0.001
             settings = self.params[self.session['tts_engine']]
-            sentence = self.force_string(sentence)
+            sentence = self._force_string(sentence)
             final_sentence = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             if sentence.endswith('-'):
                 sentence = sentence[:-1]
