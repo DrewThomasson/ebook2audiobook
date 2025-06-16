@@ -850,13 +850,13 @@ def get_sentences(text, lang, tts_engine):
     else:
         raw_list = re.split(pattern, text)
     raw_list = combine_punctuation(raw_list)
-    print(raw_list)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
         if len(raw_list) % 2 != 0:
             tmp_list.append(raw_list[-1])
     else:
         tmp_list = raw_list
+    print(tmp_list)
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
     sentences = []
