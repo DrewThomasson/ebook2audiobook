@@ -109,7 +109,7 @@ def recursive_proxy(data, manager=None):
     elif isinstance(data, (str, int, float, bool, type(None))):
         return data
     else:
-        error = f"Unsupported data type: {type(data)}"
+        error = f'Unsupported data type: {type(data)}'
         print(error)
         return
 
@@ -238,7 +238,7 @@ def check_programs(prog_name, command, options):
 def analyze_uploaded_file(zip_path, required_files):
     try:
         if not os.path.exists(zip_path):
-            error = f"The file does not exist: {os.path.basename(zip_path)}"
+            error = f'The file does not exist: {os.path.basename(zip_path)}'
             print(error)
             return False
         files_in_zip = {}
@@ -256,15 +256,15 @@ def analyze_uploaded_file(zip_path, required_files):
         missing_files = [f for f in required_files if f not in files_in_zip]
         required_empty_files = [f for f in required_files if f in empty_files]
         if missing_files:
-            print(f"Missing required files: {missing_files}")
+            print(f'Missing required files: {missing_files}')
         if required_empty_files:
-            print(f"Required files with 0 KB: {required_empty_files}")
+            print(f'Required files with 0 KB: {required_empty_files}')
         return not missing_files and not required_empty_files
     except zipfile.BadZipFile:
-        error = "The file is not a valid ZIP archive."
+        error = 'The file is not a valid ZIP archive.'
         raise ValueError(error)
     except Exception as e:
-        error = f"An error occurred: {e}"
+        error = f'An error occurred: {e}'
         raise RuntimeError(error)
 
 def extract_custom_model(file_src, session, required_files=None):
@@ -383,8 +383,8 @@ def math2word(text, lang, lang_iso1, tts_engine):
             number_in_words = num2words(number_value, lang=lang_iso1)
             return f" {number_in_words}"
         except Exception as e:
-            print(f"Error converting number: {number}, Error: {e}")
-            return f"{number}"
+            print(f'Error converting number: {number}, Error: {e}')
+            return f'{number}'
 
     def replace_ambiguous(match):
         symbol2 = match.group(2)
@@ -476,7 +476,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
         comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
         text = re.sub(comma_dot_pattern, r' \1 ', text)
     # Replace special chars with words
-    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
     for char, word in specialchars.items():
         text = text.replace(char, f" {word} ")
     for char in specialchars_remove:
@@ -569,7 +569,7 @@ def get_ebook_title(epubBook, all_docs):
         # 3. Try <img alt="..."> if no visible <title>
         img = soup.find("img", alt=True)
         if img:
-            alt = img["alt"].strip()
+            alt = img['alt'].strip()
             if alt and "cover" not in alt.lower():
                 return alt
     return None
@@ -668,12 +668,12 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         if any(part in epub_type for part in excluded_types):
             return None
         
-        for script in soup(["script", "style"]):
+        for script in soup(['script', 'style']):
             script.decompose()
 
         text_array = []
         handled_tables = set()
-        for tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]):
+        for tag in soup.find_all(['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'table']):
             if tag.name == "table":
                 # Ensure we don't process the same table multiple times
                 if tag in handled_tables:
@@ -682,7 +682,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                 rows = tag.find_all("tr")
                 if not rows:
                     continue
-                header_cells = [td.get_text(strip=True) for td in rows[0].find_all(["td", "th"])]
+                header_cells = [td.get_text(strip=True) for td in rows[0].find_all(['td", "th'])]
                 for row in rows[1:]:
                     cells = [td.get_text(strip=True).replace('\xa0', ' ') for td in row.find_all("td")]
                     if len(cells) == len(header_cells):
@@ -696,7 +696,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
             elif tag.name == "p" and "whitespace" in (tag.get("class") or []):
                 if tag.get_text(strip=True) == '\xa0' or not tag.get_text(strip=True):
                     text_array.append("[pause]")
-            elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
+            elif tag.name in ['h1", "h2", "h3", "h4", "h5", "h6']:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
                     # replace roman numbers by digits
@@ -1518,7 +1518,7 @@ def convert_ebook(args):
                         if vram_avail <= 4:
                             msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
                             if session['tts_engine'] == BARK:
-                                os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
+                                os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                 msg_extra += f"Switching BARK to SMALL models - "
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
@@ -1530,7 +1530,7 @@ def convert_ebook(args):
                                 msg += f"MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
+                                os.environ['SUNO_OFFLOAD_CPU'] = 'True'
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
                                 import deepspeed
@@ -1837,7 +1837,7 @@ def web_interface(args):
                 #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                     height: 140px !important !important;
                 }
-                #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
+                #gr_custom_model_file [aria-label="Clear'], #gr_voice_file [aria-label="Clear'] {
                     display: none !important;
                 }               
                 #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
@@ -1846,8 +1846,8 @@ def web_interface(args):
                 #gr_voice_list {
                     height: 60px !important;
                 }
-                #gr_voice_list span[data-testid="block-info"], 
-                #gr_audiobook_list span[data-testid="block-info"] {
+                #gr_voice_list span[data-testid="block-info'], 
+                #gr_audiobook_list span[data-testid="block-info'] {
                     display: none !important;
                 }
                 ///////////////
@@ -2174,10 +2174,10 @@ def web_interface(args):
                 return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
             return f"""
             <div style='margin:0; padding:0; font-size:12px; line-height:0; height:auto; display:inline; border: none; gap:0px; align-items:center'>
-                <span style='padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
-                <span style='padding:0 10px'><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
-                <span style='padding:0 10px'><b>RAM:</b> {color_box(rating["RAM"])}</span>
-                <span style='padding:0 10px'><b>Emotions:</b> {yellow_stars(rating["Emotions"])}</span>
+                <span style='padding:0 10px'><b>GPU VRAM:</b> {color_box(rating['GPU VRAM'])}</span>
+                <span style='padding:0 10px'><b>CPU:</b> {yellow_stars(rating['CPU'])}</span>
+                <span style='padding:0 10px'><b>RAM:</b> {color_box(rating['RAM'])}</span>
+                <span style='padding:0 10px'><b>Emotions:</b> {yellow_stars(rating['Emotions'])}</span>
             </div>
             """
 
@@ -2629,7 +2629,7 @@ def web_interface(args):
                     "fine_tuned": fine_tuned
                 }
                 error = None
-                if args["ebook"] is None and args['ebook_list'] is None:
+                if args['ebook'] is None and args['ebook_list'] is None:
                     error = 'Error: a file or directory is required.'
                     show_alert({"type": "warning", "msg": error})
                 elif args['num_beams'] < args['length_penalty']:

@@ -16,6 +16,8 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
+from TTS.config import load_config
+from TTS.model import BaseTrainerModel
 
 from lib.models import *
 from lib.conf import voices_dir, models_dir, tts_dir, default_audio_proc_format
@@ -834,7 +836,7 @@ class Coqui:
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
-                                text='今日はとてもいい天気ですね -',
+                                text=text_part,
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
