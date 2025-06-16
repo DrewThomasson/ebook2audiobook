@@ -30,6 +30,8 @@ dependencies = [
 	"indic-nlp-library",
 	"iso-639",
 	"jieba",
+	"mecab",
+	"mecab-python3",
 	"soynlp",
 	"pythainlp",
 	"pydub",

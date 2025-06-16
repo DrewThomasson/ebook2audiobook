@@ -11,6 +11,8 @@ hangul-romanize
 indic-nlp-library
 iso-639
 jieba
+mecab
+mecab-python3
 soynlp
 pythainlp
 m4b-util
