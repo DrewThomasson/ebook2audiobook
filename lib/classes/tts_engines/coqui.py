@@ -590,7 +590,6 @@ class Coqui:
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
             if tts:
-                print(sentence_parts)
                 for text_part in sentence_parts:
                     text_part = text_part.strip()
                     if not text_part:
@@ -818,7 +817,7 @@ class Coqui:
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
-                                text=text_part,
+                                text=str(text_part),
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
