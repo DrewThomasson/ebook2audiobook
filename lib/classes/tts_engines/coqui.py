@@ -557,7 +557,7 @@ class Coqui:
             pass
         return False
 
-    def force_string(self, text):rpheme,
+    def force_string(self, text):
         if isinstance(text, str):
             return text
         if hasattr(text, '__iter__') and not isinstance(text, str):
