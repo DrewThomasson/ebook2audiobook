@@ -817,7 +817,7 @@ class Coqui:
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             if self.session['language'] == 'jpn':
-                                ext_part = ''.join(m.surface() for m in text_part)
+                                text_part = ''.join(m.surface() for m in text_part)
                             else:
                                 text_part = str(text_part)
                             tts.tts_to_file(
