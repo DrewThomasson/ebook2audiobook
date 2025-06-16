@@ -476,7 +476,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
         comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
         text = re.sub(comma_dot_pattern, r' \1 ', text)
     # Replace special chars with words
-    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
     for char, word in specialchars.items():
         text = text.replace(char, f" {word} ")
     for char in specialchars_remove:
@@ -569,7 +569,7 @@ def get_ebook_title(epubBook, all_docs):
         # 3. Try <img alt="..."> if no visible <title>
         img = soup.find("img", alt=True)
         if img:
-            alt = img["alt"].strip()
+            alt = img['alt'].strip()
             if alt and "cover" not in alt.lower():
                 return alt
     return None
@@ -1518,7 +1518,7 @@ def convert_ebook(args):
                         if vram_avail <= 4:
                             msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
                             if session['tts_engine'] == BARK:
-                                os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
+                                os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                 msg_extra += f"Switching BARK to SMALL models - "
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
@@ -1530,7 +1530,7 @@ def convert_ebook(args):
                                 msg += f"MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == BARK:
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
+                                os.environ['SUNO_OFFLOAD_CPU'] = 'True'
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
                                 import deepspeed
@@ -2629,7 +2629,7 @@ def web_interface(args):
                     "fine_tuned": fine_tuned
                 }
                 error = None
-                if args["ebook"] is None and args['ebook_list'] is None:
+                if args['ebook'] is None and args['ebook_list'] is None:
                     error = 'Error: a file or directory is required.'
                     show_alert({"type": "warning", "msg": error})
                 elif args['num_beams'] < args['length_penalty']:
