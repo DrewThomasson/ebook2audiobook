@@ -560,6 +560,7 @@ class Coqui:
     def convert(self, sentence_number, sentence):
         global xtts_builtin_speakers_list
         try:
+            print(sentence)
             speaker = None
             audio_data = False
             audio2trim = False
