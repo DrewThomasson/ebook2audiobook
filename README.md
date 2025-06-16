@@ -111,16 +111,15 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ## Supported Languages
-| **Arabic (ar)**    | **Chinese (zh)**    | **English (en)**   | **Spanish (es)**   |
+| **Arabic (ar)** 🇸🇦    | **Chinese (zh)** 🇨🇳    | **English (en)** 🇺🇸   | **Spanish (es)** 🇪🇸   |
 |:------------------:|:------------------:|:------------------:|:------------------:|
-| **French (fr)**    | **German (de)**     | **Italian (it)**   | **Portuguese (pt)** |
-| **Polish (pl)**    | **Turkish (tr)**    | **Russian (ru)**   | **Dutch (nl)**     |
-| **Czech (cs)**     | **Japanese (ja)**   | **Hindi (hi)**     | **Bengali (bn)**   |
-| **Hungarian (hu)** | **Korean (ko)**     | **Vietnamese (vi)**| **Swedish (sv)**   |
-| **Persian (fa)**   | **Yoruba (yo)**     | **Swahili (sw)**   | **Indonesian (id)**|
-| **Slovak (sk)**    | **Croatian (hr)**   | **Tamil (ta)**     | **Danish (da)**    |
+| **French (fr)** 🇫🇷    | **German (de)** 🇩🇪     | **Italian (it)** 🇮🇹   | **Portuguese (pt)** 🇵🇹 |
+| **Polish (pl)** 🇵🇱    | **Turkish (tr)** 🇹🇷    | **Russian (ru)** 🇷🇺   | **Dutch (nl)** 🇳🇱     |
+| **Czech (cs)** 🇨🇿     | **Japanese (ja)** 🇯🇵   | **Hindi (hi)** 🇮🇳     | **Bengali (bn)** 🇧🇩   |
+| **Hungarian (hu)** 🇭🇺 | **Korean (ko)** 🇰🇷     | **Vietnamese (vi)** 🇻🇳| **Swedish (sv)** 🇸🇪   |
+| **Persian (fa)** 🇮🇷   | **Yoruba (yo)** 🇳🇬     | **Swahili (sw)** 🇹🇿   | **Indonesian (id)** 🇮🇩|
+| **Slovak (sk)** 🇸🇰    | **Croatian (hr)** 🇭🇷   | **Tamil (ta)** 🇮🇳     | **Danish (da)** 🇩🇰    |
 - [**+1100 languages and dialects here**](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
-
 
 ##  Hardware Requirements
 - 4gb RAM minimum, 8GB recommended
