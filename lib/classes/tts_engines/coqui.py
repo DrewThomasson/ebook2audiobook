@@ -19,7 +19,7 @@ from scipy.signal import find_peaks
 
 from lib.models import default_vc_model, XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS
 from lib.conf import voices_dir, models_dir, tts_dir, default_audio_proc_format
-from lib.lang import language_tts
+from lib.lang import language_tts, abbreviations_mapping
 
 torch.backends.cudnn.benchmark = True
 #torch.serialization.add_safe_globals(["numpy.core.multiarray.scalar"])
