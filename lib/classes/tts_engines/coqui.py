@@ -17,7 +17,7 @@ from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
 
-from lib.models import default_vc_model, XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS, models
+from lib.models import default_vc_model, XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS, models, default_xtts_settings, default_bark_settings, default_vits_settings, default_fairseq_settings, default_yourtts_settings
 from lib.conf import voices_dir, models_dir, tts_dir, default_audio_proc_format
 from lib.lang import language_tts, abbreviations_mapping
 
