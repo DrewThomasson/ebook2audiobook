@@ -406,7 +406,7 @@ models = {
             "lang": "multi",
             "repo": "tts_models/[lang_iso1]/[xxx]",
             "sub": {
-                "mai/tacotron2-DDC": ['fr', 'es'],
+                "mai/tacotron2-DDC": ['fr', 'es', 'nl'],
                 "thorsten/tacotron2-DDC": ['de'],
                 "kokoro/tacotron2-DDC": ['ja'],
                 "ljspeech/tacotron2-DDC": ['en'],
