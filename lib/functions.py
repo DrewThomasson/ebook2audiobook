@@ -62,7 +62,7 @@ from urllib.parse import urlparse
 
 from lib.conf import interface_component_options, prog_version, ebook_formats, voice_formats, output_formats, default_device, default_output_format
 from lib.lang import default_language_code, language_mapping
-#from lib.models import
+from lib.models import default_xtts_settings, default_bark_settings, default_vits_settings, default_fairseq_settings, default_tacotron_settings, default_yourtts_settings
 
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
