@@ -62,7 +62,7 @@ from urllib.parse import urlparse
 
 from lib.conf import NATIVE, FULL_DOCKER, prog_version, debug_mode, interface_component_options, interface_concurrency_limit, interface_host, interface_port, ebook_formats, voice_formats, output_formats, default_device, default_output_format
 from lib.lang import default_language_code, language_mapping
-from lib.models import XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS, default_tts_engine, default_fine_tuned, default_xtts_settings, default_bark_settings, default_vits_settings, default_fairseq_settings, default_tacotron_settings, default_yourtts_settings, max_upload_size
+from lib.models import XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS, models, default_tts_engine, default_fine_tuned, default_xtts_settings, default_bark_settings, default_vits_settings, default_fairseq_settings, default_tacotron_settings, default_yourtts_settings, max_upload_size
 
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
