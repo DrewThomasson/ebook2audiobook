@@ -12,7 +12,7 @@ from pydub import AudioSegment
 from torchvggish import vggish, vggish_input
 
 from lib.conf import voice_formats
-from lib.models import *
+from lib.models import XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS, models
 
 class VoiceExtractor:
 

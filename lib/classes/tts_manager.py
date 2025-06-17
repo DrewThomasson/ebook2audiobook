@@ -1,7 +1,7 @@
 import os
 
 from lib.classes.tts_engines.coqui import Coqui
-from lib.models import *
+from lib.models import active_tts_engines
 
 class TTSManager:
     def __init__(self, session):   

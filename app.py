@@ -8,10 +8,9 @@ import subprocess
 import sys
 
 from pathlib import Path
-
-from lib.conf import *
-from lib.models import *
 from lib.lang import install_info, default_language_code
+from lib.conf import default_device, device_list, default_output_format, prog_version, min_python_version, max_python_version, interface_port, NATIVE, FULL_DOCKER, requirements_file
+from lib.models import models, default_fine_tuned, default_bark_settings
 
 def check_virtual_env(script_mode):
     current_version = sys.version_info[:2]  # (major, minor)

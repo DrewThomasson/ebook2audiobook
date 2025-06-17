@@ -16,8 +16,6 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
-from TTS.config import load_config
-from TTS.model import BaseTrainerModel
 
 from lib.models import *
 from lib.conf import voices_dir, models_dir, tts_dir, default_audio_proc_format
@@ -26,23 +24,8 @@ from lib.lang import language_tts
 torch.backends.cudnn.benchmark = True
 #torch.serialization.add_safe_globals(["numpy.core.multiarray.scalar"])
 
-_original_multinomial = torch.multinomial
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
-
-def _safe_multinomial(input, num_samples, replacement=False, *, generator=None, out=None):
-    input = torch.nan_to_num(input, nan=0.0, posinf=0.0, neginf=0.0)
-    input = torch.clamp(input, min=0.0)
-    sum_input = input.sum(dim=-1, keepdim=True)
-    # Handle degenerate cases: fallback to uniform
-    mask = (sum_input <= 0)
-    if mask.any():
-        input[mask.expand_as(input)] = 1.0  # fallback to uniform distribution
-        sum_input = input.sum(dim=-1, keepdim=True)
-    input = input / sum_input
-    return _original_multinomial(input, num_samples, replacement=replacement, generator=generator, out=out)
-
-torch.multinomial = _safe_multinomial
 
 class Coqui:
     def __init__(self, session):   
@@ -272,7 +255,7 @@ class Coqui:
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
             voice_parts = Path(voice_path).parts
-            if self.session['language'] not in voice_parts:               
+            if self.session['language'] not in voice_parts and self.session['language'] != 'en':               
                 if self.session['language'] in language_tts[XTTSv2].keys():
                     lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                     new_voice_path = voice_path.replace('/eng/',f'/{lang_dir}/').replace('\\eng\\',f'\\{lang_dir}\\')
@@ -559,22 +542,6 @@ class Coqui:
             pass
         return False
 
-    def _force_string(self, text):
-        if isinstance(text, str):
-            return text
-        if hasattr(text, '__iter__') and not isinstance(text, str):
-            try:
-                return ''.join(
-                    m.surface() if hasattr(m, "surface") and callable(m.surface) else str(m)
-                    for m in text
-                )
-            except Exception:
-                try:
-                    return ''.join(str(m) for m in text)
-                except Exception:
-                    return str(text)
-        return str(text)
-
     def convert(self, sentence_number, sentence):
         global xtts_builtin_speakers_list
         try:
@@ -583,7 +550,6 @@ class Coqui:
             audio2trim = False
             trim_audio_buffer = 0.001
             settings = self.params[self.session['tts_engine']]
-            sentence = self._force_string(sentence)
             final_sentence = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             if sentence.endswith('-'):
                 sentence = sentence[:-1]
