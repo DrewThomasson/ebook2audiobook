@@ -60,7 +60,7 @@ from starlette.requests import ClientDisconnect
 from types import MappingProxyType
 from urllib.parse import urlparse
 
-from lib.conf import interface_component_options, prog_version, ebook_formats, voice_formats, output_formats, default_device
+from lib.conf import interface_component_options, prog_version, ebook_formats, voice_formats, output_formats, default_device, default_output_format
 from lib.lang import default_language_code, language_mapping
 #from lib.models import
 
