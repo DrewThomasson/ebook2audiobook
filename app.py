@@ -8,9 +8,10 @@ import subprocess
 import sys
 
 from pathlib import Path
-from lib.lang import install_info, default_language_code
-from lib.conf import default_device, device_list, default_output_format, prog_version, min_python_version, max_python_version, interface_port, NATIVE, FULL_DOCKER, requirements_file
-from lib.models import models, default_fine_tuned, default_bark_settings
+
+from lib.models import BARK, FAIRSEQ, TACOTRON2, VITS, XTTSv2, YOURTTS, active_tts_engines, default_bark_settings, default_fairseq_settings, default_fine_tuned, default_tacotron_settings, default_tts_engine, default_vc_model, default_vits_settings, default_xtts_settings, default_yourtts_settings, loaded_tts, max_custom_model, max_custom_voices, max_tts_in_memory, max_upload_size, models, os, voices_dir
+from lib.conf import FULL_DOCKER, NATIVE, audiobooks_cli_dir, audiobooks_gradio_dir, audiobooks_host_dir, debug_mode, default_audio_proc_format, default_device, default_gpu_wiki, default_output_format, device_list, ebook_formats, ebooks_dir, interface_component_options, interface_concurrency_limit, interface_host, interface_port, interface_shared_tmp_expire, max_python_version, min_python_version, models_dir, os, output_formats, platform, prog_version, python_env_dir, requirements_file, tmp_dir, tmp_expire, tts_dir, voice_formats, voices_dir
+from lib.lang import abbreviations_mapping, chapter_word_mapping, default_language_code, emojis_array, install_info, language_mapping, language_math_phonemes, language_tts, os, punctuation_list, punctuation_list_set, punctuation_split, punctuation_split_set, punctuation_switch, specialchars_mapping, specialchars_remove
 
 def check_virtual_env(script_mode):
     current_version = sys.version_info[:2]  # (major, minor)

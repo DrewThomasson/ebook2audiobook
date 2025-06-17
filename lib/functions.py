@@ -60,9 +60,9 @@ from starlette.requests import ClientDisconnect
 from types import MappingProxyType
 from urllib.parse import urlparse
 
-from lib.conf import NATIVE, FULL_DOCKER, prog_version, debug_mode, models_dir, tmp_dir, tmp_expire, ebooks_dir, voices_dir, audiobooks_gradio_dir, audiobooks_host_dir, audiobooks_cli_dir, interface_component_options, interface_concurrency_limit, interface_host, interface_port, default_audio_proc_format, ebook_formats, voice_formats, output_formats, default_device, default_output_format
-from lib.lang import default_language_code, language_tts, punctuation_switch, punctuation_list, punctuation_list_set, punctuation_split, punctuation_split_set, emojis_array, language_math_phonemes, language_mapping, abbreviations_mapping, specialchars_mapping, specialchars_remove
-from lib.models import XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS, models, default_tts_engine, default_fine_tuned, default_xtts_settings, default_bark_settings, default_vits_settings, default_fairseq_settings, default_tacotron_settings, default_yourtts_settings, max_upload_size
+from lib.models import BARK, FAIRSEQ, TACOTRON2, VITS, XTTSv2, YOURTTS, active_tts_engines, default_bark_settings, default_fairseq_settings, default_fine_tuned, default_tacotron_settings, default_tts_engine, default_vc_model, default_vits_settings, default_xtts_settings, default_yourtts_settings, loaded_tts, max_custom_model, max_custom_voices, max_tts_in_memory, max_upload_size, models, os, voices_dir
+from lib.conf import FULL_DOCKER, NATIVE, audiobooks_cli_dir, audiobooks_gradio_dir, audiobooks_host_dir, debug_mode, default_audio_proc_format, default_device, default_gpu_wiki, default_output_format, device_list, ebook_formats, ebooks_dir, interface_component_options, interface_concurrency_limit, interface_host, interface_port, interface_shared_tmp_expire, max_python_version, min_python_version, models_dir, os, output_formats, platform, prog_version, python_env_dir, requirements_file, tmp_dir, tmp_expire, tts_dir, voice_formats, voices_dir
+from lib.lang import abbreviations_mapping, chapter_word_mapping, default_language_code, emojis_array, install_info, language_mapping, language_math_phonemes, language_tts, os, punctuation_list, punctuation_list_set, punctuation_split, punctuation_split_set, punctuation_switch, specialchars_mapping, specialchars_remove
 
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
