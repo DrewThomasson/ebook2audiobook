@@ -74,6 +74,7 @@ def check_and_install_requirements(file_path):
             msg = '\nInstalling missing packages...\n'
             print(msg)
             os.environ['TMPDIR'] = tmp_dir
+            result = subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
             with tqdm(total=len(packages), desc='Installation 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
                 for package in tqdm(missing_packages, desc="Installing", unit="pkg"):

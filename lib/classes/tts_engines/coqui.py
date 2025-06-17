@@ -180,7 +180,6 @@ class Coqui:
                     print(msg)
                     return tts
                 else:
-                    gc.collect()
                     error = 'TTS engine could not be created!'
                     print(error)
         except Exception as e:
@@ -245,7 +244,6 @@ class Coqui:
                 print(msg)
                 return tts
             else:
-                gc.collect()
                 error = 'TTS engine could not be created!'
                 print(error)
         except Exception as e:
@@ -430,10 +428,12 @@ class Coqui:
             if tts_key is not None:
                 if tts_key in loaded_tts.keys():
                     del loaded_tts[tts_key]
+                    gc.collect()
             else:
                 for key in list(loaded_tts.keys()):
                     if key != self.tts_vc_key and key != self.tts_key:
                         del loaded_tts[key]
+                        gc.collect()
                 if device != 'cpu':
                     torch.cuda.empty_cache()
                     torch.cuda.synchronize()

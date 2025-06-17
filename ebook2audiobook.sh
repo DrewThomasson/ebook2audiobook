@@ -301,13 +301,13 @@ else
 			conda init > /dev/null 2>&1
 			source $CONDA_ENV
 			conda activate "$SCRIPT_DIR/$PYTHON_ENV"
+			python -m pip cache purge > /dev/null 2>&1
 			python -m pip install --upgrade pip
 			python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on < requirements.txt
 			tts_version=$(python -c "import importlib.metadata; print(importlib.metadata.version('coqui-tts'))" 2>/dev/null)
 			if [[ -n "$tts_version" ]]; then
 				if [[ "$(printf '%s\n' "$tts_version" "0.26.1" | sort -V | tail -n1)" == "0.26.1" ]]; then
 					python -m pip uninstall transformers
-					python -m pip cache purge
 					python -m install 'transformers<=4.51.3'
 				fi
 			fi
