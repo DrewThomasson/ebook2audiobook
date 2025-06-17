@@ -802,7 +802,7 @@ class Coqui:
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
-                                text=text_part,
+                                text='今日はとてもいい天気ですね',
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
