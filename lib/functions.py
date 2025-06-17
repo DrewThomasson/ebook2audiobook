@@ -69,14 +69,6 @@ from lib.classes.voice_extractor import VoiceExtractor
 #from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
 
-def inject_configs(target_namespace):
-    # Extract variables from both modules and inject them into the target namespace
-    for module in (conf, lang, mod):
-        target_namespace.update({k: v for k, v in vars(module).items() if not k.startswith('__')})
-
-# Inject configurations into the global namespace of this module
-inject_configs(globals())
-
 class DependencyError(Exception):
     def __init__(self, message=None):
         super().__init__(message)
