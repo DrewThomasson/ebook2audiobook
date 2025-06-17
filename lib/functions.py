@@ -60,7 +60,7 @@ from starlette.requests import ClientDisconnect
 from types import MappingProxyType
 from urllib.parse import urlparse
 
-from lib.conf import NATIVE, FULL_DOCKER, prog_version, debug_mode, models_dir, tmp_dir, tmp_expire, ebooks_dir, voices_dir, audiobooks_gradio_dir, audiobooks_host_dir, audiobooks_cli_dir, interface_component_options, interface_concurrency_limit, interface_host, interface_port, ebook_formats, voice_formats, output_formats, default_device, default_output_format
+from lib.conf import NATIVE, FULL_DOCKER, prog_version, debug_mode, models_dir, tmp_dir, tmp_expire, ebooks_dir, voices_dir, audiobooks_gradio_dir, audiobooks_host_dir, audiobooks_cli_dir, interface_component_options, interface_concurrency_limit, interface_host, interface_port, default_audio_proc_format, ebook_formats, voice_formats, output_formats, default_device, default_output_format
 from lib.lang import default_language_code, language_tts, punctuation_switch, punctuation_list, punctuation_list_set, punctuation_split, punctuation_split_set, emojis_array, language_math_phonemes, language_mapping, abbreviations_mapping, specialchars_mapping, specialchars_remove
 from lib.models import XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS, models, default_tts_engine, default_fine_tuned, default_xtts_settings, default_bark_settings, default_vits_settings, default_fairseq_settings, default_tacotron_settings, default_yourtts_settings, max_upload_size
 
