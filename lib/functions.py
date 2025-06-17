@@ -60,15 +60,14 @@ from starlette.requests import ClientDisconnect
 from types import MappingProxyType
 from urllib.parse import urlparse
 
-from lib.conf import interface_component_options
+from lib.conf import interface_component_options, prog_version
 from lib.lang import language_mapping
-#from lib.models as mod
+#from lib.models import
 
-
-#from lib.classes.redirect_console import RedirectConsole
 from lib.classes.voice_extractor import VoiceExtractor
-#from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
+#from lib.classes.redirect_console import RedirectConsole
+#from lib.classes.argos_translator import ArgosTranslator
 
 class DependencyError(Exception):
     def __init__(self, message=None):
