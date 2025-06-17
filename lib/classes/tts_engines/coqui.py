@@ -17,7 +17,6 @@ from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
 
-from lib.models import *
 from lib.conf import voices_dir, models_dir, tts_dir, default_audio_proc_format
 from lib.lang import language_tts
 
