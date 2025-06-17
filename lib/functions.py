@@ -37,10 +37,6 @@ import zipfile
 import traceback
 import unicodedata
 
-import lib.conf as conf
-import lib.lang as lang
-import lib.models as mod
-
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
@@ -63,6 +59,11 @@ from queue import Queue, Empty
 from starlette.requests import ClientDisconnect
 from types import MappingProxyType
 from urllib.parse import urlparse
+
+#from lib.conf as conf
+from lib.lang import language_mapping
+#from lib.models as mod
+
 
 #from lib.classes.redirect_console import RedirectConsole
 from lib.classes.voice_extractor import VoiceExtractor
