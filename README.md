@@ -51,6 +51,14 @@ https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
 
+**ASMR Voice** 
+
+https://github.com/user-attachments/assets/f7dc9875-55b2-4b2f-8e7e-06668256e054
+
+**Scarlett Voice**
+
+https://github.com/user-attachments/assets/ec02fbb7-f712-417e-850a-d8d03ab0230d
+
 **David Attenborough Voice** 
 
 https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
