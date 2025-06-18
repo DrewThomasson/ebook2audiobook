@@ -2393,7 +2393,7 @@ def web_interface(args):
                         files2remove = glob(pattern)
                         for file in files2remove:
                             os.remove(file)
-                        shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', session['language'], selected_name), ignore_errors=True)
+                        shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
                         msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
