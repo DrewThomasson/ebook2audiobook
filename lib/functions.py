@@ -1492,7 +1492,7 @@ def convert_ebook(args):
             if not is_gui_process:
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root
-                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob.glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
+                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
                 if session['custom_model'] is not None:
                     if not os.path.exists(session['custom_model_dir']):
@@ -2777,7 +2777,7 @@ def web_interface(args):
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root
-                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob.glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
+                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
                 # Same for bark folder
                 os.makedirs(session['custom_model_dir'], exist_ok=True)
                 os.makedirs(session['voice_dir'], exist_ok=True)             
