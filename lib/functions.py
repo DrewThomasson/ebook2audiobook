@@ -2507,11 +2507,10 @@ def web_interface(args):
 
         def change_gr_language(selected, id):
             session = context.get_session(id)
-            if selected == 'zzz':
-                new_language_code = default_language_code
-            else:
-                new_language_code = selected
-            session['language'] = new_language_code
+            previous = session['language']
+            new = default_language_code if selected == 'zzz' else selected
+            session['language'] = new
+            session['voice_dir'] = session['voice_dir'].replace(f"/{previous}/", f"/{new}/").replace(f"\\{previous}\\", f"\\{new}\\")
             return[
                 gr.update(value=session['language']),
                 update_gr_voice_list(id),
