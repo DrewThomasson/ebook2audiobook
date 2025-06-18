@@ -416,6 +416,8 @@ def math2word(text, lang, lang_iso1, tts_engine):
             return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
         return match.group(0)
 
+    # Check if it's a serie of small numbers with a separator
+    text = check_formatted_number(text)
     is_num2words_compat = check_compat()
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     # Separate ambiguous and non-ambiguous symbols
@@ -434,11 +436,9 @@ def math2word(text, lang, lang_iso1, tts_engine):
     )
     if ambiguous_replacements:
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-    # Check if it's a serie of small numbers with a separator
-    text = check_formatted_number(text)
     # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
     number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
-    if tts_engine in [TTS_ENGINES['TACOTRON2'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['YOURTTS']]:
+    if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
         if is_num2words_compat:
             # Pattern 2: Split big numbers into groups of 4
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
