@@ -56,9 +56,9 @@ from num2words import num2words
 from pathlib import Path
 from pydub import AudioSegment
 from queue import Queue, Empty
-from starlette.requests import ClientDisconnect
 from types import MappingProxyType
 from urllib.parse import urlparse
+from starlette.requests import ClientDisconnect
 
 from lib import *
 from lib.classes.voice_extractor import VoiceExtractor
@@ -2444,9 +2444,14 @@ def web_interface(args):
                     eng_options = []
                 keys = {key for key, _ in builtin_options}
                 voice_options = builtin_options + [row for row in eng_options if row[0] not in keys]
+                parent_dir = Path(session['voice_dir']).parent
                 voice_options += [
-                    (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                    for f in Path(session['voice_dir']).rglob(file_pattern)
+                    (
+                        os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0],
+                        str(f)
+                    )
+                    for f in parent_dir.rglob(file_pattern)
+                    if f.is_file()
                 ]
                 voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 session['voice'] = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
