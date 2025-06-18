@@ -2438,7 +2438,7 @@ def web_interface(args):
                 if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
                     eng_options = [
                         (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                        for f in Path(os.path.join(voices_dir, 'en')).rglob(file_pattern)
+                        for f in Path(os.path.join(voices_dir, 'eng')).rglob(file_pattern)
                     ]
                 else:
                     eng_options = []
