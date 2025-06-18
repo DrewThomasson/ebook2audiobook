@@ -354,34 +354,32 @@ def proxy2dict(proxy_obj):
 
 def check_formatted_number(text, max_single_value=9_000_000_000):
 	text = text.strip()
-	# Try to parse as a single large number like "500,000.34"
 	try:
 		as_number = float(text.replace(",", ""))
 		if abs(as_number) <= max_single_value:
 			return num2words(as_number)
 	except Exception:
-		pass  # Not a valid full number
-	# Otherwise process as a list of tokens (numbers and separators)
-	tokens = re.findall(r'\d*\.\d+|\d+|[^\d\s]', text)  # floats, ints, and single char separators
+		pass
+	tokens = re.findall(r'\d*\.\d+|\d+|[^\d\s]', text)
 	result = []
-	for i, token in enumerate(tokens):
+	for token in tokens:
 		if re.fullmatch(r'\d*\.\d+', token):  # float
 			try:
 				num = float(token)
 				result.append(num2words(num))
 			except:
-				result.append(f"[SKIP:{token}]")
+				result.append(token)
 		elif token.isdigit():
 			try:
 				num = int(token)
 				result.append(num2words(num))
 			except:
-				result.append(f"[SKIP:{token}]")
+				result.append(token)
+        elif token in {',', '.'}:
+			result.append(token + ' ')
 		else:
-			# separator with a space after
-			result.append(f"{token} ")
-
-	return ' '.join(result).strip()
+			result.append(token)
+	return ''.join(result).strip()
 
 def math2word(text, lang, lang_iso1, tts_engine):
     def check_compat():
