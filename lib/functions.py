@@ -2508,10 +2508,9 @@ def web_interface(args):
             session = context.get_session(id)
             previous = session['language']
             new = default_language_code if selected == 'zzz' else selected
-            session['voice_dir'] = session['voice_dir'].replace(f"/{previous}/", f"/{new}/").replace(f"\\{previous}\\", f"\\{new}\\")
+            session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
             session['language'] = new
             os.makedirs(session['voice_dir'], exist_ok=True)
-            print(f"-----------{previous}----{new}---------")
             return[
                 gr.update(value=session['language']),
                 update_gr_voice_list(id),
