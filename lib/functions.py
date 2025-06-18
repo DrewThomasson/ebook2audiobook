@@ -1491,6 +1491,7 @@ def convert_ebook(args):
 
             if not is_gui_process:
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                os.makedirs(session['voice_dir'], exist_ok=True)
                 # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root
                 [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
@@ -1509,8 +1510,7 @@ def convert_ebook(args):
                                 error = f"{model} could not be extracted or mandatory files are missing"
                         else:
                             error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
-                if session['voice'] is not None:
-                    os.makedirs(session['voice_dir'], exist_ok=True)
+                if session['voice'] is not None:                  
                     voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
                     final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
                     if not os.path.exists(final_voice_file):
@@ -2776,11 +2776,10 @@ def web_interface(args):
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
-                # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root
-                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
-                # Same for bark folder
                 os.makedirs(session['custom_model_dir'], exist_ok=True)
-                os.makedirs(session['voice_dir'], exist_ok=True)             
+                os.makedirs(session['voice_dir'], exist_ok=True)
+                # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root
+                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]                
                 if is_gui_shared:
                     msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
                     session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
