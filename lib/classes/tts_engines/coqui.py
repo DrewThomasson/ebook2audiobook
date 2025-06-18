@@ -44,16 +44,16 @@ class Coqui:
         global xtts_builtin_speakers_list
         self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')
         if xtts_builtin_speakers_list is None:
-            self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
+            self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
             xtts_builtin_speakers_list = torch.load(self.speakers_path)
         if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
             self.params[TTS_ENGINES['XTTSv2']]['sample_rate'] = models[TTS_ENGINES['XTTSv2']][self.session['fine_tuned']]['samplerate']
             msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
             print(msg)
             if self.session['custom_model'] is not None:
-                config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][0])
-                checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_xtts_settings['files'][1])
-                vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],default_xtts_settings['files'][2])
+                config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
+                checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
+                vocab_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'],default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][2])
                 self.tts_key = f"{self.session['tts_engine']}-{self.session['custom_model']}"
                 tts = self._load_checkpoint(tts_engine=self.session['tts_engine'], key=self.tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=self.session['device'])
             else:
@@ -61,7 +61,7 @@ class Coqui:
                 if self.session['fine_tuned'] == 'internal':
                     hf_sub = ''
                     if self.speakers_path is None:
-                        self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=default_xtts_settings['files'][4], cache_dir=self.cache_dir)
+                        self.speakers_path = hf_hub_download(repo_id=hf_repo, filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
                 else:
                     hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                 config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
@@ -208,7 +208,7 @@ class Coqui:
                         config,
                         checkpoint_path=checkpoint_path,
                         vocab_path=vocab_path,
-                        use_deepspeed=default_xtts_settings['use_deepspeed'],
+                        use_deepspeed=default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'],
                         eval=True
                     )
                 elif tts_engine == TTS_ENGINES['BARK']:
@@ -263,8 +263,8 @@ class Coqui:
                             tts = self._load_checkpoint(tts_engine=TTS_ENGINES['XTTSv2'], key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                         if tts:
                             file_path = new_voice_path.replace('_24000.wav', '.wav')
-                            if speaker in default_xtts_settings['voices'].keys():
-                                gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
+                            if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
+                                gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
                             else:
                                 gpt_cond_latent, speaker_embedding = tts.get_conditioning_latents(audio_path=[voice_path])
                             fine_tuned_params = {
@@ -294,7 +294,7 @@ class Coqui:
                                 audio_data = audio_data.tolist()
                                 sourceTensor = self._tensor_type(audio_data)
                                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                                torchaudio.save(file_path, audio_tensor, default_xtts_settings['samplerate'], format='wav')
+                                torchaudio.save(file_path, audio_tensor, default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate'], format='wav')
                                 for samplerate in [16000, 24000]:
                                     output_file = file_path.replace('.wav', f'_{samplerate}.wav')
                                     if not self._normalize_audio(file_path, output_file, samplerate):
@@ -577,8 +577,8 @@ class Coqui:
                         else:
                             msg = 'Computing speaker latents...'
                             print(msg)
-                            if speaker in default_xtts_settings['voices'].keys():
-                                settings['gpt_cond_latent'], settings['speaker_embedding'] = xtts_builtin_speakers_list[default_xtts_settings['voices'][speaker]].values()
+                            if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
+                                settings['gpt_cond_latent'], settings['speaker_embedding'] = xtts_builtin_speakers_list[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
                             else:
                                 settings['gpt_cond_latent'], settings['speaker_embedding'] = tts.get_conditioning_latents(audio_path=[settings['voice_path']])  
                             settings['latent_embedding'][settings['voice_path']] = settings['gpt_cond_latent'], settings['speaker_embedding']
@@ -854,7 +854,7 @@ class Coqui:
                             settings['voice_path'] = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
                             speaker_argument = {"speaker_wav": settings['voice_path']}
                         else:
-                            voice_key = default_yourtts_settings['voices']['ElectroMale-2']
+                            voice_key = default_engine_settings[TTS_ENGINES['YOURTTS']]['voices']['ElectroMale-2']
                             speaker_argument = {"speaker": voice_key}
                         with torch.no_grad():
                             audio_part = tts.tts(
