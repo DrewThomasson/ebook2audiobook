@@ -158,7 +158,7 @@ class VoiceExtractor:
             silence_threshold = -60
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
-            min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000 if self.session['tts_engine'] in (TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['YOURTTS']) else 6000
+            min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000
             if total_duration <= min_required_duration:
                 msg = f"Audio is only {total_duration/1000:.2f}s long; skipping trimming."
                 self._remove_silences(audio, silence_threshold)

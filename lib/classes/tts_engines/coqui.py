@@ -240,6 +240,21 @@ class Coqui:
             error = f'_load_checkpoint() error: {e}'
         return False
 
+    def _unload_tts(self, device, tts_key=None):
+        if len(loaded_tts) >= max_tts_in_memory:
+            if tts_key is not None:
+                if tts_key in loaded_tts.keys():
+                    del loaded_tts[tts_key]
+                    gc.collect()
+            else:
+                for key in list(loaded_tts.keys()):
+                    if key != self.tts_vc_key and key != self.tts_key:
+                        del loaded_tts[key]
+                        gc.collect()
+                if device != 'cpu':
+                    torch.cuda.empty_cache()
+                    torch.cuda.synchronize()
+
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
             voice_parts = Path(voice_path).parts
@@ -414,21 +429,6 @@ class Coqui:
             print(error)
             return None
 
-    def _unload_tts(self, device, tts_key=None):
-        if len(loaded_tts) >= max_tts_in_memory:
-            if tts_key is not None:
-                if tts_key in loaded_tts.keys():
-                    del loaded_tts[tts_key]
-                    gc.collect()
-            else:
-                for key in list(loaded_tts.keys()):
-                    if key != self.tts_vc_key and key != self.tts_key:
-                        del loaded_tts[key]
-                        gc.collect()
-                if device != 'cpu':
-                    torch.cuda.empty_cache()
-                    torch.cuda.synchronize()
-
     def _tensor_type(self, audio_data):
         if isinstance(audio_data, torch.Tensor):
             return audio_data
@@ -448,7 +448,6 @@ class Coqui:
                 audio_data = audio_data.cpu()           
             # Detect non-silent indices
             non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
-
             if len(non_silent_indices) == 0:
                 return torch.tensor([], device=audio_data.device)
             # Calculate start and end trimming indices with buffer
@@ -518,7 +517,7 @@ class Coqui:
             f.write(f"{start} --> {end}\n{text}\n\n")
         return index + 1
 
-    def _is_valid(self, audio_data):
+    def _is_audio_data_valid(self, audio_data):
         if audio_data is None:
             return False
         if isinstance(audio_data, torch.Tensor):
@@ -606,7 +605,7 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         audio_part = result.get('wav')
-                        if self._is_valid(audio_part):
+                        if self._is_audio_data_valid(audio_part):
                             audio_part = audio_part.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['BARK']:
                         trim_audio_buffer = 0.004
@@ -649,7 +648,7 @@ class Coqui:
                                     silent=True,
                                     **fine_tuned_params
                                 )                                
-                            if self._is_valid(audio_part):
+                            if self._is_audio_data_valid(audio_part):
                                 audio_part = audio_part.tolist()
                         else:
                             error = 'Could not create npz file!'
@@ -863,7 +862,7 @@ class Coqui:
                                 language=language,
                                 **speaker_argument
                             )
-                    if self._is_valid(audio_part):
+                    if self._is_audio_data_valid(audio_part):
                         sourceTensor = self._tensor_type(audio_part)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                         audio_segments.append(audio_tensor)
