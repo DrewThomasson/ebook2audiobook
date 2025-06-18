@@ -2511,6 +2511,7 @@ def web_interface(args):
             session['voice_dir'] = session['voice_dir'].replace(f"/{previous}/", f"/{new}/").replace(f"\\{previous}\\", f"\\{new}\\")
             session['language'] = new
             os.makedirs(session['voice_dir'], exist_ok=True)
+            print(f"-----------{session['voice_dir']}-------------")
             return[
                 gr.update(value=session['language']),
                 update_gr_voice_list(id),
