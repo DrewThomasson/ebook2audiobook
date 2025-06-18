@@ -352,14 +352,11 @@ def proxy2dict(proxy_obj):
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
 
-def check_formatted_number(text, max_single_value=9_000_000_000):
+def check_formatted_number(text, max_single_value=999999999999999):
     text = text.strip()
-    try:
-        as_number = float(text.replace(",", ""))
-        if abs(as_number) <= max_single_value:
-            return num2words(as_number)
-    except Exception:
-        pass
+    as_number = float(text.replace(",", ""))
+    if abs(as_number) <= max_single_value:
+        return text
     tokens = re.findall(r'\d*\.\d+|\d+|[^\d\s]', text)
     result = []
     for token in tokens:
