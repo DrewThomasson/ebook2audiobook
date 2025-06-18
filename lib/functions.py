@@ -2511,6 +2511,7 @@ def web_interface(args):
             new = default_language_code if selected == 'zzz' else selected
             session['language'] = new
             session['voice_dir'] = session['voice_dir'].replace(f"/{previous}/", f"/{new}/").replace(f"\\{previous}\\", f"\\{new}\\")
+            os.makedirs(session['voice_dir'], exist_ok=True)
             return[
                 gr.update(value=session['language']),
                 update_gr_voice_list(id),
