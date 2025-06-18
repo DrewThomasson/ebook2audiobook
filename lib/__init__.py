@@ -1,8 +1,7 @@
 from .models import (
-    TTS_ENGINES, default_bark_settings, default_fairseq_settings,
-    default_fine_tuned, default_tacotron_settings, default_tts_engine,
-    default_vc_model, default_vits_settings, default_xtts_settings,
-    default_yourtts_settings, loaded_tts, max_custom_model, max_custom_voices,
+    TTS_ENGINES, default_fine_tuned, default_tts_engine, 
+    default_engine_settings, default_vc_model, 
+    loaded_tts, max_custom_model, max_custom_voices,
     max_tts_in_memory, max_upload_size, models, os, voices_dir
 )
 
@@ -28,10 +27,9 @@ from .lang import (
 
 __all__ = [
     # from models
-    "TTS_ENGINES", "default_bark_settings", "default_fairseq_settings",
-    "default_fine_tuned", "default_tacotron_settings", "default_tts_engine",
-    "default_vc_model", "default_vits_settings", "default_xtts_settings",
-    "default_yourtts_settings", "loaded_tts", "max_custom_model",
+    "TTS_ENGINES", "default_fine_tuned", "default_tts_engine",
+    "default_engine_settings", "default_vc_model", 
+    "loaded_tts", "max_custom_model",
     "max_custom_voices", "max_tts_in_memory", "max_upload_size",
     "models", "os", "voices_dir",
 

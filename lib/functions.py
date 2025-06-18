@@ -142,16 +142,16 @@ class SessionContext:
                 "progress": 0,
                 "time": None,
                 "cancellation_requested": False,
-                "temperature": default_xtts_settings['temperature'],
-                "length_penalty": default_xtts_settings['length_penalty'],
-                "num_beams": default_xtts_settings['num_beams'],
-                "repetition_penalty": default_xtts_settings['repetition_penalty'],
-                "top_k": default_xtts_settings['top_k'],
-                "top_p": default_xtts_settings['top_k'],
-                "speed": default_xtts_settings['speed'],
-                "enable_text_splitting": default_xtts_settings['enable_text_splitting'],
-                "text_temp": default_bark_settings['text_temp'],
-                "waveform_temp": default_bark_settings['waveform_temp'],
+                "temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
+                "length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
+                "num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
+                "repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
+                "top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
+                "top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
+                "speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
+                "enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+                "text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
+                "waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
                 "event": None,
                 "final_name": None,
                 "output_format": default_output_format,
@@ -1552,11 +1552,11 @@ def convert_ebook(args):
                         if session['device'] == 'cpu':
                             if session['tts_engine'] == TTS_ENGINES['BARK']:
                                 os.environ['SUNO_OFFLOAD_CPU'] = 'True'
-                        if default_xtts_settings['use_deepspeed'] == True:
+                        if default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] == True:
                             try:
                                 import deepspeed
                             except:
-                                default_xtts_settings['use_deepspeed'] = False
+                                default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] = False
                                 msg_extra += 'deepseed not installed or package is broken. set to False - '
                             else: 
                                 msg_extra += 'deepspeed detected and ready!'
@@ -1968,7 +1968,7 @@ def web_interface(args):
                     minimum=0.1, 
                     maximum=10.0, 
                     step=0.1, 
-                    value=float(default_xtts_settings['temperature']),
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
                     elem_id='gr_xtts_temperature',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
                 )
@@ -1977,7 +1977,7 @@ def web_interface(args):
                     minimum=0.3, 
                     maximum=5.0, 
                     step=0.1,
-                    value=float(default_xtts_settings['length_penalty']),
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
                     elem_id='gr_xtts_length_penalty',
                     info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
                     visible=False
@@ -1987,7 +1987,7 @@ def web_interface(args):
                     minimum=1, 
                     maximum=10, 
                     step=1, 
-                    value=int(default_xtts_settings['num_beams']),
+                    value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
                     elem_id='gr_xtts_num_beams',
                     info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
                     visible=False
@@ -1997,7 +1997,7 @@ def web_interface(args):
                     minimum=1.0, 
                     maximum=10.0, 
                     step=0.1, 
-                    value=float(default_xtts_settings['repetition_penalty']),
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
                     elem_id='gr_xtts_repetition_penalty',
                     info='Penalizes repeated phrases. Higher values reduce repetition.'
                 )
@@ -2006,7 +2006,7 @@ def web_interface(args):
                     minimum=10, 
                     maximum=100, 
                     step=1, 
-                    value=int(default_xtts_settings['top_k']),
+                    value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
                     elem_id='gr_xtts_top_k',
                     info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
                 )
@@ -2015,7 +2015,7 @@ def web_interface(args):
                     minimum=0.1, 
                     maximum=1.0, 
                     step=0.01, 
-                    value=float(default_xtts_settings['top_p']), 
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']), 
                     elem_id='gr_xtts_top_p',
                     info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
                 )
@@ -2024,13 +2024,13 @@ def web_interface(args):
                     minimum=0.5, 
                     maximum=3.0, 
                     step=0.1, 
-                    value=float(default_xtts_settings['speed']),
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']),
                     elem_id='gr_xtts_speed',
                     info='Adjusts how fast the narrator will speak.'
                 )
                 gr_xtts_enable_text_splitting = gr.Checkbox(
                     label='Enable Text Splitting', 
-                    value=default_xtts_settings['enable_text_splitting'],
+                    value=default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
                     elem_id='gr_xtts_enable_text_splitting',
                     info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                     visible=False
@@ -2048,7 +2048,7 @@ def web_interface(args):
                     minimum=0.0, 
                     maximum=1.0, 
                     step=0.01, 
-                    value=float(default_bark_settings['text_temp']),
+                    value=float(default_engine_settings[TTS_ENGINES['BARK']]['text_temp']),
                     elem_id='gr_bark_text_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
@@ -2057,7 +2057,7 @@ def web_interface(args):
                     minimum=0.0, 
                     maximum=1.0, 
                     step=0.01, 
-                    value=float(default_bark_settings['waveform_temp']),
+                    value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
@@ -2170,17 +2170,17 @@ def web_interface(args):
 
         def show_rating(tts_engine):
             if tts_engine == TTS_ENGINES['XTTSv2']:
-                rating = default_xtts_settings['rating']
+                rating = default_engine_settings[TTS_ENGINES['XTTSv2']]['rating']
             elif tts_engine == TTS_ENGINES['BARK']:
-                rating = default_bark_settings['rating']
-            elif tts_engine == TTS_ENGINES['TACOTRON2']:
-                rating = default_tacotron_settings['rating']
+                rating = default_engine_settings[TTS_ENGINES['BARK']]['rating']
             elif tts_engine == TTS_ENGINES['VITS']:
-                rating = default_vits_settings['rating']
+                rating = default_engine_settings[TTS_ENGINES['VITS']]['rating']
             elif tts_engine == TTS_ENGINES['FAIRSEQ']:
-                rating = default_fairseq_settings['rating']
+                rating = default_engine_settings[TTS_ENGINES['FAIRSEQ']]['rating']
+            elif tts_engine == TTS_ENGINES['TACOTRON2']:
+                rating = default_engine_settings[TTS_ENGINES['TACOTRON2']]['rating']
             elif tts_engine == TTS_ENGINES['YOURTTS']:
-                rating = default_yourtts_settings['rating']
+                rating = default_engine_settings[TTS_ENGINES['YOURTTS']]['rating']
             def yellow_stars(n):
                 return "".join(
                     "<span style='color:#FFD700;font-size:12px'>★</span>" for _ in range(n)
@@ -2218,17 +2218,17 @@ def web_interface(args):
             else:
                 ebook_data = None
             ### XTTSv2 Params
-            session['temperature'] = session['temperature'] if session['temperature'] else default_xtts_settings['temperature']
-            session['length_penalty'] = default_xtts_settings['length_penalty']
-            session['num_beams'] = default_xtts_settings['num_beams']
-            session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_xtts_settings['repetition_penalty']
-            session['top_k'] = session['top_k'] if session['top_k'] else default_xtts_settings['top_k']
-            session['top_p'] = session['top_p'] if session['top_p'] else default_xtts_settings['top_p']
-            session['speed'] = session['speed'] if session['speed'] else default_xtts_settings['speed']
-            session['enable_text_splitting'] = default_xtts_settings['enable_text_splitting']
+            session['temperature'] = session['temperature'] if session['temperature'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']
+            session['length_penalty'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']
+            session['num_beams'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']
+            session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']
+            session['top_k'] = session['top_k'] if session['top_k'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']
+            session['top_p'] = session['top_p'] if session['top_p'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']
+            session['speed'] = session['speed'] if session['speed'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']
+            session['enable_text_splitting'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting']
             ### BARK Params
-            session['text_temp'] = session['text_temp'] if session['text_temp'] else default_bark_settings['text_temp']
-            session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_bark_settings['waveform_temp']
+            session['text_temp'] = session['text_temp'] if session['text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
+            session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
             return (
                 gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
                 gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
@@ -2335,7 +2335,7 @@ def web_interface(args):
             try:
                 if selected is not None:
                     voice_name = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(selected))
-                    if voice_name in default_xtts_settings['voices'].keys() or voice_name in default_yourtts_settings['voices'].keys():
+                    if voice_name in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys() or voice_name in default_engine_settings[TTS_ENGINES['YOURTTS']]['voices'].keys():
                         error = f'Voice file {voice_name} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
                     else:                   
