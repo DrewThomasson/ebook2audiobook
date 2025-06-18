@@ -353,33 +353,33 @@ def proxy2dict(proxy_obj):
     return recursive_copy(proxy_obj, set())
 
 def check_formatted_number(text, max_single_value=9_000_000_000):
-	text = text.strip()
-	try:
-		as_number = float(text.replace(",", ""))
-		if abs(as_number) <= max_single_value:
-			return num2words(as_number)
-	except Exception:
-		pass
-	tokens = re.findall(r'\d*\.\d+|\d+|[^\d\s]', text)
-	result = []
-	for token in tokens:
-		if re.fullmatch(r'\d*\.\d+', token):  # float
-			try:
-				num = float(token)
-				result.append(num2words(num))
-			except:
-				result.append(token)
-		elif token.isdigit():
-			try:
-				num = int(token)
-				result.append(num2words(num))
-			except:
-				result.append(token)
+    text = text.strip()
+    try:
+        as_number = float(text.replace(",", ""))
+        if abs(as_number) <= max_single_value:
+            return num2words(as_number)
+    except Exception:
+        pass
+    tokens = re.findall(r'\d*\.\d+|\d+|[^\d\s]', text)
+    result = []
+    for token in tokens:
+        if re.fullmatch(r'\d*\.\d+', token):  # float
+            try:
+                num = float(token)
+                result.append(num2words(num))
+            except:
+                result.append(token)
+        elif token.isdigit():
+            try:
+                num = int(token)
+                result.append(num2words(num))
+            except:
+                result.append(token)
         elif token in {',', '.'}:
-			result.append(token + ' ')
-		else:
-			result.append(token)
-	return ''.join(result).strip()
+            result.append(token + ' ')
+        else:
+            result.append(token)
+    return ''.join(result).strip()
 
 def math2word(text, lang, lang_iso1, tts_engine):
     def check_compat():
