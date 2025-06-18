@@ -69,21 +69,6 @@ class VoiceExtractor:
             error = f'_convert2wav() error: {e}'
             raise ValueError(error)
         return False, error
-        
-    def _wav2npz(self):
-        try:
-            npz_dir = os.path.join(self.output_dir, 'bark', self.voice_name)
-            os.makedirs(npz_dir, exist_ok=True)
-            npz_file = os.path.join(npz_dir, f'{self.voice_name}.npz')
-            audio, sr = sf.read(self.final_files[1]) # final_file a 24000hz
-            np.savez(npz_file, audio=audio, sample_rate=self.samplerate)
-            msg = f"Saved NPZ file: {npz_file}"
-            if os.path.exists(npz_file):
-                return True, msg
-        except Exception as e:
-            error = f'_wav2npz() error: {e}'
-            raise ValueError(error)   
-        return False, error
 
     def _detect_background(self):
         try:
@@ -311,9 +296,6 @@ class VoiceExtractor:
                             if success:
                                 success, msg = self._normalize_audio()
                                 print(msg)
-                                if success:
-                                    success, msg = self._wav2npz()
-                                    print(msg)
         except Exception as e:
             msg = f'extract_voice() error: {e}'
             raise ValueError(msg)
