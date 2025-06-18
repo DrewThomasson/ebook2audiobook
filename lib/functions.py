@@ -2383,17 +2383,17 @@ def web_interface(args):
                 alert_exception(error)
             return gr.update(), gr.update(visible=False)
 
-        def confirm_deletion(voice, custom_model, audiobook, id, method=None):
+        def confirm_deletion(voice_path, custom_model, audiobook, id, method=None):
             try:
                 if method is not None:
                     session = context.get_session(id)
                     if method == 'confirm_voice_del':
-                        selected_name = os.path.basename(voice)
-                        pattern = re.sub(r'_(24000|16000)\.wav$', '_*.wav', voice)
+                        selected_name = os.path.basename(voice_path)
+                        pattern = re.sub(r'_(24000|16000)\.wav$', '_*.wav', voice_path)
                         files2remove = glob(pattern)
                         for file in files2remove:
                             os.remove(file)
-                        shutil.rmtree(os.path.join(os.path.dirname(voice), 'bark', selected_name), ignore_errors=True)
+                        shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', session['language'], selected_name), ignore_errors=True)
                         msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
