@@ -2429,25 +2429,24 @@ def web_interface(args):
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
-                voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                voice_lang_eng_dir = 'eng'
-                voice_file_pattern = "*_24000.wav"
-                voice_builtin_options = [
+                lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
+                file_pattern = "*_24000.wav"
+                builtin_options = [
                     (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                    for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
+                    for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
                 ]
                 if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
-                    voice_eng_options = [
+                    eng_options = [
                         (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                        for f in Path(os.path.join(voices_dir, voice_lang_eng_dir)).rglob(voice_file_pattern)
+                        for f in Path(os.path.join(voices_dir, 'en')).rglob(file_pattern)
                     ]
                 else:
-                    voice_eng_options = []
-                voice_keys = {key for key, _ in voice_builtin_options}
-                voice_options = voice_builtin_options + [row for row in voice_eng_options if row[0] not in voice_keys]
+                    eng_options = []
+                keys = {key for key, _ in builtin_options}
+                voice_options = builtin_options + [row for row in eng_options if row[0] not in keys]
                 voice_options += [
                     (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                    for f in Path(session['voice_dir']).rglob(voice_file_pattern)
+                    for f in Path(session['voice_dir']).rglob(file_pattern)
                 ]
                 voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 session['voice'] = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
@@ -2509,8 +2508,8 @@ def web_interface(args):
             session = context.get_session(id)
             previous = session['language']
             new = default_language_code if selected == 'zzz' else selected
-            session['language'] = new
             session['voice_dir'] = session['voice_dir'].replace(f"/{previous}/", f"/{new}/").replace(f"\\{previous}\\", f"\\{new}\\")
+            session['language'] = new
             os.makedirs(session['voice_dir'], exist_ok=True)
             return[
                 gr.update(value=session['language']),
