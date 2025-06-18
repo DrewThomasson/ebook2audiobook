@@ -2442,8 +2442,8 @@ def web_interface(args):
                     ]
                 else:
                     eng_options = []
-                keys = {key for key, _ in builtin_options}
-                voice_options = builtin_options + [row for row in eng_options if row[0] not in keys]
+                lang_keys = {key for key, _ in builtin_options}
+                voice_options = builtin_options + [row for row in eng_options if row[0] not in lang_keys]
                 voice_options += [
                     (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
                     for f in Path(session['voice_dir']).rglob(file_pattern)
