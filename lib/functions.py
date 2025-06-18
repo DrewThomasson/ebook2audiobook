@@ -352,6 +352,37 @@ def proxy2dict(proxy_obj):
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
 
+def check_formatted_number(text, max_single_value=9_000_000_000):
+	text = text.strip()
+	# Try to parse as a single large number like "500,000.34"
+	try:
+		as_number = float(text.replace(",", ""))
+		if abs(as_number) <= max_single_value:
+			return num2words(as_number)
+	except Exception:
+		pass  # Not a valid full number
+	# Otherwise process as a list of tokens (numbers and separators)
+	tokens = re.findall(r'\d*\.\d+|\d+|[^\d\s]', text)  # floats, ints, and single char separators
+	result = []
+	for i, token in enumerate(tokens):
+		if re.fullmatch(r'\d*\.\d+', token):  # float
+			try:
+				num = float(token)
+				result.append(num2words(num))
+			except:
+				result.append(f"[SKIP:{token}]")
+		elif token.isdigit():
+			try:
+				num = int(token)
+				result.append(num2words(num))
+			except:
+				result.append(f"[SKIP:{token}]")
+		else:
+			# separator with a space after
+			result.append(f"{token} ")
+
+	return ' '.join(result).strip()
+
 def math2word(text, lang, lang_iso1, tts_engine):
     def check_compat():
         try:
@@ -402,9 +433,11 @@ def math2word(text, lang, lang_iso1, tts_engine):
     )
     if ambiguous_replacements:
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
+    # Check if it's a serie of small numbers with a separator
+    text = check_formatted_number(text)
     # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
     number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
-    if tts_engine in [TACOTRON2, VITS, FAIRSEQ, YOURTTS]:
+    if tts_engine in [TTS_ENGINES['TACOTRON2'], TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['YOURTTS']]:
         if is_num2words_compat:
             # Pattern 2: Split big numbers into groups of 4
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
@@ -453,10 +486,9 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     pattern = '|'.join(map(re.escape, punctuation_split))
     # Reduce multiple consecutive punctuations
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
-    if tts_engine == XTTSv2:
+    if tts_engine == TTS_ENGINES['XTTSv2']:
         # Pattern 1: Add a space between UTF-8 characters and numbers
         text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    if tts_engine == XTTSv2:
         pattern_space = re.escape(''.join(punctuation_list))
         # Ensure space before and after punctuation (excluding `,` and `.`)
         punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
@@ -809,7 +841,7 @@ def get_sentences(text, lang, tts_engine):
                     split_index = before if (mid - before) <= (after - mid) else after
         delim_used = sentence[split_index - 1] if split_index > 0 else None
         end = ''
-        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != BARK:
+        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != TTS_ENGINES['BARK']:
             end = ' -' if delim_used == ' ' else end
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:')
@@ -823,7 +855,7 @@ def get_sentences(text, lang, tts_engine):
         if part2:
             if len(part2) <= max_chars:
                 if part2 and part2[-1].isalpha():
-                    if tts_engine != BARK:
+                    if tts_engine != TTS_ENGINES['BARK']:
                         part2 += ' -'
                 result.append(part2)
             else:
@@ -1506,7 +1538,7 @@ def convert_ebook(args):
                         vram_avail = get_vram()
                         if vram_avail <= 4:
                             msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
-                            if session['tts_engine'] == BARK:
+                            if session['tts_engine'] == TTS_ENGINES['BARK']:
                                 os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                 msg_extra += f"Switching BARK to SMALL models - "
                         if session['device'] == 'cuda':
@@ -1518,7 +1550,7 @@ def convert_ebook(args):
                             if session['device'] == 'cpu':
                                 msg += f"MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
                         if session['device'] == 'cpu':
-                            if session['tts_engine'] == BARK:
+                            if session['tts_engine'] == TTS_ENGINES['BARK']:
                                 os.environ['SUNO_OFFLOAD_CPU'] = 'True'
                         if default_xtts_settings['use_deepspeed'] == True:
                             try:
@@ -2137,17 +2169,17 @@ def web_interface(args):
             '''
 
         def show_rating(tts_engine):
-            if tts_engine == XTTSv2:
+            if tts_engine == TTS_ENGINES['XTTSv2']:
                 rating = default_xtts_settings['rating']
-            elif tts_engine == BARK:
+            elif tts_engine == TTS_ENGINES['BARK']:
                 rating = default_bark_settings['rating']
-            elif tts_engine == TACOTRON2:
+            elif tts_engine == TTS_ENGINES['TACOTRON2']:
                 rating = default_tacotron_settings['rating']
-            elif tts_engine == VITS:
+            elif tts_engine == TTS_ENGINES['VITS']:
                 rating = default_vits_settings['rating']
-            elif tts_engine == FAIRSEQ:
+            elif tts_engine == TTS_ENGINES['FAIRSEQ']:
                 rating = default_fairseq_settings['rating']
-            elif tts_engine == YOURTTS:
+            elif tts_engine == TTS_ENGINES['YOURTTS']:
                 rating = default_yourtts_settings['rating']
             def yellow_stars(n):
                 return "".join(
@@ -2401,7 +2433,7 @@ def web_interface(args):
                     (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
                     for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
                 ]
-                if session['language'] in language_tts[XTTSv2]:
+                if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
                     voice_eng_options = [
                         (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
                         for f in Path(os.path.join(voices_dir, voice_lang_eng_dir)).rglob(voice_file_pattern)
@@ -2533,7 +2565,7 @@ def web_interface(args):
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
             session['tts_engine'] = engine
-            if session['tts_engine'] == XTTSv2:
+            if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                 visible_custom_model = True
                 if session['fine_tuned'] != 'internal':
                     visible_custom_model = False
@@ -2545,14 +2577,14 @@ def web_interface(args):
                 )
             else:
                 bark_visible = False
-                if session['tts_engine'] == BARK:
+                if session['tts_engine'] == TTS_ENGINES['BARK']:
                     bark_visible = visible_gr_tab_bark_params
                 return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
             visible = False
-            if session['tts_engine'] == XTTSv2:
+            if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                 if selected == 'internal':
                     visible = visible_gr_group_custom_model
             session['fine_tuned'] = selected
