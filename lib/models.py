@@ -331,6 +331,14 @@ models = {
             "files": default_xtts_settings['files'],
             "samplerate": default_xtts_settings['samplerate']
         },
+        "SladeTeenTitans": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/SladeTeenTitans/",
+            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"SladeTeenTitans_{default_xtts_settings['samplerate']}.wav"),
+            "files": default_xtts_settings['files'],
+            "samplerate": default_xtts_settings['samplerate']
+        },
         "StanleyParable": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
