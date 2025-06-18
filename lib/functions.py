@@ -2344,7 +2344,7 @@ def web_interface(args):
                     else:                   
                         try:
                             session = context.get_session(id)
-                            if selected.find(session['voice_dir']) > -1:
+                            if selected.find(Path(session['voice_dir']).parent) > -1:
                                 msg = f'Are you sure to delete {voice_name}...'
                                 return gr.update(value='confirm_voice_del'), gr.update(value=show_modal('confirm', msg),visible=True)
                             else:
