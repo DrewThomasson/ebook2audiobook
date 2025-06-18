@@ -1,8 +1,9 @@
 import os
 
 from lib.conf import voices_dir
-
 loaded_tts = {}
+
+TTS_ENGINES = {"XTTSv2": "xtts", "BARK": "bark", "VITS": "vits", "FAIRSEQ": "fairseq", "TACOTRON2": "tacotron", "YOURTTS": "yourtts"}
 
 XTTSv2 = 'xtts'
 BARK = 'bark'
@@ -11,10 +12,8 @@ FAIRSEQ = 'fairseq'
 TACOTRON2 = 'tacotron'
 YOURTTS = 'yourtts'
 
-default_tts_engine = 'xtts'
+default_tts_engine = TTS_ENGINES['XTTS-v2']
 default_fine_tuned = 'internal'
-
-active_tts_engines = [XTTSv2, BARK, VITS, FAIRSEQ, TACOTRON2, YOURTTS]
 
 r"""
 voice_conversion_models/multilingual/vctk/freevc24

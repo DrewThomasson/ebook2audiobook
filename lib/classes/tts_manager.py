@@ -1,7 +1,6 @@
 import os
 
-from lib.classes.tts_engines.coqui import Coqui
-from lib.models import active_tts_engines
+from lib.models import TTS_ENGINES
 
 class TTSManager:
     def __init__(self, session):   
@@ -10,7 +9,7 @@ class TTSManager:
         self._build()
  
     def _build(self):
-        if self.session['tts_engine'] in active_tts_engines:
+        if self.session['tts_engine'] in TTS_ENGINES.values():
             from lib.classes.tts_engines.coqui import Coqui
             self.tts = Coqui(self.session)
             if self.tts:
@@ -24,7 +23,7 @@ class TTSManager:
 
     def convert_sentence2audio(self, sentence_number, sentence):
         try:
-            if self.session['tts_engine'] in active_tts_engines:
+            if self.session['tts_engine'] in TTS_ENGINES.values():
                 return self.tts.convert(sentence_number, sentence)
             else:
                 print('Other TTS engines coming soon!')    
