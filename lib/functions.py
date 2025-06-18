@@ -1490,7 +1490,9 @@ def convert_ebook(args):
             info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
 
             if not is_gui_process:
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions',f"voice-{session['id']}")
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                # As now uploaded voice files are in their respective language folder so check if no wav are on the voice_dir root
+                [shutil.move(f, os.path.join(session['voice_dir'], os.path.basename(f))) for f in glob.glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) if not os.path.exists(os.path.join(session['voice_dir'], os.path.basename(f)))]
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
                 if session['custom_model'] is not None:
                     if not os.path.exists(session['custom_model_dir']):
@@ -2309,7 +2311,7 @@ def web_interface(args):
                     session = context.get_session(id)
                     voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
                     voice_name = get_sanitized(voice_name)
-                    final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
+                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}_24000.wav')
                     extractor = VoiceExtractor(session, models_dir, f, voice_name)
                     status, msg = extractor.extract_voice()
                     if status:
@@ -2773,7 +2775,9 @@ def web_interface(args):
                         return gr.update(), gr.update(), gr.update()
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}")
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                # As now uploaded voice files are in their respective language folder so check if no wav are on the voice_dir root
+                [shutil.move(f, os.path.join(session['voice_dir'], os.path.basename(f))) for f in glob.glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) if not os.path.exists(os.path.join(session['voice_dir'], os.path.basename(f)))]
                 os.makedirs(session['custom_model_dir'], exist_ok=True)
                 os.makedirs(session['voice_dir'], exist_ok=True)             
                 if is_gui_shared:
