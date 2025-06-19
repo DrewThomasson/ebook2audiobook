@@ -257,48 +257,49 @@ def analyze_uploaded_file(zip_path, required_files):
         raise RuntimeError(error)
 
 def extract_custom_model(file_src, session, required_files=None):
-    try:
-        model_path = None
-        if required_files is None:
-            required_files = models[session['tts_engine']][default_fine_tuned]['files']
-        model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
-        model_name = get_sanitized(model_name)
-        with zipfile.ZipFile(file_src, 'r') as zip_ref:
-            files = zip_ref.namelist()
-            files_length = len(files)
-            tts_dir = session['tts_engine']    
-            model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
-            if os.path.exists(model_path):
-                msg = f'{model_path} already exists, bypassing files extraction'
-                print(msg)
-                return model_path
-            os.makedirs(model_path, exist_ok=True)
-            required_files_lc = set(x.lower() for x in required_files)
-            with tqdm(total=files_length, unit='files') as t:
-                for f in files:
-                    base_f = os.path.basename(f).lower()
-                    if base_f in required_files_lc:
-                        zip_ref.extract(f, model_path)
-                    t.update(1)
-        if is_gui_process:
-            os.remove(file_src)
-        if model_path is not None:
-            msg = f'Extracted files to {model_path}'
-            print(msg)
-            return model_name
-        else:
-            error = f'An error occured when unzip {file_src}'
-            return None
-    except asyncio.exceptions.CancelledError as e:
-        DependencyError(e)
-        if is_gui_process:
-            os.remove(file_src)
-        return None       
-    except Exception as e:
-        DependencyError(e)
-        if is_gui_process:
-            os.remove(file_src)
-        return None
+	try:
+		model_path = None
+		if required_files is None:
+			required_files = models[session['tts_engine']][default_fine_tuned]['files']
+		model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
+		model_name = get_sanitized(model_name)
+		with zipfile.ZipFile(file_src, 'r') as zip_ref:
+			files = zip_ref.namelist()
+			files_length = len(files)
+			tts_dir = session['tts_engine']
+			model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
+			if os.path.exists(model_path):
+				print(f'{model_path} already exists, bypassing files extraction')
+				return model_path
+			os.makedirs(model_path, exist_ok=True)
+			required_files_lc = set(x.lower() for x in required_files)
+			with tqdm(total=files_length, unit='files') as t:
+				for f in files:
+					base_f = os.path.basename(f).lower()
+					if base_f in required_files_lc:
+						out_path = os.path.join(model_path, base_f)
+						with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
+							shutil.copyfileobj(src, dst)
+					t.update(1)
+		if is_gui_process:
+			os.remove(file_src)
+		if model_path is not None:
+			msg = f'Extracted files to {model_path}'
+			print(msg)
+			return model_name
+		else:
+			error = f'An error occured when unzip {file_src}'
+			return None
+	except asyncio.exceptions.CancelledError as e:
+		DependencyError(e)
+		if is_gui_process:
+			os.remove(file_src)
+		return None       
+	except Exception as e:
+		DependencyError(e)
+		if is_gui_process:
+			os.remove(file_src)
+		return None
         
 def hash_proxy_dict(proxy_dict):
     return hashlib.md5(str(proxy_dict).encode('utf-8')).hexdigest()
