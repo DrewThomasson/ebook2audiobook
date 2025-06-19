@@ -283,11 +283,29 @@ def extract_custom_model(file_src, session, required_files=None):
                 print(f'{model_path} already exists, bypassing files extraction')
                 return model_path
             os.makedirs(model_path, exist_ok=True)
+            
             with tqdm(total=files_length, unit='files') as t:
                 for f in files:
-                    if f in required_files:
+                    # Check if the file basename matches any required file
+                    file_basename = os.path.basename(f)
+                    if file_basename in required_files:
+                        # Extract the file
                         zip_ref.extract(f, model_path)
+                        # Move it to the root of model_path if it's in a subfolder
+                        extracted_path = os.path.join(model_path, f)
+                        target_path = os.path.join(model_path, file_basename)
+                        if extracted_path != target_path:
+                            os.makedirs(os.path.dirname(target_path), exist_ok=True)
+                            shutil.move(extracted_path, target_path)
+                            # Clean up empty directories
+                            try:
+                                parent_dir = os.path.dirname(extracted_path)
+                                if parent_dir != model_path:
+                                    os.rmdir(parent_dir)
+                            except OSError:
+                                pass  # Directory not empty, that's fine
                     t.update(1)
+                    
         if is_gui_process:
             os.remove(file_src)
         if model_path is not None:
