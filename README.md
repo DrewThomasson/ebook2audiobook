@@ -212,6 +212,11 @@ to let the web page reconnect to the new connection socket.**
 
 ###  Example of Custom Model Zip Upload
   (must be a .zip file containing the mandatory model files. Example for XTTS: config.json, model.pth, vocab.json and ref.wav)
+
+> [!IMPORTANT]
+**Custom model files must be at the root of the ZIP file.<br>
+ Meaning you must compress the files together in a ZIP file, not a folder.**
+
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.sh --headless --ebook <ebook_file_path> \
