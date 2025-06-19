@@ -269,12 +269,15 @@ def extract_custom_model(file_src, session, required_files=None):
             tts_dir = session['tts_engine']    
             model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
             if os.path.exists(model_path):
-                print(f'{model_path} already exists, bypassing files extraction')
+                msg = f'{model_path} already exists, bypassing files extraction'
+                print(msg)
                 return model_path
             os.makedirs(model_path, exist_ok=True)
+            required_files_lc = set(x.lower() for x in required_files)
             with tqdm(total=files_length, unit='files') as t:
                 for f in files:
-                    if f in required_files:
+                    base_f = os.path.basename(f).lower()
+                    if base_f in required_files_lc:
                         zip_ref.extract(f, model_path)
                     t.update(1)
         if is_gui_process:
@@ -286,7 +289,7 @@ def extract_custom_model(file_src, session, required_files=None):
         else:
             error = f'An error occured when unzip {file_src}'
             return None
-    except asyncio.exceptions.CancelledError:
+    except asyncio.exceptions.CancelledError as e:
         DependencyError(e)
         if is_gui_process:
             os.remove(file_src)
@@ -296,6 +299,7 @@ def extract_custom_model(file_src, session, required_files=None):
         if is_gui_process:
             os.remove(file_src)
         return None
+
         
 def hash_proxy_dict(proxy_dict):
     return hashlib.md5(str(proxy_dict).encode('utf-8')).hexdigest()
