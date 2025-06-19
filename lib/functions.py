@@ -299,7 +299,6 @@ def extract_custom_model(file_src, session, required_files=None):
         if is_gui_process:
             os.remove(file_src)
         return None
-
         
 def hash_proxy_dict(proxy_dict):
     return hashlib.md5(str(proxy_dict).encode('utf-8')).hexdigest()
