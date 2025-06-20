@@ -2460,7 +2460,7 @@ def web_interface(args):
                         ]
                 keys = {key for key, _ in builtin_options}
                 voice_options = builtin_options + [row for row in eng_options if row[0] not in keys]
-                voice_option += bark_options
+                voice_options += bark_options
                 parent_dir = Path(session['voice_dir']).parent
                 voice_options += [
                     (
