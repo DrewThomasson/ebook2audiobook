@@ -259,6 +259,7 @@ class Coqui:
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
             voice_parts = Path(voice_path).parts
+            print(f"-----------{voice_path}------------")
             if self.session['language'] not in voice_parts and self.session['language'] != 'eng':
                 if self.session['language'] in language_tts[TTS_ENGINES['XTTSv2']].keys():
                     lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
@@ -321,7 +322,6 @@ class Coqui:
                                     self._unload_tts(device, tts_internal_key)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
-                                    print(f"----------{new_voice_path}----------")
                                     return new_voice_path
                             else:
                                 error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
