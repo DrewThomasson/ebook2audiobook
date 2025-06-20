@@ -621,39 +621,41 @@ class Coqui:
                             CAPITALIZATION for emphasis of a word
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
-                        bark_dir = default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'] if speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() else os.path.join(os.path.dirname(settings['voice_path']), 'bark')
-                        if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):                                 
-                            fine_tuned_params = {
-                                key: cast_type(self.session[key])
-                                for key, cast_type in {
-                                    "text_temp": float,
-                                    "waveform_temp": float
-                                }.items()
-                                if self.session.get(key) is not None
-                            }
-                            npz = os.path.join(bark_dir, speaker, f'{speaker}.npz')
-                            if self.npz_path is None or self.npz_path != npz:
-                                self.npz_path = npz
-                                self.npz_data = np.load(self.npz_path, allow_pickle=True)
-                            history_prompt = [
-                                    self.npz_data["semantic_prompt"],
-                                    self.npz_data["coarse_prompt"],
-                                    self.npz_data["fine_prompt"]
-                            ]
-                            with torch.no_grad():
-                                torch.manual_seed(67878789)
-                                audio_part, _ = tts.generate_audio(
-                                    text_part,
-                                    history_prompt=history_prompt,
-                                    silent=True,
-                                    **fine_tuned_params
-                                )                                
-                            if self._is_audio_data_valid(audio_part):
-                                audio_part = audio_part.tolist()
+                        if speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys():
+                            bark_dir = default_engine_settings[TTS_ENGINES['BARK']]['speakers_path']
                         else:
-                            error = 'Could not create npz file!'
-                            print(error)
-                            return False
+                            bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
+                            if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
+                                error = 'Could not create npz file!'
+                                print(error)
+                                return False
+                        fine_tuned_params = {
+                            key: cast_type(self.session[key])
+                            for key, cast_type in {
+                                "text_temp": float,
+                                "waveform_temp": float
+                            }.items()
+                            if self.session.get(key) is not None
+                        }
+                        npz = os.path.join(bark_dir, speaker, f'{speaker}.npz')
+                        if self.npz_path is None or self.npz_path != npz:
+                            self.npz_path = npz
+                            self.npz_data = np.load(self.npz_path, allow_pickle=True)
+                        history_prompt = [
+                                self.npz_data["semantic_prompt"],
+                                self.npz_data["coarse_prompt"],
+                                self.npz_data["fine_prompt"]
+                        ]
+                        with torch.no_grad():
+                            torch.manual_seed(67878789)
+                            audio_part, _ = tts.generate_audio(
+                                text_part,
+                                history_prompt=history_prompt,
+                                silent=True,
+                                **fine_tuned_params
+                            )                                
+                        if self._is_audio_data_valid(audio_part):
+                            audio_part = audio_part.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
                         speaker_argument = {}
                         if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
