@@ -547,14 +547,15 @@ class Coqui:
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
                 else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
-            )    
-            speaker = re.sub(r'_(24000|16000)\.wav$|\.npz$', '', os.path.basename(settings['voice_path']))
-            if settings['voice_path'] is not None and settings['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and os.path.basename(settings['voice_path']) != 'ref.wav':
-                self.session['voice'] = settings['voice_path'] = self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device'])
-                if not settings['voice_path']:
-                    msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
-                    print(msg)
-                    return False
+            )
+            if settings['voice_path'] is not None
+                speaker = re.sub(r'_(24000|16000)\.wav$|\.npz$', '', os.path.basename(settings['voice_path']))
+                if settings['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and os.path.basename(settings['voice_path']) != 'ref.wav':
+                    self.session['voice'] = settings['voice_path'] = self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device'])
+                    if not settings['voice_path']:
+                        msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
+                        print(msg)
+                        return False
             sentence_parts = sentence.split('‡pause‡')
             if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                 sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
