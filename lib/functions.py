@@ -2593,9 +2593,9 @@ def web_interface(args):
             else:
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                     bark_visible = visible_gr_tab_bark_params
-                    if not Path(folder_path).exists() or not any(Path(folder_path).iterdir()):
-                        bark_dir_src = default_engine_settings[TTS_ENGINES['BARK']]['speakers_src']
-                        bark_dir_dst = default_engine_settings[TTS_ENGINES['BARK']]['speakers_path']
+                    bark_dir_src = default_engine_settings[TTS_ENGINES['BARK']]['speakers_src']
+                    bark_dir_dst = default_engine_settings[TTS_ENGINES['BARK']]['speakers_path']
+                    if not Path(bark_dir_dst).exists() or not any(Path(bark_dir_dst).iterdir()):
                         os.makedirs(bark_dir_dst, exist_ok=True)
                         for npz_file in bark_dir_src.glob('*.npz'):
                             shutil.copy2(npz_file, bark_dir_dst / npz_file.name)
