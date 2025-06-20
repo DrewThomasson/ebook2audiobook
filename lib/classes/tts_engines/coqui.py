@@ -259,10 +259,10 @@ class Coqui:
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
             voice_parts = Path(voice_path).parts
-            if self.session['language'] not in voice_parts and self.session['language'] != 'en':               
+            if self.session['language'] not in voice_parts and self.session['language'] != 'eng':
                 if self.session['language'] in language_tts[TTS_ENGINES['XTTSv2']].keys():
                     lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
-                    new_voice_path = voice_path.replace('/eng/',f'/{lang_dir}/').replace('\\eng\\',f'\\{lang_dir}\\')
+                    new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
                     default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                     if os.path.exists(default_text_file):
                         msg = f"Converting builtin eng voice to {self.session['language']}..."
