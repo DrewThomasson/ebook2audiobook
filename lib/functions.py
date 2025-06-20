@@ -2437,6 +2437,8 @@ def web_interface(args):
                 session = context.get_session(id)
                 lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
                 file_pattern = "*_24000.wav"
+                eng_options = []
+                bark_options = []
                 builtin_options = [
                     (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
                     for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
@@ -2446,10 +2448,15 @@ def web_interface(args):
                         (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
                         for f in Path(os.path.join(voices_dir, 'eng')).rglob(file_pattern)
                     ]
-                else:
-                    eng_options = []
+                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                    lang = session['language_iso1'].lower()
+                    speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
+                    bark_options = [
+                        (re.sub(r'^.*?_speaker_(\d+)$', r'speaker \1', f.stem), str(f))
+                        for f in speakers_path.glob(f"{lang}_speaker_*.npz")
+                    ]
                 keys = {key for key, _ in builtin_options}
-                voice_options = builtin_options + [row for row in eng_options if row[0] not in keys]
+                voice_options = builtin_options + bark_options + [row for row in eng_options if row[0] not in keys]
                 parent_dir = Path(session['voice_dir']).parent
                 voice_options += [
                     (
@@ -2489,8 +2496,7 @@ def web_interface(args):
                     for dir in os.listdir(custom_model_tts_dir)
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
-                session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-                print(f"-----{session['custom_model']}----------")
+                session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[0] for option in custom_model_options] else custom_model_options[0][1]
                 return gr.update(choices=custom_model_options, value=session['custom_model'])
             except Exception as e:
                 error = f'update_gr_custom_model_list(): {e}!'
@@ -2593,9 +2599,9 @@ def web_interface(args):
             else:
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                     bark_visible = visible_gr_tab_bark_params
-                    bark_dir_src = default_engine_settings[TTS_ENGINES['BARK']]['speakers_src']
-                    bark_dir_dst = default_engine_settings[TTS_ENGINES['BARK']]['speakers_path']
-                    if not Path(bark_dir_dst).exists() or not any(Path(bark_dir_dst).iterdir()):
+                    bark_dir_src = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_src'])
+                    bark_dir_dst = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
+                    if not bark_dir_dst.exists() or not any(bark_dir_dst.iterdir()):
                         os.makedirs(bark_dir_dst, exist_ok=True)
                         for npz_file in bark_dir_src.glob('*.npz'):
                             shutil.copy2(npz_file, bark_dir_dst / npz_file.name)

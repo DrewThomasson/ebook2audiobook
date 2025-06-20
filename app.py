@@ -59,7 +59,7 @@ def check_and_install_requirements(file_path):
             packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip()]
         missing_packages = []
         for package in packages:
-            pkg_name = re.split(r'[<>=]', package)[0].strip()
+            pkg_name = re.split(r'[<>=]', re.sub(r'\[.*?\]', '', package), 1)[0].strip()
             try:
                 installed_version = version(pkg_name)
             except PackageNotFoundError:
