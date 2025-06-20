@@ -2341,9 +2341,9 @@ def web_interface(args):
         def click_gr_voice_del_btn(selected, id):          
             try:
                 if selected is not None:
-                    voice_name = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(selected))
-                    if voice_name in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys() or voice_name in default_engine_settings[TTS_ENGINES['YOURTTS']]['voices'].keys():
-                        error = f'Voice file {voice_name} is a builtin voice and cannot be deleted.'
+                    voice_path = re.sub(r'_(24000|16000)\.wav$|\.npz$', '', os.path.basename(selected))
+                    if voice_path in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys() or voice_path in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() or voice_path in default_engine_settings[TTS_ENGINES['YOURTTS']]['voices'].keys():
+                        error = f'Voice file {voice_path} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
                     else:                   
                         try:
