@@ -2452,14 +2452,15 @@ def web_interface(args):
                     lang_array = languages.get(part3=session['language'])
                     if lang_array:
                         lang_iso1 = lang_array.part1 
-                    lang = lang_iso1.lower()
-                    speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
-                    bark_options = [
-                        (re.sub(r'^.*?_speaker_(\d+)$', r'speaker \1', f.stem), str(f))
-                        for f in speakers_path.glob(f"{lang}_speaker_*.npz")
-                    ]
+                        lang = lang_iso1.lower()
+                        speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
+                        bark_options = [
+                            (re.sub(r'^.*?_speaker_(\d+)$', r'speaker \1', f.stem), str(f))
+                            for f in speakers_path.glob(f"{lang}_speaker_*.npz")
+                        ]
                 keys = {key for key, _ in builtin_options}
-                voice_options = builtin_options + bark_options + [row for row in eng_options if row[0] not in keys]
+                voice_options = builtin_options + [row for row in eng_options if row[0] not in keys]
+                voice_option += bark_options
                 parent_dir = Path(session['voice_dir']).parent
                 voice_options += [
                     (
