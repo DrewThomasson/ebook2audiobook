@@ -2490,6 +2490,7 @@ def web_interface(args):
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
                 session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
+                print(f"$$$$$$$$$$-----{session['custom_model']----------$$$$$$$$$")
                 return gr.update(choices=custom_model_options, value=session['custom_model'])
             except Exception as e:
                 error = f'update_gr_custom_model_list(): {e}!'
@@ -2572,8 +2573,8 @@ def web_interface(args):
                     state['type'] = 'error'
                     state['msg'] = error
                 show_alert(state)
-                return gr.update(value=None), gr.update()
-            return gr.update(), update_gr_custom_model_list(id)
+                return gr.update(value=None)
+            return gr.update()
 
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
@@ -2905,7 +2906,11 @@ def web_interface(args):
         gr_custom_model_file.upload(
             fn=change_gr_custom_model_file,
             inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
-            outputs=[gr_custom_model_file, gr_custom_model_list]
+            outputs=[gr_custom_model_file]
+        ).then(
+            fn=update_gr_custom_model_list,
+            inputs=[gr_session],
+            outputs=[gr_custom_model_list]
         )
         gr_custom_model_list.change(
             fn=change_gr_custom_model_list,
