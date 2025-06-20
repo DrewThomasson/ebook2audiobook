@@ -788,10 +788,7 @@ class Coqui:
                                 text=text_part
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
-                        speaker_argument = {
-                            phonemizer: "pyopenjtalk",
-                            phoneme_language: "ja"
-                        }
+                        speaker_argument = {}
                         if settings['voice_path'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
