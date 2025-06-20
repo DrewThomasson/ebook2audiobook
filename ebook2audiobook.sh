@@ -48,7 +48,6 @@ SCRIPT_MODE="$NATIVE"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 WGET=$(which wget 2>/dev/null)
-#REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rust" "sox")
 REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
@@ -160,37 +159,29 @@ else
 					echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
 					eval "$(/opt/homebrew/bin/brew shellenv)"
 				fi
-			#mecab_extra="mecab-ipadic"
 		else
 			SUDO="sudo"
 			echo -e "\e[33mInstalling required programs. NOTE: you must have 'sudo' priviliges to install ebook2audiobook.\e[0m"
 			PACK_MGR_OPTIONS=""
 			if command -v emerge &> /dev/null; then
 				PACK_MGR="emerge"
-				#mecab_extra="app-text/mecab app-text/mecab-ipadic"
 			elif command -v dnf &> /dev/null; then
 				PACK_MGR="dnf install"
 				PACK_MGR_OPTIONS="-y"
-				#mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v yum &> /dev/null; then
 				PACK_MGR="yum install"
 				PACK_MGR_OPTIONS="-y"
-				#mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v zypper &> /dev/null; then
 				PACK_MGR="zypper install"
 				PACK_MGR_OPTIONS="-y"
-				#mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v pacman &> /dev/null; then
 				PACK_MGR="pacman -Sy"
-				#mecab_extra="mecab-devel mecab-ipadic"
 			elif command -v apt-get &> /dev/null; then
 				$SUDO apt-get update
 				PACK_MGR="apt-get install"
 				PACK_MGR_OPTIONS="-y"
-				#mecab_extra="libmecab-dev mecab-ipadic-utf8"
 			elif command -v apk &> /dev/null; then
 				PACK_MGR="apk add"
-				#mecab_extra="mecab-dev mecab-ipadic"
 			else
 				echo "Cannot recognize your applications package manager. Please install the required applications manually."
 				return 1
@@ -227,18 +218,7 @@ else
 					else
 						echo "$program installation failed."
 					fi
-				fi
-			#elif [ "$program" = "mecab" ];then
-			#	if command -v emerge &> /dev/null; then
-			#		eval "$SUDO $PACK_MGR $mecab_extra $PACK_MGR_OPTIONS"
-			#	else
-			#		eval "$SUDO $PACK_MGR $program $mecab_extra $PACK_MGR_OPTIONS"
-			#	fi
-			#	if command -v $program >/dev/null 2>&1; then
-			#		echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
-			#	else
-			#		echo "$program installation failed."
-			#	fi		
+				fi	
 			elif [ "$program" = "rust" ]; then
 				if command -v apt-get &> /dev/null; then
 					app="rustc"
