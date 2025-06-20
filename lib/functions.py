@@ -2490,7 +2490,7 @@ def web_interface(args):
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
                 session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-                print(f"$$$$$$$$$$-----{session['custom_model']----------$$$$$$$$$")
+                print(f"$$$$$$$$$$-----{session['custom_model']}----------$$$$$$$$$")
                 return gr.update(choices=custom_model_options, value=session['custom_model'])
             except Exception as e:
                 error = f'update_gr_custom_model_list(): {e}!'
