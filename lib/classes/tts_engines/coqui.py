@@ -623,9 +623,11 @@ class Coqui:
                         '''
                         if speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys():
                             bark_dir = default_engine_settings[TTS_ENGINES['BARK']]['speakers_path']
+                            npz_file = os.path.join(bark_dir, f'{speaker}.npz')
                         else:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
-                            if self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
+                            npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
+                            if not self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
                                 error = 'Could not create npz file!'
                                 print(error)
                                 return False
@@ -637,9 +639,8 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        npz = os.path.join(bark_dir, speaker, f'{speaker}.npz')
-                        if self.npz_path is None or self.npz_path != npz:
-                            self.npz_path = npz
+                        if self.npz_path is None or self.npz_path != npz_file:
+                            self.npz_path = npz_file
                             self.npz_data = np.load(self.npz_path, allow_pickle=True)
                         history_prompt = [
                                 self.npz_data["semantic_prompt"],
