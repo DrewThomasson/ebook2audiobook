@@ -2449,7 +2449,10 @@ def web_interface(args):
                         for f in Path(os.path.join(voices_dir, 'eng')).rglob(file_pattern)
                     ]
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
-                    lang = session['language_iso1'].lower()
+                    lang_array = languages.get(part3=session['language'])
+                    if lang_array:
+                        lang_iso1 = lang_array.part1 
+                    lang = lang_iso1.lower()
                     speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
                     bark_options = [
                         (re.sub(r'^.*?_speaker_(\d+)$', r'speaker \1', f.stem), str(f))
