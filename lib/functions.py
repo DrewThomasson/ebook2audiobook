@@ -2455,7 +2455,7 @@ def web_interface(args):
                         lang = lang_iso1.lower()
                         speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
                         bark_options = [
-                            (re.sub(r'^.*?_speaker_(\d+)$', r'speaker \1', f.stem), str(f))
+                            (re.sub(r'^.*?_speaker_(\d+)$', r'Speaker \1', f.stem), str(f))
                             for f in speakers_path.glob(f"{lang}_speaker_*.npz")
                         ]
                 keys = {key for key, _ in builtin_options}
