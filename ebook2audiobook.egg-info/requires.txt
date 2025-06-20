@@ -11,8 +11,6 @@ hangul-romanize
 indic-nlp-library
 iso-639
 jieba
-mecab
-mecab-python3
 soynlp
 pythainlp
 m4b-util
@@ -29,5 +27,5 @@ pymupdf4llm
 sudachipy
 sudachidict_core
 torch
-coqui-tts>=0.26.2
+coqui-tts[all]>=0.26.2
 torchvggish
