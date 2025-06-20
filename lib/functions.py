@@ -2578,6 +2578,7 @@ def web_interface(args):
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
             session['tts_engine'] = engine
+            bark_visible = False
             if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                 visible_custom_model = True
                 if session['fine_tuned'] != 'internal':
@@ -2589,9 +2590,14 @@ def web_interface(args):
                        gr.update(label=f"My {session['tts_engine']} custom models")
                 )
             else:
-                bark_visible = False
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                     bark_visible = visible_gr_tab_bark_params
+                    if not Path(folder_path).exists() or not any(Path(folder_path).iterdir()):
+                    bark_dir_src = default_engine_settings[TTS_ENGINES['BARK']]['speakers_src']
+                    bark_dir_dst = default_engine_settings[TTS_ENGINES['BARK']]['speakers_path']
+                    os.makedirs(bark_dir_dst, exist_ok=True)
+                    for npz_file in bark_dir_src.glob('*.npz'):
+                        shutil.copy2(npz_file, bark_dir_dst / npz_file.name)
                 return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
