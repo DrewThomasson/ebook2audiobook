@@ -2572,8 +2572,8 @@ def web_interface(args):
                     state['type'] = 'error'
                     state['msg'] = error
                 show_alert(state)
-                return gr.update(value=None)
-            return gr.update()
+                return gr.update(value=None), gr.update()
+            return gr.update(), update_gr_custom_model_list(id)
 
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
@@ -2899,11 +2899,7 @@ def web_interface(args):
         gr_custom_model_file.upload(
             fn=change_gr_custom_model_file,
             inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
-            outputs=[gr_custom_model_file]
-        ).then(
-            fn=update_gr_custom_model_list,
-            inputs=[gr_session],
-            outputs=[gr_custom_model_list]
+            outputs=[gr_custom_model_file, gr_custom_model_list]
         )
         gr_custom_model_list.change(
             fn=change_gr_custom_model_list,
