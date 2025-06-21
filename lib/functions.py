@@ -2476,7 +2476,7 @@ def web_interface(args):
                     for f in parent_dir.rglob(file_pattern)
                     if f.is_file()
                 ]
-                voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
+                voice_options = [('Default', models[TTS_ENGINES[session['tts_engine']]]['voice'])] + sorted(voice_options, key=lambda x: x[0].lower())
                 session['voice'] = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
