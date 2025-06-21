@@ -62,7 +62,7 @@ def normalize_audio_folder(folder_path):
                 ffmpeg_cmd += [
                     '-filter_complex', filter_complex,
                     '-map', '[audio]',
-                    '-ar', 'null',
+                    '-ar', '24000',
                     '-y', process_file
                 ]
                 try:
