@@ -1,10 +1,52 @@
 import os
 import subprocess
+import argparse
+import torch
+
+def demucs_voice(wav_file, output_dir, models_dir):
+	try:
+		# Set TORCH_HOME for demucs
+		torch.hub.set_dir(models_dir)
+		os.environ['TORCH_HOME'] = models_dir
+
+		# Run demucs subprocess
+		cmd = [
+			"demucs",
+			"--verbose",
+			"--two-stems=vocals",
+			"--out", output_dir,
+			wav_file
+		]
+
+		print(f"🔄 Running: {' '.join(cmd)}")
+		subprocess.run(cmd, check=True)
+
+		# Output folder name is based on input filename
+		base_name = os.path.splitext(os.path.basename(wav_file))[0]
+		demucs_output_path = os.path.join(output_dir, "demucs", base_name, "vocals.wav")
+
+		if os.path.exists(demucs_output_path):
+			print(f"✅ Voice track saved to: {demucs_output_path}")
+			return demucs_output_path
+		else:
+			raise FileNotFoundError(f"Expected output not found: {demucs_output_path}")
+
+	except subprocess.CalledProcessError as e:
+		raise RuntimeError(
+			f"❌ demucs failed with exit code {e.returncode}.\n"
+			f"stdout: {getattr(e, 'output', 'N/A')}\n"
+			f"stderr: {getattr(e, 'stderr', 'N/A')}"
+		)
+	except FileNotFoundError as e:
+		raise RuntimeError("❌ 'demucs' command not found. Ensure it is installed and in PATH.") from e
+	except Exception as e:
+		raise RuntimeError(f"❌ Unexpected error: {e}") from e
 
 def normalize_audio_file(input_file, output_file):
-    # FFmpeg command
+    models_dir = os.path.join('..', 'models', 'tts')
+    demucs_file = demucs_voice(input_file, root_dir, models_dir)
     ffmpeg_cmd = [
-        'ffmpeg', '-i', input_file,
+        'ffmpeg', '-i', demucs_file,
         '-af', 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
                'afftdn=nf=-70,'
                'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
@@ -27,6 +69,7 @@ def normalize_audio_file(input_file, output_file):
         print(f"Unexpected error: {e}")
 
 # Example Usage
-input_file = os.path.join('voices', 'eng', 'adult', 'male', 'Jamie.wav')
-output_file = os.path.join('voices', 'eng', 'adult', 'male', 'Jamie2.wav')
+root_dir = os.path.join('..', 'voices')
+input_file = os.path.join(root_dir, 'eng', 'adult', 'male', 'Jamie.wav')
+output_file = os.path.join(root_dir, 'eng', 'adult', 'male', 'Jamie2.wav')
 normalize_audio_file(input_file, output_file)

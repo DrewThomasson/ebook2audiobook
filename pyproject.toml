@@ -25,6 +25,7 @@ dependencies = [
 	"docker",
 	"ebooklib",
 	"fastapi",
+	"fugashi",
 	"gradio",
 	"hangul-romanize",
 	"indic-nlp-library",
