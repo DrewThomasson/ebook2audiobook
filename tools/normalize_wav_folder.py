@@ -22,7 +22,7 @@ def demucs_voice(wav_file, output_dir, models_dir):
 		subprocess.run(cmd, check=True)
 
 		# Output folder name is based on input filename
-		demucs_output_path = os.path.join(output_dir, "demucs", "vocals.wav")
+		demucs_output_path = os.path.join(output_dir, "htdemucs", "vocals.wav")
 
 		if os.path.exists(demucs_output_path):
 			print(f"✅ Voice track saved to: {demucs_output_path}")
@@ -32,7 +32,7 @@ def demucs_voice(wav_file, output_dir, models_dir):
 
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError(
-			f"❌ demucs failed with exit code {e.returncode}.\n"
+			f"demucs failed with exit code {e.returncode}.\n"
 			f"stdout: {getattr(e, 'output', 'N/A')}\n"
 			f"stderr: {getattr(e, 'stderr', 'N/A')}"
 		)
