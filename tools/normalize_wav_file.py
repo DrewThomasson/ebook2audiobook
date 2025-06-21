@@ -44,25 +44,48 @@ def demucs_voice(wav_file, output_dir, models_dir):
 
 def normalize_audio_file(input_file, output_file):
     models_dir = os.path.join('..', 'models', 'tts')
-    demucs_file = demucs_voice(input_file, root_dir, models_dir)
-    ffmpeg_cmd = [
-        'ffmpeg', '-i', demucs_file,
-        '-af', 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
-               'afftdn=nf=-70,'
-               'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
-               'loudnorm=I=-16:TP=-3:LRA=7:linear=true,'
-               'equalizer=f=250:t=q:w=2:g=-3,'
-               'equalizer=f=150:t=q:w=2:g=2,'
-               'equalizer=f=3000:t=q:w=2:g=3,'
-               'equalizer=f=5500:t=q:w=2:g=-4,'
-               'equalizer=f=9000:t=q:w=2:g=-2,'
-               'highpass=f=63',
+    demucs_file = demucs_voice(input_file, folder_path, models_dir)
+    ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', demucs_file]
+    filter_complex = (
+        'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
+        'afftdn=nf=-70,'
+        'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
+        'loudnorm=I=-14:TP=-3:LRA=7:linear=true,'
+        'equalizer=f=150:t=q:w=2:g=1,'
+        'equalizer=f=250:t=q:w=2:g=-3,'
+        'equalizer=f=3000:t=q:w=2:g=2,'
+        'equalizer=f=5500:t=q:w=2:g=-4,'
+        'equalizer=f=9000:t=q:w=2:g=-2,'
+        'highpass=f=63[audio]'
+    )
+    ffmpeg_cmd += [
+        '-filter_complex', filter_complex,
+        '-map', '[audio]',
+        '-ar', 'null',
         '-y', output_file
     ]
-
     try:
-        subprocess.run(ffmpeg_cmd, check=True)
-        print(f"Processed file saved to: {output_file}")
+        process = subprocess.Popen(
+            ffmpeg_cmd,
+            env={},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            universal_newlines=True,
+            encoding='utf-8'
+        )
+        for line in process.stdout:
+            print(line, end='')  # Print each line of stdout
+        process.wait()
+        if process.returncode != 0:
+            error = f'normalize_audio(): process.returncode: {process.returncode}'
+        elif not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
+            error = f'normalize_audio() error: {output_file} was not created or is empty.'
+        else:
+            os.replace(process_file, input_file)
+            print(f"File processed and replaced: {input_file}")
+    except subprocess.CalledProcessError as e:
+        error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
     except subprocess.CalledProcessError as e:
         print(f"Error processing file {input_file}: {e}")
     except Exception as e:

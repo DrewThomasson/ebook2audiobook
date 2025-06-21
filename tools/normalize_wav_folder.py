@@ -9,7 +9,6 @@ def demucs_voice(wav_file, output_dir, models_dir):
 		# Set TORCH_HOME for demucs
 		torch.hub.set_dir(models_dir)
 		os.environ['TORCH_HOME'] = models_dir
-
 		# Run demucs subprocess
 		cmd = [
 			os.path.join('..', 'python_env', 'bin', 'demucs'),
@@ -18,20 +17,16 @@ def demucs_voice(wav_file, output_dir, models_dir):
 			"--out", output_dir,
 			wav_file
 		]
-
 		print(f"🔄 Running: {' '.join(cmd)}")
 		subprocess.run(cmd, check=True)
-
 		# Output folder name is based on input filename
 		base_name = os.path.splitext(os.path.basename(wav_file))[0]
 		demucs_output_path = os.path.join(output_dir, "htdemucs", base_name, "vocals.wav")
-
 		if os.path.exists(demucs_output_path):
 			print(f"✅ Voice track saved to: {demucs_output_path}")
 			return demucs_output_path
 		else:
 			raise FileNotFoundError(f"Expected output not found: {demucs_output_path}")
-
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError(
 			f"demucs failed with exit code {e.returncode}.\n"
@@ -86,8 +81,8 @@ def normalize_audio_folder(folder_path):
                     if process.returncode != 0:
                         error = f'normalize_audio(): process.returncode: {process.returncode}'
                         break
-                    elif not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
-                        error = f'normalize_audio() error: {output_file} was not created or is empty.'
+                    elif not os.path.exists(process_file) or os.path.getsize(process_file) == 0:
+                        error = f'normalize_audio() error: {process_file} was not created or is empty.'
                         break
                     else:
                         os.replace(process_file, input_file)
