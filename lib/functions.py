@@ -2476,7 +2476,12 @@ def web_interface(args):
                     for f in parent_dir.rglob(file_pattern)
                     if f.is_file()
                 ]
-                voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
+                if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+                    voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
+                else:
+                    if session['voice'] is None:
+                        session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
+                    voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                 session['voice'] = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
