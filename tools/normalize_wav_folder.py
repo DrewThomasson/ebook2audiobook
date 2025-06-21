@@ -11,7 +11,7 @@ def demucs_voice(wav_file, output_dir, models_dir):
 
 		# Run demucs subprocess
 		cmd = [
-			"demucs",
+			os.path.join('python_env', 'bin', 'demucs'),
 			"--verbose",
 			"--two-stems=vocals",
 			"--out", output_dir,
