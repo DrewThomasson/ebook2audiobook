@@ -48,7 +48,6 @@ def normalize_audio_folder(folder_path):
         for file in files:
             if file.lower().endswith('.wav'):
                 input_file = os.path.join(root, file)
-                temp_file = 
                 models_dir = os.path.join('..', 'models', 'tts')
                 demucs_file = demucs_voice(input_file, folder_path, models_dir)
                 process_file = os.path.join(root, 'temp_output.wav')  # Temporary file to avoid overwriting during processing
