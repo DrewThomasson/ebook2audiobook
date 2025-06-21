@@ -2618,7 +2618,8 @@ def web_interface(args):
                 if selected == 'internal':
                     visible = visible_gr_group_custom_model
             session['fine_tuned'] = selected
-            return gr.update(visible=visible)
+            session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
+            return update_gr_voice_list(id), gr.update(visible=visible)
 
         def change_gr_custom_model_list(selected, id):
             session = context.get_session(id)
@@ -2911,7 +2912,7 @@ def web_interface(args):
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
             inputs=[gr_fine_tuned_list, gr_session],
-            outputs=[gr_group_custom_model]
+            outputs=[gr_voice_list, gr_group_custom_model]
         )
         gr_custom_model_file.upload(
             fn=change_gr_custom_model_file,
