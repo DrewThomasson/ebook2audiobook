@@ -36,10 +36,11 @@ import uvicorn
 import zipfile
 import traceback
 import unicodedata
+import MeCab
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
-from sudachipy import dictionary, tokenizer
+#from sudachipy import dictionary, tokenizer
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -768,10 +769,14 @@ def get_sentences(text, lang, tts_engine):
     def segment_ideogramms(text):
         if lang == 'zho':
             return list(jieba.cut(text))
+        #elif lang == 'jpn':
+        #    sudachi = dictionary.Dictionary().create()
+        #    mode = tokenizer.Tokenizer.SplitMode.C
+        #    return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'jpn':
-            sudachi = dictionary.Dictionary().create()
-            mode = tokenizer.Tokenizer.SplitMode.C
-            return [m.surface() for m in sudachi.tokenize(text, mode)]
+            tagger = MeCab.Tagger("-Owakati")
+            tokens = tagger.parse(text).strip().split()
+            return tokens
         elif lang == 'kor':
             ltokenizer = LTokenizer()
             return ltokenizer.tokenize(text)
