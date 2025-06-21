@@ -28,5 +28,5 @@ pymupdf4llm
 sudachipy
 sudachidict_core
 torch
-coqui-tts[all]
+coqui-tts[languages]
 torchvggish
