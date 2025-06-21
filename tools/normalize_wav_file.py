@@ -11,7 +11,7 @@ def demucs_voice(wav_file, output_dir, models_dir):
 
 		# Run demucs subprocess
 		cmd = [
-			"demucs",
+			os.path.join('..', 'python_env', 'bin', 'demucs'),
 			"--verbose",
 			"--two-stems=vocals",
 			"--out", output_dir,
@@ -23,7 +23,7 @@ def demucs_voice(wav_file, output_dir, models_dir):
 
 		# Output folder name is based on input filename
 		base_name = os.path.splitext(os.path.basename(wav_file))[0]
-		demucs_output_path = os.path.join(output_dir, "demucs", base_name, "vocals.wav")
+		demucs_output_path = os.path.join(output_dir, "htdemucs", "vocals.wav")
 
 		if os.path.exists(demucs_output_path):
 			print(f"✅ Voice track saved to: {demucs_output_path}")
@@ -33,14 +33,14 @@ def demucs_voice(wav_file, output_dir, models_dir):
 
 	except subprocess.CalledProcessError as e:
 		raise RuntimeError(
-			f"❌ demucs failed with exit code {e.returncode}.\n"
+			f"demucs failed with exit code {e.returncode}.\n"
 			f"stdout: {getattr(e, 'output', 'N/A')}\n"
 			f"stderr: {getattr(e, 'stderr', 'N/A')}"
 		)
 	except FileNotFoundError as e:
-		raise RuntimeError("❌ 'demucs' command not found. Ensure it is installed and in PATH.") from e
+		raise RuntimeError(f"FileNotFoundError: {e}")
 	except Exception as e:
-		raise RuntimeError(f"❌ Unexpected error: {e}") from e
+		raise RuntimeError(f"Unexpected error: {e}")
 
 def normalize_audio_file(input_file, output_file):
     models_dir = os.path.join('..', 'models', 'tts')

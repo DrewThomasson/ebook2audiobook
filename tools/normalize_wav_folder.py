@@ -22,6 +22,7 @@ def demucs_voice(wav_file, output_dir, models_dir):
 		subprocess.run(cmd, check=True)
 
 		# Output folder name is based on input filename
+		base_name = os.path.splitext(os.path.basename(wav_file))[0]
 		demucs_output_path = os.path.join(output_dir, "htdemucs", "vocals.wav")
 
 		if os.path.exists(demucs_output_path):
