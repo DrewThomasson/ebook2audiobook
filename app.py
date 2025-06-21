@@ -1,4 +1,3 @@
-import logging
 import argparse
 import filecmp
 import importlib.util
@@ -10,8 +9,6 @@ import sys
 
 from pathlib import Path
 from lib import *
-
-logging.basicConfig(level=logging.DEBUG)
 
 def check_virtual_env(script_mode):
     current_version = sys.version_info[:2]  # (major, minor)
