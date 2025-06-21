@@ -36,11 +36,10 @@ import uvicorn
 import zipfile
 import traceback
 import unicodedata
-import MeCab
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
-#from sudachipy import dictionary, tokenizer
+from sudachipy import dictionary, tokenizer
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -769,14 +768,10 @@ def get_sentences(text, lang, tts_engine):
     def segment_ideogramms(text):
         if lang == 'zho':
             return list(jieba.cut(text))
-        #elif lang == 'jpn':
-        #    sudachi = dictionary.Dictionary().create()
-        #    mode = tokenizer.Tokenizer.SplitMode.C
-        #    return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'jpn':
-            tagger = MeCab.Tagger("-Owakati")
-            tokens = tagger.parse(text).strip().split()
-            return tokens
+            sudachi = dictionary.Dictionary().create()
+            mode = tokenizer.Tokenizer.SplitMode.C
+            return [m.surface() for m in sudachi.tokenize(text, mode)]
         elif lang == 'kor':
             ltokenizer = LTokenizer()
             return ltokenizer.tokenize(text)
@@ -2607,14 +2602,14 @@ def web_interface(args):
                     visible_custom_model = False
                 return (
                        gr.update(value=show_rating(session['tts_engine'])), 
-                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
+                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
                        gr.update(label=f"*Upload {session['tts_engine']} Model (Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
                        gr.update(label=f"My {session['tts_engine']} custom models")
                 )
             else:
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                     bark_visible = visible_gr_tab_bark_params
-                return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
+                return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), update_gr_voice_list(id), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
@@ -2911,7 +2906,7 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
+            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_voice_list, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
