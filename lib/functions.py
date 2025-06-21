@@ -2467,15 +2467,16 @@ def web_interface(args):
                 keys = {key for key, _ in builtin_options}
                 voice_options = builtin_options + [row for row in eng_options if row[0] not in keys]
                 voice_options += bark_options
-                parent_dir = Path(session['voice_dir']).parent
-                voice_options += [
-                    (
-                        os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0],
-                        str(f)
-                    )
-                    for f in parent_dir.rglob(file_pattern)
-                    if f.is_file()
-                ]
+                if session['voice_dir'] is not None:
+                    parent_dir = Path(session['voice_dir']).parent
+                    voice_options += [
+                        (
+                            os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0],
+                            str(f)
+                        )
+                        for f in parent_dir.rglob(file_pattern)
+                        if f.is_file()
+                    ]
                 if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 else:

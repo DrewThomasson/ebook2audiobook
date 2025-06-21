@@ -273,6 +273,7 @@ class Coqui:
                         hf_sub = ''
                         tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
                         if not tts:
+                            for key in list(loaded_tts.keys()): self._unload_tts(device, key)
                             config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][0]}", cache_dir=self.cache_dir)
                             checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][1]}", cache_dir=self.cache_dir)
                             vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][2]}", cache_dir=self.cache_dir)
@@ -354,6 +355,7 @@ class Coqui:
                     hf_sub = models[TTS_ENGINES['BARK']]['internal']['sub']
                     tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
                     if not tts:
+                        for key in list(loaded_tts.keys()): self._unload_tts(device, key)
                         text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][0]}", cache_dir=self.cache_dir)
                         coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][1]}", cache_dir=self.cache_dir)
                         fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][2]}", cache_dir=self.cache_dir)
