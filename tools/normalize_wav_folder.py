@@ -37,9 +37,9 @@ def demucs_voice(wav_file, output_dir, models_dir):
 			f"stderr: {getattr(e, 'stderr', 'N/A')}"
 		)
 	except FileNotFoundError as e:
-		raise RuntimeError("❌ 'demucs' command not found. Ensure it is installed and in PATH.") from e
+		raise RuntimeError(f"FileNotFoundError: {e}")
 	except Exception as e:
-		raise RuntimeError(f"❌ Unexpected error: {e}") from e
+		raise RuntimeError(f"Unexpected error: {e}")
 
 def normalize_audio_folder(folder_path):
     for root, dirs, files in os.walk(folder_path):
