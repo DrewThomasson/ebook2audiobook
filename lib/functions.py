@@ -292,7 +292,7 @@ def extract_custom_model(file_src, session, required_files=None):
 		if model_path is not None:
 			msg = f'Extracted files to {model_path}'
 			print(msg)
-			return model_name
+			return model_path
 		else:
 			error = f'An error occured when unzip {file_src}'
 			return None
