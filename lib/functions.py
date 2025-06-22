@@ -2508,7 +2508,10 @@ def web_interface(args):
                 session = context.get_session(id)
                 custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
                 custom_model_options = [('None', None)] + [
-                    (os.path.basename(os.path.join(custom_model_tts_dir, dir)), os.path.join(custom_model_tts_dir, dir))
+                    (
+                        os.path.join(custom_model_tts_dir, dir),
+                        str(dir)
+                    )
                     for dir in os.listdir(custom_model_tts_dir)
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
