@@ -91,8 +91,10 @@ def normalize_audio_file(input_file, output_file):
     except Exception as e:
         print(f"Unexpected error: {e}")
 
-# Example Usage
-root_dir = os.path.join('..', 'voices')
-input_file = os.path.join(root_dir, 'eng', 'adult', 'male', 'Jamie.wav')
-output_file = os.path.join(root_dir, 'eng', 'adult', 'male', 'Jamie2.wav')
-normalize_audio_file(input_file, output_file)
+if __name__ == "__main__":
+	if len(sys.argv) != 3:
+		print(f"Usage: python {os.path.basename(__file__)} <input_file> <output_file>")
+		sys.exit(1)
+	input_file = os.path.abspath(sys.argv[1])
+	output_file = os.path.abspath(sys.argv[2])
+	normalize_audio_file(input_file, output_file)

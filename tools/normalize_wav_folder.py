@@ -97,5 +97,9 @@ def normalize_audio_folder(folder_path):
                     print(f"Unexpected error: {e}")
                     break
 
-folder_path = '../assets/bark'
-normalize_audio_folder(folder_path)
+if __name__ == "__main__":
+	if len(sys.argv) != 2:
+		print(f"Usage: python {os.path.basename(__file__)} <folder_path>")
+		sys.exit(1)
+	folder_path = os.path.abspath(sys.argv[1])
+	normalize_audio_folder(folder_path)
