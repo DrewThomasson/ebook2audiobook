@@ -130,7 +130,11 @@ def wav_to_npz(bark_dir, wav_dir):
         print(f'wav_to_npz() error: {e}')
 
 if __name__ == "__main__":
-    bark_dir = os.path.abspath(os.path.join('.', 'assets', 'bark'))
-    wav_dir = os.path.abspath(os.path.join('.', 'assets', 'bark_wav')) 
+    parser = argparse.ArgumentParser(description="Convert WAV files to Bark NPZ format.")
+    parser.add_argument("--bark_dir", type=str, required=True, help="Path to the Bark asset directory")
+    parser.add_argument("--wav_dir", type=str, required=True, help="Path to the output WAV directory")
+    args = parser.parse_args()
+    bark_dir = os.path.abspath(args.bark_dir)
+    wav_dir = os.path.abspath(args.wav_dir)
     wav_to_npz(bark_dir, wav_dir)
 

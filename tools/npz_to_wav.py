@@ -53,12 +53,16 @@ def npz_to_wav(npz_path, output_path):
 	torchaudio.save(output_path, audio_tensor, SAMPLE_RATE)
 	print(f"✅ Saved: {output_path}")
 
-def process_all_npz_in_folder(folder="./assets/bark"):
+def process_all_npz_in_folder(folder_path):
 	preload_models()
-	for npz_file in Path(folder).glob("*.npz"):
+	for npz_file in Path(folder_path).glob("*.npz"):
 		output_path = npz_file.with_suffix(".wav")
 		npz_to_wav(str(npz_file), str(output_path))
 
 if __name__ == "__main__":
-	process_all_npz_in_folder()
+	parser = argparse.ArgumentParser(description="Process all NPZ files in a folder.")
+	parser.add_argument("--folder_path", type=str, required=True, help="Path to the folder containing NPZ files")
+	args = parser.parse_args()
+	folder_path = os.path.abspath(args.folder_path)
+	process_all_npz_in_folder(folder_path)
 
