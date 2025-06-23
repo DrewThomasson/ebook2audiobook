@@ -1,6 +1,7 @@
 import os
 
 tmp_dir = os.path.abspath(os.path.join('..', 'tmp'))
+models_dir = os.path.abspath(os.path.join('..', 'models'))
 tts_dir = os.path.join(models_dir, 'tts')
 
 os.environ['PYTHONUTF8'] = '1'
