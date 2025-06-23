@@ -244,7 +244,6 @@ class Coqui:
             if tts_key is not None:
                 if tts_key in loaded_tts.keys():
                     del loaded_tts[tts_key]
-                    gc.collect()
             else:
                 for key in list(loaded_tts.keys()):
                     if key != self.tts_vc_key and key != self.tts_key:
@@ -253,6 +252,7 @@ class Coqui:
                 if device != 'cpu':
                     torch.cuda.empty_cache()
                     torch.cuda.synchronize()
+            gc.collect()
 
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
@@ -904,8 +904,6 @@ class Coqui:
                     self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)
                     torchaudio.save(final_sentence, audio_tensor, sample_rate, format=default_audio_proc_format)
                     del audio_tensor
-                if self.session['device'] == 'cuda':
-                    torch.cuda.empty_cache()
                 if os.path.exists(final_sentence):
                     return True
                 else:
