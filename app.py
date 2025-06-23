@@ -230,6 +230,12 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
 
         from lib.functions import web_interface, convert_ebook_batch, convert_ebook
 
+        # copy bark builtin voices in cache if not exists
+        bark_dir_src = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_src'])
+        bark_dir_dst = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
+        if not bark_dir_dst.exists() or not any(bark_dir_dst.iterdir()):
+            shutil.copytree(bark_dir_src, bark_dir_dst, dirs_exist_ok=True)
+
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False

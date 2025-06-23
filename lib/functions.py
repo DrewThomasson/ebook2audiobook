@@ -198,10 +198,6 @@ def prepare_dirs(src, session):
         os.makedirs(session['chapters_dir'], exist_ok=True)
         os.makedirs(session['chapters_dir_sentences'], exist_ok=True)
         shutil.copy(src, session['ebook']) 
-        bark_dir_src = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_src'])
-        bark_dir_dst = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
-        if not bark_dir_dst.exists() or not any(bark_dir_dst.iterdir()):
-            shutil.copytree(bark_dir_src, bark_dir_dst, dirs_exist_ok=True)
         return True
     except Exception as e:
         DependencyError(e)
