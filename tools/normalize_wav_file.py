@@ -1,4 +1,5 @@
 import os
+import sys
 import subprocess
 import argparse
 import torch
@@ -44,6 +45,7 @@ def demucs_voice(wav_file, output_dir, models_dir):
 
 def normalize_audio_file(input_file, output_file):
     models_dir = os.path.join('..', 'models', 'tts')
+    folder_path = os.path.dirname(output_file)
     demucs_file = demucs_voice(input_file, folder_path, models_dir)
     ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', demucs_file]
     filter_complex = (
