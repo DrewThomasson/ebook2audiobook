@@ -59,4 +59,3 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	folder_path = os.path.abspath(args.folder_path)
 	process_all_npz_in_folder(folder_path)
- 
