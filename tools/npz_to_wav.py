@@ -39,18 +39,11 @@ from bark import SAMPLE_RATE, preload_models
 from bark.generation import codec_decode
 
 def npz_to_wav(npz_path, output_path):
-	# Load Bark models once (assumes global)
 	preload_models()
-
-	# Load .npz
 	data = np.load(npz_path)
 	fine_prompt = data["fine_prompt"]
-
-	# Decode audio
 	audio_array = codec_decode(fine_prompt)
 	audio_tensor = torch.tensor(audio_array).unsqueeze(0)
-
-	# Save .wav
 	torchaudio.save(output_path, audio_tensor, SAMPLE_RATE)
 	print(f"✅ Saved: {output_path}")
 
