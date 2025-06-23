@@ -1977,18 +1977,18 @@ def web_interface(args):
                     '''
                 )
                 gr_xtts_temperature = gr.Slider(
-                    label='Temperature', 
-                    minimum=0.1, 
-                    maximum=10.0, 
-                    step=0.1, 
+                    label='Temperature',
+                    minimum=0.1,
+                    maximum=10.0,
+                    step=0.1,
                     value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
                     elem_id='gr_xtts_temperature',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
                 )
                 gr_xtts_length_penalty = gr.Slider(
-                    label='Length Penalty', 
-                    minimum=0.3, 
-                    maximum=5.0, 
+                    label='Length Penalty',
+                    minimum=0.3,
+                    maximum=5.0,
                     step=0.1,
                     value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
                     elem_id='gr_xtts_length_penalty',
@@ -1996,39 +1996,39 @@ def web_interface(args):
                     visible=False
                 )
                 gr_xtts_num_beams = gr.Slider(
-                    label='Number Beams', 
-                    minimum=1, 
-                    maximum=10, 
-                    step=1, 
+                    label='Number Beams',
+                    minimum=1,
+                    maximum=10,
+                    step=1,
                     value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
                     elem_id='gr_xtts_num_beams',
                     info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
                     visible=False
                 )
                 gr_xtts_repetition_penalty = gr.Slider(
-                    label='Repetition Penalty', 
-                    minimum=1.0, 
-                    maximum=10.0, 
-                    step=0.1, 
+                    label='Repetition Penalty',
+                    minimum=1.0,
+                    maximum=10.0,
+                    step=0.1,
                     value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
                     elem_id='gr_xtts_repetition_penalty',
                     info='Penalizes repeated phrases. Higher values reduce repetition.'
                 )
                 gr_xtts_top_k = gr.Slider(
-                    label='Top-k Sampling', 
-                    minimum=10, 
-                    maximum=100, 
-                    step=1, 
+                    label='Top-k Sampling',
+                    minimum=10,
+                    maximum=100,
+                    step=1,
                     value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
                     elem_id='gr_xtts_top_k',
                     info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
                 )
                 gr_xtts_top_p = gr.Slider(
-                    label='Top-p Sampling', 
-                    minimum=0.1, 
+                    label='Top-p Sampling',
+                    minimum=0.1,
                     maximum=1.0, 
-                    step=0.01, 
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']), 
+                    step=0.01,
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']),
                     elem_id='gr_xtts_top_p',
                     info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
                 )
@@ -2058,18 +2058,18 @@ def web_interface(args):
                 )
                 gr_bark_text_temp = gr.Slider(
                     label='Text Temperature', 
-                    minimum=0.0, 
-                    maximum=1.0, 
-                    step=0.01, 
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
                     value=float(default_engine_settings[TTS_ENGINES['BARK']]['text_temp']),
                     elem_id='gr_bark_text_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
                 gr_bark_waveform_temp = gr.Slider(
                     label='Waveform Temperature', 
-                    minimum=0.0, 
-                    maximum=1.0, 
-                    step=0.01, 
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
                     value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
@@ -2220,7 +2220,7 @@ def web_interface(args):
             DependencyError(error)
 
         def restore_interface(id):
-            session = context.get_session(id)              
+            session = context.get_session(id)
             ebook_data = None
             file_count = session['ebook_mode']
             if isinstance(session['ebook_list'], list) and file_count == 'directory':
@@ -2275,7 +2275,7 @@ def web_interface(args):
                         return gr.update(variant='primary', interactive=False)
             except Exception as e:
                 error = f'update_convert_btn(): {e}'
-                alert_exception(error)               
+                alert_exception(error)
 
         def change_gr_ebook_file(data, id):
             try:
@@ -2344,14 +2344,14 @@ def web_interface(args):
             min_width = 60 if session['voice'] is not None else 0
             return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible)
 
-        def click_gr_voice_del_btn(selected, id):          
+        def click_gr_voice_del_btn(selected, id):
             try:
                 if selected is not None:
                     speaker = re.sub(r'_(24000|16000)\.wav$|\.npz$', '', os.path.basename(selected))
                     if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['YOURTTS']]['voices'].keys():
                         error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
-                    else:                   
+                    else:
                         try:
                             session = context.get_session(id)
                             selected_path = Path(selected).resolve()
@@ -2487,7 +2487,7 @@ def web_interface(args):
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
-                alert_exception(error)              
+                alert_exception(error)
                 return gr.update()
 
         def update_gr_tts_engine_list(id):
@@ -2519,7 +2519,7 @@ def web_interface(args):
                 return gr.update(choices=custom_model_options, value=session['custom_model'])
             except Exception as e:
                 error = f'update_gr_custom_model_list(): {e}!'
-                alert_exception(error)              
+                alert_exception(error)
                 return gr.update()
 
         def update_gr_fine_tuned_list(id):
