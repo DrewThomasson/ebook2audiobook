@@ -1,4 +1,6 @@
 import os
+import platform
+import argparse
 
 tmp_dir = os.path.abspath(os.path.join('..', 'tmp'))
 models_dir = os.path.abspath(os.path.join('..', 'models'))
@@ -15,7 +17,6 @@ os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir
 os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
 os.environ['HF_HOME'] = tts_dir
 os.environ['HF_DATASETS_CACHE'] = tts_dir
-os.environ['TRANSFORMERS_CACHE'] = tts_dir
 os.environ['BARK_CACHE_DIR'] = tts_dir
 os.environ['TTS_CACHE'] = tts_dir
 os.environ['TORCH_HOME'] = tts_dir
@@ -30,7 +31,6 @@ os.environ['SUNO_USE_SMALL_MODELS'] = 'False' # BARK option: False needs a GPU w
 if platform.system() == 'Windows':
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
 
-import platform
 import torch
 import torchaudio
 import numpy as np
