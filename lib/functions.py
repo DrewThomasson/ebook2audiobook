@@ -201,9 +201,7 @@ def prepare_dirs(src, session):
         bark_dir_src = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_src'])
         bark_dir_dst = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
         if not bark_dir_dst.exists() or not any(bark_dir_dst.iterdir()):
-            os.makedirs(bark_dir_dst, exist_ok=True)
-            for npz_file in bark_dir_src.glob('*.npz'):
-                shutil.copy2(npz_file, bark_dir_dst / npz_file.name)
+            shutil.copytree(bark_dir_src, bark_dir_dst, dirs_exist_ok=True)
         return True
     except Exception as e:
         DependencyError(e)
