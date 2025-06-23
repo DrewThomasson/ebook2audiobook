@@ -49,7 +49,7 @@ def npz_to_wav(npz_path, output_path):
 
 def process_all_npz_in_folder(folder_path):
 	preload_models()
-	for npz_file in Path(folder_path).glob("*.npz"):
+	for npz_file in Path(folder_path).rglob("*.npz"):
 		output_path = npz_file.with_suffix(".wav")
 		npz_to_wav(str(npz_file), str(output_path))
 
