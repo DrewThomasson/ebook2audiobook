@@ -565,8 +565,8 @@ class Coqui:
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
-                sample_rate = 16000 if self.session['tts_engine'] in [TTS_ENGINES['TACOTRON2'], TTS_ENGINES['VITS']] and self.session['voice'] is not None else settings['sample_rate']
-                silence_tensor = torch.zeros(1, int(sample_rate * 1.4)) # 1.4 seconds
+                setting['sample_rate'] = self.params[self.session['tts_engine']]['sample_rate']
+                silence_tensor = torch.zeros(1, int(settings['sample_rate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
                     text_part = text_part.strip()
@@ -890,9 +890,9 @@ class Coqui:
                 if audio_segments:
                     audio_tensor = torch.cat(audio_segments, dim=-1)
                     if audio2trim:
-                        audio_tensor = self._trim_audio(audio_tensor.squeeze(), sample_rate, 0.001, trim_audio_buffer).unsqueeze(0)
+                        audio_tensor = self._trim_audio(audio_tensor.squeeze(), settings['sample_rate'], 0.001, trim_audio_buffer).unsqueeze(0)
                     start_time = self.sentences_total_time
-                    duration = audio_tensor.shape[-1] / sample_rate
+                    duration = audio_tensor.shape[-1] / settings['sample_rate']
                     end_time = start_time + duration
                     self.sentences_total_time = end_time
                     sentence_obj = {
@@ -902,7 +902,7 @@ class Coqui:
                         "resume_check": self.sentence_idx
                     }
                     self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)
-                    torchaudio.save(final_sentence, audio_tensor, sample_rate, format=default_audio_proc_format)
+                    torchaudio.save(final_sentence, audio_tensor, settings['sample_rate'], format=default_audio_proc_format)
                     del audio_tensor
                 if os.path.exists(final_sentence):
                     return True
