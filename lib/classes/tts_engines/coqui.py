@@ -650,7 +650,7 @@ class Coqui:
                                 self.npz_data["fine_prompt"]
                         ]
                         with torch.no_grad():
-                            torch.manual_seed(123)
+                            torch.manual_seed(67878789)
                             audio_part, _ = tts.generate_audio(
                                 text_part,
                                 history_prompt=history_prompt,
