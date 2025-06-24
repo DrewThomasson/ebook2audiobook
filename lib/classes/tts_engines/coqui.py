@@ -625,8 +625,8 @@ class Coqui:
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
                         print(f'--------------------{speaker}-----------------------')
-                        if speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys():
-                            bark_dir = default_engine_settings[TTS_ENGINES['BARK']]['speakers_path']
+                        if speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
+                            bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
                             npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                         else:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
