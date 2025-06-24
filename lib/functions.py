@@ -37,10 +37,6 @@ import zipfile
 import traceback
 import unicodedata
 
-import lib.conf as conf
-import lib.lang as lang
-import lib.models as mod
-
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
@@ -60,22 +56,15 @@ from num2words import num2words
 from pathlib import Path
 from pydub import AudioSegment
 from queue import Queue, Empty
-from starlette.requests import ClientDisconnect
 from types import MappingProxyType
 from urllib.parse import urlparse
+from starlette.requests import ClientDisconnect
 
-#from lib.classes.redirect_console import RedirectConsole
+from lib import *
 from lib.classes.voice_extractor import VoiceExtractor
-#from lib.classes.argos_translator import ArgosTranslator
 from lib.classes.tts_manager import TTSManager
-
-def inject_configs(target_namespace):
-    # Extract variables from both modules and inject them into the target namespace
-    for module in (conf, lang, mod):
-        target_namespace.update({k: v for k, v in vars(module).items() if not k.startswith('__')})
-
-# Inject configurations into the global namespace of this module
-inject_configs(globals())
+#from lib.classes.redirect_console import RedirectConsole
+#from lib.classes.argos_translator import ArgosTranslator
 
 class DependencyError(Exception):
     def __init__(self, message=None):
@@ -153,16 +142,16 @@ class SessionContext:
                 "progress": 0,
                 "time": None,
                 "cancellation_requested": False,
-                "temperature": default_xtts_settings['temperature'],
-                "length_penalty": default_xtts_settings['length_penalty'],
-                "num_beams": default_xtts_settings['num_beams'],
-                "repetition_penalty": default_xtts_settings['repetition_penalty'],
-                "top_k": default_xtts_settings['top_k'],
-                "top_p": default_xtts_settings['top_k'],
-                "speed": default_xtts_settings['speed'],
-                "enable_text_splitting": default_xtts_settings['enable_text_splitting'],
-                "text_temp": default_bark_settings['text_temp'],
-                "waveform_temp": default_bark_settings['waveform_temp'],
+                "temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
+                "length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
+                "num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
+                "repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
+                "top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
+                "top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
+                "speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
+                "enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+                "text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
+                "waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
                 "event": None,
                 "final_name": None,
                 "output_format": default_output_format,
@@ -268,45 +257,49 @@ def analyze_uploaded_file(zip_path, required_files):
         raise RuntimeError(error)
 
 def extract_custom_model(file_src, session, required_files=None):
-    try:
-        model_path = None
-        if required_files is None:
-            required_files = models[session['tts_engine']][default_fine_tuned]['files']
-        model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
-        model_name = get_sanitized(model_name)
-        with zipfile.ZipFile(file_src, 'r') as zip_ref:
-            files = zip_ref.namelist()
-            files_length = len(files)
-            tts_dir = session['tts_engine']    
-            model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
-            if os.path.exists(model_path):
-                print(f'{model_path} already exists, bypassing files extraction')
-                return model_path
-            os.makedirs(model_path, exist_ok=True)
-            with tqdm(total=files_length, unit='files') as t:
-                for f in files:
-                    if f in required_files:
-                        zip_ref.extract(f, model_path)
-                    t.update(1)
-        if is_gui_process:
-            os.remove(file_src)
-        if model_path is not None:
-            msg = f'Extracted files to {model_path}'
-            print(msg)
-            return model_name
-        else:
-            error = f'An error occured when unzip {file_src}'
-            return None
-    except asyncio.exceptions.CancelledError:
-        DependencyError(e)
-        if is_gui_process:
-            os.remove(file_src)
-        return None       
-    except Exception as e:
-        DependencyError(e)
-        if is_gui_process:
-            os.remove(file_src)
-        return None
+	try:
+		model_path = None
+		if required_files is None:
+			required_files = models[session['tts_engine']][default_fine_tuned]['files']
+		model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
+		model_name = get_sanitized(model_name)
+		with zipfile.ZipFile(file_src, 'r') as zip_ref:
+			files = zip_ref.namelist()
+			files_length = len(files)
+			tts_dir = session['tts_engine']
+			model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
+			if os.path.exists(model_path):
+				print(f'{model_path} already exists, bypassing files extraction')
+				return model_path
+			os.makedirs(model_path, exist_ok=True)
+			required_files_lc = set(x.lower() for x in required_files)
+			with tqdm(total=files_length, unit='files') as t:
+				for f in files:
+					base_f = os.path.basename(f).lower()
+					if base_f in required_files_lc:
+						out_path = os.path.join(model_path, base_f)
+						with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
+							shutil.copyfileobj(src, dst)
+					t.update(1)
+		if is_gui_process:
+			os.remove(file_src)
+		if model_path is not None:
+			msg = f'Extracted files to {model_path}'
+			print(msg)
+			return model_path
+		else:
+			error = f'An error occured when unzip {file_src}'
+			return None
+	except asyncio.exceptions.CancelledError as e:
+		DependencyError(e)
+		if is_gui_process:
+			os.remove(file_src)
+		return None       
+	except Exception as e:
+		DependencyError(e)
+		if is_gui_process:
+			os.remove(file_src)
+		return None
         
 def hash_proxy_dict(proxy_dict):
     return hashlib.md5(str(proxy_dict).encode('utf-8')).hexdigest()
@@ -363,6 +356,38 @@ def proxy2dict(proxy_obj):
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
 
+def check_formatted_number(text, max_single_value=999_999_999_999_999):
+    text = text.strip()
+    digit_count = sum(c.isdigit() for c in text)
+    if digit_count <= 9:
+        return text  # Skip conversion
+    try:
+        as_number = float(text.replace(",", ""))
+        if abs(as_number) <= max_single_value:
+            return text
+    except ValueError:
+        pass
+    tokens = re.findall(r'\d*\.\d+|\d+|[^\d\s]', text)
+    result = []
+    for token in tokens:
+        if re.fullmatch(r'\d*\.\d+', token):
+            try:
+                num = float(token)
+                result.append(num2words(num))
+            except:
+                result.append(token)
+        elif token.isdigit():
+            try:
+                num = int(token)
+                result.append(num2words(num))
+            except:
+                result.append(token)
+        elif token in {',', '.'}:
+            result.append(token + ' ')
+        else:
+            result.append(token)
+    return ''.join(result).strip()
+
 def math2word(text, lang, lang_iso1, tts_engine):
     def check_compat():
         try:
@@ -395,6 +420,8 @@ def math2word(text, lang, lang_iso1, tts_engine):
             return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
         return match.group(0)
 
+    # Check if it's a serie of small numbers with a separator
+    text = check_formatted_number(text)
     is_num2words_compat = check_compat()
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     # Separate ambiguous and non-ambiguous symbols
@@ -415,7 +442,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
     # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
     number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
-    if tts_engine in [TACOTRON2, VITS, FAIRSEQ, YOURTTS]:
+    if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
         if is_num2words_compat:
             # Pattern 2: Split big numbers into groups of 4
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
@@ -464,10 +491,9 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     pattern = '|'.join(map(re.escape, punctuation_split))
     # Reduce multiple consecutive punctuations
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
-    if tts_engine == XTTSv2:
+    if tts_engine == TTS_ENGINES['XTTSv2']:
         # Pattern 1: Add a space between UTF-8 characters and numbers
         text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    if tts_engine == XTTSv2:
         pattern_space = re.escape(''.join(punctuation_list))
         # Ensure space before and after punctuation (excluding `,` and `.`)
         punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
@@ -476,7 +502,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
         comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
         text = re.sub(comma_dot_pattern, r' \1 ', text)
     # Replace special chars with words
-    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping["eng"]
+    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
     for char, word in specialchars.items():
         text = text.replace(char, f" {word} ")
     for char in specialchars_remove:
@@ -569,7 +595,7 @@ def get_ebook_title(epubBook, all_docs):
         # 3. Try <img alt="..."> if no visible <title>
         img = soup.find("img", alt=True)
         if img:
-            alt = img["alt"].strip()
+            alt = img['alt'].strip()
             if alt and "cover" not in alt.lower():
                 return alt
     return None
@@ -820,7 +846,7 @@ def get_sentences(text, lang, tts_engine):
                     split_index = before if (mid - before) <= (after - mid) else after
         delim_used = sentence[split_index - 1] if split_index > 0 else None
         end = ''
-        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != BARK:
+        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != TTS_ENGINES['BARK']:
             end = ' -' if delim_used == ' ' else end
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:')
@@ -834,7 +860,7 @@ def get_sentences(text, lang, tts_engine):
         if part2:
             if len(part2) <= max_chars:
                 if part2 and part2[-1].isalpha():
-                    if tts_engine != BARK:
+                    if tts_engine != TTS_ENGINES['BARK']:
                         part2 += ' -'
                 result.append(part2)
             else:
@@ -994,7 +1020,6 @@ def convert_chapters2audio(session):
                 start = sentence_number
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
-                print(sentences)
                 for i, sentence in enumerate(sentences):
                     if session['cancellation_requested']:
                         msg = 'Cancel requested'
@@ -1469,7 +1494,10 @@ def convert_ebook(args):
             info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
 
             if not is_gui_process:
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions',f"voice-{session['id']}")
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                os.makedirs(session['voice_dir'], exist_ok=True)
+                # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
+                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
                 if session['custom_model'] is not None:
                     if not os.path.exists(session['custom_model_dir']):
@@ -1486,8 +1514,7 @@ def convert_ebook(args):
                                 error = f"{model} could not be extracted or mandatory files are missing"
                         else:
                             error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
-                if session['voice'] is not None:
-                    os.makedirs(session['voice_dir'], exist_ok=True)
+                if session['voice'] is not None:                  
                     voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
                     final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
                     if not os.path.exists(final_voice_file):
@@ -1518,8 +1545,8 @@ def convert_ebook(args):
                         vram_avail = get_vram()
                         if vram_avail <= 4:
                             msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
-                            if session['tts_engine'] == BARK:
-                                os.environ["SUNO_USE_SMALL_MODELS"] = 'True'
+                            if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                 msg_extra += f"Switching BARK to SMALL models - "
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
@@ -1530,13 +1557,13 @@ def convert_ebook(args):
                             if session['device'] == 'cpu':
                                 msg += f"MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
                         if session['device'] == 'cpu':
-                            if session['tts_engine'] == BARK:
-                                os.environ["SUNO_OFFLOAD_CPU"] = 'True'
-                        if default_xtts_settings['use_deepspeed'] == True:
+                            if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                os.environ['SUNO_OFFLOAD_CPU'] = 'True'
+                        if default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] == True:
                             try:
                                 import deepspeed
                             except:
-                                default_xtts_settings['use_deepspeed'] = False
+                                default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] = False
                                 msg_extra += 'deepseed not installed or package is broken. set to False - '
                             else: 
                                 msg_extra += 'deepspeed detected and ready!'
@@ -1944,58 +1971,58 @@ def web_interface(args):
                     '''
                 )
                 gr_xtts_temperature = gr.Slider(
-                    label='Temperature', 
-                    minimum=0.1, 
-                    maximum=10.0, 
-                    step=0.1, 
-                    value=float(default_xtts_settings['temperature']),
+                    label='Temperature',
+                    minimum=0.1,
+                    maximum=10.0,
+                    step=0.1,
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
                     elem_id='gr_xtts_temperature',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
                 )
                 gr_xtts_length_penalty = gr.Slider(
-                    label='Length Penalty', 
-                    minimum=0.3, 
-                    maximum=5.0, 
+                    label='Length Penalty',
+                    minimum=0.3,
+                    maximum=5.0,
                     step=0.1,
-                    value=float(default_xtts_settings['length_penalty']),
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
                     elem_id='gr_xtts_length_penalty',
                     info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
                     visible=False
                 )
                 gr_xtts_num_beams = gr.Slider(
-                    label='Number Beams', 
-                    minimum=1, 
-                    maximum=10, 
-                    step=1, 
-                    value=int(default_xtts_settings['num_beams']),
+                    label='Number Beams',
+                    minimum=1,
+                    maximum=10,
+                    step=1,
+                    value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
                     elem_id='gr_xtts_num_beams',
                     info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
                     visible=False
                 )
                 gr_xtts_repetition_penalty = gr.Slider(
-                    label='Repetition Penalty', 
-                    minimum=1.0, 
-                    maximum=10.0, 
-                    step=0.1, 
-                    value=float(default_xtts_settings['repetition_penalty']),
+                    label='Repetition Penalty',
+                    minimum=1.0,
+                    maximum=10.0,
+                    step=0.1,
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
                     elem_id='gr_xtts_repetition_penalty',
                     info='Penalizes repeated phrases. Higher values reduce repetition.'
                 )
                 gr_xtts_top_k = gr.Slider(
-                    label='Top-k Sampling', 
-                    minimum=10, 
-                    maximum=100, 
-                    step=1, 
-                    value=int(default_xtts_settings['top_k']),
+                    label='Top-k Sampling',
+                    minimum=10,
+                    maximum=100,
+                    step=1,
+                    value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
                     elem_id='gr_xtts_top_k',
                     info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
                 )
                 gr_xtts_top_p = gr.Slider(
-                    label='Top-p Sampling', 
-                    minimum=0.1, 
+                    label='Top-p Sampling',
+                    minimum=0.1,
                     maximum=1.0, 
-                    step=0.01, 
-                    value=float(default_xtts_settings['top_p']), 
+                    step=0.01,
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']),
                     elem_id='gr_xtts_top_p',
                     info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
                 )
@@ -2004,13 +2031,13 @@ def web_interface(args):
                     minimum=0.5, 
                     maximum=3.0, 
                     step=0.1, 
-                    value=float(default_xtts_settings['speed']),
+                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']),
                     elem_id='gr_xtts_speed',
                     info='Adjusts how fast the narrator will speak.'
                 )
                 gr_xtts_enable_text_splitting = gr.Checkbox(
                     label='Enable Text Splitting', 
-                    value=default_xtts_settings['enable_text_splitting'],
+                    value=default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
                     elem_id='gr_xtts_enable_text_splitting',
                     info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                     visible=False
@@ -2025,19 +2052,19 @@ def web_interface(args):
                 )
                 gr_bark_text_temp = gr.Slider(
                     label='Text Temperature', 
-                    minimum=0.0, 
-                    maximum=1.0, 
-                    step=0.01, 
-                    value=float(default_bark_settings['text_temp']),
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=float(default_engine_settings[TTS_ENGINES['BARK']]['text_temp']),
                     elem_id='gr_bark_text_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
                 gr_bark_waveform_temp = gr.Slider(
                     label='Waveform Temperature', 
-                    minimum=0.0, 
-                    maximum=1.0, 
-                    step=0.01, 
-                    value=float(default_bark_settings['waveform_temp']),
+                    minimum=0.0,
+                    maximum=1.0,
+                    step=0.01,
+                    value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
@@ -2149,18 +2176,18 @@ def web_interface(args):
             '''
 
         def show_rating(tts_engine):
-            if tts_engine == XTTSv2:
-                rating = default_xtts_settings['rating']
-            elif tts_engine == BARK:
-                rating = default_bark_settings['rating']
-            elif tts_engine == TACOTRON2:
-                rating = default_tacotron_settings['rating']
-            elif tts_engine == VITS:
-                rating = default_vits_settings['rating']
-            elif tts_engine == FAIRSEQ:
-                rating = default_fairseq_settings['rating']
-            elif tts_engine == YOURTTS:
-                rating = default_yourtts_settings['rating']
+            if tts_engine == TTS_ENGINES['XTTSv2']:
+                rating = default_engine_settings[TTS_ENGINES['XTTSv2']]['rating']
+            elif tts_engine == TTS_ENGINES['BARK']:
+                rating = default_engine_settings[TTS_ENGINES['BARK']]['rating']
+            elif tts_engine == TTS_ENGINES['VITS']:
+                rating = default_engine_settings[TTS_ENGINES['VITS']]['rating']
+            elif tts_engine == TTS_ENGINES['FAIRSEQ']:
+                rating = default_engine_settings[TTS_ENGINES['FAIRSEQ']]['rating']
+            elif tts_engine == TTS_ENGINES['TACOTRON2']:
+                rating = default_engine_settings[TTS_ENGINES['TACOTRON2']]['rating']
+            elif tts_engine == TTS_ENGINES['YOURTTS']:
+                rating = default_engine_settings[TTS_ENGINES['YOURTTS']]['rating']
             def yellow_stars(n):
                 return "".join(
                     "<span style='color:#FFD700;font-size:12px'>★</span>" for _ in range(n)
@@ -2187,7 +2214,7 @@ def web_interface(args):
             DependencyError(error)
 
         def restore_interface(id):
-            session = context.get_session(id)              
+            session = context.get_session(id)
             ebook_data = None
             file_count = session['ebook_mode']
             if isinstance(session['ebook_list'], list) and file_count == 'directory':
@@ -2198,17 +2225,17 @@ def web_interface(args):
             else:
                 ebook_data = None
             ### XTTSv2 Params
-            session['temperature'] = session['temperature'] if session['temperature'] else default_xtts_settings['temperature']
-            session['length_penalty'] = default_xtts_settings['length_penalty']
-            session['num_beams'] = default_xtts_settings['num_beams']
-            session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_xtts_settings['repetition_penalty']
-            session['top_k'] = session['top_k'] if session['top_k'] else default_xtts_settings['top_k']
-            session['top_p'] = session['top_p'] if session['top_p'] else default_xtts_settings['top_p']
-            session['speed'] = session['speed'] if session['speed'] else default_xtts_settings['speed']
-            session['enable_text_splitting'] = default_xtts_settings['enable_text_splitting']
+            session['temperature'] = session['temperature'] if session['temperature'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']
+            session['length_penalty'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']
+            session['num_beams'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']
+            session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']
+            session['top_k'] = session['top_k'] if session['top_k'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']
+            session['top_p'] = session['top_p'] if session['top_p'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']
+            session['speed'] = session['speed'] if session['speed'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']
+            session['enable_text_splitting'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting']
             ### BARK Params
-            session['text_temp'] = session['text_temp'] if session['text_temp'] else default_bark_settings['text_temp']
-            session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_bark_settings['waveform_temp']
+            session['text_temp'] = session['text_temp'] if session['text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
+            session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
             return (
                 gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
                 gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
@@ -2242,7 +2269,7 @@ def web_interface(args):
                         return gr.update(variant='primary', interactive=False)
             except Exception as e:
                 error = f'update_convert_btn(): {e}'
-                alert_exception(error)               
+                alert_exception(error)
 
         def change_gr_ebook_file(data, id):
             try:
@@ -2288,7 +2315,7 @@ def web_interface(args):
                     session = context.get_session(id)
                     voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
                     voice_name = get_sanitized(voice_name)
-                    final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
+                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}_24000.wav')
                     extractor = VoiceExtractor(session, models_dir, f, voice_name)
                     status, msg = extractor.extract_voice()
                     if status:
@@ -2311,17 +2338,19 @@ def web_interface(args):
             min_width = 60 if session['voice'] is not None else 0
             return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible)
 
-        def click_gr_voice_del_btn(selected, id):          
+        def click_gr_voice_del_btn(selected, id):
             try:
                 if selected is not None:
-                    voice_name = re.sub(r'_(24000|16000)\.wav$', '', os.path.basename(selected))
-                    if voice_name in default_xtts_settings['voices'].keys() or voice_name in default_yourtts_settings['voices'].keys():
-                        error = f'Voice file {voice_name} is a builtin voice and cannot be deleted.'
+                    speaker = re.sub(r'_(24000|16000)\.wav$|\.npz$', '', os.path.basename(selected))
+                    if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['YOURTTS']]['voices'].keys():
+                        error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
-                    else:                   
+                    else:
                         try:
                             session = context.get_session(id)
-                            if selected.find(session['voice_dir']) > -1:
+                            selected_path = Path(selected).resolve()
+                            parent_path = Path(session['voice_dir']).parent.resolve()
+                            if parent_path in selected_path.parents:
                                 msg = f'Are you sure to delete {voice_name}...'
                                 return gr.update(value='confirm_voice_del'), gr.update(value=show_modal('confirm', msg),visible=True)
                             else:
@@ -2360,17 +2389,17 @@ def web_interface(args):
                 alert_exception(error)
             return gr.update(), gr.update(visible=False)
 
-        def confirm_deletion(voice, custom_model, audiobook, id, method=None):
+        def confirm_deletion(voice_path, custom_model, audiobook, id, method=None):
             try:
                 if method is not None:
                     session = context.get_session(id)
                     if method == 'confirm_voice_del':
-                        selected_name = os.path.basename(voice)
-                        pattern = re.sub(r'_(24000|16000)\.wav$', '_*.wav', voice)
+                        selected_name = os.path.basename(voice_path)
+                        pattern = re.sub(r'_(24000|16000)\.wav$', '_*.wav', voice_path)
                         files2remove = glob(pattern)
                         for file in files2remove:
                             os.remove(file)
-                        shutil.rmtree(os.path.join(os.path.dirname(voice), 'bark', selected_name), ignore_errors=True)
+                        shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
                         msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
@@ -2406,32 +2435,56 @@ def web_interface(args):
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
-                voice_lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                voice_lang_eng_dir = 'eng'
-                voice_file_pattern = "*_24000.wav"
-                voice_builtin_options = [
+                lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
+                file_pattern = "*_24000.wav"
+                eng_options = []
+                bark_options = []
+                builtin_options = [
                     (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                    for f in Path(os.path.join(voices_dir, voice_lang_dir)).rglob(voice_file_pattern)
+                    for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
                 ]
-                if session['language'] in language_tts[XTTSv2]:
-                    voice_eng_options = [
+                if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
+                    eng_options = [
                         (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                        for f in Path(os.path.join(voices_dir, voice_lang_eng_dir)).rglob(voice_file_pattern)
+                        for f in Path(os.path.join(voices_dir, 'eng')).rglob(file_pattern)
                     ]
+                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                    lang_array = languages.get(part3=session['language'])
+                    if lang_array:
+                        lang_iso1 = lang_array.part1 
+                        lang = lang_iso1.lower()
+                        speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
+                        bark_options = [
+                            (
+                                re.sub(r"^.*?_speaker_(\d+)$", r"Speaker \1", f.stem),
+                                str(f.with_suffix(".wav"))
+                            )
+                            for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
+                        ]
+                keys = {key for key, _ in builtin_options}
+                voice_options = builtin_options + [row for row in eng_options if row[0] not in keys]
+                voice_options += bark_options
+                if session['voice_dir'] is not None:
+                    parent_dir = Path(session['voice_dir']).parent
+                    voice_options += [
+                        (
+                            os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0],
+                            str(f)
+                        )
+                        for f in parent_dir.rglob(file_pattern)
+                        if f.is_file()
+                    ]
+                if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+                    voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 else:
-                    voice_eng_options = []
-                voice_keys = {key for key, _ in voice_builtin_options}
-                voice_options = voice_builtin_options + [row for row in voice_eng_options if row[0] not in voice_keys]
-                voice_options += [
-                    (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
-                    for f in Path(session['voice_dir']).rglob(voice_file_pattern)
-                ]
-                voice_options = [('None', None)] + sorted(voice_options, key=lambda x: x[0].lower())
+                    if session['voice'] is None:
+                        session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
+                    voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                 session['voice'] = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
-                alert_exception(error)              
+                alert_exception(error)
                 return gr.update()
 
         def update_gr_tts_engine_list(id):
@@ -2452,7 +2505,10 @@ def web_interface(args):
                 session = context.get_session(id)
                 custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
                 custom_model_options = [('None', None)] + [
-                    (os.path.basename(os.path.join(custom_model_tts_dir, dir)), os.path.join(custom_model_tts_dir, dir))
+                    (
+                        str(dir),
+                        os.path.join(custom_model_tts_dir, dir)
+                    )
                     for dir in os.listdir(custom_model_tts_dir)
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
@@ -2460,7 +2516,7 @@ def web_interface(args):
                 return gr.update(choices=custom_model_options, value=session['custom_model'])
             except Exception as e:
                 error = f'update_gr_custom_model_list(): {e}!'
-                alert_exception(error)              
+                alert_exception(error)
                 return gr.update()
 
         def update_gr_fine_tuned_list(id):
@@ -2484,11 +2540,11 @@ def web_interface(args):
 
         def change_gr_language(selected, id):
             session = context.get_session(id)
-            if selected == 'zzz':
-                new_language_code = default_language_code
-            else:
-                new_language_code = selected
-            session['language'] = new_language_code
+            previous = session['language']
+            new = default_language_code if selected == 'zzz' else selected
+            session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
+            session['language'] = new
+            os.makedirs(session['voice_dir'], exist_ok=True)
             return[
                 gr.update(value=session['language']),
                 update_gr_voice_list(id),
@@ -2545,30 +2601,31 @@ def web_interface(args):
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
             session['tts_engine'] = engine
-            if session['tts_engine'] == XTTSv2:
+            bark_visible = False
+            if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                 visible_custom_model = True
                 if session['fine_tuned'] != 'internal':
                     visible_custom_model = False
                 return (
                        gr.update(value=show_rating(session['tts_engine'])), 
-                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
+                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
                        gr.update(label=f"*Upload {session['tts_engine']} Model (Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
                        gr.update(label=f"My {session['tts_engine']} custom models")
                 )
             else:
-                bark_visible = False
-                if session['tts_engine'] == BARK:
+                if session['tts_engine'] == TTS_ENGINES['BARK']:
                     bark_visible = visible_gr_tab_bark_params
-                return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
+                return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), update_gr_voice_list(id), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
             session = context.get_session(id)
             visible = False
-            if session['tts_engine'] == XTTSv2:
+            if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                 if selected == 'internal':
                     visible = visible_gr_group_custom_model
             session['fine_tuned'] = selected
-            return gr.update(visible=visible)
+            session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
+            return update_gr_voice_list(id), gr.update(visible=visible)
 
         def change_gr_custom_model_list(selected, id):
             session = context.get_session(id)
@@ -2630,7 +2687,7 @@ def web_interface(args):
                     "fine_tuned": fine_tuned
                 }
                 error = None
-                if args["ebook"] is None and args['ebook_list'] is None:
+                if args['ebook'] is None and args['ebook_list'] is None:
                     error = 'Error: a file or directory is required.'
                     show_alert({"type": "warning", "msg": error})
                 elif args['num_beams'] < args['length_penalty']:
@@ -2752,9 +2809,11 @@ def web_interface(args):
                         return gr.update(), gr.update(), gr.update()
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}")
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 os.makedirs(session['custom_model_dir'], exist_ok=True)
-                os.makedirs(session['voice_dir'], exist_ok=True)             
+                os.makedirs(session['voice_dir'], exist_ok=True)
+                # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
+                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]                
                 if is_gui_shared:
                     msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
                     session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
@@ -2854,12 +2913,12 @@ def web_interface(args):
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
+            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_voice_list, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
             inputs=[gr_fine_tuned_list, gr_session],
-            outputs=[gr_group_custom_model]
+            outputs=[gr_voice_list, gr_group_custom_model]
         )
         gr_custom_model_file.upload(
             fn=change_gr_custom_model_file,
