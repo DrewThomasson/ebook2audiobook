@@ -626,14 +626,13 @@ class Coqui:
                         '''
                         if speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
                             bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
-                            npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                         else:
-                            bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
-                            npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
+                            bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')       
                             if not self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
                                 error = 'Could not create npz file!'
                                 print(error)
                                 return False
+                        npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                         fine_tuned_params = {
                             key: cast_type(self.session[key])
                             for key, cast_type in {
@@ -651,7 +650,7 @@ class Coqui:
                                 self.npz_data["fine_prompt"]
                         ]
                         with torch.no_grad():
-                            torch.manual_seed(67878789)
+                            #torch.manual_seed(67878789)
                             audio_part, _ = tts.generate_audio(
                                 text_part,
                                 history_prompt=history_prompt,
