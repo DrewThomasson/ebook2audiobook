@@ -626,7 +626,7 @@ class Coqui:
                         '''
                         if speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys():
                             bark_dir = default_engine_settings[TTS_ENGINES['BARK']]['speakers_path']
-                            npz_file = os.path.join(bark_dir, f'{speaker}.npz')
+                            npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                         else:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')
                             npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
