@@ -8,10 +8,7 @@ import subprocess
 import sys
 
 from pathlib import Path
-
-from lib.conf import *
-from lib.models import *
-from lib.lang import install_info, default_language_code
+from lib import *
 
 def check_virtual_env(script_mode):
     current_version = sys.version_info[:2]  # (major, minor)
@@ -62,7 +59,7 @@ def check_and_install_requirements(file_path):
             packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip()]
         missing_packages = []
         for package in packages:
-            pkg_name = re.split(r'[<>=]', package)[0].strip()
+            pkg_name = re.split(r'[<>=]', re.sub(r'\[.*?\]', '', package), 1)[0].strip()
             try:
                 installed_version = version(pkg_name)
             except PackageNotFoundError:
@@ -74,6 +71,7 @@ def check_and_install_requirements(file_path):
             msg = '\nInstalling missing packages...\n'
             print(msg)
             os.environ['TMPDIR'] = tmp_dir
+            result = subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
             with tqdm(total=len(packages), desc='Installation 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
                 for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
@@ -142,8 +140,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         '--text_temp', '--waveform_temp',
         '--output_dir', '--version', '--workflow', '--help'
     ]
-    #tts_engine_list = [k for k in models.keys() if k != BARK]
-    tts_engine_list = [k for k in models.keys()]
+    tts_engine_list = [k for k in TTS_ENGINES.keys()]
     all_group = parser.add_argument_group('**** The following options are for all modes', 'Optional')
     all_group.add_argument(options[0], type=str, help=argparse.SUPPRESS)
     parser.add_argument(options[1], type=str, help='''Session to resume the conversion in case of interruption, crash, 
@@ -186,9 +183,9 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
     headless_optional_group.add_argument(options[20], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
     Default to config.json model.""")
     headless_optional_group.add_argument(options[21], type=float, default=None, help=f"""(bark only, optional) Text Temperature for the model. 
-    Default to {default_bark_settings['text_temp']}. Higher temperatures lead to more creative outputs.""")
+    Default to {default_engine_settings[TTS_ENGINES['BARK']]['text_temp']}. Higher temperatures lead to more creative outputs.""")
     headless_optional_group.add_argument(options[22], type=float, default=None, help=f"""(bark only, optional) Waveform Temperature for the model. 
-    Default to {default_bark_settings['waveform_temp']}. Higher temperatures lead to more creative outputs.""")
+    Default to {default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']}. Higher temperatures lead to more creative outputs.""")
     headless_optional_group.add_argument(options[23], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
     headless_optional_group.add_argument(options[24], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
     headless_optional_group.add_argument(options[25], action='store_true', help=argparse.SUPPRESS)

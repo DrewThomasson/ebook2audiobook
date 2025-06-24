@@ -47,9 +47,17 @@ https://github.com/user-attachments/assets/750035dc-e355-46f1-9286-05c1d9e88cea
 <details>
   <summary>More Demos</summary>
 
+**ASMR Voice** 
+
+https://github.com/user-attachments/assets/68eee9a1-6f71-4903-aacd-47397e47e422
+
 **Rainy Day Voice**  
 
 https://github.com/user-attachments/assets/d25034d9-c77f-43a9-8f14-0d167172b080  
+
+**Scarlett Voice**
+
+https://github.com/user-attachments/assets/b12009ee-ec0d-45ce-a1ef-b3a52b9f8693
 
 **David Attenborough Voice** 
 

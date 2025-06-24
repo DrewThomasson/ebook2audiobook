@@ -221,6 +221,7 @@ if "%SCRIPT_MODE%"=="%FULL_DOCKER%" (
 		call conda create --prefix "%SCRIPT_DIR%\%PYTHON_ENV%" python=%PYTHON_VERSION% -y
 		call %CONDA_ENV% activate base
 		call conda activate "%SCRIPT_DIR%\%PYTHON_ENV%"
+		call python -m pip cache purge >nul 2>&1
 		call python -m pip install --upgrade pip
 		for /f "usebackq delims=" %%p in ("requirements.txt") do (
 			echo Installing %%p...
