@@ -74,7 +74,7 @@ default_engine_settings = {
         "text_temp": 0.40,
         "waveform_temp": 0.40,
         "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
-        "speakers_path": os.path.join(voices_dir, '__bark')),
+        "speakers_path": os.path.join(voices_dir, '__bark'),
         "voices": {
             "de_speaker_0": "Speaker 0", "de_speaker_1": "Speaker 1", "de_speaker_2": "Speaker 2",
             "de_speaker_3": "Speaker 3", "de_speaker_4": "Speaker 4", "de_speaker_5": "Speaker 5",
