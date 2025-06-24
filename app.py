@@ -235,6 +235,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             args['is_gui_process'] = False
             args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
             args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
+            args['tts_engine'] = TTS_ENGINES[args['tts_engine']]
             # Condition to stop if both --ebook and --ebooks_dir are provided
             if args['ebook'] and args['ebooks_dir']:
                 error = 'Error: You cannot specify both --ebook and --ebooks_dir in headless mode.'
