@@ -549,7 +549,7 @@ class Coqui:
                 else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
             )
             if settings['voice_path'] is not None:
-                speaker = re.sub(r'_(24000|16000)\.wav$|\.npz$', '', os.path.basename(settings['voice_path']))
+                speaker = re.sub(r'_(24000|16000)\.wav$|\.wav$', '', os.path.basename(settings['voice_path']))
                 if settings['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and os.path.basename(settings['voice_path']) != 'ref.wav':
                     self.session['voice'] = settings['voice_path'] = self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device'])
                     if not settings['voice_path']:
