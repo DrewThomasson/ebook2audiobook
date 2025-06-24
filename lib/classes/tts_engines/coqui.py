@@ -624,7 +624,6 @@ class Coqui:
                             CAPITALIZATION for emphasis of a word
                             [MAN] and [WOMAN] to bias Bark toward male and female speakers, respectively
                         '''
-                        print(f'--------------------{speaker}-----------------------')
                         if speaker in default_engine_settings[self.session['tts_engine']]['voices'].keys():
                             bark_dir = default_engine_settings[self.session['tts_engine']]['speakers_path']
                             npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
