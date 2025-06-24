@@ -56,7 +56,11 @@ def check_and_install_requirements(file_path):
             from tqdm import tqdm
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
-            packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip()]
+            packages = [
+                pkg.strip()
+                for pkg in contents.splitlines()
+                if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)
+            ]
         missing_packages = []
         for package in packages:
             pkg_name = re.split(r'[<>=]', re.sub(r'\[.*?\]', '', package), 1)[0].strip()
