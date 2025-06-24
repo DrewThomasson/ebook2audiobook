@@ -224,6 +224,7 @@ class Coqui:
                         eval=True
                     )                    
             if tts:
+                print('bark created-----------')
                 if device == 'cuda':
                     tts.cuda()
                 else:

@@ -288,7 +288,7 @@ else
 			if [[ -n "$tts_version" ]]; then
 				if [[ "$(printf '%s\n' "$tts_version" "0.26.1" | sort -V | tail -n1)" == "0.26.1" ]]; then
 					python -m pip uninstall transformers
-					python -m install 'transformers<=4.51.3'
+					python -m pip install --no-cache-dir --use-pep517 --progress-bar=on 'transformers<=4.51.3'
 				fi
 			fi
 			conda deactivate
