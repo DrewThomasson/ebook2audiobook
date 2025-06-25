@@ -1,5 +1,4 @@
 import os
-import gc
 import hashlib
 import numpy as np
 import regex as re
@@ -38,7 +37,8 @@ class Coqui:
         self.sentences_total_time = 0.0
         self.sentence_idx = 1
         self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
-        self.vtt_path = None
+        self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
+        self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')
         self._build()
  
     def _build(self):
@@ -46,12 +46,10 @@ class Coqui:
         load_zeroshot = True if self.session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2']] else False
         tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
         if not tts:
-            self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')
             if xtts_builtin_speakers_list is None:
                 self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
                 xtts_builtin_speakers_list = torch.load(self.speakers_path)
             if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                self.params[TTS_ENGINES['XTTSv2']]['sample_rate'] = models[TTS_ENGINES['XTTSv2']][self.session['fine_tuned']]['samplerate']
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
                 if self.session['custom_model'] is not None:
@@ -78,7 +76,6 @@ class Coqui:
                     print(msg)
                     return False
                 else:
-                    self.params[TTS_ENGINES['BARK']]['sample_rate'] = models[TTS_ENGINES['BARK']][self.session['fine_tuned']]['samplerate']
                     hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                     hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                     text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[self.session['tts_engine']][self.session['fine_tuned']]['files'][0]}", cache_dir=self.cache_dir)
@@ -96,7 +93,7 @@ class Coqui:
                     sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
                     if sub is not None:
-                        self.params[TTS_ENGINES['VITS']]['sample_rate'] = models[TTS_ENGINES['VITS']][self.session['fine_tuned']]['samplerate'][sub]
+                        self.params[self.session['tts_engine']]['samplerate'] = models[TTS_ENGINES['VITS']][self.session['fine_tuned']]['samplerate'][sub]
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                         msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                         print(msg)
@@ -112,7 +109,6 @@ class Coqui:
                     print(msg)
                     return False
                 else:
-                    self.params[TTS_ENGINES['FAIRSEQ']]['sample_rate'] = models[TTS_ENGINES['FAIRSEQ']][self.session['fine_tuned']]['samplerate']
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
                     self.tts_key = model_path
                     tts = self._load_api(self.tts_key, model_path, self.session['device'])
@@ -125,7 +121,7 @@ class Coqui:
                     iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
                     sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-                    self.params[TTS_ENGINES['TACOTRON2']]['sample_rate'] = models[TTS_ENGINES['TACOTRON2']][self.session['fine_tuned']]['samplerate'][sub]
+                    self.params[self.session['tts_engine']]['samplerate'] = models[TTS_ENGINES['TACOTRON2']][self.session['fine_tuned']]['samplerate'][sub]
                     if sub is None:
                         iso_dir = self.session['language']
                         sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
@@ -145,7 +141,6 @@ class Coqui:
                     print(msg)
                     return False
                 else:
-                    self.params[TTS_ENGINES['YOURTTS']]['sample_rate'] = models[TTS_ENGINES['YOURTTS']][self.session['fine_tuned']]['samplerate']
                     model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                     tts = self._load_api(self.tts_key, model_path, self.session['device'])
         if load_zeroshot:
@@ -224,7 +219,6 @@ class Coqui:
                         eval=True
                     )                    
             if tts:
-                print('bark created-----------')
                 if device == 'cuda':
                     tts.cuda()
                 else:
@@ -249,11 +243,9 @@ class Coqui:
                 for key in list(loaded_tts.keys()):
                     if key != self.tts_vc_key and key != self.tts_key:
                         del loaded_tts[key]
-                        gc.collect()
                 if device != 'cpu':
                     torch.cuda.empty_cache()
                     torch.cuda.synchronize()
-            gc.collect()
 
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
@@ -403,13 +395,13 @@ class Coqui:
    
     def _detect_gender(self, voice_path):
         try:
-            sample_rate, signal = wav.read(voice_path)
+            samplerate, signal = wav.read(voice_path)
             # Convert stereo to mono if needed
             if len(signal.shape) > 1:
                 signal = np.mean(signal, axis=1)
             # Compute FFT
             fft_spectrum = np.abs(np.fft.fft(signal))
-            freqs = np.fft.fftfreq(len(fft_spectrum), d=1/sample_rate)
+            freqs = np.fft.fftfreq(len(fft_spectrum), d=1/samplerate)
             # Consider only positive frequencies
             positive_freqs = freqs[:len(freqs)//2]
             positive_magnitude = fft_spectrum[:len(fft_spectrum)//2]
@@ -440,7 +432,7 @@ class Coqui:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
 
-    def _trim_audio(self, audio_data, sample_rate, silence_threshold=0.001, buffer_sec=0.007):
+    def _trim_audio(self, audio_data, samplerate, silence_threshold=0.001, buffer_sec=0.007):
         # Ensure audio_data is a PyTorch tensor
         if isinstance(audio_data, list):  
             audio_data = torch.tensor(audio_data)
@@ -452,8 +444,8 @@ class Coqui:
             if len(non_silent_indices) == 0:
                 return torch.tensor([], device=audio_data.device)
             # Calculate start and end trimming indices with buffer
-            start_index = max(non_silent_indices[0] - int(buffer_sec * sample_rate), 0)
-            end_index = non_silent_indices[-1] + int(buffer_sec * sample_rate)
+            start_index = max(non_silent_indices[0] - int(buffer_sec * samplerate), 0)
+            end_index = non_silent_indices[-1] + int(buffer_sec * samplerate)
             # Trim the audio
             trimmed_audio = audio_data[start_index:end_index]
             return trimmed_audio       
@@ -565,8 +557,7 @@ class Coqui:
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
-                settings['sample_rate'] = self.params[self.session['tts_engine']]['sample_rate']
-                silence_tensor = torch.zeros(1, int(settings['sample_rate'] * 1.4)) # 1.4 seconds
+                silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
                     text_part = text_part.strip()
@@ -696,7 +687,7 @@ class Coqui:
                                 try:
                                     cmd = [
                                         shutil.which('sox'), tmp_in_wav,
-                                        "-r", str(settings['sample_rate']), tmp_out_wav,
+                                        "-r", str(settings['samplerate']), tmp_out_wav,
                                         "pitch", str(semitones * 100)
                                     ]
                                     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -723,7 +714,7 @@ class Coqui:
                                 error = f'Engine {self.tts_vc_key} is None'
                                 print(error)
                                 return False
-                            settings['sample_rate'] = 16000
+                            settings['samplerate'] = 16000
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
@@ -762,7 +753,7 @@ class Coqui:
                                 try:
                                     cmd = [
                                         shutil.which('sox'), tmp_in_wav,
-                                        "-r", str(settings['sample_rate']), tmp_out_wav,
+                                        "-r", str(settings['samplerate']), tmp_out_wav,
                                         "pitch", str(semitones * 100)
                                     ]
                                     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -827,7 +818,7 @@ class Coqui:
                                 try:
                                     cmd = [
                                         shutil.which('sox'), tmp_in_wav,
-                                        "-r", str(settings['sample_rate']), tmp_out_wav,
+                                        "-r", str(settings['samplerate']), tmp_out_wav,
                                         "pitch", str(semitones * 100)
                                     ]
                                     subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
@@ -854,7 +845,7 @@ class Coqui:
                                 error = f'Engine {self.tts_vc_key} is None'
                                 print(error)
                                 return False
-                            settings['sample_rate'] = 16000
+                            settings['samplerate'] = 16000
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
@@ -890,9 +881,9 @@ class Coqui:
                 if audio_segments:
                     audio_tensor = torch.cat(audio_segments, dim=-1)
                     if audio2trim:
-                        audio_tensor = self._trim_audio(audio_tensor.squeeze(), settings['sample_rate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                        audio_tensor = self._trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                     start_time = self.sentences_total_time
-                    duration = audio_tensor.shape[-1] / settings['sample_rate']
+                    duration = audio_tensor.shape[-1] / settings['samplerate']
                     end_time = start_time + duration
                     self.sentences_total_time = end_time
                     sentence_obj = {
@@ -902,7 +893,7 @@ class Coqui:
                         "resume_check": self.sentence_idx
                     }
                     self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)
-                    torchaudio.save(final_sentence, audio_tensor, settings['sample_rate'], format=default_audio_proc_format)
+                    torchaudio.save(final_sentence, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
                     del audio_tensor
                 if os.path.exists(final_sentence):
                     return True
