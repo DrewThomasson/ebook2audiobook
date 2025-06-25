@@ -1,5 +1,4 @@
 import os
-import gc
 import hashlib
 import numpy as np
 import regex as re
@@ -95,7 +94,7 @@ class Coqui:
                     sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)  
                     if sub is not None:
-                        self.params[TTS_ENGINES['VITS']]['samplerate'] = models[TTS_ENGINES['VITS']][self.session['fine_tuned']]['samplerate'][sub]
+                        self.params[self.session['tts_engine']]['samplerate'] = models[TTS_ENGINES['VITS']][self.session['fine_tuned']]['samplerate'][sub]
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
                         msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                         print(msg)
@@ -123,7 +122,7 @@ class Coqui:
                     iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
                     sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
                     sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
-                    self.params[TTS_ENGINES['TACOTRON2']]['samplerate'] = models[TTS_ENGINES['TACOTRON2']][self.session['fine_tuned']]['samplerate'][sub]
+                    self.params[self.session['tts_engine']]['samplerate'] = models[TTS_ENGINES['TACOTRON2']][self.session['fine_tuned']]['samplerate'][sub]
                     if sub is None:
                         iso_dir = self.session['language']
                         sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
@@ -245,11 +244,9 @@ class Coqui:
                 for key in list(loaded_tts.keys()):
                     if key != self.tts_vc_key and key != self.tts_key:
                         del loaded_tts[key]
-                        gc.collect()
                 if device != 'cpu':
                     torch.cuda.empty_cache()
                     torch.cuda.synchronize()
-            gc.collect()
 
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
