@@ -224,7 +224,6 @@ class Coqui:
                         eval=True
                     )                    
             if tts:
-                print('bark created-----------')
                 if device == 'cuda':
                     tts.cuda()
                 else:
@@ -544,6 +543,7 @@ class Coqui:
             if sentence.endswith('-'):
                 sentence = sentence[:-1]
                 audio2trim = True
+            settings['sample_rate'] = default_engine_settings[self.session['tts_engine']]['sample_rate']
             settings['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
@@ -565,7 +565,6 @@ class Coqui:
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
-                settings['sample_rate'] = self.params[self.session['tts_engine']]['sample_rate']
                 silence_tensor = torch.zeros(1, int(settings['sample_rate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
