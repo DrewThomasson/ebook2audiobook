@@ -211,7 +211,7 @@ to let the web page reconnect to the new connection socket.**
 
 
 ###  Example of Custom Model Zip Upload
-  (must be a .zip file containing the mandatory model files. Example for XTTS: config.json, model.pth, vocab.json and ref.wav)
+  (must be a .zip file containing the mandatory model files. Example for XTTSv2: config.json, model.pth, vocab.json and ref.wav)
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.sh --headless --ebook <ebook_file_path> \
@@ -246,7 +246,7 @@ to let the web page reconnect to the new connection socket.**
 usage: app.py [-h] [--session SESSION] [--share] [--headless] [--ebook EBOOK]
               [--ebooks_dir EBOOKS_DIR] [--language LANGUAGE] [--voice VOICE]
               [--device {cpu,gpu,mps}]
-              [--tts_engine {xtts,bark,vits,fairseq,tacotron,yourtts}]
+              [--tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}]
               [--custom_model CUSTOM_MODEL] [--fine_tuned FINE_TUNED]
               [--output_format OUTPUT_FORMAT] [--temperature TEMPERATURE]
               [--length_penalty LENGTH_PENALTY] [--num_beams NUM_BEAMS]
@@ -285,8 +285,8 @@ optional parameters:
   --device {cpu,gpu,mps}
                         (Optional) Pprocessor unit type for the conversion. 
                             Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.
-  --tts_engine {xtts,bark,vits,fairseq,tacotron,yourtts}
-                        (Optional) Preferred TTS engine (available are: ['xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
+  --tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}
+                        (Optional) Preferred TTS engine (available are: ['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
                             Default depends on the selected language. The tts engine should be compatible with the chosen language
   --custom_model CUSTOM_MODEL
                         (Optional) Path to the custom model zip file cntaining mandatory model files. 
@@ -319,10 +319,10 @@ optional parameters:
                             Default to config.json model.
   --text_temp TEXT_TEMP
                         (bark only, optional) Text Temperature for the model. 
-                            Default to 0.4. Higher temperatures lead to more creative outputs.
+                            Default to 0.2. Higher temperatures lead to more creative outputs.
   --waveform_temp WAVEFORM_TEMP
                         (bark only, optional) Waveform Temperature for the model. 
-                            Default to 0.4. Higher temperatures lead to more creative outputs.
+                            Default to 0.2. Higher temperatures lead to more creative outputs.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
   --version             Show the version of the script and exit
@@ -340,7 +340,7 @@ Linux/Mac:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file'
     
 Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
-
+   
 ```
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
@@ -380,7 +380,7 @@ docker build -t athomasson2/ebook2audiobook .
 
 All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
 
-`--build-arg SKIP_XTTS_TEST=true` (Saves space by not baking xtts model into docker image)
+`--build-arg SKIP_XTTS_TEST=true` (Saves space by not baking XTTSv2 model into docker image)
 
 
 ## Docker container file locations
@@ -464,7 +464,7 @@ docker run --pull always --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF
 
 
 ## Fine Tuned TTS models
-#### Fine Tune your own xtts model
+#### Fine Tune your own XTTSv2 model
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
@@ -481,7 +481,7 @@ docker run --pull always --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 
-For an XTTS custom model a ref audio clip of the voice reference is mandatory:
+For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 
 
 ## Supported eBook Formats
