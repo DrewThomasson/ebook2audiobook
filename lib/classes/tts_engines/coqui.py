@@ -243,9 +243,6 @@ class Coqui:
                 for key in list(loaded_tts.keys()):
                     if key != self.tts_vc_key and key != self.tts_key:
                         del loaded_tts[key]
-                if device != 'cpu':
-                    torch.cuda.empty_cache()
-                    torch.cuda.synchronize()
 
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
@@ -550,9 +547,6 @@ class Coqui:
                         print(msg)
                         return False
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
-            if not tts:
-                self._build()
-                tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
@@ -702,9 +696,6 @@ class Coqui:
                             else:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
-                            if not tts_vc:
-                                self._build()
-                                tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
                                 audio_part = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
@@ -768,9 +759,6 @@ class Coqui:
                             else:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
-                            if not tts_vc:
-                                self._build()
-                                tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
                                 audio_part = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
@@ -833,9 +821,6 @@ class Coqui:
                             else:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
-                            if not tts_vc:
-                                self._build()
-                                tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
                                 audio_part = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
