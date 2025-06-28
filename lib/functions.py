@@ -525,6 +525,8 @@ def convert2epub(session):
         print('Cancel requested')
         return False
     try:
+        title = False
+        author = False
         util_app = shutil.which('ebook-convert')
         if not util_app:
             error = "The 'ebook-convert' utility is not installed or not found."
@@ -566,9 +568,10 @@ def convert2epub(session):
                 '--disable-font-rescaling',
                 '--pretty-print',
                 '--smarten-punctuation',
-                '--verbose',
-                '--title', title
+                '--verbose'
             ]
+        if title:
+            cmd += ['--title', title]
         if author:
             cmd += ['--authors', author]
         result = subprocess.run(
