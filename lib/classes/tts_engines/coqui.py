@@ -15,11 +15,12 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
+from TTS.api import TTS as coquiAPI
 
 from lib import *
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
+#import logging
+#logging.basicConfig(level=logging.DEBUG)
 
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
@@ -153,7 +154,6 @@ class Coqui:
         return (loaded_tts.get(self.tts_key) or {}).get('engine', False)
 
     def _load_api(self, key, model_path, device):
-        from TTS.api import TTS as coquiAPI
         global lock
         try:
             if key in loaded_tts.keys():

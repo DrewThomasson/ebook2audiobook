@@ -525,6 +525,8 @@ def convert2epub(session):
         print('Cancel requested')
         return False
     try:
+        title = False
+        author = False
         util_app = shutil.which('ebook-convert')
         if not util_app:
             error = "The 'ebook-convert' utility is not installed or not found."
@@ -541,17 +543,21 @@ def convert2epub(session):
             print(error)
             return False
         if file_ext == '.pdf':
+            import fitz
             msg = 'File input is a PDF. flatten it in MD and HTML...'
             print(msg)
-            file_input = f"{os.path.splitext(session['epub_path'])[0]}.md"
+            doc = fitz.open(session['ebook'])
+            pdf_metadata = doc.metadata
+            filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
+            title = pdf_metadata.get('title') or filename_no_ext
+            author = pdf_metadata.get('author') or False
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
-            html_content = markdown(markdown_text)
+            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
             with open(file_input, "w", encoding="utf-8") as html_file:
                 html_file.write(markdown_text)
         msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
         print(msg)
-        result = subprocess.run(
-            [
+        cmd = [
                 util_app, file_input, session['epub_path'],
                 '--input-encoding=utf-8',
                 '--output-profile=generic_eink',
@@ -563,7 +569,13 @@ def convert2epub(session):
                 '--pretty-print',
                 '--smarten-punctuation',
                 '--verbose'
-            ],
+            ]
+        if title:
+            cmd += ['--title', title]
+        if author:
+            cmd += ['--authors', author]
+        result = subprocess.run(
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
