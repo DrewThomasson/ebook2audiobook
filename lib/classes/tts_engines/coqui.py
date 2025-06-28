@@ -18,8 +18,8 @@ from scipy.signal import find_peaks
 
 from lib import *
 
-import logging
-logging.basicConfig(level=logging.DEBUG)
+#import logging
+#logging.basicConfig(level=logging.DEBUG)
 
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
