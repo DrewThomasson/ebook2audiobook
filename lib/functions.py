@@ -541,11 +541,23 @@ def convert2epub(session):
             print(error)
             return False
         if file_ext == '.pdf':
+            import fitz
             msg = 'File input is a PDF. flatten it in MD and HTML...'
             print(msg)
-            file_input = f"{os.path.splitext(session['epub_path'])[0]}.md"
+            doc = fitz.open(session['ebook'])
+            pdf_metadata = doc.metadata
+            filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
+            title = pdf_metadata.get('title') or filename_no_ext
+            author = pdf_metadata.get('author') or False
+            frontmatter = f"""---
+            title: "{get_sanitized(title)}"
+            """
+            if author:
+                frontmatter += f'author: "{get_sanitized(author)}"\n'
+            frontmatter += f"language: \"{session['language']}\"\n---\n\n"
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
-            html_content = markdown(markdown_text)
+            markdown_text = frontmatter + markdown_text
+            file_input = f"{filename_no_ext}.md"
             with open(file_input, "w", encoding="utf-8") as html_file:
                 html_file.write(markdown_text)
         msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
