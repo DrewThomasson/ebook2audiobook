@@ -568,9 +568,9 @@ def convert2epub(session):
                 '--smarten-punctuation',
                 '--verbose',
                 '--title', title
-            ],
+            ]
         if author:
-            cmd += ["--authors", author]
+            cmd += ['--authors', author]
         result = subprocess.run(
             cmd,
             stdout=subprocess.PIPE,
