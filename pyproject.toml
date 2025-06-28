@@ -47,7 +47,7 @@ dependencies = [
 	"sudachipy",
 	"sudachidict_core",
 	"torch",
-	"coqui-tts[languages]",
+	"coqui-tts[languages]==0.26.0",
 	"torchvggish"
 ]
 readme = "README.md"
