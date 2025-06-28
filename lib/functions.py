@@ -548,23 +548,14 @@ def convert2epub(session):
             pdf_metadata = doc.metadata
             filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
             title = pdf_metadata.get('title') or filename_no_ext
-            print(f'----------------{title}-------------')
             author = pdf_metadata.get('author') or False
-            frontmatter = f"""---
-            title: "{get_sanitized(title)}"
-            """
-            if author:
-                frontmatter += f'author: "{get_sanitized(author)}"\n'
-            frontmatter += f"language: \"{session['language']}\"\n---\n\n"
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
-            markdown_text = frontmatter + markdown_text
             file_input = f"{filename_no_ext}.md"
             with open(file_input, "w", encoding="utf-8") as html_file:
                 html_file.write(markdown_text)
         msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
         print(msg)
-        result = subprocess.run(
-            [
+        cmd = [
                 util_app, file_input, session['epub_path'],
                 '--input-encoding=utf-8',
                 '--output-profile=generic_eink',
@@ -575,8 +566,13 @@ def convert2epub(session):
                 '--disable-font-rescaling',
                 '--pretty-print',
                 '--smarten-punctuation',
-                '--verbose'
+                '--verbose',
+                '--title', title
             ],
+        if author:
+            cmd += ["--authors", author]
+        result = subprocess.run(
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
