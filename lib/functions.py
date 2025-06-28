@@ -548,6 +548,7 @@ def convert2epub(session):
             pdf_metadata = doc.metadata
             filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
             title = pdf_metadata.get('title') or filename_no_ext
+            print(f'----------------{title}-------------')
             author = pdf_metadata.get('author') or False
             frontmatter = f"""---
             title: "{get_sanitized(title)}"
