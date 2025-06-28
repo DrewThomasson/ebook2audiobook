@@ -552,7 +552,7 @@ def convert2epub(session):
             title = pdf_metadata.get('title') or filename_no_ext
             author = pdf_metadata.get('author') or False
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
-            file_input = f"{filename_no_ext}.md"
+            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
             with open(file_input, "w", encoding="utf-8") as html_file:
                 html_file.write(markdown_text)
         msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
