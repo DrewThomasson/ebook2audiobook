@@ -217,8 +217,8 @@ jobs:
           #  command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK'
           #- name: "English BARK Custom-Voice headless batch test" # Marked out as it takes too long
           #  command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
-          #- name: "English BARK Custom-Voice headless single test"
-          #  command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
+          - name: "English BARK Custom-Voice headless single test"
+            command: '--headless --script_mode full_docker --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"'
           #- name: "English BARK headless batch test"
           #  command: '--headless --script_mode full_docker --language eng --ebooks_dir "tools/workflow-testing" --tts_engine BARK'            
           # Add more test configurations as needed
