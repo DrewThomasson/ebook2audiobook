@@ -458,7 +458,66 @@ def math2word(text, lang, lang_iso1, tts_engine):
     return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
-
+    # Remove emojis
+    emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
+    emoji_pattern.sub('', text)
+    if lang in abbreviations_mapping:
+        abbr_map = {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping[lang].items()}
+        pattern = re.compile(r'\b(' + '|'.join(re.escape(k).replace('\\.', '') for k in abbreviations_mapping[lang].keys()) + r')\.?\b', re.IGNORECASE)
+        text = pattern.sub(lambda m: abbr_map.get(m.group(1).lower(), m.group()), text)
+    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
+    pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
+    # uppercase acronyms
+    text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
+    # Replace ### and [pause] with ‡pause‡ (‡ = double dagger U+2021)
+    text = re.sub(r'(###|\[pause\])', '‡pause‡', text)
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
+    pattern = r'(?:\r\n|\r|\n){2,}'
+    text = re.sub(pattern, '‡pause‡', text)
+    # Replace single newlines ("\n" or "\r") with spaces
+    text = re.sub(r'\r\n|\r|\n', ' ', text)
+    # Replace punctuations causing hallucinations
+    pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
+    text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
+    # Replace NBSP with a normal space
+    text = text.replace("\xa0", " ")
+    # Replace multiple and spaces with single space
+    text = re.sub(r'\s+', ' ', text)
+    # Replace ok by 'Owkey'
+    text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
+    # Replace parentheses with double quotes
+    text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
+    # Escape special characters in the punctuation list for regex
+    pattern = '|'.join(map(re.escape, punctuation_split))
+    # Reduce multiple consecutive punctuations
+    #text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
+    if tts_engine == TTS_ENGINES['XTTSv2']:
+        # Pattern 1: Add a space between UTF-8 characters and numbers
+        text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+        pattern_space = re.escape(''.join(punctuation_list))
+        # Ensure space before and after punctuation (excluding `,` and `.`)
+        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+        text = re.sub(comma_dot_pattern, r' \1 ', text)
+    # Replace special chars with words
+    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
+    for char, word in specialchars.items():
+        text = text.replace(char, f" {word} ")
+    for char in specialchars_remove:
+        text = text.replace(char, ' ')
+    text = ' '.join(text.split())
+    if text.strip():
+        # Add punctuation after numbers or Roman numerals at start of a chapter.
+        roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
+        arabic_pattern = r'^(\d+)(?=\s|$)'
+        if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
+            # Add punctuation if not already present (e.g. "II", "4")
+            if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
+                text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
+        # Replace math symbols with words
+        text = math2word(text, lang, lang_iso1, tts_engine)
     return text
 
 def convert2epub(session):
