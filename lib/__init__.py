@@ -22,7 +22,7 @@ from .lang import (
     emojis_array, install_info, language_mapping, language_math_phonemes,
     language_tts, os, punctuation_list, punctuation_list_set,
     punctuation_split, punctuation_split_set, punctuation_switch,
-    specialchars_mapping, specialchars_remove
+    specialchars_mapping, specialchars_remove, year_to_decades_languages
 )
 
 __all__ = [
@@ -51,5 +51,5 @@ __all__ = [
     "language_math_phonemes", "language_tts", "os",
     "punctuation_list", "punctuation_list_set", "punctuation_split",
     "punctuation_split_set", "punctuation_switch",
-    "specialchars_mapping", "specialchars_remove",
+    "specialchars_mapping", "specialchars_remove", "year_to_decades_languages"
 ]
