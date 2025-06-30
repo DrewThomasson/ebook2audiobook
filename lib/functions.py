@@ -357,36 +357,34 @@ def proxy2dict(proxy_obj):
     return recursive_copy(proxy_obj, set())
 
 def check_formatted_number(text, max_single_value=999_999_999_999_999):
-    text = text.strip()
-    digit_count = sum(c.isdigit() for c in text)
-    if digit_count <= 9:
-        return text  # Skip conversion
-    try:
-        as_number = float(text.replace(",", ""))
-        if abs(as_number) <= max_single_value:
-            return text
-    except ValueError:
-        pass
-    tokens = re.findall(r'\d*\.\d+|\d+|[^\d\s]', text)
-    result = []
-    for token in tokens:
-        if re.fullmatch(r'\d*\.\d+', token):
-            try:
-                num = float(token)
-                result.append(num2words(num))
-            except:
-                result.append(token)
-        elif token.isdigit():
-            try:
-                num = int(token)
-                result.append(num2words(num))
-            except:
-                result.append(token)
-        elif token in {',', '.'}:
-            result.append(token + ' ')
-        else:
-            result.append(token)
-    return ''.join(result).strip()
+	text = text.strip()
+	digit_count = sum(c.isdigit() for c in text)
+	if digit_count <= 9:
+		return text
+	try:
+		as_number = float(text.replace(",", ""))
+		if abs(as_number) <= max_single_value:
+			return text
+	except ValueError:
+		pass
+	tokens = re.findall(r'\d*\.\d+|\d+|[^\w\s]|[\w]+|\s+', text)
+	result = []
+	for token in tokens:
+		if re.fullmatch(r'\d*\.\d+', token):
+			try:
+				num = float(token)
+				result.append(num2words(num))
+			except:
+				result.append(token)
+		elif token.isdigit():
+			try:
+				num = int(token)
+				result.append(num2words(num))
+			except:
+				result.append(token)
+		else:
+			result.append(token)
+	return ''.join(result)
 
 def math2word(text, lang, lang_iso1, tts_engine):
     def check_compat():
@@ -421,7 +419,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
         return match.group(0)
 
     # Check if it's a serie of small numbers with a separator
-    #text = check_formatted_number(text)
+    text = check_formatted_number(text)
     is_num2words_compat = check_compat()
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     # Separate ambiguous and non-ambiguous symbols
