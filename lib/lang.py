@@ -39,7 +39,7 @@ language_tts = {
     "yourtts": {"eng": "en", "fra": "fr", "por": "pt"}
 }
 
-stanza_ner_compatible_languages = ['en', 'de', 'nl', 'no', 'da', 'sv']
+year_to_decades_languages = ['eng', 'deu', 'nld', 'nob', 'dan', 'swe']
 
 punctuation_switch = {
     # Quotes causing hallucinations in some TTS engines

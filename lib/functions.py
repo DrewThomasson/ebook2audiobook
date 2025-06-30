@@ -57,8 +57,6 @@ from num2words import num2words
 from pathlib import Path
 from pydub import AudioSegment
 from queue import Queue, Empty
-from stanza.models.common.utils import available_languages as stanza_languages
-from stanza.resources.common import DEFAULT_MODEL_DIR
 from types import MappingProxyType
 from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
@@ -435,7 +433,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
 
     def year_to_words(year):
         year_str = str(year)
-        if len(year_str) != 4 or not year_str.isdigit() or lang_iso not in stanza_ner_compatible_languages:
+        if len(year_str) != 4 or not year_str.isdigit():
             return num2words(year)
         first_two = int(year_str[:2])
         last_two = int(year_str[2:])
@@ -445,14 +443,14 @@ def math2word(text, lang, lang_iso1, tts_engine):
         is_num2words_compat = check_num2words_compat()  
         # Check if there are positive integers so possible date to convert
         if bool(re.search(r'\b\d+\b', text)):
-            if lang_iso1 in stanza_languages:
+            if lang in year_to_decades_languages:
                 date_spans = detect_date_entities(text)
                 result = []
                 last_pos = 0
                 for start, end, date_text in date_spans:
                     # Append text before this date
                     result.append(text[last_pos:start])
-                    processed = re.sub(r"\b\d{4}\b", years_to_word, date_text)
+                    processed = re.sub(r"\b\d{4}\b", year_to_words, date_text)
                     result.append(processed)
                     last_pos = end
                 # Append remaining text
