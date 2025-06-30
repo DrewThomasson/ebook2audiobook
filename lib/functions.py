@@ -440,21 +440,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
     )
     if ambiguous_replacements:
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-    # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
-    number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
-    if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
-        if is_num2words_compat:
-            # Pattern 2: Split big numbers into groups of 4
-            text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
-            #text = re.sub(number_pattern, rep_num, text)
-        else:
-            # Pattern 2: Split big numbers into groups of 2
-            text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
-            # Fallback: Replace numbers using phonemes dictionary
-            sorted_numbers = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
-            if sorted_numbers:
-                number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
-                text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
+
     return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
