@@ -508,7 +508,16 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     for char in specialchars_remove:
         text = text.replace(char, ' ')
     text = ' '.join(text.split())
-
+    if text.strip():
+        # Add punctuation after numbers or Roman numerals at start of a chapter.
+        roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
+        arabic_pattern = r'^(\d+)(?=\s|$)'
+        if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
+            # Add punctuation if not already present (e.g. "II", "4")
+            if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
+                text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
+        # Replace math symbols with words
+        #text = math2word(text, lang, lang_iso1, tts_engine)
     return text
 
 def convert2epub(session):
