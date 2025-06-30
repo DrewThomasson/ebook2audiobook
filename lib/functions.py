@@ -491,6 +491,16 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     pattern = '|'.join(map(re.escape, punctuation_split))
     # Reduce multiple consecutive punctuations
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
+    if tts_engine == TTS_ENGINES['XTTSv2']:
+        # Pattern 1: Add a space between UTF-8 characters and numbers
+        text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+        pattern_space = re.escape(''.join(punctuation_list))
+        # Ensure space before and after punctuation (excluding `,` and `.`)
+        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+        text = re.sub(comma_dot_pattern, r' \1 ', text)
 
     return text
 
