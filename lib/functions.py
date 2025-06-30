@@ -887,6 +887,7 @@ def get_sentences(text, lang, tts_engine):
         raw_list = list(join_ideogramms(ideogramm_list))
     else:
         raw_list = re.split(pattern, text)
+    print(f'-----------raw_list = {raw_list}------------')
     raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
