@@ -2253,7 +2253,7 @@ def web_interface(args):
                 <span style='padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
                 <span style='padding:0 10px'><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
                 <span style='padding:0 10px'><b>RAM:</b> {color_box(rating["RAM"])}</span>
-                <span style='padding:0 10px'><b>Emotions:</b> {yellow_stars(rating["Emotions"])}</span>
+                <span style='padding:0 10px'><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
             </div>
             """
 
