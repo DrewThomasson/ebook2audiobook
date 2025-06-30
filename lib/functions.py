@@ -399,17 +399,17 @@ def math2word(text, lang, lang_iso1, tts_engine):
             return False
 
     def rep_num(match):
-        number = match.group().strip().replace(",", "")
+        number = match.group().replace(",", "")
         try:
             if "." in number or "e" in number or "E" in number:
                 number_value = float(number)
             else:
                 number_value = int(number)
             number_in_words = num2words(number_value, lang=lang_iso1)
-            return f" {number_in_words}"
+            return f"{number_in_words}"
         except Exception as e:
             print(f"Error converting number: {number}, Error: {e}")
-            return f"{number}"
+            return number
 
     def replace_ambiguous(match):
         symbol2 = match.group(2)
