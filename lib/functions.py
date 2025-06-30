@@ -420,19 +420,6 @@ def math2word(text, lang, lang_iso1, tts_engine):
             return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
         return match.group(0)
 
-    # Check if it's a serie of small numbers with a separator
-    text = check_formatted_number(text)
-    is_num2words_compat = check_compat()
-    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-    # Separate ambiguous and non-ambiguous symbols
-    ambiguous_symbols = {"-", "/", "*", "x"}
-    replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit()}  # Keep only math symbols
-    normal_replacements = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
-    ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
-    # Replace unambiguous math symbols normally
-    if normal_replacements:
-        math_pattern = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
-        text = re.sub(math_pattern, lambda m: f" {normal_replacements[m.group(0)]} ", text)
 
     return text
 
