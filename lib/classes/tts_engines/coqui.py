@@ -13,11 +13,10 @@ import uuid
 
 from huggingface_hub import hf_hub_download
 from pathlib import Path
-from scipy.io import wavfile as wav
-from scipy.signal import find_peaks
-from TTS.api import TTS as coquiAPI
 
 from lib import *
+from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
@@ -158,7 +157,8 @@ class Coqui:
         try:
             if key in loaded_tts.keys():
                 return loaded_tts[key]['engine']
-            self._unload_tts(self.session['device'])
+            unload_tts(device, [self.tts_key, self.tts_vc_key])
+            from TTS.api import TTS as coquiAPI
             with lock:
                 tts = coquiAPI(model_path)
                 if tts:
@@ -186,7 +186,7 @@ class Coqui:
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
             device = kwargs.get('device')
-            self._unload_tts(device)
+            unload_tts(device, [self.tts_key, self.tts_vc_key])
             with lock:
                 if tts_engine == TTS_ENGINES['XTTSv2']:
                     from TTS.tts.configs.xtts_config import XttsConfig
@@ -234,16 +234,6 @@ class Coqui:
             error = f'_load_checkpoint() error: {e}'
         return False
 
-    def _unload_tts(self, device, tts_key=None):
-        if len(loaded_tts) >= max_tts_in_memory:
-            if tts_key is not None:
-                if tts_key in loaded_tts.keys():
-                    del loaded_tts[tts_key]
-            else:
-                for key in list(loaded_tts.keys()):
-                    if key != self.tts_vc_key and key != self.tts_key:
-                        del loaded_tts[key]
-
     def _check_xtts_builtin_speakers(self, voice_path, speaker, device):
         try:
             voice_parts = Path(voice_path).parts
@@ -261,7 +251,7 @@ class Coqui:
                         hf_sub = ''
                         tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
                         if not tts:
-                            for key in list(loaded_tts.keys()): self._unload_tts(device, key)
+                            for key in list(loaded_tts.keys()): unload_tts(device, None, key)
                             config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][0]}", cache_dir=self.cache_dir)
                             checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][1]}", cache_dir=self.cache_dir)
                             vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][2]}", cache_dir=self.cache_dir)
@@ -302,12 +292,12 @@ class Coqui:
                                 torchaudio.save(file_path, audio_tensor, default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate'], format='wav')
                                 for samplerate in [16000, 24000]:
                                     output_file = file_path.replace('.wav', f'_{samplerate}.wav')
-                                    if not self._normalize_audio(file_path, output_file, samplerate):
+                                    if not normalize_audio(file_path, output_file, samplerate):
                                         break
                                 del audio_data, sourceTensor, audio_tensor  
                                 if self.session['tts_engine'] != TTS_ENGINES['XTTSv2']:
                                     del tts
-                                    self._unload_tts(device, tts_internal_key)
+                                    unload_tts(device, None, tts_internal_key)
                                 if os.path.exists(file_path):
                                     os.remove(file_path)
                                     return new_voice_path
@@ -343,7 +333,7 @@ class Coqui:
                     hf_sub = models[TTS_ENGINES['BARK']]['internal']['sub']
                     tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
                     if not tts:
-                        for key in list(loaded_tts.keys()): self._unload_tts(device, key)
+                        for key in list(loaded_tts.keys()): unload_tts(device, None, key)
                         text_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][0]}", cache_dir=self.cache_dir)
                         coarse_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][1]}", cache_dir=self.cache_dir)
                         fine_model_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][2]}", cache_dir=self.cache_dir)
@@ -376,7 +366,7 @@ class Coqui:
                         del audio_data
                         if self.session['tts_engine'] != TTS_ENGINES['BARK']:
                             del tts
-                            self._unload_tts(device, tts_internal_key)
+                            unload_tts(device, None, tts_internal_key)
                         msg = f"Saved NPZ file: {npz_file}"
                         print(msg)
                         return True
@@ -389,36 +379,7 @@ class Coqui:
             error = f'_check_bark_npz() error: {e}'
             print(error)
         return False
-   
-    def _detect_gender(self, voice_path):
-        try:
-            samplerate, signal = wav.read(voice_path)
-            # Convert stereo to mono if needed
-            if len(signal.shape) > 1:
-                signal = np.mean(signal, axis=1)
-            # Compute FFT
-            fft_spectrum = np.abs(np.fft.fft(signal))
-            freqs = np.fft.fftfreq(len(fft_spectrum), d=1/samplerate)
-            # Consider only positive frequencies
-            positive_freqs = freqs[:len(freqs)//2]
-            positive_magnitude = fft_spectrum[:len(fft_spectrum)//2]
-            # Find peaks in frequency spectrum
-            peaks, _ = find_peaks(positive_magnitude, height=np.max(positive_magnitude) * 0.2)
-            if len(peaks) == 0:
-                return None 
-            # Find the first strong peak within the human voice range (75Hz - 300Hz)
-            for peak in peaks:
-                if 75 <= positive_freqs[peak] <= 300:
-                    pitch = positive_freqs[peak]
-                    gender = "female" if pitch > 135 else "male"
-                    return gender
-                    break     
-            return None
-        except Exception as e:
-            error = f"_detect_gender() error: {voice_path}: {e}"
-            print(error)
-            return None
-
+        
     def _tensor_type(self, audio_data):
         if isinstance(audio_data, torch.Tensor):
             return audio_data
@@ -428,98 +389,6 @@ class Coqui:
             return torch.tensor(audio_data, dtype=torch.float32)
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
-
-    def _trim_audio(self, audio_data, samplerate, silence_threshold=0.001, buffer_sec=0.007):
-        # Ensure audio_data is a PyTorch tensor
-        if isinstance(audio_data, list):  
-            audio_data = torch.tensor(audio_data)
-        if isinstance(audio_data, torch.Tensor):
-            if audio_data.is_cuda:
-                audio_data = audio_data.cpu()           
-            # Detect non-silent indices
-            non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
-            if len(non_silent_indices) == 0:
-                return torch.tensor([], device=audio_data.device)
-            # Calculate start and end trimming indices with buffer
-            start_index = max(non_silent_indices[0] - int(buffer_sec * samplerate), 0)
-            end_index = non_silent_indices[-1] + int(buffer_sec * samplerate)
-            # Trim the audio
-            trimmed_audio = audio_data[start_index:end_index]
-            return trimmed_audio       
-        raise TypeError("audio_data must be a PyTorch tensor or a list of numerical values.")
-
-    def _normalize_audio(self, input_file, output_file, samplerate):
-        filter_complex = (
-            'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
-            'afftdn=nf=-70,'
-            'acompressor=threshold=-20dB:ratio=2:attack=80:release=200:makeup=1dB,'
-            'loudnorm=I=-14:TP=-3:LRA=7:linear=true,'
-            'equalizer=f=150:t=q:w=2:g=1,'
-            'equalizer=f=250:t=q:w=2:g=-3,'
-            'equalizer=f=3000:t=q:w=2:g=2,'
-            'equalizer=f=5500:t=q:w=2:g=-4,'
-            'equalizer=f=9000:t=q:w=2:g=-2,'
-            'highpass=f=63[audio]'
-        )
-        ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', input_file]
-        ffmpeg_cmd += [
-            '-filter_complex', filter_complex,
-            '-map', '[audio]',
-            '-ar', str(samplerate),
-            '-y', output_file
-        ]
-        try:
-            subprocess.run(
-                ffmpeg_cmd,
-                env={},
-                stdout=subprocess.PIPE, 
-                stderr=subprocess.PIPE,
-                encoding='utf-8',
-                errors='ignore'
-            )
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"_normalize_audio() error: {input_file}: {e}")
-            return False
-
-    def _append_sentence2vtt(self, sentence_obj, path):
-        def format_timestamp(seconds):
-            m, s = divmod(seconds, 60)
-            h, m = divmod(m, 60)
-            return f"{int(h):02}:{int(m):02}:{s:06.3f}"
-
-        index = 1
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                lines = f.readlines()
-                for line in lines:
-                    if "-->" in line:
-                        index += 1
-        if index > 1 and "resume_check" in sentence_obj and sentence_obj["resume_check"] < index:
-            return index  # Already written
-        if not os.path.exists(path):
-            with open(path, "w", encoding="utf-8") as f:
-                f.write("WEBVTT\n\n")
-        with open(path, "a", encoding="utf-8") as f:
-            start = format_timestamp(sentence_obj["start"])
-            end = format_timestamp(sentence_obj["end"])
-            text = re.sub(r'[\r\n]+', ' ', sentence_obj["text"]).strip()
-            f.write(f"{start} --> {end}\n{text}\n\n")
-        return index + 1
-
-    def _is_audio_data_valid(self, audio_data):
-        if audio_data is None:
-            return False
-        if isinstance(audio_data, torch.Tensor):
-            return audio_data.numel() > 0
-        if isinstance(audio_data, (list, tuple)):
-            return len(audio_data) > 0
-        try:
-            if isinstance(audio_data, np.ndarray):
-                return audio_data.size > 0
-        except ImportError:
-            pass
-        return False
 
     def convert(self, sentence_number, sentence):
         global xtts_builtin_speakers_list
@@ -594,7 +463,7 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         audio_part = result.get('wav')
-                        if self._is_audio_data_valid(audio_part):
+                        if is_audio_data_valid(audio_part):
                             audio_part = audio_part.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['BARK']:
                         trim_audio_buffer = 0.004
@@ -643,7 +512,7 @@ class Coqui:
                                 silent=True,
                                 **fine_tuned_params
                             )                                
-                        if self._is_audio_data_valid(audio_part):
+                        if is_audio_data_valid(audio_part):
                             audio_part = audio_part.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
                         speaker_argument = {}
@@ -666,8 +535,8 @@ class Coqui:
                             if settings['voice_path'] in settings['semitones'].keys():
                                 semitones = settings['semitones'][settings['voice_path']]
                             else:
-                                voice_path_gender = self._detect_gender(settings['voice_path'])
-                                voice_builtin_gender = self._detect_gender(tmp_in_wav)
+                                voice_path_gender = detect_gender(settings['voice_path'])
+                                voice_builtin_gender = detect_gender(tmp_in_wav)
                                 msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
                                 print(msg)
                                 if voice_builtin_gender != voice_path_gender:
@@ -716,6 +585,7 @@ class Coqui:
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
+                        speaker_argument = {}
                         if settings['voice_path'] is not None:
                             settings['voice_path'] = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
@@ -724,13 +594,14 @@ class Coqui:
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
                                 text=text_part,
-                                file_path=tmp_in_wav
+                                file_path=tmp_in_wav,
+                                **speaker_argument
                             )
                             if settings['voice_path'] in settings['semitones'].keys():
                                 semitones = settings['semitones'][settings['voice_path']]
                             else:
-                                voice_path_gender = self._detect_gender(settings['voice_path'])
-                                voice_builtin_gender = self._detect_gender(tmp_in_wav)
+                                voice_path_gender = detect_gender(settings['voice_path'])
+                                voice_builtin_gender = detect_gender(tmp_in_wav)
                                 msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
                                 print(msg)
                                 if voice_builtin_gender != voice_path_gender:
@@ -774,7 +645,8 @@ class Coqui:
                                 os.remove(tmp_out_wav)
                         else:
                             audio_part = tts.tts(
-                                text=text_part
+                                text=text_part,
+                                **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
                         speaker_argument = {}
@@ -791,8 +663,8 @@ class Coqui:
                             if settings['voice_path'] in settings['semitones'].keys():
                                 semitones = settings['semitones'][settings['voice_path']]
                             else:
-                                voice_path_gender = self._detect_gender(settings['voice_path'])
-                                voice_builtin_gender = self._detect_gender(tmp_in_wav)
+                                voice_path_gender = detect_gender(settings['voice_path'])
+                                voice_builtin_gender = detect_gender(tmp_in_wav)
                                 msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
                                 print(msg)
                                 if voice_builtin_gender != voice_path_gender:
@@ -856,7 +728,7 @@ class Coqui:
                                 language=language,
                                 **speaker_argument
                             )
-                    if self._is_audio_data_valid(audio_part):
+                    if is_audio_data_valid(audio_part):
                         sourceTensor = self._tensor_type(audio_part)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                         audio_segments.append(audio_tensor)
@@ -866,7 +738,7 @@ class Coqui:
                 if audio_segments:
                     audio_tensor = torch.cat(audio_segments, dim=-1)
                     if audio2trim:
-                        audio_tensor = self._trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                        audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                     start_time = self.sentences_total_time
                     duration = audio_tensor.shape[-1] / settings['samplerate']
                     end_time = start_time + duration
@@ -877,7 +749,7 @@ class Coqui:
                         "text": sentence,
                         "resume_check": self.sentence_idx
                     }
-                    self.sentence_idx = self._append_sentence2vtt(sentence_obj, self.vtt_path)
+                    self.sentence_idx = append_sentence2vtt(sentence_obj, self.vtt_path)
                     torchaudio.save(final_sentence, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
                     del audio_tensor
                 if os.path.exists(final_sentence):
