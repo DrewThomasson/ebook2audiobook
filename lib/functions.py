@@ -57,6 +57,8 @@ from num2words import num2words
 from pathlib import Path
 from pydub import AudioSegment
 from queue import Queue, Empty
+from stanza.models.common.utils import available_languages as stanza_languages
+from stanza.resources.common import DEFAULT_MODEL_DIR
 from types import MappingProxyType
 from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
@@ -443,7 +445,6 @@ def math2word(text, lang, lang_iso1, tts_engine):
         is_num2words_compat = check_num2words_compat()  
         # Check if there are positive integers so possible date to convert
         if bool(re.search(r'\b\d+\b', text)):
-            stanza_languages = stanza.utils.default_paths.get_available_languages()
             if lang_iso1 in stanza_languages:
                 date_spans = detect_date_entities(text)
                 result = []

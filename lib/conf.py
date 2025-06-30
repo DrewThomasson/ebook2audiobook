@@ -25,6 +25,7 @@ os.environ['TTS_CACHE'] = tts_dir
 os.environ['TORCH_HOME'] = tts_dir
 os.environ['TTS_HOME'] = models_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
+os.environ['STANZA_RESOURCES_DIR'] = models_dir
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
 os.environ['HF_TOKEN_PATH'] = os.path.join(os.path.expanduser('~'), '.huggingface_token')
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
