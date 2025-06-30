@@ -585,6 +585,7 @@ class Coqui:
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
+                        speaker_argument = {}
                         if settings['voice_path'] is not None:
                             settings['voice_path'] = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
@@ -593,7 +594,8 @@ class Coqui:
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
                                 text=text_part,
-                                file_path=tmp_in_wav
+                                file_path=tmp_in_wav,
+                                **speaker_argument
                             )
                             if settings['voice_path'] in settings['semitones'].keys():
                                 semitones = settings['semitones'][settings['voice_path']]
@@ -643,7 +645,8 @@ class Coqui:
                                 os.remove(tmp_out_wav)
                         else:
                             audio_part = tts.tts(
-                                text=text_part
+                                text=text_part,
+                                **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
                         speaker_argument = {}

@@ -1596,6 +1596,9 @@ def convert_ebook(args):
                             if session['tts_engine'] == TTS_ENGINES['BARK']:
                                 os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                 msg_extra += f"Switching BARK to SMALL models - "
+                        else:
+                            if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
                         if session['device'] == 'cuda':
                             session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                             if session['device'] == 'cpu':
