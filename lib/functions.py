@@ -482,7 +482,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
     # Replace multiple  and spaces with single space
-    text = re.sub(r'[     ]+', ' ', text)
+    text = re.sub(r'\s+', ' ', text)
     # Replace ok by 'Owkey'
     text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
     # Replace parentheses with double quotes
@@ -490,7 +490,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Escape special characters in the punctuation list for regex
     pattern = '|'.join(map(re.escape, punctuation_split))
     # Reduce multiple consecutive punctuations
-    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
+    #text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     if tts_engine == TTS_ENGINES['XTTSv2']:
         # Pattern 1: Add a space between UTF-8 characters and numbers
         text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
@@ -747,7 +747,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         text = "\n".join(text_array)
         if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
-            #text = normalize_text(text, lang, lang_iso1, tts_engine)
+            text = normalize_text(text, lang, lang_iso1, tts_engine)
             if text.strip() and len(text.strip()) > 1:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
