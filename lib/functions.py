@@ -877,7 +877,6 @@ def get_sentences(text, lang, tts_engine):
                 result.extend(split_sentence(part2))
         return result
 
-    print(f'-----------text = {text}------------')
     max_chars = language_mapping[lang]['max_chars'] - 2
     pattern_split = [re.escape(p) for p in punctuation_split_set]
     pattern = f"({'|'.join(pattern_split)})"
