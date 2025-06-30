@@ -445,8 +445,8 @@ def math2word(text, lang, lang_iso1, tts_engine):
     if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
         if is_num2words_compat:
             # Pattern 2: Split big numbers into groups of 4
-            #text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
-            text = re.sub(number_pattern, rep_num, text)
+            text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
+            #text = re.sub(number_pattern, rep_num, text)
         else:
             # Pattern 2: Split big numbers into groups of 2
             text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
