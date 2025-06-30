@@ -431,7 +431,8 @@ def math2word(text, lang, lang_iso1, tts_engine):
                 date_spans.append((ent.start_char, ent.end_char, ent.text))
         return date_spans
 
-    def year_to_words(year):
+    def year_to_words(match):
+        year = int(match.group())
         year_str = str(year)
         if len(year_str) != 4 or not year_str.isdigit():
             return num2words(year)
