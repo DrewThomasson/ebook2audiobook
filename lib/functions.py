@@ -433,13 +433,6 @@ def math2word(text, lang, lang_iso1, tts_engine):
     if normal_replacements:
         math_pattern = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
         text = re.sub(math_pattern, lambda m: f" {normal_replacements[m.group(0)]} ", text)
-    # Regex pattern for ambiguous symbols (match only valid equations)
-    ambiguous_pattern = (
-        r'(?<!\S)(\d+)\s*([-/*x])\s*(\d+)(?!\S)|'  # Matches "num SYMBOL num" (e.g., "3 + 5", "7-2", "8 * 4")
-        r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'           # Matches "SYMBOL num" (e.g., "-4", "/ 9")
-    )
-    if ambiguous_replacements:
-        text = re.sub(ambiguous_pattern, replace_ambiguous, text)
 
     return text
 
