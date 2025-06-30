@@ -357,36 +357,34 @@ def proxy2dict(proxy_obj):
     return recursive_copy(proxy_obj, set())
 
 def check_formatted_number(text, max_single_value=999_999_999_999_999):
-    text = text.strip()
-    digit_count = sum(c.isdigit() for c in text)
-    if digit_count <= 9:
-        return text  # Skip conversion
-    try:
-        as_number = float(text.replace(",", ""))
-        if abs(as_number) <= max_single_value:
-            return text
-    except ValueError:
-        pass
-    tokens = re.findall(r'\d*\.\d+|\d+|[^\d\s]', text)
-    result = []
-    for token in tokens:
-        if re.fullmatch(r'\d*\.\d+', token):
-            try:
-                num = float(token)
-                result.append(num2words(num))
-            except:
-                result.append(token)
-        elif token.isdigit():
-            try:
-                num = int(token)
-                result.append(num2words(num))
-            except:
-                result.append(token)
-        elif token in {',', '.'}:
-            result.append(token + ' ')
-        else:
-            result.append(token)
-    return ''.join(result).strip()
+	text = text.strip()
+	digit_count = sum(c.isdigit() for c in text)
+	if digit_count <= 9:
+		return text
+	try:
+		as_number = float(text.replace(",", ""))
+		if abs(as_number) <= max_single_value:
+			return text
+	except ValueError:
+		pass
+	tokens = re.findall(r'\d*\.\d+|\d+|[^\w\s]|[\w]+|\s+', text)
+	result = []
+	for token in tokens:
+		if re.fullmatch(r'\d*\.\d+', token):
+			try:
+				num = float(token)
+				result.append(num2words(num))
+			except:
+				result.append(token)
+		elif token.isdigit():
+			try:
+				num = int(token)
+				result.append(num2words(num))
+			except:
+				result.append(token)
+		else:
+			result.append(token)
+	return ''.join(result)
 
 def math2word(text, lang, lang_iso1, tts_engine):
     def check_compat():
@@ -481,8 +479,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
-    # Replace multiple  and spaces with single space
-    text = re.sub(r'[     ]+', ' ', text)
+    # Replace multiple and spaces with single space
+    text = re.sub(r'\s+', ' ', text)
     # Replace ok by 'Owkey'
     text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
     # Replace parentheses with double quotes
@@ -879,6 +877,7 @@ def get_sentences(text, lang, tts_engine):
                 result.extend(split_sentence(part2))
         return result
 
+    print(f'-----------text = {text}------------')
     max_chars = language_mapping[lang]['max_chars'] - 2
     pattern_split = [re.escape(p) for p in punctuation_split_set]
     pattern = f"({'|'.join(pattern_split)})"
