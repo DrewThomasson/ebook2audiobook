@@ -27,6 +27,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import stanza
 import threading
 import time
 import torch
@@ -386,15 +387,16 @@ def check_formatted_number(text, max_single_value=999_999_999_999_999):
 			result.append(token)
 	return ''.join(result)
 
+def check_num2words_compat():
+    try:
+        num2words(1, lang=lang_iso1)
+        return True
+    except NotImplementedError:
+        return False
+    except Exception as e:
+        return False
+
 def math2word(text, lang, lang_iso1, tts_engine):
-    def check_compat():
-        try:
-            num2words(1, lang=lang_iso1)
-            return True
-        except NotImplementedError:
-            return False
-        except Exception as e:
-            return False
 
     def rep_num(match):
         number = match.group().strip().replace(",", "")
@@ -406,7 +408,8 @@ def math2word(text, lang, lang_iso1, tts_engine):
             number_in_words = num2words(number_value, lang=lang_iso1)
             return f" {number_in_words}"
         except Exception as e:
-            print(f"Error converting number: {number}, Error: {e}")
+            error = f"Error converting number: {number}, Error: {e}"
+            print(error)
             return f"{number}"
 
     def replace_ambiguous(match):
@@ -418,41 +421,76 @@ def math2word(text, lang, lang_iso1, tts_engine):
             return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
         return match.group(0)
 
-    # Check if it's a serie of small numbers with a separator
-    text = check_formatted_number(text)
-    is_num2words_compat = check_compat()
-    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-    # Separate ambiguous and non-ambiguous symbols
-    ambiguous_symbols = {"-", "/", "*", "x"}
-    replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit()}  # Keep only math symbols
-    normal_replacements = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
-    ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
-    # Replace unambiguous math symbols normally
-    if normal_replacements:
-        math_pattern = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
-        text = re.sub(math_pattern, lambda m: f" {normal_replacements[m.group(0)]} ", text)
-    # Regex pattern for ambiguous symbols (match only valid equations)
-    ambiguous_pattern = (
-        r'(?<!\S)(\d+)\s*([-/*x])\s*(\d+)(?!\S)|'  # Matches "num SYMBOL num" (e.g., "3 + 5", "7-2", "8 * 4")
-        r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'           # Matches "SYMBOL num" (e.g., "-4", "/ 9")
-    )
-    if ambiguous_replacements:
-        text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-    # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
-    number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
-    if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
-        if is_num2words_compat:
-            # Pattern 2: Split big numbers into groups of 4
-            text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
-            text = re.sub(number_pattern, rep_num, text)
-        else:
-            # Pattern 2: Split big numbers into groups of 2
-            text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
-            # Fallback: Replace numbers using phonemes dictionary
-            sorted_numbers = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
-            if sorted_numbers:
-                number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
-                text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
+    def detect_date_entities(text):
+        stanza.download(lang_iso1)
+        nlp = stanza.Pipeline(lang_iso1, processors='tokenize,ner')
+        doc = nlp(text)
+        date_spans = []
+        for ent in doc.ents:
+            if ent.type == 'DATE':
+                date_spans.append((ent.start_char, ent.end_char, ent.text))
+        return date_spans
+
+    def year_to_words(year):
+        year_str = str(year)
+        if len(year_str) != 4 or not year_str.isdigit() or lang_iso not in stanza_ner_compatible_languages:
+            return num2words(year)
+        first_two = int(year_str[:2])
+        last_two = int(year_str[2:])
+        return f"{num2words(first_two)} {num2words(last_two)}"
+
+    if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)):
+        is_num2words_compat = check_num2words_compat()  
+        # Check if there are positive integers so possible date to convert
+        if bool(re.search(r'\b\d+\b', text)):
+            stanza_languages = stanza.utils.default_paths.get_available_languages()
+            if lang_iso1 in stanza_languages:
+                date_spans = detect_date_entities(text)
+                result = []
+                last_pos = 0
+                for start, end, date_text in date_spans:
+                    # Append text before this date
+                    result.append(text[last_pos:start])
+                    processed = re.sub(r"\b\d{4}\b", years_to_word, date_text)
+                    result.append(processed)
+                    last_pos = end
+                # Append remaining text
+                result.append(text[last_pos:])
+                text = ''.join(result)       
+        # Check if it's a serie of small numbers with a separator
+        text = check_formatted_number(text)
+        phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+        # Separate ambiguous and non-ambiguous symbols
+        ambiguous_symbols = {"-", "/", "*", "x"}
+        replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit()}  # Keep only math symbols
+        normal_replacements = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
+        ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
+        # Replace unambiguous math symbols normally
+        if normal_replacements:
+            math_pattern = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
+            text = re.sub(math_pattern, lambda m: f" {normal_replacements[m.group(0)]} ", text)
+        # Regex pattern for ambiguous symbols (match only valid equations)
+        ambiguous_pattern = (
+            r'(?<!\S)(\d+)\s*([-/*x])\s*(\d+)(?!\S)|'  # Matches "num SYMBOL num" (e.g., "3 + 5", "7-2", "8 * 4")
+            r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'           # Matches "SYMBOL num" (e.g., "-4", "/ 9")
+        )
+        if ambiguous_replacements:
+            text = re.sub(ambiguous_pattern, replace_ambiguous, text)
+        # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
+        number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
+        if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+            if is_num2words_compat:
+                # Pattern 2: Split big numbers into groups of 4
+                text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
+                text = re.sub(number_pattern, rep_num, text)
+            else:
+                # Pattern 2: Split big numbers into groups of 2
+                text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
+                # Fallback: Replace numbers using phonemes dictionary
+                sorted_numbers = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
+                if sorted_numbers:
+                    number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
+                    text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
     return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
