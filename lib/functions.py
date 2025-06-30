@@ -459,8 +459,8 @@ def math2word(text, lang, lang_iso1, tts_engine):
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
     # Remove emojis
-    emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
-    emoji_pattern.sub('', text)
+    #emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
+    #emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
         abbr_map = {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping[lang].items()}
         pattern = re.compile(r'\b(' + '|'.join(re.escape(k).replace('\\.', '') for k in abbreviations_mapping[lang].keys()) + r')\.?\b', re.IGNORECASE)
@@ -477,8 +477,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
-    #pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
-    #text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
+    pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
+    text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
     # Replace multiple and spaces with single space
