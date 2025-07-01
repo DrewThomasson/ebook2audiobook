@@ -1081,14 +1081,14 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         chapters_dir_sentences = session['chapters_dir_sentences']
         batch_size = 512 
         sentence_files = [
-            f for f in os.listdir(sent_dir)
+            f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
         ]
         sentences_ordered = sorted(
             sentence_files, key=lambda x: int(os.path.splitext(x)[0])
         )
         selected_files = [
-            os.path.join(sent_dir, f)
+            os.path.join(chapters_dir_sentences, f)
             for f in sentences_ordered
             if start <= int(os.path.splitext(f)[0]) <= end
         ]
