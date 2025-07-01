@@ -27,7 +27,7 @@ xtts_builtin_speakers_list = None
 
 class Coqui:
     def __init__(self, session):   
-        if self.session['language'] in year_to_decades_languages:
+        if session['language'] in year_to_decades_languages:
             stanza.download(session['language_iso1'])
             self.stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
         self.session = session
