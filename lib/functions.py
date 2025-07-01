@@ -1076,6 +1076,33 @@ def convert_chapters2audio(session):
         return False
 
 def combine_audio_sentences(chapter_audio_file, start, end, session):
+    def assemble_chunks(txt_file, out_file):
+        try:
+            cmd = [
+                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
+                '-safe', '0', '-f', 'concat', '-i', txt_file,
+                '-c:a', default_audio_proc_format, '-map_metadata', '-1', out_file
+            ]
+            process = subprocess.Popen(
+                cmd,
+                env={},
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding='utf-8',
+                errors='ignore'
+            )
+            for line in process.stdout:
+                print(line, end='')  # Print each line of stdout
+            process.wait()
+            if process.returncode == 0:
+                return True
+            else:
+                error = process.returncode
+                print(error, cmd)
+                return False
+        except subprocess.CalledProcessError as e:
+            DependencyError(e)
+            return False
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
@@ -1108,27 +1135,19 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 chunk_list.append((txt, out))
             # Run chunk merges in parallel
             with Pool(cpu_count()) as pool:
-                pool.starmap(run_ffmpeg_concat, chunk_list)
+                pool.starmap(assemble_chunks, chunk_list)
             # Final merge
             final_list = os.path.join(tmpdir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
                 for _, chunk_path in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            cmd = [
-                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
-                '-safe', '0', '-f', 'concat', '-i', txt_file,
-                '-c:a', default_audio_proc_format, '-map_metadata', '-1', out_file
-            ]
-            subprocess.run(cmd, check=True)
-            msg = f'********* Combined block audio file saved to {chapter_audio_file}'
-            print(msg)
-            return True
-    except subprocess.CalledProcessError as e:
-        DependencyError(e)
-        return False
+            if assemble_chunks(final_list, chapter_audio_file)
+                msg = f'********* Combined block audio file saved to {chapter_audio_file}'
+                print(msg)
+                return True
     except Exception as e:
         DependencyError(e)
-        return False
+    return False
 
 def combine_audio_chapters(session):
     def assemble_segments():
