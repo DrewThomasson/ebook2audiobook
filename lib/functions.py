@@ -1101,19 +1101,17 @@ def assemble_chunks(txt_file, out_file):
             return False
     except subprocess.CalledProcessError as e:
         DependencyError(e)
-        raise
         return False
     except Exception as e:
         error = f"assemble_chanks() Error: Failed to process {txt_file} → {out_file}: {e}"
         print(error)
-        raise
         return False
 
 def combine_audio_sentences(chapter_audio_file, start, end, session):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
-        batch_size = 512 
+        batch_size = 512
         sentence_files = [
             f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1137,12 +1135,19 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
                 with open(txt, 'w') as f:
                     for file in batch:
-                        file = file.replace("\\", "/")
-                        f.write(f"file '{file}'\n")
+                        f.write(f"file '{file.replace(os.sep, '/')}'\n")
                 chunk_list.append((txt, out))
-            # Run chunk merges in parallel
-            with Pool(cpu_count()) as pool:
-                pool.starmap(assemble_chunks, chunk_list)
+            try:
+                with Pool(cpu_count()) as pool:
+                    results = pool.starmap(assemble_chunks, chunk_list)
+            except Exception as e:
+                error = f"combine_audio_sentences() multiprocessing error: {e}"
+                print(error)
+                return False
+            if not all(results):
+                error = "combine_audio_sentences() One or more chunks failed."
+                print(error)
+                return False
             # Final merge
             final_list = os.path.join(tmpdir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
@@ -1152,9 +1157,13 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 msg = f'********* Combined block audio file saved to {chapter_audio_file}'
                 print(msg)
                 return True
+            else:
+                error = "combine_audio_sentences() Final merge failed."
+                print(error)
+                return False
     except Exception as e:
         DependencyError(e)
-    return False
+        return False
 
 def combine_audio_chapters(session):
     def assemble_segments():
