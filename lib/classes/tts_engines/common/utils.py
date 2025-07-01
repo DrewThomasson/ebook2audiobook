@@ -1,8 +1,8 @@
 import os
-import num2words
 import regex as re
 import stanza
 
+from num2words import num2words
 from lib.models import loaded_tts, max_tts_in_memory
 
 def detect_date_entities(text, stanza_nlp):
