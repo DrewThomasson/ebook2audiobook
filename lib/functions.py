@@ -68,6 +68,10 @@ from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 
+context = None
+lock = threading.Lock()
+is_gui_process = False
+
 class DependencyError(Exception):
     def __init__(self, message=None):
         super().__init__(message)
@@ -177,10 +181,6 @@ class SessionContext:
                 }
             }, manager=self.manager)
         return self.sessions[id]
-
-lock = threading.Lock()
-context = SessionContext()
-is_gui_process = False
 
 def prepare_dirs(src, session):
     try:
@@ -1463,7 +1463,9 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-def convert_ebook_batch(args):
+def convert_ebook_batch(args, ctx):
+    global context
+    context = ctx
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
@@ -1481,7 +1483,7 @@ def convert_ebook_batch(args):
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
 
-def convert_ebook(args):
+def convert_ebook(args, ctx=None):
     try:
         global is_gui_process, context        
         error = None
@@ -1517,6 +1519,8 @@ def convert_ebook(args):
                 print(error)
                 return error, false
 
+            if ctx is not None:
+                context = ctx
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
             session = context.get_session(id)
@@ -1784,7 +1788,8 @@ def show_alert(state):
             elif state['type'] == 'success':
                 gr.Success(state['msg'])
 
-def web_interface(args):
+def web_interface(args, ctx):
+    global context
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
@@ -1816,6 +1821,8 @@ def web_interface(args):
     # Event to signal when the process should stop
     thread = None
     stop_event = threading.Event()
+    
+    context = ctx
 
     theme = gr.themes.Origin(
         primary_hue='green',
