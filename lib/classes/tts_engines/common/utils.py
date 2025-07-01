@@ -5,7 +5,7 @@ import stanza
 
 from lib.models import loaded_tts, max_tts_in_memory
 
-def detect_date_entities(text):
+def detect_date_entities(text, stanza_nlp):
     doc = stanza_nlp(text)
     date_spans = []
     for ent in doc.ents:
