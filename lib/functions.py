@@ -1101,6 +1101,12 @@ def assemble_chunks(txt_file, out_file):
             return False
     except subprocess.CalledProcessError as e:
         DependencyError(e)
+        raise
+        return False
+	except Exception as e:
+        error = f"assemble_chanks() Error: Failed to process {txt_file} → {out_file}: {e}"
+		print(error)
+		raise
         return False
 
 def combine_audio_sentences(chapter_audio_file, start, end, session):
