@@ -1141,7 +1141,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
             with open(final_list, 'w') as f:
                 for _, chunk_path in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            if assemble_chunks(final_list, chapter_audio_file)
+            if assemble_chunks(final_list, chapter_audio_file):
                 msg = f'********* Combined block audio file saved to {chapter_audio_file}'
                 print(msg)
                 return True
