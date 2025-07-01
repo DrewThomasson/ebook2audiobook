@@ -396,7 +396,7 @@ def check_num2words_compat():
     except Exception as e:
         return False
 
-def math2word(text, lang, lang_iso1, tts_engine):
+def math2word(text, lang, lang_iso1, tts_engine, stanza_nlp):
 
     def rep_num(match):
         number = match.group().strip().replace(",", "")
@@ -422,9 +422,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
         return match.group(0)
 
     def detect_date_entities(text):
-        stanza.download(lang_iso1)
-        nlp = stanza.Pipeline(lang_iso1, processors='tokenize,ner')
-        doc = nlp(text)
+        doc = stanza_nlp(text)
         date_spans = []
         for ent in doc.ents:
             if ent.type == 'DATE':
@@ -493,7 +491,7 @@ def math2word(text, lang, lang_iso1, tts_engine):
                     text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
     return text
 
-def normalize_text(text, lang, lang_iso1, tts_engine):
+def normalize_text(text, lang, lang_iso1, tts_engine, stanza_nlp):
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
@@ -553,7 +551,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
             if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
         # Replace math symbols with words
-        text = math2word(text, lang, lang_iso1, tts_engine)
+        text = math2word(text, lang, lang_iso1, tts_engine, stanza_nlp)
     return text
 
 def convert2epub(session):
@@ -705,10 +703,12 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         ]
         if not all_docs:
             return [], []
+        stanza.download(session['language_iso1'])
+        stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
         for doc in all_docs:
-            sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
+            sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp)
             if sentences_array is not None:
                 chapters.append(sentences_array)
         return toc, chapters
@@ -717,7 +717,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return None, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine):
+def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp):
     try:
         chapter_sentences = None
         raw_html = doc.get_body_content().decode("utf-8")
@@ -783,15 +783,15 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         text = "\n".join(text_array)
         if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
-            text = normalize_text(text, lang, lang_iso1, tts_engine)
+            text = normalize_text(text, lang, lang_iso1, tts_engine, stanza_nlp)
             if text.strip() and len(text.strip()) > 1:
-                chapter_sentences = get_sentences(text, lang, tts_engine)
+                chapter_sentences = get_sentences(text, lang, tts_engine, stanza_nlp)
         return chapter_sentences
     except Exception as e:
         DependencyError(e)
         return None
 
-def get_sentences(text, lang, tts_engine):
+def get_sentences(text, lang, tts_engine, stanza_nlp):
     def combine_punctuation(tokens):
         if not tokens:
             return tokens
