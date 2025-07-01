@@ -424,14 +424,14 @@ class Coqui:
                 if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
                     # Check if there are positive integers so possible date to convert
                     if bool(re.search(r'\b\d+\b', sentence)):
-                        if lang in year_to_decades_languages:
+                        if self.session['language'] in year_to_decades_languages:
                             date_spans = detect_date_entities(sentence)
                             result = []
                             last_pos = 0
                             for start, end, date_text in date_spans:
                                 # Append sentence before this date
                                 result.append(sentence[last_pos:start])
-                                processed = re.sub(r"\b\d{4}\b", year_to_words, date_text, self.session['lang_iso1'])
+                                processed = re.sub(r"\b\d{4}\b", year_to_words, date_text, self.session['language_iso1'])
                                 result.append(processed)
                                 last_pos = end
                             # Append remaining sentence
