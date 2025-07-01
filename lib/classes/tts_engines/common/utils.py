@@ -13,9 +13,8 @@ def detect_date_entities(text, stanza_nlp):
             date_spans.append((ent.start_char, ent.end_char, ent.text))
     return date_spans
 
-def year_to_words(match, lang_iso1):
-    year = int(match.group())
-    year_str = str(year)
+def year_to_words(year_str, lang_iso1):
+    year = int(year_str)
     if len(year_str) != 4 or not year_str.isdigit():
         return num2words(year, lang=lang_iso1)
     first_two = int(year_str[:2])
