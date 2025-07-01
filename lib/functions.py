@@ -1075,34 +1075,35 @@ def convert_chapters2audio(session):
         DependencyError(e)
         return False
 
-def combine_audio_sentences(chapter_audio_file, start, end, session):
-    def assemble_chunks(txt_file, out_file):
-        try:
-            cmd = [
-                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
-                '-safe', '0', '-f', 'concat', '-i', txt_file,
-                '-c:a', default_audio_proc_format, '-map_metadata', '-1', out_file
-            ]
-            process = subprocess.Popen(
-                cmd,
-                env={},
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                encoding='utf-8',
-                errors='ignore'
-            )
-            for line in process.stdout:
-                print(line, end='')  # Print each line of stdout
-            process.wait()
-            if process.returncode == 0:
-                return True
-            else:
-                error = process.returncode
-                print(error, cmd)
-                return False
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
+def assemble_chunks(txt_file, out_file):
+    try:
+        cmd = [
+            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
+            '-safe', '0', '-f', 'concat', '-i', txt_file,
+            '-c:a', default_audio_proc_format, '-map_metadata', '-1', out_file
+        ]
+        process = subprocess.Popen(
+            cmd,
+            env={},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding='utf-8',
+            errors='ignore'
+        )
+        for line in process.stdout:
+            print(line, end='')  # Print each line of stdout
+        process.wait()
+        if process.returncode == 0:
+            return True
+        else:
+            error = process.returncode
+            print(error, cmd)
             return False
+    except subprocess.CalledProcessError as e:
+        DependencyError(e)
+        return False
+
+def combine_audio_sentences(chapter_audio_file, start, end, session):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
