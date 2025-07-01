@@ -27,6 +27,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import torch
@@ -50,6 +51,7 @@ from ebooklib import epub
 from glob import glob
 from iso639 import languages
 from markdown import markdown
+from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
 from num2words import num2words
