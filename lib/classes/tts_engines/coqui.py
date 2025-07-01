@@ -27,7 +27,9 @@ xtts_builtin_speakers_list = None
 
 class Coqui:
     def __init__(self, session):   
-        stanza.download(session['language_iso1'])
+        if self.session['language'] in year_to_decades_languages:
+            stanza.download(session['language_iso1'])
+            self.stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
         self.session = session
         self.cache_dir = tts_dir
         self.speakers_path = None
@@ -40,8 +42,7 @@ class Coqui:
         self.sentence_idx = 1
         self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
         self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
-        self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')
-        self.stanza_nlp = stanza.Pipeline(self.session['language_iso1'], processors='tokenize,ner')
+        self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')       
         self._build()
  
     def _build(self):
@@ -420,11 +421,12 @@ class Coqui:
                         return False
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
-                # Check if numbers exists in the sentence
-                if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
-                    # Check if there are positive integers so possible date to convert
-                    if bool(re.search(r'\b\d+\b', sentence)):
-                        if self.session['language'] in year_to_decades_languages:
+                # Check if the language requires to split the year in decades
+                if self.session['language'] in year_to_decades_languages:
+                    # Check if numbers exists in the sentence
+                    if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
+                        # Check if there are positive integers so possible date to convert
+                        if bool(re.search(r'\b\d+\b', sentence)):
                             date_spans = detect_date_entities(sentence)
                             result = []
                             last_pos = 0
