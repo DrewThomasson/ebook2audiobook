@@ -17,10 +17,10 @@ def year_to_words(match, lang_iso1):
     year = int(match.group())
     year_str = str(year)
     if len(year_str) != 4 or not year_str.isdigit():
-        return num2words(year, lang_iso1)
+        return num2words(year, lang=lang_iso1)
     first_two = int(year_str[:2])
     last_two = int(year_str[2:])
-    return f"{num2words(first_two, lang_iso1)} {num2words(last_two, lang_iso1)}"  
+    return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}"  
 
 def unload_tts(device, reserved_keys=None, tts_key=None):
     if len(loaded_tts) >= max_tts_in_memory:
