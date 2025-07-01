@@ -1,7 +1,26 @@
 import os
+import num2words
 import regex as re
+import stanza
 
 from lib.models import loaded_tts, max_tts_in_memory
+
+def detect_date_entities(text):
+    doc = stanza_nlp(text)
+    date_spans = []
+    for ent in doc.ents:
+        if ent.type == 'DATE':
+            date_spans.append((ent.start_char, ent.end_char, ent.text))
+    return date_spans
+
+def year_to_words(match, lang_iso1):
+    year = int(match.group())
+    year_str = str(year)
+    if len(year_str) != 4 or not year_str.isdigit():
+        return num2words(year, lang_iso1)
+    first_two = int(year_str[:2])
+    last_two = int(year_str[2:])
+    return f"{num2words(first_two, lang_iso1)} {num2words(last_two, lang_iso1)}"  
 
 def unload_tts(device, reserved_keys=None, tts_key=None):
     if len(loaded_tts) >= max_tts_in_memory:

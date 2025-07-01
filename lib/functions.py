@@ -27,7 +27,6 @@ import shutil
 import socket
 import subprocess
 import sys
-import stanza
 import threading
 import time
 import torch
@@ -357,7 +356,16 @@ def proxy2dict(proxy_obj):
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
 
-def check_formatted_number(text, max_single_value=999_999_999_999_999):
+def check_num2words_compat():
+    try:
+        num2words(1, lang=lang_iso1)
+        return True
+    except NotImplementedError:
+        return False
+    except Exception as e:
+        return False
+
+def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999_999_999):
 	text = text.strip()
 	digit_count = sum(c.isdigit() for c in text)
 	if digit_count <= 9:
@@ -372,126 +380,22 @@ def check_formatted_number(text, max_single_value=999_999_999_999_999):
 	result = []
 	for token in tokens:
 		if re.fullmatch(r'\d*\.\d+', token):
-			try:
+			if is_num2words_compat:
 				num = float(token)
-				result.append(num2words(num))
-			except:
+				result.append(num2words(num, lang=lang_iso1))
+			else:
 				result.append(token)
 		elif token.isdigit():
-			try:
+			if is_num2words_compat:
 				num = int(token)
-				result.append(num2words(num))
-			except:
+				result.append(num2words(num, lang=lang_iso1))
+			else:
 				result.append(token)
 		else:
 			result.append(token)
 	return ''.join(result)
 
-def check_num2words_compat():
-    try:
-        num2words(1, lang=lang_iso1)
-        return True
-    except NotImplementedError:
-        return False
-    except Exception as e:
-        return False
-
-def math2word(text, lang, lang_iso1, tts_engine, stanza_nlp):
-
-    def rep_num(match):
-        number = match.group().strip().replace(",", "")
-        try:
-            if "." in number or "e" in number or "E" in number:
-                number_value = float(number)
-            else:
-                number_value = int(number)
-            number_in_words = num2words(number_value, lang=lang_iso1)
-            return f" {number_in_words}"
-        except Exception as e:
-            error = f"Error converting number: {number}, Error: {e}"
-            print(error)
-            return f"{number}"
-
-    def replace_ambiguous(match):
-        symbol2 = match.group(2)
-        symbol3 = match.group(3)
-        if symbol2 in ambiguous_replacements: # "num SYMBOL num" case
-            return f"{match.group(1)} {ambiguous_replacements[symbol2]} {match.group(3)}"            
-        elif symbol3 in ambiguous_replacements: # "SYMBOL num" case
-            return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
-        return match.group(0)
-
-    def detect_date_entities(text):
-        doc = stanza_nlp(text)
-        date_spans = []
-        for ent in doc.ents:
-            if ent.type == 'DATE':
-                date_spans.append((ent.start_char, ent.end_char, ent.text))
-        return date_spans
-
-    def year_to_words(match):
-        year = int(match.group())
-        year_str = str(year)
-        if len(year_str) != 4 or not year_str.isdigit():
-            return num2words(year)
-        first_two = int(year_str[:2])
-        last_two = int(year_str[2:])
-        return f"{num2words(first_two)} {num2words(last_two)}"
-
-    if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)):
-        is_num2words_compat = check_num2words_compat()  
-        # Check if there are positive integers so possible date to convert
-        if bool(re.search(r'\b\d+\b', text)):
-            if lang in year_to_decades_languages:
-                date_spans = detect_date_entities(text)
-                result = []
-                last_pos = 0
-                for start, end, date_text in date_spans:
-                    # Append text before this date
-                    result.append(text[last_pos:start])
-                    processed = re.sub(r"\b\d{4}\b", year_to_words, date_text)
-                    result.append(processed)
-                    last_pos = end
-                # Append remaining text
-                result.append(text[last_pos:])
-                text = ''.join(result)       
-        # Check if it's a serie of small numbers with a separator
-        text = check_formatted_number(text)
-        phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-        # Separate ambiguous and non-ambiguous symbols
-        ambiguous_symbols = {"-", "/", "*", "x"}
-        replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit()}  # Keep only math symbols
-        normal_replacements = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
-        ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
-        # Replace unambiguous math symbols normally
-        if normal_replacements:
-            math_pattern = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
-            text = re.sub(math_pattern, lambda m: f" {normal_replacements[m.group(0)]} ", text)
-        # Regex pattern for ambiguous symbols (match only valid equations)
-        ambiguous_pattern = (
-            r'(?<!\S)(\d+)\s*([-/*x])\s*(\d+)(?!\S)|'  # Matches "num SYMBOL num" (e.g., "3 + 5", "7-2", "8 * 4")
-            r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'           # Matches "SYMBOL num" (e.g., "-4", "/ 9")
-        )
-        if ambiguous_replacements:
-            text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-        # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
-        number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
-        if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
-            if is_num2words_compat:
-                # Pattern 2: Split big numbers into groups of 4
-                text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
-                text = re.sub(number_pattern, rep_num, text)
-            else:
-                # Pattern 2: Split big numbers into groups of 2
-                text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
-                # Fallback: Replace numbers using phonemes dictionary
-                sorted_numbers = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
-                if sorted_numbers:
-                    number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
-                    text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
-    return text
-
-def normalize_text(text, lang, lang_iso1, tts_engine, stanza_nlp):
+def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
@@ -551,7 +455,67 @@ def normalize_text(text, lang, lang_iso1, tts_engine, stanza_nlp):
             if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
         # Replace math symbols with words
-        text = math2word(text, lang, lang_iso1, tts_engine, stanza_nlp)
+        text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+    return text
+
+def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+
+    def rep_num(match):
+        number = match.group().strip().replace(",", "")
+        try:
+            if "." in number or "e" in number or "E" in number:
+                number_value = float(number)
+            else:
+                number_value = int(number)
+            number_in_words = num2words(number_value, lang=lang_iso1)
+            return f" {number_in_words}"
+        except Exception as e:
+            error = f"Error converting number: {number}, Error: {e}"
+            print(error)
+            return f"{number}"
+
+    def replace_ambiguous(match):
+        symbol2 = match.group(2)
+        symbol3 = match.group(3)
+        if symbol2 in ambiguous_replacements: # "num SYMBOL num" case
+            return f"{match.group(1)} {ambiguous_replacements[symbol2]} {match.group(3)}"            
+        elif symbol3 in ambiguous_replacements: # "SYMBOL num" case
+            return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
+        return match.group(0)    
+        # Check if it's a serie of small numbers with a separator
+        text = check_formatted_number(text, lang_iso1, is_num2words_compat)
+        phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+        # Separate ambiguous and non-ambiguous symbols
+        ambiguous_symbols = {"-", "/", "*", "x"}
+        replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit()}  # Keep only math symbols
+        normal_replacements = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
+        ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
+        # Replace unambiguous math symbols normally
+        if normal_replacements:
+            math_pattern = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
+            text = re.sub(math_pattern, lambda m: f" {normal_replacements[m.group(0)]} ", text)
+        # Regex pattern for ambiguous symbols (match only valid equations)
+        ambiguous_pattern = (
+            r'(?<!\S)(\d+)\s*([-/*x])\s*(\d+)(?!\S)|'  # Matches "num SYMBOL num" (e.g., "3 + 5", "7-2", "8 * 4")
+            r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'           # Matches "SYMBOL num" (e.g., "-4", "/ 9")
+        )
+        if ambiguous_replacements:
+            text = re.sub(ambiguous_pattern, replace_ambiguous, text)
+        # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
+        number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
+        if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+            if is_num2words_compat:
+                # Pattern 2: Split big numbers into groups of 4
+                text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
+                text = re.sub(number_pattern, rep_num, text)
+            else:
+                # Pattern 2: Split big numbers into groups of 2
+                text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
+                # Fallback: Replace numbers using phonemes dictionary
+                sorted_numbers = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
+                if sorted_numbers:
+                    number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
+                    text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
     return text
 
 def convert2epub(session):
@@ -686,11 +650,12 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
+        is_num2words_compat = check_num2words_compat() 
         # Step 1: Extract TOC (Table of Contents)
         toc_list = []
         try:
             toc = epubBook.toc  # Extract TOC
-            toc_list = [normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine']) for item in toc if hasattr(item, 'title')]
+            toc_list = [normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat) for item in toc if hasattr(item, 'title')]
         except Exception as toc_error:
             error = f"Error extracting TOC: {toc_error}"
             print(error)
@@ -703,12 +668,10 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         ]
         if not all_docs:
             return [], []
-        stanza.download(session['language_iso1'])
-        stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
         for doc in all_docs:
-            sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp)
+            sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
             if sentences_array is not None:
                 chapters.append(sentences_array)
         return toc, chapters
@@ -717,7 +680,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return None, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp):
+def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
     try:
         chapter_sentences = None
         raw_html = doc.get_body_content().decode("utf-8")
@@ -783,15 +746,15 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp):
         text = "\n".join(text_array)
         if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
-            text = normalize_text(text, lang, lang_iso1, tts_engine, stanza_nlp)
+            text = normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat)
             if text.strip() and len(text.strip()) > 1:
-                chapter_sentences = get_sentences(text, lang, tts_engine, stanza_nlp)
+                chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
     except Exception as e:
         DependencyError(e)
         return None
 
-def get_sentences(text, lang, tts_engine, stanza_nlp):
+def get_sentences(text, lang, tts_engine):
     def combine_punctuation(tokens):
         if not tokens:
             return tokens

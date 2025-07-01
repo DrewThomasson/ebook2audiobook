@@ -4,6 +4,7 @@ import numpy as np
 import regex as re
 import shutil
 import soundfile as sf
+import stanza
 import subprocess
 import tempfile
 import torch
@@ -15,7 +16,7 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 
 from lib import *
-from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -26,6 +27,7 @@ xtts_builtin_speakers_list = None
 
 class Coqui:
     def __init__(self, session):   
+        stanza.download(session['language_iso1'])
         self.session = session
         self.cache_dir = tts_dir
         self.speakers_path = None
@@ -39,6 +41,7 @@ class Coqui:
         self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
         self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
         self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')
+        self.stanza_nlp = stanza.Pipeline(self.session['language_iso1'], processors='tokenize,ner')
         self._build()
  
     def _build(self):
@@ -417,6 +420,23 @@ class Coqui:
                         return False
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
+                # Check if numbers exists in the sentence
+                if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
+                    # Check if there are positive integers so possible date to convert
+                    if bool(re.search(r'\b\d+\b', sentence)):
+                        if lang in year_to_decades_languages:
+                            date_spans = detect_date_entities(sentence)
+                            result = []
+                            last_pos = 0
+                            for start, end, date_text in date_spans:
+                                # Append sentence before this date
+                                result.append(sentence[last_pos:start])
+                                processed = re.sub(r"\b\d{4}\b", year_to_words, date_text, self.session['lang_iso1'])
+                                result.append(processed)
+                                last_pos = end
+                            # Append remaining sentence
+                            result.append(sentence[last_pos:])
+                            sentence = ''.join(result)
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
