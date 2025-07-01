@@ -1166,49 +1166,52 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         return False
 
 def combine_audio_chapters(session):
-    def assemble_segments():
-        try:
-            file_list = os.path.join(session['chapters_dir'], 'chapters.txt')
-            chapter_files_ordered = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
-            if not chapter_files_ordered:
-                error = 'No block files found.'
-                print(error)
-                return False
-            with open(file_list, "w") as f:
-                for file in chapter_files_ordered:
-                    file = file.replace("\\", "/")
-                    f.write(f"file '{file}'\n")
-            ffmpeg_cmd = [
-                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
-                '-c:a', default_audio_proc_format, '-map_metadata', '-1', combined_chapters_file
-            ]
-            try:
-                process = subprocess.Popen(
-                    ffmpeg_cmd,
-                    env={},
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    encoding='utf-8',
-                    errors='ignore'
-                )
-                for line in process.stdout:
-                    print(line, end='')  # Print each line of stdout
-                process.wait()
-                if process.returncode == 0:
-                    os.remove(file_list)
-                    msg = f'********* total audio blocks saved to {combined_chapters_file}'
-                    print(msg)
-                    return True
-                else:
-                    error = process.returncode
-                    print(error, ffmpeg_cmd)
-                    return False
-            except subprocess.CalledProcessError as e:
-                DependencyError(e)
-                return False
-        except Exception as e:
-            DependencyError(e)
-            return False
+	def assemble_segments():
+		try:
+			batch_size = 512
+			with tempfile.TemporaryDirectory() as tmpdir:
+				chapter_files_ordered = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
+				if not chapter_files_ordered:
+					error = 'No block files found.'
+					print(error)
+					return False
+				chunk_list = []
+				for i in range(0, len(chapter_files_ordered), batch_size):
+					batch = chapter_files_ordered[i:i + batch_size]
+					txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
+					out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
+					with open(txt, 'w') as f:
+						for file in batch:
+							path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
+							f.write(f"file '{path}'\n")
+					chunk_list.append((txt, out))
+				try:
+					with Pool(cpu_count()) as pool:
+						results = pool.starmap(assemble_chunks, chunk_list)
+				except Exception as e:
+					error = f"assemble_segments() multiprocessing error: {e}"
+					print(error)
+					return False
+				if not all(results):
+					error = "assemble_segments() One or more chunks failed."
+					print(error)
+					return False
+				# Final merge
+				final_list = os.path.join(tmpdir, 'chapters_final.txt')
+				with open(final_list, 'w') as f:
+					for _, chunk_path in chunk_list:
+						f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
+				if assemble_chunks(final_list, combined_chapters_file):
+					msg = f'********* total audio blocks saved to {combined_chapters_file}'
+					print(msg)
+					return True
+				else:
+					error = "assemble_segments() Final merge failed."
+					print(error)
+					return False
+		except Exception as e:
+			DependencyError(e)
+			return False
 
     def generate_ffmpeg_metadata():
         try:
