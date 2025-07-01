@@ -259,49 +259,49 @@ def analyze_uploaded_file(zip_path, required_files):
         raise RuntimeError(error)
 
 def extract_custom_model(file_src, session, required_files=None):
-	try:
-		model_path = None
-		if required_files is None:
-			required_files = models[session['tts_engine']][default_fine_tuned]['files']
-		model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
-		model_name = get_sanitized(model_name)
-		with zipfile.ZipFile(file_src, 'r') as zip_ref:
-			files = zip_ref.namelist()
-			files_length = len(files)
-			tts_dir = session['tts_engine']
-			model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
-			if os.path.exists(model_path):
-				print(f'{model_path} already exists, bypassing files extraction')
-				return model_path
-			os.makedirs(model_path, exist_ok=True)
-			required_files_lc = set(x.lower() for x in required_files)
-			with tqdm(total=files_length, unit='files') as t:
-				for f in files:
-					base_f = os.path.basename(f).lower()
-					if base_f in required_files_lc:
-						out_path = os.path.join(model_path, base_f)
-						with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
-							shutil.copyfileobj(src, dst)
-					t.update(1)
-		if is_gui_process:
-			os.remove(file_src)
-		if model_path is not None:
-			msg = f'Extracted files to {model_path}'
-			print(msg)
-			return model_path
-		else:
-			error = f'An error occured when unzip {file_src}'
-			return None
-	except asyncio.exceptions.CancelledError as e:
-		DependencyError(e)
-		if is_gui_process:
-			os.remove(file_src)
-		return None       
-	except Exception as e:
-		DependencyError(e)
-		if is_gui_process:
-			os.remove(file_src)
-		return None
+    try:
+        model_path = None
+        if required_files is None:
+            required_files = models[session['tts_engine']][default_fine_tuned]['files']
+        model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
+        model_name = get_sanitized(model_name)
+        with zipfile.ZipFile(file_src, 'r') as zip_ref:
+            files = zip_ref.namelist()
+            files_length = len(files)
+            tts_dir = session['tts_engine']
+            model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
+            if os.path.exists(model_path):
+                print(f'{model_path} already exists, bypassing files extraction')
+                return model_path
+            os.makedirs(model_path, exist_ok=True)
+            required_files_lc = set(x.lower() for x in required_files)
+            with tqdm(total=files_length, unit='files') as t:
+                for f in files:
+                    base_f = os.path.basename(f).lower()
+                    if base_f in required_files_lc:
+                        out_path = os.path.join(model_path, base_f)
+                        with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
+                            shutil.copyfileobj(src, dst)
+                    t.update(1)
+        if is_gui_process:
+            os.remove(file_src)
+        if model_path is not None:
+            msg = f'Extracted files to {model_path}'
+            print(msg)
+            return model_path
+        else:
+            error = f'An error occured when unzip {file_src}'
+            return None
+    except asyncio.exceptions.CancelledError as e:
+        DependencyError(e)
+        if is_gui_process:
+            os.remove(file_src)
+        return None       
+    except Exception as e:
+        DependencyError(e)
+        if is_gui_process:
+            os.remove(file_src)
+        return None
         
 def hash_proxy_dict(proxy_dict):
     return hashlib.md5(str(proxy_dict).encode('utf-8')).hexdigest()
@@ -368,34 +368,34 @@ def check_num2words_compat():
         return False
 
 def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999_999_999):
-	text = text.strip()
-	digit_count = sum(c.isdigit() for c in text)
-	if digit_count <= 9:
-		return text
-	try:
-		as_number = float(text.replace(",", ""))
-		if abs(as_number) <= max_single_value:
-			return text
-	except ValueError:
-		pass
-	tokens = re.findall(r'\d*\.\d+|\d+|[^\w\s]|[\w]+|\s+', text)
-	result = []
-	for token in tokens:
-		if re.fullmatch(r'\d*\.\d+', token):
-			if is_num2words_compat:
-				num = float(token)
-				result.append(num2words(num, lang=lang_iso1))
-			else:
-				result.append(token)
-		elif token.isdigit():
-			if is_num2words_compat:
-				num = int(token)
-				result.append(num2words(num, lang=lang_iso1))
-			else:
-				result.append(token)
-		else:
-			result.append(token)
-	return ''.join(result)
+    text = text.strip()
+    digit_count = sum(c.isdigit() for c in text)
+    if digit_count <= 9:
+        return text
+    try:
+        as_number = float(text.replace(",", ""))
+        if abs(as_number) <= max_single_value:
+            return text
+    except ValueError:
+        pass
+    tokens = re.findall(r'\d*\.\d+|\d+|[^\w\s]|[\w]+|\s+', text)
+    result = []
+    for token in tokens:
+        if re.fullmatch(r'\d*\.\d+', token):
+            if is_num2words_compat:
+                num = float(token)
+                result.append(num2words(num, lang=lang_iso1))
+            else:
+                result.append(token)
+        elif token.isdigit():
+            if is_num2words_compat:
+                num = int(token)
+                result.append(num2words(num, lang=lang_iso1))
+            else:
+                result.append(token)
+        else:
+            result.append(token)
+    return ''.join(result)
 
 def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     # Remove emojis
@@ -1076,10 +1076,10 @@ def convert_chapters2audio(session):
         return False
 
 def combine_audio_sentences(chapter_audio_file, start, end, session):
-	try:
-		chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
-		chapters_dir_sentences = session['chapters_dir_sentences']
-		batch_size = 512 
+    try:
+        chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
+        chapters_dir_sentences = session['chapters_dir_sentences']
+        batch_size = 512 
         sentence_files = [
             f for f in os.listdir(sent_dir)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1092,43 +1092,43 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
             for f in sentences_ordered
             if start <= int(os.path.splitext(f)[0]) <= end
         ]
-		if not selected_files:
-			print('No audio files found in the specified range.')
-			return False
-		with tempfile.TemporaryDirectory() as tmpdir:
-			chunk_list = []
-			for i in range(0, len(selected_files), batch_size):
-				batch = selected_files[i:i + batch_size]
-				txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
-				out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
-				with open(txt, 'w') as f:
-					for file in batch:
-						file = file.replace("\\", "/")
-						f.write(f"file '{file}'\n")
-				chunk_list.append((txt, out))
-			# Run chunk merges in parallel
-			with Pool(cpu_count()) as pool:
-				pool.starmap(run_ffmpeg_concat, chunk_list)
-			# Final merge
-			final_list = os.path.join(tmpdir, 'sentences_final.txt')
-			with open(final_list, 'w') as f:
-				for _, chunk_path in chunk_list:
-					f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-			cmd = [
-				shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
-				'-safe', '0', '-f', 'concat', '-i', txt_file,
-				'-c:a', default_audio_proc_format, '-map_metadata', '-1', out_file
-			]
-			subprocess.run(cmd, check=True)
-			msg = f'********* Combined block audio file saved to {chapter_audio_file}'
-			print(msg)
-			return True
-	except subprocess.CalledProcessError as e:
-		DependencyError(e)
-		return False
-	except Exception as e:
-		DependencyError(e)
-		return False
+        if not selected_files:
+            print('No audio files found in the specified range.')
+            return False
+        with tempfile.TemporaryDirectory() as tmpdir:
+            chunk_list = []
+            for i in range(0, len(selected_files), batch_size):
+                batch = selected_files[i:i + batch_size]
+                txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
+                out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
+                with open(txt, 'w') as f:
+                    for file in batch:
+                        file = file.replace("\\", "/")
+                        f.write(f"file '{file}'\n")
+                chunk_list.append((txt, out))
+            # Run chunk merges in parallel
+            with Pool(cpu_count()) as pool:
+                pool.starmap(run_ffmpeg_concat, chunk_list)
+            # Final merge
+            final_list = os.path.join(tmpdir, 'sentences_final.txt')
+            with open(final_list, 'w') as f:
+                for _, chunk_path in chunk_list:
+                    f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
+            cmd = [
+                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
+                '-safe', '0', '-f', 'concat', '-i', txt_file,
+                '-c:a', default_audio_proc_format, '-map_metadata', '-1', out_file
+            ]
+            subprocess.run(cmd, check=True)
+            msg = f'********* Combined block audio file saved to {chapter_audio_file}'
+            print(msg)
+            return True
+    except subprocess.CalledProcessError as e:
+        DependencyError(e)
+        return False
+    except Exception as e:
+        DependencyError(e)
+        return False
 
 def combine_audio_chapters(session):
     def assemble_segments():
