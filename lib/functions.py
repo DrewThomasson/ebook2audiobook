@@ -1301,6 +1301,8 @@ def combine_audio_chapters(session):
                 ffmpeg_cmd += ['-map', '0:a']
             elif session['output_format'] ==  'aac':
                 ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+            elif session['output_format'] == 'flac':
+                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
             else:
                 ffmpeg_cmd += ['-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4']:
@@ -1310,8 +1312,6 @@ def combine_audio_chapters(session):
                     ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
                 elif session['output_format'] == 'ogg':
                     ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
-                elif session['output_format'] == 'flac':
-                    ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
                 elif session['output_format'] == 'mp3':
                     ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
                 if session['output_format'] != 'ogg':
