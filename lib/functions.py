@@ -615,33 +615,33 @@ def get_ebook_title(epubBook, all_docs):
     return None
 
 def get_cover(epubBook, session):
-	try:
-		if session['cancellation_requested']:
+    try:
+        if session['cancellation_requested']:
             msg = 'Cancel requested'
-			print(msg)
-			return False
-		cover_image = None
-		cover_path = os.path.join(session['process_dir'], session['filename_noext'] + '.jpg')
-		for item in epubBook.get_items_of_type(ebooklib.ITEM_COVER):
-			cover_image = item.get_content()
-			break
-		if not cover_image:
-			for item in epubBook.get_items_of_type(ebooklib.ITEM_IMAGE):
-				if 'cover' in item.file_name.lower() or 'cover' in item.get_id().lower():
-					cover_image = item.get_content()
-					break
-		if cover_image:
-			# Open the image from bytes
-			image = Image.open(io.BytesIO(cover_image))
-			# Convert to RGB if needed (JPEG doesn't support alpha)
-			if image.mode in ('RGBA', 'P'):
-				image = image.convert('RGB')
-			image.save(cover_path, format='JPEG')
-			return cover_path
-		return True
-	except Exception as e:
-		DependencyError(e)
-		return False
+            print(msg)
+            return False
+        cover_image = None
+        cover_path = os.path.join(session['process_dir'], session['filename_noext'] + '.jpg')
+        for item in epubBook.get_items_of_type(ebooklib.ITEM_COVER):
+            cover_image = item.get_content()
+            break
+        if not cover_image:
+            for item in epubBook.get_items_of_type(ebooklib.ITEM_IMAGE):
+                if 'cover' in item.file_name.lower() or 'cover' in item.get_id().lower():
+                    cover_image = item.get_content()
+                    break
+        if cover_image:
+            # Open the image from bytes
+            image = Image.open(io.BytesIO(cover_image))
+            # Convert to RGB if needed (JPEG doesn't support alpha)
+            if image.mode in ('RGBA', 'P'):
+                image = image.convert('RGB')
+            image.save(cover_path, format='JPEG')
+            return cover_path
+        return True
+    except Exception as e:
+        DependencyError(e)
+        return False
 
 def get_chapters(epubBook, session):
     try:
