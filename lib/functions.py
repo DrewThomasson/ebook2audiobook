@@ -898,14 +898,10 @@ def get_sentences(text, lang, tts_engine):
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
     sentences = []
-    count = 0
     for sentence in tmp_list:
-        print(f'---------------{count}--------------')
-        if count > 2300:
-            print(f'------------------{sentence}----------------')
-        if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-            sentences.extend(split_sentence(sentence.strip()))
-        count += 1
+		sentence = sentence.strip()
+		if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+			sentences.extend(split_sentence(sentence))
     return sentences
 
 def get_ram():
