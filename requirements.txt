@@ -14,7 +14,7 @@ iso-639
 jieba
 soynlp
 pythainlp
-m4b-util
+mutagen
 nvidia-ml-py
 phonemizer-fork
 pydub

@@ -34,7 +34,7 @@ dependencies = [
 	"soynlp",
 	"pythainlp",
 	"pydub",
-	"m4b-util",
+	"mutagen",
 	"nvidia-ml-py",
 	"PyOpenGL",
 	"pypinyin",

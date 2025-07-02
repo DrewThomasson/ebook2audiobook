@@ -1328,39 +1328,55 @@ def combine_audio_chapters(session):
                 if process.returncode == 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'flac']:
                         if session['cover'] is not None:
-                            # Second pass
                             ffmpeg_cover = session['cover']
                             ffmpeg_final_no_cover_file = f"{os.path.splitext(final_file)[0]}_no_cover.{session['output_format']}"
                             shutil.move(ffmpeg_final_file, ffmpeg_final_no_cover_file)
                             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
                             ffmpeg_cmd += ['-i', ffmpeg_final_no_cover_file, '-i', ffmpeg_cover, '-map', '0', '-map', '1', '-c', 'copy', '-disposition:v:0', 'attached_pic', '-map_metadata', '0']
                             if session['output_format'] == 'mp3':
-                                ffmpeg_cmd += ['-id3v2_version', '3']
+                                from mutagen.mp3 import MP3
+                                from mutagen.id3 import ID3, APIC, error
+                                audio = MP3(ffmpeg_final_file, ID3=ID3)
+                                try:
+                                    audio.add_tags()
+                                except error:
+                                    pass
+                                with open(ffmpeg_cover, 'rb') as img:
+                                    audio.tags.add(
+                                        APIC(
+                                            encoding=3, # UTF-8
+                                            mime='image/jpeg',
+                                            type=3, # Front cover
+                                            desc='Cover',
+                                            data=img.read()
+                                        )
+                                    )
+                                audio.save()
+                                return True
                             elif session['output_format'] in ['m4a', 'm4b']:
-                                ffmpeg_cmd += ['-vsync', '0']
-                            ffmpeg_cmd += [ffmpeg_final_file]
-                            try:
-                                process = subprocess.Popen(
-                                    ffmpeg_cmd,
-                                    env={},
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT,
-                                    encoding='utf-8',
-                                    errors='ignore'
-                                )
-                                for line in process.stdout:
-                                    print(line, end='')  # Print each line of stdout
-                                process.wait()
-                                if process.returncode == 0:
-                                    return True
-                                else:
-                                    error = process.returncode
+                                ffmpeg_cmd += [ffmpeg_final_file]
+                                try:
+                                    process = subprocess.Popen(
+                                        ffmpeg_cmd,
+                                        env={},
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT,
+                                        encoding='utf-8',
+                                        errors='ignore'
+                                    )
+                                    for line in process.stdout:
+                                        print(line, end='')  # Print each line of stdout
+                                    process.wait()
+                                    if process.returncode == 0:
+                                        return True
+                                    else:
+                                        error = process.returncode
+                                        print(error, ffmpeg_cmd)
+                                        return False
+                                except subprocess.CalledProcessError as e:
+                                    DependencyError(e)
                                     print(error, ffmpeg_cmd)
                                     return False
-                            except subprocess.CalledProcessError as e:
-                                DependencyError(e)
-                                print(error, ffmpeg_cmd)
-                                return False
                     else:
                         return True
                 else:

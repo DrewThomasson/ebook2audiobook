@@ -13,7 +13,7 @@ iso-639
 jieba
 soynlp
 pythainlp
-m4b-util
+mutagen
 nvidia-ml-py
 pydub
 PyOpenGL
