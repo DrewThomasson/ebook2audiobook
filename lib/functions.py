@@ -900,6 +900,7 @@ def get_sentences(text, lang, tts_engine):
     sentences = []
     count = 0
     for sentence in tmp_list:
+        print(f'---------------{count}--------------')
         if count > 2300:
             print(f'------------------{sentence}----------------')
         if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
