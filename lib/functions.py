@@ -1329,7 +1329,7 @@ def combine_audio_chapters(session):
                 elif session['output_format'] == 'webm':
                     ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
                 elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '256k', '-compression_level', '0']
                 elif session['output_format'] == 'mp3':
                     ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
                 ffmpeg_cmd += ['-map_metadata', '1']
