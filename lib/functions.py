@@ -1326,34 +1326,19 @@ def combine_audio_chapters(session):
                     print(line, end='')  # Print each line of stdout
                 process.wait()
                 if process.returncode == 0:
-                    if session['output_format'] in ['mp3', 'm4a', 'm4b', 'flac', 'ogg']:
+                    if session['output_format'] in ['mp3', 'm4a', 'm4b', 'flac']:
                         if session['cover'] is not None:
                             # Second pass
                             ffmpeg_cover = session['cover']
                             ffmpeg_final_no_cover_file = f'{os.path.splitext(final_file[0])}_no_cover.{session['output_format']}'
                             shutil.move(ffmpeg_final_file, ffmpeg_final_no_cover_file)
                             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
+                            ffmpeg_cmd += ['-i', ffmpeg_final_no_cover_file, '-i', ffmpeg_cover, '-map', '0', '-map', '1', '-c', 'copy', '-disposition:v:0', 'attached_pic', '-map_metadata', '0']
                             if session['output_format'] == 'mp3':
-                                ffmpeg_cmd += ['-i', ffmpeg_final_no_cover_file, '-i', ffmpeg_cover, '-map', '0', '-map', '1', '-c', 'copy', '-disposition:v:0', 'attached_pic', '-map_metadata', '0', ffmpeg_final_file]
-                        #    if session['output_format'] == 'mp3' or session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4' or session['output_format'] == 'flac':
-                        #        ffmpeg_cmd += ['-i', ffmpeg_cover]
-                        #        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
-                        #        if ffmpeg_cover.endswith('.png'):
-                        #            ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
-                        #        else:
-                        #            ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
-                        #    elif session['output_format'] == 'mov':
-                        #        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        #        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v', '-shortest']
-                        #    elif session['output_format'] == 'webm':
-                        #        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        #        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
-                        #        ffmpeg_cmd += ['-c:v', 'libvpx-vp9', '-crf', '40', '-speed', '8', '-shortest']
-                        #    elif session['output_format'] == 'ogg':
-                        #        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        #        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
-                        #   if ffmpeg_cover.endswith('.png'):
-                        #        ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
+                                ffmpeg_cmd += ['-id3v2_version', '3']
+                            elif session['output_format'] in ['m4a', 'm4b']:
+                                ffmpeg_cmd += ['-vsync', '0']
+                            ffmpeg_cmd += [ffmpeg_final_file]
                             try:
                                 process = subprocess.Popen(
                                     ffmpeg_cmd,
