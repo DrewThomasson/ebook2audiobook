@@ -1329,10 +1329,6 @@ def combine_audio_chapters(session):
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'flac']:
                         if session['cover'] is not None:
                             ffmpeg_cover = session['cover']
-                            ffmpeg_final_no_cover_file = f"{os.path.splitext(final_file)[0]}_no_cover.{session['output_format']}"
-                            shutil.move(ffmpeg_final_file, ffmpeg_final_no_cover_file)
-                            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
-                            ffmpeg_cmd += ['-i', ffmpeg_final_no_cover_file, '-i', ffmpeg_cover, '-map', '0', '-map', '1', '-c', 'copy', '-disposition:v:0', 'attached_pic', '-map_metadata', '0']
                             if session['output_format'] == 'mp3':
                                 from mutagen.mp3 import MP3
                                 from mutagen.id3 import ID3, APIC, error
@@ -1354,6 +1350,10 @@ def combine_audio_chapters(session):
                                 audio.save()
                                 return True
                             elif session['output_format'] in ['m4a', 'm4b']:
+                                ffmpeg_final_no_cover_file = f"{os.path.splitext(final_file)[0]}_no_cover.{session['output_format']}"
+                                shutil.move(ffmpeg_final_file, ffmpeg_final_no_cover_file)
+                                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
+                                ffmpeg_cmd += ['-i', ffmpeg_final_no_cover_file, '-i', ffmpeg_cover, '-map', '0', '-map', '1', '-c', 'copy', '-disposition:v:0', 'attached_pic', '-map_metadata', '0']
                                 ffmpeg_cmd += [ffmpeg_final_file]
                                 try:
                                     process = subprocess.Popen(
