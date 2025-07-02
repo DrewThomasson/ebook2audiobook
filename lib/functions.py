@@ -1314,9 +1314,9 @@ def combine_audio_chapters(session):
                     ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
                 elif session['output_format'] == 'mp3':
                     ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
-                if session['output_format'] != 'ogg':
-                    ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
                 ffmpeg_cmd += ['-map_metadata', '1']
+            if session['output_format'] != 'ogg':
+                ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
             ffmpeg_cmd += ['-strict', 'experimental']
             ffmpeg_cmd += ['-threads', '0', '-y', ffmpeg_final_file]
             print(ffmpeg_cmd)
