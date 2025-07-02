@@ -899,9 +899,9 @@ def get_sentences(text, lang, tts_engine):
         tmp_list.pop()
     sentences = []
     for sentence in tmp_list:
-		sentence = sentence.strip()
-		if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-			sentences.extend(split_sentence(sentence))
+        sentence = sentence.strip()
+        if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+            sentences.extend(split_sentence(sentence))
     return sentences
 
 def get_ram():
