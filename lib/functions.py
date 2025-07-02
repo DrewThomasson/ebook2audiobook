@@ -1371,7 +1371,7 @@ def combine_audio_chapters(session):
                                     image_data = img_file.read()
                                 mime = mimetypes.guess_type(ffmpeg_cover)[0]
                                 if not mime:
-                                mime = "image/jpeg"  # fallback
+                                    mime = "image/jpeg"  # fallback
                                 pic = Picture()
                                 pic.data = image_data
                                 pic.type = 3  # 3 = Front cover
