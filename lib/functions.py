@@ -1230,52 +1230,57 @@ def combine_audio_chapters(session):
 
     def generate_ffmpeg_metadata():
         try:
-            if session['cancellation_requested']:
-                print('Cancel requested')
-                return False
-            ffmpeg_metadata = ';FFMETADATA1\n'        
-            if session['metadata'].get('title'):
-                ffmpeg_metadata += f"title={session['metadata']['title']}\n"            
-            if session['metadata'].get('creator'):
-                ffmpeg_metadata += f"artist={session['metadata']['creator']}\n"
-            if session['metadata'].get('language'):
-                ffmpeg_metadata += f"language={session['metadata']['language']}\n\n"
-            if session['metadata'].get('publisher'):
-                ffmpeg_metadata += f"publisher={session['metadata']['publisher']}\n"              
-            if session['metadata'].get('description'):
-                ffmpeg_metadata += f"description={session['metadata']['description']}\n"
-            if session['metadata'].get('published'):
-                # Check if the timestamp contains fractional seconds
-                if '.' in session['metadata']['published']:
-                    # Parse with fractional seconds
-                    year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
-                else:
-                    # Parse without fractional seconds
-                    year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
-            else:
-                # If published is not provided, use the current year
-                year = datetime.now().year
-            ffmpeg_metadata += f'year={year}\n'
-            if session['metadata'].get('identifiers') and isinstance(session['metadata'].get('identifiers'), dict):
-                isbn = session['metadata']['identifiers'].get('isbn', None)
-                if isbn:
-                    ffmpeg_metadata += f'isbn={isbn}\n'  # ISBN
-                mobi_asin = session['metadata']['identifiers'].get('mobi-asin', None)
-                if mobi_asin:
-                    ffmpeg_metadata += f'asin={mobi_asin}\n'  # ASIN                   
-            start_time = 0
-            for index, chapter_file in enumerate(chapter_files):
+            if session['output_format'] not in ['wav', 'aac']:
                 if session['cancellation_requested']:
-                    msg = 'Cancel requested'
-                    print(msg)
+                    print('Cancel requested')
                     return False
-                duration_ms = len(AudioSegment.from_file(os.path.join(session['chapters_dir'],chapter_file), format=default_audio_proc_format))
-                ffmpeg_metadata += f'[CHAPTER]\nTIMEBASE=1/1000\nSTART={start_time}\n'
-                ffmpeg_metadata += f"END={start_time + duration_ms}\ntitle={session['chapters'][index][0].replace('‡pause‡', '')}\n"
-                start_time += duration_ms
-            # Write the metadata to the file
-            with open(metadata_file, 'w', encoding='utf-8') as f:
-                f.write(ffmpeg_metadata)
+                ffmpeg_metadata = ';FFMETADATA1\n'        
+                if session['metadata'].get('title'):
+                    ffmpeg_metadata += f"title={session['metadata']['title']}\n"            
+                if session['metadata'].get('creator'):
+                    ffmpeg_metadata += f"artist={session['metadata']['creator']}\n"
+                if session['metadata'].get('language'):
+                    ffmpeg_metadata += f"language={session['metadata']['language']}\n\n"
+                if session['metadata'].get('publisher'):
+                    ffmpeg_metadata += f"publisher={session['metadata']['publisher']}\n"              
+                if session['metadata'].get('description'):
+                    ffmpeg_metadata += f"description={session['metadata']['description']}\n"
+                if session['metadata'].get('published'):
+                    # Check if the timestamp contains fractional seconds
+                    if '.' in session['metadata']['published']:
+                        # Parse with fractional seconds
+                        year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
+                    else:
+                        # Parse without fractional seconds
+                        year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
+                else:
+                    # If published is not provided, use the current year
+                    year = datetime.now().year
+                if session['output_format'] in ['flac', 'ogg', 'webm']:
+                    ffmpeg_metadata += f'date={year}\n'
+                else:
+                    ffmpeg_metadata += f'year={year}\n'
+                if session['metadata'].get('identifiers') and isinstance(session['metadata'].get('identifiers'), dict):
+                    isbn = session['metadata']['identifiers'].get('isbn', None)
+                    if isbn:
+                        ffmpeg_metadata += f'isbn={isbn}\n'  # ISBN
+                    mobi_asin = session['metadata']['identifiers'].get('mobi-asin', None)
+                    if mobi_asin:
+                        ffmpeg_metadata += f'asin={mobi_asin}\n'  # ASIN  
+                if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mp3', 'mov']:
+                    start_time = 0
+                    for index, chapter_file in enumerate(chapter_files):
+                        if session['cancellation_requested']:
+                            msg = 'Cancel requested'
+                            print(msg)
+                            return False
+                        duration_ms = len(AudioSegment.from_file(os.path.join(session['chapters_dir'],chapter_file), format=default_audio_proc_format))
+                        ffmpeg_metadata += f'[CHAPTER]\nTIMEBASE=1/1000\nSTART={start_time}\n'
+                        ffmpeg_metadata += f"END={start_time + duration_ms}\ntitle={session['chapters'][index][0].replace('‡pause‡', '')}\n"
+                        start_time += duration_ms
+                # Write the metadata to the file
+                with open(metadata_file, 'w', encoding='utf-8') as f:
+                    f.write(ffmpeg_metadata)
             return True
         except Exception as e:
             DependencyError(e)
@@ -1291,13 +1296,13 @@ def combine_audio_chapters(session):
             ffmpeg_metadata_file = metadata_file
             ffmpeg_final_file = final_file
             # First pass
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a']
             elif session['output_format'] ==  'aac':
                 ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
             else:
-                ffmpeg_cmd += ['-map', '0:a']
+                ffmpeg_cmd += ['-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4']:
                     ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
                     ffmpeg_cmd += ['-movflags', '+faststart']
