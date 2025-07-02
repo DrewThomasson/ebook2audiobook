@@ -29,6 +29,7 @@ import subprocess
 import sys
 import stanza
 import threading
+from concurrent.futures import ThreadPoolExecutor
 import time
 import torch
 import urllib.request
@@ -1265,56 +1266,135 @@ def combine_audio_chapters(session):
 
     def export_audio():
         try:
-            if session['cancellation_requested']:
+            if session.get('cancellation_requested'):
                 print('Cancel requested')
                 return False
-            ffmpeg_combined_audio = combined_chapters_file
-            ffmpeg_metadata_file = metadata_file
-            ffmpeg_final_file = final_file
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
-            if session['output_format'] == 'wav':
-                ffmpeg_cmd += ['-map', '0:a']
-            elif session['output_format'] ==  'aac':
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
-            else:
-                ffmpeg_cmd += ['-map', '0:a']
-                if session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4':
+
+            num_workers = max(1, os.cpu_count() - 1)
+            
+            def get_duration(file_path):
+                try:
+                    ffprobe_cmd = [shutil.which('ffprobe'), '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', file_path]
+                    result = subprocess.run(ffprobe_cmd, capture_output=True, text=True, check=True, encoding='utf-8')
+                    return float(result.stdout.strip())
+                except (subprocess.CalledProcessError, FileNotFoundError, ValueError) as e:
+                    print(f"Could not get duration of {file_path}, processing with single thread. Error: {e}")
+                    return None
+
+            duration = get_duration(combined_chapters_file)
+
+            # Fallback to single-threaded if we can't process in parallel
+            if num_workers <= 1 or duration is None:
+                print("Processing with a single thread...")
+                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', combined_chapters_file, '-i', metadata_file]
+                if session['output_format'] == 'wav':
+                    ffmpeg_cmd += ['-map', '0:a']
+                elif session['output_format'] == 'aac':
                     ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
-                    ffmpeg_cmd += ['-movflags', '+faststart']
-                elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
-                elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
-                elif session['output_format'] == 'flac':
-                    ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
-                elif session['output_format'] == 'mp3':
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
-                if session['output_format'] != 'ogg':
-                    ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
-            ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1']
-            ffmpeg_cmd += ['-threads', '8', '-y', ffmpeg_final_file]
-            try:
-                process = subprocess.Popen(
-                    ffmpeg_cmd,
-                    env={},
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    encoding='utf-8',
-                    errors='ignore'
-                )
-                for line in process.stdout:
-                    print(line, end='')  # Print each line of stdout
-                process.wait()
-                if process.returncode == 0:
-                    return True
                 else:
-                    error = process.returncode
-                    print(error, ffmpeg_cmd)
+                    ffmpeg_cmd += ['-map', '0:a']
+                    if session['output_format'] in ['m4a', 'm4b', 'mp4']:
+                        ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-movflags', '+faststart']
+                    elif session['output_format'] == 'webm':
+                        ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
+                    elif session['output_format'] == 'ogg':
+                        ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
+                    elif session['output_format'] == 'flac':
+                        ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
+                    elif session['output_format'] == 'mp3':
+                        ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
+                    
+                    if session['output_format'] != 'ogg':
+                        ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
+
+                ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1', '-threads', '1', '-y', final_file]
+                
+                process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='ignore')
+                for line in process.stdout:
+                    print(line, end='')
+                process.wait()
+                return process.returncode == 0
+
+            # --- Parallel Processing Logic ---
+            print(f"Processing in parallel with {num_workers} threads...")
+            segment_dir = os.path.join(session['process_dir'], 'segments')
+            os.makedirs(segment_dir, exist_ok=True)
+            
+            processed_segments = [None] * num_workers
+
+            def process_segment(segment_index):
+                start_time = segment_index * (duration / num_workers)
+                end_time_arg = ['-to', str(start_time + (duration / num_workers))] if segment_index < num_workers - 1 else []
+
+                segment_output_path = os.path.join(segment_dir, f"segment_{segment_index}.{session['output_format']}")
+                
+                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', combined_chapters_file, '-ss', str(start_time)] + end_time_arg
+
+                if session['output_format'] == 'wav': pass
+                elif session['output_format'] == 'aac': ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+                else:
+                    if session['output_format'] in ['m4a', 'm4b', 'mp4']: ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+                    elif session['output_format'] == 'webm': ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
+                    elif session['output_format'] == 'ogg': ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
+                    elif session['output_format'] == 'flac': ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
+                    elif session['output_format'] == 'mp3': ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
+                    if session['output_format'] != 'ogg': ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
+
+                ffmpeg_cmd += ['-y', segment_output_path]
+
+                try:
+                    result = subprocess.run(ffmpeg_cmd, check=True, capture_output=True, text=True, encoding='utf-8')
+                    processed_segments[segment_index] = segment_output_path
+                    return True
+                except subprocess.CalledProcessError as e:
+                    print(f"Error processing segment {segment_index}:\nCMD: {' '.join(e.cmd)}\nSTDERR: {e.stderr}")
                     return False
-            except subprocess.CalledProcessError as e:
-                DependencyError(e)
+
+            with ThreadPoolExecutor(max_workers=num_workers) as executor:
+                results = list(executor.map(process_segment, range(num_workers)))
+
+            if not all(results):
+                print("One or more segments failed to process. Aborting.")
+                shutil.rmtree(segment_dir, ignore_errors=True)
                 return False
- 
+
+            concat_file_path = os.path.join(segment_dir, 'concat.txt')
+            with open(concat_file_path, 'w', encoding='utf-8') as f:
+                for i in range(num_workers):
+                    seg_path = os.path.join(segment_dir, f"segment_{i}.{session['output_format']}").replace(os.sep, '/')
+                    f.write(f"file '{seg_path}'\n")
+
+            temp_final_file = os.path.join(session['process_dir'], f"temp_final.{session['output_format']}")
+            concat_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-f', 'concat', '-safe', '0', '-i', concat_file_path, '-c', 'copy', '-y', temp_final_file]
+            
+            try:
+                subprocess.run(concat_cmd, check=True, capture_output=True, text=True, encoding='utf-8')
+            except subprocess.CalledProcessError as e:
+                print(f"Error concatenating segments:\nCMD: {' '.join(e.cmd)}\nSTDERR: {e.stderr}")
+                shutil.rmtree(segment_dir, ignore_errors=True)
+                return False
+
+            metadata_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', temp_final_file, '-i', metadata_file, '-map', '0:a', '-map_metadata', '1', '-c', 'copy']
+            if session['output_format'] in ['m4a', 'm4b', 'mp4']:
+                 metadata_cmd += ['-movflags', '+faststart']
+            
+            metadata_cmd += ['-y', final_file]
+            
+            process = subprocess.Popen(metadata_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='ignore')
+            for line in process.stdout:
+                print(line, end='')
+            process.wait()
+
+            shutil.rmtree(segment_dir, ignore_errors=True)
+            if os.path.exists(temp_final_file):
+                os.remove(temp_final_file)
+
+            if process.returncode != 0:
+                print(f"Error adding metadata. FFmpeg exit code: {process.returncode}")
+                return False
+            
+            return True
+
         except Exception as e:
             DependencyError(e)
             return False
