@@ -441,7 +441,7 @@ class Coqui:
                             sentence = ''.join(result)
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
-                    sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
+                    sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
@@ -768,7 +768,7 @@ class Coqui:
                     sentence_obj = {
                         "start": start_time,
                         "end": end_time,
-                        "text": sentence,
+                        "text": sentence.replace('‡pause‡', '. '),
                         "resume_check": self.sentence_idx
                     }
                     self.sentence_idx = append_sentence2vtt(sentence_obj, self.vtt_path)
