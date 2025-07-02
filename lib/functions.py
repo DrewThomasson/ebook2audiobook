@@ -1316,7 +1316,7 @@ def combine_audio_chapters(session):
             # First pass
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
             if session['output_format'] == 'wav':
-                ffmpeg_cmd += ['-map', '0:a']
+                ffmpeg_cmd += ['-map', '0:a', '-ar', '44100']
             elif session['output_format'] ==  'aac':
                 ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
             elif session['output_format'] == 'flac':
