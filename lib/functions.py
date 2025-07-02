@@ -422,8 +422,12 @@ def math2word(text, lang, lang_iso1, tts_engine):
         return match.group(0)
 
     def detect_date_entities(text):
-        stanza.download(lang_iso1)
-        nlp = stanza.Pipeline(lang_iso1, processors='tokenize,ner')
+        #check if stanza already exists and has the target language
+        if os.path.exists(os.path.join(models_dir, 'stanza', lang_iso1)):
+            nlp = stanza.Pipeline(lang_iso1, processors='tokenize,ner')
+        else:
+            stanza.download(lang_iso1)
+            nlp = stanza.Pipeline(lang_iso1, processors='tokenize,ner')
         doc = nlp(text)
         date_spans = []
         for ent in doc.ents:
