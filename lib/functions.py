@@ -1329,6 +1329,8 @@ def combine_audio_chapters(session):
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'flac']:
                         if session['cover'] is not None:
                             ffmpeg_cover = session['cover']
+                            msg = f'Adding cover {ffmpeg_cover} into the final audiobook file...'
+                            print(msg)
                             if session['output_format'] == 'mp3':
                                 from mutagen.mp3 import MP3
                                 from mutagen.id3 import ID3, APIC, error
