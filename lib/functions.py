@@ -1357,19 +1357,19 @@ def combine_audio_chapters(session):
                                 audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
                             elif session['output_format'] == 'flac':
                                 from mutagen.flac import FLAC, Picture
-                                import base64
+                                import mimetypes
                                 audio = FLAC(ffmpeg_final_file)
-                                pic = Picture()
-                                pic.type = 3  # front cover
-                                pic.mime = "image/jpeg"
+                                image = Picture()
+                                image.type = 3  # Cover (front)
+                                image.desc = "Cover"
+                                image.mime = mimetypes.guess_type(ffmpeg_cover)[0] or "image/jpeg"
                                 with open(ffmpeg_cover, "rb") as f:
-                                    pic.data = f.read()
-                                pic.width = 0
-                                pic.height = 0
-                                pic.depth = 0
-                                pic.colors = 0
+                                image.data = f.read()
+                                image.width = 0
+                                image.height = 0
+                                image.depth = 0
                                 audio.clear_pictures()
-                                audio.add_picture(pic)
+                                audio.add_picture(image)
                             if audio:
                                 audio.save()
                             return True
