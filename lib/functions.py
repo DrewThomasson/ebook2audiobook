@@ -1256,7 +1256,7 @@ def combine_audio_chapters(session):
                     return False
                 duration_ms = len(AudioSegment.from_file(os.path.join(session['chapters_dir'],chapter_file), format=default_audio_proc_format))
                 ffmpeg_metadata += f'[CHAPTER]\nTIMEBASE=1/1000\nSTART={start_time}\n'
-                ffmpeg_metadata += f"END={start_time + duration_ms}\ntitle={session['chapters'][index][0].replace('‡pause‡', '. ')}\n"
+                ffmpeg_metadata += f"END={start_time + duration_ms}\ntitle={session['chapters'][index][0].replace('‡pause‡', '')}\n"
                 start_time += duration_ms
             # Write the metadata to the file
             with open(metadata_file, 'w', encoding='utf-8') as f:
