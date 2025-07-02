@@ -838,6 +838,8 @@ def get_sentences(text, lang, tts_engine):
 
     def split_sentence(sentence):
         sentence = sentence.strip()
+        if not re.search(r'[^\W_]', sentence, re.UNICODE):
+            return []
         if len(sentence) <= max_chars:
             if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
