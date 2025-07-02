@@ -400,7 +400,7 @@ class Coqui:
             speaker = None
             audio_data = False
             audio2trim = False
-            trim_audio_buffer = 0.001
+            trim_audio_buffer = 0.003
             settings = self.params[self.session['tts_engine']]
             final_sentence = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             if sentence.endswith('-'):
@@ -451,7 +451,7 @@ class Coqui:
                         continue
                     audio_part = None
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                        trim_audio_buffer = 0.07 
+                        trim_audio_buffer = 0.08
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
                             settings['gpt_cond_latent'], settings['speaker_embedding'] = settings['latent_embedding'][settings['voice_path']]
                         else:
