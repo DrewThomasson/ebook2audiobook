@@ -1271,39 +1271,55 @@ def combine_audio_chapters(session):
             if session['cancellation_requested']:
                 print('Cancel requested')
                 return False
-
-            ffmpeg_cover = session['cover']
+            ffmpeg_cover = None
             ffmpeg_combined_audio = combined_chapters_file
             ffmpeg_metadata_file = metadata_file
             ffmpeg_final_file = final_file
-
-            # Step 1: Create intermediate audio file without cover
-            audio_temp_file = ffmpeg_final_file.replace('.' + session['output_format'], f'_temp_no_cover.{session["output_format"]}')
+            if session['cover'] is not None:
+                ffmpeg_cover = session['cover']                    
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
-
-            ffmpeg_cmd += ['-map', '0:a']
-
-            # Select audio encoding by format
-            if session['output_format'] in ['m4a', 'm4b', 'mp4']:
+            if session['output_format'] == 'wav':
+                ffmpeg_cmd += ['-map', '0:a']
+            elif session['output_format'] ==  'aac':
                 ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
-                ffmpeg_cmd += ['-movflags', '+faststart']
-            elif session['output_format'] == 'webm':
-                ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
-            elif session['output_format'] == 'ogg':
-                ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
-            elif session['output_format'] == 'flac':
-                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
-            elif session['output_format'] == 'mp3':
-                ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
             else:
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k']
-
-            if session['output_format'] != 'ogg':
-                ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
-
+                if ffmpeg_cover is not None:
+                    if session['output_format'] == 'mp3' or session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4' or session['output_format'] == 'flac':
+                        ffmpeg_cmd += ['-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
+                        if ffmpeg_cover.endswith('.png'):
+                            ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
+                        else:
+                            ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
+                    elif session['output_format'] == 'mov':
+                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v', '-shortest']
+                    elif session['output_format'] == 'webm':
+                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
+                        ffmpeg_cmd += ['-c:v', 'libvpx-vp9', '-crf', '40', '-speed', '8', '-shortest']
+                    elif session['output_format'] == 'ogg':
+                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
+                        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
+                    if ffmpeg_cover.endswith('.png'):
+                        ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
+                else:
+                    ffmpeg_cmd += ['-map', '0:a']
+                if session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4':
+                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+                    ffmpeg_cmd += ['-movflags', '+faststart']
+                elif session['output_format'] == 'webm':
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
+                elif session['output_format'] == 'ogg':
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
+                elif session['output_format'] == 'flac':
+                    ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
+                elif session['output_format'] == 'mp3':
+                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
+                if session['output_format'] != 'ogg':
+                    ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
             ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1']
-            ffmpeg_cmd += ['-threads', '8', '-y', audio_temp_file]
-
+            ffmpeg_cmd += ['-threads', '8', '-y', ffmpeg_final_file]
             try:
                 process = subprocess.Popen(
                     ffmpeg_cmd,
@@ -1314,56 +1330,17 @@ def combine_audio_chapters(session):
                     errors='ignore'
                 )
                 for line in process.stdout:
-                    print(line, end='')
+                    print(line, end='')  # Print each line of stdout
                 process.wait()
-                if process.returncode != 0:
+                if process.returncode == 0:
+                    return True
+                else:
                     error = process.returncode
                     print(error, ffmpeg_cmd)
                     return False
             except subprocess.CalledProcessError as e:
                 DependencyError(e)
                 return False
-
-            # Step 2: Attach cover
-            if ffmpeg_cover:
-                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', audio_temp_file, '-i', ffmpeg_cover]
-                ffmpeg_cmd += ['-map', '0', '-map', '1', '-c', 'copy', '-disposition:v:1', 'attached_pic']
-
-                # Keep format-specific options (e.g., mp4-style containers)
-                if session['output_format'] in ['m4a', 'm4b', 'mp4']:
-                    ffmpeg_cmd += ['-movflags', '+faststart']
-                elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
-                elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
-
-                ffmpeg_cmd += ['-y', ffmpeg_final_file]
-
-                try:
-                    process = subprocess.Popen(
-                        ffmpeg_cmd,
-                        env={},
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        encoding='utf-8',
-                        errors='ignore'
-                    )
-                    for line in process.stdout:
-                        print(line, end='')
-                    process.wait()
-                    if process.returncode != 0:
-                        error = process.returncode
-                        print(error, ffmpeg_cmd)
-                        return False
-                except subprocess.CalledProcessError as e:
-                    DependencyError(e)
-                    return False
-            else:
-                # No cover: just move the audio temp file to final
-                shutil.move(audio_temp_file, ffmpeg_final_file)
-
-            return True
-
         except Exception as e:
             DependencyError(e)
             return False
