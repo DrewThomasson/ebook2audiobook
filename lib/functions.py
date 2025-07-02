@@ -1298,7 +1298,7 @@ def combine_audio_chapters(session):
                 ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
             else:
                 ffmpeg_cmd += ['-map', '0:a']
-                if session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4':
+                if session['output_format'] in ['m4a', 'm4b', 'mp4']:
                     ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
                     ffmpeg_cmd += ['-movflags', '+faststart']
                 elif session['output_format'] == 'webm':
@@ -1313,6 +1313,7 @@ def combine_audio_chapters(session):
                     ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
             ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1']
             ffmpeg_cmd += ['-threads', '0', '-y', ffmpeg_final_file]
+            print(ffmpeg_cmd)
             try:
                 process = subprocess.Popen(
                     ffmpeg_cmd,
@@ -1326,7 +1327,7 @@ def combine_audio_chapters(session):
                     print(line, end='')  # Print each line of stdout
                 process.wait()
                 if process.returncode == 0:
-                    if session['output_format'] in ['mp3', 'm4a', 'm4b']:
+                    if session['output_format'] in ['mp3', 'm4a', 'm4b', 'flac']:
                         if session['cover'] is not None:
                             ffmpeg_cover = session['cover']
                             msg = f'Adding cover {ffmpeg_cover} into the final audiobook file...'
@@ -1355,6 +1356,16 @@ def combine_audio_chapters(session):
                                 with open(ffmpeg_cover, 'rb') as f:
                                     cover_data = f.read()
                                 audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
+                            elif session['output_format'] == 'flac':
+                                from mutagen.flac import FLAC, Picture
+                                import base64
+                                audio = FLAC(ffmpeg_final_file)
+                                image = Picture()
+                                image.type = 3  # front cover
+                                image.mime = "image/jpeg"
+                                with open(ffmpeg_cover, 'rb') as f:
+                                    image.data = f.read()
+                                audio.add_picture(image)
                             if audio:
                                 audio.save()
                             return True
