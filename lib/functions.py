@@ -1324,14 +1324,14 @@ def combine_audio_chapters(session):
             else:
                 ffmpeg_cmd += ['-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4']:
-                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
                     ffmpeg_cmd += ['-movflags', '+faststart']
                 elif session['output_format'] == 'webm':
                     ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
                 elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '256k', '-compression_level', '0']
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-compression_level', '0']
                 elif session['output_format'] == 'mp3':
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
+                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
                 ffmpeg_cmd += ['-map_metadata', '1']
             ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
             ffmpeg_cmd += ['-strict', 'experimental']
