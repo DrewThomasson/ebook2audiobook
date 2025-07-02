@@ -28,6 +28,7 @@ unidic
 pymupdf4llm
 sudachipy
 sudachidict_core
+transformers==4.51.3
 torch
 coqui-tts[languages]==0.26.0
 torchvggish
