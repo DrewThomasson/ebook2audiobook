@@ -757,19 +757,21 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         return None
 
 def get_sentences(text, lang, tts_engine):
-    def combine_punctuation(tokens):
-        if not tokens:
-            return tokens
-        result = [tokens[0]]
-        for token in tokens[1:]:
+    def combine_punctuation(raw_list):
+        if not raw_list:
+            return raw_list
+        result = [raw_list[0]]
+        for sentence in raw_list[1:]:
+            if not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+                continue
             if (
-                not any(char.isalpha() for char in token)
-                and all(char.isspace() or char in punctuation_list_set for char in token)
-                and len(result[-1]) + len(token) <= max_chars
+                not any(char.isalpha() for char in sentence)
+                and all(char.isspace() or char in punctuation_list_set for char in sentence)
+                and len(result[-1]) + len(sentence) <= max_chars
             ):
-                result[-1] += token
+                result[-1] += sentence
             else:
-                result.append(token)
+                result.append(sentence)
         return result
 
     def segment_ideogramms(text):
@@ -791,11 +793,11 @@ def get_sentences(text, lang, tts_engine):
 
     def join_ideogramms(idg_list):
         buffer = ''
-        for token in idg_list:
-            if not token.strip():
+        for sentence in idg_list:
+            if not sentence.strip() or not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
                 continue
-            buffer += token
-            if token in punctuation_split_set:
+            buffer += sentence
+            if sentence in punctuation_split_set:
                 if len(buffer) > max_chars:
                     for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
                         if part.strip() and not all(c in punctuation_split_set for c in part):
@@ -817,6 +819,8 @@ def get_sentences(text, lang, tts_engine):
         min_diff = float('inf')
         punctuation_priority = '.!?,;:'
         space_priority = ' '
+        if not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+            return best_index
         for i in range(1, min(len(sentence), max_chars)):
             if sentence[i] in punctuation_priority:
                 left_len = i
