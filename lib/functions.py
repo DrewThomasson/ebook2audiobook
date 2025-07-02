@@ -1357,12 +1357,17 @@ def combine_audio_chapters(session):
                                 from mutagen.flac import FLAC, Picture
                                 import base64
                                 audio = FLAC(ffmpeg_final_file)
-                                image = Picture()
-                                image.type = 3  # front cover
-                                image.mime = "image/jpeg"
-                                with open(ffmpeg_cover, 'rb') as f:
-                                    image.data = f.read()
-                                audio.add_picture(image)
+                                pic = Picture()
+                                pic.type = 3  # front cover
+                                pic.mime = "image/jpeg"
+                                with open(ffmpeg_cover, "rb") as f:
+                                    pic.data = f.read()
+                                pic.width = 0
+                                pic.height = 0
+                                pic.depth = 0
+                                pic.colors = 0
+                                audio.clear_pictures()
+                                audio.add_picture(pic)
                             if audio:
                                 audio.save()
                             return True
