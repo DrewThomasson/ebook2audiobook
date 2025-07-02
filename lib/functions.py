@@ -1266,99 +1266,99 @@ def combine_audio_chapters(session):
             DependencyError(e)
             return False
 
-	def export_audio():
-		try:
-			if session['cancellation_requested']:
-				print('Cancel requested')
-				return False
-			ffmpeg_cover = session['cover'] if session['cover'] is not None else None
-			ffmpeg_combined_audio = combined_chapters_file
-			ffmpeg_metadata_file = metadata_file
-			ffmpeg_final_file = final_file
-			audio_temp_file = os.path.join(session['process_dir'], 'audio_temp_no_cover.' + session['output_format'])
-			# Pass 1: Process audio + metadata (no cover)
-			ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
-			if session['output_format'] == 'wav':
-				ffmpeg_cmd += ['-map', '0:a']
-			elif session['output_format'] == 'aac':
-				ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
-			else:
-				ffmpeg_cmd += ['-map', '0:a']
-				if session['output_format'] in {'m4a', 'm4b', 'mp4'}:
-					ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-movflags', '+faststart']
-				elif session['output_format'] == 'webm':
-					ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
-				elif session['output_format'] == 'ogg':
-					ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
-				elif session['output_format'] == 'flac':
-					ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
-				elif session['output_format'] == 'mp3':
-					ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
-				if session['output_format'] != 'ogg':
-					ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
-			ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1']
-			ffmpeg_cmd += ['-threads', '8', '-y', audio_temp_file]
-			try:
-				process = subprocess.Popen(
-					ffmpeg_cmd,
-					env={},
-					stdout=subprocess.PIPE,
-					stderr=subprocess.STDOUT,
-					encoding='utf-8',
-					errors='ignore'
-				)
-				for line in process.stdout:
-					print(line, end='')
-				process.wait()
-				if process.returncode != 0:
-					error = process.returncode
-					print(error, ffmpeg_cmd)
-					return False
-			except subprocess.CalledProcessError as e:
-				DependencyError(e)
-				return False
-			# Pass 2: Attach cover if needed (fast remux)
-			if ffmpeg_cover and session['output_format'] in {'m4b', 'm4a', 'mp4'}:
-				ffmpeg_cmd = [
-					shutil.which('ffmpeg'), '-hide_banner', '-nostats',
-					'-i', audio_temp_file, '-i', ffmpeg_cover,
-					'-map', '0', '-map', '1',
-					'-c', 'copy', '-disposition:v:1', 'attached_pic',
-					'-y', ffmpeg_final_file
-				]
-				if ffmpeg_cover.endswith('.png'):
-					ffmpeg_cmd.insert(-2, '-pix_fmt')
-					ffmpeg_cmd.insert(-2, 'yuv420p')
-				try:
-					process = subprocess.Popen(
-						ffmpeg_cmd,
-						env={},
-						stdout=subprocess.PIPE,
-						stderr=subprocess.STDOUT,
-						encoding='utf-8',
-						errors='ignore'
-					)
-					for line in process.stdout:
-						print(line, end='')
-					process.wait()
-					if process.returncode == 0:
-						return True
-					else:
-						error = process.returncode
-						print(error, ffmpeg_cmd)
-						return False
-				except subprocess.CalledProcessError as e:
-					DependencyError(e)
-					return False
-			else:
-				# No cover, just rename temp file to final output
-				shutil.move(audio_temp_file, ffmpeg_final_file)
-				msg = f'********* Audio exported to {ffmpeg_final_file}'
-				print(msg)
-				return True
-		except Exception as e:
-			DependencyError(e)
-			return False
+    def export_audio():
+        try:
+            if session['cancellation_requested']:
+                print('Cancel requested')
+                return False
+            ffmpeg_cover = session['cover'] if session['cover'] is not None else None
+            ffmpeg_combined_audio = combined_chapters_file
+            ffmpeg_metadata_file = metadata_file
+            ffmpeg_final_file = final_file
+            audio_temp_file = os.path.join(session['process_dir'], 'audio_temp_no_cover.' + session['output_format'])
+            # Pass 1: Process audio + metadata (no cover)
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
+            if session['output_format'] == 'wav':
+                ffmpeg_cmd += ['-map', '0:a']
+            elif session['output_format'] == 'aac':
+                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+            else:
+                ffmpeg_cmd += ['-map', '0:a']
+                if session['output_format'] in {'m4a', 'm4b', 'mp4'}:
+                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-movflags', '+faststart']
+                elif session['output_format'] == 'webm':
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
+                elif session['output_format'] == 'ogg':
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
+                elif session['output_format'] == 'flac':
+                    ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
+                elif session['output_format'] == 'mp3':
+                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
+                if session['output_format'] != 'ogg':
+                    ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
+            ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1']
+            ffmpeg_cmd += ['-threads', '8', '-y', audio_temp_file]
+            try:
+                process = subprocess.Popen(
+                    ffmpeg_cmd,
+                    env={},
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    encoding='utf-8',
+                    errors='ignore'
+                )
+                for line in process.stdout:
+                    print(line, end='')
+                process.wait()
+                if process.returncode != 0:
+                    error = process.returncode
+                    print(error, ffmpeg_cmd)
+                    return False
+            except subprocess.CalledProcessError as e:
+                DependencyError(e)
+                return False
+            # Pass 2: Attach cover if needed (fast remux)
+            if ffmpeg_cover and session['output_format'] in {'m4b', 'm4a', 'mp4'}:
+                ffmpeg_cmd = [
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats',
+                    '-i', audio_temp_file, '-i', ffmpeg_cover,
+                    '-map', '0', '-map', '1',
+                    '-c', 'copy', '-disposition:v:1', 'attached_pic',
+                    '-y', ffmpeg_final_file
+                ]
+                if ffmpeg_cover.endswith('.png'):
+                    ffmpeg_cmd.insert(-2, '-pix_fmt')
+                    ffmpeg_cmd.insert(-2, 'yuv420p')
+                try:
+                    process = subprocess.Popen(
+                        ffmpeg_cmd,
+                        env={},
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        encoding='utf-8',
+                        errors='ignore'
+                    )
+                    for line in process.stdout:
+                        print(line, end='')
+                    process.wait()
+                    if process.returncode == 0:
+                        return True
+                    else:
+                        error = process.returncode
+                        print(error, ffmpeg_cmd)
+                        return False
+                except subprocess.CalledProcessError as e:
+                    DependencyError(e)
+                    return False
+            else:
+                # No cover, just rename temp file to final output
+                shutil.move(audio_temp_file, ffmpeg_final_file)
+                msg = f'********* Audio exported to {ffmpeg_final_file}'
+                print(msg)
+                return True
+        except Exception as e:
+            DependencyError(e)
+            return False
 
     try:
         chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
