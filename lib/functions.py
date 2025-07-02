@@ -947,6 +947,19 @@ def get_ram():
     vm = psutil.virtual_memory()
     return vm.total // (1024 ** 3)
 
+def get_total_vram_gb():
+    """Gets the total VRAM of the first NVIDIA GPU in Gigabytes."""
+    try:
+        pynvml.nvmlInit()
+        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
+        info = pynvml.nvmlDeviceGetMemoryInfo(handle)
+        pynvml.nvmlShutdown()
+        # Return total memory in GB, rounded to nearest integer
+        return round(info.total / (1024**3))
+    except Exception as e:
+        # Return 0 if pynvml is not installed or GPU is not available
+        return 0
+
 def get_free_vram_mb():
     """Gets the free VRAM of the first NVIDIA GPU in Megabytes."""
     if pynvml is None:
@@ -1653,7 +1666,7 @@ def convert_ebook(args):
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
                         msg_extra = ''
-                        vram_avail = get_vram()
+                        vram_avail = get_total_vram_gb()
                         if vram_avail <= 4:
                             msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
                             if session['tts_engine'] == TTS_ENGINES['BARK']:
