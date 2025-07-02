@@ -512,7 +512,7 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 - Any help from people speaking any of the supported languages to help us improve the models
 
 ## Do you need to rent a GPU to boost service from us?
-- https://github.com/DrewThomasson/ebook2audiobook/discussions/889
+- A poll is open here https://github.com/DrewThomasson/ebook2audiobook/discussions/889
 
 ## Special Thanks
 - **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
