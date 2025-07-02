@@ -898,9 +898,13 @@ def get_sentences(text, lang, tts_engine):
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
     sentences = []
+    count_sentence = 0
     for sentence in tmp_list:
+        if count_sentence == 2330:
+            print(f'------------------------{sentence}-----------------------')
         if bool(re.search(r'[^\W_]', text, re.UNICODE)):
             sentences.extend(split_sentence(sentence.strip()))
+        count_sentence += 1
     return sentences
 
 def get_ram():
@@ -1112,7 +1116,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
-        batch_size = 512
+        batch_size = 1024
         sentence_files = [
             f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1169,7 +1173,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
 def combine_audio_chapters(session):
     def assemble_segments():
         try:
-            batch_size = 512
+            batch_size = 1024
             with tempfile.TemporaryDirectory() as tmpdir:
                 chapter_files_ordered = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
                 if not chapter_files_ordered:
