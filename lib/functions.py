@@ -1332,7 +1332,7 @@ def combine_audio_chapters(session):
                     print(line, end='')  # Print each line of stdout
                 process.wait()
                 if process.returncode == 0:
-                    if session['output_format'] in ['mp3', 'm4a', 'm4b', 'flac']:
+                    if session['output_format'] in ['mp3', 'm4a', 'm4b']:
                         if session['cover'] is not None:
                             ffmpeg_cover = session['cover']
                             msg = f'Adding cover {ffmpeg_cover} into the final audiobook file...'
@@ -1361,16 +1361,6 @@ def combine_audio_chapters(session):
                                 with open(ffmpeg_cover, 'rb') as f:
                                     cover_data = f.read()
                                 audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
-                            elif session['output_format'] == 'flac':
-                                from mutagen.flac import FLAC, Picture
-                                import base64
-                                audio = FLAC(ffmpeg_final_file)
-                                image = Picture()
-                                image.type = 3  # front cover
-                                image.mime = "image/jpeg"
-                                with open(ffmpeg_cover, 'rb') as f:
-                                    image.data = f.read()
-                                audio.add_picture(image)
                             if audio:
                                 audio.save()
                             return True
