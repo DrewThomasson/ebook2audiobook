@@ -5,6 +5,7 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
+import os
 import argparse
 import asyncio
 import csv
@@ -14,9 +15,9 @@ import fnmatch
 import gc
 import gradio as gr
 import hashlib
+import io
 import json
 import math
-import os
 import platform
 import psutil
 import pymupdf4llm
@@ -41,6 +42,7 @@ import unicodedata
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
+from PIL import Image
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -613,28 +615,33 @@ def get_ebook_title(epubBook, all_docs):
     return None
 
 def get_cover(epubBook, session):
-    try:
-        if session['cancellation_requested']:
-            print('Cancel requested')
-            return False
-        cover_image = False
-        cover_path = os.path.join(session['process_dir'], session['filename_noext'] + '.jpg')
-        for item in epubBook.get_items_of_type(ebooklib.ITEM_COVER):
-            cover_image = item.get_content()
-            break
-        if not cover_image:
-            for item in epubBook.get_items_of_type(ebooklib.ITEM_IMAGE):
-                if 'cover' in item.file_name.lower() or 'cover' in item.get_id().lower():
-                    cover_image = item.get_content()
-                    break
-        if cover_image:
-            with open(cover_path, 'wb') as cover_file:
-                cover_file.write(cover_image)
-                return cover_path
-        return True
-    except Exception as e:
-        DependencyError(e)
-        return False
+	try:
+		if session['cancellation_requested']:
+            msg = 'Cancel requested'
+			print(msg)
+			return False
+		cover_image = None
+		cover_path = os.path.join(session['process_dir'], session['filename_noext'] + '.jpg')
+		for item in epubBook.get_items_of_type(ebooklib.ITEM_COVER):
+			cover_image = item.get_content()
+			break
+		if not cover_image:
+			for item in epubBook.get_items_of_type(ebooklib.ITEM_IMAGE):
+				if 'cover' in item.file_name.lower() or 'cover' in item.get_id().lower():
+					cover_image = item.get_content()
+					break
+		if cover_image:
+			# Open the image from bytes
+			image = Image.open(io.BytesIO(cover_image))
+			# Convert to RGB if needed (JPEG doesn't support alpha)
+			if image.mode in ('RGBA', 'P'):
+				image = image.convert('RGB')
+			image.save(cover_path, format='JPEG')
+			return cover_path
+		return True
+	except Exception as e:
+		DependencyError(e)
+		return False
 
 def get_chapters(epubBook, session):
     try:
@@ -1283,35 +1290,13 @@ def combine_audio_chapters(session):
             ffmpeg_combined_audio = combined_chapters_file
             ffmpeg_metadata_file = metadata_file
             ffmpeg_final_file = final_file
-            if session['cover'] is not None:
-                ffmpeg_cover = session['cover']                    
+            # First pass
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a']
             elif session['output_format'] ==  'aac':
                 ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
             else:
-                #if ffmpeg_cover is not None:
-                #    if session['output_format'] == 'mp3' or session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4' or session['output_format'] == 'flac':
-                #        ffmpeg_cmd += ['-i', ffmpeg_cover]
-                #        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
-                #        if ffmpeg_cover.endswith('.png'):
-                #            ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
-                #        else:
-                #            ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
-                #    elif session['output_format'] == 'mov':
-                #        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                #        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v', '-shortest']
-                #    elif session['output_format'] == 'webm':
-                #        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                #        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
-                #        ffmpeg_cmd += ['-c:v', 'libvpx-vp9', '-crf', '40', '-speed', '8', '-shortest']
-                #    elif session['output_format'] == 'ogg':
-                #        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                #        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
-                #   if ffmpeg_cover.endswith('.png'):
-                #        ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
-                #else:
                 ffmpeg_cmd += ['-map', '0:a']
                 if session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4':
                     ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
@@ -1327,7 +1312,7 @@ def combine_audio_chapters(session):
                 if session['output_format'] != 'ogg':
                     ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
             ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1']
-            ffmpeg_cmd += ['-threads', '8', '-y', ffmpeg_final_file]
+            ffmpeg_cmd += ['-threads', '0', '-y', ffmpeg_final_file]
             try:
                 process = subprocess.Popen(
                     ffmpeg_cmd,
@@ -1341,7 +1326,56 @@ def combine_audio_chapters(session):
                     print(line, end='')  # Print each line of stdout
                 process.wait()
                 if process.returncode == 0:
-                    return True
+                    if session['output_format'] in ['mp3', 'm4a', 'm4b', 'flac', 'ogg']:
+                        if session['cover'] is not None:
+                            # Second pass
+                            ffmpeg_cover = session['cover']
+                            ffmpeg_final_no_cover_file = f'{os.path.splitext(final_file[0])}_no_cover.{session['output_format']}'
+                            shutil.move(ffmpeg_final_file, ffmpeg_final_no_cover_file)
+                            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
+                            if session['output_format'] == 'mp3':
+                                ffmpeg_cmd += ['-i', ffmpeg_final_no_cover_file, '-i', ffmpeg_cover, '-map', '0', '-map', '1', '-c', 'copy', '-disposition:v:0', 'attached_pic', '-map_metadata', '0', ffmpeg_final_file]
+                        #    if session['output_format'] == 'mp3' or session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4' or session['output_format'] == 'flac':
+                        #        ffmpeg_cmd += ['-i', ffmpeg_cover]
+                        #        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
+                        #        if ffmpeg_cover.endswith('.png'):
+                        #            ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
+                        #        else:
+                        #            ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
+                        #    elif session['output_format'] == 'mov':
+                        #        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
+                        #        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v', '-shortest']
+                        #    elif session['output_format'] == 'webm':
+                        #        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
+                        #        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
+                        #        ffmpeg_cmd += ['-c:v', 'libvpx-vp9', '-crf', '40', '-speed', '8', '-shortest']
+                        #    elif session['output_format'] == 'ogg':
+                        #        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
+                        #        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
+                        #   if ffmpeg_cover.endswith('.png'):
+                        #        ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
+                            try:
+                                process = subprocess.Popen(
+                                    ffmpeg_cmd,
+                                    env={},
+                                    stdout=subprocess.PIPE,
+                                    stderr=subprocess.STDOUT,
+                                    encoding='utf-8',
+                                    errors='ignore'
+                                )
+                                for line in process.stdout:
+                                    print(line, end='')  # Print each line of stdout
+                                process.wait()
+                                if process.returncode == 0:
+                                    return True
+                                else:
+                                    error = process.returncode
+                                    print(error, ffmpeg_cmd)
+                                    return False
+                            except subprocess.CalledProcessError as e:
+                                DependencyError(e)
+                    else:
+                        return True
                 else:
                     error = process.returncode
                     print(error, ffmpeg_cmd)
