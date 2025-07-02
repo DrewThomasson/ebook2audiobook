@@ -1264,40 +1264,16 @@ def combine_audio_chapters(session):
             if session['cancellation_requested']:
                 print('Cancel requested')
                 return False
-            ffmpeg_cover = None
             ffmpeg_combined_audio = combined_chapters_file
             ffmpeg_metadata_file = metadata_file
             ffmpeg_final_file = final_file
-            if session['cover'] is not None:
-                ffmpeg_cover = session['cover']                    
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a']
             elif session['output_format'] ==  'aac':
                 ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
             else:
-                if ffmpeg_cover is not None:
-                    if session['output_format'] == 'mp3' or session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4' or session['output_format'] == 'flac':
-                        ffmpeg_cmd += ['-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
-                        if ffmpeg_cover.endswith('.png'):
-                            ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
-                        else:
-                            ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
-                    elif session['output_format'] == 'mov':
-                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v', '-shortest']
-                    elif session['output_format'] == 'webm':
-                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
-                        ffmpeg_cmd += ['-c:v', 'libvpx-vp9', '-crf', '40', '-speed', '8', '-shortest']
-                    elif session['output_format'] == 'ogg':
-                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
-                    if ffmpeg_cover.endswith('.png'):
-                        ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
-                else:
-                    ffmpeg_cmd += ['-map', '0:a']
+                ffmpeg_cmd += ['-map', '0:a']
                 if session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4':
                     ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
                     ffmpeg_cmd += ['-movflags', '+faststart']
