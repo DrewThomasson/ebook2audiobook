@@ -1330,7 +1330,7 @@ def combine_audio_chapters(session):
                         if session['cover'] is not None:
                             # Second pass
                             ffmpeg_cover = session['cover']
-                            ffmpeg_final_no_cover_file = f"{os.path.splitext(final_file[0])}_no_cover.{session['output_format']}"
+                            ffmpeg_final_no_cover_file = f"{os.path.splitext(final_file)[0]}_no_cover.{session['output_format']}"
                             shutil.move(ffmpeg_final_file, ffmpeg_final_no_cover_file)
                             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
                             ffmpeg_cmd += ['-i', ffmpeg_final_no_cover_file, '-i', ffmpeg_cover, '-map', '0', '-map', '1', '-c', 'copy', '-disposition:v:0', 'attached_pic', '-map_metadata', '0']
@@ -1359,6 +1359,8 @@ def combine_audio_chapters(session):
                                     return False
                             except subprocess.CalledProcessError as e:
                                 DependencyError(e)
+                                print(error, ffmpeg_cmd)
+                                return False
                     else:
                         return True
                 else:
