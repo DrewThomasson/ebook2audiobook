@@ -1234,51 +1234,69 @@ def combine_audio_chapters(session):
                 if session['cancellation_requested']:
                     print('Cancel requested')
                     return False
-                ffmpeg_metadata = ';FFMETADATA1\n'        
+                ffmpeg_metadata = ';FFMETADATA1\n'
+                out_fmt = session['output_format']
+                is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
+                is_mp3 = out_fmt == 'mp3'
+                is_vorbis = out_fmt in ['flac', 'ogg', 'webm']
+                supports_chapters = is_mp4_like or is_mp3
+                
+                def tag(key):
+                    return key.upper() if is_vorbis else key
+                
+                # Core tags
                 if session['metadata'].get('title'):
-                    ffmpeg_metadata += f"title={session['metadata']['title']}\n"            
+                    ffmpeg_metadata += f"{tag('title')}={session['metadata']['title']}\n"
                 if session['metadata'].get('creator'):
-                    ffmpeg_metadata += f"artist={session['metadata']['creator']}\n"
+                    ffmpeg_metadata += f"{tag('artist')}={session['metadata']['creator']}\n"
                 if session['metadata'].get('language'):
-                    ffmpeg_metadata += f"language={session['metadata']['language']}\n\n"
-                if session['metadata'].get('publisher'):
-                    ffmpeg_metadata += f"publisher={session['metadata']['publisher']}\n"              
+                    ffmpeg_metadata += f"{tag('language')}={session['metadata']['language']}\n"
                 if session['metadata'].get('description'):
-                    ffmpeg_metadata += f"description={session['metadata']['description']}\n"
+                    ffmpeg_metadata += f"{tag('description')}={session['metadata']['description']}\n"
+                # Publisher — only for MP3/MP4
+                if session['metadata'].get('publisher') and (is_mp4_like or is_mp3):
+                    ffmpeg_metadata += f"{tag('publisher')}={session['metadata']['publisher']}\n"
+                # Year/Date
                 if session['metadata'].get('published'):
-                    # Check if the timestamp contains fractional seconds
-                    if '.' in session['metadata']['published']:
-                        # Parse with fractional seconds
-                        year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
-                    else:
-                        # Parse without fractional seconds
-                        year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
+                    try:
+                        if '.' in session['metadata']['published']:
+                            year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
+                        else:
+                            year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
+                    except Exception:
+                        year = datetime.now().year
                 else:
-                    # If published is not provided, use the current year
                     year = datetime.now().year
-                if session['output_format'] in ['flac', 'ogg', 'webm']:
-                    ffmpeg_metadata += f'date={year}\n'
+                if is_vorbis:
+                    ffmpeg_metadata += f"{tag('date')}={year}\n"
                 else:
-                    ffmpeg_metadata += f'year={year}\n'
-                if session['metadata'].get('identifiers') and isinstance(session['metadata'].get('identifiers'), dict):
-                    isbn = session['metadata']['identifiers'].get('isbn', None)
-                    if isbn:
-                        ffmpeg_metadata += f'isbn={isbn}\n'  # ISBN
-                    mobi_asin = session['metadata']['identifiers'].get('mobi-asin', None)
-                    if mobi_asin:
-                        ffmpeg_metadata += f'asin={mobi_asin}\n'  # ASIN  
-                if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mp3', 'mov']:
+                    ffmpeg_metadata += f"{tag('year')}={year}\n"
+                # Identifiers (only for MP3/MP4)
+                if session['metadata'].get('identifiers') and isinstance(session['metadata']['identifiers'], dict):
+                    if is_mp3 or is_mp4_like:
+                        isbn = session['metadata']['identifiers'].get('isbn')
+                        if isbn:
+                            ffmpeg_metadata += f"{tag('isbn')}={isbn}\n"
+                        asin = session['metadata']['identifiers'].get('mobi-asin')
+                        if asin:
+                            ffmpeg_metadata += f"{tag('asin')}={asin}\n"
+                # Chapters
+                if supports_chapters:
                     start_time = 0
                     for index, chapter_file in enumerate(chapter_files):
                         if session['cancellation_requested']:
                             msg = 'Cancel requested'
                             print(msg)
                             return False
-                        duration_ms = len(AudioSegment.from_file(os.path.join(session['chapters_dir'],chapter_file), format=default_audio_proc_format))
-                        ffmpeg_metadata += f'[CHAPTER]\nTIMEBASE=1/1000\nSTART={start_time}\n'
-                        ffmpeg_metadata += f"END={start_time + duration_ms}\ntitle={session['chapters'][index][0].replace('‡pause‡', '')}\n"
+                        duration_ms = len(AudioSegment.from_file(
+                            os.path.join(session['chapters_dir'], chapter_file),
+                            format=default_audio_proc_format
+                        ))
+                        chapter_title = session['chapters'][index][0].replace('‡pause‡', '')
+                        ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
+                        ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
+                        ffmpeg_metadata += f"{tag('title')}={chapter_title}\n"
                         start_time += duration_ms
-                # Write the metadata to the file
                 with open(metadata_file, 'w', encoding='utf-8') as f:
                     f.write(ffmpeg_metadata)
             return True
