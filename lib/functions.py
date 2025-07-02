@@ -1347,36 +1347,25 @@ def combine_audio_chapters(session):
                                             data=img.read()
                                         )
                                     )
+                            elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
+                                from mutagen.mp4 import MP4, MP4Cover
+                                audio = MP4(ffmpeg_final_file)
+                                with open(ffmpeg_cover, 'rb') as f:
+                                    cover_data = f.read()
+                                audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
+                            elif session['output_format'] == 'flac':
+                                from mutagen.flac import FLAC, Picture
+                                import base64
+                                audio = FLAC(ffmpeg_final_file)
+                                image = Picture()
+                                image.type = 3  # front cover
+                                image.mime = "image/jpeg"
+                                with open(ffmpeg_cover, 'rb') as f:
+                                    image.data = f.read()
+                                audio.add_picture(image)
+                            if audio:
                                 audio.save()
-                                return True
-                            elif session['output_format'] in ['m4a', 'm4b']:
-                                ffmpeg_final_no_cover_file = f"{os.path.splitext(final_file)[0]}_no_cover.{session['output_format']}"
-                                shutil.move(ffmpeg_final_file, ffmpeg_final_no_cover_file)
-                                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
-                                ffmpeg_cmd += ['-i', ffmpeg_final_no_cover_file, '-i', ffmpeg_cover, '-map', '0', '-map', '1', '-c', 'copy', '-disposition:v:0', 'attached_pic', '-map_metadata', '0']
-                                ffmpeg_cmd += [ffmpeg_final_file]
-                                try:
-                                    process = subprocess.Popen(
-                                        ffmpeg_cmd,
-                                        env={},
-                                        stdout=subprocess.PIPE,
-                                        stderr=subprocess.STDOUT,
-                                        encoding='utf-8',
-                                        errors='ignore'
-                                    )
-                                    for line in process.stdout:
-                                        print(line, end='')  # Print each line of stdout
-                                    process.wait()
-                                    if process.returncode == 0:
-                                        return True
-                                    else:
-                                        error = process.returncode
-                                        print(error, ffmpeg_cmd)
-                                        return False
-                                except subprocess.CalledProcessError as e:
-                                    DependencyError(e)
-                                    print(error, ffmpeg_cmd)
-                                    return False
+                            return True
                     else:
                         return True
                 else:
