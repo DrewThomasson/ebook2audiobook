@@ -29,7 +29,7 @@ import subprocess
 import sys
 import stanza
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import time
 import torch
 import urllib.request
@@ -1017,99 +1017,107 @@ def get_sanitized(str, replacement="_"):
 
 def convert_chapters2audio(session):
     try:
-        if session['cancellation_requested']:
+        if session.get('cancellation_requested'):
             print('Cancel requested')
             return False
-        progress_bar = None
-        if is_gui_process:
-            progress_bar = gr.Progress(track_tqdm=True)        
+
+        progress_bar = gr.Progress(track_tqdm=True) if is_gui_process else None
         tts_manager = TTSManager(session)
         if not tts_manager:
-            error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
-            print(error)
+            print(f"TTS engine {session['tts_engine']} could not be loaded! Check memory and model configuration.")
             return False
-        resume_chapter = 0
-        missing_chapters = []
-        resume_sentence = 0
-        missing_sentences = []
-        existing_chapters = sorted(
-            [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')],
-            key=lambda x: int(re.search(r'\d+', x).group())
-        )
-        if existing_chapters:
-            resume_chapter = max(int(re.search(r'\d+', f).group()) for f in existing_chapters) 
-            msg = f'Resuming from block {resume_chapter}'
-            print(msg)
-            existing_chapter_numbers = {int(re.search(r'\d+', f).group()) for f in existing_chapters}
-            missing_chapters = [
-                i for i in range(1, resume_chapter) if i not in existing_chapter_numbers
-            ]
-            if resume_chapter not in missing_chapters:
-                missing_chapters.append(resume_chapter)
-        existing_sentences = sorted(
-            [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')],
-            key=lambda x: int(re.search(r'\d+', x).group())
-        )
-        if existing_sentences:
-            resume_sentence = max(int(re.search(r'\d+', f).group()) for f in existing_sentences)
-            msg = f"Resuming from sentence {resume_sentence}"
-            print(msg)
-            existing_sentence_numbers = {int(re.search(r'\d+', f).group()) for f in existing_sentences}
-            missing_sentences = [
-                i for i in range(1, resume_sentence) if i not in existing_sentence_numbers
-            ]
-            if resume_sentence not in missing_sentences:
-                missing_sentences.append(resume_sentence)
-        total_chapters = len(session['chapters'])
-        total_sentences = sum(len(array) for array in session['chapters'])
-        sentence_number = 0
-        with tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
-            msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
-            for x in range(0, total_chapters):
-                chapter_num = x + 1
-                chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
-                sentences = session['chapters'][x]
-                sentences_count = len(sentences)
-                start = sentence_number
-                msg = f'Block {chapter_num} containing {sentences_count} sentences...'
-                print(msg)
-                for i, sentence in enumerate(sentences):
-                    if session['cancellation_requested']:
-                        msg = 'Cancel requested'
-                        print(msg)
-                        return False
-                    if sentence_number in missing_sentences or sentence_number > resume_sentence or (sentence_number == 0 and resume_sentence == 0):
-                        if sentence_number <= resume_sentence and sentence_number > 0:
-                            msg = f'**Recovering missing file sentence {sentence_number}'
-                            print(msg)
-                        success = tts_manager.convert_sentence2audio(sentence_number, sentence)
-                        if success:                           
-                            percentage = (sentence_number / total_sentences) * 100
-                            t.set_description(f'Converting {percentage:.2f}%')
-                            msg = f"\nSentence: {sentence}"
-                            print(msg)
-                        else:
-                            return False
-                        t.update(1)
-                    if progress_bar is not None:
-                        progress_bar(sentence_number / total_sentences)
-                    sentence_number += 1
-                if progress_bar is not None:
-                    progress_bar(sentence_number / total_sentences)
-                end = sentence_number - 1 if sentence_number > 1 else sentence_number
-                msg = f"End of Block {chapter_num}"
-                print(msg)
-                if chapter_num in missing_chapters or sentence_number > resume_sentence:
-                    if chapter_num <= resume_chapter:
-                        msg = f'**Recovering missing file block {chapter_num}'
-                        print(msg)
-                    if combine_audio_sentences(chapter_audio_file, start, end, session):
-                        msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
-                        print(msg)
+
+        # Set a fixed number of workers for the GPU-bound TTS task
+        num_workers = 5
+
+        # Flatten all sentences from all chapters into a single list with their original index
+        all_sentences = []
+        sentence_idx = 0
+        for chapter_index, sentences in enumerate(session['chapters']):
+            for sentence_text in sentences:
+                all_sentences.append((sentence_idx, sentence_text, chapter_index))
+                sentence_idx += 1
+        
+        total_sentences = len(all_sentences)
+
+        # --- Resume Logic ---
+        existing_sentence_numbers = {
+            int(re.search(r'\d+', f).group())
+            for f in os.listdir(session['chapters_dir_sentences'])
+            if f.endswith(f'.{default_audio_proc_format}')
+        }
+        
+        sentences_to_process = [s for s in all_sentences if s[0] not in existing_sentence_numbers]
+        
+        if not sentences_to_process:
+            print("All sentences have already been converted. Proceeding to combine chapters.")
+        else:
+            print(f"Found {len(existing_sentence_numbers)} existing sentences. Processing {len(sentences_to_process)} new sentences with {num_workers} threads...")
+
+            def convert_sentence_worker(sentence_data):
+                sentence_number, sentence, _ = sentence_data
+                if session.get('cancellation_requested'):
+                    return None
+                try:
+                    # Each thread will call the TTS conversion function
+                    success = tts_manager.convert_sentence2audio(sentence_number, sentence)
+                    if success:
+                        return sentence_number
                     else:
-                        msg = 'combine_audio_sentences() failed!'
-                        print(msg)
-                        return False
+                        print(f"TTS conversion failed for sentence {sentence_number}: {sentence[:80]}...")
+                        return None
+                except Exception as e:
+                    print(f"An exception occurred while processing sentence {sentence_number}: {e}")
+                    traceback.print_exc()
+                    return None
+
+            with tqdm(total=len(sentences_to_process), desc='Converting Sentences', unit='sentence') as pbar:
+                with ThreadPoolExecutor(max_workers=num_workers) as executor:
+                    # Submit all sentences to the executor
+                    futures = {executor.submit(convert_sentence_worker, s): s for s in sentences_to_process}
+                    
+                    # Process results as they are completed
+                    for future in as_completed(futures):
+                        if session.get('cancellation_requested'):
+                            executor.shutdown(wait=False, cancel_futures=True)
+                            print("Cancellation requested, stopping sentence conversion.")
+                            return False
+                        
+                        result = future.result()
+                        if result is not None:
+                            pbar.update(1)
+                            if progress_bar:
+                                overall_progress = (len(existing_sentence_numbers) + pbar.n) / total_sentences
+                                progress_bar(overall_progress)
+                        else:
+                            # If any sentence fails, stop the entire process
+                            print("A sentence failed to convert. Stopping all processing.")
+                            executor.shutdown(wait=False, cancel_futures=True)
+                            return False
+        
+        # --- Combine Sentences into Chapters ---
+        print("All sentences converted. Combining into chapter files...")
+        sentence_number = 0
+        for x, sentences in enumerate(session['chapters']):
+            chapter_num = x + 1
+            chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
+            start_sentence = sentence_number
+            end_sentence = sentence_number + len(sentences) - 1
+
+            # Check if chapter file already exists to avoid re-combining
+            if os.path.exists(os.path.join(session['chapters_dir'], chapter_audio_file)):
+                print(f"Chapter {chapter_num} already exists. Skipping combination.")
+                sentence_number = end_sentence + 1
+                continue
+
+            print(f'Combining block {chapter_num} from sentences {start_sentence} to {end_sentence}...')
+            if not combine_audio_sentences(chapter_audio_file, start_sentence, end_sentence, session):
+                print(f'Failed to combine block {chapter_num}. Aborting.')
+                return False
+            
+            sentence_number = end_sentence + 1
+
+        print("Successfully created all chapter audio files.")
         return True
     except Exception as e:
         DependencyError(e)
