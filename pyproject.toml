@@ -34,7 +34,7 @@ dependencies = [
 	"soynlp",
 	"pythainlp",
 	"pydub",
-	"m4b-util",
+	"mutagen",
 	"nvidia-ml-py",
 	"PyOpenGL",
 	"pypinyin",
@@ -47,6 +47,7 @@ dependencies = [
 	"sudachipy",
 	"sudachidict_core",
 	"torch",
+	"transformers==4.51.3",
 	"coqui-tts[languages]==0.26.0",
 	"torchvggish"
 ]

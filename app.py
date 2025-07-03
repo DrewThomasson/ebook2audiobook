@@ -114,8 +114,6 @@ def is_port_in_use(port):
         return s.connect_ex(('0.0.0.0', port)) == 0
 
 def main():
-    global is_gui_process
-
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
@@ -233,8 +231,8 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                 print(error)
                 sys.exit(1)
 
-        from lib.functions import web_interface, convert_ebook_batch, convert_ebook
-
+        from lib.functions import SessionContext, convert_ebook_batch, convert_ebook, web_interface
+        ctx = SessionContext()
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False
@@ -268,7 +266,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                         args['ebook_list'].append(full_path)
-                progress_status, passed = convert_ebook_batch(args)
+                progress_status, passed = convert_ebook_batch(args, ctx)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
@@ -279,7 +277,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
                     print(error)
                     sys.exit(1) 
-                progress_status, passed = convert_ebook(args)
+                progress_status, passed = convert_ebook(args, ctx)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
@@ -294,7 +292,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             allowed_arguments = {'--share', '--script_mode'}
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
-                 web_interface(args)
+                 web_interface(args, ctx)
             else:
                 error = 'Error: In non-headless mode, no option or only --share can be passed'
                 print(error)

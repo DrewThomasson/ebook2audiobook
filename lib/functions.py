@@ -5,6 +5,7 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
+import os
 import argparse
 import asyncio
 import csv
@@ -14,9 +15,9 @@ import fnmatch
 import gc
 import gradio as gr
 import hashlib
+import io
 import json
 import math
-import os
 import platform
 import psutil
 import pymupdf4llm
@@ -27,7 +28,7 @@ import shutil
 import socket
 import subprocess
 import sys
-import stanza
+import tempfile
 import threading
 import time
 import torch
@@ -41,6 +42,7 @@ import unicodedata
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
+from PIL import Image
 from tqdm import tqdm
 from bs4 import BeautifulSoup
 from collections import Counter
@@ -51,6 +53,7 @@ from ebooklib import epub
 from glob import glob
 from iso639 import languages
 from markdown import markdown
+from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
 from num2words import num2words
@@ -66,6 +69,10 @@ from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
+
+context = None
+lock = threading.Lock()
+is_gui_process = False
 
 class DependencyError(Exception):
     def __init__(self, message=None):
@@ -177,10 +184,6 @@ class SessionContext:
             }, manager=self.manager)
         return self.sessions[id]
 
-lock = threading.Lock()
-context = SessionContext()
-is_gui_process = False
-
 def prepare_dirs(src, session):
     try:
         resume = False
@@ -258,49 +261,49 @@ def analyze_uploaded_file(zip_path, required_files):
         raise RuntimeError(error)
 
 def extract_custom_model(file_src, session, required_files=None):
-	try:
-		model_path = None
-		if required_files is None:
-			required_files = models[session['tts_engine']][default_fine_tuned]['files']
-		model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
-		model_name = get_sanitized(model_name)
-		with zipfile.ZipFile(file_src, 'r') as zip_ref:
-			files = zip_ref.namelist()
-			files_length = len(files)
-			tts_dir = session['tts_engine']
-			model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
-			if os.path.exists(model_path):
-				print(f'{model_path} already exists, bypassing files extraction')
-				return model_path
-			os.makedirs(model_path, exist_ok=True)
-			required_files_lc = set(x.lower() for x in required_files)
-			with tqdm(total=files_length, unit='files') as t:
-				for f in files:
-					base_f = os.path.basename(f).lower()
-					if base_f in required_files_lc:
-						out_path = os.path.join(model_path, base_f)
-						with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
-							shutil.copyfileobj(src, dst)
-					t.update(1)
-		if is_gui_process:
-			os.remove(file_src)
-		if model_path is not None:
-			msg = f'Extracted files to {model_path}'
-			print(msg)
-			return model_path
-		else:
-			error = f'An error occured when unzip {file_src}'
-			return None
-	except asyncio.exceptions.CancelledError as e:
-		DependencyError(e)
-		if is_gui_process:
-			os.remove(file_src)
-		return None       
-	except Exception as e:
-		DependencyError(e)
-		if is_gui_process:
-			os.remove(file_src)
-		return None
+    try:
+        model_path = None
+        if required_files is None:
+            required_files = models[session['tts_engine']][default_fine_tuned]['files']
+        model_name = re.sub('.zip', '', os.path.basename(file_src), flags=re.IGNORECASE)
+        model_name = get_sanitized(model_name)
+        with zipfile.ZipFile(file_src, 'r') as zip_ref:
+            files = zip_ref.namelist()
+            files_length = len(files)
+            tts_dir = session['tts_engine']
+            model_path = os.path.join(session['custom_model_dir'], tts_dir, model_name)
+            if os.path.exists(model_path):
+                print(f'{model_path} already exists, bypassing files extraction')
+                return model_path
+            os.makedirs(model_path, exist_ok=True)
+            required_files_lc = set(x.lower() for x in required_files)
+            with tqdm(total=files_length, unit='files') as t:
+                for f in files:
+                    base_f = os.path.basename(f).lower()
+                    if base_f in required_files_lc:
+                        out_path = os.path.join(model_path, base_f)
+                        with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
+                            shutil.copyfileobj(src, dst)
+                    t.update(1)
+        if is_gui_process:
+            os.remove(file_src)
+        if model_path is not None:
+            msg = f'Extracted files to {model_path}'
+            print(msg)
+            return model_path
+        else:
+            error = f'An error occured when unzip {file_src}'
+            return None
+    except asyncio.exceptions.CancelledError as e:
+        DependencyError(e)
+        if is_gui_process:
+            os.remove(file_src)
+        return None       
+    except Exception as e:
+        DependencyError(e)
+        if is_gui_process:
+            os.remove(file_src)
+        return None
         
 def hash_proxy_dict(proxy_dict):
     return hashlib.md5(str(proxy_dict).encode('utf-8')).hexdigest()
@@ -357,36 +360,6 @@ def proxy2dict(proxy_obj):
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
 
-def check_formatted_number(text, max_single_value=999_999_999_999_999):
-	text = text.strip()
-	digit_count = sum(c.isdigit() for c in text)
-	if digit_count <= 9:
-		return text
-	try:
-		as_number = float(text.replace(",", ""))
-		if abs(as_number) <= max_single_value:
-			return text
-	except ValueError:
-		pass
-	tokens = re.findall(r'\d*\.\d+|\d+|[^\w\s]|[\w]+|\s+', text)
-	result = []
-	for token in tokens:
-		if re.fullmatch(r'\d*\.\d+', token):
-			try:
-				num = float(token)
-				result.append(num2words(num))
-			except:
-				result.append(token)
-		elif token.isdigit():
-			try:
-				num = int(token)
-				result.append(num2words(num))
-			except:
-				result.append(token)
-		else:
-			result.append(token)
-	return ''.join(result)
-
 def check_num2words_compat():
     try:
         num2words(1, lang=lang_iso1)
@@ -396,104 +369,37 @@ def check_num2words_compat():
     except Exception as e:
         return False
 
-def math2word(text, lang, lang_iso1, tts_engine):
-
-    def rep_num(match):
-        number = match.group().strip().replace(",", "")
-        try:
-            if "." in number or "e" in number or "E" in number:
-                number_value = float(number)
-            else:
-                number_value = int(number)
-            number_in_words = num2words(number_value, lang=lang_iso1)
-            return f" {number_in_words}"
-        except Exception as e:
-            error = f"Error converting number: {number}, Error: {e}"
-            print(error)
-            return f"{number}"
-
-    def replace_ambiguous(match):
-        symbol2 = match.group(2)
-        symbol3 = match.group(3)
-        if symbol2 in ambiguous_replacements: # "num SYMBOL num" case
-            return f"{match.group(1)} {ambiguous_replacements[symbol2]} {match.group(3)}"            
-        elif symbol3 in ambiguous_replacements: # "SYMBOL num" case
-            return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
-        return match.group(0)
-
-    def detect_date_entities(text):
-        stanza.download(lang_iso1)
-        nlp = stanza.Pipeline(lang_iso1, processors='tokenize,ner')
-        doc = nlp(text)
-        date_spans = []
-        for ent in doc.ents:
-            if ent.type == 'DATE':
-                date_spans.append((ent.start_char, ent.end_char, ent.text))
-        return date_spans
-
-    def year_to_words(match):
-        year = int(match.group())
-        year_str = str(year)
-        if len(year_str) != 4 or not year_str.isdigit():
-            return num2words(year)
-        first_two = int(year_str[:2])
-        last_two = int(year_str[2:])
-        return f"{num2words(first_two)} {num2words(last_two)}"
-
-    if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)):
-        is_num2words_compat = check_num2words_compat()  
-        # Check if there are positive integers so possible date to convert
-        if bool(re.search(r'\b\d+\b', text)):
-            if lang in year_to_decades_languages:
-                date_spans = detect_date_entities(text)
-                result = []
-                last_pos = 0
-                for start, end, date_text in date_spans:
-                    # Append text before this date
-                    result.append(text[last_pos:start])
-                    processed = re.sub(r"\b\d{4}\b", year_to_words, date_text)
-                    result.append(processed)
-                    last_pos = end
-                # Append remaining text
-                result.append(text[last_pos:])
-                text = ''.join(result)       
-        # Check if it's a serie of small numbers with a separator
-        text = check_formatted_number(text)
-        phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-        # Separate ambiguous and non-ambiguous symbols
-        ambiguous_symbols = {"-", "/", "*", "x"}
-        replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit()}  # Keep only math symbols
-        normal_replacements = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
-        ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
-        # Replace unambiguous math symbols normally
-        if normal_replacements:
-            math_pattern = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
-            text = re.sub(math_pattern, lambda m: f" {normal_replacements[m.group(0)]} ", text)
-        # Regex pattern for ambiguous symbols (match only valid equations)
-        ambiguous_pattern = (
-            r'(?<!\S)(\d+)\s*([-/*x])\s*(\d+)(?!\S)|'  # Matches "num SYMBOL num" (e.g., "3 + 5", "7-2", "8 * 4")
-            r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'           # Matches "SYMBOL num" (e.g., "-4", "/ 9")
-        )
-        if ambiguous_replacements:
-            text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-        # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
-        number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
-        if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999_999_999):
+    text = text.strip()
+    digit_count = sum(c.isdigit() for c in text)
+    if digit_count <= 9:
+        return text
+    try:
+        as_number = float(text.replace(",", ""))
+        if abs(as_number) <= max_single_value:
+            return text
+    except ValueError:
+        pass
+    tokens = re.findall(r'\d*\.\d+|\d+|[^\w\s]|[\w]+|\s+', text)
+    result = []
+    for token in tokens:
+        if re.fullmatch(r'\d*\.\d+', token):
             if is_num2words_compat:
-                # Pattern 2: Split big numbers into groups of 4
-                text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
-                text = re.sub(number_pattern, rep_num, text)
+                num = float(token)
+                result.append(num2words(num, lang=lang_iso1))
             else:
-                # Pattern 2: Split big numbers into groups of 2
-                text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
-                # Fallback: Replace numbers using phonemes dictionary
-                sorted_numbers = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
-                if sorted_numbers:
-                    number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
-                    text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
-    return text
+                result.append(token)
+        elif token.isdigit():
+            if is_num2words_compat:
+                num = int(token)
+                result.append(num2words(num, lang=lang_iso1))
+            else:
+                result.append(token)
+        else:
+            result.append(token)
+    return ''.join(result)
 
-def normalize_text(text, lang, lang_iso1, tts_engine):
+def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
@@ -553,7 +459,67 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
             if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
         # Replace math symbols with words
-        text = math2word(text, lang, lang_iso1, tts_engine)
+        text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+    return text
+
+def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+
+    def rep_num(match):
+        number = match.group().strip().replace(",", "")
+        try:
+            if "." in number or "e" in number or "E" in number:
+                number_value = float(number)
+            else:
+                number_value = int(number)
+            number_in_words = num2words(number_value, lang=lang_iso1)
+            return f" {number_in_words}"
+        except Exception as e:
+            error = f"Error converting number: {number}, Error: {e}"
+            print(error)
+            return f"{number}"
+
+    def replace_ambiguous(match):
+        symbol2 = match.group(2)
+        symbol3 = match.group(3)
+        if symbol2 in ambiguous_replacements: # "num SYMBOL num" case
+            return f"{match.group(1)} {ambiguous_replacements[symbol2]} {match.group(3)}"            
+        elif symbol3 in ambiguous_replacements: # "SYMBOL num" case
+            return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
+        return match.group(0)    
+        # Check if it's a serie of small numbers with a separator
+        text = check_formatted_number(text, lang_iso1, is_num2words_compat)
+        phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+        # Separate ambiguous and non-ambiguous symbols
+        ambiguous_symbols = {"-", "/", "*", "x"}
+        replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit()}  # Keep only math symbols
+        normal_replacements = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
+        ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
+        # Replace unambiguous math symbols normally
+        if normal_replacements:
+            math_pattern = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
+            text = re.sub(math_pattern, lambda m: f" {normal_replacements[m.group(0)]} ", text)
+        # Regex pattern for ambiguous symbols (match only valid equations)
+        ambiguous_pattern = (
+            r'(?<!\S)(\d+)\s*([-/*x])\s*(\d+)(?!\S)|'  # Matches "num SYMBOL num" (e.g., "3 + 5", "7-2", "8 * 4")
+            r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'           # Matches "SYMBOL num" (e.g., "-4", "/ 9")
+        )
+        if ambiguous_replacements:
+            text = re.sub(ambiguous_pattern, replace_ambiguous, text)
+        # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
+        number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
+        if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+            if is_num2words_compat:
+                # Pattern 2: Split big numbers into groups of 4
+                text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
+                text = re.sub(number_pattern, rep_num, text)
+            else:
+                # Pattern 2: Split big numbers into groups of 2
+                text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
+                # Fallback: Replace numbers using phonemes dictionary
+                sorted_numbers = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
+                if sorted_numbers:
+                    number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
+                    text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
     return text
 
 def convert2epub(session):
@@ -651,9 +617,10 @@ def get_ebook_title(epubBook, all_docs):
 def get_cover(epubBook, session):
     try:
         if session['cancellation_requested']:
-            print('Cancel requested')
+            msg = 'Cancel requested'
+            print(msg)
             return False
-        cover_image = False
+        cover_image = None
         cover_path = os.path.join(session['process_dir'], session['filename_noext'] + '.jpg')
         for item in epubBook.get_items_of_type(ebooklib.ITEM_COVER):
             cover_image = item.get_content()
@@ -664,9 +631,13 @@ def get_cover(epubBook, session):
                     cover_image = item.get_content()
                     break
         if cover_image:
-            with open(cover_path, 'wb') as cover_file:
-                cover_file.write(cover_image)
-                return cover_path
+            # Open the image from bytes
+            image = Image.open(io.BytesIO(cover_image))
+            # Convert to RGB if needed (JPEG doesn't support alpha)
+            if image.mode in ('RGBA', 'P'):
+                image = image.convert('RGB')
+            image.save(cover_path, format='JPEG')
+            return cover_path
         return True
     except Exception as e:
         DependencyError(e)
@@ -688,11 +659,12 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
+        is_num2words_compat = check_num2words_compat() 
         # Step 1: Extract TOC (Table of Contents)
         toc_list = []
         try:
             toc = epubBook.toc  # Extract TOC
-            toc_list = [normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine']) for item in toc if hasattr(item, 'title')]
+            toc_list = [normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat) for item in toc if hasattr(item, 'title')]
         except Exception as toc_error:
             error = f"Error extracting TOC: {toc_error}"
             print(error)
@@ -708,7 +680,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
         for doc in all_docs:
-            sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
+            sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
             if sentences_array is not None:
                 chapters.append(sentences_array)
         return toc, chapters
@@ -717,7 +689,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return None, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine):
+def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
     try:
         chapter_sentences = None
         raw_html = doc.get_body_content().decode("utf-8")
@@ -783,7 +755,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         text = "\n".join(text_array)
         if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
-            text = normalize_text(text, lang, lang_iso1, tts_engine)
+            text = normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat)
             if text.strip() and len(text.strip()) > 1:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
@@ -792,19 +764,21 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         return None
 
 def get_sentences(text, lang, tts_engine):
-    def combine_punctuation(tokens):
-        if not tokens:
-            return tokens
-        result = [tokens[0]]
-        for token in tokens[1:]:
+    def combine_punctuation(raw_list):
+        if not raw_list:
+            return raw_list
+        result = [raw_list[0]]
+        for sentence in raw_list[1:]:
+            if not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+                continue
             if (
-                not any(char.isalpha() for char in token)
-                and all(char.isspace() or char in punctuation_list_set for char in token)
-                and len(result[-1]) + len(token) <= max_chars
+                not any(char.isalpha() for char in sentence)
+                and all(char.isspace() or char in punctuation_list_set for char in sentence)
+                and len(result[-1]) + len(sentence) <= max_chars
             ):
-                result[-1] += token
+                result[-1] += sentence
             else:
-                result.append(token)
+                result.append(sentence)
         return result
 
     def segment_ideogramms(text):
@@ -826,11 +800,11 @@ def get_sentences(text, lang, tts_engine):
 
     def join_ideogramms(idg_list):
         buffer = ''
-        for token in idg_list:
-            if not token.strip():
+        for sentence in idg_list:
+            if not sentence.strip() or not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
                 continue
-            buffer += token
-            if token in punctuation_split_set:
+            buffer += sentence
+            if sentence in punctuation_split_set:
                 if len(buffer) > max_chars:
                     for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
                         if part.strip() and not all(c in punctuation_split_set for c in part):
@@ -852,6 +826,8 @@ def get_sentences(text, lang, tts_engine):
         min_diff = float('inf')
         punctuation_priority = '.!?,;:'
         space_priority = ' '
+        if not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+            return best_index
         for i in range(1, min(len(sentence), max_chars)):
             if sentence[i] in punctuation_priority:
                 left_len = i
@@ -873,6 +849,8 @@ def get_sentences(text, lang, tts_engine):
 
     def split_sentence(sentence):
         sentence = sentence.strip()
+        if not re.search(r'[^\W_]', sentence, re.UNICODE):
+            return []
         if len(sentence) <= max_chars:
             if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
@@ -934,7 +912,9 @@ def get_sentences(text, lang, tts_engine):
         tmp_list.pop()
     sentences = []
     for sentence in tmp_list:
-        sentences.extend(split_sentence(sentence.strip()))
+        sentence = sentence.strip()
+        if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+            sentences.extend(split_sentence(sentence))
     return sentences
 
 def get_ram():
@@ -1110,53 +1090,92 @@ def convert_chapters2audio(session):
         DependencyError(e)
         return False
 
+def assemble_chunks(txt_file, out_file):
+    try:
+        cmd = [
+            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
+            '-safe', '0', '-f', 'concat', '-i', txt_file,
+            '-c:a', default_audio_proc_format, '-map_metadata', '-1', out_file
+        ]
+        process = subprocess.Popen(
+            cmd,
+            env={},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding='utf-8',
+            errors='ignore'
+        )
+        for line in process.stdout:
+            print(line, end='')  # Print each line of stdout
+        process.wait()
+        if process.returncode == 0:
+            return True
+        else:
+            error = process.returncode
+            print(error, cmd)
+            return False
+    except subprocess.CalledProcessError as e:
+        DependencyError(e)
+        return False
+    except Exception as e:
+        error = f"assemble_chanks() Error: Failed to process {txt_file} → {out_file}: {e}"
+        print(error)
+        return False
+
 def combine_audio_sentences(chapter_audio_file, start, end, session):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
-        file_list = os.path.join(session['chapters_dir_sentences'], 'sentences.txt')
-        sentence_files = [f for f in os.listdir(session['chapters_dir_sentences']) if f.endswith(f'.{default_audio_proc_format}')]
-        sentences_dir_ordered = sorted(sentence_files, key=lambda x: int(re.search(r'\d+', x).group()))
+        chapters_dir_sentences = session['chapters_dir_sentences']
+        batch_size = 1024
+        sentence_files = [
+            f for f in os.listdir(chapters_dir_sentences)
+            if f.endswith(f'.{default_audio_proc_format}')
+        ]
+        sentences_ordered = sorted(
+            sentence_files, key=lambda x: int(os.path.splitext(x)[0])
+        )
         selected_files = [
-            os.path.join(session['chapters_dir_sentences'], f)
-            for f in sentences_dir_ordered
-            if start <= int(''.join(filter(str.isdigit, os.path.basename(f)))) <= end
+            os.path.join(chapters_dir_sentences, f)
+            for f in sentences_ordered
+            if start <= int(os.path.splitext(f)[0]) <= end
         ]
         if not selected_files:
-            error = 'No audio files found in the specified range.'
-            print(error)
+            print('No audio files found in the specified range.')
             return False
-        with open(file_list, 'w') as f:
-            for file in selected_files:
-                file = file.replace("\\", "/")
-                f.write(f'file {file}\n')
-        ffmpeg_cmd = [
-            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
-            '-c:a', default_audio_proc_format, '-map_metadata', '-1', chapter_audio_file
-        ]
-        try:
-            process = subprocess.Popen(
-                ffmpeg_cmd,
-                env={},
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                encoding='utf-8',
-                errors='ignore'
-            )
-            for line in process.stdout:
-                print(line, end='')  # Print each line of stdout
-            process.wait()
-            if process.returncode == 0:
-                os.remove(file_list)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            chunk_list = []
+            for i in range(0, len(selected_files), batch_size):
+                batch = selected_files[i:i + batch_size]
+                txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
+                out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
+                with open(txt, 'w') as f:
+                    for file in batch:
+                        f.write(f"file '{file.replace(os.sep, '/')}'\n")
+                chunk_list.append((txt, out))
+            try:
+                with Pool(cpu_count()) as pool:
+                    results = pool.starmap(assemble_chunks, chunk_list)
+            except Exception as e:
+                error = f"combine_audio_sentences() multiprocessing error: {e}"
+                print(error)
+                return False
+            if not all(results):
+                error = "combine_audio_sentences() One or more chunks failed."
+                print(error)
+                return False
+            # Final merge
+            final_list = os.path.join(tmpdir, 'sentences_final.txt')
+            with open(final_list, 'w') as f:
+                for _, chunk_path in chunk_list:
+                    f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
+            if assemble_chunks(final_list, chapter_audio_file):
                 msg = f'********* Combined block audio file saved to {chapter_audio_file}'
                 print(msg)
                 return True
             else:
-                error = process.returncode
-                print(error, ffmpeg_cmd)
+                error = "combine_audio_sentences() Final merge failed."
+                print(error)
                 return False
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
-            return False
     except Exception as e:
         DependencyError(e)
         return False
@@ -1164,96 +1183,123 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
 def combine_audio_chapters(session):
     def assemble_segments():
         try:
-            file_list = os.path.join(session['chapters_dir'], 'chapters.txt')
-            chapter_files_ordered = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
-            if not chapter_files_ordered:
-                error = 'No block files found.'
-                print(error)
-                return False
-            with open(file_list, "w") as f:
-                for file in chapter_files_ordered:
-                    file = file.replace("\\", "/")
-                    f.write(f"file '{file}'\n")
-            ffmpeg_cmd = [
-                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y', '-safe', '0', '-f', 'concat', '-i', file_list,
-                '-c:a', default_audio_proc_format, '-map_metadata', '-1', combined_chapters_file
-            ]
-            try:
-                process = subprocess.Popen(
-                    ffmpeg_cmd,
-                    env={},
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    encoding='utf-8',
-                    errors='ignore'
-                )
-                for line in process.stdout:
-                    print(line, end='')  # Print each line of stdout
-                process.wait()
-                if process.returncode == 0:
-                    os.remove(file_list)
+            batch_size = 1024
+            with tempfile.TemporaryDirectory() as tmpdir:
+                chapter_files_ordered = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
+                if not chapter_files_ordered:
+                    error = 'No block files found.'
+                    print(error)
+                    return False
+                chunk_list = []
+                for i in range(0, len(chapter_files_ordered), batch_size):
+                    batch = chapter_files_ordered[i:i + batch_size]
+                    txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
+                    out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
+                    with open(txt, 'w') as f:
+                        for file in batch:
+                            path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
+                            f.write(f"file '{path}'\n")
+                    chunk_list.append((txt, out))
+                try:
+                    with Pool(cpu_count()) as pool:
+                        results = pool.starmap(assemble_chunks, chunk_list)
+                except Exception as e:
+                    error = f"assemble_segments() multiprocessing error: {e}"
+                    print(error)
+                    return False
+                if not all(results):
+                    error = "assemble_segments() One or more chunks failed."
+                    print(error)
+                    return False
+                # Final merge
+                final_list = os.path.join(tmpdir, 'chapters_final.txt')
+                with open(final_list, 'w') as f:
+                    for _, chunk_path in chunk_list:
+                        f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
+                if assemble_chunks(final_list, combined_chapters_file):
                     msg = f'********* total audio blocks saved to {combined_chapters_file}'
                     print(msg)
                     return True
                 else:
-                    error = process.returncode
-                    print(error, ffmpeg_cmd)
+                    error = "assemble_segments() Final merge failed."
+                    print(error)
                     return False
-            except subprocess.CalledProcessError as e:
-                DependencyError(e)
-                return False
         except Exception as e:
             DependencyError(e)
             return False
 
     def generate_ffmpeg_metadata():
         try:
-            if session['cancellation_requested']:
-                print('Cancel requested')
-                return False
-            ffmpeg_metadata = ';FFMETADATA1\n'        
-            if session['metadata'].get('title'):
-                ffmpeg_metadata += f"title={session['metadata']['title']}\n"            
-            if session['metadata'].get('creator'):
-                ffmpeg_metadata += f"artist={session['metadata']['creator']}\n"
-            if session['metadata'].get('language'):
-                ffmpeg_metadata += f"language={session['metadata']['language']}\n\n"
-            if session['metadata'].get('publisher'):
-                ffmpeg_metadata += f"publisher={session['metadata']['publisher']}\n"              
-            if session['metadata'].get('description'):
-                ffmpeg_metadata += f"description={session['metadata']['description']}\n"
-            if session['metadata'].get('published'):
-                # Check if the timestamp contains fractional seconds
-                if '.' in session['metadata']['published']:
-                    # Parse with fractional seconds
-                    year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
-                else:
-                    # Parse without fractional seconds
-                    year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
-            else:
-                # If published is not provided, use the current year
-                year = datetime.now().year
-            ffmpeg_metadata += f'year={year}\n'
-            if session['metadata'].get('identifiers') and isinstance(session['metadata'].get('identifiers'), dict):
-                isbn = session['metadata']['identifiers'].get('isbn', None)
-                if isbn:
-                    ffmpeg_metadata += f'isbn={isbn}\n'  # ISBN
-                mobi_asin = session['metadata']['identifiers'].get('mobi-asin', None)
-                if mobi_asin:
-                    ffmpeg_metadata += f'asin={mobi_asin}\n'  # ASIN                   
-            start_time = 0
-            for index, chapter_file in enumerate(chapter_files):
+            if session['output_format'] not in ['wav', 'aac', 'flac']:
                 if session['cancellation_requested']:
-                    msg = 'Cancel requested'
-                    print(msg)
+                    print('Cancel requested')
                     return False
-                duration_ms = len(AudioSegment.from_file(os.path.join(session['chapters_dir'],chapter_file), format=default_audio_proc_format))
-                ffmpeg_metadata += f'[CHAPTER]\nTIMEBASE=1/1000\nSTART={start_time}\n'
-                ffmpeg_metadata += f'END={start_time + duration_ms}\ntitle=Part {index + 1}\n'
-                start_time += duration_ms
-            # Write the metadata to the file
-            with open(metadata_file, 'w', encoding='utf-8') as f:
-                f.write(ffmpeg_metadata)
+                ffmpeg_metadata = ';FFMETADATA1\n'
+                out_fmt = session['output_format']
+                is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
+                is_vorbis = out_fmt in ['ogg', 'webm']
+                is_mp3 = out_fmt == 'mp3'
+                supports_chapters = is_mp4_like or is_mp3
+                
+                def tag(key):
+                    return key.upper() if is_vorbis else key
+                
+                # Core tags
+                if session['metadata'].get('title'):
+                    ffmpeg_metadata += f"{tag('title')}={session['metadata']['title']}\n"
+                if session['metadata'].get('creator'):
+                    ffmpeg_metadata += f"{tag('artist')}={session['metadata']['creator']}\n"
+                if session['metadata'].get('language'):
+                    ffmpeg_metadata += f"{tag('language')}={session['metadata']['language']}\n"
+                if session['metadata'].get('description'):
+                    ffmpeg_metadata += f"{tag('description')}={session['metadata']['description']}\n"
+                # Publisher — only for MP3/MP4
+                if session['metadata'].get('publisher') and (is_mp4_like or is_mp3):
+                    ffmpeg_metadata += f"{tag('publisher')}={session['metadata']['publisher']}\n"
+                # Year/Date
+                if session['metadata'].get('published'):
+                    try:
+                        if '.' in session['metadata']['published']:
+                            year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
+                        else:
+                            year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
+                    except Exception:
+                        year = datetime.now().year
+                else:
+                    year = datetime.now().year
+                if is_vorbis:
+                    ffmpeg_metadata += f"{tag('date')}={year}\n"
+                else:
+                    ffmpeg_metadata += f"{tag('year')}={year}\n"
+                # Identifiers (only for MP3/MP4)
+                if session['metadata'].get('identifiers') and isinstance(session['metadata']['identifiers'], dict):
+                    if is_mp3 or is_mp4_like:
+                        isbn = session['metadata']['identifiers'].get('isbn')
+                        if isbn:
+                            ffmpeg_metadata += f"{tag('isbn')}={isbn}\n"
+                        asin = session['metadata']['identifiers'].get('mobi-asin')
+                        if asin:
+                            ffmpeg_metadata += f"{tag('asin')}={asin}\n"
+                # Chapters
+                if supports_chapters:
+                    ffmpeg_metadata += '\n'
+                    start_time = 0
+                    for index, chapter_file in enumerate(chapter_files):
+                        if session['cancellation_requested']:
+                            msg = 'Cancel requested'
+                            print(msg)
+                            return False
+                        duration_ms = len(AudioSegment.from_file(
+                            os.path.join(session['chapters_dir'], chapter_file),
+                            format=default_audio_proc_format
+                        ))
+                        chapter_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), session['chapters'][index][0].replace('‡pause‡', ''))
+                        ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
+                        ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
+                        ffmpeg_metadata += f"{tag('title')}={chapter_title}\n"
+                        start_time += duration_ms
+                with open(metadata_file, 'w', encoding='utf-8') as f:
+                    f.write(ffmpeg_metadata)
             return True
         except Exception as e:
             DependencyError(e)
@@ -1268,51 +1314,28 @@ def combine_audio_chapters(session):
             ffmpeg_combined_audio = combined_chapters_file
             ffmpeg_metadata_file = metadata_file
             ffmpeg_final_file = final_file
-            if session['cover'] is not None:
-                ffmpeg_cover = session['cover']                    
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio, '-i', ffmpeg_metadata_file]
+            # First pass
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
             if session['output_format'] == 'wav':
-                ffmpeg_cmd += ['-map', '0:a']
+                ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
             elif session['output_format'] ==  'aac':
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+                ffmpeg_cmd += ['-c:a', 'libfdk_aac', '-b:a', '192k', '-ar', '44100']
+            elif session['output_format'] == 'flac':
+                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
             else:
-                if ffmpeg_cover is not None:
-                    if session['output_format'] == 'mp3' or session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4' or session['output_format'] == 'flac':
-                        ffmpeg_cmd += ['-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
-                        if ffmpeg_cover.endswith('.png'):
-                            ffmpeg_cmd += ['-c:v', 'png', '-disposition:v', 'attached_pic']  # PNG cover
-                        else:
-                            ffmpeg_cmd += ['-c:v', 'copy', '-disposition:v', 'attached_pic']  # JPEG cover (no re-encoding needed)
-                    elif session['output_format'] == 'mov':
-                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v', '-shortest']
-                    elif session['output_format'] == 'webm':
-                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-map', '0:a', '-map', '2:v']
-                        ffmpeg_cmd += ['-c:v', 'libvpx-vp9', '-crf', '40', '-speed', '8', '-shortest']
-                    elif session['output_format'] == 'ogg':
-                        ffmpeg_cmd += ['-framerate', '1', '-loop', '1', '-i', ffmpeg_cover]
-                        ffmpeg_cmd += ['-filter_complex', '[2:v:0][0:a:0]concat=n=1:v=1:a=1[outv][rawa];[rawa]loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70[outa]', '-map', '[outv]', '-map', '[outa]', '-shortest']
-                    if ffmpeg_cover.endswith('.png'):
-                        ffmpeg_cmd += ['-pix_fmt', 'yuv420p']
-                else:
-                    ffmpeg_cmd += ['-map', '0:a']
-                if session['output_format'] == 'm4a' or session['output_format'] == 'm4b' or session['output_format'] == 'mp4':
-                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
-                    ffmpeg_cmd += ['-movflags', '+faststart']
-                elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
-                elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-compression_level', '0']
-                elif session['output_format'] == 'flac':
-                    ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '4']
+                ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
+                if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
+                    ffmpeg_cmd += ['-c:a', 'libfdk_aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
                 elif session['output_format'] == 'mp3':
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
-                if session['output_format'] != 'ogg':
-                    ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
-            ffmpeg_cmd += ['-strict', 'experimental', '-map_metadata', '1']
-            ffmpeg_cmd += ['-threads', '8', '-y', ffmpeg_final_file]
+                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
+                elif session['output_format'] == 'webm':
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
+                elif session['output_format'] == 'ogg':
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
+                ffmpeg_cmd += ['-map_metadata', '1']
+            ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
+            ffmpeg_cmd += ['-strict', 'experimental']
+            ffmpeg_cmd += ['-threads', '0', '-y', ffmpeg_final_file]
             try:
                 process = subprocess.Popen(
                     ffmpeg_cmd,
@@ -1326,6 +1349,37 @@ def combine_audio_chapters(session):
                     print(line, end='')  # Print each line of stdout
                 process.wait()
                 if process.returncode == 0:
+                    if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
+                        if session['cover'] is not None:
+                            ffmpeg_cover = session['cover']
+                            msg = f'Adding cover {ffmpeg_cover} into the final audiobook file...'
+                            print(msg)
+                            if session['output_format'] == 'mp3':
+                                from mutagen.mp3 import MP3
+                                from mutagen.id3 import ID3, APIC, error
+                                audio = MP3(ffmpeg_final_file, ID3=ID3)
+                                try:
+                                    audio.add_tags()
+                                except error:
+                                    pass
+                                with open(ffmpeg_cover, 'rb') as img:
+                                    audio.tags.add(
+                                        APIC(
+                                            encoding=3, # UTF-8
+                                            mime='image/jpeg',
+                                            type=3, # Front cover
+                                            desc='Cover',
+                                            data=img.read()
+                                        )
+                                    )
+                            elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
+                                from mutagen.mp4 import MP4, MP4Cover
+                                audio = MP4(ffmpeg_final_file)
+                                with open(ffmpeg_cover, 'rb') as f:
+                                    cover_data = f.read()
+                                audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
+                            if audio:
+                                audio.save()
                     return True
                 else:
                     error = process.returncode
@@ -1334,10 +1388,10 @@ def combine_audio_chapters(session):
             except subprocess.CalledProcessError as e:
                 DependencyError(e)
                 return False
- 
         except Exception as e:
             DependencyError(e)
             return False
+
     try:
         chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
         chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
@@ -1459,7 +1513,9 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-def convert_ebook_batch(args):
+def convert_ebook_batch(args, ctx):
+    global context
+    context = ctx
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
@@ -1477,7 +1533,7 @@ def convert_ebook_batch(args):
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
 
-def convert_ebook(args):
+def convert_ebook(args, ctx=None):
     try:
         global is_gui_process, context        
         error = None
@@ -1513,6 +1569,8 @@ def convert_ebook(args):
                 print(error)
                 return error, false
 
+            if ctx is not None:
+                context = ctx
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
             session = context.get_session(id)
@@ -1780,7 +1838,8 @@ def show_alert(state):
             elif state['type'] == 'success':
                 gr.Success(state['msg'])
 
-def web_interface(args):
+def web_interface(args, ctx):
+    global context
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
@@ -1812,6 +1871,8 @@ def web_interface(args):
     # Event to signal when the process should stop
     thread = None
     stop_event = threading.Event()
+    
+    context = ctx
 
     theme = gr.themes.Origin(
         primary_hue='green',
