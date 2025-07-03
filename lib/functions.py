@@ -1230,7 +1230,7 @@ def combine_audio_chapters(session):
 
     def generate_ffmpeg_metadata():
         try:
-            if session['output_format'] not in ['wav', 'aac']:
+            if session['output_format'] not in ['wav', 'aac', 'flac']:
                 if session['cancellation_requested']:
                     print('Cancel requested')
                     return False
