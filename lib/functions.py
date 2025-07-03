@@ -1237,8 +1237,8 @@ def combine_audio_chapters(session):
                 ffmpeg_metadata = ';FFMETADATA1\n'
                 out_fmt = session['output_format']
                 is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
-                is_mp3 = out_fmt == 'mp3'
                 is_vorbis = out_fmt in ['ogg', 'webm']
+                is_mp3 = out_fmt == 'mp3'
                 supports_chapters = is_mp4_like or is_mp3
                 
                 def tag(key):
@@ -1282,6 +1282,7 @@ def combine_audio_chapters(session):
                             ffmpeg_metadata += f"{tag('asin')}={asin}\n"
                 # Chapters
                 if supports_chapters:
+                    ffmpeg_metadata += '\n'
                     start_time = 0
                     for index, chapter_file in enumerate(chapter_files):
                         if session['cancellation_requested']:
