@@ -1322,13 +1322,13 @@ def combine_audio_chapters(session):
             elif session['output_format'] == 'flac':
                 ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100']
             else:
-                ffmpeg_cmd += ['-i', ffmpeg_metadata_file, '-map', '0:a']
+                ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
                     ffmpeg_cmd += ['-c:a', 'libfdk_aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart']
                 elif session['output_format'] == 'mp3':
                     ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
                 elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '-b:a', '192k', '-ar', '48000']
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
                 elif session['output_format'] == 'ogg':
                     ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
                 ffmpeg_cmd += ['-map_metadata', '1']
