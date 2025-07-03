@@ -1318,9 +1318,9 @@ def combine_audio_chapters(session):
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a', '-ar', '44100']
             elif session['output_format'] ==  'aac':
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k']
+                ffmpeg_cmd += ['-c:a', 'aac', '-ar', '44100']
             elif session['output_format'] == 'flac':
-                ffmpeg_cmd += ['-i', ffmpeg_metadata_file, '-c:a', 'flac', '-compression_level', '4', '-map_metadata', '1']
+                ffmpeg_cmd += ['-i', ffmpeg_metadata_file, '-c:a', 'flac', '-compression_level', '5', '-map_metadata', '1']
             else:
                 ffmpeg_cmd += ['-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4']:
