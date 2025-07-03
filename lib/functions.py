@@ -1238,7 +1238,7 @@ def combine_audio_chapters(session):
                 out_fmt = session['output_format']
                 is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
                 is_mp3 = out_fmt == 'mp3'
-                is_vorbis = out_fmt in ['flac', 'ogg', 'webm']
+                is_vorbis = out_fmt in ['ogg', 'webm']
                 supports_chapters = is_mp4_like or is_mp3
                 
                 def tag(key):
@@ -1320,10 +1320,10 @@ def combine_audio_chapters(session):
             elif session['output_format'] ==  'aac':
                 ffmpeg_cmd += ['-c:a', 'libfdk_aac', '-b:a', '192k', '-ar', '44100']
             elif session['output_format'] == 'flac':
-                ffmpeg_cmd += ['-i', ffmpeg_metadata_file, '-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-map_metadata', '1']
+                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100']
             else:
                 ffmpeg_cmd += ['-i', ffmpeg_metadata_file, '-map', '0:a']
-                if session['output_format'] in ['m4a', 'm4b', 'mp4']:
+                if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
                     ffmpeg_cmd += ['-c:a', 'libfdk_aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart']
                 elif session['output_format'] == 'mp3':
                     ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
