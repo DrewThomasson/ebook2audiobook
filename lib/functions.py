@@ -1329,14 +1329,13 @@ def combine_audio_chapters(session):
                 elif session['output_format'] == 'webm':
                     ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '64k']
                 elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-compression_level', '0']
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-ar', '44100']
                 elif session['output_format'] == 'mp3':
                     ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k']
                 ffmpeg_cmd += ['-map_metadata', '1']
             ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
             ffmpeg_cmd += ['-strict', 'experimental']
             ffmpeg_cmd += ['-threads', '0', '-y', ffmpeg_final_file]
-            print(ffmpeg_cmd)
             try:
                 process = subprocess.Popen(
                     ffmpeg_cmd,
