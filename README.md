@@ -507,11 +507,12 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
    we don't speak every language and need advise from users to fine tune the sentence splitting logic.😊
 
 
-## What I need help with! 🙌 
+## What we need help with! 🙌 
 ## [Full list of things can be found here](https://github.com/DrewThomasson/ebook2audiobook/issues/32)
-- Any help from people speaking any of the supported languages to help with proper sentence splitting methods
-- Potentially creating readme Guides for Multiple languages(Becuase the only language I know is English 😔)
+- Any help from people speaking any of the supported languages to help us improve the models
 
+## Do you need to rent a GPU to boost service from us?
+- A poll is open here https://github.com/DrewThomasson/ebook2audiobook/discussions/889
 
 ## Special Thanks
 - **Coqui TTS**: [Coqui TTS GitHub](https://github.com/idiap/coqui-ai-TTS)
