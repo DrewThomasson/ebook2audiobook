@@ -1293,10 +1293,10 @@ def combine_audio_chapters(session):
                             os.path.join(session['chapters_dir'], chapter_file),
                             format=default_audio_proc_format
                         ))
-                        chapter_title = session['chapters'][index][0].replace('‡pause‡', '')
+                        chapter_title = re.sub(r'(^#)|[=\\]', lambda m: '\\' + (m.group(1) if m.group(1) else m.group(0)), session['chapters'][index][0].replace('‡pause‡', ''))
                         ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
                         ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
-                        ffmpeg_metadata += f"{tag('title')}={re.sub(r'(^#)|[=\\]', lambda m: r'\\' + (m.group(1) if m.group(1) else m.group(0)), chapter_title)}\n"
+                        ffmpeg_metadata += f"{tag('title')}={chapter_title}\n"
                         start_time += duration_ms
                 with open(metadata_file, 'w', encoding='utf-8') as f:
                     f.write(ffmpeg_metadata)
