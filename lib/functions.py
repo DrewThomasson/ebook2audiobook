@@ -1,4 +1,4 @@
-# NOTE!!NOTE!!!NOTE!!NOTE!!!NOTE!!NOTE!!!NOTE!!NOTE!!!
+e# NOTE!!NOTE!!!NOTE!!NOTE!!!NOTE!!NOTE!!!NOTE!!NOTE!!!
 # THE WORD "CHAPTER" IN THE CODE DOES NOT MEAN
 # IT'S THE REAL CHAPTER OF THE EBOOK SINCE NO STANDARDS
 # ARE DEFINING A CHAPTER ON .EPUB FORMAT. THE WORD "BLOCK"
@@ -1319,13 +1319,13 @@ def combine_audio_chapters(session):
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
             elif session['output_format'] ==  'aac':
-                ffmpeg_cmd += ['-c:a', 'libfdk_aac', '-b:a', '192k', '-ar', '44100']
+                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
             elif session['output_format'] == 'flac':
                 ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
             else:
                 ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
-                    ffmpeg_cmd += ['-c:a', 'libfdk_aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
+                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
                 elif session['output_format'] == 'mp3':
                     ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
                 elif session['output_format'] == 'webm':
