@@ -1348,7 +1348,7 @@ def combine_audio_chapters(session):
                     print(line, end='')  # Print each line of stdout
                 process.wait()
                 if process.returncode == 0:
-                    if session['output_format'] in ['mp3', 'm4a', 'm4b']:
+                    if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                         if session['cover'] is not None:
                             ffmpeg_cover = session['cover']
                             msg = f'Adding cover {ffmpeg_cover} into the final audiobook file...'
