@@ -24,7 +24,6 @@ import random
 import regex as re
 import requests
 import shutil
-import pynvml
 import socket
 import subprocess
 import sys
@@ -947,39 +946,66 @@ def get_ram():
     vm = psutil.virtual_memory()
     return vm.total // (1024 ** 3)
 
-def get_total_vram_gb():
-    """Gets the total VRAM of the first NVIDIA GPU in Gigabytes."""
+def get_vram():
+    os_name = platform.system()
+    # NVIDIA (Cross-Platform: Windows, Linux, macOS)
     try:
-        pynvml.nvmlInit()
-        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-        info = pynvml.nvmlDeviceGetMemoryInfo(handle)
-        pynvml.nvmlShutdown()
-        # Return total memory in GB, rounded to nearest integer
-        return round(info.total / (1024**3))
+        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
+        nvmlInit()
+        handle = nvmlDeviceGetHandleByIndex(0)  # First GPU
+        info = nvmlDeviceGetMemoryInfo(handle)
+        vram = info.total
+        return int(vram // (1024 ** 3))  # Convert to GB
+    except ImportError:
+        pass
     except Exception as e:
-        # Return 0 if pynvml is not installed or GPU is not available
-        return 0
-
-def get_free_vram_mb():
-    """Gets the free VRAM of the first NVIDIA GPU in Megabytes."""
-    if pynvml is None:
-        print("pynvml library not found. Cannot determine free VRAM.")
-        return None
-    try:
-        pynvml.nvmlInit()
-        handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-        info = pynvml.nvmlDeviceGetMemoryInfo(handle)
-        pynvml.nvmlShutdown()
-        # Return free memory in MB
-        return info.free / (1024**2)
-    except Exception as e:
-        print(f"Error querying GPU for VRAM: {e}")
-        # Ensure shutdown is called even on error
+        pass
+    # AMD (Windows)
+    if os_name == "Windows":
         try:
-            pynvml.nvmlShutdown()
-        except Exception:
+            cmd = 'wmic path Win32_VideoController get AdapterRAM'
+            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+            lines = output.stdout.splitlines()
+            vram_values = [int(line.strip()) for line in lines if line.strip().isdigit()]
+            if vram_values:
+                return int(vram_values[0] // (1024 ** 3))
+        except Exception as e:
             pass
-        return None
+    # AMD (Linux)
+    if os_name == "Linux":
+        try:
+            cmd = "lspci -v | grep -i 'VGA' -A 12 | grep -i 'preallocated' | awk '{print $2}'"
+            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
+            if output.stdout.strip().isdigit():
+                return int(output.stdout.strip()) // 1024
+        except Exception as e:
+            pass
+    # Intel (Linux Only)
+    intel_vram_paths = [
+        "/sys/kernel/debug/dri/0/i915_vram_total",  # Intel dedicated GPUs
+        "/sys/class/drm/card0/device/resource0"  # Some integrated GPUs
+    ]
+    for path in intel_vram_paths:
+        if os.path.exists(path):
+            try:
+                with open(path, "r") as f:
+                    vram = int(f.read().strip()) // (1024 ** 3)
+                    return vram
+            except Exception as e:
+                pass
+    # macOS (OpenGL Alternative)
+    if os_name == "Darwin":
+        try:
+            from OpenGL.GL import glGetIntegerv
+            from OpenGL.GLX import GLX_RENDERER_VIDEO_MEMORY_MB_MESA
+            vram = int(glGetIntegerv(GLX_RENDERER_VIDEO_MEMORY_MB_MESA) // 1024)
+            return vram
+        except ImportError:
+            pass
+        except Exception as e:
+            pass
+    msg = 'Could not detect GPU VRAM Capacity!'
+    return 0
 
 def get_sanitized(str, replacement="_"):
     str = str.replace('&', 'And')
@@ -996,37 +1022,14 @@ def convert_chapters2audio(session):
             return False
 
         progress_bar = gr.Progress(track_tqdm=True) if is_gui_process else None
-
-        # --- Dynamic VRAM-based Worker Calculation ---
-        print("Profiling VRAM usage for the selected TTS model...")
-        vram_before_load = get_free_vram_mb()
-
         tts_manager = TTSManager(session)
         if not tts_manager:
             print(f"TTS engine {session['tts_engine']} could not be loaded! Check memory and model configuration.")
             return False
 
-        vram_after_load = get_free_vram_mb()
-
-        # This is a conservative estimate for the VRAM used by a single inference task.
-        VRAM_PER_INFERENCE_TASK_MB = 250  # A safe buffer for each parallel conversion
-        DEFAULT_WORKERS = 2
-
-        if vram_before_load is not None and vram_after_load is not None:
-            model_vram_cost = vram_before_load - vram_after_load
-            print(f"TTS model loaded. VRAM cost: {model_vram_cost:.0f}MB.")
-            
-            # Calculate workers based on REMAINING VRAM
-            remaining_vram = vram_after_load
-            # Use 90% of remaining VRAM as a safety margin for inference tasks
-            num_workers = max(1, int((remaining_vram * 0.9) / VRAM_PER_INFERENCE_TASK_MB))
-            print(f"Remaining VRAM is {remaining_vram:.0f}MB. Setting max parallel TTS tasks to {num_workers}.")
-        else:
-            num_workers = DEFAULT_WORKERS
-            print(f"Could not determine free VRAM. Falling back to default of {num_workers} workers.")
-
-        # The semaphore will limit the number of concurrent GPU tasks
-        gpu_semaphore = threading.Semaphore(num_workers)
+        # Set a fixed number of workers for the GPU-bound TTS task
+        num_workers = session.get('num_workers', 5)
+        print(f"Using {num_workers} parallel threads for TTS conversion.")
 
         # Flatten all sentences from all chapters into a single list with their original index
         all_sentences = []
@@ -1050,19 +1053,14 @@ def convert_chapters2audio(session):
         if not sentences_to_process:
             print("All sentences have already been converted. Proceeding to combine chapters.")
         else:
-            print(f"Found {len(existing_sentence_numbers)} existing sentences. Processing {len(sentences_to_process)} new sentences...")
+            print(f"Found {len(existing_sentence_numbers)} existing sentences. Processing {len(sentences_to_process)} new sentences with {num_workers} threads...")
 
             def convert_sentence_worker(sentence_data):
                 sentence_number, sentence, _ = sentence_data
                 if session.get('cancellation_requested'):
                     return None
-
-                # Acquire a slot from the semaphore before accessing the GPU
-                gpu_semaphore.acquire()
                 try:
-                    # Check for cancellation again after acquiring the lock
-                    if session.get('cancellation_requested'):
-                        return None
+                    # Each thread will call the TTS conversion function
                     success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                     if success:
                         return sentence_number
@@ -1073,14 +1071,9 @@ def convert_chapters2audio(session):
                     print(f"An exception occurred while processing sentence {sentence_number}: {e}")
                     traceback.print_exc()
                     return None
-                finally:
-                    # ALWAYS release the semaphore slot, even if an error occurred
-                    gpu_semaphore.release()
 
             with tqdm(total=len(sentences_to_process), desc='Converting Sentences', unit='sentence') as pbar:
-                # The executor can have more threads than the semaphore allows.
-                # This ensures threads are ready to pick up tasks as soon as the GPU is free.
-                with ThreadPoolExecutor(max_workers=num_workers * 2) as executor:
+                with ThreadPoolExecutor(max_workers=num_workers) as executor:
                     # Submit all sentences to the executor
                     futures = {executor.submit(convert_sentence_worker, s): s for s in sentences_to_process}
                     
@@ -1600,6 +1593,7 @@ def convert_ebook(args):
             session['language_iso1'] = args['language_iso1']
             session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
             session['custom_model'] = args['custom_model'] if not is_gui_process or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
+            session['num_workers'] = args['num_workers']
             session['fine_tuned'] = args['fine_tuned']
             session['output_format'] = args['output_format']
             session['temperature'] =  args['temperature']
@@ -1666,7 +1660,7 @@ def convert_ebook(args):
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
                         msg_extra = ''
-                        vram_avail = get_total_vram_gb()
+                        vram_avail = get_vram()
                         if vram_avail <= 4:
                             msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
                             if session['tts_engine'] == TTS_ENGINES['BARK']:
