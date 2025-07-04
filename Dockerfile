@@ -1,5 +1,5 @@
+# Stage 1: Base image with system dependencies
 ARG BASE=python:3.12
-ARG BASE_IMAGE=base
 FROM ${BASE} AS base
 
 # Set environment PATH for local installations
@@ -16,22 +16,26 @@ RUN apt-get update && \
 # Install Rust compiler
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-# Copy the application
+ENV UNIDIC_DIR=/root/.local/share/unidic
+
+# Stage 2: Final application image with dependencies and app code
+FROM base
+
 WORKDIR /app
-COPY . /app
+
+# --- Dependency Installation ---
+# Copy ONLY the requirements file first to leverage Docker layer caching.
+COPY requirements.txt .
+
+# Add build arguments for dependency installation
+ARG TORCH_VERSION=""
+
 # Install UniDic (non-torch dependent)
+# This and the subsequent RUN command for dependencies will be cached as long as
+# requirements.txt and TORCH_VERSION arg don't change.
 RUN pip install --no-cache-dir unidic-lite unidic && \
     python3 -m unidic download && \
     mkdir -p /root/.local/share/unidic
-ENV UNIDIC_DIR=/root/.local/share/unidic
-
-# Second stage for PyTorch installation + swappable base image if you want to use a pulled image
-FROM $BASE_IMAGE AS pytorch
-# Add parameter for PyTorch version with a default empty value
-ARG TORCH_VERSION=""
-# Add parameter to control whether to skip the XTTS test
-ARG SKIP_XTTS_TEST="false"
-
 
 # Extract torch versions from requirements.txt or set to empty strings if not found
 RUN TORCH_VERSION_REQ=$(grep -E "^torch==" requirements.txt | cut -d'=' -f3 || echo "") && \
@@ -39,7 +43,7 @@ RUN TORCH_VERSION_REQ=$(grep -E "^torch==" requirements.txt | cut -d'=' -f3 || e
     TORCHVISION_VERSION_REQ=$(grep -E "^torchvision==" requirements.txt | cut -d'=' -f3 || echo "") && \
     echo "Found in requirements: torch==$TORCH_VERSION_REQ torchaudio==$TORCHAUDIO_VERSION_REQ torchvision==$TORCHVISION_VERSION_REQ"
 
-# Install PyTorch with CUDA support if specified
+# Install PyTorch and other requirements
 RUN if [ ! -z "$TORCH_VERSION" ]; then \
         # Check if we need to use specific versions or get the latest
         if [ ! -z "$TORCH_VERSION_REQ" ] && [ ! -z "$TORCHVISION_VERSION_REQ" ] && [ ! -z "$TORCHAUDIO_VERSION_REQ" ]; then \
@@ -59,11 +63,9 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
             CUDA_VERSION=$(echo "$TORCH_VERSION" | sed 's/cuda//g') && \
             echo "Detected CUDA version: $CUDA_VERSION" && \
             echo "Attempting to install PyTorch nightly for CUDA $CUDA_VERSION..." && \
-            #if ! pip install --no-cache-dir --pre $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
             if ! pip install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
                 echo "❌ Nightly build for CUDA $CUDA_VERSION not available or failed" && \
                 echo "🔄 Trying stable release for CUDA $CUDA_VERSION..." && \
-                #if pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
                 if pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
                     echo "✅ Successfully installed stable PyTorch for CUDA $CUDA_VERSION"; \
                 else \
@@ -78,11 +80,9 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
             # Handle non-CUDA cases (existing functionality)
             case "$TORCH_VERSION" in \
                 "rocm") \
-                    # Using the correct syntax for ROCm PyTorch installation
                     pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/rocm6.2 \
                     ;; \
                 "xpu") \
-                    # Install PyTorch with Intel XPU support through IPEX
                     pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC && \
                     pip install --no-cache-dir intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/ \
                     ;; \
@@ -102,6 +102,13 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
         # Install all requirements as specified
         pip install --no-cache-dir --upgrade -r requirements.txt; \
     fi
+
+# --- Application Setup ---
+# Now copy the application code. Changes here won't bust the dependency cache.
+COPY . .
+
+# Add parameter to control whether to skip the XTTS test
+ARG SKIP_XTTS_TEST="false"
 
 # Do a test run to pre-download and bake base models into the image, but only if SKIP_XTTS_TEST is not true
 RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
