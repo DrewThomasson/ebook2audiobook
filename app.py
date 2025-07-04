@@ -141,7 +141,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
         '--custom_model', '--fine_tuned', '--output_format',
         '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', '--top_k', '--top_p', '--speed', '--enable_text_splitting',
-        '--text_temp', '--waveform_temp',
+        '--text_temp', '--waveform_temp', '--num_workers',
         '--output_dir', '--version', '--workflow', '--help'
     ]
     tts_engine_list_keys = [k for k in TTS_ENGINES.keys()]
@@ -191,9 +191,10 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
     Default to {default_engine_settings[TTS_ENGINES['BARK']]['text_temp']}. Higher temperatures lead to more creative outputs.""")
     headless_optional_group.add_argument(options[22], type=float, default=None, help=f"""(bark only, optional) Waveform Temperature for the model. 
     Default to {default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']}. Higher temperatures lead to more creative outputs.""")
-    headless_optional_group.add_argument(options[23], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[24], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
-    headless_optional_group.add_argument(options[25], action='store_true', help=argparse.SUPPRESS)
+    headless_optional_group.add_argument(options[23], type=int, default=5, help='''(Optional) Number of parallel threads for TTS conversion. Default is 5.''')
+    headless_optional_group.add_argument(options[24], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
+    headless_optional_group.add_argument(options[25], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
+    headless_optional_group.add_argument(options[26], action='store_true', help=argparse.SUPPRESS)
     
     for arg in sys.argv:
         if arg.startswith('--') and arg not in options:
