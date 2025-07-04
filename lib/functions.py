@@ -1346,7 +1346,7 @@ def combine_audio_chapters(session):
 
                 segment_output_path = os.path.join(segment_dir, f"segment_{segment_index}.{session['output_format']}")
                 
-                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', combined_chapters_file, '-ss', str(start_time)] + end_time_arg
+                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-ss', str(start_time), '-i', combined_chapters_file] + end_time_arg
 
                 if session['output_format'] == 'wav': pass
                 elif session['output_format'] == 'aac': ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
