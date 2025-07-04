@@ -1394,7 +1394,8 @@ def combine_audio_chapters(session):
 
             concat_file_path = os.path.join(segment_dir, 'concat.txt')
             with open(concat_file_path, 'w', encoding='utf-8') as f:
-                for seg_path in sorted(processed_segment_paths):
+                # Sort using a key that extracts the number from the filename to ensure correct order
+                for seg_path in sorted(processed_segment_paths, key=lambda p: int(re.search(r'_(\d+)\.', os.path.basename(p)).group(1))):
                     f.write(f"file '{seg_path.replace(os.sep, '/')}'\n")
 
             temp_final_file = os.path.join(session['process_dir'], f"temp_final.{session['output_format']}")
