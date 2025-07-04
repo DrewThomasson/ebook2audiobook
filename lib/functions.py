@@ -1331,13 +1331,36 @@ def combine_audio_chapters(session):
             
             processed_segments = [None] * num_workers
 
-            def process_segment(segment_index):
-                start_time = segment_index * (duration / num_workers)
-                end_time_arg = ['-to', str(start_time + (duration / num_workers))] if segment_index < num_workers - 1 else []
+            # --- Pre-split the audio file into raw segments --- 
+            print("Splitting the combined audio into raw segments to avoid seeking issues...")
+            raw_segment_dir = os.path.join(session['process_dir'], 'raw_segments')
+            os.makedirs(raw_segment_dir, exist_ok=True)
+            raw_segment_files = []
 
+            for i in range(num_workers):
+                start_time = i * (duration / num_workers)
+                end_time_arg = ['-to', str(start_time + (duration / num_workers))] if i < num_workers - 1 else []
+                raw_segment_path = os.path.join(raw_segment_dir, f'raw_segment_{i}.{default_audio_proc_format}')
+                raw_segment_files.append(raw_segment_path)
+                
+                # Use fast input seeking for splitting, as no complex filters are applied here.
+                split_cmd = [shutil.which('ffmpeg'), '-ss', str(start_time), '-i', combined_chapters_file] + end_time_arg + ['-c', 'copy', '-y', raw_segment_path]
+                
+                try:
+                    subprocess.run(split_cmd, check=True, capture_output=True, text=True, encoding='utf-8')
+                except subprocess.CalledProcessError as e:
+                    print(f"Error splitting audio file for segment {i}:\nCMD: {' '.join(e.cmd)}\nSTDERR: {e.stderr}")
+                    shutil.rmtree(raw_segment_dir, ignore_errors=True)
+                    return False
+            
+            print("Successfully split audio into raw segments.")
+
+            def process_segment(raw_segment_path):
+                segment_index = int(re.search(r'_(\d+)\.', os.path.basename(raw_segment_path)).group(1))
                 segment_output_path = os.path.join(segment_dir, f"segment_{segment_index}.{session['output_format']}")
                 
-                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', combined_chapters_file, '-ss', str(start_time)] + end_time_arg
+                # Command now uses the pre-split raw segment as input, no seeking needed.
+                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', raw_segment_path]
 
                 if session['output_format'] == 'wav': pass
                 elif session['output_format'] == 'aac': ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
@@ -1352,26 +1375,28 @@ def combine_audio_chapters(session):
                 ffmpeg_cmd += ['-y', segment_output_path]
 
                 try:
-                    result = subprocess.run(ffmpeg_cmd, check=True, capture_output=True, text=True, encoding='utf-8')
-                    processed_segments[segment_index] = segment_output_path
-                    return True
+                    subprocess.run(ffmpeg_cmd, check=True, capture_output=True, text=True, encoding='utf-8')
+                    return segment_output_path
                 except subprocess.CalledProcessError as e:
                     print(f"Error processing segment {segment_index}:\nCMD: {' '.join(e.cmd)}\nSTDERR: {e.stderr}")
-                    return False
+                    return None
 
             with ThreadPoolExecutor(max_workers=num_workers) as executor:
-                results = list(executor.map(process_segment, range(num_workers)))
+                processed_segment_paths = list(executor.map(process_segment, raw_segment_files))
 
-            if not all(results):
+            # Clean up the raw segments directory as it's no longer needed
+            shutil.rmtree(raw_segment_dir, ignore_errors=True)
+
+            if any(p is None for p in processed_segment_paths):
                 print("One or more segments failed to process. Aborting.")
                 shutil.rmtree(segment_dir, ignore_errors=True)
                 return False
 
             concat_file_path = os.path.join(segment_dir, 'concat.txt')
             with open(concat_file_path, 'w', encoding='utf-8') as f:
-                for i in range(num_workers):
-                    seg_path = os.path.join(segment_dir, f"segment_{i}.{session['output_format']}").replace(os.sep, '/')
-                    f.write(f"file '{seg_path}'\n")
+                # Sort using a key that extracts the number from the filename to ensure correct order
+                for seg_path in sorted(processed_segment_paths, key=lambda p: int(re.search(r'_(\d+)\.', os.path.basename(p)).group(1))):
+                    f.write(f"file '{seg_path.replace(os.sep, '/')}'\n")
 
             temp_final_file = os.path.join(session['process_dir'], f"temp_final.{session['output_format']}")
             concat_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-f', 'concat', '-safe', '0', '-i', concat_file_path, '-c', 'copy', '-y', temp_final_file]
