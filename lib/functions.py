@@ -5,6 +5,9 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
+#TODO: Make GPU release memory before moving onto FFMPEG file conversion, normalization, and noise reduction process
+#TODO: Make this process send a signal to observer before FFMPEG process starts to that observer can start the next book conversion process and use the GPU while the CPU is occupied 
+
 import argparse
 import asyncio
 import csv
