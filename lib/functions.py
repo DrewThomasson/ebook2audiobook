@@ -5,6 +5,9 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
+#TODO: Make GPU release memory before moving onto FFMPEG file conversion, normalization, and noise reduction process
+#TODO: Make this process send a signal to observer before FFMPEG process starts to that observer can start the next book conversion process and use the GPU while the CPU is occupied 
+
 import argparse
 import asyncio
 import csv
@@ -15,6 +18,7 @@ import gc
 import gradio as gr
 import hashlib
 import json
+import multiprocessing
 import math
 import os
 import platform
@@ -29,7 +33,7 @@ import subprocess
 import sys
 import stanza
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import time
 import torch
 import urllib.request
@@ -1015,6 +1019,30 @@ def get_sanitized(str, replacement="_"):
     sanitized = sanitized.strip("_")
     return sanitized
 
+tts_manager = None
+
+def init_worker_process(session_data):
+    """Initializes a TTSManager for each worker process."""
+    global tts_manager
+    session = recursive_proxy(session_data)
+    tts_manager = TTSManager(session)
+
+def process_sentence_chunk(chunk):
+    """
+    Processes a chunk of sentences in a single worker process.
+    `chunk` is a list of tuples: [(sentence_number, sentence_text), ...]
+    """
+    global tts_manager
+    if tts_manager is None:
+        # Worker not initialized, return empty success
+        return (0, [])
+    results = []
+    for sentence_number, sentence in chunk:
+        result = tts_manager.convert_sentence2audio(sentence_number, sentence)
+        results.append(result)
+    # Return the number of processed items for the progress bar
+    return (len(chunk), results)
+
 def convert_chapters2audio(session):
     try:
         if session.get('cancellation_requested'):
@@ -1022,80 +1050,64 @@ def convert_chapters2audio(session):
             return False
 
         progress_bar = gr.Progress(track_tqdm=True) if is_gui_process else None
-        tts_manager = TTSManager(session)
-        if not tts_manager:
-            print(f"TTS engine {session['tts_engine']} could not be loaded! Check memory and model configuration.")
-            return False
-
-        # Set a fixed number of workers for the GPU-bound TTS task
         num_workers = session.get('num_workers', 5)
-        print(f"Using {num_workers} parallel threads for TTS conversion.")
+        print(f"Starting TTS conversion with {num_workers} processes.")
 
-        # Flatten all sentences from all chapters into a single list with their original index
+        # --- Sentence Preparation & Resume Logic ---
         all_sentences = []
-        sentence_idx = 0
-        for chapter_index, sentences in enumerate(session['chapters']):
-            for sentence_text in sentences:
-                all_sentences.append((sentence_idx, sentence_text, chapter_index))
-                sentence_idx += 1
+        for sentences in session['chapters']:
+            all_sentences.extend(sentences)
         
         total_sentences = len(all_sentences)
+        all_sentences_with_indices = list(enumerate(all_sentences))
 
-        # --- Resume Logic ---
+        existing_sentence_files = os.listdir(session['chapters_dir_sentences'])
         existing_sentence_numbers = {
             int(re.search(r'\d+', f).group())
-            for f in os.listdir(session['chapters_dir_sentences'])
+            for f in existing_sentence_files
             if f.endswith(f'.{default_audio_proc_format}')
         }
         
-        sentences_to_process = [s for s in all_sentences if s[0] not in existing_sentence_numbers]
+        sentences_to_process = [s for s in all_sentences_with_indices if s[0] not in existing_sentence_numbers]
         
         if not sentences_to_process:
             print("All sentences have already been converted. Proceeding to combine chapters.")
         else:
-            print(f"Found {len(existing_sentence_numbers)} existing sentences. Processing {len(sentences_to_process)} new sentences with {num_workers} threads...")
+            print(f"Found {len(existing_sentence_numbers)} existing sentences. Processing {len(sentences_to_process)} new sentences...")
 
-            def convert_sentence_worker(sentence_data):
-                sentence_number, sentence, _ = sentence_data
-                if session.get('cancellation_requested'):
-                    return None
-                try:
-                    # Each thread will call the TTS conversion function
-                    success = tts_manager.convert_sentence2audio(sentence_number, sentence)
-                    if success:
-                        return sentence_number
-                    else:
-                        print(f"TTS conversion failed for sentence {sentence_number}: {sentence[:80]}...")
-                        return None
-                except Exception as e:
-                    print(f"An exception occurred while processing sentence {sentence_number}: {e}")
-                    traceback.print_exc()
-                    return None
+            # --- TTS Conversion with Chunking ---
+            chunk_size = 20
+            chunks = [sentences_to_process[i:i + chunk_size] for i in range(0, len(sentences_to_process), chunk_size)]
+            session_data = dict(session)
 
             with tqdm(total=len(sentences_to_process), desc='Converting Sentences', unit='sentence') as pbar:
-                with ThreadPoolExecutor(max_workers=num_workers) as executor:
-                    # Submit all sentences to the executor
-                    futures = {executor.submit(convert_sentence_worker, s): s for s in sentences_to_process}
+                # Ensure spawn method is used for multiprocessing to be GPU-safe
+                with ProcessPoolExecutor(max_workers=num_workers, mp_context=multiprocessing.get_context('spawn'), initializer=init_worker_process, initargs=(session_data,)) as executor:
+                    futures = [executor.submit(process_sentence_chunk, chunk) for chunk in chunks]
                     
-                    # Process results as they are completed
                     for future in as_completed(futures):
                         if session.get('cancellation_requested'):
                             executor.shutdown(wait=False, cancel_futures=True)
                             print("Cancellation requested, stopping sentence conversion.")
-                            return False
+                            break
                         
-                        result = future.result()
-                        if result is not None:
-                            pbar.update(1)
-                            if progress_bar:
-                                overall_progress = (len(existing_sentence_numbers) + pbar.n) / total_sentences
-                                progress_bar(overall_progress)
-                        else:
-                            # If any sentence fails, stop the entire process
-                            print("A sentence failed to convert. Stopping all processing.")
+                        try:
+                            processed_count, results = future.result()
+                            if processed_count > 0:
+                                pbar.update(processed_count)
+                                if progress_bar:
+                                    overall_progress = (len(existing_sentence_numbers) + pbar.n) / total_sentences
+                                    progress_bar(overall_progress)
+                        except Exception as e:
+                            print(f"A sentence chunk failed to process: {e}")
+                            traceback.print_exc()
                             executor.shutdown(wait=False, cancel_futures=True)
                             return False
-        
+
+        if session.get('cancellation_requested'):
+            print("Conversion cancelled. Skipping chapter combination.")
+            return False
+
         # --- Combine Sentences into Chapters ---
         print("All sentences converted. Combining into chapter files...")
         sentence_number = 0
@@ -1105,7 +1117,6 @@ def convert_chapters2audio(session):
             start_sentence = sentence_number
             end_sentence = sentence_number + len(sentences) - 1
 
-            # Check if chapter file already exists to avoid re-combining
             if os.path.exists(os.path.join(session['chapters_dir'], chapter_audio_file)):
                 print(f"Chapter {chapter_num} already exists. Skipping combination.")
                 sentence_number = end_sentence + 1
