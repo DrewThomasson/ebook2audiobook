@@ -18,6 +18,7 @@ import gc
 import gradio as gr
 import hashlib
 import json
+import multiprocessing
 import math
 import os
 import platform
@@ -1080,7 +1081,8 @@ def convert_chapters2audio(session):
             session_data = dict(session)
 
             with tqdm(total=len(sentences_to_process), desc='Converting Sentences', unit='sentence') as pbar:
-                with ProcessPoolExecutor(max_workers=num_workers, initializer=init_worker_process, initargs=(session_data,)) as executor:
+                # Ensure spawn method is used for multiprocessing to be GPU-safe
+                with ProcessPoolExecutor(max_workers=num_workers, mp_context=multiprocessing.get_context('spawn'), initializer=init_worker_process, initargs=(session_data,)) as executor:
                     futures = [executor.submit(process_sentence_chunk, chunk) for chunk in chunks]
                     
                     for future in as_completed(futures):
