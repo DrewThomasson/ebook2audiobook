@@ -16,7 +16,7 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 
 from lib import *
-from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, check_vocab_support, unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -237,7 +237,7 @@ class Coqui:
                     tts.cuda()
                 else:
                     tts.to(device)
-                loaded_tts[key] = {"engine": tts, "config": config}
+                loaded_tts[key] = {"engine": tts, "config": config, "vocab": check_vocab_support(config)}
                 msg = f'{tts_engine} Loaded!'
                 print(msg)
                 return tts
@@ -430,6 +430,7 @@ class Coqui:
                         print(msg)
                         return False
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
+            vocab = (loaded_tts.get(self.tts_key) or {}).get('vocab', False)
             if tts:
                 # Check if the language requires to split the year in decades
                 if self.session['language'] in year_to_decades_languages:
@@ -449,6 +450,8 @@ class Coqui:
                             # Append remaining sentence
                             result.append(sentence[last_pos:])
                             sentence = ''.join(result)
+                unsupported_chars = set(sentence) - vocab
+                print(f'----------------------{unsupported_chars}-------------------')
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]

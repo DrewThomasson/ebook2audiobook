@@ -21,6 +21,15 @@ def year_to_words(year_str, lang_iso1):
     last_two = int(year_str[2:])
     return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}"  
 
+def check_vocab_support(config):
+    if hasattr(config, "characters"):
+        vocab = set(config.characters.characters)
+    elif hasattr(config, "tokenizer") and hasattr(config.tokenizer, "symbols"):
+        vocab = set(config.tokenizer.symbols)
+    else:
+        return False
+    return vocab
+
 def unload_tts(device, reserved_keys=None, tts_key=None):
     if len(loaded_tts) >= max_tts_in_memory:
         if reserved_keys is None:
