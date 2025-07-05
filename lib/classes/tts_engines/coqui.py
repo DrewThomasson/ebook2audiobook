@@ -16,7 +16,7 @@ from huggingface_hub import hf_hub_download
 from pathlib import Path
 
 from lib import *
-from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, check_vocab_support, unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, get_model_vocab, unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
