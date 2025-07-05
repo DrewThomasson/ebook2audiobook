@@ -1,5 +1,4 @@
 import os
-import gc
 import torch
 import regex as re
 import stanza
@@ -8,46 +7,66 @@ from num2words import num2words
 from lib.models import loaded_tts, max_tts_in_memory
 
 def detect_date_entities(text, stanza_nlp):
-    doc = stanza_nlp(text)
-    date_spans = []
-    for ent in doc.ents:
-        if ent.type == 'DATE':
-            date_spans.append((ent.start_char, ent.end_char, ent.text))
-    return date_spans
+    try:
+        doc = stanza_nlp(text)
+        date_spans = []
+        for ent in doc.ents:
+            if ent.type == 'DATE':
+                date_spans.append((ent.start_char, ent.end_char, ent.text))
+        return date_spans
+    except Exception as e:
+        error = f'detect_date_entities() error: {e}'
+        print(error)
+        return False
 
 def year_to_words(year_str, lang_iso1):
-    year = int(year_str)
-    if len(year_str) != 4 or not year_str.isdigit():
-        return num2words(year, lang=lang_iso1)
-    first_two = int(year_str[:2])
-    last_two = int(year_str[2:])
-    return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}"  
+    try:
+        year = int(year_str)
+        if len(year_str) != 4 or not year_str.isdigit():
+            return num2words(year, lang=lang_iso1)
+        first_two = int(year_str[:2])
+        last_two = int(year_str[2:])
+        return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}"  
+    except Exception as e:
+        error = f'year_to_words() error: {e}'
+        print(error)
+        raise
+        return False
 
 def check_vocab_support(config):
-    if hasattr(config, "characters"):
-        vocab = set(config.characters.characters)
-    elif hasattr(config, "tokenizer") and hasattr(config.tokenizer, "symbols"):
-        vocab = set(config.tokenizer.symbols)
-    else:
+    try:
+        if hasattr(config, "characters"):
+            vocab = set(config.characters.characters)
+        elif hasattr(config, "tokenizer") and hasattr(config.tokenizer, "symbols"):
+            vocab = set(config.tokenizer.symbols)
+        else:
+            return False
+        return vocab
+    except Exception as e:
+        error = f'check_vocab_support() error: {e}'
+        print(error)
         return False
-    return vocab
 
 def unload_tts(device, reserved_keys=None, tts_key=None):
-    if len(loaded_tts) >= max_tts_in_memory:
-        if reserved_keys is None:
-            reserved_keys = []
-        if tts_key is not None:
-            if tts_key in loaded_tts.keys():
-                del loaded_tts[tts_key]
-            if device == 'cuda':
-                torch.cuda.empty_cache()
-                torch.cuda.ipc_collect()
-            gc.collect()
-        else:
-            for key in list(loaded_tts.keys()):
-                if key not in reserved_keys:
-                    del loaded_tts[key]
-                    
+    try:
+        if len(loaded_tts) >= max_tts_in_memory:
+            if reserved_keys is None:
+                reserved_keys = []
+            if tts_key is not None:
+                if tts_key in loaded_tts.keys():
+                    del loaded_tts[tts_key]
+                if device == 'cuda':
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
+            else:
+                for key in list(loaded_tts.keys()):
+                    if key not in reserved_keys:
+                        del loaded_tts[key]
+    except Exception as e:
+        error = f'unload_tts() error: {e}'
+        print(error)
+        return False
+        
 def append_sentence2vtt(sentence_obj, path):
 
     def format_timestamp(seconds):
@@ -55,21 +74,26 @@ def append_sentence2vtt(sentence_obj, path):
         h, m = divmod(m, 60)
         return f"{int(h):02}:{int(m):02}:{s:06.3f}"
 
-    index = 1
-    if os.path.exists(path):
-        with open(path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
-            for line in lines:
-                if "-->" in line:
-                    index += 1
-    if index > 1 and "resume_check" in sentence_obj and sentence_obj["resume_check"] < index:
-        return index  # Already written
-    if not os.path.exists(path):
-        with open(path, "w", encoding="utf-8") as f:
-            f.write("WEBVTT\n\n")
-    with open(path, "a", encoding="utf-8") as f:
-        start = format_timestamp(sentence_obj["start"])
-        end = format_timestamp(sentence_obj["end"])
-        text = re.sub(r'[\r\n]+', ' ', sentence_obj["text"]).strip()
-        f.write(f"{start} --> {end}\n{text}\n\n")
-    return index + 1
+    try:
+        index = 1
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+                for line in lines:
+                    if "-->" in line:
+                        index += 1
+        if index > 1 and "resume_check" in sentence_obj and sentence_obj["resume_check"] < index:
+            return index  # Already written
+        if not os.path.exists(path):
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("WEBVTT\n\n")
+        with open(path, "a", encoding="utf-8") as f:
+            start = format_timestamp(sentence_obj["start"])
+            end = format_timestamp(sentence_obj["end"])
+            text = re.sub(r'[\r\n]+', ' ', sentence_obj["text"]).strip()
+            f.write(f"{start} --> {end}\n{text}\n\n")
+        return index + 1
+    except Exception as e:
+        error = f'append_sentence2vtt() error: {e}'
+        print(error)
+        return False

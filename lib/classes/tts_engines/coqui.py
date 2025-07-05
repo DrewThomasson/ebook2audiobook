@@ -445,6 +445,8 @@ class Coqui:
                                 # Append sentence before this date
                                 result.append(sentence[last_pos:start])
                                 processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language_iso1']), date_text)
+                                if not processed:
+                                    break
                                 result.append(processed)
                                 last_pos = end
                             # Append remaining sentence
@@ -786,8 +788,9 @@ class Coqui:
                         "resume_check": self.sentence_idx
                     }
                     self.sentence_idx = append_sentence2vtt(sentence_obj, self.vtt_path)
-                    torchaudio.save(final_sentence, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
-                    del audio_tensor
+                    if self.sentence_idx:
+                        torchaudio.save(final_sentence, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
+                        del audio_tensor
                 if os.path.exists(final_sentence):
                     return True
                 else:
