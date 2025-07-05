@@ -33,22 +33,25 @@ def year_to_words(year_str, lang_iso1):
         raise
         return False
 
-def get_model_vocab(model_or_config):
+def get_model_vocab(obj):
     try:
-        # Try characters list (used in Tacotron2, VITS, etc.)
-        if hasattr(model_or_config, "characters") and model_or_config.characters:
-            return set(model_or_config.characters.characters)
-        # Try tokenizer.symbols (used in XTTS, Bark, YourTTS, Fairseq-based models)
-        if hasattr(model_or_config, "tokenizer") and hasattr(model_or_config.tokenizer, "symbols"):
-            return set(model_or_config.tokenizer.symbols)
-        # Try symbols directly on model (some edge cases)
-        if hasattr(model_or_config, "symbols"):
-            return set(model_or_config.symbols)
-        # Try accessing tokenizer from Synthesizer (fallback)
-        if hasattr(model_or_config, "tts_model") and hasattr(model_or_config.tts_model, "tokenizer"):
-            tokenizer = model_or_config.tts_model.tokenizer
+        if hasattr(obj, "characters"):
+            punctuations = ''
+            if hasattr(obj.characters, "punctuations"):
+                punctuations = obj.characters.punctuations
+            return set(obj.characters.characters + punctuations)
+        if hasattr(obj, "tokenizer") and hasattr(obj.tokenizer, "symbols"):
+            return set(obj.tokenizer.symbols)
+        if hasattr(obj, "symbols"):
+            return set(obj.symbols)
+        if hasattr(obj, "tts_model") and hasattr(obj.tts_model, "tokenizer"):
+            tokenizer = obj.tts_model.tokenizer
             if hasattr(tokenizer, "symbols"):
                 return set(tokenizer.symbols)
+        if hasattr(obj.tts_checkpoint):
+            vocab_path = os.path.join(obj.tts_checkpoint, 'vocab.txt')
+            if os.path.isfile(vocab_path):
+                return set(''.join(line.strip() for line in open('vocab.txt', encoding='utf-8') if line.strip()))
         return False
     except Exception as e:
         error = f'check_vocab_support() error: {e}'
