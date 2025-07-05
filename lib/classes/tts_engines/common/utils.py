@@ -33,20 +33,23 @@ def year_to_words(year_str, lang_iso1):
         raise
         return False
 
-def check_vocab_support(config):
+def get_model_vocab(model_or_config):
     try:
-        if hasattr(config, "characters") and config.characters:
-            # For Tacotron2, VITS, FastPitch, etc.
-            vocab = set(config.characters.characters)
-        elif hasattr(config, "tokenizer") and hasattr(config.tokenizer, "symbols"):
-            # For XTTSv2, Bark, YourTTS, Fairseq-style models
-            vocab = set(config.tokenizer.symbols)
-        elif hasattr(config, "symbols"):
-            # Fallback: symbols directly on config or model
-            vocab = set(config.symbols)
-        else:
-            return False
-        return vocab
+        # Try characters list (used in Tacotron2, VITS, etc.)
+        if hasattr(model_or_config, "characters") and model_or_config.characters:
+            return set(model_or_config.characters.characters)
+        # Try tokenizer.symbols (used in XTTS, Bark, YourTTS, Fairseq-based models)
+        if hasattr(model_or_config, "tokenizer") and hasattr(model_or_config.tokenizer, "symbols"):
+            return set(model_or_config.tokenizer.symbols)
+        # Try symbols directly on model (some edge cases)
+        if hasattr(model_or_config, "symbols"):
+            return set(model_or_config.symbols)
+        # Try accessing tokenizer from Synthesizer (fallback)
+        if hasattr(model_or_config, "tts_model") and hasattr(model_or_config.tts_model, "tokenizer"):
+            tokenizer = model_or_config.tts_model.tokenizer
+            if hasattr(tokenizer, "symbols"):
+                return set(tokenizer.symbols)
+        return False
     except Exception as e:
         error = f'check_vocab_support() error: {e}'
         print(error)

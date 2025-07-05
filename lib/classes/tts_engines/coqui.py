@@ -237,7 +237,7 @@ class Coqui:
                     tts.cuda()
                 else:
                     tts.to(device)
-                loaded_tts[key] = {"engine": tts, "config": config, "vocab": check_vocab_support(config)}
+                loaded_tts[key] = {"engine": tts, "config": config, "vocab": get_model_vocab(config)}
                 msg = f'{tts_engine} Loaded!'
                 print(msg)
                 return tts
