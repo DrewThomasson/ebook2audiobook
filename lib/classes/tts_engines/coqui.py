@@ -14,6 +14,7 @@ import uuid
 
 from huggingface_hub import hf_hub_download
 from pathlib import Path
+from pprint import pprint
 
 from lib import *
 from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, get_model_vocab, unload_tts, append_sentence2vtt
@@ -181,6 +182,7 @@ class Coqui:
                     else:
                         tts.to(device)
                     loaded_tts[key] = {"engine": tts, "config": None, "vocab": get_model_vocab(tts)}
+                    pprint(vars(tts)) 
                     msg = f'{model_path} Loaded!'
                     print(msg)
                     return tts
@@ -238,6 +240,7 @@ class Coqui:
                 else:
                     tts.to(device)
                 loaded_tts[key] = {"engine": tts, "config": config, "vocab": get_model_vocab(config)}
+                pprint(vars(config)) 
                 msg = f'{tts_engine} Loaded!'
                 print(msg)
                 return tts
