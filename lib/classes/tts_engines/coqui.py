@@ -450,8 +450,9 @@ class Coqui:
                             # Append remaining sentence
                             result.append(sentence[last_pos:])
                             sentence = ''.join(result)
-                unsupported_chars = set(sentence) - vocab
-                print(f'----------------------{unsupported_chars}-------------------')
+                if vocab
+                    unsupported_chars = set(sentence) - vocab
+                    print(f'----------------------{unsupported_chars}-------------------')
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
