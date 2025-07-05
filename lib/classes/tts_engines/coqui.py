@@ -17,7 +17,7 @@ from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, get_model_vocab, unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -181,8 +181,7 @@ class Coqui:
                         tts.cuda()
                     else:
                         tts.to(device)
-                    loaded_tts[key] = {"engine": tts, "config": None, "vocab": get_model_vocab(tts)}
-                    pprint(vars(tts)) 
+                    loaded_tts[key] = {"engine": tts, "config": None} 
                     msg = f'{model_path} Loaded!'
                     print(msg)
                     return tts
@@ -239,8 +238,7 @@ class Coqui:
                     tts.cuda()
                 else:
                     tts.to(device)
-                loaded_tts[key] = {"engine": tts, "config": config, "vocab": get_model_vocab(config)}
-                pprint(vars(config)) 
+                loaded_tts[key] = {"engine": tts, "config": config}
                 msg = f'{tts_engine} Loaded!'
                 print(msg)
                 return tts

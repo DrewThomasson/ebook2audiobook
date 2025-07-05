@@ -33,31 +33,6 @@ def year_to_words(year_str, lang_iso1):
         raise
         return False
 
-def get_model_vocab(obj):
-    try:
-        if hasattr(obj, "characters"):
-            punctuations = ''
-            if hasattr(obj.characters, "punctuations"):
-                punctuations = obj.characters.punctuations
-            return set(obj.characters.characters + punctuations)
-        if hasattr(obj, "tokenizer") and hasattr(obj.tokenizer, "symbols"):
-            return set(obj.tokenizer.symbols)
-        if hasattr(obj, "symbols"):
-            return set(obj.symbols)
-        if hasattr(obj, "tts_model") and hasattr(obj.tts_model, "tokenizer"):
-            tokenizer = obj.tts_model.tokenizer
-            if hasattr(tokenizer, "symbols"):
-                return set(tokenizer.symbols)
-        if hasattr(obj.tts_checkpoint):
-            vocab_path = os.path.join(obj.tts_checkpoint, 'vocab.txt')
-            if os.path.isfile(vocab_path):
-                return set(''.join(line.strip() for line in open('vocab.txt', encoding='utf-8') if line.strip()))
-        return False
-    except Exception as e:
-        error = f'check_vocab_support() error: {e}'
-        print(error)
-        return False
-
 def unload_tts(device, reserved_keys=None, tts_key=None):
     try:
         if len(loaded_tts) >= max_tts_in_memory:
