@@ -39,14 +39,14 @@ def unload_tts(device, reserved_keys=None, tts_key=None):
         if tts_key is not None:
             if tts_key in loaded_tts.keys():
                 del loaded_tts[tts_key]
+            if device == 'cuda':
+                torch.cuda.empty_cache()
+                torch.cuda.ipc_collect()
+            gc.collect()
         else:
             for key in list(loaded_tts.keys()):
                 if key not in reserved_keys:
                     del loaded_tts[key]
-    if device == 'cuda':
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
-    gc.collect()
                     
 def append_sentence2vtt(sentence_obj, path):
 
