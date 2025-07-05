@@ -431,6 +431,7 @@ class Coqui:
                         return False
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             vocab = (loaded_tts.get(self.tts_key) or {}).get('vocab', False)
+            print(f'----------------------{vocab}-------------------')
             if tts:
                 # Check if the language requires to split the year in decades
                 if self.session['language'] in year_to_decades_languages:
@@ -455,7 +456,6 @@ class Coqui:
                                 sentence = ''.join(result)
                 if vocab:
                     unsupported_chars = set(sentence) - vocab
-                    print(f'----------------------{unsupported_chars}-------------------')
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
