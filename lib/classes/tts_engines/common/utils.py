@@ -1,4 +1,6 @@
 import os
+import gc
+import torch
 import regex as re
 import stanza
 
@@ -41,6 +43,10 @@ def unload_tts(device, reserved_keys=None, tts_key=None):
             for key in list(loaded_tts.keys()):
                 if key not in reserved_keys:
                     del loaded_tts[key]
+    if device == 'cuda':
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+    gc.collect()
                     
 def append_sentence2vtt(sentence_obj, path):
 
