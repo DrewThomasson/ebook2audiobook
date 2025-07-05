@@ -14,6 +14,7 @@ import csv
 import jieba
 import ebooklib
 import fnmatch
+import glob as glob_module
 import gc
 import gradio as gr
 import hashlib
@@ -1342,32 +1343,47 @@ def combine_audio_chapters(session):
             
             processed_segments = [None] * num_workers
 
-            # --- Pre-split the audio file into raw segments --- 
-            print("Splitting the combined audio into raw segments to avoid seeking issues...")
+            # --- Pre-split the audio file using the segment muxer for robust splitting ---
+            print("Splitting the combined audio into segments for parallel processing...")
             raw_segment_dir = os.path.join(session['process_dir'], 'raw_segments')
+            # Clean up old segments if they exist
+            if os.path.exists(raw_segment_dir):
+                shutil.rmtree(raw_segment_dir)
             os.makedirs(raw_segment_dir, exist_ok=True)
-            raw_segment_files = []
 
-            for i in range(num_workers):
-                start_time = i * (duration / num_workers)
-                end_time_arg = ['-to', str(start_time + (duration / num_workers))] if i < num_workers - 1 else []
-                raw_segment_path = os.path.join(raw_segment_dir, f'raw_segment_{i}.{default_audio_proc_format}')
-                raw_segment_files.append(raw_segment_path)
-                
-                # Use fast input seeking for splitting, as no complex filters are applied here.
-                split_cmd = [shutil.which('ffmpeg'), '-ss', str(start_time), '-i', combined_chapters_file] + end_time_arg + ['-c', 'copy', '-y', raw_segment_path]
-                
-                try:
-                    subprocess.run(split_cmd, check=True, capture_output=True, text=True, encoding='utf-8')
-                except subprocess.CalledProcessError as e:
-                    print(f"Error splitting audio file for segment {i}:\nCMD: {' '.join(e.cmd)}\nSTDERR: {e.stderr}")
-                    shutil.rmtree(raw_segment_dir, ignore_errors=True)
-                    return False
+            # The segment muxer is more reliable for creating chunks of a specific duration.
+            segment_duration = duration / num_workers
+            raw_segment_pattern = os.path.join(raw_segment_dir, f'raw_segment_%d.{default_audio_proc_format}')
+
+            # -reset_timestamps 1 is crucial to ensure each segment starts from timestamp 0.
+            split_cmd = [
+                shutil.which('ffmpeg'), '-i', combined_chapters_file,
+                '-f', 'segment', '-segment_time', str(segment_duration),
+                '-c', 'copy', '-reset_timestamps', '1', '-y', raw_segment_pattern
+            ]
+
+            try:
+                # A single command now splits the entire file efficiently.
+                subprocess.run(split_cmd, check=True, capture_output=True, text=True, encoding='utf-8')
+            except subprocess.CalledProcessError as e:
+                print(f"Error splitting audio file with segment muxer:\nCMD: {' '.join(e.cmd)}\nSTDERR: {e.stderr}")
+                shutil.rmtree(raw_segment_dir, ignore_errors=True)
+                return False
+
+            # Collect the generated raw segment files and sort them numerically.
+            raw_segment_files = sorted(
+                glob_module.glob(os.path.join(raw_segment_dir, f'raw_segment_*.{default_audio_proc_format}')),
+                key=lambda p: int(re.search(r'_(\d+)', os.path.basename(p)).group(1))
+            )
+
+            if not raw_segment_files:
+                print("Audio splitting with segment muxer produced no segments. Aborting.")
+                return False
             
-            print("Successfully split audio into raw segments.")
+            print(f"Successfully split audio into {len(raw_segment_files)} segments.")
 
             def process_segment(raw_segment_path):
-                segment_index = int(re.search(r'_(\d+)\.', os.path.basename(raw_segment_path)).group(1))
+                segment_index = int(re.search(r'_(\d+)', os.path.basename(raw_segment_path)).group(1))
                 segment_output_path = os.path.join(segment_dir, f"segment_{segment_index}.{session['output_format']}")
                 
                 # Command now uses the pre-split raw segment as input, no seeking needed.
@@ -1406,7 +1422,7 @@ def combine_audio_chapters(session):
             concat_file_path = os.path.join(segment_dir, 'concat.txt')
             with open(concat_file_path, 'w', encoding='utf-8') as f:
                 # Sort using a key that extracts the number from the filename to ensure correct order
-                for seg_path in sorted(processed_segment_paths, key=lambda p: int(re.search(r'_(\d+)\.', os.path.basename(p)).group(1))):
+                for seg_path in sorted(processed_segment_paths, key=lambda p: int(re.search(r'_(\d+)', os.path.basename(p)).group(1))):
                     f.write(f"file '{seg_path.replace(os.sep, '/')}'\n")
 
             temp_final_file = os.path.join(session['process_dir'], f"temp_final.{session['output_format']}")
