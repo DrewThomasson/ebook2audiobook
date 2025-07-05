@@ -439,7 +439,7 @@ class Coqui:
                         # Check if there are positive integers so possible date to convert
                         if bool(re.search(r'\b\d+\b', sentence)):
                             date_spans = detect_date_entities(sentence, self.stanza_nlp)
-                            if date_spans
+                            if date_spans:
                                 result = []
                                 last_pos = 0
                                 for start, end, date_text in date_spans:
