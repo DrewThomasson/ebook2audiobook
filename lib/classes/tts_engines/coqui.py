@@ -439,19 +439,20 @@ class Coqui:
                         # Check if there are positive integers so possible date to convert
                         if bool(re.search(r'\b\d+\b', sentence)):
                             date_spans = detect_date_entities(sentence, self.stanza_nlp)
-                            result = []
-                            last_pos = 0
-                            for start, end, date_text in date_spans:
-                                # Append sentence before this date
-                                result.append(sentence[last_pos:start])
-                                processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language_iso1']), date_text)
-                                if not processed:
-                                    break
-                                result.append(processed)
-                                last_pos = end
-                            # Append remaining sentence
-                            result.append(sentence[last_pos:])
-                            sentence = ''.join(result)
+                            if date_spans
+                                result = []
+                                last_pos = 0
+                                for start, end, date_text in date_spans:
+                                    # Append sentence before this date
+                                    result.append(sentence[last_pos:start])
+                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language_iso1']), date_text)
+                                    if not processed:
+                                        break
+                                    result.append(processed)
+                                    last_pos = end
+                                # Append remaining sentence
+                                result.append(sentence[last_pos:])
+                                sentence = ''.join(result)
                 if vocab:
                     unsupported_chars = set(sentence) - vocab
                     print(f'----------------------{unsupported_chars}-------------------')
