@@ -450,7 +450,7 @@ class Coqui:
                             # Append remaining sentence
                             result.append(sentence[last_pos:])
                             sentence = ''.join(result)
-                if vocab
+                if vocab:
                     unsupported_chars = set(sentence) - vocab
                     print(f'----------------------{unsupported_chars}-------------------')
                 sentence_parts = sentence.split('‡pause‡')
