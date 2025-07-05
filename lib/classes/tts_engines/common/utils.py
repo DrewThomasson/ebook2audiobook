@@ -33,24 +33,24 @@ def year_to_words(year_str, lang_iso1):
         raise
         return False
 
-    def check_vocab_support(config):
-        try:
-            if hasattr(config, "characters") and config.characters:
-                # For Tacotron2, VITS, FastPitch, etc.
-                vocab = set(config.characters.characters)
-            elif hasattr(config, "tokenizer") and hasattr(config.tokenizer, "symbols"):
-                # For XTTSv2, Bark, YourTTS, Fairseq-style models
-                vocab = set(config.tokenizer.symbols)
-            elif hasattr(config, "symbols"):
-                # Fallback: symbols directly on config or model
-                vocab = set(config.symbols)
-            else:
-                return False
-            return vocab
-        except Exception as e:
-            error = f'check_vocab_support() error: {e}'
-            print(error)
+def check_vocab_support(config):
+    try:
+        if hasattr(config, "characters") and config.characters:
+            # For Tacotron2, VITS, FastPitch, etc.
+            vocab = set(config.characters.characters)
+        elif hasattr(config, "tokenizer") and hasattr(config.tokenizer, "symbols"):
+            # For XTTSv2, Bark, YourTTS, Fairseq-style models
+            vocab = set(config.tokenizer.symbols)
+        elif hasattr(config, "symbols"):
+            # Fallback: symbols directly on config or model
+            vocab = set(config.symbols)
+        else:
             return False
+        return vocab
+    except Exception as e:
+        error = f'check_vocab_support() error: {e}'
+        print(error)
+        return False
 
 def unload_tts(device, reserved_keys=None, tts_key=None):
     try:
