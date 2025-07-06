@@ -756,6 +756,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+            print(text)
             if text.strip() and len(text.strip()) > 1:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
