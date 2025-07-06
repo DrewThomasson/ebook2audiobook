@@ -442,7 +442,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
     comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
     text = re.sub(comma_dot_pattern, r' \1 ', text)
-    print(text)
     # Replace special chars with words
     specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
     for char, word in specialchars.items():
@@ -450,7 +449,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     for char in specialchars_remove:
         text = text.replace(char, ' ')
     text = ' '.join(text.split())
-    if text.strip():
+    if text.isalnum():
         # Add punctuation after numbers or Roman numerals at start of a chapter.
         roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
         arabic_pattern = r'^(\d+)(?=\s|$)'
@@ -460,6 +459,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
         # Replace math symbols with words
         text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+    print(text)
     return text
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
