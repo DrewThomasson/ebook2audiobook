@@ -449,7 +449,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     for char in specialchars_remove:
         text = text.replace(char, ' ')
     text = ' '.join(text.split())
-    if text.isalnum():
+    if bool(re.search(r'[^\W_]', text)):
         # Add punctuation after numbers or Roman numerals at start of a chapter.
         roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
         arabic_pattern = r'^(\d+)(?=\s|$)'
@@ -761,8 +761,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
                 if raw_text:
                     text_array.append(raw_text)
         text = "\n".join(text_array)
-        print(text)
-        if text.isalnum():
+        if bool(re.search(r'[^\W_]', text)):
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat)
             if text is not None:
