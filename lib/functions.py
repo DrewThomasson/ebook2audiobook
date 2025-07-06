@@ -995,9 +995,7 @@ def convert_chapters2audio(session):
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
-        progress_bar = None
-        if is_gui_process:
-            progress_bar = gr.Progress(track_tqdm=True)        
+        progress_bar = gr.Progress(track_tqdm=True) if is_gui_process else None
         tts_manager = TTSManager(session)
         if not tts_manager:
             error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
@@ -1092,13 +1090,13 @@ def convert_chapters2audio(session):
 
 def assemble_chunks(txt_file, out_file):
     try:
-        cmd = [
+        ffmpeg_cmd = [
             shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
             '-safe', '0', '-f', 'concat', '-i', txt_file,
-            '-c:a', default_audio_proc_format, '-map_metadata', '-1', out_file
+            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
         ]
         process = subprocess.Popen(
-            cmd,
+            ffmpeg_cmd,
             env={},
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -1112,7 +1110,7 @@ def assemble_chunks(txt_file, out_file):
             return True
         else:
             error = process.returncode
-            print(error, cmd)
+            print(error, ffmpeg_cmd)
             return False
     except subprocess.CalledProcessError as e:
         DependencyError(e)
@@ -1181,18 +1179,133 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         return False
 
 def combine_audio_chapters(session):
-    def assemble_segments():
+
+    def get_audio_duration(filepath):
+        cmd = [
+            shutil.which('ffprobe'),
+            '-v', 'error',
+            '-show_entries', 'format=duration',
+            '-of', 'json',
+            filepath
+        ]
+        result = subprocess.run(cmd, capture_output=True, text=True)
         try:
-            batch_size = 1024
+            return float(json.loads(result.stdout)['format']['duration'])
+        except Exception:
+            return 0
+
+    def generate_ffmpeg_metadata(part_chapters, session, output_metadata_path, default_audio_proc_format):
+        out_fmt = session['output_format']
+        is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
+        is_vorbis = out_fmt in ['ogg', 'webm']
+        is_mp3 = out_fmt == 'mp3'
+        def tag(key):
+            return key.upper() if is_vorbis else key
+        ffmpeg_metadata = ';FFMETADATA1\n'
+        if session['metadata'].get('title'):
+            ffmpeg_metadata += f"{tag('title')}={session['metadata']['title']}\n"
+        if session['metadata'].get('creator'):
+            ffmpeg_metadata += f"{tag('artist')}={session['metadata']['creator']}\n"
+        if session['metadata'].get('language'):
+            ffmpeg_metadata += f"{tag('language')}={session['metadata']['language']}\n"
+        if session['metadata'].get('description'):
+            ffmpeg_metadata += f"{tag('description')}={session['metadata']['description']}\n"
+        if session['metadata'].get('publisher') and (is_mp4_like or is_mp3):
+            ffmpeg_metadata += f"{tag('publisher')}={session['metadata']['publisher']}\n"
+        if session['metadata'].get('published'):
+            try:
+                if '.' in session['metadata']['published']:
+                    year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
+                else:
+                    year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
+            except Exception:
+                year = datetime.now().year
+        else:
+            year = datetime.now().year
+        if is_vorbis:
+            ffmpeg_metadata += f"{tag('date')}={year}\n"
+        else:
+            ffmpeg_metadata += f"{tag('year')}={year}\n"
+        if session['metadata'].get('identifiers') and isinstance(session['metadata']['identifiers'], dict):
+            if is_mp3 or is_mp4_like:
+                isbn = session['metadata']['identifiers'].get('isbn')
+                if isbn:
+                    ffmpeg_metadata += f"{tag('isbn')}={isbn}\n"
+                asin = session['metadata']['identifiers'].get('mobi-asin')
+                if asin:
+                    ffmpeg_metadata += f"{tag('asin')}={asin}\n"
+        start_time = 0
+        for filename, chapter_title in part_chapters:
+            filepath = os.path.join(session['chapters_dir'], filename)
+            duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
+            clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), chapter_title.replace('‡pause‡', ''))
+            ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
+            ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
+            ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
+            start_time += duration_ms
+        with open(output_metadata_path, 'w', encoding='utf-8') as f:
+            f.write(ffmpeg_metadata)
+        return output_metadata_path
+
+    def assemble_chunks(txt, out):
+        # You must provide your own FFmpeg merge logic here, as in your original codebase
+        # For example:
+        import subprocess
+        cmd = [
+            shutil.which('ffmpeg'),
+            '-hide_banner', '-nostats',
+            '-f', 'concat', '-safe', '0',
+            '-i', txt, '-c', 'copy', '-threads', '1', '-y', out
+        ]
+        result = subprocess.run(cmd, capture_output=True)
+        return result.returncode == 0
+
+    try:
+        chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
+        chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
+        chapter_titles = [c[0] for c in session['chapters']]
+        if len(chapter_files) == 0:
+            print('No block files exists!')
+            return None
+
+        # Calculate total duration
+        durations = []
+        for file in chapter_files:
+            filepath = os.path.join(session['chapters_dir'], file)
+            durations.append(get_audio_duration(filepath))
+        total_duration = sum(durations)
+        max_part_duration = 6 * 3600  # 6h in seconds
+        needs_split = total_duration > 12 * 3600
+
+        # --- Split into parts by duration ---
+        part_files = []
+        part_chapter_indices = []
+        cur_part = []
+        cur_indices = []
+        cur_duration = 0
+        for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
+            if cur_part and (cur_duration + dur > max_part_duration):
+                part_files.append(cur_part)
+                part_chapter_indices.append(cur_indices)
+                cur_part = []
+                cur_indices = []
+                cur_duration = 0
+            cur_part.append(file)
+            cur_indices.append(idx)
+            cur_duration += dur
+        if cur_part:
+            part_files.append(cur_part)
+            part_chapter_indices.append(cur_indices)
+
+        exported_files = []
+
+        for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
             with tempfile.TemporaryDirectory() as tmpdir:
-                chapter_files_ordered = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
-                if not chapter_files_ordered:
-                    error = 'No block files found.'
-                    print(error)
-                    return False
+                # --- Batch merging logic ---
+                batch_size = 1024
                 chunk_list = []
-                for i in range(0, len(chapter_files_ordered), batch_size):
-                    batch = chapter_files_ordered[i:i + batch_size]
+                for i in range(0, len(part_file_list), batch_size):
+                    batch = part_file_list[i:i + batch_size]
                     txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
                     out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
                     with open(txt, 'w') as f:
@@ -1200,213 +1313,116 @@ def combine_audio_chapters(session):
                             path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                             f.write(f"file '{path}'\n")
                     chunk_list.append((txt, out))
-                try:
-                    with Pool(cpu_count()) as pool:
-                        results = pool.starmap(assemble_chunks, chunk_list)
-                except Exception as e:
-                    error = f"assemble_segments() multiprocessing error: {e}"
-                    print(error)
-                    return False
+                with Pool(cpu_count()) as pool:
+                    results = pool.starmap(assemble_chunks, chunk_list)
                 if not all(results):
-                    error = "assemble_segments() One or more chunks failed."
-                    print(error)
-                    return False
-                # Final merge
-                final_list = os.path.join(tmpdir, 'chapters_final.txt')
+                    print(f"assemble_segments() One or more chunks failed for part {part_idx+1}.")
+                    return None
+                # Final merge for this part
+                combined_chapters_file = os.path.join(
+                    session['process_dir'],
+                    f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
+                )
+                final_list = os.path.join(tmpdir, f'part_{part_idx+1:02d}_final.txt')
                 with open(final_list, 'w') as f:
                     for _, chunk_path in chunk_list:
                         f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-                if assemble_chunks(final_list, combined_chapters_file):
-                    msg = f'********* total audio blocks saved in {combined_chapters_file}'
-                    print(msg)
-                    return True
-                else:
-                    error = "assemble_segments() Final merge failed."
-                    print(error)
-                    return False
-        except Exception as e:
-            DependencyError(e)
-            return False
+                if not assemble_chunks(final_list, combined_chapters_file):
+                    print(f"assemble_segments() Final merge failed for part {part_idx+1}.")
+                    return None
 
-    def generate_ffmpeg_metadata():
-        try:
-            if session['output_format'] not in ['wav', 'aac', 'flac']:
-                if session['cancellation_requested']:
-                    print('Cancel requested')
-                    return False
-                ffmpeg_metadata = ';FFMETADATA1\n'
-                out_fmt = session['output_format']
-                is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
-                is_vorbis = out_fmt in ['ogg', 'webm']
-                is_mp3 = out_fmt == 'mp3'
-                supports_chapters = is_mp4_like or is_mp3
-                
-                def tag(key):
-                    return key.upper() if is_vorbis else key
-                
-                # Core tags
-                if session['metadata'].get('title'):
-                    ffmpeg_metadata += f"{tag('title')}={session['metadata']['title']}\n"
-                if session['metadata'].get('creator'):
-                    ffmpeg_metadata += f"{tag('artist')}={session['metadata']['creator']}\n"
-                if session['metadata'].get('language'):
-                    ffmpeg_metadata += f"{tag('language')}={session['metadata']['language']}\n"
-                if session['metadata'].get('description'):
-                    ffmpeg_metadata += f"{tag('description')}={session['metadata']['description']}\n"
-                # Publisher — only for MP3/MP4
-                if session['metadata'].get('publisher') and (is_mp4_like or is_mp3):
-                    ffmpeg_metadata += f"{tag('publisher')}={session['metadata']['publisher']}\n"
-                # Year/Date
-                if session['metadata'].get('published'):
-                    try:
-                        if '.' in session['metadata']['published']:
-                            year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S.%f%z').year
-                        else:
-                            year = datetime.strptime(session['metadata']['published'], '%Y-%m-%dT%H:%M:%S%z').year
-                    except Exception:
-                        year = datetime.now().year
-                else:
-                    year = datetime.now().year
-                if is_vorbis:
-                    ffmpeg_metadata += f"{tag('date')}={year}\n"
-                else:
-                    ffmpeg_metadata += f"{tag('year')}={year}\n"
-                # Identifiers (only for MP3/MP4)
-                if session['metadata'].get('identifiers') and isinstance(session['metadata']['identifiers'], dict):
-                    if is_mp3 or is_mp4_like:
-                        isbn = session['metadata']['identifiers'].get('isbn')
-                        if isbn:
-                            ffmpeg_metadata += f"{tag('isbn')}={isbn}\n"
-                        asin = session['metadata']['identifiers'].get('mobi-asin')
-                        if asin:
-                            ffmpeg_metadata += f"{tag('asin')}={asin}\n"
-                # Chapters
-                if supports_chapters:
-                    ffmpeg_metadata += '\n'
-                    start_time = 0
-                    for index, chapter_file in enumerate(chapter_files):
-                        if session['cancellation_requested']:
-                            msg = 'Cancel requested'
-                            print(msg)
-                            return False
-                        duration_ms = len(AudioSegment.from_file(
-                            os.path.join(session['chapters_dir'], chapter_file),
-                            format=default_audio_proc_format
-                        ))
-                        chapter_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), session['chapters'][index][0].replace('‡pause‡', ''))
-                        ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
-                        ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
-                        ffmpeg_metadata += f"{tag('title')}={chapter_title}\n"
-                        start_time += duration_ms
-                with open(metadata_file, 'w', encoding='utf-8') as f:
-                    f.write(ffmpeg_metadata)
-            return True
-        except Exception as e:
-            DependencyError(e)
-            return False
+                # --- Generate metadata for this part ---
+                metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
+                part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
+                generate_ffmpeg_metadata(part_chapters, session, metadata_file, default_audio_proc_format)
 
-    def export_audio():
-        try:
-            if session['cancellation_requested']:
-                print('Cancel requested')
-                return False
-            ffmpeg_cover = None
-            ffmpeg_combined_audio = combined_chapters_file
-            ffmpeg_metadata_file = metadata_file
-            ffmpeg_final_file = final_file
-            # First pass
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
-            if session['output_format'] == 'wav':
-                ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
-            elif session['output_format'] ==  'aac':
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
-            elif session['output_format'] == 'flac':
-                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
-            else:
-                ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
-                if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
-                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
-                elif session['output_format'] == 'mp3':
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
-                elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
-                elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
-                ffmpeg_cmd += ['-map_metadata', '1']
-            ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70']
-            ffmpeg_cmd += ['-strict', 'experimental']
-            ffmpeg_cmd += ['-threads', '0', '-y', ffmpeg_final_file]
-            try:
-                process = subprocess.Popen(
-                    ffmpeg_cmd,
-                    env={},
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    encoding='utf-8',
-                    errors='ignore'
+                # --- Export audio for this part ---
+                final_file = os.path.join(
+                    session['audiobooks_dir'],
+                    f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']
                 )
-                for line in process.stdout:
-                    print(line, end='')  # Print each line of stdout
-                process.wait()
-                if process.returncode == 0:
-                    if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
-                        if session['cover'] is not None:
-                            ffmpeg_cover = session['cover']
-                            msg = f'Adding cover {ffmpeg_cover} into the final audiobook file...'
-                            print(msg)
-                            if session['output_format'] == 'mp3':
-                                from mutagen.mp3 import MP3
-                                from mutagen.id3 import ID3, APIC, error
-                                audio = MP3(ffmpeg_final_file, ID3=ID3)
-                                try:
-                                    audio.add_tags()
-                                except error:
-                                    pass
-                                with open(ffmpeg_cover, 'rb') as img:
-                                    audio.tags.add(
-                                        APIC(
-                                            encoding=3, # UTF-8
-                                            mime='image/jpeg',
-                                            type=3, # Front cover
-                                            desc='Cover',
-                                            data=img.read()
-                                        )
-                                    )
-                            elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
-                                from mutagen.mp4 import MP4, MP4Cover
-                                audio = MP4(ffmpeg_final_file)
-                                with open(ffmpeg_cover, 'rb') as f:
-                                    cover_data = f.read()
-                                audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
-                            if audio:
-                                audio.save()
-                    return True
-                else:
-                    error = process.returncode
-                    print(error, ffmpeg_cmd)
-                    return False
-            except subprocess.CalledProcessError as e:
-                DependencyError(e)
-                return False
-        except Exception as e:
-            DependencyError(e)
-            return False
+                # Inner export_audio function:
+                def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file):
+                    try:
+                        if session['cancellation_requested']:
+                            print('Cancel requested')
+                            return False
+                        ffmpeg_cover = None
+                        ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
+                        if session['output_format'] == 'wav':
+                            ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
+                        elif session['output_format'] ==  'aac':
+                            ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
+                        elif session['output_format'] == 'flac':
+                            ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
+                        else:
+                            ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
+                            if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
+                                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
+                            elif session['output_format'] == 'mp3':
+                                ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
+                            elif session['output_format'] == 'webm':
+                                ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
+                            elif session['output_format'] == 'ogg':
+                                ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
+                            ffmpeg_cmd += ['-map_metadata', '1']
+                        ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70', '-strict', 'experimental', '-threads', '1', '-y', ffmpeg_final_file]
+                        process = subprocess.Popen(
+                            ffmpeg_cmd,
+                            env={},
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT,
+                            encoding='utf-8',
+                            errors='ignore'
+                        )
+                        for line in process.stdout:
+                            print(line, end='')
+                        process.wait()
+                        if process.returncode == 0:
+                            if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
+                                if session['cover'] is not None:
+                                    ffmpeg_cover = session['cover']
+                                    msg = f'Adding cover {ffmpeg_cover} into the final audiobook file...'
+                                    print(msg)
+                                    if session['output_format'] == 'mp3':
+                                        from mutagen.mp3 import MP3
+                                        from mutagen.id3 import ID3, APIC, error
+                                        audio = MP3(ffmpeg_final_file, ID3=ID3)
+                                        try:
+                                            audio.add_tags()
+                                        except error:
+                                            pass
+                                        with open(ffmpeg_cover, 'rb') as img:
+                                            audio.tags.add(
+                                                APIC(
+                                                    encoding=3,
+                                                    mime='image/jpeg',
+                                                    type=3,
+                                                    desc='Cover',
+                                                    data=img.read()
+                                                )
+                                            )
+                                    elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
+                                        from mutagen.mp4 import MP4, MP4Cover
+                                        audio = MP4(ffmpeg_final_file)
+                                        with open(ffmpeg_cover, 'rb') as f:
+                                            cover_data = f.read()
+                                        audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
+                                    if audio:
+                                        audio.save()
+                            return True
+                        else:
+                            error = process.returncode
+                            print(error, ffmpeg_cmd)
+                            return False
+                    except Exception as e:
+                        DependencyError(e)
+                        return False
 
-    try:
-        chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
-        chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
-        if len(chapter_files) > 0:
-            combined_chapters_file = os.path.join(session['process_dir'], get_sanitized(session['metadata']['title']) + '.' + default_audio_proc_format)
-            metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
-            if assemble_segments():
-                if generate_ffmpeg_metadata():
-                    final_file = os.path.join(session['audiobooks_dir'], session['final_name'])                       
-                    if export_audio():
-                        return final_file
-        else:
-            error = 'No block files exists!'
-            print(error)
-        return None
+                if export_audio(combined_chapters_file, metadata_file, final_file):
+                    exported_files.append(final_file)
+
+        return exported_files if exported_files else None
     except Exception as e:
         DependencyError(e)
         return False
