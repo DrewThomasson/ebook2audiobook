@@ -1729,8 +1729,8 @@ def convert_ebook(args, ctx=None):
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(session):
-                                        final_file = combine_audio_chapters(session)               
-                                        if final_file is not None:
+                                        exported_files = combine_audio_chapters(session)               
+                                        if len(exported_files) > 0:
                                             #chapters_dirs = [
                                             #    dir_name for dir_name in os.listdir(session['process_dir'])
                                             #    if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
@@ -1756,12 +1756,12 @@ def convert_ebook(args, ctx=None):
                                             #            shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
                                             #    if os.path.exists(session['session_dir']):
                                             #        shutil.rmtree(session['session_dir'], ignore_errors=True)
-                                            progress_status = f'Audiobook {os.path.basename(final_file)} created!'
-                                            session['audiobook'] = final_file
+                                            progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
+                                            session['audiobook'] = exported_files[0]
                                             print(info_session)
                                             return progress_status, True
                                         else:
-                                            error = 'combine_audio_chapters() error: final_file not created!'
+                                            error = 'combine_audio_chapters() error: exported_files not created!'
                                     else:
                                         error = 'convert_chapters2audio() failed!'
                                 else:
