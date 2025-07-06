@@ -421,6 +421,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
+    print(text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
     # Replace multiple and spaces with single space
@@ -756,7 +757,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         if text.strip():
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-            print(text)
             if text.strip() and len(text.strip()) > 1:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
@@ -1266,7 +1266,7 @@ def combine_audio_chapters(session):
             if session['cancellation_requested']:
                 print('Cancel requested')
                 return False
-            ffmpeg_cover = None
+            cover_path = None
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
@@ -1300,8 +1300,8 @@ def combine_audio_chapters(session):
             if process.returncode == 0:
                 if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                     if session['cover'] is not None:
-                        ffmpeg_cover = session['cover']
-                        msg = f'Adding cover {ffmpeg_cover} into the final audiobook file...'
+                        cover_path = session['cover']
+                        msg = f'Adding cover {cover_path} into the final audiobook file...'
                         print(msg)
                         if session['output_format'] == 'mp3':
                             from mutagen.mp3 import MP3
@@ -1311,7 +1311,7 @@ def combine_audio_chapters(session):
                                 audio.add_tags()
                             except error:
                                 pass
-                            with open(ffmpeg_cover, 'rb') as img:
+                            with open(cover_path, 'rb') as img:
                                 audio.tags.add(
                                     APIC(
                                         encoding=3,
@@ -1324,7 +1324,7 @@ def combine_audio_chapters(session):
                         elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
                             from mutagen.mp4 import MP4, MP4Cover
                             audio = MP4(ffmpeg_final_file)
-                            with open(ffmpeg_cover, 'rb') as f:
+                            with open(cover_path, 'rb') as f:
                                 cover_data = f.read()
                             audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
                         if audio:
