@@ -691,6 +691,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             sentences_array = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
             if sentences_array is not None:
                 chapters.append(sentences_array)
+        print(chapters)
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
