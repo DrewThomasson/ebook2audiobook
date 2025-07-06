@@ -1260,24 +1260,6 @@ def combine_audio_chapters(session):
             print(error)
             return False
 
-    def assemble_chunks(txt, out):
-        try:
-            ffmpeg_cmd = [
-                shutil.which('ffmpeg'),
-                '-hide_banner', '-nostats',
-                '-f', 'concat', '-safe', '0',
-                '-i', txt, '-c', 'copy', '-threads', '1', '-y', out
-            ]
-            result = subprocess.run(ffmpeg_cmd, capture_output=True)
-            return result.returncode == 0
-        except subprocess.CalledProcessError as e:
-            DependencyError(e)
-            return False
-        except Exception as e:
-            error = f"assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}"
-            print(error)
-            return False
-
     def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file):
         try:
             if session['cancellation_requested']:
