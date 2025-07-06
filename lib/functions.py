@@ -459,8 +459,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
         # Replace math symbols with words
         text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-    print(text)
-    return text
+        return text
+     return False
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
@@ -664,7 +664,15 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         toc_list = []
         try:
             toc = epubBook.toc  # Extract TOC
-            toc_list = [normalize_text(str(item.title), session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat) for item in toc if hasattr(item, 'title')]
+            toc_list = [
+                nt for item in toc if hasattr(item, 'title')
+                if (nt := normalize_text(
+                    str(item.title),
+                    session['language'],
+                    session['language_iso1'],
+                    session['tts_engine'],
+                    is_num2words_compat
+            )) is not None
         except Exception as toc_error:
             error = f"Error extracting TOC: {toc_error}"
             print(error)
@@ -753,11 +761,12 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
                 if raw_text:
                     text_array.append(raw_text)
         text = "\n".join(text_array)
-        if text.strip():
+        if text.isalnum():
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-            if text.strip() and len(text.strip()) > 1:
+            if text is not None:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
+                print(chapter_sentences)
         return chapter_sentences
     except Exception as e:
         DependencyError(e)
