@@ -661,18 +661,18 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             return False
         is_num2words_compat = check_num2words_compat() 
         # Step 1: Extract TOC (Table of Contents)
-        toc_list = []
         try:
             toc = epubBook.toc  # Extract TOC
             toc_list = [
-                nt for item in toc if hasattr(item, 'title')
-                if (nt := normalize_text(
-                    str(item.title),
-                    session['language'],
-                    session['language_iso1'],
-                    session['tts_engine'],
-                    is_num2words_compat
-            )) is not None
+                    nt for item in toc if hasattr(item, 'title')
+                    if (nt := normalize_text(
+                        str(item.title),
+                        session['language'],
+                        session['language_iso1'],
+                        session['tts_engine'],
+                        is_num2words_compat
+                )) is not None
+            ]
         except Exception as toc_error:
             error = f"Error extracting TOC: {toc_error}"
             print(error)
