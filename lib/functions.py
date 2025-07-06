@@ -761,10 +761,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
                 if raw_text:
                     text_array.append(raw_text)
         text = "\n".join(text_array)
+        print(text)
         if text.isalnum():
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-            print(text)
             if text is not None:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
