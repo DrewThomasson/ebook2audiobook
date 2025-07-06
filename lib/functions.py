@@ -1274,8 +1274,8 @@ def combine_audio_chapters(session):
             filepath = os.path.join(session['chapters_dir'], file)
             durations.append(get_audio_duration(filepath))
         total_duration = sum(durations)
-        max_part_duration = 1 * 3600  # 6h in seconds
-        needs_split = total_duration > 2 * 3600
+        max_part_duration = outpout_split_hours * 3600
+        needs_split = total_duration > (outpout_split_hours * 2) * 3600
 
         # --- Split into parts by duration ---
         part_files = []
