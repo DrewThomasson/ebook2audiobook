@@ -902,13 +902,18 @@ def get_sentences(text, lang, tts_engine):
         return result
 
     max_chars = language_mapping[lang]['max_chars'] - 2
-    pattern_split = [re.escape(p) for p in punctuation_split_set]
-    pattern = f"({'|'.join(pattern_split)})"
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         ideogramm_list = segment_ideogramms(text)
         raw_list = list(join_ideogramms(ideogramm_list))
-    else:
-        raw_list = re.split(pattern, text)
+    else:    
+        punctuations = sorted(punctuation_split, key=len, reverse=True)
+        pattern_split = '|'.join(map(re.escape, punctuations))
+        pattern = rf"(.*?[{pattern_split}])(\s+|$)"
+        raw_list = []
+        for match in re.finditer(pattern, text):
+            s = match.group(1).strip()
+            if s:
+                raw_list.append(s)
         print(raw_list)
     raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
