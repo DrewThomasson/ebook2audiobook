@@ -764,7 +764,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         if bool(re.search(r'[^\W_]', text)):
             # Normalize lines and remove unnecessary spaces and switch special chars
             text = normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-            print(text)
             if text is not None:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
@@ -919,6 +918,7 @@ def get_sentences(text, lang, tts_engine):
         tmp_list = raw_list
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
+    print(tmp_list)
     sentences = []
     for sentence in tmp_list:
         sentence = sentence.strip()
