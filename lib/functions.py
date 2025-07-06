@@ -460,7 +460,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         # Replace math symbols with words
         text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         return text
-     return False
+    return None
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
