@@ -421,7 +421,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     # Replace punctuations causing hallucinations
     pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
     text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
-    print(text)
     # Replace NBSP with a normal space
     text = text.replace("\xa0", " ")
     # Replace multiple and spaces with single space
@@ -434,16 +433,16 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     pattern = '|'.join(map(re.escape, punctuation_split))
     # Reduce multiple consecutive punctuations
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
-    if tts_engine == TTS_ENGINES['XTTSv2']:
-        # Pattern 1: Add a space between UTF-8 characters and numbers
-        text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-        pattern_space = re.escape(''.join(punctuation_list))
-        # Ensure space before and after punctuation (excluding `,` and `.`)
-        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-        text = re.sub(punctuation_pattern_space, r' \1 ', text)
-        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-        text = re.sub(comma_dot_pattern, r' \1 ', text)
+    # Pattern 1: Add a space between UTF-8 characters and numbers
+    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+    pattern_space = re.escape(''.join(punctuation_list))
+    # Ensure space before and after punctuation (excluding `,` and `.`)
+    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+    text = re.sub(punctuation_pattern_space, r' \1 ', text)
+    # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+    text = re.sub(comma_dot_pattern, r' \1 ', text)
+    print(text)
     # Replace special chars with words
     specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
     for char, word in specialchars.items():
@@ -1710,16 +1709,14 @@ def convert_ebook(args, ctx=None):
                             metadata['language'] = session['language']
                             metadata['title'] = metadata['title'] if metadata['title'] else os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ')
                             metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
-                            session['metadata'] = metadata
-                            
+                            session['metadata'] = metadata                  
                             try:
                                 if len(session['metadata']['language']) == 2:
                                     lang_array = languages.get(part1=session['language'])
                                     if lang_array:
                                         session['metadata']['language'] = lang_array.part3     
                             except Exception as e:
-                                pass
-                           
+                                pass                         
                             if session['metadata']['language'] != session['language']:
                                 error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
                                 print(error)
