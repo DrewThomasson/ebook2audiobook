@@ -907,14 +907,11 @@ def get_sentences(text, lang, tts_engine):
     punctuations = sorted(punctuation_split, key=len, reverse=True)
     if all(len(p) == 1 for p in punctuations):
         pattern_split = ''.join(map(re.escape, punctuations))
-        # Pattern: greedy up to the last punctuation in a contiguous run, plus optional trailing non-word/space chars
-        pattern = rf"(.+[ {pattern_split}])([^\w\s]*)(?=\s+|$)"
+        # Greedy match up to last punctuation in a run, plus optional trailing non-word chars
+        pattern = rf"(.+[ {pattern_split}]+)([^\w\s]*)(?=\s+|$)"
     else:
-        # For multi-char punctuations, use alternation
         pattern_split = '|'.join(map(re.escape, punctuations))
-        # Greedy, and matches all trailing punctuations in a group
         pattern = rf"(.+(?:{pattern_split})+)([^\w\s]*)(?=\s+|$)"
-
     raw_list = []
     for match in re.finditer(pattern, text):
         s = (match.group(1) or '') + (match.group(2) or '')
