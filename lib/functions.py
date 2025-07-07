@@ -1777,7 +1777,7 @@ def convert_ebook(args, ctx=None):
                                             #    if os.path.exists(session['session_dir']):
                                             #        shutil.rmtree(session['session_dir'], ignore_errors=True)
                                             progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
-                                            session['audiobook'] = exported_files[0]
+                                            session['audiobook'] = exported_files[-1]
                                             print(info_session)
                                             return progress_status, True
                                         else:
