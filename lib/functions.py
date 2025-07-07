@@ -2218,8 +2218,8 @@ def web_interface(args, ctx):
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
-        gr_state = gr.State(elem_id='gr_state', value={"hash": None})
-        gr_state_alert = gr.State(elem_id='gr_state_alert', value={"type": None,"msg": None})
+        gr_state = gr.State(value={"hash": None})
+        gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
         gr_conversion_progress = gr.Textbox(elem_id='gr_conversion_progress', label='Progress')
