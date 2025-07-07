@@ -38,7 +38,6 @@ import uvicorn
 import zipfile
 import traceback
 import unicodedata
-import webvtt
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
