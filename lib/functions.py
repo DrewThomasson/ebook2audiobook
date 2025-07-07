@@ -772,6 +772,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         return None
 
 def get_sentences(text, lang, tts_engine):
+    max_chars = language_mapping[lang]['max_chars'] - 2
+
     def combine_punctuation(raw_list):
         if not raw_list:
             return raw_list
@@ -905,7 +907,6 @@ def get_sentences(text, lang, tts_engine):
                 result.extend(split_sentence(part2))
         return result
 
-    max_chars = language_mapping[lang]['max_chars'] - 2
     punctuations = sorted(punctuation_split, key=len, reverse=True)
     pattern_split = '|'.join(map(re.escape, punctuations))
     pattern = rf"(.*?[{pattern_split}])(\s+|$)"
@@ -935,6 +936,8 @@ def get_sentences(text, lang, tts_engine):
         sentence = sentence.strip()
         if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
             sentences.extend(split_sentence(sentence))
+    if not sentences and text.strip():
+        sentences = split_sentence(text.strip())
     return sentences
 
 def get_ram():
