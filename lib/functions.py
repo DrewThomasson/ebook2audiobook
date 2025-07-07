@@ -786,7 +786,9 @@ def get_sentences(text, lang, tts_engine):
                     result[-1] += ' '
                 result[-1] += sentence.lstrip()
             else:
-                result.append(sentence)
+                if not result[-1].endswith(' '):
+                    result[-1] += ' '
+                result.append(sentence.lstrip())
         return result
 
     def segment_ideogramms(text):
