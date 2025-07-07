@@ -48,7 +48,8 @@ dependencies = [
 	"sudachidict_core",
 	"transformers==4.51.3",
 	"coqui-tts[languages]==0.26.0",
-	"torchvggish"
+	"torchvggish",
+	"webvtt-py"
 ]
 readme = "README.md"
 requires-python = ">3.9,<3.13"
