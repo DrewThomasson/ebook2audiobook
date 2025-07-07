@@ -776,19 +776,19 @@ def get_sentences(text, lang, tts_engine):
         if not raw_list:
             return raw_list
         result = [raw_list[0]]
-        for sentence in raw_list[1:]:
-            if not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-                continue
-            if (not any(char.isalpha() for char in sentence)
-                and all(char.isspace() or char in punctuation_list_set for char in sentence)
-                and len(result[-1]) + len(sentence) <= max_chars):
+        i = 1
+        while i < len(raw_list):
+            curr_sentence = raw_list[i]
+            # While the current sentence starts with a punctuation and adding it does not exceed max_chars
+            while curr_sentence and curr_sentence[0] in punctuation_list_set and len(result[-1]) + 1 <= max_chars:
+                result[-1] += curr_sentence[0]
+                curr_sentence = curr_sentence[1:]
+            # If there's anything left, treat as a new sentence
+            if curr_sentence.strip():
                 if not result[-1].endswith(' '):
                     result[-1] += ' '
-                result[-1] += sentence.lstrip()
-            else:
-                if not result[-1].endswith(' '):
-                    result[-1] += ' '
-                result.append(sentence.lstrip())
+                result.append(curr_sentence.lstrip())
+            i += 1
         return result
 
     def segment_ideogramms(text):
@@ -905,17 +905,11 @@ def get_sentences(text, lang, tts_engine):
 
     max_chars = language_mapping[lang]['max_chars'] - 2
     punctuations = sorted(punctuation_split, key=len, reverse=True)
-    if all(len(p) == 1 for p in punctuations):
-        pattern_split = ''.join(map(re.escape, punctuations))
-        # Greedy match up to last punctuation in a run, plus optional trailing non-word chars
-        pattern = rf"(.+[ {pattern_split}]+)([^\w\s]*)(?=\s+|$)"
-    else:
-        pattern_split = '|'.join(map(re.escape, punctuations))
-        pattern = rf"(.+(?:{pattern_split})+)([^\w\s]*)(?=\s+|$)"
-    raw_list = []
+    pattern_split = '|'.join(map(re.escape, punctuations))
+    pattern = rf"(.*?[{pattern_split}])(\s+|$)"
+    raw_list = []      
     for match in re.finditer(pattern, text):
-        s = (match.group(1) or '') + (match.group(2) or '')
-        s = s.strip()
+        s = match.group(1).strip()
         if s:
             if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 tokens = segment_ideogramms(s)
