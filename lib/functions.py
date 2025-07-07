@@ -2516,13 +2516,13 @@ def web_interface(args, ctx):
                             selected_path = Path(selected).resolve()
                             parent_path = Path(session['voice_dir']).parent.resolve()
                             if parent_path in selected_path.parents:
-                                msg = f'Are you sure to delete {selected}...'
+                                msg = f'Are you sure to delete {speaker}...'
                                 return gr.update(value='confirm_voice_del'), gr.update(value=show_modal('confirm', msg),visible=True)
                             else:
-                                error = f'{selected} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
+                                error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
                                 show_alert({"type": "warning", "msg": error})
                         except Exception as e:
-                            error = f'Could not delete the voice file {selected}!'
+                            error = f'Could not delete the voice file {speaker}!'
                             alert_exception(error)
                 return gr.update(), gr.update(visible=False)
             except Exception as e:
