@@ -2522,7 +2522,7 @@ def web_interface(args, ctx):
                                 error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
                                 show_alert({"type": "warning", "msg": error})
                         except Exception as e:
-                            error = f'Could not delete the voice file {speaker}!'
+                            error = f'Could not delete the voice file {selected}!'
                             alert_exception(error)
                 return gr.update(), gr.update(visible=False)
             except Exception as e:
