@@ -2108,7 +2108,7 @@ def web_interface(args, ctx):
                                     gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                     gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 gr_custom_model_markdown = gr.Markdown(elem_id='gr_markdown_custom_model', value='<p>&nbsp;&nbsp;* Optional</p>')
-                        with gr.Group((elem_id='gr_group_session'):
+                        with gr.Group(elem_id='gr_group_session'):
                             gr_session = gr.Textbox(label='Session', elem_id='gr_session', interactive=False)
                         gr_output_format_list = gr.Dropdown(label='Output format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True)
             gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
