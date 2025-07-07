@@ -779,12 +779,12 @@ def get_sentences(text, lang, tts_engine):
         for sentence in raw_list[1:]:
             if not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
                 continue
-            if (
-                not any(char.isalpha() for char in sentence)
+            if (not any(char.isalpha() for char in sentence)
                 and all(char.isspace() or char in punctuation_list_set for char in sentence)
-                and len(result[-1]) + len(sentence) <= max_chars
-            ):
-                result[-1] += sentence
+                and len(result[-1]) + len(sentence) <= max_chars):
+                if not result[-1].endswith(' '):
+                    result[-1] += ' '
+                result[-1] += sentence.lstrip()
             else:
                 result.append(sentence)
         return result
@@ -917,7 +917,6 @@ def get_sentences(text, lang, tts_engine):
                     raw_list.append(str(tokens))
             else:
                 raw_list.append(s)
-    print(raw_list)
     raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
