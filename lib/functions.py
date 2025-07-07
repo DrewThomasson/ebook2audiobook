@@ -372,95 +372,44 @@ def check_num2words_compat():
 def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999_999_999):
     text = text.strip()
     digit_count = sum(c.isdigit() for c in text)
-    if digit_count <= 9:
+    # --- 1) Pure small integers up to 9 digits: leave as-is ---
+    if digit_count <= 9 and text.isdigit():
         return text
-    try:
-        as_number = float(text.replace(",", ""))
-        if abs(as_number) <= max_single_value:
-            return text
-    except ValueError:
-        pass
-    tokens = re.findall(r'\d*\.\d+|\d+|[^\w\s]|[\w]+|\s+', text)
+    # --- 2) “Thousands-grouped” numbers (at most 2 commas) ---
+    # e.g. "1,234" or "12,345,678.90", but NOT long lists like "626,262,636,626,262,…"
+    grouped_num_pattern = r'\d{1,3}(?:,\d{3})*(?:\.\d+)?'
+    if text.count(',') <= 2 and re.fullmatch(grouped_num_pattern, text):
+        # try parsing as a float
+        try:
+            val = float(text.replace(',', ''))
+            if abs(val) <= max_single_value:
+                return text
+        except ValueError:
+            pass
+    # --- 3) Otherwise tokenize and process each number/token individually ---
+    # captures decimals, ints, punctuation, words, and whitespace
+    token_re = re.compile(r'\d*\.\d+|\d+|[^\w\s]|\w+|\s+')
+    tokens = token_re.findall(text)
     result = []
-    for token in tokens:
-        if re.fullmatch(r'\d*\.\d+', token):
+    for tok in tokens:
+        # decimal numbers like "123.45"
+        if re.fullmatch(r'\d*\.\d+', tok):
             if is_num2words_compat:
-                num = float(token)
+                num = float(tok)
                 result.append(num2words(num, lang=lang_iso1))
             else:
-                result.append(token)
-        elif token.isdigit():
+                result.append(tok)
+        # pure integer tokens
+        elif tok.isdigit():
             if is_num2words_compat:
-                num = int(token)
+                num = int(tok)
                 result.append(num2words(num, lang=lang_iso1))
             else:
-                result.append(token)
+                result.append(tok)
+        # anything else (commas, Russian text, punctuation, spaces…)
         else:
-            result.append(token)
+            result.append(tok)
     return ''.join(result)
-
-def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
-    # Remove emojis
-    emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
-    emoji_pattern.sub('', text)
-    if lang in abbreviations_mapping:
-        abbr_map = {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping[lang].items()}
-        pattern = re.compile(r'\b(' + '|'.join(re.escape(k).replace('\\.', '') for k in abbreviations_mapping[lang].keys()) + r')\.?\b', re.IGNORECASE)
-        text = pattern.sub(lambda m: abbr_map.get(m.group(1).lower(), m.group()), text)
-    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
-    pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
-    # uppercase acronyms
-    text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
-    # Replace ### and [pause] with ‡pause‡ (‡ = double dagger U+2021)
-    text = re.sub(r'(###|\[pause\])', '‡pause‡', text)
-    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
-    pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, '‡pause‡', text)
-    # Replace single newlines ("\n" or "\r") with spaces
-    text = re.sub(r'\r\n|\r|\n', ' ', text)
-    # Replace punctuations causing hallucinations
-    pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
-    text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
-    # Replace NBSP with a normal space
-    text = text.replace("\xa0", " ")
-    # Replace multiple and spaces with single space
-    text = re.sub(r'\s+', ' ', text)
-    # Replace ok by 'Owkey'
-    text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
-    # Replace parentheses with double quotes
-    text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
-    # Escape special characters in the punctuation list for regex
-    pattern = '|'.join(map(re.escape, punctuation_split))
-    # Reduce multiple consecutive punctuations
-    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
-    # Pattern 1: Add a space between UTF-8 characters and numbers
-    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    pattern_space = re.escape(''.join(punctuation_list))
-    # Ensure space before and after punctuation (excluding `,` and `.`)
-    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-    text = re.sub(punctuation_pattern_space, r' \1 ', text)
-    # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-    text = re.sub(comma_dot_pattern, r' \1 ', text)
-    # Replace special chars with words
-    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
-    for char, word in specialchars.items():
-        text = text.replace(char, f" {word} ")
-    for char in specialchars_remove:
-        text = text.replace(char, ' ')
-    text = ' '.join(text.split())
-    if bool(re.search(r'[^\W_]', text)):
-        # Add punctuation after numbers or Roman numerals at start of a chapter.
-        roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
-        arabic_pattern = r'^(\d+)(?=\s|$)'
-        if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
-            # Add punctuation if not already present (e.g. "II", "4")
-            if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
-                text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
-        # Replace math symbols with words
-        text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
-        return text
-    return None
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
@@ -521,6 +470,74 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
                     number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
                     text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
     return text
+
+def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+    # Remove emojis
+    emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
+    emoji_pattern.sub('', text)
+    if lang in abbreviations_mapping:
+        abbr_map = {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping[lang].items()}
+        pattern = re.compile(r'\b(' + '|'.join(re.escape(k).replace('\\.', '') for k in abbreviations_mapping[lang].keys()) + r')\.?\b', re.IGNORECASE)
+        text = pattern.sub(lambda m: abbr_map.get(m.group(1).lower(), m.group()), text)
+    # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
+    pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
+    # uppercase acronyms
+    text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
+    # Replace ### and [pause] with ‡pause‡ (‡ = double dagger U+2021)
+    text = re.sub(r'(###|\[pause\])', '‡pause‡', text)
+    # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
+    pattern = r'(?:\r\n|\r|\n){2,}'
+    text = re.sub(pattern, '‡pause‡', text)
+    # Replace single newlines ("\n" or "\r") with spaces
+    text = re.sub(r'\r\n|\r|\n', ' ', text)
+    # Replace punctuations causing hallucinations
+    pattern = f"[{''.join(map(re.escape, punctuation_switch.keys()))}]"
+    text = re.sub(pattern, lambda match: punctuation_switch.get(match.group(), match.group()), text)
+    # Replace NBSP with a normal space
+    text = text.replace("\xa0", " ")
+    # Replace multiple and spaces with single space
+    text = re.sub(r'\s+', ' ', text)
+    # Replace ok by 'Owkey'
+    text = re.sub(r'\bok\b', 'Okay', text, flags=re.IGNORECASE)
+    # Replace parentheses with double quotes
+    text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
+    # Escape special characters in the punctuation list for regex
+    pattern = '|'.join(map(re.escape, punctuation_split))
+    # Reduce multiple consecutive punctuations
+    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
+    # Pattern 1: Add a space between UTF-8 characters and numbers
+    text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
+    pattern_space = re.escape(''.join(punctuation_list))
+    # Ensure space before and after punctuation (excluding `,` and `.`)
+    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
+    text = re.sub(punctuation_pattern_space, r' \1 ', text)
+    # If this whole `text` is not a valid thousands-grouped number…
+    grouped_num_re = re.compile(r'^\d{1,3}(?:,\d{3})*(?:\.\d+)?$')
+    if not grouped_num_re.match(text):
+        # then force spaces around *every* comma between digits…
+        text = re.sub(r'(?<=\d),(?=\d)', ' , ', text)
+    # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
+    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
+    text = re.sub(comma_dot_pattern, r' \1 ', text)
+    # Replace special chars with words
+    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
+    for char, word in specialchars.items():
+        text = text.replace(char, f" {word} ")
+    for char in specialchars_remove:
+        text = text.replace(char, ' ')
+    text = ' '.join(text.split())
+    if bool(re.search(r'[^\W_]', text)):
+        # Add punctuation after numbers or Roman numerals at start of a chapter.
+        roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
+        arabic_pattern = r'^(\d+)(?=\s|$)'
+        if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
+            # Add punctuation if not already present (e.g. "II", "4")
+            if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
+                text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
+        # Replace math symbols with words
+        text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+        return text
+    return None
 
 def convert2epub(session):
     if session['cancellation_requested']:
@@ -702,17 +719,14 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         chapter_sentences = None
         raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
-
         if not soup.body or not soup.body.get_text(strip=True):
             return None
-
         # Get epub:type from <body> or outermost <section>
         epub_type = soup.body.get("epub:type", "").lower()
         if not epub_type:
             section_tag = soup.find("section")
             if section_tag and section_tag.get("epub:type"):
                 epub_type = section_tag.get("epub:type").lower()
-
         # Skip known non-chapter types
         excluded_types = {
             "frontmatter", "backmatter", "toc", "titlepage", "colophon",
@@ -721,13 +735,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         }
         if any(part in epub_type for part in excluded_types):
             return None
-
         for script in soup(["script", "style"]):
             script.decompose()
-
         # --- NEW: detect whether any real <p> exists ---
         has_real_p = any(p.get_text(strip=True) for p in soup.find_all("p"))
-
         # build the list of tags to scan
         base_tags = ["h1", "h2", "h3", "h4", "h5", "h6", "table"]
         if has_real_p:
@@ -735,7 +746,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         else:
             # fallback to div/span when no paragraphs exist
             base_tags.extend(["div", "span"])
-
         text_array = []
         handled_tables = set()
         for tag in soup.find_all(base_tags):
@@ -757,26 +767,21 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
                         line = " — ".join(cells)
                     if line:
                         text_array.append(line)
-
             elif tag.name in ["p", "div", "span"] and tag.find_parent("table"):
                 continue  # Already handled in the <table> section
-
             elif tag.name == "p" and "whitespace" in (tag.get("class") or []):
                 if tag.get_text(strip=True) == '\xa0' or not tag.get_text(strip=True):
                     text_array.append("[pause]")
-
             elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
                     # replace roman numbers by digits
                     raw_text = replace_roman_numbers(raw_text, lang)
                     text_array.append(f'{raw_text}.[pause]')
-
             else:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
                     text_array.append(raw_text)
-
         text = "\n".join(text_array)
         if bool(re.search(r'[^\W_]', text)):
             # Normalize lines and remove unnecessary spaces and switch special chars
@@ -784,7 +789,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
             if text is not None:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
-
     except Exception as e:
         DependencyError(e)
         return None
