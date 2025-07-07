@@ -917,7 +917,6 @@ def get_sentences(text, lang, tts_engine):
                     raw_list.append(str(tokens))
             else:
                 raw_list.append(s)
-    print(raw_list)
     raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
