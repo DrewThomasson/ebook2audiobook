@@ -705,7 +705,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
 
         if not soup.body or not soup.body.get_text(strip=True):
             return None
- 
+
         # Get epub:type from <body> or outermost <section>
         epub_type = soup.body.get("epub:type", "").lower()
         if not epub_type:
@@ -721,13 +721,24 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         }
         if any(part in epub_type for part in excluded_types):
             return None
-        
+
         for script in soup(["script", "style"]):
             script.decompose()
 
+        # --- NEW: detect whether any real <p> exists ---
+        has_real_p = any(p.get_text(strip=True) for p in soup.find_all("p"))
+
+        # build the list of tags to scan
+        base_tags = ["h1", "h2", "h3", "h4", "h5", "h6", "table"]
+        if has_real_p:
+            base_tags.append("p")
+        else:
+            # fallback to div/span when no paragraphs exist
+            base_tags.extend(["div", "span"])
+
         text_array = []
         handled_tables = set()
-        for tag in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6", "p", "table"]):
+        for tag in soup.find_all(base_tags):
             if tag.name == "table":
                 # Ensure we don't process the same table multiple times
                 if tag in handled_tables:
@@ -738,28 +749,34 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
                     continue
                 header_cells = [td.get_text(strip=True) for td in rows[0].find_all(["td", "th"])]
                 for row in rows[1:]:
-                    cells = [td.get_text(strip=True).replace('\xa0', ' ') for td in row.find_all("td")]
+                    cells = [td.get_text(strip=True).replace('\xa0', ' ')
+                             for td in row.find_all("td")]
                     if len(cells) == len(header_cells):
                         line = " — ".join(f"{header}: {cell}" for header, cell in zip(header_cells, cells))
                     else:
                         line = " — ".join(cells)
                     if line:
                         text_array.append(line)
-            elif tag.name == "p" and tag.find_parent("table"):
+
+            elif tag.name in ["p", "div", "span"] and tag.find_parent("table"):
                 continue  # Already handled in the <table> section
+
             elif tag.name == "p" and "whitespace" in (tag.get("class") or []):
                 if tag.get_text(strip=True) == '\xa0' or not tag.get_text(strip=True):
                     text_array.append("[pause]")
+
             elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
                     # replace roman numbers by digits
                     raw_text = replace_roman_numbers(raw_text, lang)
                     text_array.append(f'{raw_text}.[pause]')
+
             else:
                 raw_text = tag.get_text(strip=True)
                 if raw_text:
                     text_array.append(raw_text)
+
         text = "\n".join(text_array)
         if bool(re.search(r'[^\W_]', text)):
             # Normalize lines and remove unnecessary spaces and switch special chars
@@ -767,6 +784,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
             if text is not None:
                 chapter_sentences = get_sentences(text, lang, tts_engine)
         return chapter_sentences
+
     except Exception as e:
         DependencyError(e)
         return None
