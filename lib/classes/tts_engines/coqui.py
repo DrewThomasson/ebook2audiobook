@@ -14,6 +14,7 @@ import uuid
 
 from huggingface_hub import hf_hub_download
 from pathlib import Path
+from pprint import pprint
 
 from lib import *
 from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, unload_tts, append_sentence2vtt
@@ -180,7 +181,7 @@ class Coqui:
                         tts.cuda()
                     else:
                         tts.to(device)
-                    loaded_tts[key] = {"engine": tts, "config": None}
+                    loaded_tts[key] = {"engine": tts, "config": None} 
                     msg = f'{model_path} Loaded!'
                     print(msg)
                     return tts
@@ -410,11 +411,11 @@ class Coqui:
             speaker = None
             audio_data = False
             audio2trim = False
-            trim_audio_buffer = 0.003
+            trim_audio_buffer = 0.004
             settings = self.params[self.session['tts_engine']]
-            final_sentence = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
-            if sentence.endswith('-'):
-                sentence = sentence[:-1]
+            final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
+            sentence = sentence.rstrip()
+            if sentence.endswith('-') or sentence[-1].isalnum():
                 audio2trim = True
             settings['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
@@ -438,20 +439,23 @@ class Coqui:
                         # Check if there are positive integers so possible date to convert
                         if bool(re.search(r'\b\d+\b', sentence)):
                             date_spans = detect_date_entities(sentence, self.stanza_nlp)
-                            result = []
-                            last_pos = 0
-                            for start, end, date_text in date_spans:
-                                # Append sentence before this date
-                                result.append(sentence[last_pos:start])
-                                processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language_iso1']), date_text)
-                                result.append(processed)
-                                last_pos = end
-                            # Append remaining sentence
-                            result.append(sentence[last_pos:])
-                            sentence = ''.join(result)
+                            if date_spans:
+                                result = []
+                                last_pos = 0
+                                for start, end, date_text in date_spans:
+                                    # Append sentence before this date
+                                    result.append(sentence[last_pos:start])
+                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language_iso1']), date_text)
+                                    if not processed:
+                                        break
+                                    result.append(processed)
+                                    last_pos = end
+                                # Append remaining sentence
+                                result.append(sentence[last_pos:])
+                                sentence = ''.join(result)
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
-                    sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
+                    sentence_parts = [p.replace('. ', '— ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
@@ -461,7 +465,7 @@ class Coqui:
                         continue
                     audio_part = None
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                        trim_audio_buffer = 0.08
+                        trim_audio_buffer = 0.06
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
                             settings['gpt_cond_latent'], settings['speaker_embedding'] = settings['latent_embedding'][settings['voice_path']]
                         else:
@@ -498,7 +502,7 @@ class Coqui:
                         if is_audio_data_valid(audio_part):
                             audio_part = audio_part.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['BARK']:
-                        trim_audio_buffer = 0.004
+                        trim_audio_buffer = 0.002
                         '''
                             [laughter]
                             [laughs]
@@ -745,7 +749,7 @@ class Coqui:
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
-                        trim_audio_buffer = 0.005
+                        trim_audio_buffer = 0.003
                         speaker_argument = {}
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                         if settings['voice_path'] is not None:
@@ -770,7 +774,7 @@ class Coqui:
                 if audio_segments:
                     audio_tensor = torch.cat(audio_segments, dim=-1)
                     if audio2trim:
-                        audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                        audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.003, trim_audio_buffer).unsqueeze(0)
                     start_time = self.sentences_total_time
                     duration = audio_tensor.shape[-1] / settings['samplerate']
                     end_time = start_time + duration
@@ -782,12 +786,13 @@ class Coqui:
                         "resume_check": self.sentence_idx
                     }
                     self.sentence_idx = append_sentence2vtt(sentence_obj, self.vtt_path)
-                    torchaudio.save(final_sentence, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
-                    del audio_tensor
-                if os.path.exists(final_sentence):
+                    if self.sentence_idx:
+                        torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
+                        del audio_tensor
+                if os.path.exists(final_sentence_file):
                     return True
                 else:
-                    error = f"Cannot create {final_sentence}"
+                    error = f"Cannot create {final_sentence_file}"
                     print(error)
             else:
                 error = f"convert() error: {self.session['tts_engine']} is None"

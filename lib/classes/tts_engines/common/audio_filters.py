@@ -35,7 +35,7 @@ def detect_gender(voice_path):
         print(error)
         return None
 
-def trim_audio(audio_data, samplerate, silence_threshold=0.001, buffer_sec=0.007):
+def trim_audio(audio_data, samplerate, silence_threshold=0.003, buffer_sec=0.005):
     # Ensure audio_data is a PyTorch tensor
     if isinstance(audio_data, list):  
         audio_data = torch.tensor(audio_data)
