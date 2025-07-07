@@ -902,19 +902,22 @@ def get_sentences(text, lang, tts_engine):
         return result
 
     max_chars = language_mapping[lang]['max_chars'] - 2
-    if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-        ideogramm_list = segment_ideogramms(text)
-        raw_list = list(join_ideogramms(ideogramm_list))
-    else:    
-        punctuations = sorted(punctuation_split, key=len, reverse=True)
-        pattern_split = '|'.join(map(re.escape, punctuations))
-        pattern = rf"(.*?[{pattern_split}])(\s+|$)"
-        raw_list = []
-        for match in re.finditer(pattern, text):
-            s = match.group(1).strip()
-            if s:
+    punctuations = sorted(punctuation_split, key=len, reverse=True)
+    pattern_split = '|'.join(map(re.escape, punctuations))
+    pattern = rf"(.*?[{pattern_split}])(\s+|$)"
+    raw_list = []      
+    for match in re.finditer(pattern, text):
+        s = match.group(1).strip()
+        if s:
+            if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                tokens = segment_ideogramms(s)
+                if isinstance(tokens, list):
+                    raw_list.append(''.join(tokens))
+                else:
+                    raw_list.append(str(tokens))
+            else:
                 raw_list.append(s)
-        print(raw_list)
+    print(raw_list)
     raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
