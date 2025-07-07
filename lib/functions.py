@@ -782,7 +782,7 @@ def get_sentences(text, lang, tts_engine):
         while i < len(raw_list):
             curr_sentence = raw_list[i]
             # While the current sentence starts with a punctuation and adding it does not exceed max_chars
-            while curr_sentence and curr_sentence[0] in punctuation_split_set and len(result[-1]) + 1 <= max_chars:
+            while curr_sentence and curr_sentence[0] in extended_punct_set and len(result[-1]) + 1 <= max_chars:
                 result[-1] += curr_sentence[0]
                 curr_sentence = curr_sentence[1:]
             # If there's anything left, treat as a new sentence
