@@ -420,10 +420,11 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
                 number_value = float(number)
             else:
                 number_value = int(number)
-            return num2words(number_value, lang=lang_iso1)
+            result = num2words(number_value, lang=lang_iso1)
+            print(f'------------{result}----------')
+            return result
         except Exception as e:
             print(f"Error converting number: {number}, Error: {e}")
-            # on error, leave original
             return match.group(0)
 
     def replace_ambiguous(match):
@@ -466,10 +467,12 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         r'(?!\S)'                                       # whitespace or end
     )
     if tts_engine != TTS_ENGINES['XTTSv2']:
+        print('pass 1')
         if is_num2words_compat:
             # split long digit-runs for clarity (4-digit groups)
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
             # *this* re.sub will now find every standalone number and convert it
+            print('pass 2')
             text = re.sub(number_pattern, rep_num, text)
         else:
             # fallback: split into 2-digit groups then map digits to phonemes
