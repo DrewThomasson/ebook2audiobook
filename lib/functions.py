@@ -421,7 +421,6 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             else:
                 number_value = int(number)
             result = num2words(number_value, lang=lang_iso1)
-            print(f'------------{result}----------')
             return result
         except Exception as e:
             print(f"Error converting number: {number}, Error: {e}")
@@ -467,12 +466,10 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         r'(?!\S)'                                       # whitespace or end
     )
     if tts_engine != TTS_ENGINES['XTTSv2']:
-        print('pass 1')
         if is_num2words_compat:
             # split long digit-runs for clarity (4-digit groups)
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
             # *this* re.sub will now find every standalone number and convert it
-            print('pass 2')
             text = re.sub(number_pattern, rep_num, text)
         else:
             # fallback: split into 2-digit groups then map digits to phonemes
@@ -546,8 +543,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             # Add punctuation if not already present (e.g. "II", "4")
             if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
-        # Replace math symbols with words
-        print('call math2word()')
+        # Replace math symbols with word
         text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         return text
     return None
@@ -689,7 +685,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
-        is_num2words_compat = check_num2words_compat() 
+        is_num2words_compat = check_num2words_compat()
+        print(f'=========>is_num2words_compat: {is_num2words_compat}')
         # Step 1: Extract TOC (Table of Contents)
         try:
             toc = epubBook.toc  # Extract TOC
