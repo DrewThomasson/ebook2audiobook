@@ -547,6 +547,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
         # Replace math symbols with words
+        print('call math2word()')
         text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         return text
     return None
