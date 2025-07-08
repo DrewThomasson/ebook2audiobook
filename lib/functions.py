@@ -455,7 +455,8 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         if ambiguous_replacements:
             text = re.sub(ambiguous_pattern, replace_ambiguous, text)
         # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
-        number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
+        #number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
+        number_pattern = r'^\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*$'
         if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
             if is_num2words_compat:
                 # Pattern 2: Split big numbers into groups of 4
