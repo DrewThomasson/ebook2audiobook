@@ -412,65 +412,78 @@ def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_valu
     return ''.join(result)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
-
     def rep_num(match):
-        number = match.group().strip().replace(",", "")
+        # strip any commas, convert to int/float, then to words
+        number = match.group(1).replace(",", "")
         try:
-            if "." in number or "e" in number or "E" in number:
+            if "." in number or "e" in number.lower():
                 number_value = float(number)
             else:
                 number_value = int(number)
-            number_in_words = num2words(number_value, lang=lang_iso1)
-            return f" {number_in_words}"
+            return num2words(number_value, lang=lang_iso1)
         except Exception as e:
-            error = f"Error converting number: {number}, Error: {e}"
-            print(error)
-            return f"{number}"
+            print(f"Error converting number: {number}, Error: {e}")
+            # on error, leave original
+            return match.group(0)
 
     def replace_ambiguous(match):
-        symbol2 = match.group(2)
-        symbol3 = match.group(3)
-        if symbol2 in ambiguous_replacements: # "num SYMBOL num" case
-            return f"{match.group(1)} {ambiguous_replacements[symbol2]} {match.group(3)}"            
-        elif symbol3 in ambiguous_replacements: # "SYMBOL num" case
-            return f"{ambiguous_replacements[symbol3]} {match.group(4)}"
-        return match.group(0)    
+        # handles "num SYMBOL num" and "SYMBOL num"
+        if match.group(2) and match.group(2) in ambiguous_replacements:
+            return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
+        if match.group(3) and match.group(3) in ambiguous_replacements:
+            return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
+        return match.group(0)
 
-    # Check if it's a serie of small numbers with a separator
+    # 1) Pre-process formatted series (e.g. phone numbers) if needed
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
+    # 2) Symbol phonemes
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-    # Separate ambiguous and non-ambiguous symbols
     ambiguous_symbols = {"-", "/", "*", "x"}
-    replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit()}  # Keep only math symbols
-    normal_replacements = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
+    replacements         = {k: v for k, v in phonemes_list.items() if not k.isdigit()}
+    normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
-    # Replace unambiguous math symbols normally
+    # 3) Replace unambiguous symbols everywhere
     if normal_replacements:
-        math_pattern = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
-        text = re.sub(math_pattern, lambda m: f" {normal_replacements[m.group(0)]} ", text)
-    # Regex pattern for ambiguous symbols (match only valid equations)
-    ambiguous_pattern = (
-        r'(?<!\S)(\d+)\s*([-/*x])\s*(\d+)(?!\S)|'  # Matches "num SYMBOL num" (e.g., "3 + 5", "7-2", "8 * 4")
-        r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'           # Matches "SYMBOL num" (e.g., "-4", "/ 9")
-    )
+        sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
+        text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
+    # 4) Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
-        text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-    # Regex pattern for detecting numbers (handles negatives, commas, decimals, scientific notation)
-    #number_pattern = r'\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+(?!\s|$))?(?:[eE][-+]?\d+)?)\s*'
-    number_pattern = r'^\s*(-?\d{1,3}(?:,\d{3})*(?:\.\d+)?(?:[eE][+-]?\d+)?)\s*$'
-    if tts_engine in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
+        amb_pat = (
+            r'(?<!\S)'               # no non-space before
+            r'(\d+)\s*([-/*x])\s*(\d+)'  # num SYMBOL num
+            r'(?!\S)'               # no non-space after
+            r'|'                    # or
+            r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
+        )
+        text = re.sub(amb_pat, replace_ambiguous, text)
+    # 5) Number-to-words: build a pattern that finds any standalone number,
+    #    with commas, decimals or exponents.
+    number_pattern = (
+        r'(?<!\S)'                                      # whitespace or start
+        r'(-?\d{1,3}(?:,\d{3})*'                        # integer with optional commas
+        r'(?:\.\d+)?'                                   # optional decimal
+        r'(?:[eE][+-]?\d+)?)'                           # optional exponent
+        r'(?!\S)'                                       # whitespace or end
+    )
+    tts_set = {
+        TTS_ENGINES['VITS'],
+        TTS_ENGINES['FAIRSEQ'],
+        TTS_ENGINES['TACOTRON2'],
+        TTS_ENGINES['YOURTTS'],
+    }
+    if tts_engine in tts_set:
         if is_num2words_compat:
-            # Pattern 2: Split big numbers into groups of 4
+            # split long digit-runs for clarity (4-digit groups)
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
+            # *this* re.sub will now find every standalone number and convert it
             text = re.sub(number_pattern, rep_num, text)
         else:
-            # Pattern 2: Split big numbers into groups of 2
+            # fallback: split into 2-digit groups then map digits to phonemes
             text = re.sub(r'(\d{2})(?=\d{2}(?!\.\d))', r'\1 ', text)
-            # Fallback: Replace numbers using phonemes dictionary
-            sorted_numbers = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
-            if sorted_numbers:
-                number_pattern = r'\b(' + '|'.join(map(re.escape, sorted_numbers)) + r')\b'
-                text = re.sub(number_pattern, lambda match: phonemes_list[match.group(0)], text)
+            digit_keys = sorted((k for k in phonemes_list if k.isdigit()), key=len, reverse=True)
+            if digit_keys:
+                dd_pat = r'\b(' + '|'.join(map(re.escape, digit_keys)) + r')\b'
+                text = re.sub(dd_pat, lambda m: phonemes_list[m.group(1)], text)
     return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine, is_num2words_compat):
