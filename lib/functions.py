@@ -685,8 +685,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
-        is_num2words_compat = check_num2words_compat()
-        print(f'=========>is_num2words_compat: {is_num2words_compat}')
+        is_num2words_compat = check_num2words_compat(session['language_iso1'])
         # Step 1: Extract TOC (Table of Contents)
         try:
             toc = epubBook.toc  # Extract TOC
