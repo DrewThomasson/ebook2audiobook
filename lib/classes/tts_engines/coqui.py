@@ -27,10 +27,11 @@ lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
 class Coqui:
+
     def __init__(self, session):
         try:
             if session['language'] in year_to_decades_languages:
-                stanza.download(session['language_iso1']):
+                stanza.download(session['language_iso1'])
                 self.stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
             self.session = session
             self.cache_dir = tts_dir
