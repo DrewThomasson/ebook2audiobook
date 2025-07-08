@@ -465,13 +465,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         r'(?:[eE][+-]?\d+)?)'                           # optional exponent
         r'(?!\S)'                                       # whitespace or end
     )
-    tts_set = {
-        TTS_ENGINES['VITS'],
-        TTS_ENGINES['FAIRSEQ'],
-        TTS_ENGINES['TACOTRON2'],
-        TTS_ENGINES['YOURTTS'],
-    }
-    if tts_engine in tts_set:
+    if tts_engine != TTS_ENGINES['XTTSv2']:
         if is_num2words_compat:
             # split long digit-runs for clarity (4-digit groups)
             text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
