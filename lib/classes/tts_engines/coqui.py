@@ -35,7 +35,6 @@ class Coqui:
                 else:
                     error = f"Timeout trying to download stanza {session['language_iso1']} model from stanford.edu. You probably exceed their download limit. Retry later thanks."
                     print(error)
-                    return False
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
@@ -49,11 +48,11 @@ class Coqui:
             self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')       
-            return self._build()
+            self._build()
         except Exception as e:
             error = f'__init__() error: {e}'
             print(error)
-            return False
+            return None
 
     def _build(self):
         try:
