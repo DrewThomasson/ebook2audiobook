@@ -54,9 +54,24 @@ class BackgroundDetector:
         hop_len   = int(frame_len * (1 - overlap))
 
         # 2) Compute spectral features per frame
-        rms      = librosa.feature.rms(y=y, frame_length=frame_len, hop_length=hop_len)[0]
-        flatness = librosa.feature.spectral_flatness(y=y, frame_length=frame_len, hop_length=hop_len)[0]
-        zcr      = librosa.feature.zero_crossing_rate(y, frame_length=frame_len, hop_length=hop_len)[0]
+        rms      = librosa.feature.rms(
+                       y=y,
+                       frame_length=frame_len,
+                       hop_length=hop_len
+                   )[0]
+
+        # ← patched here ↓
+        flatness = librosa.feature.spectral_flatness(
+                       y=y,
+                       n_fft=frame_len,
+                       hop_length=hop_len
+                   )[0]
+
+        zcr      = librosa.feature.zero_crossing_rate(
+                       y,
+                       frame_length=frame_len,
+                       hop_length=hop_len
+                   )[0]
 
         # frame‐level decisions
         rms_mean, rms_std = rms.mean(), rms.std()
