@@ -193,9 +193,12 @@ class VoiceExtractor:
             best_start = timestamps[best_index]
             best_end = best_start + min_required_duration
             print(f'--------- best start: {best_start}-------- best end: {best_end}')
-            # Start at best_end and search backward for min_silence_len of silence
+            padding = 100  # ms
+
+            # 1. Search backward from best_end for min_silence_len of silence
             search_end = best_end
             found = False
+            last_valid_end = best_end  # fallback if no silence region found
             while search_end - min_silence_len >= 0:
                 silence = True
                 for offset in range(0, min_silence_len, chunk_size):
@@ -206,18 +209,20 @@ class VoiceExtractor:
                 if silence:
                     found = True
                     break
+                last_valid_end = search_end  # update last checked
                 search_end -= chunk_size
 
             if found:
-                end_index = min(search_end + search_padding, total_duration)
+                end_index = min(search_end + padding, total_duration)
             else:
-                end_index = min(best_end + search_padding, total_duration)
+                end_index = min(last_valid_end + padding, total_duration)
 
-            # Guarantee min_required_duration
+            # 2. Guarantee min_required_duration
             start_candidate = max(0, end_index - min_required_duration)
 
-            # Now search backward from start_candidate for min_silence_len of silence
+            # 3. Now search backward from start_candidate for min_silence_len of silence
             found = False
+            last_valid_start = start_candidate
             search_start = start_candidate
             while search_start - min_silence_len >= 0:
                 silence = True
@@ -229,12 +234,13 @@ class VoiceExtractor:
                 if silence:
                     found = True
                     break
+                last_valid_start = search_start
                 search_start -= chunk_size
 
             if found:
-                start_index = max(search_start - search_padding, 0)
+                start_index = max(search_start - padding, 0)
             else:
-                start_index = max(start_candidate - search_padding, 0)
+                start_index = max(last_valid_start - padding, 0)
 
             # 4. Final cut
             trimmed_audio = audio[start_index:end_index]
