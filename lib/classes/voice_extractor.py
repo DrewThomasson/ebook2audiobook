@@ -13,6 +13,7 @@ from torchvggish import vggish, vggish_input
 
 from lib.conf import voice_formats
 from lib.models import TTS_ENGINES, models
+from lib.classes.background_detector import BackgroundDetector
 
 class VoiceExtractor:
 
@@ -77,7 +78,6 @@ class VoiceExtractor:
             torch_home = os.path.join(self.models_dir, 'hub')
             torch.hub.set_dir(torch_home)
             os.environ['TORCH_HOME'] = torch_home
-           
             #energy_threshold = 50000 # to tune if not enough accurate (higher = less sensitive)
             #model = vggish()
             #model.eval()
