@@ -191,7 +191,7 @@ class VoiceExtractor:
             best_index = np.argmax(score)  # Find the chunk with max variation
             # set timestamp and duration
             best_start = timestamps[best_index]
-            best_end = min(best_start + min_required_duration, total_duration - best_start)
+            best_end = total_duration - best_start
             # ms of optional padding before/after
             padding = 400
             # Find pause start
