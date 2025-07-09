@@ -192,15 +192,19 @@ class VoiceExtractor:
             best_start = timestamps[best_index]
             best_end = best_start + min_required_duration
             print(f'--------- best start: {best_start}-------- best end: {best_end}')
-
-            # EXAMPLE: Backward search from best_end for end_index
             required_chunks = min_silence_len // chunk_size
+
+            audio_length = len(audio)
+
+            # Clamp best_start and best_end to within the audio
+            best_start = max(0, min(best_start, audio_length))
+            best_end = max(0, min(best_end, audio_length))
+
+            # --- Backward search for end_index ---
             index = best_end
             found = False
-
             while index - (required_chunks * chunk_size) >= 0:
                 silence = True
-                # Check all chunks in this window (moving window backward)
                 for n in range(required_chunks):
                     chunk_start = index - (n + 1) * chunk_size
                     chunk_end = index - n * chunk_size
@@ -216,9 +220,9 @@ class VoiceExtractor:
             if found:
                 end_index = index - (required_chunks * chunk_size)
             else:
-                end_index = best_end  # Fallback: no silent region, use original
+                end_index = best_end  # Fallback
 
-            # EXAMPLE: Backward search from best_start for start_index, then fallback to forward search if needed
+            # --- Backward search for start_index ---
             index = best_start
             found = False
             while index - (required_chunks * chunk_size) >= 0:
@@ -238,7 +242,7 @@ class VoiceExtractor:
             if found:
                 start_index = index - (required_chunks * chunk_size)
             else:
-                # Fallback: forward search from best_start up to end_index
+                # Fallback: scan FORWARD from best_start up to end_index
                 index = best_start
                 found = False
                 while index + (required_chunks * chunk_size) <= end_index:
@@ -259,13 +263,14 @@ class VoiceExtractor:
                 else:
                     start_index = best_start  # Ultimate fallback
 
-            # Sanity check
+            # --- Final bounds check ---
             start_index = max(0, start_index)
-            end_index = min(end_index, len(audio))
-            if start_index >= end_index:
-                raise ValueError(f"start_index ({start_index}) >= end_index ({end_index}) -- check logic or thresholds.")
+            end_index = min(end_index, audio_length)
 
-            # Final trim and export
+            if start_index >= end_index:
+                raise ValueError(f"start_index ({start_index}) >= end_index ({end_index}) -- check your logic or thresholds.")
+
+            # --- Final trim and export ---
             trimmed_audio = audio[start_index:end_index]
             trimmed_audio.export(self.voice_track, format='wav')
             msg = 'Audio trimmed and cleaned!'
