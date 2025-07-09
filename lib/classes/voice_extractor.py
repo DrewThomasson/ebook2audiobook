@@ -193,7 +193,7 @@ class VoiceExtractor:
             best_start = timestamps[best_index]
             best_end = best_start + min_required_duration
             print(f'--------- best start: {best_start}-------- best end: {best_end}')
-            padding = 100  # ms
+            search_padding = 100  # ms
             # 1. Start at best_end and search backward for min_silence_len of silence
             search_end = best_end
             found = False
@@ -210,9 +210,9 @@ class VoiceExtractor:
                 search_end -= chunk_size
 
             if found:
-                end_index = min(search_end + padding, total_duration)
+                end_index = min(search_end + search_padding, total_duration)
             else:
-                end_index = min(best_end + padding, total_duration)
+                end_index = min(best_end + search_padding, total_duration)
 
             # 2. Guarantee min_required_duration
             start_candidate = max(0, end_index - min_required_duration)
@@ -233,9 +233,9 @@ class VoiceExtractor:
                 search_start -= chunk_size
 
             if found:
-                start_index = max(search_start - padding, 0)
+                start_index = max(search_start - search_padding, 0)
             else:
-                start_index = max(start_candidate - padding, 0)
+                start_index = max(start_candidate - search_padding, 0)
 
             # 4. Final cut
             trimmed_audio = audio[start_index:end_index]
