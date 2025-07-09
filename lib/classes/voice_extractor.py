@@ -132,7 +132,7 @@ class VoiceExtractor:
             raise ValueError(error)
         return False, error
 
-    def _remove_silences(self, audio, silence_threshold, min_silence_len=200, keep_silence=400):
+    def _remove_silences(self, audio, silence_threshold, min_silence_len=200, keep_silence=300):
         final_audio = AudioSegment.silent(duration=0)
         chunks = silence.split_on_silence(
             audio,
