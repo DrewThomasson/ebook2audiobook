@@ -7,7 +7,7 @@ from num2words import num2words
 from lib.models import loaded_tts, max_tts_in_memory
 from lib.lang import language_math_phonemes
         
-def check_num2words_compat():
+def check_num2words_compat(lang_iso1):
     try:
         num2words(1, lang=lang_iso1)
         return True
