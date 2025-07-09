@@ -2,7 +2,7 @@ import os
 import torch
 import numpy as np
 import librosa
-from vggish import vggish, vggish_input
+from torchvggish import vggish, vggish_input
 
 class BackgroundDetector:
     def __init__(self, wav_file: str, models_dir: str):
