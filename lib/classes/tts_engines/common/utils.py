@@ -133,6 +133,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     if normal_replacements:
         sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
         text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
+        print(f'normal_replacements------------{text}------------')
     # 4) Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
         amb_pat = (
@@ -143,6 +144,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
         text = re.sub(amb_pat, replace_ambiguous, text)
+        print(f'ambiguous_replacements------------{text}------------')
     # split long digit-runs (3-digit groups)
     text = re.sub(r'(\d{3})(?=\d{3}(?!\.\d))', r'\1 ', text)
     if tts_engine != TTS_ENGINES['XTTSv2']:
@@ -157,6 +159,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         )
         # *this* re.sub will now find every standalone number and convert it
         text = re.sub(number_pattern, rep_num, text)
+        print(f'ambiguous_replacements------------{text}------------')
     return text
 
 def unload_tts(device, reserved_keys=None, tts_key=None):

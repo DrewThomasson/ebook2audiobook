@@ -132,19 +132,24 @@ class VoiceExtractor:
             raise ValueError(error)
         return False, error
 
-    def _remove_silences(self, audio, silence_threshold):
+    def _remove_silences(self, audio, silence_threshold, min_silence_len=400, keep_silence=400):
         final_audio = AudioSegment.silent(duration=0)
-        for chunk in audio[::100]:
-            if chunk.dBFS > silence_threshold:
-                final_audio += chunk
+        chunks = silence.split_on_silence(
+            audio,
+            min_silence_len=min_silence_len,
+            silence_thresh=silence_threshold,
+            keep_silence=keep_silence
+        )
+        for chunk in chunks:
+            final_audio += chunk
         final_audio.export(self.voice_track, format='wav')
     
     def _trim_and_clean(self):
         try:
-            silence_threshold = -60
+            silence_threshold = -70
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
-            min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000
+            min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 6000
             if total_duration <= min_required_duration:
                 msg = f"Audio is only {total_duration/1000:.2f}s long; skipping trimming."
                 self._remove_silences(audio, silence_threshold)

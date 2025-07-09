@@ -2,52 +2,54 @@ import os
 import sys
 import subprocess
 import argparse
+import shutil
 import torch
 
 def demucs_voice(wav_file, output_dir, models_dir):
-	try:
-		# Set TORCH_HOME for demucs
-		torch.hub.set_dir(models_dir)
-		os.environ['TORCH_HOME'] = models_dir
+    try:
+        # Set TORCH_HOME for demucs
+        torch.hub.set_dir(models_dir)
+        os.environ['TORCH_HOME'] = models_dir
+        demucs_app = shutil.which('demucs')
+        if not demucs_app:
+            demucs_app = os.path.join('..', 'python_env', 'Scripts', 'demucs')
+        # Run demucs subprocess
+        cmd = [
+            demucs_app,
+            "--verbose",
+            "--two-stems=vocals",
+            "--out", output_dir,
+            wav_file
+        ]
 
-		# Run demucs subprocess
-		cmd = [
-			os.path.join('..', 'python_env', 'bin', 'demucs'),
-			"--verbose",
-			"--two-stems=vocals",
-			"--out", output_dir,
-			wav_file
-		]
+        print(f"🔄 Running: {' '.join(cmd)}")
+        subprocess.run(cmd, check=True)
 
-		print(f"🔄 Running: {' '.join(cmd)}")
-		subprocess.run(cmd, check=True)
+        # Output folder name is based on input filename
+        base_name = os.path.splitext(os.path.basename(wav_file))[0]
+        demucs_output_path = os.path.join(output_dir, "htdemucs", "vocals.wav")
+        if os.path.exists(demucs_output_path):
+            print(f"✅ Voice track saved to: {demucs_output_path}")
+            return demucs_output_path
+        else:
+            raise FileNotFoundError(f"Expected output not found: {demucs_output_path}")
 
-		# Output folder name is based on input filename
-		base_name = os.path.splitext(os.path.basename(wav_file))[0]
-		demucs_output_path = os.path.join(output_dir, "htdemucs", "vocals.wav")
-
-		if os.path.exists(demucs_output_path):
-			print(f"✅ Voice track saved to: {demucs_output_path}")
-			return demucs_output_path
-		else:
-			raise FileNotFoundError(f"Expected output not found: {demucs_output_path}")
-
-	except subprocess.CalledProcessError as e:
-		raise RuntimeError(
-			f"demucs failed with exit code {e.returncode}.\n"
-			f"stdout: {getattr(e, 'output', 'N/A')}\n"
-			f"stderr: {getattr(e, 'stderr', 'N/A')}"
-		)
-	except FileNotFoundError as e:
-		raise RuntimeError(f"FileNotFoundError: {e}")
-	except Exception as e:
-		raise RuntimeError(f"Unexpected error: {e}")
+    except subprocess.CalledProcessError as e:
+        raise RuntimeError(
+            f"demucs failed with exit code {e.returncode}.\n"
+            f"stdout: {getattr(e, 'output', 'N/A')}\n"
+            f"stderr: {getattr(e, 'stderr', 'N/A')}"
+        )
+    except FileNotFoundError as e:
+        raise RuntimeError(f"FileNotFoundError: {e}")
+    except Exception as e:
+        raise RuntimeError(f"Unexpected error: {e}")
 
 def normalize_audio_file(input_file, output_file):
     models_dir = os.path.join('..', 'models', 'tts')
-    folder_path = os.path.dirname(output_file)
-    demucs_file = demucs_voice(input_file, folder_path, models_dir)
-    ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', demucs_file]
+    output_dir = os.path.dirname(output_file)
+    #demucs_file = demucs_voice(input_file, output_dir, models_dir)
+    ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', input_file]
     filter_complex = (
         'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
         'afftdn=nf=-70,'
@@ -63,7 +65,7 @@ def normalize_audio_file(input_file, output_file):
     ffmpeg_cmd += [
         '-filter_complex', filter_complex,
         '-map', '[audio]',
-        '-ar', '24000',
+        '-ar', '44100',
         '-y', output_file
     ]
     try:
@@ -84,8 +86,7 @@ def normalize_audio_file(input_file, output_file):
         elif not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
             error = f'normalize_audio() error: {output_file} was not created or is empty.'
         else:
-            os.replace(process_file, input_file)
-            print(f"File processed and replaced: {input_file}")
+            print(f"File denoised and normalized!: {output_file}")
     except subprocess.CalledProcessError as e:
         error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
     except subprocess.CalledProcessError as e:
@@ -94,9 +95,9 @@ def normalize_audio_file(input_file, output_file):
         print(f"Unexpected error: {e}")
 
 if __name__ == "__main__":
-	if len(sys.argv) != 3:
-		print(f"Usage: python {os.path.basename(__file__)} <input_file> <output_file>")
-		sys.exit(1)
-	input_file = os.path.abspath(sys.argv[1])
-	output_file = os.path.abspath(sys.argv[2])
-	normalize_audio_file(input_file, output_file)
+    if len(sys.argv) != 3:
+        print(f"Usage: python {os.path.basename(__file__)} <input_file> <output_file>")
+        sys.exit(1)
+    input_file = os.path.abspath(sys.argv[1])
+    output_file = os.path.abspath(sys.argv[2])
+    normalize_audio_file(input_file, output_file)
