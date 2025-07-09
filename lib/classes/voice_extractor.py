@@ -193,8 +193,7 @@ class VoiceExtractor:
             best_start = timestamps[best_index]
             best_end = best_start + min_required_duration
             print(f'--------- best start: {best_start}-------- best end: {best_end}')
-            padding = 100  # ms of optional padding before/after
-
+            padding = 3000  # padding in ms
             # 1. Start with the maximum end: total_duration
             search_end = total_duration
             # Move search_end backward in chunk_size steps until silence is found
