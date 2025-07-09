@@ -77,7 +77,6 @@ class VoiceExtractor:
         try:
             torch_home = self.models_dir
             torch.hub.set_dir(torch_home)
-            os.environ['TORCH_HOME'] = torch_home
             #energy_threshold = 50000 # to tune if not enough accurate (higher = less sensitive)
             #model = vggish()
             #model.eval()
