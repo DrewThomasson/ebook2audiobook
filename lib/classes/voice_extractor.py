@@ -146,7 +146,7 @@ class VoiceExtractor:
     
     def _trim_and_clean(self):
         try:
-            silence_threshold = -70
+            silence_threshold = -60
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
             min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 6000
