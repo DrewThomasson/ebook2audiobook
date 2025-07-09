@@ -447,7 +447,7 @@ class Coqui:
                                 for start, end, date_text in date_spans:
                                     # Append sentence before this date
                                     result.append(sentence[last_pos:start])
-                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language'], self.session['language_iso1']), date_text, self.is_num2words_compat)
+                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language'], self.session['language_iso1'], self.is_num2words_compat), date_text)
                                     if not processed:
                                         break
                                     result.append(processed)
