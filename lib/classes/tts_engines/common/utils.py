@@ -4,7 +4,7 @@ import regex as re
 import stanza
 
 from num2words import num2words
-from lib.models import loaded_tts, max_tts_in_memory
+from lib.models import loaded_tts, max_tts_in_memory, TTS_ENGINES
 from lib.lang import default_language_code, language_math_phonemes
         
 def check_num2words_compat(lang_iso1):
