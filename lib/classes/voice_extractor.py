@@ -161,7 +161,7 @@ class VoiceExtractor:
             # Compute Amplitude and Frequency Variation
             amplitude_variations = []
             frequency_variations = []
-            time_stamps = []
+            timestamps = []
             for i in range(0, total_duration - chunk_size, chunk_size):
                 chunk = audio[i:i + chunk_size]
                 if chunk.dBFS > silence_threshold:  # Ignore silence
@@ -170,7 +170,7 @@ class VoiceExtractor:
                     samples = np.array(chunk.get_array_of_samples())
                     spectrum = np.abs(scipy.fftpack.fft(samples))
                     frequency_variations.append(np.std(spectrum))  # Measure frequency spread
-                    time_stamps.append(i)
+                    timestamps.append(i)
             # If no significant speech was detected, return an error
             if not amplitude_variations:
                 raise ValueError("_trim_and_clean(): No speech detected!")
@@ -181,7 +181,6 @@ class VoiceExtractor:
                 amplitude_variations = (amplitude_variations - np.min(amplitude_variations)) / np.ptp(amplitude_variations)
             else:
                 amplitude_variations = np.zeros_like(amplitude_variations)
-
             if len(frequency_variations) > 1:
                 frequency_variations = (frequency_variations - np.min(frequency_variations)) / np.ptp(frequency_variations)
             else:
@@ -190,9 +189,30 @@ class VoiceExtractor:
             score = amplitude_variations + frequency_variations  # Weight both factors equally
             # Find the best segments
             best_index = np.argmax(score)  # Find the chunk with max variation
-            best_start = time_stamps[best_index]
+            # set timestamp and duration
+            best_start = timestamps[best_index]
             best_end = min(best_start + min_required_duration, total_duration - best_start)
-            print(f'----best start: {best_start}----------- best end: {best_end}-------------')
+            # ms of optional padding before/after
+            padding = 400
+            # Find pause start
+            search_start = best_start
+            while search_start - chunk_size >= 0:
+                chunk = audio[search_start - chunk_size : search_start]
+                if chunk.dBFS <= silence_threshold:
+                    break
+                search_start -= chunk_size
+            start_index = max(0, search_start - padding)
+            # Find pause end
+            search_end = best_start + min_required_duration
+            while search_end + chunk_size <= total_duration:
+                chunk = audio[search_end : search_end + chunk_size]
+                if chunk.dBFS <= silence_threshold:
+                    break
+                search_end += chunk_size
+            end_index = min(total_duration, search_end + padding)
+            trimmed_audio = audio[start_index:end_index]
+            trimmed_audio.export(self.voice_track, format='wav')
+            msg = 'Audio trimmed and cleaned!'
             return True, msg
         except Exception as e:
             error = f'_trim_and_clean() error: {e}'
