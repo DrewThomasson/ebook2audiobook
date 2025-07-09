@@ -192,7 +192,26 @@ class VoiceExtractor:
             # set timestamp and duration
             best_start = timestamps[best_index]
             best_end = total_duration - best_start
-            trimmed_audio = audio[best_start:best_end]
+            print(f'--------- best start: {best_start}-------- best end: {best_end}')
+            # ms of optional padding before/after
+            padding = 100
+            # Find pause start
+            search_start = best_start
+            while search_start - chunk_size >= 0:
+                chunk = audio[search_start - chunk_size : search_start]
+                if chunk.dBFS <= silence_threshold:
+                    break
+                search_start -= chunk_size
+            start_index = max(0, search_start - padding)
+            # Find pause end
+            search_end = best_start + min_required_duration
+            while search_end + chunk_size <= total_duration:
+                chunk = audio[search_end : search_end + chunk_size]
+                if chunk.dBFS <= silence_threshold:
+                    break
+                search_end += chunk_size
+            end_index = min(total_duration, search_end + padding)
+            trimmed_audio = audio[start_index:end_index]
             trimmed_audio.export(self.voice_track, format='wav')
             msg = 'Audio trimmed and cleaned!'
             return True, msg
