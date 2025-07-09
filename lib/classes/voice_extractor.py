@@ -263,20 +263,14 @@ class VoiceExtractor:
                 else:
                     start_index = best_start  # Ultimate fallback
 
-            # --- Final bounds and sanity check ---
+            # --- Final bounds check ---
             start_index = max(0, start_index)
             end_index = min(end_index, audio_length)
 
             if start_index >= end_index:
-                # Final fallback: Use original best_start/best_end, but clamp and ensure >0 duration
-                start_index = max(0, min(best_start, best_end - 1))
-                end_index = min(max(best_end, best_start + 1), audio_length)
-                print(f"[WARN] Silence region invalid, fallback to original segment: {start_index} -> {end_index}")
+                raise ValueError(f"start_index ({start_index}) >= end_index ({end_index}) -- check your logic or thresholds.")
 
-            if start_index >= end_index:
-                raise ValueError(f"start_index ({start_index}) >= end_index ({end_index}) -- nothing to extract.")
-
-            print(f"Trimming: {start_index} ms to {end_index} ms (duration: {end_index - start_index} ms)")
+            # --- Final trim and export ---
             trimmed_audio = audio[start_index:end_index]
             trimmed_audio.export(self.voice_track, format='wav')
             msg = 'Audio trimmed and cleaned!'
