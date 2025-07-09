@@ -191,7 +191,7 @@ class VoiceExtractor:
             best_index = np.argmax(score)  # Find the chunk with max variation
             # set timestamp and duration
             best_start = timestamps[best_index]
-            best_end = total_duration - best_start
+            best_end = best_start + min_required_duration
             print(f'--------- best start: {best_start}-------- best end: {best_end}')
             # ms of optional padding before/after
             padding = 100
@@ -204,7 +204,7 @@ class VoiceExtractor:
                 search_start -= chunk_size
             start_index = max(0, search_start - padding)
             # Find pause end
-            search_end = best_start + min_required_duration
+            search_end = best_end
             while search_end + chunk_size <= total_duration:
                 chunk = audio[search_end : search_end + chunk_size]
                 if chunk.dBFS <= silence_threshold:
