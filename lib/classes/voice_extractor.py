@@ -75,7 +75,7 @@ class VoiceExtractor:
 
     def _detect_background(self):
         try:
-            torch_home = os.path.join(self.models_dir, 'hub')
+            torch_home = self.models_dir
             torch.hub.set_dir(torch_home)
             os.environ['TORCH_HOME'] = torch_home
             #energy_threshold = 50000 # to tune if not enough accurate (higher = less sensitive)
