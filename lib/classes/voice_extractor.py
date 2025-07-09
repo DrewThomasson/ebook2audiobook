@@ -190,7 +190,7 @@ class VoiceExtractor:
             # Find the best segments
             best_index = np.argmax(score)  # Find the chunk with max variation
             best_start = time_stamps[best_index]  # Start time in ms
-            best_end = min_required_duration
+            best_end = min(best_start + min_required_duration, total_duration - best_start)  # End time in ms
             # Step 3: Ensure Trim Happens at Silence Boundaries
             start_adjusted = best_start
             end_adjusted = best_end
