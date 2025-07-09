@@ -5,7 +5,7 @@ import stanza
 
 from num2words import num2words
 from lib.models import loaded_tts, max_tts_in_memory
-from lib.lang import language_math_phonemes
+from lib.lang import default_language_code, language_math_phonemes
         
 def check_num2words_compat(lang_iso1):
     try:
@@ -32,7 +32,7 @@ def detect_date_entities(text, stanza_nlp):
 def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
     try:
         year = int(year_str)
-        lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else 'eng'
+        lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
         if len(year_str) != 4 or not year_str.isdigit():
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
