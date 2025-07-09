@@ -94,13 +94,17 @@ def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_valu
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     def rep_num(match):
-        # strip any commas, convert to int/float, then to words
-        number = match.group(1).replace(",", "")
         try:
+            number = match.group()
+            trailing = ''
+            if number and number[-1] in '.,':
+                trailing = number[-1]
+                number = number[:-1]
             if "." in number or "e" in number.lower():
                 number_value = float(number)
             else:
                 number_value = int(number)
+            print(f'---------{number_value}-----------')
             if is_num2words_compat:
                 return num2words(number_value, lang=lang_iso1)
             else:
@@ -139,18 +143,18 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
         text = re.sub(amb_pat, replace_ambiguous, text)
-    # 5) Number-to-words: build a pattern that finds any standalone number,
-    #    with commas, decimals or exponents.
-    number_pattern = (
-        r'(?<!\S)'                                      # whitespace or start
-        r'(-?\d{1,3}(?:,\d{3})*'                        # integer with optional commas
-        r'(?:\.\d+)?'                                   # optional decimal
-        r'(?:[eE][+-]?\d+)?)'                           # optional exponent
-        r'(?!\S)'                                       # whitespace or end
-    )
+    # split long digit-runs (3-digit groups)
+    text = re.sub(r'(\d{3})(?=\d{3}(?!\.\d))', r'\1 ', text)
     if tts_engine != TTS_ENGINES['XTTSv2']:
-        # split long digit-runs for clarity (4-digit groups)
-        text = re.sub(r'(\d{4})(?=\d{4}(?!\.\d))', r'\1 ', text)
+        # 5) Number-to-words: build a pattern that finds any standalone number,
+        #    with commas, decimals or exponents.
+        number_pattern = (
+            r'(?<!\S)'                                      # whitespace or start
+            r'(-?\d{1,3}(?:,\d{3})*'                        # integer with optional commas
+            r'(?:\.\d+)?'                                   # optional decimal
+            r'(?:[eE][+-]?\d+)?)'                           # optional exponent
+            r'(?!\S)'                                       # whitespace or end
+        )
         # *this* re.sub will now find every standalone number and convert it
         text = re.sub(number_pattern, rep_num, text)
     return text
