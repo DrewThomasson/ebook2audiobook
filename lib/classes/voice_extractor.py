@@ -154,6 +154,7 @@ class VoiceExtractor:
                 msg = f"Audio is only {total_duration/1000:.2f}s long; skipping trimming."
                 self._remove_silences(audio, silence_threshold)
                 return True, msg
+            self._remove_silences(audio, silence_threshold)
             sample_rate = audio.frame_rate
             chunk_size = 100  # Analyze in 100ms chunks
             # Step 1: Compute Amplitude and Frequency Variation
@@ -203,10 +204,6 @@ class VoiceExtractor:
                 if audio[i:i + chunk_size].dBFS < silence_threshold:
                     end_adjusted = i
                     break
-            # Trim to the adjusted start and end times
-            trimmed_audio = audio[start_adjusted:end_adjusted]
-            # Step 5: remove silences
-            self._remove_silences(trimmed_audio, silence_threshold)
             msg = f"Silences removed, best section extracted from {start_adjusted/1000:.2f}s to {end_adjusted/1000:.2f}s"
             return True, msg
         except Exception as e:
