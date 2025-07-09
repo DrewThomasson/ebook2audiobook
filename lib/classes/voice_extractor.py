@@ -26,7 +26,8 @@ class VoiceExtractor:
         self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', os.path.splitext(os.path.basename(self.voice_file))[0])
-        self.final_files = [] 
+        self.final_files = []
+        self.silence_threshold = -60
 
     def _validate_format(self):
         file_extension = os.path.splitext(self.voice_file)[1].lower()
@@ -144,11 +145,8 @@ class VoiceExtractor:
             final_audio += chunk
         final_audio.export(self.voice_track, format='wav')
     
-    def _trim_and_clean(self):
+    def _trim_and_clean(self,silence_threshold, min_silence_len=300, search_padding=100):
         try:
-            silence_threshold = -60
-            min_silence_len = 300
-            search_padding = 100
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
             min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000
@@ -331,7 +329,7 @@ class VoiceExtractor:
                         else:
                             self.voice_track = self.wav_file
                         if success:
-                            success, msg = self._trim_and_clean()
+                            success, msg = self._trim_and_clean(self.silence_threshold)
                             print(msg)
                             if success:
                                 success, msg = self._normalize_audio()
