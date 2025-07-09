@@ -147,6 +147,8 @@ class VoiceExtractor:
     def _trim_and_clean(self):
         try:
             silence_threshold = -60
+            min_silence_len = 300
+            search_padding = 100
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
             min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000
@@ -193,8 +195,7 @@ class VoiceExtractor:
             best_start = timestamps[best_index]
             best_end = best_start + min_required_duration
             print(f'--------- best start: {best_start}-------- best end: {best_end}')
-            search_padding = 100  # ms
-            # 1. Start at best_end and search backward for min_silence_len of silence
+            # Start at best_end and search backward for min_silence_len of silence
             search_end = best_end
             found = False
             while search_end - min_silence_len >= 0:
@@ -214,10 +215,10 @@ class VoiceExtractor:
             else:
                 end_index = min(best_end + search_padding, total_duration)
 
-            # 2. Guarantee min_required_duration
+            # Guarantee min_required_duration
             start_candidate = max(0, end_index - min_required_duration)
 
-            # 3. Now search backward from start_candidate for min_silence_len of silence
+            # Now search backward from start_candidate for min_silence_len of silence
             found = False
             search_start = start_candidate
             while search_start - min_silence_len >= 0:
