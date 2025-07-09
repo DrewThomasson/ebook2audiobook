@@ -150,14 +150,15 @@ class VoiceExtractor:
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
             min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000
-            if total_duration <= min_required_duration:
-                msg = f"Audio is only {total_duration/1000:.2f}s long; skipping trimming."
-                self._remove_silences(audio, silence_threshold)
-                return True, msg
+            msg = f"Removing long pauses..."
+            print(msg)
             self._remove_silences(audio, silence_threshold)
+            if total_duration <= min_required_duration:
+                msg = f"Audio is only {total_duration/1000:.2f}s long; skipping audio trimming..."
+                return True, msg
             sample_rate = audio.frame_rate
             chunk_size = 100  # Analyze in 100ms chunks
-            # Step 1: Compute Amplitude and Frequency Variation
+            # Compute Amplitude and Frequency Variation
             amplitude_variations = []
             frequency_variations = []
             time_stamps = []
@@ -185,26 +186,13 @@ class VoiceExtractor:
                 frequency_variations = (frequency_variations - np.min(frequency_variations)) / np.ptp(frequency_variations)
             else:
                 frequency_variations = np.zeros_like(frequency_variations)
-            # Step 2: Score each segment using combined variation
+            # Score each segment using combined variation
             score = amplitude_variations + frequency_variations  # Weight both factors equally
             # Find the best segments
             best_index = np.argmax(score)  # Find the chunk with max variation
-            best_start = time_stamps[best_index]  # Start time in ms
-            best_end = min(best_start + min_required_duration, total_duration - best_start)  # End time in ms
-            # Step 3: Ensure Trim Happens at Silence Boundaries
-            start_adjusted = best_start
-            end_adjusted = best_end
-            # Adjust start to the nearest silence before it
-            for i in range(best_start, max(0, best_start - 2000), -chunk_size):
-                if audio[i:i + chunk_size].dBFS < silence_threshold:
-                    start_adjusted = i
-                    break
-            # Adjust end to the nearest silence after it
-            for i in range(best_end, min(total_duration, best_end + 2000), chunk_size):
-                if audio[i:i + chunk_size].dBFS < silence_threshold:
-                    end_adjusted = i
-                    break
-            msg = f"Silences removed, best section extracted from {start_adjusted/1000:.2f}s to {end_adjusted/1000:.2f}s"
+            best_start = time_stamps[best_index]
+            best_end = min(best_start + min_required_duration, total_duration - best_start)
+            print(f'----best start: {best_start}----------- best end: {best_end}-------------')
             return True, msg
         except Exception as e:
             error = f'_trim_and_clean() error: {e}'
