@@ -8,7 +8,7 @@ import shutil
 import torch
 
 from io import BytesIO
-from pydub import AudioSegment
+from pydub import AudioSegment, silence
 from torchvggish import vggish, vggish_input
 
 from lib.conf import voice_formats
