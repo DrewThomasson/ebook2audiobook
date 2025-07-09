@@ -193,30 +193,51 @@ class VoiceExtractor:
             best_start = timestamps[best_index]
             best_end = best_start + min_required_duration
             print(f'--------- best start: {best_start}-------- best end: {best_end}')
-            padding = 3000  # padding in ms
-            # 1. Start with the maximum end: total_duration
-            search_end = total_duration
-            # Move search_end backward in chunk_size steps until silence is found
-            while search_end - chunk_size >= 0:
-                chunk = audio[search_end - chunk_size:search_end]
-                if chunk.dBFS <= silence_threshold:
+            padding = 100  # ms
+            # 1. Start at best_end and search backward for min_silence_len of silence
+            search_end = best_end
+            found = False
+            while search_end - min_silence_len >= 0:
+                silence = True
+                for offset in range(0, min_silence_len, chunk_size):
+                    chunk = audio[search_end - min_silence_len + offset : search_end - min_silence_len + offset + chunk_size]
+                    if chunk.dBFS > silence_threshold:
+                        silence = False
+                        break
+                if silence:
+                    found = True
                     break
                 search_end -= chunk_size
-            end_index = min(total_duration, search_end + padding)  # Optionally pad, don't exceed total_duration
 
-            # 2. Now set start_index so that segment is at least min_required_duration
-            start_index = max(0, end_index - min_required_duration)
+            if found:
+                end_index = min(search_end + padding, total_duration)
+            else:
+                end_index = min(best_end + padding, total_duration)
 
-            # 3. Optionally, find the nearest silence before start_index for naturalness
-            search_start = start_index
-            while search_start - chunk_size >= 0:
-                chunk = audio[search_start - chunk_size:search_start]
-                if chunk.dBFS <= silence_threshold:
+            # 2. Guarantee min_required_duration
+            start_candidate = max(0, end_index - min_required_duration)
+
+            # 3. Now search backward from start_candidate for min_silence_len of silence
+            found = False
+            search_start = start_candidate
+            while search_start - min_silence_len >= 0:
+                silence = True
+                for offset in range(0, min_silence_len, chunk_size):
+                    chunk = audio[search_start - min_silence_len + offset : search_start - min_silence_len + offset + chunk_size]
+                    if chunk.dBFS > silence_threshold:
+                        silence = False
+                        break
+                if silence:
+                    found = True
                     break
                 search_start -= chunk_size
-            start_index = max(0, search_start - padding)
 
-            # 4. Final export
+            if found:
+                start_index = max(search_start - padding, 0)
+            else:
+                start_index = max(start_candidate - padding, 0)
+
+            # 4. Final cut
             trimmed_audio = audio[start_index:end_index]
             trimmed_audio.export(self.voice_track, format='wav')
             msg = 'Audio trimmed and cleaned!'
