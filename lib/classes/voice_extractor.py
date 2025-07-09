@@ -164,13 +164,12 @@ class VoiceExtractor:
                 timestamps = []
                 for i in range(0, total_duration - chunk_size, chunk_size):
                     chunk = audio[i:i + chunk_size]
-                    if chunk.dBFS > silence_threshold:  # Ignore silence
-                        amplitude_variations.append(chunk.dBFS)
-                        # FFT to analyze frequency spectrum
-                        samples = np.array(chunk.get_array_of_samples())
-                        spectrum = np.abs(scipy.fftpack.fft(samples))
-                        frequency_variations.append(np.std(spectrum))  # Measure frequency spread
-                        timestamps.append(i)
+                    amplitude_variations.append(chunk.dBFS)
+                    # FFT to analyze frequency spectrum
+                    samples = np.array(chunk.get_array_of_samples())
+                    spectrum = np.abs(scipy.fftpack.fft(samples))
+                    frequency_variations.append(np.std(spectrum))  # Measure frequency spread
+                    timestamps.append(i)
                 # If no significant speech was detected, return an error
                 if not amplitude_variations:
                     raise ValueError("_trim_and_clean(): No speech detected!")
