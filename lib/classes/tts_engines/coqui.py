@@ -17,7 +17,7 @@ from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import check_num2words_compat, detect_date_entities, year_to_words, math2word, unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -46,6 +46,7 @@ class Coqui:
             self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')       
+            self.is_num2words_compat = check_num2words_compat(self.session['language_iso1'])
             self._build()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -446,7 +447,7 @@ class Coqui:
                                 for start, end, date_text in date_spans:
                                     # Append sentence before this date
                                     result.append(sentence[last_pos:start])
-                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language_iso1']), date_text)
+                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language'], self.session['language_iso1']), date_text, self.is_num2words_compat)
                                     if not processed:
                                         break
                                     result.append(processed)
@@ -454,6 +455,7 @@ class Coqui:
                                 # Append remaining sentence
                                 result.append(sentence[last_pos:])
                                 sentence = ''.join(result)
+                sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('. ', '— ') for p in sentence_parts]
