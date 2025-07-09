@@ -145,7 +145,7 @@ class VoiceExtractor:
             final_audio += chunk
         final_audio.export(self.voice_track, format='wav')
     
-    def _trim_and_clean(self,silence_threshold, min_silence_len=300, chunk_size=100):
+    def _trim_and_clean(self,silence_threshold, min_silence_len=200, chunk_size=100):
         try:
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
