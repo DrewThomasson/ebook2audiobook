@@ -193,7 +193,7 @@ class VoiceExtractor:
             best_start = timestamps[best_index]
             best_end = total_duration - best_start
             # ms of optional padding before/after
-            padding = 400
+            padding = 100
             # Find pause start
             search_start = best_start
             while search_start - chunk_size >= 0:
