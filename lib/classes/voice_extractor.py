@@ -77,17 +77,27 @@ class VoiceExtractor:
             torch_home = os.path.join(self.models_dir, 'hub')
             torch.hub.set_dir(torch_home)
             os.environ['TORCH_HOME'] = torch_home
-            energy_threshold = 15000 # to tune if not enough accurate (higher = less sensitive)
-            model = vggish()
-            model.eval()
-            # Preprocess audio to log mel spectrogram
-            log_mel_spectrogram = vggish_input.wavfile_to_examples(self.wav_file)
-            audio_tensor = log_mel_spectrogram.clone().detach()
-            embeddings = model(audio_tensor)
-            # Calculate total energy
-            energy_score = torch.norm(embeddings).item()           
-            status = energy_score > energy_threshold
-            msg = f'Noise Score: {energy_score:.2f}'
+           
+            #energy_threshold = 50000 # to tune if not enough accurate (higher = less sensitive)
+            #model = vggish()
+            #model.eval()
+            ## Preprocess audio to log mel spectrogram
+            #log_mel_spectrogram = vggish_input.wavfile_to_examples(self.wav_file)
+            #audio_tensor = log_mel_spectrogram.clone().detach()
+            #embeddings = model(audio_tensor)
+            ## Calculate total energy
+            #energy_score = torch.norm(embeddings).item()           
+            #status = energy_score > energy_threshold
+            
+            detector = BackgroundDetector(wav_file=self.wav_file, models_dir=torch_home)
+            status, report = detector.detect(
+                frame_s=1.0,               # frame length in seconds
+                overlap=0.5,               # 50% overlap between frames
+                energy_sigma_mul=1.5,      # threshold = mean + 1.5 * std
+                flatness_thresh=0.3,       # spectral flatness cutoff
+                zcr_thresh=0.1             # zero-crossing rate cutoff
+            )
+            print(report)
             if status:
                 msg = f'{msg}\nBackground noise or music detected. Proceeding voice extraction.'
             else:
