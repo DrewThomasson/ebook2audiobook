@@ -85,11 +85,15 @@ class VoiceExtractor:
                 frame_s=1.0,
                 overlap=0.5,
                 rms_db_thresh=-17,    # absolute –17 dB cutoff on loudness
-                # energy_sigma_mul is now ignored when rms_db_thresh is set
                 flatness_thresh=0.02, # per our calibration
                 zcr_thresh=0.11       # per our calibration
             )
             print(report)
+            if status:
+                msg = 'Background noise or music detected. Proceeding voice extraction...'
+            else:
+                msg = 'No background noise or music detected. Skipping separation...'
+            print(msg)
             return True, status, msg
         except Exception as e:
             error = f'_detect_background() error: {e}'
