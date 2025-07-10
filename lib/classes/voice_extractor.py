@@ -80,7 +80,7 @@ class VoiceExtractor:
             torch_home = self.models_dir
             torch.hub.set_dir(torch_home)
             detector = BackgroundDetector(wav_file=self.wav_file, models_dir=torch_home)
-            status, report = detector.detect(vad_ratio_thresh=0.05)
+            status, report = detector.detect(vad_ratio_thresh=0.15)
             print(report)
             if status:
                 msg = 'Background noise or music detected. Proceeding voice extraction...'
