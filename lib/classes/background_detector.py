@@ -5,16 +5,15 @@ import librosa
 from torchvggish import vggish, vggish_input
 
 class BackgroundDetector:
+
     def __init__(self, wav_file: str, models_dir: str):
         self.wav_file   = wav_file
         self.models_dir = models_dir
-
         # configure torch cache
         torch_home = os.path.join(self.models_dir, 'hub')
         os.makedirs(torch_home, exist_ok=True)
         torch.hub.set_dir(torch_home)
         os.environ['TORCH_HOME'] = torch_home
-
         # load VGGish once
         self.model = vggish()
         self.model.eval()
@@ -50,13 +49,7 @@ class BackgroundDetector:
                 energies.append(energy)
         return np.array(energies)
 
-    def detect(self,
-               frame_s: float                = 1.0,
-               overlap: float                = 0.5,
-               energy_sigma_mul: float       = 1.5,
-               flatness_thresh: float        = 0.3,
-               zcr_thresh: float             = 0.3
-              ) -> (bool, str):
+    def detect(self, frame_s: float=1.0, overlap: float=0.5, energy_sigma_mul: float=1.5, flatness_thresh: float=0.3, zcr_thresh: float=0.3) -> (bool, str):
         """
         Returns (status, message) where status is True if background music/noise
         is detected.
@@ -67,11 +60,7 @@ class BackgroundDetector:
         frame_len = int(frame_s * sr)
         hop_len   = int(frame_len * (1 - overlap))
         # Compute spectral features per frame
-        rms      = librosa.feature.rms(
-                       y=y,
-                       frame_length=frame_len,
-                       hop_length=hop_len
-                   )[0]
+        rms = librosa.feature.rms(y=y, frame_length=frame_len, hop_length=hop_len)[0]
         # ← patched here ↓
         flatness = librosa.feature.spectral_flatness(y=y, n_fft=frame_len, hop_length=hop_len)[0]
         zcr = librosa.feature.zero_crossing_rate(y, frame_length=frame_len, hop_length=hop_len)[0]
@@ -80,7 +69,7 @@ class BackgroundDetector:
         energy_thresh     = rms_mean + energy_sigma_mul * rms_std
         rms_flag      = (rms > energy_thresh).mean() > 0.5
         flatness_flag = (flatness > flatness_thresh).mean() > 0.3
-        zcr_flag      = (zcr > zcr_thresh).mean() > 0.5
+        zcr_flag      = (zcr > zcr_thresh).mean() > 0.3
         # GGish embeddings over the whole file (in 0.96s hops)
         log_mel = vggish_input.wavfile_to_examples(self.wav_file)  # (N,96,64)
         vgg_energies = self._compute_vggish_energy(log_mel)
@@ -98,5 +87,4 @@ class BackgroundDetector:
         msg.append(f"VGGish mean/std: {vgg_mean:.1f} / {vgg_std:.1f}  (thresh {vgg_thresh:.1f})")
         msg.append(f"VGGish flag: {vgg_flag!s}")
         msg.append("\nBackground detected; proceeding with separation." if status else "\nNo significant background; skipping separation.")
-       
         return status, "\n".join(msg)

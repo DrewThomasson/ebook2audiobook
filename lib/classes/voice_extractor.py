@@ -94,7 +94,7 @@ class VoiceExtractor:
                 overlap=0.5,               # 50% overlap between frames
                 energy_sigma_mul=1.5,      # threshold = mean + 1.5 * std
                 flatness_thresh=0.3,       # spectral flatness cutoff
-                zcr_thresh=0.1             # zero-crossing rate cutoff
+                zcr_thresh=0.3             # zero-crossing rate cutoff
             )
             print(report)
             if status:
