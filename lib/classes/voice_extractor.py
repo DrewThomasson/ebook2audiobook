@@ -88,10 +88,6 @@ class VoiceExtractor:
                 zcr_thresh=0.3             # zero-crossing rate cutoff
             )
             print(report)
-            if status:
-                msg = 'Background noise or music detected. Proceeding voice extraction.'
-            else:
-                msg = 'No background noise or music detected. Skipping separation.'
             return True, status, msg
         except Exception as e:
             error = f'_detect_background() error: {e}'
@@ -160,6 +156,7 @@ class VoiceExtractor:
                 if total_duration > (min_required_duration * 2):
                     msg = f"Audio longer than the max allowed. Proceeding to audio trimming..."       
                     print(msg)
+                    window = min_required_duration
                     hop = max(1, window // 4)
                     best_var   = -float("inf")
                     best_start = 0

@@ -86,5 +86,5 @@ class BackgroundDetector:
         msg.append(f"ZCR > {zcr_thresh}: {zcr_flag!s}")
         msg.append(f"VGGish mean/std: {vgg_mean:.1f} / {vgg_std:.1f}  (thresh {vgg_thresh:.1f})")
         msg.append(f"VGGish flag: {vgg_flag!s}")
-        msg.append("\nBackground detected; proceeding with separation." if status else "\nNo significant background; skipping separation.")
+        msg.append("\nBackground noise or music detected. Proceeding voice extraction." if status else "\nNo background noise or music detected. Skipping separation")
         return status, "\n".join(msg)
