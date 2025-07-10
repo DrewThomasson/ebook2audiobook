@@ -158,32 +158,29 @@ class VoiceExtractor:
                 return True, msg
             else:
                 if total_duration > (min_required_duration * 2):
-                    msg = f"Audio longer than the max allowed. Proceeding to audio trimming..."          
-                    # slide with a hop (e.g. quarter-window for a good speed/accuracy tradeoff)
-                    window = min_required_duration
+                    msg = f"Audio longer than the max allowed. Proceeding to audio trimming..."       
+                    print(msg)
                     hop = max(1, window // 4)
-                    best_width = -float("inf")
+                    best_var   = -float("inf")
                     best_start = 0
+                    sr = audio.frame_rate
                     for start in range(0, total_duration - window + 1, hop):
                         chunk   = audio[start : start + window]
                         samples = np.array(chunk.get_array_of_samples()).astype(float)
-                        # Option A: FFT‐based “width”
+                        # 1) FFT + magnitude
                         spectrum = np.abs(scipy.fftpack.fft(samples))
-                        width    = np.std(spectrum)
-                        # Option B: librosa spectral bandwidth (uncomment to use)
-                        # import librosa
-                        # sr = audio.frame_rate
-                        # D  = librosa.stft(samples, n_fft=2048, hop_length=512)
-                        # S  = np.abs(D)**2
-                        # width = librosa.feature.spectral_bandwidth(S=S, sr=sr)[0].mean()
-                        if width > best_width:
-                            best_width = width
+                        # 2) turn into a probability distribution
+                        p = spectrum / (np.sum(spectrum) + 1e-10)
+                        # 3) spectral entropy
+                        entropy = -np.sum(p * np.log2(p + 1e-10))
+                        if entropy > best_var:
+                            best_var   = entropy
                             best_start = start
                     best_end = best_start + window
                     msg = (
-                        f"Selected widest‐spectrum window "
+                        f"Selected most‐diverse‐spectrum window "
                         f"{best_start/1000:.2f}s–{best_end/1000:.2f}s "
-                        f"(@ width {best_width:.1f})"
+                        f"(@ entropy {best_var:.2f} bits)"
                     )
                     print(msg)
                 else:
