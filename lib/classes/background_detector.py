@@ -21,13 +21,20 @@ class BackgroundDetector:
         if torch.cuda.is_available():
             self.model.cuda()
 
-    def _compute_vggish_energy(self, log_mel: np.ndarray) -> np.ndarray:
+    def _compute_vggish_energy(self, log_mel):
         """Return per‐frame L2 norms of VGGish embeddings."""
         energies = []
         with torch.no_grad():
             for mel_chunk in log_mel:
-                # mel_chunk: (96, 64) → add batch+channel dims
-                x = torch.from_numpy(mel_chunk).unsqueeze(0).unsqueeze(0).float()
+                # mel_chunk may be np.ndarray *or* torch.Tensor
+                if isinstance(mel_chunk, np.ndarray):
+                    t = torch.from_numpy(mel_chunk)
+                elif torch.is_tensor(mel_chunk):
+                    t = mel_chunk
+                else:
+                    raise TypeError(f"Unexpected chunk type: {type(mel_chunk)}")
+                # add batch+channel dims
+                x = t.unsqueeze(0).unsqueeze(0).float()
                 if torch.cuda.is_available():
                     x = x.cuda()
                 emb = self.model(x)               # (1, 128)
