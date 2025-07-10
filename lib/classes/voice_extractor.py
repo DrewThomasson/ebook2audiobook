@@ -77,17 +77,6 @@ class VoiceExtractor:
         try:
             torch_home = self.models_dir
             torch.hub.set_dir(torch_home)
-            #energy_threshold = 50000 # to tune if not enough accurate (higher = less sensitive)
-            #model = vggish()
-            #model.eval()
-            ## Preprocess audio to log mel spectrogram
-            #log_mel_spectrogram = vggish_input.wavfile_to_examples(self.wav_file)
-            #audio_tensor = log_mel_spectrogram.clone().detach()
-            #embeddings = model(audio_tensor)
-            ## Calculate total energy
-            #energy_score = torch.norm(embeddings).item()           
-            #status = energy_score > energy_threshold
-            
             detector = BackgroundDetector(wav_file=self.wav_file, models_dir=torch_home)
             status, report = detector.detect(
                 frame_s=1.0,               # frame length in seconds
@@ -204,14 +193,10 @@ class VoiceExtractor:
                 best_start = 0
                 best_end = total_duration
                 msg = f"Audio length is not enough long to find the best start and end. Skipping best start/end process..."         
-            
-            print(f'--------- best start: {best_start}-------- best end: {best_end}')
-
             # EXAMPLE: Backward search from best_end for end_index
             required_chunks = min_silence_len // chunk_size
             index = best_end
             found = False
-
             while index - (required_chunks * chunk_size) >= 0:
                 silence = True
                 # Check all chunks in this window (moving window backward)
@@ -226,13 +211,10 @@ class VoiceExtractor:
                     found = True
                     break
                 index -= chunk_size
-
             if found:
                 end_index = index - (required_chunks * chunk_size)
             else:
                 end_index = best_end  # Fallback: no silent region, use original
-
-            # EXAMPLE: Backward search from best_start for start_index, then fallback to forward search if needed
             index = best_start
             found = False
             while index - (required_chunks * chunk_size) >= 0:
@@ -248,7 +230,6 @@ class VoiceExtractor:
                     found = True
                     break
                 index -= chunk_size
-
             if found:
                 start_index = index - (required_chunks * chunk_size)
             else:
@@ -272,13 +253,11 @@ class VoiceExtractor:
                     start_index = index
                 else:
                     start_index = best_start  # Ultimate fallback
-
             # Sanity check
             start_index = max(0, start_index)
             end_index = min(end_index, len(audio))
             if start_index >= end_index:
                 raise ValueError(f"start_index ({start_index}) >= end_index ({end_index}) -- check logic or thresholds.")
-
             # Final trim and export
             trimmed_audio = audio[start_index:end_index]
             trimmed_audio.export(self.voice_track, format='wav')
