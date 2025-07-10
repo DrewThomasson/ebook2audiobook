@@ -121,19 +121,19 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
-    # 1) Pre-process formatted series (e.g. phone numbers) if needed
+    # Pre-process formatted series (e.g. phone numbers) if needed
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
-    # 2) Symbol phonemes
+    # Symbol phonemes
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     ambiguous_symbols = {"-", "/", "*", "x"}
     replacements         = {k: v for k, v in phonemes_list.items() if not k.isdigit()}
     normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
-    # 3) Replace unambiguous symbols everywhere
+    # Replace unambiguous symbols everywhere
     if normal_replacements:
         sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
         text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
-    # 4) Replace ambiguous symbols only in valid equation contexts
+    # Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
         ambiguous_pattern = (
             r'(?<!\S)'               # no non-space before
