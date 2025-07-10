@@ -61,42 +61,26 @@ class BackgroundDetector:
         Returns (status, message) where status is True if background music/noise
         is detected.
         """
-
-        # 1) Load raw audio (mono @16kHz) for spectral features
+        # Load raw audio (mono @16kHz) for spectral features
         y, sr = librosa.load(self.wav_file, sr=16000, mono=True)
-
         # frame params
         frame_len = int(frame_s * sr)
         hop_len   = int(frame_len * (1 - overlap))
-
-        # 2) Compute spectral features per frame
+        # Compute spectral features per frame
         rms      = librosa.feature.rms(
                        y=y,
                        frame_length=frame_len,
                        hop_length=hop_len
                    )[0]
-
         # ← patched here ↓
-        flatness = librosa.feature.spectral_flatness(
-                       y=y,
-                       n_fft=frame_len,
-                       hop_length=hop_len
-                   )[0]
-
-        zcr      = librosa.feature.zero_crossing_rate(
-                       y,
-                       frame_length=frame_len,
-                       hop_length=hop_len
-                   )[0]
-
+        flatness = librosa.feature.spectral_flatness(y=y, n_fft=frame_len, hop_length=hop_len)[0]
+        zcr = librosa.feature.zero_crossing_rate(y, frame_length=frame_len, hop_length=hop_len)[0]
         # frame‐level decisions
         rms_mean, rms_std = rms.mean(), rms.std()
         energy_thresh     = rms_mean + energy_sigma_mul * rms_std
-
         rms_flag      = (rms > energy_thresh).mean() > 0.5
         flatness_flag = (flatness > flatness_thresh).mean() > 0.3
-        zcr_flag      = (zcr > zcr_thresh).mean() > 0.3
-
+        zcr_flag      = (zcr > zcr_thresh).mean() > 0.5
         # GGish embeddings over the whole file (in 0.96s hops)
         log_mel = vggish_input.wavfile_to_examples(self.wav_file)  # (N,96,64)
         vgg_energies = self._compute_vggish_energy(log_mel)
@@ -104,10 +88,8 @@ class BackgroundDetector:
         vgg_std      = vgg_energies.std()
         vgg_thresh   = vgg_mean + energy_sigma_mul * vgg_std
         vgg_flag     = (vgg_energies > vgg_thresh).mean() > 0.3
-
         # Final decision: any indicator tripped → background detected
         status = any([rms_flag, flatness_flag, zcr_flag, vgg_flag])
-
         # Build report
         msg = []
         msg.append(f"RMS mean/std: {rms_mean:.1f} / {rms_std:.1f}  (>{energy_sigma_mul}σ → {energy_thresh:.1f})")
@@ -115,7 +97,6 @@ class BackgroundDetector:
         msg.append(f"ZCR > {zcr_thresh}: {zcr_flag!s}")
         msg.append(f"VGGish mean/std: {vgg_mean:.1f} / {vgg_std:.1f}  (thresh {vgg_thresh:.1f})")
         msg.append(f"VGGish flag: {vgg_flag!s}")
-
         msg.append("\nBackground detected; proceeding with separation." if status else "\nNo significant background; skipping separation.")
-        
+       
         return status, "\n".join(msg)
