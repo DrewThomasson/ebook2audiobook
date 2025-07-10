@@ -26,18 +26,26 @@ class BackgroundDetector:
         energies = []
         with torch.no_grad():
             for mel_chunk in log_mel:
-                # mel_chunk may be np.ndarray *or* torch.Tensor
+                # mel_chunk may be a NumPy array or a Tensor
                 if isinstance(mel_chunk, np.ndarray):
                     t = torch.from_numpy(mel_chunk)
                 elif torch.is_tensor(mel_chunk):
                     t = mel_chunk
                 else:
                     raise TypeError(f"Unexpected chunk type: {type(mel_chunk)}")
-                # add batch+channel dims
-                x = t.unsqueeze(0).unsqueeze(0).float()
+                # t.dim() could be:
+                # 2 → (96,64)     : we need [1,1,96,64]
+                # 3 → (1,96,64)   : we need [1,1,96,64]
+                if t.dim() == 2:
+                    x = t.unsqueeze(0).unsqueeze(0)
+                elif t.dim() == 3:
+                    x = t.unsqueeze(0)          # adds batch dim, giving [1,1,96,64]
+                else:
+                    raise ValueError(f"Unexpected mel_chunk dims: {t.shape}")
+                x = x.float()
                 if torch.cuda.is_available():
                     x = x.cuda()
-                emb = self.model(x)               # (1, 128)
+                emb = self.model(x)              # now emb is (1,128)
                 energies.append(torch.norm(emb, dim=1).cpu().item())
         return np.array(energies)
 
