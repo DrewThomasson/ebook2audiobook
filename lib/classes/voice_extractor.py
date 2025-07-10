@@ -162,12 +162,13 @@ class VoiceExtractor:
                 timestamps = []
                 for i in range(0, total_duration - chunk_size, chunk_size):
                     chunk = audio[i:i + chunk_size]
-                    amplitude_variations.append(chunk.dBFS)
-                    # FFT to analyze frequency spectrum
-                    samples = np.array(chunk.get_array_of_samples())
-                    spectrum = np.abs(scipy.fftpack.fft(samples))
-                    frequency_variations.append(np.std(spectrum))  # Measure frequency spread
-                    timestamps.append(i)
+                    if chunk.dBFS > silence_threshold:
+                        amplitude_variations.append(chunk.dBFS)
+                        # FFT to analyze frequency spectrum
+                        samples = np.array(chunk.get_array_of_samples())
+                        spectrum = np.abs(scipy.fftpack.fft(samples))
+                        frequency_variations.append(np.std(spectrum))  # Measure frequency spread
+                        timestamps.append(i)
                 # If no significant speech was detected, return an error
                 if not amplitude_variations:
                     raise ValueError("_trim_and_clean(): No speech detected!")
@@ -193,7 +194,7 @@ class VoiceExtractor:
                 best_start = 0
                 best_end = total_duration
                 msg = f"Audio length is not enough long to find the best start and end. Skipping best start/end process..."         
-            # EXAMPLE: Backward search from best_end for end_index
+            # Backward search from best_end for end_index
             required_chunks = min_silence_len // chunk_size
             index = best_end
             found = False
@@ -252,7 +253,7 @@ class VoiceExtractor:
                 if found:
                     start_index = index
                 else:
-                    start_index = best_start  # Ultimate fallback
+                    start_index = best_start
             # Sanity check
             start_index = max(0, start_index)
             end_index = min(end_index, len(audio))
