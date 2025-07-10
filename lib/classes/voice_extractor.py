@@ -9,6 +9,7 @@ import torch
 
 from io import BytesIO
 from pydub import AudioSegment, silence
+from pydub.silence import detect_silence
 #from torchvggish import vggish, vggish_input
 
 from lib.conf import voice_formats
@@ -180,9 +181,30 @@ class VoiceExtractor:
                         f"(@ entropy {best_var:.2f} bits)"
                     )
                     print(msg)
+                    # 1) find all silent spans in the file
+                    silence_spans = detect_silence(
+                        audio,
+                        min_silence_len=min_silence_len,
+                        silence_thresh=silence_threshold
+                    )
+                    # silence_spans = [ [start_ms, end_ms], … ]
+                    # 2) snap best_start *backward* to the end of the last silence before it
+                    prev_ends = [end for (start, end) in silence_spans if end <= best_start]
+                    if prev_ends:
+                        new_start = max(prev_ends)
+                    else:
+                        new_start = 0
+                    # 3) snap best_end *forward* to the start of the first silence after it
+                    next_starts = [start for (start, end) in silence_spans if start >= best_end]
+                    if next_starts:
+                        new_end = min(next_starts)
+                    else:
+                        new_end = total_duration
+                    # 4) update your slice bounds
+                    best_start, best_end = new_start, new_end
                 else:
                     best_start = 0
-                    best_end = total_duration       
+                    best_end = total_duration
             trimmed_audio = audio[best_start:best_end]
             trimmed_audio.export(self.voice_track, format='wav')
             msg = 'Audio trimmed and cleaned!'
