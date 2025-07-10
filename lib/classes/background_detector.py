@@ -9,13 +9,6 @@ class BackgroundDetector:
     def __init__(self, wav_file: str, models_dir: str):
         self.wav_file   = wav_file
         self.models_dir = models_dir
-        # configure torch cache
-        torch_home = os.path.join(self.models_dir, 'hub')
-        os.makedirs(torch_home, exist_ok=True)
-        torch.hub.set_dir(torch_home)
-        os.environ['TORCH_HOME'] = torch_home
-        # load VGGish once
-        self.model = vggish()
         self.model.eval()
         if torch.cuda.is_available():
             self.model.cuda()
