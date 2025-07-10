@@ -99,11 +99,8 @@ class BackgroundDetector:
 
         # --- flatness & ZCR flags (unchanged) ---
         flatness_flag = (flatness > flatness_thresh).mean() > 0.3
-        zcr_flag      = (zcr > zcr_thresh).mean() > 0.3
-
-        # --- VGGish or other flags … (leave as you had them) ---
-        vgg_flag = ...
-        # … your existing embedding-energy logic …
+        zcr_flag = (zcr > zcr_thresh).mean() > 0.3
+        vgg_flag = (vgg_energies > vgg_thresh).mean() > 0.3
 
         # --- final decision & report ---
         status = any([rms_flag, flatness_flag, zcr_flag, vgg_flag])
