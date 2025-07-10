@@ -11,7 +11,7 @@ class BackgroundDetector:
         self.vad_pipeline = Pipeline.from_pretrained("pyannote/voice-activity-detection", use_auth_token=os.environ['HF_TOKEN'])
 
     def detect(self, vad_ratio_thresh: float=0.05):
-        diarization     = self.vad(self.wav_file)
+        diarization     = self.vad_pipeline(self.wav_file)
         speech_segments = [(s.start, s.end) for s in diarization.get_timeline()]
         total_duration  = librosa.get_duration(filename=self.wav_file)
         speech_time     = sum(end - start for start, end in speech_segments)
