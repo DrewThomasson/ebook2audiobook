@@ -13,7 +13,7 @@ class BackgroundDetector:
     def detect(self, vad_ratio_thresh: float=0.05):
         diarization     = self.vad_pipeline(self.wav_file)
         speech_segments = [(s.start, s.end) for s in diarization.get_timeline()]
-        total_duration  = librosa.get_duration(filename=self.wav_file)
+        total_duration  = librosa.get_duration(path=self.wav_file)
         speech_time     = sum(end - start for start, end in speech_segments)
         non_speech_ratio = 1 - (speech_time / total_duration)
         status = non_speech_ratio > vad_ratio_thresh
