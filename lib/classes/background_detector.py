@@ -26,14 +26,14 @@ class BackgroundDetector:
         energies = []
         with torch.no_grad():
             for mel_chunk in log_mel:
-                # 1) turn into a float Tensor
+                # Turn into a float Tensor
                 if isinstance(mel_chunk, np.ndarray):
                     t = torch.from_numpy(mel_chunk).float()
                 elif torch.is_tensor(mel_chunk):
                     t = mel_chunk.float()
                 else:
                     raise TypeError(f"Unexpected chunk type: {type(mel_chunk)}")
-                # 2) ensure shape [1,1,96,64]
+                # Ensure shape [1,1,96,64]
                 if t.dim() == 2:            # (96,64)
                     x = t.unsqueeze(0).unsqueeze(0)
                 elif t.dim() == 3:          # (1,96,64)
@@ -42,9 +42,9 @@ class BackgroundDetector:
                     raise ValueError(f"Unexpected mel_chunk dims: {t.shape}")
                 if torch.cuda.is_available():
                     x = x.cuda()
-                # 3) forward pass
+                # Forward pass
                 emb = self.model(x)
-                # 4) compute norm on flattened embedding
+                # Compute norm on flattened embedding
                 flat = emb.view(-1)        # e.g. [128] or [ ... ] whatever shape
                 energy = torch.norm(flat).cpu().item()
                 energies.append(energy)
@@ -55,7 +55,7 @@ class BackgroundDetector:
                overlap: float                = 0.5,
                energy_sigma_mul: float       = 1.5,
                flatness_thresh: float        = 0.3,
-               zcr_thresh: float             = 0.1
+               zcr_thresh: float             = 0.3
               ) -> (bool, str):
         """
         Returns (status, message) where status is True if background music/noise
@@ -97,7 +97,7 @@ class BackgroundDetector:
         flatness_flag = (flatness > flatness_thresh).mean() > 0.3
         zcr_flag      = (zcr > zcr_thresh).mean() > 0.3
 
-        # 3) VGGish embeddings over the whole file (in 0.96s hops)
+        # GGish embeddings over the whole file (in 0.96s hops)
         log_mel = vggish_input.wavfile_to_examples(self.wav_file)  # (N,96,64)
         vgg_energies = self._compute_vggish_energy(log_mel)
         vgg_mean     = vgg_energies.mean()
@@ -105,19 +105,17 @@ class BackgroundDetector:
         vgg_thresh   = vgg_mean + energy_sigma_mul * vgg_std
         vgg_flag     = (vgg_energies > vgg_thresh).mean() > 0.3
 
-        # 4) Final decision: any indicator tripped → background detected
+        # Final decision: any indicator tripped → background detected
         status = any([rms_flag, flatness_flag, zcr_flag, vgg_flag])
 
-        # 5) Build report
+        # Build report
         msg = []
-        msg.append(f"RMS mean/std:      {rms_mean:.1f} / {rms_std:.1f}  (>{energy_sigma_mul}σ → {energy_thresh:.1f})")
+        msg.append(f"RMS mean/std: {rms_mean:.1f} / {rms_std:.1f}  (>{energy_sigma_mul}σ → {energy_thresh:.1f})")
         msg.append(f"Flatness > {flatness_thresh}: {flatness_flag!s}")
-        msg.append(f"ZCR > {zcr_thresh}:           {zcr_flag!s}")
-        msg.append(f"VGGish mean/std:    {vgg_mean:.1f} / {vgg_std:.1f}  (thresh {vgg_thresh:.1f})")
-        msg.append(f"VGGish flag:        {vgg_flag!s}")
+        msg.append(f"ZCR > {zcr_thresh}: {zcr_flag!s}")
+        msg.append(f"VGGish mean/std: {vgg_mean:.1f} / {vgg_std:.1f}  (thresh {vgg_thresh:.1f})")
+        msg.append(f"VGGish flag: {vgg_flag!s}")
 
-        msg.append("\n▶ Background detected; proceeding with separation." 
-                   if status 
-                   else "\n✔ No significant background; skipping separation.")
-
+        msg.append("\nBackground detected; proceeding with separation." if status else "\nNo significant background; skipping separation.")
+        
         return status, "\n".join(msg)
