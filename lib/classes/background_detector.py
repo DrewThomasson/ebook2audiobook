@@ -49,69 +49,68 @@ class BackgroundDetector:
                 energies.append(energy)
         return np.array(energies)
 
-def detect(self,
-           frame_s: float = 1.0,
-           overlap: float = 0.5,
-           rms_db_thresh: float = None,
-           energy_sigma_mul: float = 1.5,
-           flatness_thresh: float = 0.3,
-           zcr_thresh: float = 0.3):
-    """
-    Detect background segments in the audio.
-    
-    Parameters
-    ----------
-    frame_s : float
-        Frame length in seconds.
-    overlap : float
-        Fractional overlap between successive frames.
-    rms_db_thresh : float, optional
-        If provided, use this absolute dB cutoff on RMS instead of mean+σ.
-    energy_sigma_mul : float
-        Multiplier for RMS σ when using relative threshold.
-    flatness_thresh : float
-        Spectral flatness cutoff (0–1).
-    zcr_thresh : float
-        Zero-crossing rate cutoff (0–1).
-    """
+    def detect(self,
+               frame_s: float = 1.0,
+               overlap: float = 0.5,
+               rms_db_thresh: float = None,
+               energy_sigma_mul: float = 1.5,
+               flatness_thresh: float = 0.3,
+               zcr_thresh: float = 0.3):
+        """
+        Detect background segments in the audio.
+        
+        Parameters
+        ----------
+        frame_s : float
+            Frame length in seconds.
+        overlap : float
+            Fractional overlap between successive frames.
+        rms_db_thresh : float, optional
+            If provided, use this absolute dB cutoff on RMS instead of mean+σ.
+        energy_sigma_mul : float
+            Multiplier for RMS σ when using relative threshold.
+        flatness_thresh : float
+            Spectral flatness cutoff (0–1).
+        zcr_thresh : float
+            Zero-crossing rate cutoff (0–1).
+        """
 
-    # --- load + framing ---
-    y, sr = librosa.load(self.wav_file, sr=None, mono=True)
-    frame_len = int(frame_s * sr)
-    hop_len   = int(frame_len * (1 - overlap))
+        # --- load + framing ---
+        y, sr = librosa.load(self.wav_file, sr=None, mono=True)
+        frame_len = int(frame_s * sr)
+        hop_len   = int(frame_len * (1 - overlap))
 
-    # --- extract features per frame ---
-    rms      = librosa.feature.rms(y=y, frame_length=frame_len, hop_length=hop_len)[0]
-    flatness = librosa.feature.spectral_flatness(y=y, n_fft=frame_len, hop_length=hop_len)[0]
-    zcr      = librosa.feature.zero_crossing_rate(y, frame_length=frame_len, hop_length=hop_len)[0]
+        # --- extract features per frame ---
+        rms      = librosa.feature.rms(y=y, frame_length=frame_len, hop_length=hop_len)[0]
+        flatness = librosa.feature.spectral_flatness(y=y, n_fft=frame_len, hop_length=hop_len)[0]
+        zcr      = librosa.feature.zero_crossing_rate(y, frame_length=frame_len, hop_length=hop_len)[0]
 
-    # --- RMS-based flag ---
-    if rms_db_thresh is not None:
-        # absolute dB threshold
-        rms_db   = 20 * np.log10(rms + 1e-9)
-        rms_flag = (rms_db > rms_db_thresh).mean() > 0.5
-    else:
-        # legacy relative threshold
-        mean_rms = rms.mean()
-        std_rms  = rms.std()
-        thresh   = mean_rms + energy_sigma_mul * std_rms
-        rms_flag = (rms > thresh).mean() > 0.5
+        # --- RMS-based flag ---
+        if rms_db_thresh is not None:
+            # absolute dB threshold
+            rms_db   = 20 * np.log10(rms + 1e-9)
+            rms_flag = (rms_db > rms_db_thresh).mean() > 0.5
+        else:
+            # legacy relative threshold
+            mean_rms = rms.mean()
+            std_rms  = rms.std()
+            thresh   = mean_rms + energy_sigma_mul * std_rms
+            rms_flag = (rms > thresh).mean() > 0.5
 
-    # --- flatness & ZCR flags (unchanged) ---
-    flatness_flag = (flatness > flatness_thresh).mean() > 0.3
-    zcr_flag      = (zcr > zcr_thresh).mean() > 0.3
+        # --- flatness & ZCR flags (unchanged) ---
+        flatness_flag = (flatness > flatness_thresh).mean() > 0.3
+        zcr_flag      = (zcr > zcr_thresh).mean() > 0.3
 
-    # --- VGGish or other flags … (leave as you had them) ---
-    vgg_flag = ...
-    # … your existing embedding-energy logic …
+        # --- VGGish or other flags … (leave as you had them) ---
+        vgg_flag = ...
+        # … your existing embedding-energy logic …
 
-    # --- final decision & report ---
-    status = any([rms_flag, flatness_flag, zcr_flag, vgg_flag])
-    report = {
-        'rms_flag': rms_flag,
-        'flatness_flag': flatness_flag,
-        'zcr_flag': zcr_flag,
-        'vgg_flag': vgg_flag,
-        # you can also include distributions or thresholds used
-    }
-    return status, report
+        # --- final decision & report ---
+        status = any([rms_flag, flatness_flag, zcr_flag, vgg_flag])
+        report = {
+            'rms_flag': rms_flag,
+            'flatness_flag': flatness_flag,
+            'zcr_flag': zcr_flag,
+            'vgg_flag': vgg_flag,
+        }
+        return status, report
