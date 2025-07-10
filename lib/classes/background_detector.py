@@ -1,5 +1,4 @@
 import os
-import torch
 import numpy as np
 import librosa
 from pyannote.audio import Pipeline
@@ -9,9 +8,6 @@ class BackgroundDetector:
     def __init__(self, wav_file: str, models_dir: str):
         self.wav_file   = wav_file
         self.models_dir = models_dir
-        self.model.eval()
-        if torch.cuda.is_available():
-            self.model.cuda()
         self.vad_pipeline = Pipeline.from_pretrained("pyannote/voice-activity-detection", use_auth_token=os.environ['HF_TOKEN'])
 
     def detect(self,
