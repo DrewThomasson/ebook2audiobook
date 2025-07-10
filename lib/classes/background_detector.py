@@ -20,7 +20,9 @@ class BackgroundDetector:
         self.model.eval()
         if torch.cuda.is_available():
             self.model.cuda()
-        self.vad_pipeline = Pipeline.from_pretrained("pyannote/voice-activity-detection")
+        with open(os.environ['HF_TOKEN_PATH']) as f:
+            os.environ['HUGGINGFACE_TOKEN'] = f.read().strip()
+        self.vad_pipeline = Pipeline.from_pretrained("pyannote/voice-activity-detection", use_auth_token=True)
 
     def _compute_vggish_energy(self, log_mel):
         """Return per‐frame L2 norms of VGGish embeddings."""
