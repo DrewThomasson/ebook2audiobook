@@ -39,8 +39,8 @@ class BackgroundDetector:
             rms_flag  = (rms > thresh).mean() > 0.5
 
         # --- flatness & ZCR flags ---
-        flatness_flag = (flatness > flatness_thresh).mean() > 0.3
-        zcr_flag      = (zcr      > zcr_thresh).mean() > 0.3
+        flatness_flag = (flatness > flatness_thresh).any()
+        zcr_flag = (zcr > zcr_thresh).any()
 
         # --- VAD (non-speech) flag ---
         # run the pipeline to get speech time segments
