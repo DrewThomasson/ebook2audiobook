@@ -1,7 +1,6 @@
 import os
 import torch
 import numpy as np
-import librosa
 from torchvggish import vggish, vggish_input
 from pyannote.audio import Pipeline
 
@@ -20,6 +19,7 @@ class BackgroundDetector:
         self.model.eval()
         if torch.cuda.is_available():
             self.model.cuda()
+        os.environ['HF_TOKEN_PATH'] = os.path.join(os.path.expanduser('~'), '.huggingface_token')
         with open(os.environ['HF_TOKEN_PATH']) as f:
             os.environ['HUGGINGFACE_TOKEN'] = f.read().strip()
         self.vad_pipeline = Pipeline.from_pretrained("pyannote/voice-activity-detection", use_auth_token=True)
