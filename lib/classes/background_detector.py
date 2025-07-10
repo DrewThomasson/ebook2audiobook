@@ -19,8 +19,6 @@ class BackgroundDetector:
         self.model.eval()
         if torch.cuda.is_available():
             self.model.cuda()
-        with open(os.environ['HF_TOKEN_PATH']) as f:
-            os.environ['HUGGINGFACE_TOKEN'] = f.read().strip()
         self.vad_pipeline = Pipeline.from_pretrained("pyannote/voice-activity-detection", use_auth_token=os.environ['HUGGINGFACE_TOKEN'])
 
     def _compute_vggish_energy(self, log_mel):
