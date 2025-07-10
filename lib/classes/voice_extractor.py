@@ -162,19 +162,28 @@ class VoiceExtractor:
                     # slide with a hop (e.g. quarter-window for a good speed/accuracy tradeoff)
                     window = min_required_duration
                     hop = max(1, window // 4)
-                    best_loudness = -float('inf')
+                    best_width = -float("inf")
                     best_start = 0
                     for start in range(0, total_duration - window + 1, hop):
-                        segment    = audio[start:start + window]
-                        loudness   = segment.dBFS
-                        if loudness > best_loudness:
-                            best_loudness = loudness
-                            best_start   = start
+                        chunk   = audio[start : start + window]
+                        samples = np.array(chunk.get_array_of_samples()).astype(float)
+                        # Option A: FFT‐based “width”
+                        spectrum = np.abs(scipy.fftpack.fft(samples))
+                        width    = np.std(spectrum)
+                        # Option B: librosa spectral bandwidth (uncomment to use)
+                        # import librosa
+                        # sr = audio.frame_rate
+                        # D  = librosa.stft(samples, n_fft=2048, hop_length=512)
+                        # S  = np.abs(D)**2
+                        # width = librosa.feature.spectral_bandwidth(S=S, sr=sr)[0].mean()
+                        if width > best_width:
+                            best_width = width
+                            best_start = start
                     best_end = best_start + window
                     msg = (
-                        f"Selected loudest window "
+                        f"Selected widest‐spectrum window "
                         f"{best_start/1000:.2f}s–{best_end/1000:.2f}s "
-                        f"(@ {best_loudness:.1f} dBFS)"
+                        f"(@ width {best_width:.1f})"
                     )
                     print(msg)
                 else:
