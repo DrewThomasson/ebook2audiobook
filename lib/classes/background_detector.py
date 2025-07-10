@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import librosa
 from torchvggish import vggish, vggish_input
+from pyannote.audio import Pipeline
 
 class BackgroundDetector:
 
@@ -19,6 +20,7 @@ class BackgroundDetector:
         self.model.eval()
         if torch.cuda.is_available():
             self.model.cuda()
+        self.vad_pipeline = Pipeline.from_pretrained("pyannote/voice-activity-detection")
 
     def _compute_vggish_energy(self, log_mel):
         """Return per‐frame L2 norms of VGGish embeddings."""
@@ -56,65 +58,30 @@ class BackgroundDetector:
                energy_sigma_mul: float = 1.5,
                flatness_thresh: float = 0.3,
                zcr_thresh: float = 0.3):
-        """
-        Detect background segments in the audio.
-        
-        Parameters
-        ----------
-        frame_s : float
-            Frame length in seconds.
-        overlap : float
-            Fractional overlap between successive frames.
-        rms_db_thresh : float, optional
-            If provided, use this absolute dB cutoff on RMS instead of mean+σ.
-        energy_sigma_mul : float
-            Multiplier for RMS σ when using relative threshold.
-        flatness_thresh : float
-            Spectral flatness cutoff (0–1).
-        zcr_thresh : float
-            Zero-crossing rate cutoff (0–1).
-        """
+        # … your existing RMS/flatness/ZCR code …
 
-        # --- load + framing ---
-        y, sr = librosa.load(self.wav_file, sr=None, mono=True)
-        frame_len = int(frame_s * sr)
-        hop_len   = int(frame_len * (1 - overlap))
+        # --- NEW: run Pyannote VAD on the file ---
+        diarization = self.vad_pipeline(self.wav_file)
+        # diarization.itertracks(yield_label=True) yields (segment, track_index, label)
+        # but for VAD pipeline, it's just speech regions:
+        speech_segments = [(seg.start, seg.end) for seg in diarization.get_timeline()]
+        total_duration = librosa.get_duration(filename=self.wav_file)
 
-        # --- extract features per frame ---
-        rms      = librosa.feature.rms(y=y, frame_length=frame_len, hop_length=hop_len)[0]
-        flatness = librosa.feature.spectral_flatness(y=y, n_fft=frame_len, hop_length=hop_len)[0]
-        zcr      = librosa.feature.zero_crossing_rate(y, frame_length=frame_len, hop_length=hop_len)[0]
+        # compute total speech time
+        speech_time = sum((end - start) for start, end in speech_segments)
 
-        # --- RMS-based flag ---
-        if rms_db_thresh is not None:
-            # absolute dB threshold
-            rms_db   = 20 * np.log10(rms + 1e-9)
-            rms_flag = (rms_db > rms_db_thresh).mean() > 0.5
-        else:
-            # legacy relative threshold
-            mean_rms = rms.mean()
-            std_rms  = rms.std()
-            thresh   = mean_rms + energy_sigma_mul * std_rms
-            rms_flag = (rms > thresh).mean() > 0.5
+        # non-speech = background
+        non_speech_time = total_duration - speech_time
+        vad_flag = non_speech_time > (0.5 * total_duration)
+        # └─ True if more than half the recording is non-speech
 
-        # GGish embeddings over the whole file (in 0.96s hops)
-        log_mel = vggish_input.wavfile_to_examples(self.wav_file)  # (N,96,64)
-        vgg_energies = self._compute_vggish_energy(log_mel)
-        vgg_mean     = vgg_energies.mean()
-        vgg_std      = vgg_energies.std()
-        vgg_thresh   = vgg_mean + energy_sigma_mul * vgg_std
-
-        # --- flatness & ZCR flags (unchanged) ---
-        flatness_flag = (flatness > flatness_thresh).mean() > 0.3
-        zcr_flag = (zcr > zcr_thresh).mean() > 0.3
-        vgg_flag     = (vgg_energies > vgg_thresh).mean() > 0.3
-
-        # --- final decision & report ---
-        status = any([rms_flag, flatness_flag, zcr_flag, vgg_flag])
+        # --- combine all flags ---
+        status = any([rms_flag, flatness_flag, zcr_flag, vad_flag])
         report = {
             'rms_flag': rms_flag,
             'flatness_flag': flatness_flag,
             'zcr_flag': zcr_flag,
-            'vgg_flag': vgg_flag,
+            'vad_non_speech_ratio': non_speech_time/total_duration,
+            'vad_flag': vad_flag,
         }
         return status, report
