@@ -156,46 +156,30 @@ class VoiceExtractor:
             if total_duration <= min_required_duration:
                 msg = f"Audio is only {total_duration/1000:.2f}s long; skipping audio trimming..."
                 return True, msg
-            elif total_duration > (min_required_duration * 2):
-                msg = f"Audio is only {total_duration/1000:.2f}s long; skipping audio trimming..."          
-                # Compute Amplitude and Frequency Variation
-                amplitude_variations = []
-                frequency_variations = []
-                timestamps = []
-                for i in range(0, total_duration - chunk_size, chunk_size):
-                    chunk = audio[i:i + chunk_size]
-                    if chunk.dBFS > silence_threshold:
-                        amplitude_variations.append(chunk.dBFS)
-                        # FFT to analyze frequency spectrum
-                        samples = np.array(chunk.get_array_of_samples())
-                        spectrum = np.abs(scipy.fftpack.fft(samples))
-                        frequency_variations.append(np.std(spectrum))  # Measure frequency spread
-                        timestamps.append(i)
-                # If no significant speech was detected, return an error
-                if not amplitude_variations:
-                    raise ValueError("_trim_and_clean(): No speech detected!")
-                # Normalize values for fair weighting
-                amplitude_variations = np.array(amplitude_variations)
-                frequency_variations = np.array(frequency_variations)
-                if len(amplitude_variations) > 1:  # Avoid division errors
-                    amplitude_variations = (amplitude_variations - np.min(amplitude_variations)) / np.ptp(amplitude_variations)
-                else:
-                    amplitude_variations = np.zeros_like(amplitude_variations)
-                if len(frequency_variations) > 1:
-                    frequency_variations = (frequency_variations - np.min(frequency_variations)) / np.ptp(frequency_variations)
-                else:
-                    frequency_variations = np.zeros_like(frequency_variations)
-                # Score each segment using combined variation
-                score = amplitude_variations + frequency_variations  # Weight both factors equally
-                # Find the best segments
-                best_index = np.argmax(score)  # Find the chunk with max variation
-                # set timestamp and duration
-                best_start = timestamps[best_index]
-                best_end = best_start + min_required_duration
             else:
-                best_start = 0
-                best_end = total_duration
-                msg = f"Audio length is not enough long to find the best start and end. Skipping best start/end process..."         
+                if total_duration > (min_required_duration * 2):
+                    msg = f"Audio longer than the max allowed. Proceeding to audio trimming..."          
+                    # slide with a hop (e.g. quarter-window for a good speed/accuracy tradeoff)
+                    window = min_required_duration
+                    hop = max(1, window // 4)
+                    best_loudness = -float('inf')
+                    best_start = 0
+                    for start in range(0, total_duration - window + 1, hop):
+                        segment    = audio[start:start + window]
+                        loudness   = segment.dBFS
+                        if loudness > best_loudness:
+                            best_loudness = loudness
+                            best_start   = start
+                    best_end = best_start + window
+                    msg = (
+                        f"Selected loudest window "
+                        f"{best_start/1000:.2f}s–{best_end/1000:.2f}s "
+                        f"(@ {best_loudness:.1f} dBFS)"
+                    )
+                    print(msg)
+                else:
+                    best_start = 0
+                    best_end = total_duration       
             trimmed_audio = audio[best_start:best_end]
             trimmed_audio.export(self.voice_track, format='wav')
             msg = 'Audio trimmed and cleaned!'
