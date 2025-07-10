@@ -82,11 +82,12 @@ class VoiceExtractor:
             torch.hub.set_dir(torch_home)
             detector = BackgroundDetector(wav_file=self.wav_file, models_dir=torch_home)
             status, report = detector.detect(
-                frame_s=1.0,               # frame length in seconds
-                overlap=0.5,               # 50% overlap between frames
-                energy_sigma_mul=1.5,      # threshold = mean + 1.5 * std
-                flatness_thresh=0.3,       # spectral flatness cutoff
-                zcr_thresh=0.3             # zero-crossing rate cutoff
+                frame_s=1.0,
+                overlap=0.5,
+                rms_db_thresh=-17,    # absolute –17 dB cutoff on loudness
+                # energy_sigma_mul is now ignored when rms_db_thresh is set
+                flatness_thresh=0.02, # per our calibration
+                zcr_thresh=0.11       # per our calibration
             )
             print(report)
             return True, status, msg

@@ -382,6 +382,14 @@ models = {
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         }
+        "Konishev": {
+            "lang": "rus",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/rus/Konishev/",
+            "voice": os.path.join(voices_dir, "rus", "adult", "male", f"Konishev_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
+        }
     },
     TTS_ENGINES['BARK']: {
         "internal": {

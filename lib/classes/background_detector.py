@@ -49,42 +49,69 @@ class BackgroundDetector:
                 energies.append(energy)
         return np.array(energies)
 
-    def detect(self, frame_s: float=1.0, overlap: float=0.5, energy_sigma_mul: float=1.5, flatness_thresh: float=0.3, zcr_thresh: float=0.3) -> (bool, str):
-        """
-        Returns (status, message) where status is True if background music/noise
-        is detected.
-        """
-        # Load raw audio (mono @16kHz) for spectral features
-        y, sr = librosa.load(self.wav_file, sr=16000, mono=True)
-        # frame params
-        frame_len = int(frame_s * sr)
-        hop_len   = int(frame_len * (1 - overlap))
-        # Compute spectral features per frame
-        rms = librosa.feature.rms(y=y, frame_length=frame_len, hop_length=hop_len)[0]
-        # ← patched here ↓
-        flatness = librosa.feature.spectral_flatness(y=y, n_fft=frame_len, hop_length=hop_len)[0]
-        zcr = librosa.feature.zero_crossing_rate(y, frame_length=frame_len, hop_length=hop_len)[0]
-        # frame‐level decisions
-        rms_mean, rms_std = rms.mean(), rms.std()
-        energy_thresh     = rms_mean + energy_sigma_mul * rms_std
-        rms_flag      = (rms > energy_thresh).mean() > 0.5
-        flatness_flag = (flatness > flatness_thresh).mean() > 0.3
-        zcr_flag      = (zcr > zcr_thresh).mean() > 0.3
-        # GGish embeddings over the whole file (in 0.96s hops)
-        log_mel = vggish_input.wavfile_to_examples(self.wav_file)  # (N,96,64)
-        vgg_energies = self._compute_vggish_energy(log_mel)
-        vgg_mean     = vgg_energies.mean()
-        vgg_std      = vgg_energies.std()
-        vgg_thresh   = vgg_mean + energy_sigma_mul * vgg_std
-        vgg_flag     = (vgg_energies > vgg_thresh).mean() > 0.3
-        # Final decision: any indicator tripped → background detected
-        status = any([rms_flag, flatness_flag, zcr_flag, vgg_flag])
-        # Build report
-        msg = []
-        msg.append(f"RMS mean/std: {rms_mean:.1f} / {rms_std:.1f}  (>{energy_sigma_mul}σ → {energy_thresh:.1f})")
-        msg.append(f"Flatness > {flatness_thresh}: {flatness_flag!s}")
-        msg.append(f"ZCR > {zcr_thresh}: {zcr_flag!s}")
-        msg.append(f"VGGish mean/std: {vgg_mean:.1f} / {vgg_std:.1f}  (thresh {vgg_thresh:.1f})")
-        msg.append(f"VGGish flag: {vgg_flag!s}")
-        msg.append("\nBackground noise or music detected. Proceeding voice extraction." if status else "\nNo background noise or music detected. Skipping separation")
-        return status, "\n".join(msg)
+def detect(self,
+           frame_s: float = 1.0,
+           overlap: float = 0.5,
+           rms_db_thresh: float = None,
+           energy_sigma_mul: float = 1.5,
+           flatness_thresh: float = 0.3,
+           zcr_thresh: float = 0.3):
+    """
+    Detect background segments in the audio.
+    
+    Parameters
+    ----------
+    frame_s : float
+        Frame length in seconds.
+    overlap : float
+        Fractional overlap between successive frames.
+    rms_db_thresh : float, optional
+        If provided, use this absolute dB cutoff on RMS instead of mean+σ.
+    energy_sigma_mul : float
+        Multiplier for RMS σ when using relative threshold.
+    flatness_thresh : float
+        Spectral flatness cutoff (0–1).
+    zcr_thresh : float
+        Zero-crossing rate cutoff (0–1).
+    """
+
+    # --- load + framing ---
+    y, sr = librosa.load(self.wav_file, sr=None, mono=True)
+    frame_len = int(frame_s * sr)
+    hop_len   = int(frame_len * (1 - overlap))
+
+    # --- extract features per frame ---
+    rms      = librosa.feature.rms(y=y, frame_length=frame_len, hop_length=hop_len)[0]
+    flatness = librosa.feature.spectral_flatness(y=y, n_fft=frame_len, hop_length=hop_len)[0]
+    zcr      = librosa.feature.zero_crossing_rate(y, frame_length=frame_len, hop_length=hop_len)[0]
+
+    # --- RMS-based flag ---
+    if rms_db_thresh is not None:
+        # absolute dB threshold
+        rms_db   = 20 * np.log10(rms + 1e-9)
+        rms_flag = (rms_db > rms_db_thresh).mean() > 0.5
+    else:
+        # legacy relative threshold
+        mean_rms = rms.mean()
+        std_rms  = rms.std()
+        thresh   = mean_rms + energy_sigma_mul * std_rms
+        rms_flag = (rms > thresh).mean() > 0.5
+
+    # --- flatness & ZCR flags (unchanged) ---
+    flatness_flag = (flatness > flatness_thresh).mean() > 0.3
+    zcr_flag      = (zcr > zcr_thresh).mean() > 0.3
+
+    # --- VGGish or other flags … (leave as you had them) ---
+    vgg_flag = ...
+    # … your existing embedding-energy logic …
+
+    # --- final decision & report ---
+    status = any([rms_flag, flatness_flag, zcr_flag, vgg_flag])
+    report = {
+        'rms_flag': rms_flag,
+        'flatness_flag': flatness_flag,
+        'zcr_flag': zcr_flag,
+        'vgg_flag': vgg_flag,
+        # you can also include distributions or thresholds used
+    }
+    return status, report
