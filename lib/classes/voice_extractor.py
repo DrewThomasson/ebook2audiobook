@@ -75,6 +75,8 @@ class VoiceExtractor:
 
     def _detect_background(self):
         try:
+            msg = 'Detecting any background noise or music...'
+            print(msg)
             torch_home = self.models_dir
             torch.hub.set_dir(torch_home)
             detector = BackgroundDetector(wav_file=self.wav_file, models_dir=torch_home)
