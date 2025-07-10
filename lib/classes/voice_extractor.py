@@ -84,9 +84,9 @@ class VoiceExtractor:
             status, report = detector.detect(
                 frame_s=1.0,
                 overlap=0.5,
-                rms_db_thresh=-17,    # absolute –17 dB cutoff on loudness
-                flatness_thresh=0.02, # per our calibration
-                zcr_thresh=0.11       # per our calibration
+                rms_db_thresh=-19,    # absolute –17 dB cutoff on loudness
+                flatness_thresh=0.15, # per our calibration
+                zcr_thresh=0.09       # per our calibration
             )
             print(report)
             if status:
