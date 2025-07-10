@@ -33,7 +33,6 @@ class BackgroundDetector:
                     t = mel_chunk.float()
                 else:
                     raise TypeError(f"Unexpected chunk type: {type(mel_chunk)}")
-
                 # 2) ensure shape [1,1,96,64]
                 if t.dim() == 2:            # (96,64)
                     x = t.unsqueeze(0).unsqueeze(0)
@@ -41,18 +40,14 @@ class BackgroundDetector:
                     x = t.unsqueeze(0)
                 else:
                     raise ValueError(f"Unexpected mel_chunk dims: {t.shape}")
-
                 if torch.cuda.is_available():
                     x = x.cuda()
-
                 # 3) forward pass
                 emb = self.model(x)
-
                 # 4) compute norm on flattened embedding
                 flat = emb.view(-1)        # e.g. [128] or [ ... ] whatever shape
                 energy = torch.norm(flat).cpu().item()
                 energies.append(energy)
-
         return np.array(energies)
 
     def detect(self,
