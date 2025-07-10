@@ -86,9 +86,9 @@ class VoiceExtractor:
                 # ~50% of frames are louder than –19.1 dB
                 rms_db_thresh   = -19.1,  
                 # ~50% of frames have flatness > 0.0101
-                flatness_thresh=  0.01,  
+                flatness_thresh=  0.008,  
                 # ~50% of frames have ZCR > 0.0847
-                zcr_thresh     =  0.085, 
+                zcr_thresh     =  0.07, 
                 # you can also lower the VAD ratio requirement
                 vad_ratio_thresh= 0.4 
             )
