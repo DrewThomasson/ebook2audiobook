@@ -93,7 +93,6 @@ class VoiceExtractor:
                 msg = 'Background noise or music detected. Proceeding voice extraction...'
             else:
                 msg = 'No background noise or music detected. Skipping separation...'
-            print(msg)
             return True, status, msg
         except Exception as e:
             error = f'_detect_background() error: {e}'

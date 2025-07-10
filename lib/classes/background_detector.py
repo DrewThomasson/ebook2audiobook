@@ -97,15 +97,16 @@ class BackgroundDetector:
             thresh   = mean_rms + energy_sigma_mul * std_rms
             rms_flag = (rms > thresh).mean() > 0.5
 
-        # --- flatness & ZCR flags (unchanged) ---
-        flatness_flag = (flatness > flatness_thresh).mean() > 0.3
-        zcr_flag = (zcr > zcr_thresh).mean() > 0.3
         # GGish embeddings over the whole file (in 0.96s hops)
         log_mel = vggish_input.wavfile_to_examples(self.wav_file)  # (N,96,64)
         vgg_energies = self._compute_vggish_energy(log_mel)
         vgg_mean     = vgg_energies.mean()
         vgg_std      = vgg_energies.std()
         vgg_thresh   = vgg_mean + energy_sigma_mul * vgg_std
+
+        # --- flatness & ZCR flags (unchanged) ---
+        flatness_flag = (flatness > flatness_thresh).mean() > 0.3
+        zcr_flag = (zcr > zcr_thresh).mean() > 0.3
         vgg_flag     = (vgg_energies > vgg_thresh).mean() > 0.3
 
         # --- final decision & report ---
