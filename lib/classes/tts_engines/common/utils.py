@@ -95,6 +95,7 @@ def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_valu
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     def rep_num(match):
         try:
+            print(f'---------rep_num called: {number_value}-----------')
             number = match.group()
             trailing = ''
             if number and number[-1] in '.,':
@@ -104,7 +105,6 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
                 number_value = float(number)
             else:
                 number_value = int(number)
-            print(f'---------{number_value}-----------')
             if is_num2words_compat:
                 return num2words(number_value, lang=lang_iso1)
             else:
@@ -133,23 +133,21 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     if normal_replacements:
         sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
         text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
-        print(f'normal_replacements------------{text}------------')
     # 4) Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
-        amb_pat = (
+        ambiguous_pattern = (
             r'(?<!\S)'               # no non-space before
             r'(\d+)\s*([-/*x])\s*(\d+)'  # num SYMBOL num
             r'(?!\S)'               # no non-space after
             r'|'                    # or
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
-        text = re.sub(amb_pat, replace_ambiguous, text)
-        print(f'ambiguous_replacements------------{text}------------')
+        text = re.sub(ambiguous_pattern, replace_ambiguous, text)
     # split long digit-runs (3-digit groups)
     text = re.sub(r'(\d{3})(?=\d{3}(?!\.\d))', r'\1 ', text)
     if tts_engine != TTS_ENGINES['XTTSv2']:
-        # 5) Number-to-words: build a pattern that finds any standalone number,
-        #    with commas, decimals or exponents.
+        # Number-to-words: build a pattern that finds any standalone number,
+        # with commas, decimals or exponents.
         number_pattern = (
             r'(?<!\S)'                                      # whitespace or start
             r'(-?\d{1,3}(?:,\d{3})*'                        # integer with optional commas
@@ -157,9 +155,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?:[eE][+-]?\d+)?)'                           # optional exponent
             r'(?!\S)'                                       # whitespace or end
         )
-        # *this* re.sub will now find every standalone number and convert it
         text = re.sub(number_pattern, rep_num, text)
-        print(f'ambiguous_replacements------------{text}------------')
     return text
 
 def unload_tts(device, reserved_keys=None, tts_key=None):
