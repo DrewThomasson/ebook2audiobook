@@ -1,14 +1,16 @@
 import os
 import numpy as np
 import librosa
+
 from pyannote.audio import Pipeline
+from lib.models import voice_detector_model
 
 class BackgroundDetector:
 
     def __init__(self, wav_file: str, models_dir: str):
         self.wav_file   = wav_file
         self.models_dir = models_dir
-        self.vad_pipeline = Pipeline.from_pretrained("zermok/voice-activity-detection")
+        self.vad_pipeline = Pipeline.from_pretrained(voice_detector_model)
 
     def detect(self, vad_ratio_thresh: float=0.05):
         diarization     = self.vad_pipeline(self.wav_file)
