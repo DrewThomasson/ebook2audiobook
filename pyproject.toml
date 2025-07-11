@@ -34,6 +34,7 @@ dependencies = [
 	"soynlp",
 	"pythainlp",
 	"pydub",
+	"pyannote-audio",
 	"mutagen",
 	"nvidia-ml-py",
 	"PyOpenGL",
