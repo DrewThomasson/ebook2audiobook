@@ -11,7 +11,7 @@ class BackgroundDetector:
 
     def __init__(self, wav_file: str):
         self.wav_file   = wav_file
-        model = Model.from_pretrained(default_voice_detection_model)
+        model = Model.from_pretrained(default_voice_detection_model, cache_dir=tts_dir)
         self.pipeline. = VoiceActivityDetection(segmentation=model)
         hyper_params = {
           # onset/offset activation thresholds
