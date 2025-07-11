@@ -6,13 +6,11 @@ from pyannote.audio import Pipeline
 from lib.conf import tts_dir
 from lib.models import default_voice_detection_model
 
-os.environ['TORCH_HOME'] = tts_dir
-
 class BackgroundDetector:
 
     def __init__(self, wav_file: str):
         self.wav_file   = wav_file
-        self.vad_pipeline = Pipeline.from_pretrained(default_voice_detection_model)
+        self.vad_pipeline = Pipeline.from_pretrained(default_voice_detection_model, cache_dir=tts_dir)
 
     def detect(self, vad_ratio_thresh: float=0.05):
         diarization     = self.vad_pipeline(self.wav_file)

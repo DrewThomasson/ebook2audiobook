@@ -16,7 +16,6 @@ from lib.models import TTS_ENGINES, models
 from lib.classes.background_detector import BackgroundDetector
 
 torch.hub.set_dir(tts_dir)
-os.environ['TORCH_HOME'] = tts_dir
 
 class VoiceExtractor:
 
