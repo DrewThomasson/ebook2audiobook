@@ -50,7 +50,6 @@ punctuation_switch = {
 
     # Dashes, underscores & Hyphens that might cause weird pauses
     '–': '—',  # En dash (Unicode U+2013)
-    #'—': '-',  # Em dash (Unicode U+2014)
 	"_": " ",   # U+005F LOW LINE
 	"‗": " ",   # U+2017 DOUBLE LOW LINE
 	"¯": " ",   # U+00AF MACRON (technically an overline)

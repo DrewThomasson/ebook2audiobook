@@ -456,10 +456,43 @@ class Coqui:
                                 result.append(sentence[last_pos:])
                                 sentence = ''.join(result)
                 sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
-                print(sentence)
-                sentence_parts = sentence.split('‡pause‡')
+                sentence_pre_parts = sentence.split('‡pause‡')
+                max_chars = language_mapping.get(self.session['language'], {}).get("max_chars")
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
-                    sentence_parts = [p.replace('. ', '— ') for p in sentence_parts]
+                    sentence_pre_parts = [p.replace('. ', '— ') for p in sentence_pre_parts]
+                sentence_parts = []
+                for text_part in sentence_pre_parts:
+                    if len(text_part) > max_chars:
+                        count_punc = int(len(text_part) / max_chars)
+                        punc_pattern = '|'.join(map(re.escape, punctuation_split))
+                        punctuations = [m for m in re.finditer(punc_pattern, text_part)]
+                        if len(punctuations) >= count_punc:
+                            # Find split points (after punctuation)
+                            indices = [m.end() for m in punctuations[:count_punc]]
+                            prev = 0
+                            for idx in indices:
+                                sentence_parts.append(text_part[prev:idx].strip())
+                                prev = idx
+                            sentence_parts.append(text_part[prev:].strip())
+                        else:
+                            space_indices = [m.end() for m in re.finditer(' ', text_part)]
+                            if len(space_indices) >= count_punc:
+                                indices = space_indices[:count_punc]
+                                prev = 0
+                                for idx in indices:
+                                    sentence_parts.append(text_part[prev:idx].strip())
+                                    prev = idx
+                                sentence_parts.append(text_part[prev:].strip())
+                            else:
+                                avg_len = len(text_part)
+                                i = 0
+                                for part in range(count_punc):
+                                    sentence_parts.append(text_part[i:i+avg_len])
+                                    i += avg_len
+                                sentence_parts.append(text_part[i:])
+                    else:
+                        sentence_parts.append(text_part)
+                print(sentence_parts)
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
