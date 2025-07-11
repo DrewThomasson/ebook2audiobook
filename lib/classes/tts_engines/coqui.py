@@ -455,7 +455,7 @@ class Coqui:
                                 # Append remaining sentence
                                 result.append(sentence[last_pos:])
                                 sentence = ''.join(result)
-                sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
+                #sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('. ', '— ') for p in sentence_parts]
