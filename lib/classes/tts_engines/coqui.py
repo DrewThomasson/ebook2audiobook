@@ -412,13 +412,10 @@ class Coqui:
         try:
             speaker = None
             audio_data = False
-            audio2trim = False
             trim_audio_buffer = 0.004
             settings = self.params[self.session['tts_engine']]
             final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             sentence = sentence.rstrip()
-            if sentence.endswith('-') or sentence[-1].isalnum():
-                audio2trim = True
             settings['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
@@ -456,12 +453,10 @@ class Coqui:
                                 result.append(sentence[last_pos:])
                                 sentence = ''.join(result)
                 sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
-                sentence_pre_parts = sentence.split('‡pause‡')
-                max_chars = language_mapping.get(self.session['language'], {}).get("max_chars")
-                if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
-                    sentence_pre_parts = [p.replace('. ', '— ') for p in sentence_pre_parts]
+                max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
+                sentence_pause_parts = sentence.split('‡pause‡')
                 sentence_parts = []
-                for text_part in sentence_pre_parts:
+                for text_part in sentence_pause_parts:
                     if len(text_part) > max_chars:
                         count_punc = int(len(text_part) / max_chars)
                         punc_pattern = '|'.join(map(re.escape, punctuation_split))
@@ -480,7 +475,7 @@ class Coqui:
                                 indices = space_indices[:count_punc]
                                 prev = 0
                                 for idx in indices:
-                                    sentence_parts.append(text_part[prev:idx].strip())
+                                    sentence_parts.append(f'{text_part[prev:idx].strip()} —')
                                     prev = idx
                                 sentence_parts.append(text_part[prev:].strip())
                             else:
@@ -492,7 +487,8 @@ class Coqui:
                                 sentence_parts.append(text_part[i:])
                     else:
                         sentence_parts.append(text_part)
-                print(sentence_parts)
+                if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
+                    sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
@@ -500,7 +496,9 @@ class Coqui:
                     if not text_part:
                         audio_segments.append(silence_tensor.clone())
                         continue
-                    audio_part = None
+                    audio2trim = False
+                    if text_part.endswith('-') or text_part[-1].isalnum():
+                        audio2trim = True
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.06
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
