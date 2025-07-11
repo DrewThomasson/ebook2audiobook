@@ -3,7 +3,7 @@ import numpy as np
 import librosa
 
 from pyannote.audio import Pipeline
-from lib.models import voice_detector_model
+from lib.models import default_voice_detection_model
 
 class BackgroundDetector:
 
