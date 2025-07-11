@@ -3,14 +3,16 @@ import numpy as np
 import librosa
 
 from pyannote.audio import Pipeline
-from lib.conf import TORCH_HOME
+from lib.conf import tts_dir
 from lib.models import default_voice_detection_model
+
+torch.hub.set_dir(tts_dir)
+os.environ['TORCH_HOME'] = tts_dir
 
 class BackgroundDetector:
 
-    def __init__(self, wav_file: str, models_dir: str):
+    def __init__(self, wav_file: str):
         self.wav_file   = wav_file
-        self.models_dir = models_dir
         self.vad_pipeline = Pipeline.from_pretrained(default_voice_detection_model)
 
     def detect(self, vad_ratio_thresh: float=0.05):

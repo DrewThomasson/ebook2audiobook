@@ -1568,7 +1568,7 @@ def convert_ebook(args, ctx=None):
                     voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
                     final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
                     if not os.path.exists(final_voice_file):
-                        extractor = VoiceExtractor(session, models_dir, session['voice'], voice_name)
+                        extractor = VoiceExtractor(session, session['voice'], voice_name)
                         status, msg = extractor.extract_voice()
                         if status:
                             session['voice'] = final_voice_file
@@ -2386,7 +2386,7 @@ def web_interface(args, ctx):
                     voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
                     voice_name = get_sanitized(voice_name)
                     final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}_24000.wav')
-                    extractor = VoiceExtractor(session, models_dir, f, voice_name)
+                    extractor = VoiceExtractor(session, f, voice_name)
                     status, msg = extractor.extract_voice()
                     if status:
                         session['voice'] = final_voice_file

@@ -11,18 +11,20 @@ from io import BytesIO
 from pydub import AudioSegment, silence
 from pydub.silence import detect_silence
 
-from lib.conf import voice_formats
+from lib.conf import tts_dir, voice_formats
 from lib.models import TTS_ENGINES, models
 from lib.classes.background_detector import BackgroundDetector
 
+torch.hub.set_dir(tts_dir)
+os.environ['TORCH_HOME'] = tts_dir
+
 class VoiceExtractor:
 
-    def __init__(self, session, models_dir, voice_file, voice_name):
+    def __init__(self, session, voice_file, voice_name):
         self.wav_file = None
         self.session = session
         self.voice_file = voice_file
         self.voice_name = voice_name
-        self.models_dir = models_dir
         self.voice_track = 'vocals.wav'
         self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.output_dir = self.session['voice_dir']
@@ -77,9 +79,7 @@ class VoiceExtractor:
         try:
             msg = 'Detecting any background noise or music...'
             print(msg)
-            torch_home = self.models_dir
-            torch.hub.set_dir(torch_home)
-            detector = BackgroundDetector(wav_file=self.wav_file, models_dir=torch_home)
+            detector = BackgroundDetector(wav_file=self.wav_file)
             status, report = detector.detect(vad_ratio_thresh=0.15)
             print(report)
             if status:
@@ -102,9 +102,6 @@ class VoiceExtractor:
                 self.wav_file
             ]
             try:
-                torch_home = self.models_dir
-                torch.hub.set_dir(torch_home)
-                os.environ['TORCH_HOME'] = torch_home
                 process = subprocess.run(cmd, check=True)
                 self.voice_track = os.path.join(self.demucs_dir, self.voice_track)
                 msg = 'Voice track isolation successful'
@@ -303,6 +300,4 @@ class VoiceExtractor:
             msg = f'extract_voice() error: {e}'
             raise ValueError(msg)
         shutil.rmtree(self.demucs_dir, ignore_errors=True)
-        torch.hub.set_dir(self.models_dir)
-        os.environ['TORCH_HOME'] = self.models_dir
         return success, msg
