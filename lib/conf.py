@@ -1,6 +1,6 @@
 import os
 import platform
-from  lib..pbtk import pbtk
+#from  lib..pbtk import pbtk
 
 tmp_dir = os.path.abspath('tmp')
 tmp_expire = 7 # days
@@ -28,7 +28,7 @@ os.environ['TTS_HOME'] = models_dir
 os.environ['XDG_CACHE_HOME'] = models_dir
 os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
-os.environ['HF_TOKEN'] = pbtk
+#os.environ['HF_TOKEN'] = pbtk
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False' # BARK option: False needs A GPU

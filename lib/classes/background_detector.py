@@ -8,7 +8,7 @@ class BackgroundDetector:
     def __init__(self, wav_file: str, models_dir: str):
         self.wav_file   = wav_file
         self.models_dir = models_dir
-        self.vad_pipeline = Pipeline.from_pretrained("pyannote/voice-activity-detection", use_auth_token=os.environ['HF_TOKEN'])
+        self.vad_pipeline = Pipeline.from_pretrained("zermok/voice-activity-detection")
 
     def detect(self, vad_ratio_thresh: float=0.05):
         diarization     = self.vad_pipeline(self.wav_file)
