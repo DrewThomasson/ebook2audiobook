@@ -22,7 +22,7 @@ voice_conversion_models/multilingual/multi-dataset/openvoice_v1
 voice_conversion_models/multilingual/multi-dataset/openvoice_v2
 """
 default_vc_model = 'voice_conversion_models/multilingual/multi-dataset/knnvc'
-default_voice_detection_model = 'drewThomasson/segmentation'
+default_voice_detection_model = 'drewThomasson/segmentation/segmentation'
 
 max_tts_in_memory = 2 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM).
 max_custom_model = 100
