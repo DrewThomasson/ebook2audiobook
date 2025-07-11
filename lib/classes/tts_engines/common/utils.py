@@ -93,6 +93,7 @@ def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_valu
     return ''.join(result)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     def rep_num(match):
         try:
             print(f'---------rep_num called: {number_value}-----------')
@@ -108,6 +109,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             if is_num2words_compat:
                 return num2words(number_value, lang=lang_iso1)
             else:
+                replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
                 return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in number_value)
         except Exception as e:
             print(f"Error converting number: {number}, Error: {e}")
@@ -124,9 +126,8 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     # Pre-process formatted series (e.g. phone numbers) if needed
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
     # Symbol phonemes
-    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     ambiguous_symbols = {"-", "/", "*", "x"}
-    replacements         = {k: v for k, v in phonemes_list.items() if not k.isdigit()}
+    replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
     normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
     # Replace unambiguous symbols everywhere
