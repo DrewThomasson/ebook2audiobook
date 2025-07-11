@@ -5,17 +5,14 @@ import scipy.fftpack
 import soundfile as sf
 import subprocess
 import shutil
-import torch
 
 from io import BytesIO
 from pydub import AudioSegment, silence
 from pydub.silence import detect_silence
 
-from lib.conf import tts_dir, voice_formats
+from lib.conf import voice_formats
 from lib.models import TTS_ENGINES, models
 from lib.classes.background_detector import BackgroundDetector
-
-torch.hub.set_dir(tts_dir)
 
 class VoiceExtractor:
 
