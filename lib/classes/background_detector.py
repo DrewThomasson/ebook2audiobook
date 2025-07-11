@@ -10,7 +10,7 @@ class BackgroundDetector:
     def __init__(self, wav_file: str, models_dir: str):
         self.wav_file   = wav_file
         self.models_dir = models_dir
-        self.vad_pipeline = Pipeline.from_pretrained(voice_detector_model)
+        self.vad_pipeline = Pipeline.from_pretrained(default_voice_detection_model)
 
     def detect(self, vad_ratio_thresh: float=0.05):
         diarization     = self.vad_pipeline(self.wav_file)
