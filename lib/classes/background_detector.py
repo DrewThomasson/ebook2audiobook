@@ -6,7 +6,6 @@ from pyannote.audio import Pipeline
 from lib.conf import tts_dir
 from lib.models import default_voice_detection_model
 
-torch.hub.set_dir(tts_dir)
 os.environ['TORCH_HOME'] = tts_dir
 
 class BackgroundDetector:
