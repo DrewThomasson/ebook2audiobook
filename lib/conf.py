@@ -9,30 +9,30 @@ ebooks_dir = os.path.abspath('ebooks')
 voices_dir = os.path.abspath('voices')
 tts_dir = os.path.join(models_dir, 'tts')
 
-os.environ['PYTHONUTF8'] = '1'
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-os.environ['COQUI_TOS_AGREED'] = '1'
-os.environ['PYTHONIOENCODING'] = 'utf-8'
-os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
-os.environ['DO_NOT_TRACK'] = 'true'
-os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
-os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir
-os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
-os.environ['HF_HOME'] = tts_dir
-os.environ['HF_DATASETS_CACHE'] = tts_dir
-os.environ['BARK_CACHE_DIR'] = tts_dir
-os.environ['TTS_CACHE'] = tts_dir
-os.environ['TORCH_HOME'] = tts_dir
-os.environ['TTS_HOME'] = models_dir
-os.environ['XDG_CACHE_HOME'] = models_dir
-os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
-os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
-os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
-os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
-os.environ['SUNO_OFFLOAD_CPU'] = 'False' # BARK option: False needs A GPU
-os.environ['SUNO_USE_SMALL_MODELS'] = 'False' # BARK option: False needs a GPU with VRAM > 4GB
+PYTHONUTF8 = os.environ['PYTHONUTF8'] = '1'
+PYTHONIOENCODING = os.environ['PYTHONIOENCODING'] = 'utf-8'
+COQUI_TOS_AGREED = os.environ['COQUI_TOS_AGREED'] = '1'
+PYTHONIOENCODING = os.environ['PYTHONIOENCODING'] = 'utf-8'
+CALIBRE_NO_NATIVE_FILEDIALOGS = os.environ['CALIBRE_NO_NATIVE_FILEDIALOGS'] = '1'
+DO_NOT_TRACK = os.environ['DO_NOT_TRACK'] = 'true'
+CALIBRE_TEMP_DIR = os.environ['CALIBRE_TEMP_DIR'] = tmp_dir
+CALIBRE_CACHE_DIRECTORY = os.environ['CALIBRE_CACHE_DIRECTORY'] = tmp_dir
+HUGGINGFACE_HUB_CACHE = os.environ['HUGGINGFACE_HUB_CACHE'] = tts_dir
+HF_HOME = os.environ['HF_HOME'] = tts_dir
+HF_DATASETS_CACHE = os.environ['HF_DATASETS_CACHE'] = tts_dir
+BARK_CACHE_DIR = os.environ['BARK_CACHE_DIR'] = tts_dir
+TTS_CACHE = os.environ['TTS_CACHE'] = tts_dir
+TORCH_HOME = os.environ['TORCH_HOME'] = tts_dir
+TTS_HOME = os.environ['TTS_HOME'] = models_dir
+XDG_CACHE_HOME = os.environ['XDG_CACHE_HOME'] = models_dir
+STANZA_RESOURCES_DIR = os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
+ARGOS_TRANSLATE_PACKAGE_PATH = os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
+TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD = os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
+PYTORCH_ENABLE_MPS_FALLBACK = os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
+SUNO_OFFLOAD_CPU = os.environ['SUNO_OFFLOAD_CPU'] = 'False' # BARK option: False needs A GPU
+SUNO_USE_SMALL_MODELS = os.environ['SUNO_USE_SMALL_MODELS'] = 'False' # BARK option: False needs a GPU with VRAM > 4GB
 if platform.system() == 'Windows':
-    os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
+    ESPEAK_DATA_PATH = os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
 
 prog_version = (lambda: open('VERSION.txt').read().strip())()
 

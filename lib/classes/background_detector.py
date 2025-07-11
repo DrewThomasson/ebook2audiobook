@@ -3,6 +3,7 @@ import numpy as np
 import librosa
 
 from pyannote.audio import Pipeline
+from lib.conf import HF_HOME
 from lib.models import default_voice_detection_model
 
 class BackgroundDetector:
