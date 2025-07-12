@@ -33,6 +33,7 @@ import tempfile
 import threading
 import time
 import torch
+import unicodedata
 import urllib.request
 import uuid
 import uvicorn
@@ -556,6 +557,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                                     # Append remaining sentence
                                     result.append(sentence[last_pos:])
                                     sentence = ''.join(result)
+                    #if session['tts_engine'] not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']]:
                     sentence = math2word(sentence, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
                     sentences_list[i] = sentence
                 chapters.append(sentences_list)
@@ -932,10 +934,10 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
 def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999):
     text = text.strip()
     digit_count = sum(c.isdigit() for c in text)
-    # --- 1) Pure small integers up to 9 digits: leave as-is ---
+    # Pure small integers up to 9 digits: leave as-is
     if digit_count <= 9 and text.isdigit():
         return text
-    # --- 2) “Thousands-grouped” numbers (at most 2 commas) ---
+    # “Thousands-grouped” numbers (at most 2 commas)
     # e.g. "1,234" or "12,345,678.90", but NOT long lists like "626,262,636,626,262,…"
     grouped_num_pattern = r'\d{1,3}(?:,\d{3})*(?:\.\d+)?'
     if text.count(',') <= 2 and re.fullmatch(grouped_num_pattern, text):
@@ -946,12 +948,13 @@ def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_valu
                 return text
         except ValueError:
             pass
-    # --- 3) Otherwise tokenize and process each number/token individually ---
+    # Otherwise tokenize and process each number/token individually
     # captures decimals, ints, punctuation, words, and whitespace
     token_re = re.compile(r'\d*\.\d+|\d+|[^\w\s]|\w+|\s+')
     tokens = token_re.findall(text)
     result = []
     for tok in tokens:
+        norm_tok = unicodedata.normalize('NFKC', tok)
         # decimal numbers like "123.45"
         if re.fullmatch(r'\d*\.\d+', tok):
             if is_num2words_compat:
@@ -975,7 +978,6 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     def rep_num(match):
         try:
-            print(f'---------rep_num called: {number_value}-----------')
             number = match.group()
             trailing = ''
             if number and number[-1] in '.,':
@@ -995,7 +997,6 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return match.group(0)
 
     def replace_ambiguous(match):
-        print(f'---------replace_ambiguous called: {number_value}-----------')
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
             return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
