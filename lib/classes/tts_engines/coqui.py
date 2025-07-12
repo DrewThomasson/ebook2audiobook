@@ -51,7 +51,7 @@ class Coqui:
             self.max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
             list_split = [
                 # Western
-                '.', ','
+                '.', ',',
                 # Arabic-Persian
                 '،',
                 # CJK
