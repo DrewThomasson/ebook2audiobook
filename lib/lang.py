@@ -119,7 +119,7 @@ punctuation_list_set = set(punctuation_list)
 
 punctuation_split = [
     # Western
-    '.', ',',
+    '.',
     # Arabic-Persian
     '،',
     # CJK
