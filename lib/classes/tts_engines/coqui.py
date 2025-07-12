@@ -485,9 +485,9 @@ class Coqui:
                 sentence_parts: list[str] = []
                 for text_part in sentence_pause_parts:
                     text_part = text_part.strip()
-                    if len(text_part) > max_chars:
+                    if len(text_part) > self.max_chars:
                         # how many cuts we actually need
-                        count_punc = math.ceil(len(text_part) / max_chars) - 1
+                        count_punc = math.ceil(len(text_part) / self.max_chars) - 1
                         # 1) Try splitting on punctuation (always if there's at least one)
                         matches = list(self.punc_re.finditer(text_part))
                         print(f'--------- too long. found {len(matches)} punctuation(s), need {count_punc} split(s) ----------')
