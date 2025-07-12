@@ -453,43 +453,50 @@ class Coqui:
                                 result.append(sentence[last_pos:])
                                 sentence = ''.join(result)
                 sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
+                # 1) Precompute once:
+                tmp_list = list(punctuation_split_set)
+                tmp_list.append(',')  # if needed
+                char_class = "[" + "".join(re.escape(ch) for ch in tmp_list) + "]"
+                PUNC_RE = re.compile(char_class)
+
                 max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
                 sentence_pause_parts = sentence.split('‡pause‡')
                 sentence_parts = []
+
                 for text_part in sentence_pause_parts:
                     if len(text_part) > max_chars:
-                        count_punc = int(len(text_part) / max_chars)
-                        tmpList = list(punctuation_split_set)
-                        tmpList.append(',')
-                        # Build a regex that matches *any one* of these characters:
-                        pattern = "[" + "".join(re.escape(ch) for ch in tmpList) + "]"
-                        punctuations = re.findall(pattern, text_part)
-                        print(f'--------- text_part too long. length punctuations: {len(punctuations)} ----- count_punc = {count_punc} ----------')
-                        if len(punctuations) >= count_punc:
-                            # Find split points (after punctuation)
-                            indices = [m.end() for m in punctuations[:count_punc]]
+                        count_punc = len(text_part) // max_chars
+
+                        # 2) Get match objects, not strings
+                        matches = list(PUNC_RE.finditer(text_part))
+                        print(f'--------- text_part too long. length punctuations: {len(matches)} ----- count_punc = {count_punc} ----------')
+
+                        if len(matches) >= count_punc:
+                            # split at the end of the first count_punc punctuation matches
+                            indices = [m.end() for m in matches[:count_punc]]
                             prev = 0
                             for idx in indices:
-                                print(f'--------- text_part[prev:idx].strip(): {text_part[prev:idx].strip()} -----')
-                                sentence_parts.append(text_part[prev:idx].strip())
+                                piece = text_part[prev:idx].strip()
+                                print(f'--------- "{piece}" ----------')
+                                sentence_parts.append(piece)
                                 prev = idx
                             sentence_parts.append(text_part[prev:].strip())
+
                         else:
-                            space_indices = [m.end() for m in re.finditer(' ', text_part)]
-                            if len(space_indices) >= count_punc:
-                                indices = space_indices[:count_punc]
+                            # fallback to splitting on spaces
+                            space_matches = list(re.finditer(r"\s+", text_part))
+                            if len(space_matches) >= count_punc:
+                                indices = [m.end() for m in space_matches[:count_punc]]
                                 prev = 0
                                 for idx in indices:
-                                    sentence_parts.append(f'{text_part[prev:idx].strip()} —')
+                                    sentence_parts.append(f"{text_part[prev:idx].strip()} —")
                                     prev = idx
                                 sentence_parts.append(text_part[prev:].strip())
                             else:
-                                avg_len = len(text_part)
-                                i = 0
-                                for part in range(count_punc):
-                                    sentence_parts.append(text_part[i:i+avg_len])
-                                    i += avg_len
-                                sentence_parts.append(text_part[i:])
+                                # give up & do fixed‐size chunks
+                                chunk_size = len(text_part) // (count_punc + 1)
+                                for start in range(0, len(text_part), chunk_size):
+                                    sentence_parts.append(text_part[start:start+chunk_size].strip())
                     else:
                         sentence_parts.append(text_part)
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
