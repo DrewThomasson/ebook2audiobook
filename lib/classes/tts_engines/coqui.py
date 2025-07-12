@@ -5,7 +5,6 @@ import numpy as np
 import regex as re
 import shutil
 import soundfile as sf
-import stanza
 import subprocess
 import tempfile
 import torch
@@ -18,7 +17,7 @@ from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.classes.tts_engines.common.utils import check_num2words_compat, detect_date_entities, year_to_words, math2word, unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -31,9 +30,6 @@ class Coqui:
 
     def __init__(self, session):
         try:
-            if session['language'] in year_to_decades_languages:
-                stanza.download(session['language_iso1'])
-                self.stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
@@ -47,7 +43,6 @@ class Coqui:
             self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')       
-            self.is_num2words_compat = check_num2words_compat(self.session['language_iso1'])
             self.max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
             list_split = [
                 # Western
@@ -459,67 +454,7 @@ class Coqui:
                         return False
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
-                # Check if the language requires to split the year in decades
-                if self.session['language'] in year_to_decades_languages:
-                    # Check if numbers exists in the sentence
-                    if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
-                        # Check if there are positive integers so possible date to convert
-                        if bool(re.search(r'\b\d+\b', sentence)):
-                            date_spans = detect_date_entities(sentence, self.stanza_nlp)
-                            if date_spans:
-                                result = []
-                                last_pos = 0
-                                for start, end, date_text in date_spans:
-                                    # Append sentence before this date
-                                    result.append(sentence[last_pos:start])
-                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language'], self.session['language_iso1'], self.is_num2words_compat), date_text)
-                                    if not processed:
-                                        break
-                                    result.append(processed)
-                                    last_pos = end
-                                # Append remaining sentence
-                                result.append(sentence[last_pos:])
-                                sentence = ''.join(result)
-                sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
-                sentence_pause_parts = sentence.split('‡pause‡')
-                sentence_parts: list[str] = []
-                for text_part in sentence_pause_parts:
-                    text_part = text_part.strip()
-                    if len(text_part) > self.max_chars:
-                        # how many cuts we actually need
-                        count_punc = math.ceil(len(text_part) / self.max_chars) - 1
-                        # 1) Try splitting on punctuation (always if there's at least one)
-                        matches = list(self.punc_re.finditer(text_part))
-                        print(f'--------- too long. found {len(matches)} punctuation(s), need {count_punc} split(s) ----------')
-                        if count_punc > 0 and matches:
-                            # ensure step is at least 1
-                            step = max(1, len(matches) // count_punc)
-                            prev = 0
-                            for i in range(1, count_punc + 1):
-                                # compute match index, clamped to last match
-                                pos = i * step - 1
-                                if pos >= len(matches):
-                                    pos = len(matches) - 1
-                                idx = matches[pos].end()
-                                sentence_parts.append(text_part[prev:idx].strip())
-                                prev = idx
-                            sentence_parts.append(text_part[prev:].strip())
-                            continue
-                        # 2) Fallback: split on spaces
-                        space_matches = list(re.finditer(r"\s+", text_part))
-                        if count_punc > 0 and space_matches:
-                            prev = 0
-                            for m in space_matches[:count_punc]:
-                                sentence_parts.append(f"{text_part[prev:m.end()].strip()} —")
-                                prev = m.end()
-                            sentence_parts.append(text_part[prev:].strip())
-                            continue
-                        # 3) Last resort: fixed-size chunks
-                        chunk_size = math.ceil(len(text_part) / (count_punc + 1))
-                        for start in range(0, len(text_part), chunk_size):
-                            sentence_parts.append(text_part[start:start + chunk_size].strip())
-                    else:
-                        sentence_parts.append(text_part)
+                sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
