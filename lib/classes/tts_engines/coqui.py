@@ -48,6 +48,33 @@ class Coqui:
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')       
             self.is_num2words_compat = check_num2words_compat(self.session['language_iso1'])
+            self.max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
+            list_split = [
+                # Western
+                '.',
+                # Arabic-Persian
+                '،',
+                # CJK
+                '。', '，', '、', '·', '…',
+                # Indic
+                '।', '॥',
+                # Thai
+                'ฯ',
+                # Ethiopic
+                '፡', '።', '፣', '፤', '፥', '፦', '፧',
+                # Hebrew
+                '״',
+                # Tibetan
+                '།', '༎',
+                # Khmer
+                '។', '៕',
+                # Lao
+                '໌', 'ໍ',
+                # Misc (global)
+                '—', '!', '?', ':', ';'
+            ]
+            punctuation_class = "[" + "".join(re.escape(ch) for ch in list_split) + "]"
+            self.punc_re = re.compile(punctuation_class)
             self._build()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -454,53 +481,43 @@ class Coqui:
                                 result.append(sentence[last_pos:])
                                 sentence = ''.join(result)
                 sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
-                tmp_list = list(punctuation_split_set)
-                if ',' not in tmp_list:
-                    tmp_list.append(',')
-                char_class = "[" + "".join(re.escape(ch) for ch in tmp_list) + "]"
-                PUNC_RE = re.compile(char_class)
-                print("PUNC_RE:", PUNC_RE.pattern)
-
-                max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
                 sentence_pause_parts = sentence.split('‡pause‡')
-                sentence_parts = []
-
+                sentence_parts: list[str] = []
                 for text_part in sentence_pause_parts:
                     text_part = text_part.strip()
                     if len(text_part) > max_chars:
                         # how many cuts we actually need
-                        splits_needed = math.ceil(len(text_part) / max_chars) - 1
-
-                        # 1) Try splitting on punctuation
-                        matches = list(PUNC_RE.finditer(text_part))
-                        print(f'--------- too long. found {len(matches)} punctuation(s), need {splits_needed} split(s) ----------')
-                        if splits_needed > 0 and len(matches) >= splits_needed:
-                            # divide the occurrences evenly by count of splits
-                            step = len(matches) // splits_needed
+                        count_punc = math.ceil(len(text_part) / max_chars) - 1
+                        # 1) Try splitting on punctuation (always if there's at least one)
+                        matches = list(self.punc_re.finditer(text_part))
+                        print(f'--------- too long. found {len(matches)} punctuation(s), need {count_punc} split(s) ----------')
+                        if count_punc > 0 and matches:
+                            # ensure step is at least 1
+                            step = max(1, len(matches) // count_punc)
                             prev = 0
-                            for i in range(1, splits_needed + 1):
-                                # pick the (i*step)-th punctuation
-                                idx = matches[i * step - 1].end()
+                            for i in range(1, count_punc + 1):
+                                # compute match index, clamped to last match
+                                pos = i * step - 1
+                                if pos >= len(matches):
+                                    pos = len(matches) - 1
+                                idx = matches[pos].end()
                                 sentence_parts.append(text_part[prev:idx].strip())
                                 prev = idx
                             sentence_parts.append(text_part[prev:].strip())
                             continue
-
                         # 2) Fallback: split on spaces
                         space_matches = list(re.finditer(r"\s+", text_part))
-                        if splits_needed > 0 and len(space_matches) >= splits_needed:
+                        if count_punc > 0 and space_matches:
                             prev = 0
-                            for m in space_matches[:splits_needed]:
+                            for m in space_matches[:count_punc]:
                                 sentence_parts.append(f"{text_part[prev:m.end()].strip()} —")
                                 prev = m.end()
                             sentence_parts.append(text_part[prev:].strip())
                             continue
-
                         # 3) Last resort: fixed-size chunks
-                        chunk_size = math.ceil(len(text_part) / (splits_needed + 1))
+                        chunk_size = math.ceil(len(text_part) / (count_punc + 1))
                         for start in range(0, len(text_part), chunk_size):
                             sentence_parts.append(text_part[start:start + chunk_size].strip())
-
                     else:
                         sentence_parts.append(text_part)
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
