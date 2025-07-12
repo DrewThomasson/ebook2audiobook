@@ -461,7 +461,6 @@ class Coqui:
                 PUNC_RE = re.compile(char_class)
                 print("PUNC_RE:", PUNC_RE.pattern)
 
-                # … inside convert() …
                 max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
                 sentence_pause_parts = sentence.split('‡pause‡')
                 sentence_parts = []
@@ -475,10 +474,13 @@ class Coqui:
                         # 1) Try splitting on punctuation
                         matches = list(PUNC_RE.finditer(text_part))
                         print(f'--------- too long. found {len(matches)} punctuation(s), need {splits_needed} split(s) ----------')
-                        if matches:
-                            cut_indices = [m.end() for m in matches[:splits_needed]]
+                        if splits_needed > 0 and len(matches) >= splits_needed:
+                            # divide the occurrences evenly by count of splits
+                            step = len(matches) // splits_needed
                             prev = 0
-                            for idx in cut_indices:
+                            for i in range(1, splits_needed + 1):
+                                # pick the (i*step)-th punctuation
+                                idx = matches[i * step - 1].end()
                                 sentence_parts.append(text_part[prev:idx].strip())
                                 prev = idx
                             sentence_parts.append(text_part[prev:].strip())
@@ -486,12 +488,11 @@ class Coqui:
 
                         # 2) Fallback: split on spaces
                         space_matches = list(re.finditer(r"\s+", text_part))
-                        if space_matches:
-                            cut_indices = [m.end() for m in space_matches[:splits_needed]]
+                        if splits_needed > 0 and len(space_matches) >= splits_needed:
                             prev = 0
-                            for idx in cut_indices:
-                                sentence_parts.append(f"{text_part[prev:idx].strip()} —")
-                                prev = idx
+                            for m in space_matches[:splits_needed]:
+                                sentence_parts.append(f"{text_part[prev:m.end()].strip()} —")
+                                prev = m.end()
                             sentence_parts.append(text_part[prev:].strip())
                             continue
 
