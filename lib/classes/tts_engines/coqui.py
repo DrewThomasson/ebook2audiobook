@@ -1,5 +1,6 @@
 import os
 import hashlib
+import math
 import numpy as np
 import regex as re
 import shutil
@@ -17,7 +18,7 @@ from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import check_num2words_compat, detect_date_entities, year_to_words, math2word, unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -27,6 +28,7 @@ lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
 class Coqui:
+
     def __init__(self, session):
         try:
             if session['language'] in year_to_decades_languages:
@@ -45,11 +47,12 @@ class Coqui:
             self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')       
+            self.is_num2words_compat = check_num2words_compat(self.session['language_iso1'])
             self._build()
         except Exception as e:
             error = f'__init__() error: {e}'
             print(error)
-            return False
+            return None
 
     def _build(self):
         try:
@@ -410,13 +413,10 @@ class Coqui:
         try:
             speaker = None
             audio_data = False
-            audio2trim = False
             trim_audio_buffer = 0.004
             settings = self.params[self.session['tts_engine']]
             final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             sentence = sentence.rstrip()
-            if sentence.endswith('-') or sentence[-1].isalnum():
-                audio2trim = True
             settings['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
@@ -445,7 +445,7 @@ class Coqui:
                                 for start, end, date_text in date_spans:
                                     # Append sentence before this date
                                     result.append(sentence[last_pos:start])
-                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language_iso1']), date_text)
+                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language'], self.session['language_iso1'], self.is_num2words_compat), date_text)
                                     if not processed:
                                         break
                                     result.append(processed)
@@ -453,9 +453,58 @@ class Coqui:
                                 # Append remaining sentence
                                 result.append(sentence[last_pos:])
                                 sentence = ''.join(result)
-                sentence_parts = sentence.split('‡pause‡')
+                sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
+                tmp_list = list(punctuation_split_set)
+                if ',' not in tmp_list:
+                    tmp_list.append(',')
+                char_class = "[" + "".join(re.escape(ch) for ch in tmp_list) + "]"
+                PUNC_RE = re.compile(char_class)
+                print("PUNC_RE:", PUNC_RE.pattern)
+
+                max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
+                sentence_pause_parts = sentence.split('‡pause‡')
+                sentence_parts = []
+
+                for text_part in sentence_pause_parts:
+                    text_part = text_part.strip()
+                    if len(text_part) > max_chars:
+                        # how many cuts we actually need
+                        splits_needed = math.ceil(len(text_part) / max_chars) - 1
+
+                        # 1) Try splitting on punctuation
+                        matches = list(PUNC_RE.finditer(text_part))
+                        print(f'--------- too long. found {len(matches)} punctuation(s), need {splits_needed} split(s) ----------')
+                        if splits_needed > 0 and len(matches) >= splits_needed:
+                            # divide the occurrences evenly by count of splits
+                            step = len(matches) // splits_needed
+                            prev = 0
+                            for i in range(1, splits_needed + 1):
+                                # pick the (i*step)-th punctuation
+                                idx = matches[i * step - 1].end()
+                                sentence_parts.append(text_part[prev:idx].strip())
+                                prev = idx
+                            sentence_parts.append(text_part[prev:].strip())
+                            continue
+
+                        # 2) Fallback: split on spaces
+                        space_matches = list(re.finditer(r"\s+", text_part))
+                        if splits_needed > 0 and len(space_matches) >= splits_needed:
+                            prev = 0
+                            for m in space_matches[:splits_needed]:
+                                sentence_parts.append(f"{text_part[prev:m.end()].strip()} —")
+                                prev = m.end()
+                            sentence_parts.append(text_part[prev:].strip())
+                            continue
+
+                        # 3) Last resort: fixed-size chunks
+                        chunk_size = math.ceil(len(text_part) / (splits_needed + 1))
+                        for start in range(0, len(text_part), chunk_size):
+                            sentence_parts.append(text_part[start:start + chunk_size].strip())
+
+                    else:
+                        sentence_parts.append(text_part)
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
-                    sentence_parts = [p.replace('. ', '— ') for p in sentence_parts]
+                    sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
@@ -463,7 +512,9 @@ class Coqui:
                     if not text_part:
                         audio_segments.append(silence_tensor.clone())
                         continue
-                    audio_part = None
+                    audio2trim = False
+                    if text_part.endswith('-') or text_part[-1].isalnum():
+                        audio2trim = True
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.06
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():

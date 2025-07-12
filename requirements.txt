@@ -18,6 +18,7 @@ mutagen
 nvidia-ml-py
 phonemizer-fork
 pydub
+pyannote-audio
 PyOpenGL
 pypinyin
 ray

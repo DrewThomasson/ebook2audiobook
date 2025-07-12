@@ -16,6 +16,7 @@ pythainlp
 mutagen
 nvidia-ml-py
 pydub
+pyannote-audio
 PyOpenGL
 pypinyin
 ray
