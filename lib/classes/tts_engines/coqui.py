@@ -459,7 +459,8 @@ class Coqui:
                 for text_part in sentence_pause_parts:
                     if len(text_part) > max_chars:
                         count_punc = int(len(text_part) / max_chars)
-                        tmpList = punctuation_split_set.append(',')
+                        tmpList = punctuation_split_set
+                        tmpList.append(',')
                         # Build a regex that matches *any one* of these characters:
                         pattern = "[" + "".join(re.escape(ch) for ch in tmpList) + "]"
                         punctuations = re.findall(pattern, text_part)
