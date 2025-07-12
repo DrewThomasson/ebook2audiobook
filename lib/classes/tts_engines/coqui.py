@@ -493,8 +493,8 @@ class Coqui:
                             chunk_size = len(text_part) // (splits_needed + 1)
                             for start in range(0, len(text_part), chunk_size):
                                 sentence_parts.append(text_part[start:start + chunk_size].strip())
-                    else:
-                        sentence_parts.append(text_part)
+                else:
+                    sentence_parts.append(text_part)
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
