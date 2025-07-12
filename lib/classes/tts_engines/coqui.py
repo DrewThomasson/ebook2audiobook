@@ -453,48 +453,54 @@ class Coqui:
                                 result.append(sentence[last_pos:])
                                 sentence = ''.join(result)
                 sentence = math2word(sentence, self.session['language'], self.session['language_iso1'], self.session['tts_engine'], self.is_num2words_compat)
-                # 1) Precompute once at init
                 tmp_list = list(punctuation_split_set)
                 if ',' not in tmp_list:
                     tmp_list.append(',')
                 char_class = "[" + "".join(re.escape(ch) for ch in tmp_list) + "]"
-                PUNC_RE    = re.compile(char_class)
-                print("PUNC_RE:", PUNC_RE.pattern)  # debug
+                PUNC_RE = re.compile(char_class)
+                print("PUNC_RE:", PUNC_RE.pattern)
 
-                # … later in your loop …
+                # … inside convert() …
+                max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
+                sentence_pause_parts = sentence.split('‡pause‡')
+                sentence_parts = []
 
-                if len(text_part) > max_chars:
-                    # A better “how many splits do I actually want?”
-                    splits_needed = math.ceil(len(text_part) / max_chars) - 1
-                    matches       = list(PUNC_RE.finditer(text_part))
+                for text_part in sentence_pause_parts:
+                    text_part = text_part.strip()
+                    if len(text_part) > max_chars:
+                        # how many cuts we actually need
+                        splits_needed = math.ceil(len(text_part) / max_chars) - 1
 
-                    if matches:
-                        # split on however many commas/periods/exclamations you have,
-                        # up to the number of splits you need
-                        indices = [m.end() for m in matches[:splits_needed]]
-                        prev    = 0
-                        for idx in indices:
-                            sentence_parts.append(text_part[prev:idx].strip())
-                            prev = idx
-                        sentence_parts.append(text_part[prev:].strip())
-
-                    else:
-                        # fallback exactly as before
-                        space_matches = list(re.finditer(r"\s+", text_part))
-                        if len(space_matches) >= splits_needed:
-                            indices = [m.end() for m in space_matches[:splits_needed]]
+                        # 1) Try splitting on punctuation
+                        matches = list(PUNC_RE.finditer(text_part))
+                        print(f'--------- too long. found {len(matches)} punctuation(s), need {splits_needed} split(s) ----------')
+                        if matches:
+                            cut_indices = [m.end() for m in matches[:splits_needed]]
                             prev = 0
-                            for idx in indices:
+                            for idx in cut_indices:
+                                sentence_parts.append(text_part[prev:idx].strip())
+                                prev = idx
+                            sentence_parts.append(text_part[prev:].strip())
+                            continue
+
+                        # 2) Fallback: split on spaces
+                        space_matches = list(re.finditer(r"\s+", text_part))
+                        if space_matches:
+                            cut_indices = [m.end() for m in space_matches[:splits_needed]]
+                            prev = 0
+                            for idx in cut_indices:
                                 sentence_parts.append(f"{text_part[prev:idx].strip()} —")
                                 prev = idx
                             sentence_parts.append(text_part[prev:].strip())
-                        else:
-                            # last resort—fixed‐size chunks
-                            chunk_size = len(text_part) // (splits_needed + 1)
-                            for start in range(0, len(text_part), chunk_size):
-                                sentence_parts.append(text_part[start:start + chunk_size].strip())
-                else:
-                    sentence_parts.append(text_part)
+                            continue
+
+                        # 3) Last resort: fixed-size chunks
+                        chunk_size = math.ceil(len(text_part) / (splits_needed + 1))
+                        for start in range(0, len(text_part), chunk_size):
+                            sentence_parts.append(text_part[start:start + chunk_size].strip())
+
+                    else:
+                        sentence_parts.append(text_part)
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
