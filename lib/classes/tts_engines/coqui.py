@@ -461,11 +461,13 @@ class Coqui:
                         count_punc = int(len(text_part) / max_chars)
                         punc_pattern = '|'.join(map(re.escape, punctuation_split))
                         punctuations = [m for m in re.finditer(punc_pattern, text_part)]
+                        print(f'--------- text_part too long. length punctuations: {len(punctuations)} ----- count_punc = {count_punc} ----------')
                         if len(punctuations) >= count_punc:
                             # Find split points (after punctuation)
                             indices = [m.end() for m in punctuations[:count_punc]]
                             prev = 0
                             for idx in indices:
+                                print(f'--------- text_part[prev:idx].strip(): {text_part[prev:idx].strip()} -----')
                                 sentence_parts.append(text_part[prev:idx].strip())
                                 prev = idx
                             sentence_parts.append(text_part[prev:].strip())
@@ -489,7 +491,6 @@ class Coqui:
                         sentence_parts.append(text_part)
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
-                print(f'---------sentence_parts: {sentence_parts} ----------')
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
