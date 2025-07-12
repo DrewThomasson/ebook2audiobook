@@ -459,8 +459,9 @@ class Coqui:
                 for text_part in sentence_pause_parts:
                     if len(text_part) > max_chars:
                         count_punc = int(len(text_part) / max_chars)
-                        punc_pattern = '|'.join(map(re.escape, punctuation_split))
-                        punctuations = [m for m in re.finditer(punc_pattern, text_part)]
+                        # Build a regex that matches *any one* of these characters:
+                        pattern = "[" + "".join(re.escape(ch) for ch in punctuation_split_set) + "]"
+                        punctuations = re.findall(pattern, text_part)
                         print(f'--------- text_part too long. length punctuations: {len(punctuations)} ----- count_punc = {count_punc} ----------')
                         if len(punctuations) >= count_punc:
                             # Find split points (after punctuation)

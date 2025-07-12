@@ -118,27 +118,27 @@ punctuation_list = [
 punctuation_list_set = set(punctuation_list)
 
 punctuation_split = [
-    # Common punctuation in Western languages
-    '.', 
-    # Punctuation used in Arabic and Persian
+    # Western
+    '.', ',',
+    # Arabic-Persian
     '،',
-    # Punctuation used in Chinese, Japanese, and Korean (CJK) languages
+    # CJK
     '。', '，', '、', '·', '…',
-    # Punctuation used in Indic scripts (e.g., Hindi, Bengali, Tamil)
+    # Indic
     '।', '॥',
-    # Punctuation used in Thai
+    # Thai
     'ฯ',
-    # Punctuation used in Ethiopic scripts
+    # Ethiopic
     '፡', '።', '፣', '፤', '፥', '፦', '፧',
-    # Punctuation used in Hebrew
+    # Hebrew
     '״',
-    # Punctuation used in Tibetan
-    "།", "༎",
-    # Punctuation used in Khmer
+    # Tibetan
+    '།', '༎',
+    # Khmer
     '។', '៕',
-    # Punctuation used in Lao
+    # Lao
     '໌', 'ໍ',
-    # Miscellaneous punctuation (pause-inducing, used globally)
+    # Misc (global)
     '—', '!', '?', ':', ';'
 ]
 punctuation_split_set = set(punctuation_split)
