@@ -5,41 +5,41 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import os
 import argparse
 import asyncio
 import csv
-import jieba
-import ebooklib
 import fnmatch
 import gc
-import gradio as gr
 import hashlib
 import io
 import json
 import math
+import os
 import platform
-import psutil
-import pymupdf4llm
 import random
-import regex as re
-import requests
 import shutil
 import socket
-import stanza
 import subprocess
 import sys
 import tempfile
 import threading
 import time
-import torch
+import traceback
 import unicodedata
 import urllib.request
 import uuid
-import uvicorn
 import zipfile
-import traceback
-import unicodedata
+
+import ebooklib
+import gradio as gr
+import jieba
+import psutil
+import pymupdf4llm
+import regex as re
+import requests
+import stanza
+import torch
+import uvicorn
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -933,44 +933,48 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
 
 def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999):
     text = text.strip()
-    digit_count = sum(c.isdigit() for c in text)
-    # Pure small integers up to 9 digits: leave as-is
-    if digit_count <= 9 and text.isdigit():
-        return text
-    # “Thousands-grouped” numbers (at most 2 commas)
-    # e.g. "1,234" or "12,345,678.90", but NOT long lists like "626,262,636,626,262,…"
-    grouped_num_pattern = r'\d{1,3}(?:,\d{3})*(?:\.\d+)?'
-    if text.count(',') <= 2 and re.fullmatch(grouped_num_pattern, text):
-        # try parsing as a float
-        try:
-            val = float(text.replace(',', ''))
-            if abs(val) <= max_single_value:
-                return text
-        except ValueError:
-            pass
-    # Otherwise tokenize and process each number/token individually
-    # captures decimals, ints, punctuation, words, and whitespace
-    token_re = re.compile(r'\d*\.\d+|\d+|[^\w\s]|\w+|\s+')
     tokens = token_re.findall(text)
     result = []
     for tok in tokens:
-        norm_tok = unicodedata.normalize('NFKC', tok)  # “²” → “2”, “①” → “1”, etc.
-        # decimal numbers like "123.45"
+        # Normalize any superscripts, circled numbers, etc.
+        norm_tok = unicodedata.normalize('NFKC', tok)
+        # If we ever see 'inf', 'infinity' or 'nan', just treat it as text
+        if norm_tok.lower() in ('inf', 'infinity', 'nan'):
+            result.append(norm_tok)
+            continue
+        # Decimal numbers like "123.45"
         if re.fullmatch(r'\d*\.\d+', norm_tok):
             if is_num2words_compat:
-                num = float(norm_tok)
-                result.append(num2words(num, lang=lang_iso1))
+                try:
+                    num = float(norm_tok)
+                except (ValueError, OverflowError):
+                    result.append(norm_tok)
+                    continue
+                # guard against infinities and NaNs
+                if not math.isfinite(num):
+                    result.append(norm_tok)
+                else:
+                    result.append(num2words(num, lang=lang_iso1))
             else:
-                result.append(tok)
-        # pure integer tokens
+                result.append(norm_tok)
+        # Pure integer tokens
         elif norm_tok.isdecimal():
             if is_num2words_compat:
-                num = int(norm_tok)
-                result.append(num2words(num, lang=lang_iso1))
+                try:
+                    num = int(norm_tok)
+                except (ValueError, OverflowError):
+                    result.append(norm_tok)
+                    continue
+                # skip conversion if it’s outside your allowed range
+                if abs(num) > max_single_value:
+                    result.append(norm_tok)
+                else:
+                    result.append(num2words(num, lang=lang_iso1))
             else:
-                result.append(tok)
+                result.append(norm_tok)
+        # Eeverything else (letters, punctuation, whitespace…)
         else:
-            result.append(tok)
+            result.append(norm_tok)
     return ''.join(result)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
