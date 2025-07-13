@@ -557,7 +557,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                                     # Append remaining sentence
                                     result.append(sentence[last_pos:])
                                     sentence = ''.join(result)
-                    #if session['tts_engine'] not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']]:
                     sentence = math2word(sentence, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
                     sentences_list[i] = sentence
                 chapters.append(sentences_list)
