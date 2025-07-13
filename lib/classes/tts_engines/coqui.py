@@ -459,15 +459,13 @@ class Coqui:
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
+                extra_audio_buffer = 0
                 audio_segments = []
                 for text_part in sentence_parts:
                     text_part = text_part.strip()
                     if not text_part:
                         audio_segments.append(silence_tensor.clone())
                         continue
-                    audio2trim = False
-                    if text_part.endswith('-') or text_part[-1].isalnum():
-                        audio2trim = True
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.06
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
@@ -777,8 +775,9 @@ class Coqui:
                     audio_segments = audio_segments[:-1]
                 if audio_segments:
                     audio_tensor = torch.cat(audio_segments, dim=-1)
-                    if audio2trim:
-                        audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.003, trim_audio_buffer).unsqueeze(0)
+                    if text_part.endswith('-') or text_part[-1].isalnum():
+                        extra_audio_buffer = 1
+                    audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer + extra_audio_buffer).unsqueeze(0)
                     start_time = self.sentences_total_time
                     duration = audio_tensor.shape[-1] / settings['samplerate']
                     end_time = start_time + duration
