@@ -23,6 +23,24 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
 
+# keep a reference to the real torch.multinomial
+_orig_multinomial = torch.multinomial
+
+def _safe_multinomial(probs, num_samples, replacement=False, *, generator=None):
+    # 1) zero‐out NaNs/Infs
+    probs = torch.nan_to_num(probs, nan=0.0, posinf=0.0, neginf=0.0)
+    # 2) forbid negatives
+    probs = torch.clamp(probs, min=0.0)
+    # 3) re‐normalize so we sum to 1
+    s = probs.sum(dim=-1, keepdim=True)
+    # if sum is zero (all entries were bad), fall back to uniform
+    probs = torch.where(s > 0, probs / s, torch.full_like(probs, 1.0 / probs.size(-1)))
+    # 4) now call the real multinomial
+    return _orig_multinomial(probs, num_samples, replacement, generator=generator)
+
+# Overwrite torch.multinomial globally
+torch.multinomial = _safe_multinomial
+
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
