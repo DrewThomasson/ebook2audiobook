@@ -531,7 +531,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
             is_year_decades = True
         is_num2words_compat = get_num2words_compat(session['language_iso1'])
-        msg = 'Analizing maths and date number to convert in words...'
+        msg = 'Analizing maths and dates to convert in words...'
         print(msg)
         for doc in all_docs:
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
