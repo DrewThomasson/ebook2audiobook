@@ -394,6 +394,7 @@ def convert2epub(session):
             title = pdf_metadata.get('title') or filename_no_ext
             author = pdf_metadata.get('author') or False
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
+            markdown_text = markdown_text.replace('_', ' ')
             file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
             with open(file_input, "w", encoding="utf-8") as html_file:
                 html_file.write(markdown_text)
@@ -931,10 +932,16 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         return False
 
 def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999):
+    text = re.sub(r'(?<=\d),(?=\d{3}\b)', '', text)
     text = text.strip()
     # Otherwise tokenize and process each number/token individually
     # captures decimals, ints, punctuation, words, and whitespace
-    token_re = re.compile(r'\d*\.\d+|\d+|[^\w\s]|\w+|\s+')
+    number_re  = r'\d{1,3}(?:,\d{3})*(?:\.\d+)?'
+    decimal_re = r'\d*\.\d+'
+    integer_re = r'\d+'
+    token_re   = re.compile(
+        fr'{number_re}|{decimal_re}|{integer_re}|[^\w\s]|\w+|\s+'
+    )
     tokens = token_re.findall(text)
     result = []
     for tok in tokens:
@@ -944,8 +951,16 @@ def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_valu
         if norm_tok.lower() in ('inf', 'infinity', 'nan'):
             result.append(norm_tok)
             continue
-        # Decimal numbers like "123.45"
-        if re.fullmatch(r'\d*\.\d+', norm_tok):
+        # “123,456” or “1,234.56”
+        if re.fullmatch(number_re, norm_tok):
+            clean = norm_tok.replace(',', '')
+            num = float(clean) if '.' in clean else int(clean)
+            if not math.isfinite(num) or abs(num) > max_single_value:
+                result.append(norm_tok)
+            else:
+                result.append(num2words(num, lang=lang_iso1))
+        # Already-covered pure decimals “123.45”
+        elif re.fullmatch(decimal_re, norm_tok):
             if is_num2words_compat:
                 try:
                     num = float(norm_tok)
@@ -959,7 +974,7 @@ def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_valu
                     result.append(num2words(num, lang=lang_iso1))
             else:
                 result.append(norm_tok)
-        # Pure integer tokens
+        # Pure integers “6789”
         elif norm_tok.isdecimal():
             if is_num2words_compat:
                 try:
@@ -1008,6 +1023,8 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
+    # 0) Turn ". 1)" → ". 1."
+    text = re.sub(r'(\.\s*\d+)\)', r'\1.', text)
     # Pre-process formatted series (e.g. phone numbers) if needed
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
     # Symbol phonemes
