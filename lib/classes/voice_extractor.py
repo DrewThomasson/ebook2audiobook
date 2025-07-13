@@ -5,28 +5,28 @@ import scipy.fftpack
 import soundfile as sf
 import subprocess
 import shutil
-import torch
 
 from io import BytesIO
-from pydub import AudioSegment
-from torchvggish import vggish, vggish_input
+from pydub import AudioSegment, silence
+from pydub.silence import detect_silence
 
 from lib.conf import voice_formats
 from lib.models import TTS_ENGINES, models
+from lib.classes.background_detector import BackgroundDetector
 
 class VoiceExtractor:
 
-    def __init__(self, session, models_dir, voice_file, voice_name):
+    def __init__(self, session, voice_file, voice_name):
         self.wav_file = None
         self.session = session
         self.voice_file = voice_file
         self.voice_name = voice_name
-        self.models_dir = models_dir
         self.voice_track = 'vocals.wav'
         self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.output_dir = self.session['voice_dir']
-        self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', os.path.splitext(os.path.basename(self.voice_file))[0])
-        self.final_files = [] 
+        self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', voice_name)
+        self.final_files = []
+        self.silence_threshold = -60
 
     def _validate_format(self):
         file_extension = os.path.splitext(self.voice_file)[1].lower()
@@ -73,24 +73,15 @@ class VoiceExtractor:
 
     def _detect_background(self):
         try:
-            torch_home = os.path.join(self.models_dir, 'hub')
-            torch.hub.set_dir(torch_home)
-            os.environ['TORCH_HOME'] = torch_home
-            energy_threshold = 15000 # to tune if not enough accurate (higher = less sensitive)
-            model = vggish()
-            model.eval()
-            # Preprocess audio to log mel spectrogram
-            log_mel_spectrogram = vggish_input.wavfile_to_examples(self.wav_file)
-            audio_tensor = log_mel_spectrogram.clone().detach()
-            embeddings = model(audio_tensor)
-            # Calculate total energy
-            energy_score = torch.norm(embeddings).item()           
-            status = energy_score > energy_threshold
-            msg = f'Noise Score: {energy_score:.2f}'
+            msg = 'Detecting any background noise or music...'
+            print(msg)
+            detector = BackgroundDetector(wav_file=self.wav_file)
+            status, report = detector.detect(vad_ratio_thresh=0.15)
+            print(report)
             if status:
-                msg = f'{msg}\nBackground noise or music detected. Proceeding voice extraction.'
+                msg = 'Background noise or music detected. Proceeding voice extraction...'
             else:
-                msg = f'{msg}\nNo background noise or music detected. Skipping separation.'
+                msg = 'No background noise or music detected. Skipping separation...'
             return True, status, msg
         except Exception as e:
             error = f'_detect_background() error: {e}'
@@ -107,9 +98,6 @@ class VoiceExtractor:
                 self.wav_file
             ]
             try:
-                torch_home = self.models_dir
-                torch.hub.set_dir(torch_home)
-                os.environ['TORCH_HOME'] = torch_home
                 process = subprocess.run(cmd, check=True)
                 self.voice_track = os.path.join(self.demucs_dir, self.voice_track)
                 msg = 'Voice track isolation successful'
@@ -132,77 +120,84 @@ class VoiceExtractor:
             raise ValueError(error)
         return False, error
 
-    def _remove_silences(self, audio, silence_threshold):
+    def _remove_silences(self, audio, silence_threshold, min_silence_len=200, keep_silence=300):
         final_audio = AudioSegment.silent(duration=0)
-        for chunk in audio[::100]:
-            if chunk.dBFS > silence_threshold:
-                final_audio += chunk
+        chunks = silence.split_on_silence(
+            audio,
+            min_silence_len=min_silence_len,
+            silence_thresh=silence_threshold,
+            keep_silence=keep_silence
+        )
+        for chunk in chunks:
+            final_audio += chunk
         final_audio.export(self.voice_track, format='wav')
     
-    def _trim_and_clean(self):
+    def _trim_and_clean(self,silence_threshold, min_silence_len=200, chunk_size=100):
         try:
-            silence_threshold = -60
             audio = AudioSegment.from_file(self.voice_track)
             total_duration = len(audio)  # Total duration in milliseconds
             min_required_duration = 20000 if self.session['tts_engine'] == TTS_ENGINES['BARK'] else 12000
+            msg = f"Removing long pauses..."
+            print(msg)
+            self._remove_silences(audio, silence_threshold)
             if total_duration <= min_required_duration:
-                msg = f"Audio is only {total_duration/1000:.2f}s long; skipping trimming."
-                self._remove_silences(audio, silence_threshold)
+                msg = f"Audio is only {total_duration/1000:.2f}s long; skipping audio trimming..."
                 return True, msg
-            sample_rate = audio.frame_rate
-            chunk_size = 100  # Analyze in 100ms chunks
-            # Step 1: Compute Amplitude and Frequency Variation
-            amplitude_variations = []
-            frequency_variations = []
-            time_stamps = []
-            for i in range(0, total_duration - chunk_size, chunk_size):
-                chunk = audio[i:i + chunk_size]
-                if chunk.dBFS > silence_threshold:  # Ignore silence
-                    amplitude_variations.append(chunk.dBFS)
-                    # FFT to analyze frequency spectrum
-                    samples = np.array(chunk.get_array_of_samples())
-                    spectrum = np.abs(scipy.fftpack.fft(samples))
-                    frequency_variations.append(np.std(spectrum))  # Measure frequency spread
-                    time_stamps.append(i)
-            # If no significant speech was detected, return an error
-            if not amplitude_variations:
-                raise ValueError("_trim_and_clean(): No speech detected!")
-            # Normalize values for fair weighting
-            amplitude_variations = np.array(amplitude_variations)
-            frequency_variations = np.array(frequency_variations)
-            if len(amplitude_variations) > 1:  # Avoid division errors
-                amplitude_variations = (amplitude_variations - np.min(amplitude_variations)) / np.ptp(amplitude_variations)
             else:
-                amplitude_variations = np.zeros_like(amplitude_variations)
-
-            if len(frequency_variations) > 1:
-                frequency_variations = (frequency_variations - np.min(frequency_variations)) / np.ptp(frequency_variations)
-            else:
-                frequency_variations = np.zeros_like(frequency_variations)
-            # Step 2: Score each segment using combined variation
-            score = amplitude_variations + frequency_variations  # Weight both factors equally
-            # Find the best segments
-            best_index = np.argmax(score)  # Find the chunk with max variation
-            best_start = time_stamps[best_index]  # Start time in ms
-            best_end = min(best_start + min_required_duration, total_duration)  # End time in ms
-            # Step 3: Ensure Trim Happens at Silence Boundaries
-            start_adjusted = best_start
-            end_adjusted = best_end
-            # Adjust start to the nearest silence before it
-            for i in range(best_start, max(0, best_start - 2000), -chunk_size):
-                if audio[i:i + chunk_size].dBFS < silence_threshold:
-                    start_adjusted = i
-                    break
-            # Adjust end to the nearest silence after it
-            for i in range(best_end, min(total_duration, best_end + 2000), chunk_size):
-                if audio[i:i + chunk_size].dBFS < silence_threshold:
-                    end_adjusted = i
-                    break
-            # Trim to the adjusted start and end times
-            trimmed_audio = audio[start_adjusted:end_adjusted]
-            # Step 5: remove silences
-            self._remove_silences(trimmed_audio, silence_threshold)
-            msg = f"Silences removed, best section extracted from {start_adjusted/1000:.2f}s to {end_adjusted/1000:.2f}s"
+                if total_duration > (min_required_duration * 2):
+                    msg = f"Audio longer than the max allowed. Proceeding to audio trimming..."       
+                    print(msg)
+                    window = min_required_duration
+                    hop = max(1, window // 4)
+                    best_var   = -float("inf")
+                    best_start = 0
+                    sr = audio.frame_rate
+                    for start in range(0, total_duration - window + 1, hop):
+                        chunk   = audio[start : start + window]
+                        samples = np.array(chunk.get_array_of_samples()).astype(float)
+                        # 1) FFT + magnitude
+                        spectrum = np.abs(scipy.fftpack.fft(samples))
+                        # 2) turn into a probability distribution
+                        p = spectrum / (np.sum(spectrum) + 1e-10)
+                        # 3) spectral entropy
+                        entropy = -np.sum(p * np.log2(p + 1e-10))
+                        if entropy > best_var:
+                            best_var   = entropy
+                            best_start = start
+                    best_end = best_start + window
+                    msg = (
+                        f"Selected most‐diverse‐spectrum window "
+                        f"{best_start/1000:.2f}s–{best_end/1000:.2f}s "
+                        f"(@ entropy {best_var:.2f} bits)"
+                    )
+                    print(msg)
+                    # 1) find all silent spans in the file
+                    silence_spans = detect_silence(
+                        audio,
+                        min_silence_len=min_silence_len,
+                        silence_thresh=silence_threshold
+                    )
+                    # silence_spans = [ [start_ms, end_ms], … ]
+                    # 2) snap best_start *backward* to the end of the last silence before it
+                    prev_ends = [end for (start, end) in silence_spans if end <= best_start]
+                    if prev_ends:
+                        new_start = max(prev_ends)
+                    else:
+                        new_start = 0
+                    # 3) snap best_end *forward* to the start of the first silence after it
+                    next_starts = [start for (start, end) in silence_spans if start >= best_end]
+                    if next_starts:
+                        new_end = min(next_starts)
+                    else:
+                        new_end = total_duration
+                    # 4) update your slice bounds
+                    best_start, best_end = new_start, new_end
+                else:
+                    best_start = 0
+                    best_end = total_duration
+            trimmed_audio = audio[best_start:best_end]
+            trimmed_audio.export(self.voice_track, format='wav')
+            msg = 'Audio trimmed and cleaned!'
             return True, msg
         except Exception as e:
             error = f'_trim_and_clean() error: {e}'
@@ -292,7 +287,7 @@ class VoiceExtractor:
                         else:
                             self.voice_track = self.wav_file
                         if success:
-                            success, msg = self._trim_and_clean()
+                            success, msg = self._trim_and_clean(self.silence_threshold)
                             print(msg)
                             if success:
                                 success, msg = self._normalize_audio()
@@ -301,6 +296,4 @@ class VoiceExtractor:
             msg = f'extract_voice() error: {e}'
             raise ValueError(msg)
         shutil.rmtree(self.demucs_dir, ignore_errors=True)
-        torch.hub.set_dir(self.models_dir)
-        os.environ['TORCH_HOME'] = self.models_dir
         return success, msg

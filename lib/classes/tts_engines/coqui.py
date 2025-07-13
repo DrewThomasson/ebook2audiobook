@@ -1,23 +1,24 @@
-import os
 import hashlib
-import numpy as np
-import regex as re
+import math
+import os
 import shutil
-import soundfile as sf
-import stanza
 import subprocess
 import tempfile
-import torch
-import torchaudio
 import threading
 import uuid
+
+import numpy as np
+import regex as re
+import soundfile as sf
+import torch
+import torchaudio
 
 from huggingface_hub import hf_hub_download
 from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.classes.tts_engines.common.utils import detect_date_entities, year_to_words, unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -27,11 +28,9 @@ lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
 class Coqui:
+
     def __init__(self, session):
         try:
-            if session['language'] in year_to_decades_languages:
-                stanza.download(session['language_iso1'])
-                self.stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
@@ -45,11 +44,38 @@ class Coqui:
             self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')       
+            self.max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
+            list_split = [
+                # Western
+                '.', ',',
+                # Arabic-Persian
+                '،',
+                # CJK
+                '。', '，', '、', '·', '…',
+                # Indic
+                '।', '॥',
+                # Thai
+                'ฯ',
+                # Ethiopic
+                '፡', '።', '፣', '፤', '፥', '፦', '፧',
+                # Hebrew
+                '״',
+                # Tibetan
+                '།', '༎',
+                # Khmer
+                '។', '៕',
+                # Lao
+                '໌', 'ໍ',
+                # Misc (global)
+                '—', '!', '?', ':', ';'
+            ]
+            punctuation_class = "[" + "".join(re.escape(ch) for ch in list_split) + "]"
+            self.punc_re = re.compile(punctuation_class)
             self._build()
         except Exception as e:
             error = f'__init__() error: {e}'
             print(error)
-            return False
+            return None
 
     def _build(self):
         try:
@@ -410,13 +436,10 @@ class Coqui:
         try:
             speaker = None
             audio_data = False
-            audio2trim = False
             trim_audio_buffer = 0.004
             settings = self.params[self.session['tts_engine']]
             final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             sentence = sentence.rstrip()
-            if sentence.endswith('-') or sentence[-1].isalnum():
-                audio2trim = True
             settings['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
@@ -432,30 +455,9 @@ class Coqui:
                         return False
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
-                # Check if the language requires to split the year in decades
-                if self.session['language'] in year_to_decades_languages:
-                    # Check if numbers exists in the sentence
-                    if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
-                        # Check if there are positive integers so possible date to convert
-                        if bool(re.search(r'\b\d+\b', sentence)):
-                            date_spans = detect_date_entities(sentence, self.stanza_nlp)
-                            if date_spans:
-                                result = []
-                                last_pos = 0
-                                for start, end, date_text in date_spans:
-                                    # Append sentence before this date
-                                    result.append(sentence[last_pos:start])
-                                    processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), self.session['language_iso1']), date_text)
-                                    if not processed:
-                                        break
-                                    result.append(processed)
-                                    last_pos = end
-                                # Append remaining sentence
-                                result.append(sentence[last_pos:])
-                                sentence = ''.join(result)
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
-                    sentence_parts = [p.replace('. ', '— ') for p in sentence_parts]
+                    sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
@@ -463,7 +465,9 @@ class Coqui:
                     if not text_part:
                         audio_segments.append(silence_tensor.clone())
                         continue
-                    audio_part = None
+                    audio2trim = False
+                    if text_part.endswith('-') or text_part[-1].isalnum():
+                        audio2trim = True
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.06
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():

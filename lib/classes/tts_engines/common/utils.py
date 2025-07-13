@@ -3,35 +3,7 @@ import torch
 import regex as re
 import stanza
 
-from num2words import num2words
-from lib.models import loaded_tts, max_tts_in_memory
-
-def detect_date_entities(text, stanza_nlp):
-    try:
-        doc = stanza_nlp(text)
-        date_spans = []
-        for ent in doc.ents:
-            if ent.type == 'DATE':
-                date_spans.append((ent.start_char, ent.end_char, ent.text))
-        return date_spans
-    except Exception as e:
-        error = f'detect_date_entities() error: {e}'
-        print(error)
-        return False
-
-def year_to_words(year_str, lang_iso1):
-    try:
-        year = int(year_str)
-        if len(year_str) != 4 or not year_str.isdigit():
-            return num2words(year, lang=lang_iso1)
-        first_two = int(year_str[:2])
-        last_two = int(year_str[2:])
-        return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}"  
-    except Exception as e:
-        error = f'year_to_words() error: {e}'
-        print(error)
-        raise
-        return False
+from lib.models import loaded_tts, max_tts_in_memory, TTS_ENGINES
 
 def unload_tts(device, reserved_keys=None, tts_key=None):
     try:
