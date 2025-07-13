@@ -777,7 +777,7 @@ class Coqui:
                     audio_tensor = torch.cat(audio_segments, dim=-1)
                     if not text_part.endswith('-') and not text_part[-1].isalnum():
                         if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
-                            extra_audio_buffer = 1
+                            extra_audio_buffer = np.random.uniform(0.8, 1.6)
                     audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer + extra_audio_buffer).unsqueeze(0)
                     start_time = self.sentences_total_time
                     duration = audio_tensor.shape[-1] / settings['samplerate']
