@@ -954,22 +954,21 @@ def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_valu
     tokens = token_re.findall(text)
     result = []
     for tok in tokens:
-        norm_tok = unicodedata.normalize('NFKC', tok)
+        norm_tok = unicodedata.normalize('NFKC', tok)  # “²” → “2”, “①” → “1”, etc.
         # decimal numbers like "123.45"
-        if re.fullmatch(r'\d*\.\d+', tok):
+        if re.fullmatch(r'\d*\.\d+', norm_tok):
             if is_num2words_compat:
-                num = float(tok)
+                num = float(norm_tok)
                 result.append(num2words(num, lang=lang_iso1))
             else:
                 result.append(tok)
         # pure integer tokens
-        elif tok.isdigit():
+        elif norm_tok.isdecimal():
             if is_num2words_compat:
-                num = int(tok)
+                num = int(norm_tok)
                 result.append(num2words(num, lang=lang_iso1))
             else:
                 result.append(tok)
-        # anything else (commas, Russian text, punctuation, spaces…)
         else:
             result.append(tok)
     return ''.join(result)
