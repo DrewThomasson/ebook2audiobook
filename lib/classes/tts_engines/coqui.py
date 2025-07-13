@@ -751,7 +751,7 @@ class Coqui:
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
-                        trim_audio_buffer = 0.003
+                        trim_audio_buffer = 0.004
                         speaker_argument = {}
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                         if settings['voice_path'] is not None:
