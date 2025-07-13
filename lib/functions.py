@@ -933,6 +933,9 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
 
 def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999):
     text = text.strip()
+    # Otherwise tokenize and process each number/token individually
+    # captures decimals, ints, punctuation, words, and whitespace
+    token_re = re.compile(r'\d*\.\d+|\d+|[^\w\s]|\w+|\s+')
     tokens = token_re.findall(text)
     result = []
     for tok in tokens:
@@ -972,7 +975,6 @@ def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_valu
                     result.append(num2words(num, lang=lang_iso1))
             else:
                 result.append(norm_tok)
-        # Eeverything else (letters, punctuation, whitespace…)
         else:
             result.append(norm_tok)
     return ''.join(result)
