@@ -21,11 +21,12 @@ voice_conversion_models/multilingual/multi-dataset/knnvc
 voice_conversion_models/multilingual/multi-dataset/openvoice_v1
 voice_conversion_models/multilingual/multi-dataset/openvoice_v2
 """
-default_vc_model = "voice_conversion_models/multilingual/multi-dataset/knnvc"
+default_vc_model = 'voice_conversion_models/multilingual/multi-dataset/knnvc'
+default_voice_detection_model = 'drewThomasson/segmentation'
 
 max_tts_in_memory = 2 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM).
-max_custom_model = 10
-max_custom_voices = 100
+max_custom_model = 100
+max_custom_voices = 1000
 max_upload_size = '6GB'
 
 default_engine_settings = {
@@ -67,7 +68,8 @@ default_engine_settings = {
             "FerranSimen": "Ferran Simen", "XavierHayasaka": "Xavier Hayasaka", "LuisMoray": "Luis Moray",
             "MarcosRudaski": "Marcos Rudaski"
         },
-        "rating": {"GPU VRAM": 4, "CPU": 3, "RAM": 8, "Realism": 4}
+        "rating": {"GPU VRAM": 4, "CPU": 3, "RAM": 8, "Realism": 4},
+        "ukn_chars": []
     },
     TTS_ENGINES['BARK']: {
         "samplerate": 24000,
@@ -121,31 +123,36 @@ default_engine_settings = {
             "zh_speaker_6": "Speaker 6", "zh_speaker_7": "Speaker 7", "zh_speaker_8": "Speaker 8",
             "zh_speaker_9": "Speaker 9"
         },
-        "rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Realism": 3}
+        "rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Realism": 3},
+        "ukn_chars": []
     },
     TTS_ENGINES['VITS']: {
         "samplerate": 22050,
         "files": ['config.json', 'model_file.pth', 'language_ids.json'],
         "voices": {},
-        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 2}
+        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 2},
+        "ukn_chars": ['!', '"', ',', '.', ':', ';', '?', '¡', '«', '·', '»', '¿', '״', '،', '؛', '؟', '।', '॥', 'ฯ', '໌', 'ໍ', '།', '༎', '፡', '።', '፣', '፤', '፥', '፦', '፧', '។', '៕', '—', '…', '‽', '、', '。', '！', '，', '：', '；', '？']
     },
     TTS_ENGINES['FAIRSEQ']: {
         "samplerate": 16000,
         "files": ['config.json', 'G_100000.pth', 'vocab.json'],
         "voices": {},
-        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 2}
+        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 2},
+        "ukn_chars": ['!', '"', ',', '.', ':', ';', '?', '¡', '«', '·', '»', '¿', '״', '،', '؛', '؟', '।', '॥', 'ฯ', '໌', 'ໍ', '།', '༎', '፡', '።', '፣', '፤', '፥', '፦', '፧', '។', '៕', '—', '…', '‽', '、', '。', '！', '，', '：', '；', '？']
     },
     TTS_ENGINES['TACOTRON2']: {
         "samplerate": 22050,
         "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
         "voices": {},
-        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 2}
+        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 2},
+        "ukn_chars": ['"', '¡', '«', '·', '»', '¿', '״', '،', '؛', '؟', '।', '॥', 'ฯ', '໌', 'ໍ', '།', '༎', '፡', '።', '፣', '፤', '፥', '፦', '፧', '។', '៕', '—', '…', '‽', '、', '。', '！', '，', '：', '；', '？']
     },
     TTS_ENGINES['YOURTTS']: {
         "samplerate": 16000,
         "files": ['config.json', 'model_file.pth'],
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
-        "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 4, "Realism": 1}
+        "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 4, "Realism": 1},
+        "ukn_chars": ['"', '¡', '«', '»', '¿', '״', '،', '؛', '؟', '।', '॥', 'ฯ', '໌', 'ໍ', '།', '༎', '፡', '።', '፣', '፤', '፥', '፦', '፧', '។', '៕', '—', '…', '‽', '、', '。', '！', '，', '：', '；', '？']
     }
 }
 models = {
@@ -379,6 +386,14 @@ models = {
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/WhisperSalemASMR/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"WhisperSalemASMR_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
+        },
+        "Konishev": {
+            "lang": "rus",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/rus/Konishev/",
+            "voice": os.path.join(voices_dir, "rus", "adult", "male", f"Konishev_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         }
