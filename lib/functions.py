@@ -562,7 +562,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                                     result.append(sentence[last_pos:])
                                     sentence = ''.join(result)
                     if session['tts_engine'] not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']]:
-                        sentence = re.sub(r'(\d)\)', r'\1 :', sentence)
                         sentence = math2word(sentence, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
                     sentences_list[i] = sentence
                 chapters.append(sentences_list)
@@ -1028,7 +1027,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
-    # 0) Turn ". 1)" → ". 1."
+    sentence = re.sub(r'(\d)\)', r'\1 : ', sentence)
     # Pre-process formatted series (e.g. phone numbers) if needed
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
     # Symbol phonemes
