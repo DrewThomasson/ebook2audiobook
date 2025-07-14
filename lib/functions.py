@@ -527,7 +527,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         ]
         if not all_docs:
             return [], []
-        print(all_docs)
+        print([doc.file_name for doc in all_docs])
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
         is_year_decades = False
