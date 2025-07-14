@@ -94,7 +94,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Run Remotely](#run-remotely)  
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
-  - [Train XTTS](#fine-tune-your-own-xtts-model)
+  - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
 - [Docker](#docker-gpu-options) 
   - [GPU options](#docker-gpu-options)
   - [Docker Run](#running-the-docker-container)
@@ -105,6 +105,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Common Docker issues](#common-docker-issues)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-formats)
+- [Updating to Latest Version](#updating-to-latest-version)
+- [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
 - [Table of Contents](#table-of-contents)
@@ -319,10 +321,10 @@ optional parameters:
                             Default to config.json model.
   --text_temp TEXT_TEMP
                         (bark only, optional) Text Temperature for the model. 
-                            Default to 0.2. Higher temperatures lead to more creative outputs.
+                            Default to 0.85. Higher temperatures lead to more creative outputs.
   --waveform_temp WAVEFORM_TEMP
                         (bark only, optional) Waveform Temperature for the model. 
-                            Default to 0.2. Higher temperatures lead to more creative outputs.
+                            Default to 0.5. Higher temperatures lead to more creative outputs.
   --output_dir OUTPUT_DIR
                         (Optional) Path to the output directory. Default is set in ./lib/conf.py
   --version             Show the version of the script and exit
@@ -340,7 +342,7 @@ Linux/Mac:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file'
     
 Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
-   
+
 ```
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
@@ -493,6 +495,21 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 
 ## Output Formats
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
+
+## Updating to Latest Version
+```bash
+git pull # Locally/Compose
+
+docker pull athomasson2/ebook2audiobook:latest # For Pre-build docker images
+```
+
+## Reverting to older Versions
+Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
+```bash
+git checkout tags/VERSION_NUM # Locally/Compose -> Example: git checkout tags/v25.7.7
+
+athomasson2/ebook2audiobook:VERSION_NUM # For Pre-build docker images -> Example: athomasson2/ebook2audiobook:v25.7.7
+```
 
 ## Common Issues:
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
