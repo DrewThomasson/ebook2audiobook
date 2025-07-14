@@ -105,6 +105,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Common Docker issues](#common-docker-issues)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-formats)
+- [Updating to Latest Version](#updating-to-latest-version)
 - [Revert to older Version](#reverting-to-older-versions)
 - [Common Issues](#common-issues)
 - [Special Thanks](#special-thanks)
@@ -494,6 +495,13 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
 
 ## Output Formats
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
+
+## Updating to Latest Version
+```bash
+git pull # Locally/Compose
+
+docker pull athomasson2/ebook2audiobook:latest # For Pre-build docker images
+```
 
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
