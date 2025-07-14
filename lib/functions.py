@@ -538,8 +538,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_list is not None:
                 for i, sentence in enumerate(sentences_list):
-                    if default_engine_settings[session['tts_engine']]['punctuations'][0] != 'all':
-                        sentence = filter_punctuations(sentence, session['tts_engine'])
+                    allowed_punctuations = default_engine_settings[session['tts_engine']]['punctuations']
+                    if allowed_punctuations[0] != 'all':
+                        sentence = filter_punctuations(sentence, session['tts_engine'], allowed_punctuations)
                     if is_year_decades:
                         # Check if numbers exists in the sentence
                         if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
@@ -648,8 +649,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         DependencyError(e)
         return None
 
-def filter_punctuations(text, tts_engine):
-    allowed_punctuations = default_engine_settings[session['tts_engine']]['punctuations']
+def filter_punctuations(text, tts_engine, allowed_punctuations):
     replacement = ' '
     out_chars = []
     for ch in text:
