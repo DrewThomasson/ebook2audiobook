@@ -394,7 +394,6 @@ def convert2epub(session):
             title = pdf_metadata.get('title') or filename_no_ext
             author = pdf_metadata.get('author') or False
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
-            markdown_text = markdown_text.replace('_', ' ')
             file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
             with open(file_input, "w", encoding="utf-8") as html_file:
                 html_file.write(markdown_text)
@@ -538,9 +537,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_list is not None:
                 for i, sentence in enumerate(sentences_list):
-                    allowed_punctuations = default_engine_settings[session['tts_engine']]['punctuations']
-                    if allowed_punctuations[0] != 'all':
-                        sentence = filter_punctuations(sentence, session['tts_engine'], allowed_punctuations)
+                    sentence = sentence.replace('_', ' ')
                     if is_year_decades:
                         # Check if numbers exists in the sentence
                         if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
@@ -649,21 +646,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     except Exception as e:
         DependencyError(e)
         return None
-
-def filter_punctuations(text, tts_engine, allowed_punctuations):
-    replacement = ''
-    out_chars = []
-    for ch in text:
-        # Unicode category starting with 'P' = any punctuation
-        if unicodedata.category(ch).startswith("P"):
-            if ch in allowed_punctuations:
-                out_chars.append(ch)
-            else:
-                # drop it (or append `replacement`)
-                out_chars.append(replacement)
-        else:
-            out_chars.append(ch)
-    return "".join(out_chars)
 
 def get_sentences(text, lang, tts_engine):
     max_chars = language_mapping[lang]['max_chars'] - 2
