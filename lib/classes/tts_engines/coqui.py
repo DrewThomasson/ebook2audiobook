@@ -456,8 +456,8 @@ class Coqui:
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
                 sentence_parts = sentence.split('‡pause‡')
-                if self.session['tts_engine'] == TTS_ENGINES['XTTSv2'] or self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
-                    sentence_parts = [p.replace('.', '— ') for p in sentence_parts]
+                if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['FAIRSEQ']]:
+                    sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * 1.4)) # 1.4 seconds
                 extra_audio_buffer = 0
                 audio_segments = []
