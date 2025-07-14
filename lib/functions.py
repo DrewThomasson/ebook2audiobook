@@ -651,7 +651,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         return None
 
 def filter_punctuations(text, tts_engine, allowed_punctuations):
-    replacement = ' '
+    replacement = ''
     out_chars = []
     for ch in text:
         # Unicode category starting with 'P' = any punctuation
