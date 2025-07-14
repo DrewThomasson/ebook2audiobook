@@ -1002,19 +1002,27 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     def rep_num(match):
         try:
             number = match.group()
-            trailing = ''
+            result = ' '
             if number and number[-1] in '.,':
-                trailing = number[-1]
                 number = number[:-1]
             if "." in number or "e" in number.lower():
                 number_value = float(number)
+                parts = re.split(r'([.,])', str(number_value), maxsplit=1)
+                if len(parts) == 1:
+                    int_part, sep, dec_part = parts[0], '', ''
+                else:
+                    int_part, sep, dec_part = parts
+                # Split long digit-runs (6-digit groups)
+                int_part = re.sub(r'(\d{6})(?=\d)', r'\1 ', int_part)
+                dec_part = re.sub(r'(\d{6})(?=\d)', r'\1 ', dec_part)
+                for n in int_part.split():
+                    result += num2words(int(n), lang=lang_iso1) if is_num2words_compat else ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in n)
+                result += ' ' + ''.join(language_math_phonemes[lang].get(ch, ch) for ch in sep)
+                for n in dec_part.split():
+                    result += num2words(int(n), lang=lang_iso1) if is_num2words_compat else ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in n)
             else:
-                number_value = int(number)
-            if is_num2words_compat:
-                return num2words(number_value, lang=lang_iso1)
-            else:
-                replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in number_value)
+                result += num2words(int(number), lang=lang_iso1)
+            return result
         except Exception as e:
             print(f"Error converting number: {number}, Error: {e}")
             return match.group(0)
@@ -1049,8 +1057,6 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-    # split long digit-runs (3-digit groups)
-    text = re.sub(r'(\d{3})(?=\d{3}(?!\.\d))', r'\1 ', text)
     if tts_engine != TTS_ENGINES['XTTSv2']:
         # Number-to-words: build a pattern that finds any standalone number,
         # with commas, decimals or exponents.
