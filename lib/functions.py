@@ -1024,7 +1024,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         return match.group(0)
 
     # 0) Turn ". 1)" → ". 1."
-    text = re.sub(r'^(\d+)\)', r'\1 - ', text)
+    text = re.sub(r'^(\d+)\)', r'\1 : ', text)
     # Pre-process formatted series (e.g. phone numbers) if needed
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
     # Symbol phonemes
