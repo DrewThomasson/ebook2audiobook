@@ -46,7 +46,7 @@ from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
 from PIL import Image
 from tqdm import tqdm
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import Counter
 from collections.abc import Mapping
 from collections.abc import MutableMapping
@@ -527,7 +527,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         ]
         if not all_docs:
             return [], []
-        print([doc.file_name for doc in all_docs])
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
         is_year_decades = False
@@ -574,82 +573,84 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine):
     try:
-        chapter_sentences = None
+        heading_tags = {f'h{i}' for i in range(1, 7)}
         raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
-        if not soup.body or not soup.body.get_text(strip=True):
+        body = soup.body
+        if not body or not body.get_text(strip=True):
             return None
-        # Get epub:type from <body> or outermost <section>
-        epub_type = soup.body.get("epub:type", "").lower()
+        # Skip known non-chapter types
+        epub_type = body.get("epub:type", "").lower()
         if not epub_type:
             section_tag = soup.find("section")
-            if section_tag and section_tag.get("epub:type"):
-                epub_type = section_tag.get("epub:type").lower()
-        # Skip known non-chapter types
-        excluded_types = {
+            if section_tag:
+                epub_type = section_tag.get("epub:type", "").lower()
+        excluded = {
             "frontmatter", "backmatter", "toc", "titlepage", "colophon",
             "acknowledgments", "dedication", "glossary", "index",
             "appendix", "bibliography", "copyright-page", "landmark"
         }
-        if any(part in epub_type for part in excluded_types):
+        if any(part in epub_type for part in excluded):
             return None
-        for script in soup(["script", "style"]):
-            script.decompose()
-        # --- NEW: detect whether any real <p> exists ---
-        has_real_p = any(p.get_text(strip=True) for p in soup.find_all("p"))
-        # build the list of tags to scan
-        base_tags = ["h1", "h2", "h3", "h4", "h5", "h6", "table"]
-        if has_real_p:
-            base_tags.append("p")
-        else:
-            # fallback to div/span when no paragraphs exist
-            base_tags.extend(["div", "span"])
+        # remove scripts/styles
+        for tag in soup(["script", "style"]):
+            tag.decompose()
+        # helper to walk in document order
+        def walk(node):
+            for child in node.children:
+                if isinstance(child, NavigableString):
+                    text = child.strip()
+                    if text:
+                        yield ("text", text)
+                elif isinstance(child, Tag):
+                    if child.name in heading_tags:
+                        title = child.get_text(strip=True)
+                        if title:
+                            yield ("heading", title)
+                    elif child.name == "table":
+                        yield ("table", child)
+                    else:
+                        yield from walk(child)
+        items = list(walk(body))
+        if not items:
+            return None
         text_array = []
         handled_tables = set()
-        for tag in soup.find_all(base_tags):
-            if tag.name == "table":
-                # Ensure we don't process the same table multiple times
-                if tag in handled_tables:
+        for typ, payload in items:
+            if typ == "heading":
+                raw_text = replace_roman_numbers(payload, lang)
+                text_array.append(f"{raw_text}.[pause]")
+            elif typ == "table":
+                table = payload
+                if table in handled_tables:
                     continue
-                handled_tables.add(tag)
-                rows = tag.find_all("tr")
+                handled_tables.add(table)
+                rows = table.find_all("tr")
                 if not rows:
                     continue
-                header_cells = [td.get_text(strip=True) for td in rows[0].find_all(["td", "th"])]
+                headers = [c.get_text(strip=True) for c in rows[0].find_all(["td", "th"])]
                 for row in rows[1:]:
-                    cells = [td.get_text(strip=True).replace('\xa0', ' ')
-                             for td in row.find_all("td")]
-                    if len(cells) == len(header_cells):
-                        line = " — ".join(f"{header}: {cell}" for header, cell in zip(header_cells, cells))
+                    cells = [c.get_text(strip=True).replace('\xa0', ' ')
+                             for c in row.find_all("td")]
+                    if len(cells) == len(headers):
+                        line = " — ".join(f"{h}: {c}" for h, c in zip(headers, cells))
                     else:
                         line = " — ".join(cells)
                     if line:
                         text_array.append(line)
-            elif tag.name in ["p", "div", "span"] and tag.find_parent("table"):
-                continue  # Already handled in the <table> section
-            elif tag.name == "p" and "whitespace" in (tag.get("class") or []):
-                if tag.get_text(strip=True) == '\xa0' or not tag.get_text(strip=True):
-                    text_array.append("[pause]")
-            elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-                raw_text = tag.get_text(strip=True)
-                if raw_text:
-                    # replace roman numbers by digits
-                    raw_text = replace_roman_numbers(raw_text, lang)
-                    text_array.append(f'{raw_text}.[pause]')
-            else:
-                raw_text = tag.get_text(strip=True)
-                if raw_text:
-                    text_array.append(raw_text)
-        text = "\n".join(text_array)
-        if bool(re.search(r'[^\W_]', text)):
-            # Normalize lines and remove unnecessary spaces and switch special chars
-            text = normalize_text(text, lang, lang_iso1, tts_engine)
-            if text is not None:
-                chapter_sentences = get_sentences(text, lang, tts_engine)
-        return chapter_sentences
+            else:  # "text"
+                text_array.append(payload)
+        combined = "\n".join(text_array)
+        if not re.search(r"[^\W_]", combined):
+            return None
+        normalized = normalize_text(combined, lang, lang_iso1, tts_engine)
+        if normalized is None:
+            return None
+        return get_sentences(normalized, lang, tts_engine)
     except Exception as e:
         DependencyError(e)
         return None
+
 
 def get_sentences(text, lang, tts_engine):
     max_chars = language_mapping[lang]['max_chars'] - 2
