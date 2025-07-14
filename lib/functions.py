@@ -538,6 +538,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_list is not None:
                 for i, sentence in enumerate(sentences_list):
+                    sentence = filter_punctuations(sentence, session['tts_engine'])
                     if is_year_decades:
                         # Check if numbers exists in the sentence
                         if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
@@ -645,6 +646,22 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
     except Exception as e:
         DependencyError(e)
         return None
+
+def filter_punctuations(text, tts_engine):
+    allowed_punctuations = default_engine_settings[session['tts_engine']]['punctuations']
+    replacement = ' '
+    out_chars = []
+    for ch in text:
+        # Unicode category starting with 'P' = any punctuation
+        if unicodedata.category(ch).startswith("P"):
+            if ch in allowed_punctuations:
+                out_chars.append(ch)
+            else:
+                # drop it (or append `replacement`)
+                out_chars.append(replacement)
+        else:
+            out_chars.append(ch)
+    return "".join(out_chars)
 
 def get_sentences(text, lang, tts_engine):
     max_chars = language_mapping[lang]['max_chars'] - 2
