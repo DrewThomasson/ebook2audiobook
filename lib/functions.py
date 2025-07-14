@@ -537,7 +537,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_list is not None:
                 for i, sentence in enumerate(sentences_list):
-                    sentence = sentence.replace('_', ' ')
                     if is_year_decades:
                         # Check if numbers exists in the sentence
                         if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
