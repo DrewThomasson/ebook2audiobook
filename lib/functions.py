@@ -1038,6 +1038,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Pre-process formatted series (e.g. phone numbers) if needed
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
+    print(text)
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
     replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
