@@ -936,10 +936,7 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         return False
 
 def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999):
-    text = re.sub(r'(?<=\d),(?=\d{3}\b)', '', text)
     text = text.strip()
-    # Otherwise tokenize and process each number/token individually
-    # captures decimals, ints, punctuation, words, and whitespace
     number_re  = r'\d{1,3}(?:,\d{3})*(?:\.\d+)?'
     decimal_re = r'\d*\.\d+'
     integer_re = r'\d+'
@@ -1037,8 +1034,8 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Pre-process formatted series (e.g. phone numbers) if needed
-    print(text)
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
+    print(text)
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
     replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
