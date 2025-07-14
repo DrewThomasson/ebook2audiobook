@@ -646,11 +646,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         normalized = normalize_text(combined, lang, lang_iso1, tts_engine)
         if normalized is None:
             return None
+        print(normalized)
         return get_sentences(normalized, lang, tts_engine)
     except Exception as e:
         DependencyError(e)
         return None
-
 
 def get_sentences(text, lang, tts_engine):
     max_chars = language_mapping[lang]['max_chars'] - 2
