@@ -1027,7 +1027,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
-    sentence = re.sub(r'(\d)\)', r'\1 : ', sentence)
+    text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Pre-process formatted series (e.g. phone numbers) if needed
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
     # Symbol phonemes
