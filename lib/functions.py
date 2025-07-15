@@ -630,7 +630,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp):
                         for start, end, date_text in date_spans:
                             # Append text before this date
                             result.append(text[last_pos:start])
-                            processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), session['language'], session['language_iso1'], is_num2words_compat), date_text)
+                            processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), lang, lang_iso1, is_num2words_compat), date_text)
                             if not processed:
                                 break
                             result.append(processed)
@@ -638,7 +638,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp):
                         # Append remaining text
                         result.append(text[last_pos:])
                         text = ''.join(result)
-        text = math2word(text, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
+        text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
