@@ -642,9 +642,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
-        # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-        comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-        text = re.sub(comma_dot_pattern, r' \1 ', text)
+        # Ensure space before and after punctuation (excluding `,` and `.`)
+        pattern_space = re.escape(''.join(punctuation_list))
+        punctuation_pattern_space = r'\s*([{}])\s*'.pattern_space)
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         DependencyError(e)
@@ -1063,10 +1064,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     # Pattern 1: Add a space between UTF-8 characters and numbers
     text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    pattern_space = re.escape(''.join(punctuation_list))
-    # Ensure space before and after punctuation (excluding `,` and `.`)
-    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-    text = re.sub(punctuation_pattern_space, r' \1 ', text)
     # Replace special chars with words
     specialchars = specialchars_mapping.get(lang, specialchars_mapping['eng'])
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
