@@ -936,61 +936,48 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999_999):
-    number_re = r'\b[-+]?\d{1,12}(?:\.\d{1,12})?\b'
-    decimal_re = r'\d*\.\d+'
-    integer_re = r'\d+'
-    token_re   = re.compile(
-        fr'{number_re}|{decimal_re}|{integer_re}|[^\w\s]|\w+|\s+'
-    )
+def check_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999):
+    """
+    Scan `text` for comma‐grouped integers or decimals (up to 12 digits
+    before & after the point), strip out commas, and convert to words.
+    Respects the is_num2words_compat flag for decimal conversion.
+    """
+    # Match 1–12 digits, optional “,…” groups of up to 12 digits, optional . up to 12 digits
+    number_re = r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b'
+    token_re  = re.compile(fr'{number_re}|[^\w\s]|\w+|\s+')
     tokens = token_re.findall(text)
     result = []
     for tok in tokens:
-        # Normalize any superscripts, circled numbers, etc.
         norm_tok = unicodedata.normalize('NFKC', tok)
-        # If we ever see 'inf', 'infinity' or 'nan', just treat it as text
+        # pass through infinities/nans
         if norm_tok.lower() in ('inf', 'infinity', 'nan'):
             result.append(norm_tok)
             continue
-        # “123,456” or “1,234.56”
+        # matched a grouped integer or decimal?
         if re.fullmatch(number_re, norm_tok):
+            # strip commas, parse
             clean = norm_tok.replace(',', '')
-            num = float(clean) if '.' in clean else int(clean)
+            try:
+                num = float(clean) if '.' in clean else int(clean)
+            except (ValueError, OverflowError):
+                result.append(norm_tok)
+                continue
+            # check bounds
             if not math.isfinite(num) or abs(num) > max_single_value:
                 result.append(norm_tok)
             else:
-                result.append(num2words(num, lang=lang_iso1))
-        # Already-covered pure decimals “123.45”
-        elif re.fullmatch(decimal_re, norm_tok):
-            if is_num2words_compat:
-                try:
-                    num = float(norm_tok)
-                except (ValueError, OverflowError):
-                    result.append(norm_tok)
-                    continue
-                # guard against infinities and NaNs
-                if not math.isfinite(num):
-                    result.append(norm_tok)
+                # decimal case
+                if isinstance(num, float):
+                    if is_num2words_compat:
+                        # use decimal mode to get “point” wording
+                        result.append(num2words(num, lang=lang_iso1, to='decimal'))
+                    else:
+                        result.append(norm_tok)
+                # integer case
                 else:
                     result.append(num2words(num, lang=lang_iso1))
-            else:
-                result.append(norm_tok)
-        # Pure integers “6789”
-        elif norm_tok.isdecimal():
-            if is_num2words_compat:
-                try:
-                    num = int(norm_tok)
-                except (ValueError, OverflowError):
-                    result.append(norm_tok)
-                    continue
-                # skip conversion if it’s outside your allowed range
-                if abs(num) > max_single_value:
-                    result.append(norm_tok)
-                else:
-                    result.append(num2words(num, lang=lang_iso1))
-            else:
-                result.append(norm_tok)
         else:
+            # anything else—words, punctuation, whitespace
             result.append(norm_tok)
     return ''.join(result)
 
