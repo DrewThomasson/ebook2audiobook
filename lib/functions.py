@@ -937,8 +937,7 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         return False
 
 def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999_999):
-    text = text.strip()
-    number_re  = r'\d{1,3}(?:,\d{3})*(?:\.\d+)?'
+    number_re = r'\b[-+]?\d{1,12}(?:\.\d{1,12})?\b'
     decimal_re = r'\d*\.\d+'
     integer_re = r'\d+'
     token_re   = re.compile(
