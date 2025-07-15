@@ -538,7 +538,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         msg = 'Analizing maths and dates to convert in words...'
         print(msg)
         for doc in all_docs:
-            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
+            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_list is not None:
                 for i, sentence in enumerate(sentences_list):
                     if is_year_decades:
@@ -561,8 +561,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                                     # Append remaining sentence
                                     result.append(sentence[last_pos:])
                                     sentence = ''.join(result)
-                    if session['tts_engine'] not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']]:
-                        sentence = math2word(sentence, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
+                    sentence = math2word(sentence, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
                     sentences_list[i] = sentence
                 chapters.append(sentences_list)
         return toc, chapters
@@ -571,7 +570,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return None, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
+def filter_chapter(doc, lang, lang_iso1, tts_engine):
     try:
         heading_tags = {f'h{i}' for i in range(1, 7)}
         raw_html = doc.get_body_content().decode("utf-8")
@@ -642,7 +641,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         combined = "\n".join(text_array)
         if not re.search(r"[^\W_]", combined):
             return None
-        combined = check_formatted_number(combined, lang_iso1, is_num2words_compat)
         normalized = normalize_text(combined, lang, lang_iso1, tts_engine)
         if normalized is None:
             return None
@@ -652,7 +650,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         return None
 
 def get_sentences(text, lang, tts_engine):
-    max_chars = language_mapping[lang]['max_chars'] - 2
+    max_chars = language_mapping[lang]['max_chars'] + 2
 
     def combine_punctuation(raw_list):
         if not raw_list:
@@ -789,8 +787,9 @@ def get_sentences(text, lang, tts_engine):
 
     punctuations = sorted(punctuation_split, key=len, reverse=True)
     pattern_split = '|'.join(map(re.escape, punctuations))
-    pattern = rf"(.*?[{pattern_split}])(\s+|$)"
-    raw_list = []      
+    # build pattern: don’t split on any punctuation if it’s between two digits
+    pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
+    raw_list = []
     for match in re.finditer(pattern, text):
         s = match.group(1).strip()
         if s:
@@ -939,7 +938,7 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
 def check_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999):
     # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
     number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
-    def _replace(match):
+    def repnum(match):
         tok = unicodedata.normalize('NFKC', match.group())
         # pass through infinities/nans
         if tok.lower() in ('inf', 'infinity', 'nan'):
@@ -962,7 +961,7 @@ def check_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool,
         # integer handling
         result = num2words(num, lang=lang_iso1)
         return result
-    return number_re.sub(_replace, text)
+    return number_re.sub(repnum, text)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
