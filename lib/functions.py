@@ -971,7 +971,9 @@ def check_formatted_number(
                 return tok
 
         # integer handling
-        return num2words(num, lang=lang_iso1)
+        result = num2words(num, lang=lang_iso1)
+        print(result)
+        return result
 
     return number_re.sub(_replace, text)
 
