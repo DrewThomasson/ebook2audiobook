@@ -386,7 +386,7 @@ def convert2epub(session):
             return False
         if file_ext == '.pdf':
             import fitz
-            msg = 'File input is a PDF. flatten it in MD and HTML...'
+            msg = 'File input is a PDF. flatten it in MarkDown...'
             print(msg)
             doc = fitz.open(session['ebook'])
             pdf_metadata = doc.metadata
