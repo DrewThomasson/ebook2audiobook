@@ -2538,10 +2538,12 @@ def web_interface(args, ctx):
             return gr.update(interactive=False), gr.update(value=None), update_gr_voice_list(id), update_gr_audiobook_list(id), gr.update(value=session['audiobook']), gr.update(visible=False)
 
         def change_gr_audiobook_list(selected, id):
-            session = context.get_session(id)
-            session['audiobook'] = selected
-            visible = True if len(audiobook_options) else False
-            return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
+            if selected:
+                session = context.get_session(id)
+                session['audiobook'] = selected
+                visible = True if len(audiobook_options) else False
+                return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
+            return gr.update(), gr.update(), gr.update()
 
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
@@ -2619,11 +2621,13 @@ def web_interface(args, ctx):
             return gr.update()
 
         def change_gr_voice_list(selected, id):
-            session = context.get_session(id)
-            session['voice'] = next((value for label, value in voice_options if value == selected), None)
-            visible = True if session['voice'] is not None else False
-            min_width = 60 if session['voice'] is not None else 0
-            return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible)
+            if selected:
+                session = context.get_session(id)
+                session['voice'] = next((value for label, value in voice_options if value == selected), None)
+                visible = True if session['voice'] is not None else False
+                min_width = 60 if session['voice'] is not None else 0
+                return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible)
+            return gr.update(), gr.update()
 
         def click_gr_voice_del_btn(selected, id):
             try:
@@ -2827,19 +2831,21 @@ def web_interface(args, ctx):
             session['device'] = device
 
         def change_gr_language(selected, id):
-            session = context.get_session(id)
-            previous = session['language']
-            new = default_language_code if selected == 'zzz' else selected
-            session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
-            session['language'] = new
-            os.makedirs(session['voice_dir'], exist_ok=True)
-            return[
-                gr.update(value=session['language']),
-                update_gr_voice_list(id),
-                update_gr_tts_engine_list(id),
-                update_gr_custom_model_list(id),
-                update_gr_fine_tuned_list(id)
-            ]
+            if selected:
+                session = context.get_session(id)
+                previous = session['language']
+                new = default_language_code if selected == 'zzz' else selected
+                session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
+                session['language'] = new
+                os.makedirs(session['voice_dir'], exist_ok=True)
+                return[
+                    gr.update(value=session['language']),
+                    update_gr_voice_list(id),
+                    update_gr_tts_engine_list(id),
+                    update_gr_custom_model_list(id),
+                    update_gr_fine_tuned_list(id)
+                ]
+            return[gr.update(), gr.update(), gr.update(), gr.update(), gr.update()]
 
         def check_custom_model_tts(custom_model_dir, tts_engine):
             dir_path = os.path.join(custom_model_dir, tts_engine)
@@ -2906,20 +2912,24 @@ def web_interface(args, ctx):
                 return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), update_gr_voice_list(id), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
-            session = context.get_session(id)
-            visible = False
-            if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                if selected == 'internal':
-                    visible = visible_gr_group_custom_model
-            session['fine_tuned'] = selected
-            session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
-            return update_gr_voice_list(id), gr.update(visible=visible)
+            if selected:
+                session = context.get_session(id)
+                visible = False
+                if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                    if selected == 'internal':
+                        visible = visible_gr_group_custom_model
+                session['fine_tuned'] = selected
+                session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
+                return update_gr_voice_list(id), gr.update(visible=visible)
+            return gr.update(), gr.update()
 
         def change_gr_custom_model_list(selected, id):
-            session = context.get_session(id)
-            session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
-            visible = True if session['custom_model'] is not None else False
-            return gr.update(visible=not visible), gr.update(visible=visible)
+            if selected:
+                session = context.get_session(id)
+                session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
+                visible = True if session['custom_model'] is not None else False
+                return gr.update(visible=not visible), gr.update(visible=visible)
+            return gr.update(), gr.update()
         
         def change_gr_output_format_list(val, id):
             session = context.get_session(id)
