@@ -966,7 +966,7 @@ def check_formatted_number(
         # decimal handling
         if isinstance(num, float):
             if is_num2words_compat:
-                return num2words(num, lang=lang_iso1, to='decimal')
+                return num2words(num, lang=lang_iso1)
             else:
                 return tok
 
