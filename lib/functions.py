@@ -937,7 +937,7 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-def set_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
+def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
     # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
     number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
     def clean_num(match):
@@ -954,46 +954,14 @@ def set_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool, m
         # skip out of range or non finite
         if not math.isfinite(num) or abs(num) > max_single_value:
             return tok
-        # decimal handling
-        if isinstance(num, float):
-            if is_num2words_compat:
-                return num2words(num, lang=lang_iso1)
-            else:
-                return tok
-        # integer handling
-        return num2words(num, lang=lang_iso1)
+        if is_num2words_compat:
+            return num2words(num, lang=lang_iso1)
+        else:
+            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in num)
     return number_re.sub(clean_num, text)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
-    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-    def convert_num(match):
-        try:
-            number = match.group()
-            result = ' '
-            if number and number[-1] in '.,':
-                number = number[:-1]
-            if "." in number or "e" in number.lower():
-                number_value = float(number)
-                parts = re.split(r'([.,])', str(number_value), maxsplit=1)
-                if len(parts) == 1:
-                    int_part, sep, dec_part = parts[0], '', ''
-                else:
-                    int_part, sep, dec_part = parts
-                # Split long digit-runs (6-digit groups)
-                int_part = re.sub(r'(\d{6})(?=\d)', r'\1 ', int_part)
-                dec_part = re.sub(r'(\d{6})(?=\d)', r'\1 ', dec_part)
-                for n in int_part.split():
-                    result += num2words(int(n), lang=lang_iso1) if is_num2words_compat else ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in n)
-                result += ' ' + ''.join(language_math_phonemes[lang].get(ch, ch) for ch in sep)
-                for n in dec_part.split():
-                    result += num2words(int(n), lang=lang_iso1) if is_num2words_compat else ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in n)
-            else:
-                result += num2words(int(number), lang=lang_iso1)
-            return result
-        except Exception as e:
-            print(f"Error converting number: {number}, Error: {e}")
-            return match.group(0)
-
+    
     def replace_ambiguous(match):
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
@@ -1002,6 +970,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
+    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
@@ -1022,7 +991,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-    text = set_formatted_number(text, lang_iso1, is_num2words_compat)
+    text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
