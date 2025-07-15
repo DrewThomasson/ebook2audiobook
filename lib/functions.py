@@ -631,16 +631,15 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                     continue
                 headers = [c.get_text(strip=True) for c in rows[0].find_all(["td", "th"])]
                 for row in rows[1:]:
-                    cells = [c.get_text(strip=True).replace('\xa0', ' ')
-                             for c in row.find_all("td")]
+                    cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all("td")]
                     if len(cells) == len(headers):
                         line = " — ".join(f"{h}: {c}" for h, c in zip(headers, cells))
                     else:
                         line = " — ".join(cells)
                     if line:
-                        text_array.append(line)
-            else:  # "text"
-                text_array.append(payload)
+                        text_array.append(line.strip())
+            else:
+                text_array.append(payload.strip())
         combined = "\n".join(text_array)
         if not re.search(r"[^\W_]", combined):
             return None
@@ -1003,9 +1002,8 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
-    text = re.sub(r'(\d)\)', r'\1 : ', text)
-    # Pre-process formatted series (e.g. phone numbers) if needed
     text = check_formatted_number(text, lang_iso1, is_num2words_compat)
+    text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
     replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
