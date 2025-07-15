@@ -1066,7 +1066,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     pattern_space = re.escape(''.join(punctuation_list))
     # Ensure space before and after punctuation (excluding `,` and `.`)
     punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-    text = re.sub(punctuation_pattern_space, r' \1 ', text))
+    text = re.sub(punctuation_pattern_space, r' \1 ', text)
     # Replace special chars with words
     specialchars = specialchars_mapping.get(lang, specialchars_mapping['eng'])
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
