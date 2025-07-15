@@ -398,7 +398,7 @@ class Coqui:
                             audio_data = tts.synthesize(
                                 default_text,
                                 loaded_tts[tts_internal_key]['config'],
-                                speaker=speaker,
+                                speaker_id=speaker,
                                 voice_dirs=bark_dir,
                                 silent=True,
                                 **fine_tuned_params
