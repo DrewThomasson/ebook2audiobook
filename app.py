@@ -79,12 +79,11 @@ def check_and_install_requirements(file_path):
                 if spec_str:
                     spec = SpecifierSet(spec_str)
                     if installed_version not in spec:
-                        error = (f'{pkg_name} (installed {installed_version}) '
-                                 f"does not satisfy '{spec_str}'.")
+                        error = (f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".')
                         print(error)
                         missing_packages.append(package)
         if missing_packages:
-            msg = '\nInstalling missing or incompatible packages...\n'
+            msg = '\nInstalling missing or upgrade packages...\n'
             print(msg)
             tmp_dir = tempfile.mkdtemp()
             os.environ['TMPDIR'] = tmp_dir
