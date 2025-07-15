@@ -937,15 +937,11 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         return False
 
 def check_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999):
-    """
-    Scan `text` for comma‐grouped integers or decimals (up to 12 digits
-    before & after the point), strip out commas, and convert to words.
-    Respects the is_num2words_compat flag for decimal conversion.
-    """
     # Match 1–12 digits, optional “,…” groups of up to 12 digits, optional . up to 12 digits
     number_re = r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b'
     token_re  = re.compile(fr'{number_re}|[^\w\s]|\w+|\s+')
     tokens = token_re.findall(text)
+    print(tokens)
     result = []
     for tok in tokens:
         norm_tok = unicodedata.normalize('NFKC', tok)
