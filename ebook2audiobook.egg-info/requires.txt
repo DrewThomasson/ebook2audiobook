@@ -6,6 +6,8 @@ demucs
 docker
 ebooklib
 fastapi
+flashtext
+fugashi
 gradio
 hangul-romanize
 indic-nlp-library
@@ -15,6 +17,7 @@ soynlp
 pythainlp
 mutagen
 nvidia-ml-py
+phonemizer-fork
 pydub
 pyannote-audio
 PyOpenGL
