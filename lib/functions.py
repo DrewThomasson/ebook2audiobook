@@ -2450,12 +2450,10 @@ def web_interface(args, ctx):
             return gr.update(interactive=False), gr.update(value=None), update_gr_voice_list(id), update_gr_audiobook_list(id), gr.update(value=session['audiobook']), gr.update(visible=False)
 
         def change_gr_audiobook_list(selected, id):
-            if selected:
-                session = context.get_session(id)
-                session['audiobook'] = selected
-                visible = True if len(audiobook_options) else False
-                return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
-            return gr.update(), gr.update(), gr.update()
+            session = context.get_session(id)
+            session['audiobook'] = selected
+            visible = True if len(audiobook_options) else False
+            return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
 
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
@@ -2533,13 +2531,11 @@ def web_interface(args, ctx):
             return gr.update()
 
         def change_gr_voice_list(selected, id):
-            if selected:
-                session = context.get_session(id)
-                session['voice'] = next((value for label, value in voice_options if value == selected), None)
-                visible = True if session['voice'] is not None else False
-                min_width = 60 if session['voice'] is not None else 0
-                return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible)
-            return gr.update(), gr.update()
+            session = context.get_session(id)
+            session['voice'] = next((value for label, value in voice_options if value == selected), None)
+            visible = True if session['voice'] is not None else False
+            min_width = 60 if session['voice'] is not None else 0
+            return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible)
 
         def click_gr_voice_del_btn(selected, id):
             try:
@@ -2836,12 +2832,10 @@ def web_interface(args, ctx):
             return gr.update(), gr.update()
 
         def change_gr_custom_model_list(selected, id):
-            if selected:
-                session = context.get_session(id)
-                session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
-                visible = True if session['custom_model'] is not None else False
-                return gr.update(visible=not visible), gr.update(visible=visible)
-            return gr.update(), gr.update()
+            session = context.get_session(id)
+            session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
+            visible = True if session['custom_model'] is not None else False
+            return gr.update(visible=not visible), gr.update(visible=visible)
         
         def change_gr_output_format_list(val, id):
             session = context.get_session(id)
@@ -3359,7 +3353,6 @@ def web_interface(args, ctx):
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
         interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
-        
     except OSError as e:
         error = f'Connection error: {e}'
         alert_exception(error)
