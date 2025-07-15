@@ -529,16 +529,15 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             return [], []
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
-        is_year_decades = False
+        stanza_nlp = False
         if session['language'] in year_to_decades_languages:
             stanza.download(session['language_iso1'])
             stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
-            is_year_decades = True
         is_num2words_compat = get_num2words_compat(session['language_iso1'])
         msg = 'Analyzing maths and dates to convert in words...'
         print(msg)
         for doc in all_docs:
-            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], is_year_decades)
+            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp)
             if sentences_list is not None:
                 chapters.append(sentences_list)
         return toc, chapters
@@ -547,7 +546,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return None, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine, is_year_decades):
+def filter_chapter(doc, lang, lang_iso1, tts_engine):
     try:
         heading_tags = {f'h{i}' for i in range(1, 7)}
         raw_html = doc.get_body_content().decode("utf-8")
@@ -619,7 +618,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_year_decades):
         if not re.search(r"[^\W_]", text):
             return None
         text = normalize_text(text, lang, lang_iso1, tts_engine)
-        if is_year_decades:
+        if stanza_nlp:
             # Check if numbers exists in the text
             if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)): 
                 # Check if there are positive integers so possible date to convert
