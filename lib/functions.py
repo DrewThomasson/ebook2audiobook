@@ -538,7 +538,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         msg = 'Analizing maths and dates to convert in words...'
         print(msg)
         for doc in all_docs:
-            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
+            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
             if sentences_list is not None:
                 for i, sentence in enumerate(sentences_list):
                     if is_year_decades:
@@ -572,7 +572,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return None, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine):
+def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
     try:
         heading_tags = {f'h{i}' for i in range(1, 7)}
         raw_html = doc.get_body_content().decode("utf-8")
@@ -643,6 +643,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
         combined = "\n".join(text_array)
         if not re.search(r"[^\W_]", combined):
             return None
+        text = check_formatted_number(text, lang_iso1, is_num2words_compat)
         normalized = normalize_text(combined, lang, lang_iso1, tts_engine)
         if normalized is None:
             return None
