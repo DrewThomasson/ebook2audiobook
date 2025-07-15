@@ -972,9 +972,9 @@ def check_formatted_number(
 
         # integer handling
         result = num2words(num, lang=lang_iso1)
-        print(result)
         return result
 
+    print(text)
     return number_re.sub(_replace, text)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
