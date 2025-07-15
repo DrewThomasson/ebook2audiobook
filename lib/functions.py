@@ -617,7 +617,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         text = "\n".join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
-        text = normalize_text(text, lang, lang_iso1, tts_engine)
         if stanza_nlp:
             # Check if numbers exists in the text
             if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)): 
@@ -643,9 +642,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
         # Ensure space before and after punctuation (excluding `,` and `.`)
-        #pattern_space = re.escape(''.join(punctuation_list))
-        #punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space)
-        #text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        pattern_space = re.escape(''.join(punctuation_list))
+        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space)
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        text = normalize_text(text, lang, lang_iso1, tts_engine)
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         DependencyError(e)
