@@ -546,7 +546,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return None, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine):
+def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp):
     try:
         heading_tags = {f'h{i}' for i in range(1, 7)}
         raw_html = doc.get_body_content().decode("utf-8")
