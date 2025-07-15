@@ -9,7 +9,6 @@ import argparse
 import asyncio
 import csv
 import fnmatch
-import gc
 import hashlib
 import io
 import json
@@ -41,6 +40,7 @@ import stanza
 import torch
 import uvicorn
 
+from flashtext import KeywordProcessor
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
@@ -535,34 +535,11 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
             is_year_decades = True
         is_num2words_compat = get_num2words_compat(session['language_iso1'])
-        msg = 'Analizing maths and dates to convert in words...'
+        msg = 'Analyzing maths and dates to convert in words...'
         print(msg)
         for doc in all_docs:
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
             if sentences_list is not None:
-                for i, sentence in enumerate(sentences_list):
-                    if is_year_decades:
-                        # Check if numbers exists in the sentence
-                        if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
-                            # Check if there are positive integers so possible date to convert
-                            if bool(re.search(r'\b\d+\b', sentence)):
-                                date_spans = get_date_entities(sentence, stanza_nlp)
-                                if date_spans:
-                                    result = []
-                                    last_pos = 0
-                                    for start, end, date_text in date_spans:
-                                        # Append sentence before this date
-                                        result.append(sentence[last_pos:start])
-                                        processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), session['language'], session['language_iso1'], is_num2words_compat), date_text)
-                                        if not processed:
-                                            break
-                                        result.append(processed)
-                                        last_pos = end
-                                    # Append remaining sentence
-                                    result.append(sentence[last_pos:])
-                                    sentence = ''.join(result)
-                    sentence = math2word(sentence, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
-                    sentences_list[i] = sentence
                 chapters.append(sentences_list)
         return toc, chapters
     except Exception as e:
@@ -638,13 +615,35 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine):
                         text_array.append(line.strip())
             else:
                 text_array.append(payload.strip())
-        combined = "\n".join(text_array)
-        if not re.search(r"[^\W_]", combined):
+        text = "\n".join(text_array)
+        if not re.search(r"[^\W_]", text):
             return None
-        normalized = normalize_text(combined, lang, lang_iso1, tts_engine)
-        if normalized is None:
-            return None
-        return get_sentences(normalized, lang, tts_engine)
+        text = normalize_text(text, lang, lang_iso1, tts_engine)
+        if is_year_decades:
+            # Check if numbers exists in the text
+            if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)): 
+                # Check if there are positive integers so possible date to convert
+                if bool(re.search(r'\b\d+\b', text)):
+                    date_spans = get_date_entities(text, stanza_nlp)
+                    if date_spans:
+                        result = []
+                        last_pos = 0
+                        for start, end, date_text in date_spans:
+                            # Append text before this date
+                            result.append(text[last_pos:start])
+                            processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), session['language'], session['language_iso1'], is_num2words_compat), date_text)
+                            if not processed:
+                                break
+                            result.append(processed)
+                            last_pos = end
+                        # Append remaining text
+                        result.append(text[last_pos:])
+                        text = ''.join(result)
+        text = math2word(text, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
+        # build a translation table mapping each bad char to a space
+        specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
+        text = text.translate(specialchars_remove_table)
+        return get_sentences(text, lang, tts_engine)
     except Exception as e:
         DependencyError(e)
         return None
@@ -1028,9 +1027,12 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
-        abbr_map = {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping[lang].items()}
-        pattern = re.compile(r'\b(' + '|'.join(re.escape(k).replace('\\.', '') for k in abbreviations_mapping[lang].keys()) + r')\.?\b', re.IGNORECASE)
-        text = pattern.sub(lambda m: abbr_map.get(m.group(1).lower(), m.group()), text)
+        kp = KeywordProcessor(case_sensitive=False)
+        for abbr, expansion in abbreviations_mapping[lang].items():
+            key = abbr.rstrip('.')
+            kp.add_keyword(key, expansion)
+            kp.add_keyword(key + '.', expansion)
+        text = kp.replace_keywords(text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
@@ -1072,11 +1074,9 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
     text = re.sub(comma_dot_pattern, r' \1 ', text)
     # Replace special chars with words
-    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
-    for char, word in specialchars.items():
-        text = text.replace(char, f" {word} ")
-    for char in specialchars_remove:
-        text = text.replace(char, ' ')
+    specialchars = specialchars_mapping.get(lang, specialchars_mapping['eng'])
+    specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
+    text = text.translate(specialchars_table)
     text = ' '.join(text.split())
     if bool(re.search(r'[^\W_]', text)):
         # Add punctuation after numbers or Roman numerals at start of a chapter.
@@ -1086,8 +1086,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
             # Add punctuation if not already present (e.g. "II", "4")
             if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
-        return text
-    return None
+    return text
 
 def convert_chapters2audio(session):
     try:
