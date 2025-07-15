@@ -617,7 +617,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         text = "\n".join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
-        #text = normalize_text(text, lang, lang_iso1, tts_engine)
+        text = normalize_text(text, lang, lang_iso1, tts_engine)
         if stanza_nlp:
             # Check if numbers exists in the text
             if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)): 
@@ -1064,11 +1064,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Ensure space before and after punctuation (excluding `,` and `.`)
     punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
     text = re.sub(punctuation_pattern_space, r' \1 ', text)
-    # If this whole `text` is not a valid thousands-grouped number…
-    grouped_num_re = re.compile(r'^\d{1,3}(?:,\d{3})*(?:\.\d+)?$')
-    if not grouped_num_re.match(text):
-        # then force spaces around *every* comma between digits…
-        text = re.sub(r'(?<=\d),(?=\d)', ' , ', text)
     # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
     comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
     text = re.sub(comma_dot_pattern, r' \1 ', text)
