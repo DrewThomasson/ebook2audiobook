@@ -643,7 +643,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, is_num2words_compat):
         combined = "\n".join(text_array)
         if not re.search(r"[^\W_]", combined):
             return None
-        text = check_formatted_number(text, lang_iso1, is_num2words_compat)
+        combined = check_formatted_number(combined, lang_iso1, is_num2words_compat)
         normalized = normalize_text(combined, lang, lang_iso1, tts_engine)
         if normalized is None:
             return None
