@@ -935,10 +935,10 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-def check_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999):
+def set_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
     # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
     number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
-    def repnum(match):
+    def clean_num(match):
         tok = unicodedata.normalize('NFKC', match.group())
         # pass through infinities/nans
         if tok.lower() in ('inf', 'infinity', 'nan'):
@@ -949,7 +949,7 @@ def check_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool,
             num = float(clean) if '.' in clean else int(clean)
         except (ValueError, OverflowError):
             return tok
-        # skip out‐of‐range or non‐finite
+        # skip out of range or non finite
         if not math.isfinite(num) or abs(num) > max_single_value:
             return tok
         # decimal handling
@@ -959,13 +959,12 @@ def check_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool,
             else:
                 return tok
         # integer handling
-        result = num2words(num, lang=lang_iso1)
-        return result
-    return number_re.sub(repnum, text)
+        return num2words(num, lang=lang_iso1)
+    return number_re.sub(clean_num, text)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-    def rep_num(match):
+    def convert_num(match):
         try:
             number = match.group()
             result = ' '
@@ -1001,7 +1000,6 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
-    text = check_formatted_number(text, lang_iso1, is_num2words_compat)
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
@@ -1022,17 +1020,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-    if tts_engine != TTS_ENGINES['XTTSv2']:
-        # Number-to-words: build a pattern that finds any standalone number,
-        # with commas, decimals or exponents.
-        number_pattern = (
-            r'(?<!\S)'                                      # whitespace or start
-            r'(-?\d{1,3}(?:,\d{3})*'                        # integer with optional commas
-            r'(?:\.\d+)?'                                   # optional decimal
-            r'(?:[eE][+-]?\d+)?)'                           # optional exponent
-            r'(?!\S)'                                       # whitespace or end
-        )
-        text = re.sub(number_pattern, rep_num, text)
+    text = set_formatted_number(text, lang_iso1, is_num2words_compat)
     return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
