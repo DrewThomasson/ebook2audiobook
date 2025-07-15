@@ -936,46 +936,44 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-def check_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999):
-    # Match 1–12 digits, optional “,…” groups of up to 12 digits, optional . up to 12 digits
-    number_re = r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b'
-    token_re  = re.compile(fr'{number_re}|[^\w\s]|\w+|\s+')
-    tokens = token_re.findall(text)
-    print(tokens)
-    result = []
-    for tok in tokens:
-        norm_tok = unicodedata.normalize('NFKC', tok)
+def check_formatted_number(
+    text: str,
+    lang_iso1: str,
+    is_num2words_compat: bool,
+    max_single_value: int = 999_999_999_999
+) -> str:
+    # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
+    number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
+
+    def _replace(match):
+        tok = unicodedata.normalize('NFKC', match.group())
         # pass through infinities/nans
-        if norm_tok.lower() in ('inf', 'infinity', 'nan'):
-            result.append(norm_tok)
-            continue
-        # matched a grouped integer or decimal?
-        if re.fullmatch(number_re, norm_tok):
-            # strip commas, parse
-            clean = norm_tok.replace(',', '')
-            try:
-                num = float(clean) if '.' in clean else int(clean)
-            except (ValueError, OverflowError):
-                result.append(norm_tok)
-                continue
-            # check bounds
-            if not math.isfinite(num) or abs(num) > max_single_value:
-                result.append(norm_tok)
+        if tok.lower() in ('inf', 'infinity', 'nan'):
+            return tok
+
+        # strip commas for numeric parsing
+        clean = tok.replace(',', '')
+
+        try:
+            num = float(clean) if '.' in clean else int(clean)
+        except (ValueError, OverflowError):
+            return tok
+
+        # skip out‐of‐range or non‐finite
+        if not math.isfinite(num) or abs(num) > max_single_value:
+            return tok
+
+        # decimal handling
+        if isinstance(num, float):
+            if is_num2words_compat:
+                return num2words(num, lang=lang_iso1, to='decimal')
             else:
-                # decimal case
-                if isinstance(num, float):
-                    if is_num2words_compat:
-                        # use decimal mode to get “point” wording
-                        result.append(num2words(num, lang=lang_iso1, to='decimal'))
-                    else:
-                        result.append(norm_tok)
-                # integer case
-                else:
-                    result.append(num2words(num, lang=lang_iso1))
-        else:
-            # anything else—words, punctuation, whitespace
-            result.append(norm_tok)
-    return ''.join(result)
+                return tok
+
+        # integer handling
+        return num2words(num, lang=lang_iso1)
+
+    return number_re.sub(_replace, text)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
