@@ -562,6 +562,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                                     result.append(sentence[last_pos:])
                                     sentence = ''.join(result)
                     if session['tts_engine'] not in [TTS_ENGINES['XTTSv2'], TTS_ENGINES['BARK']]:
+                        print(sentence)
                         sentence = math2word(sentence, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
                     sentences_list[i] = sentence
                 chapters.append(sentences_list)
@@ -936,45 +937,32 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-def check_formatted_number(
-    text: str,
-    lang_iso1: str,
-    is_num2words_compat: bool,
-    max_single_value: int = 999_999_999_999
-) -> str:
+def check_formatted_number(text: str, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999):
     # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
     number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
-
     def _replace(match):
         tok = unicodedata.normalize('NFKC', match.group())
         # pass through infinities/nans
         if tok.lower() in ('inf', 'infinity', 'nan'):
             return tok
-
         # strip commas for numeric parsing
         clean = tok.replace(',', '')
-
         try:
             num = float(clean) if '.' in clean else int(clean)
         except (ValueError, OverflowError):
             return tok
-
         # skip out‐of‐range or non‐finite
         if not math.isfinite(num) or abs(num) > max_single_value:
             return tok
-
         # decimal handling
         if isinstance(num, float):
             if is_num2words_compat:
                 return num2words(num, lang=lang_iso1)
             else:
                 return tok
-
         # integer handling
         result = num2words(num, lang=lang_iso1)
         return result
-
-    print(text)
     return number_re.sub(_replace, text)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
