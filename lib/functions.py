@@ -742,7 +742,6 @@ def get_sentences(text, lang, tts_engine):
         return best_index
 
     def split_sentence(sentence):
-        sentence = sentence.strip()
         if not re.search(r'[^\W_]', sentence, re.UNICODE):
             return []
         if len(sentence) <= max_chars:
@@ -769,7 +768,7 @@ def get_sentences(text, lang, tts_engine):
         if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != TTS_ENGINES['BARK']:
             end = ' -' if delim_used == ' ' else end
         part1 = sentence[:split_index].rstrip()
-        part2 = sentence[split_index:].lstrip(' ,;:')
+        part2 = sentence[split_index:].lstrip(' ,;:!?-.')
         result = []
         if len(part1) <= max_chars:
             if part1 and part1[-1].isalpha():
