@@ -39,7 +39,6 @@ import stanza
 import torch
 import uvicorn
 
-from flashtext import KeywordProcessor
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
@@ -998,13 +997,21 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
-        kp = KeywordProcessor(case_sensitive=False)
-        kp.non_word_boundaries = set()
-        for abbr, expansion in abbreviations_mapping[lang].items():
-            key = abbr.rstrip('.')
-            kp.add_keyword(key, expansion)
-            kp.add_keyword(key + '.', expansion)
-        text = kp.replace_keywords(text)
+        def _replace_abbreviations(match: re.Match) -> str:
+            token = match.group(1)
+            for k, expansion in mapping.items():
+                if token.lower() == k.lower():
+                    return expansion
+            return token  # fallback
+        mapping = abbreviations_mapping[lang]
+        # Sort keys by descending length so longer ones match first
+        keys = sorted(mapping.keys(), key=len, reverse=True)
+        # Build a regex that only matches whole “words” (tokens) exactly
+        pattern = re.compile(
+            r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
+            flags=re.IGNORECASE
+        )
+        text = pattern.sub(_replace_abbreviations, text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
