@@ -918,14 +918,14 @@ def get_num2words_compat(lang_iso1):
 def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
     try:
         year = int(year_str)
+        first_two = int(year_str[:2])
+        last_two = int(year_str[2:])
         lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
-        if not year_str.isdigit() or len(year_str) != 4 or year % 100 == 0:
+        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
             else:
                 return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
-        first_two = int(year_str[:2])
-        last_two = int(year_str[2:])
         if is_num2words_compat:
             return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}" 
         else:
