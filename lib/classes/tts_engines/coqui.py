@@ -458,6 +458,8 @@ class Coqui:
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
                     sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
+                elif self.session['tts_engine'] in [TTS_ENGINES['FAIRSEQ']]:
+                    sentence_parts = [p.replace('.', ' ; ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(1.2, 2.1) * 100) / 100))) # 1.4 seconds
                 extra_audio_buffer = 0
                 audio_segments = []
