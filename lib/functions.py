@@ -2061,8 +2061,9 @@ def web_interface(args, ctx):
                     position: fixed;
                     top: 0; left: 0;
                     width: 100vw; height: 100vh;
-                    background: rgba(255, 255, 255, 0.6);
+                    background: rgba(255,255,255,0.6);
                     backdrop-filter: blur(8px);
+                    -webkit-backdrop-filter: blur(8px);
                     display: flex;
                     align-items: center;
                     justify-content: center;
