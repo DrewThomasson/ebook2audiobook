@@ -1772,7 +1772,7 @@ def convert_ebook(args, ctx=None):
                                 if len(session['metadata']['language']) == 2:
                                     lang_array = languages.get(part1=session['language'])
                                     if lang_array:
-                                        session['metadata']['language'] = lang_array.part3     
+                                        session['metadata']['language'] = lang_array.part3
                             except Exception as e:
                                 pass                         
                             if session['metadata']['language'] != session['language']:
