@@ -920,7 +920,7 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
     try:
         year = int(year_str)
         lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
-        if len(year_str) != 4 or not year_str.isdigit():
+        if not year_str.isdigit() or len(year_str) != 4 or year % 100 == 0:
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
             else:
