@@ -640,7 +640,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
-        #text = normalize_text(text, lang, lang_iso1, tts_engine)
+        text = normalize_text(text, lang, lang_iso1, tts_engine)
         # Ensure space before and after punctuation_list
         pattern_space = re.escape(''.join(punctuation_list))
         punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space)
@@ -997,13 +997,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
-    if lang in abbreviations_mapping:
-        kp = KeywordProcessor(case_sensitive=False)
-        for abbr, expansion in abbreviations_mapping[lang].items():
-            key = abbr.rstrip('.')
-            kp.add_keyword(key, expansion)
-            kp.add_keyword(key + '.', expansion)
-        text = kp.replace_keywords(text)
+
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
