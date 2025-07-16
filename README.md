@@ -69,14 +69,6 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 </details>
 
 ## README.md
-- ara [العربية (Arabic)](./readme/README_AR.md)
-- zho [中文 (Chinese)](./readme/README_CN.md)
-- eng [English](README.md)
-- swe [Svenska (Swedish)](./readme/README_SWE.md)
-- fas [فارسی (Persian)](./readme/README_FA.md)
-- kor [한국어 (Korean)](./readme/README_KR.md)
-- ita [Italiano (Italian)](./readme/README.it.md)
-
 
 ## Table of Contents
 - [ebook2audiobook](#-ebook2audiobook)
