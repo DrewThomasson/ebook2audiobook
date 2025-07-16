@@ -45,9 +45,9 @@ def normalize_audio_folder(folder_path):
             if file.lower().endswith('.wav'):
                 input_file = os.path.join(root, file)
                 models_dir = os.path.join('..', 'models', 'tts')
-                demucs_file = demucs_voice(input_file, folder_path, models_dir)
+                #demucs_file = demucs_voice(input_file, folder_path, models_dir)
                 process_file = os.path.join(root, 'temp_output.wav')  # Temporary file to avoid overwriting during processing
-                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', demucs_file]
+                ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', input_file]
                 filter_complex = (
                     'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
                     'afftdn=nf=-70,'
