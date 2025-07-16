@@ -997,7 +997,14 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
-
+    if lang in abbreviations_mapping:
+        kp = KeywordProcessor(case_sensitive=False)
+        kp.set_word_boundaries(' \t\n\r.,!?()"\'«»[]{}')
+        for abbr, expansion in abbreviations_mapping[lang].items():
+            key = abbr.rstrip('.')
+            kp.add_keyword(key, expansion)
+            kp.add_keyword(key + '.', expansion)
+        text = kp.replace_keywords(text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
