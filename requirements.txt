@@ -6,8 +6,9 @@ demucs
 docker
 ebooklib
 fastapi
+flashtext
 fugashi
-gradio
+gradio==5.35.0
 hangul-romanize
 indic-nlp-library
 iso-639
