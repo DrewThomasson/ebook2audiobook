@@ -638,8 +638,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         text = ''.join(result)
         text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
-        #specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
-        #text = text.translate(specialchars_remove_table)
+        specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
+        text = text.translate(specialchars_remove_table)
         #text = normalize_text(text, lang, lang_iso1, tts_engine)
         # Ensure space before and after punctuation_list
         #pattern_space = re.escape(''.join(punctuation_list))
