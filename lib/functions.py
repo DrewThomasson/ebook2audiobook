@@ -2745,7 +2745,8 @@ def web_interface(args, ctx):
                 new = default_language_code if selected == 'zzz' else selected
                 session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
                 session['voice'] = session['voice'].replace(f'/{previous}/',f'/{new}/') if session['voice'] is not None else None
-                session['voice'] = session['voice'] if os.path.exists(session['voice']) else None
+                if session['voice'] is not None:
+                    session['voice'] = session['voice'] if os.path.exists(session['voice']) else None
                 session['language'] = new
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 return[
