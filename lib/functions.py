@@ -9,7 +9,6 @@ import argparse
 import asyncio
 import csv
 import fnmatch
-import gc
 import hashlib
 import io
 import json
@@ -32,7 +31,6 @@ import zipfile
 
 import ebooklib
 import gradio as gr
-import jieba
 import psutil
 import pymupdf4llm
 import regex as re
@@ -41,12 +39,13 @@ import stanza
 import torch
 import uvicorn
 
+from flashtext import KeywordProcessor
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
 from PIL import Image
 from tqdm import tqdm
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import Counter
 from collections.abc import Mapping
 from collections.abc import MutableMapping
@@ -386,7 +385,7 @@ def convert2epub(session):
             return False
         if file_ext == '.pdf':
             import fitz
-            msg = 'File input is a PDF. flatten it in MD and HTML...'
+            msg = 'File input is a PDF. flatten it in MarkDown...'
             print(msg)
             doc = fitz.open(session['ebook'])
             pdf_metadata = doc.metadata
@@ -394,6 +393,10 @@ def convert2epub(session):
             title = pdf_metadata.get('title') or filename_no_ext
             author = pdf_metadata.get('author') or False
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
+            # Remove single asterisks for italics (but not bold **)
+            markdown_text = re.sub(r'(?<!\*)\*(?!\*)(.*?)\*(?!\*)', r'\1', markdown_text)
+            # Remove single underscores for italics (but not bold __)
+            markdown_text = re.sub(r'(?<!_)_(?!_)(.*?)_(?!_)', r'\1', markdown_text)
             file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
             with open(file_input, "w", encoding="utf-8") as html_file:
                 html_file.write(markdown_text)
@@ -525,40 +528,16 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             return [], []
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
-        is_year_decades = False
+        stanza_nlp = False
         if session['language'] in year_to_decades_languages:
             stanza.download(session['language_iso1'])
             stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
-            is_year_decades = True
         is_num2words_compat = get_num2words_compat(session['language_iso1'])
-        msg = 'Analizing maths and dates to convert in words...'
+        msg = 'Analyzing maths and dates to convert in words...'
         print(msg)
         for doc in all_docs:
-            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'])
+            sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
             if sentences_list is not None:
-                for i, sentence in enumerate(sentences_list):
-                    if is_year_decades:
-                        # Check if numbers exists in the sentence
-                        if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', sentence)): 
-                            # Check if there are positive integers so possible date to convert
-                            if bool(re.search(r'\b\d+\b', sentence)):
-                                date_spans = get_date_entities(sentence, stanza_nlp)
-                                if date_spans:
-                                    result = []
-                                    last_pos = 0
-                                    for start, end, date_text in date_spans:
-                                        # Append sentence before this date
-                                        result.append(sentence[last_pos:start])
-                                        processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), session['language'], session['language_iso1'], is_num2words_compat), date_text)
-                                        if not processed:
-                                            break
-                                        result.append(processed)
-                                        last_pos = end
-                                    # Append remaining sentence
-                                    result.append(sentence[last_pos:])
-                                    sentence = ''.join(result)
-                    sentence = math2word(sentence, session['language'], session['language_iso1'], session['tts_engine'], is_num2words_compat)
-                    sentences_list[i] = sentence
                 chapters.append(sentences_list)
         return toc, chapters
     except Exception as e:
@@ -566,87 +545,113 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return None, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine):
+def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
     try:
-        chapter_sentences = None
+        heading_tags = {f'h{i}' for i in range(1, 7)}
         raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
-        if not soup.body or not soup.body.get_text(strip=True):
+        body = soup.body
+        if not body or not body.get_text(strip=True):
             return None
-        # Get epub:type from <body> or outermost <section>
-        epub_type = soup.body.get("epub:type", "").lower()
+        # Skip known non-chapter types
+        epub_type = body.get("epub:type", "").lower()
         if not epub_type:
             section_tag = soup.find("section")
-            if section_tag and section_tag.get("epub:type"):
-                epub_type = section_tag.get("epub:type").lower()
-        # Skip known non-chapter types
-        excluded_types = {
+            if section_tag:
+                epub_type = section_tag.get("epub:type", "").lower()
+        excluded = {
             "frontmatter", "backmatter", "toc", "titlepage", "colophon",
             "acknowledgments", "dedication", "glossary", "index",
             "appendix", "bibliography", "copyright-page", "landmark"
         }
-        if any(part in epub_type for part in excluded_types):
+        if any(part in epub_type for part in excluded):
             return None
-        for script in soup(["script", "style"]):
-            script.decompose()
-        # --- NEW: detect whether any real <p> exists ---
-        has_real_p = any(p.get_text(strip=True) for p in soup.find_all("p"))
-        # build the list of tags to scan
-        base_tags = ["h1", "h2", "h3", "h4", "h5", "h6", "table"]
-        if has_real_p:
-            base_tags.append("p")
-        else:
-            # fallback to div/span when no paragraphs exist
-            base_tags.extend(["div", "span"])
+        # remove scripts/styles
+        for tag in soup(["script", "style"]):
+            tag.decompose()
+        # helper to walk in document order
+        def walk(node):
+            for child in node.children:
+                if isinstance(child, NavigableString):
+                    text = child.strip()
+                    if text:
+                        yield ("text", text)
+                elif isinstance(child, Tag):
+                    if child.name in heading_tags:
+                        title = child.get_text(strip=True)
+                        if title:
+                            yield ("heading", title)
+                    elif child.name == "table":
+                        yield ("table", child)
+                    else:
+                        yield from walk(child)
+        items = list(walk(body))
+        if not items:
+            return None
         text_array = []
         handled_tables = set()
-        for tag in soup.find_all(base_tags):
-            if tag.name == "table":
-                # Ensure we don't process the same table multiple times
-                if tag in handled_tables:
+        for typ, payload in items:
+            if typ == "heading":
+                raw_text = replace_roman_numbers(payload, lang)
+                text_array.append(f"{raw_text}.[pause]")
+            elif typ == "table":
+                table = payload
+                if table in handled_tables:
                     continue
-                handled_tables.add(tag)
-                rows = tag.find_all("tr")
+                handled_tables.add(table)
+                rows = table.find_all("tr")
                 if not rows:
                     continue
-                header_cells = [td.get_text(strip=True) for td in rows[0].find_all(["td", "th"])]
+                headers = [c.get_text(strip=True) for c in rows[0].find_all(["td", "th"])]
                 for row in rows[1:]:
-                    cells = [td.get_text(strip=True).replace('\xa0', ' ')
-                             for td in row.find_all("td")]
-                    if len(cells) == len(header_cells):
-                        line = " — ".join(f"{header}: {cell}" for header, cell in zip(header_cells, cells))
+                    cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all("td")]
+                    if len(cells) == len(headers):
+                        line = " — ".join(f"{h}: {c}" for h, c in zip(headers, cells))
                     else:
                         line = " — ".join(cells)
                     if line:
-                        text_array.append(line)
-            elif tag.name in ["p", "div", "span"] and tag.find_parent("table"):
-                continue  # Already handled in the <table> section
-            elif tag.name == "p" and "whitespace" in (tag.get("class") or []):
-                if tag.get_text(strip=True) == '\xa0' or not tag.get_text(strip=True):
-                    text_array.append("[pause]")
-            elif tag.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-                raw_text = tag.get_text(strip=True)
-                if raw_text:
-                    # replace roman numbers by digits
-                    raw_text = replace_roman_numbers(raw_text, lang)
-                    text_array.append(f'{raw_text}.[pause]')
+                        text_array.append(line.strip())
             else:
-                raw_text = tag.get_text(strip=True)
-                if raw_text:
-                    text_array.append(raw_text)
+                text_array.append(payload.strip())
         text = "\n".join(text_array)
-        if bool(re.search(r'[^\W_]', text)):
-            # Normalize lines and remove unnecessary spaces and switch special chars
-            text = normalize_text(text, lang, lang_iso1, tts_engine)
-            if text is not None:
-                chapter_sentences = get_sentences(text, lang, tts_engine)
-        return chapter_sentences
+        if not re.search(r"[^\W_]", text):
+            return None
+        if stanza_nlp:
+            # Check if numbers exists in the text
+            if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)): 
+                # Check if there are positive integers so possible date to convert
+                if bool(re.search(r'\b\d+\b', text)):
+                    date_spans = get_date_entities(text, stanza_nlp)
+                    if date_spans:
+                        result = []
+                        last_pos = 0
+                        for start, end, date_text in date_spans:
+                            # Append text before this date
+                            result.append(text[last_pos:start])
+                            processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), lang, lang_iso1, is_num2words_compat), date_text)
+                            if not processed:
+                                break
+                            result.append(processed)
+                            last_pos = end
+                        # Append remaining text
+                        result.append(text[last_pos:])
+                        text = ''.join(result)
+        text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+        # build a translation table mapping each bad char to a space
+        specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
+        text = text.translate(specialchars_remove_table)
+        text = normalize_text(text, lang, lang_iso1, tts_engine)
+        # Ensure space before and after punctuation_list
+        pattern_space = re.escape(''.join(punctuation_list))
+        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space)
+        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        return get_sentences(text, lang, tts_engine)
     except Exception as e:
         DependencyError(e)
         return None
 
 def get_sentences(text, lang, tts_engine):
-    max_chars = language_mapping[lang]['max_chars'] - 2
+    max_chars = language_mapping[lang]['max_chars'] + 2
 
     def combine_punctuation(raw_list):
         if not raw_list:
@@ -671,6 +676,7 @@ def get_sentences(text, lang, tts_engine):
 
     def segment_ideogramms(text):
         if lang == 'zho':
+            import jieba
             return list(jieba.cut(text))
         elif lang == 'jpn':
             sudachi = dictionary.Dictionary().create()
@@ -783,8 +789,9 @@ def get_sentences(text, lang, tts_engine):
 
     punctuations = sorted(punctuation_split, key=len, reverse=True)
     pattern_split = '|'.join(map(re.escape, punctuations))
-    pattern = rf"(.*?[{pattern_split}])(\s+|$)"
-    raw_list = []      
+    # build pattern: don’t split on any punctuation if it’s between two digits
+    pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
+    raw_list = []
     for match in re.finditer(pattern, text):
         s = match.group(1).strip()
         if s:
@@ -930,76 +937,31 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-def check_formatted_number(text, lang_iso1, is_num2words_compat, max_single_value=999_999_999):
-    text = text.strip()
-    # Otherwise tokenize and process each number/token individually
-    # captures decimals, ints, punctuation, words, and whitespace
-    token_re = re.compile(r'\d*\.\d+|\d+|[^\w\s]|\w+|\s+')
-    tokens = token_re.findall(text)
-    result = []
-    for tok in tokens:
-        # Normalize any superscripts, circled numbers, etc.
-        norm_tok = unicodedata.normalize('NFKC', tok)
-        # If we ever see 'inf', 'infinity' or 'nan', just treat it as text
-        if norm_tok.lower() in ('inf', 'infinity', 'nan'):
-            result.append(norm_tok)
-            continue
-        # Decimal numbers like "123.45"
-        if re.fullmatch(r'\d*\.\d+', norm_tok):
-            if is_num2words_compat:
-                try:
-                    num = float(norm_tok)
-                except (ValueError, OverflowError):
-                    result.append(norm_tok)
-                    continue
-                # guard against infinities and NaNs
-                if not math.isfinite(num):
-                    result.append(norm_tok)
-                else:
-                    result.append(num2words(num, lang=lang_iso1))
-            else:
-                result.append(norm_tok)
-        # Pure integer tokens
-        elif norm_tok.isdecimal():
-            if is_num2words_compat:
-                try:
-                    num = int(norm_tok)
-                except (ValueError, OverflowError):
-                    result.append(norm_tok)
-                    continue
-                # skip conversion if it’s outside your allowed range
-                if abs(num) > max_single_value:
-                    result.append(norm_tok)
-                else:
-                    result.append(num2words(num, lang=lang_iso1))
-            else:
-                result.append(norm_tok)
+def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
+    # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
+    number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
+    def clean_num(match):
+        tok = unicodedata.normalize('NFKC', match.group())
+        # pass through infinities/nans
+        if tok.lower() in ('inf', 'infinity', 'nan'):
+            return tok
+        # strip commas for numeric parsing
+        clean = tok.replace(',', '')
+        try:
+            num = float(clean) if '.' in clean else int(clean)
+        except (ValueError, OverflowError):
+            return tok
+        # skip out of range or non finite
+        if not math.isfinite(num) or abs(num) > max_single_value:
+            return tok
+        if is_num2words_compat:
+            return num2words(num, lang=lang_iso1)
         else:
-            result.append(norm_tok)
-    return ''.join(result)
+            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in num)
+    return number_re.sub(clean_num, text)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
-    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-    def rep_num(match):
-        try:
-            number = match.group()
-            trailing = ''
-            if number and number[-1] in '.,':
-                trailing = number[-1]
-                number = number[:-1]
-            if "." in number or "e" in number.lower():
-                number_value = float(number)
-            else:
-                number_value = int(number)
-            if is_num2words_compat:
-                return num2words(number_value, lang=lang_iso1)
-            else:
-                replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in number_value)
-        except Exception as e:
-            print(f"Error converting number: {number}, Error: {e}")
-            return match.group(0)
-
+    
     def replace_ambiguous(match):
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
@@ -1008,8 +970,8 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
-    # Pre-process formatted series (e.g. phone numbers) if needed
-    text = check_formatted_number(text, lang_iso1, is_num2words_compat)
+    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+    text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
     replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
@@ -1029,19 +991,7 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
-    # split long digit-runs (3-digit groups)
-    text = re.sub(r'(\d{3})(?=\d{3}(?!\.\d))', r'\1 ', text)
-    if tts_engine != TTS_ENGINES['XTTSv2']:
-        # Number-to-words: build a pattern that finds any standalone number,
-        # with commas, decimals or exponents.
-        number_pattern = (
-            r'(?<!\S)'                                      # whitespace or start
-            r'(-?\d{1,3}(?:,\d{3})*'                        # integer with optional commas
-            r'(?:\.\d+)?'                                   # optional decimal
-            r'(?:[eE][+-]?\d+)?)'                           # optional exponent
-            r'(?!\S)'                                       # whitespace or end
-        )
-        text = re.sub(number_pattern, rep_num, text)
+    text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
 def normalize_text(text, lang, lang_iso1, tts_engine):
@@ -1049,9 +999,12 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
-        abbr_map = {re.sub(r'\.', '', k).lower(): v for k, v in abbreviations_mapping[lang].items()}
-        pattern = re.compile(r'\b(' + '|'.join(re.escape(k).replace('\\.', '') for k in abbreviations_mapping[lang].keys()) + r')\.?\b', re.IGNORECASE)
-        text = pattern.sub(lambda m: abbr_map.get(m.group(1).lower(), m.group()), text)
+        kp = KeywordProcessor(case_sensitive=False)
+        for abbr, expansion in abbreviations_mapping[lang].items():
+            key = abbr.rstrip('.')
+            kp.add_keyword(key, expansion)
+            kp.add_keyword(key + '.', expansion)
+        text = kp.replace_keywords(text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
@@ -1080,24 +1033,10 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     # Pattern 1: Add a space between UTF-8 characters and numbers
     text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
-    pattern_space = re.escape(''.join(punctuation_list))
-    # Ensure space before and after punctuation (excluding `,` and `.`)
-    punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space.replace(',', '').replace('.', ''))
-    text = re.sub(punctuation_pattern_space, r' \1 ', text)
-    # If this whole `text` is not a valid thousands-grouped number…
-    grouped_num_re = re.compile(r'^\d{1,3}(?:,\d{3})*(?:\.\d+)?$')
-    if not grouped_num_re.match(text):
-        # then force spaces around *every* comma between digits…
-        text = re.sub(r'(?<=\d),(?=\d)', ' , ', text)
-    # Ensure spaces before & after `,` and `.` ONLY when NOT between numbers
-    comma_dot_pattern = r'(?<!\d)\s*(\.{3}|[,.])\s*(?!\d)'
-    text = re.sub(comma_dot_pattern, r' \1 ', text)
     # Replace special chars with words
-    specialchars = specialchars_mapping[lang] if lang in specialchars_mapping else specialchars_mapping['eng']
-    for char, word in specialchars.items():
-        text = text.replace(char, f" {word} ")
-    for char in specialchars_remove:
-        text = text.replace(char, ' ')
+    specialchars = specialchars_mapping.get(lang, specialchars_mapping['eng'])
+    specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
+    text = text.translate(specialchars_table)
     text = ' '.join(text.split())
     if bool(re.search(r'[^\W_]', text)):
         # Add punctuation after numbers or Roman numerals at start of a chapter.
@@ -1107,8 +1046,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
             # Add punctuation if not already present (e.g. "II", "4")
             if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
                 text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
-        return text
-    return None
+    return text
 
 def convert_chapters2audio(session):
     try:
@@ -2737,7 +2675,8 @@ def web_interface(args, ctx):
                     ]
                 if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
-                    session['voice'] = None
+                    if session['voice'] in [models[TTS_ENGINES['XTTSv2']]['internal']['voice'], models[TTS_ENGINES['BARK']]['internal']['voice']]:
+                        session['voice'] = None
                 else:
                     if session['voice'] is None:
                         session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
@@ -2801,19 +2740,21 @@ def web_interface(args, ctx):
             session['device'] = device
 
         def change_gr_language(selected, id):
-            session = context.get_session(id)
-            previous = session['language']
-            new = default_language_code if selected == 'zzz' else selected
-            session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
-            session['language'] = new
-            os.makedirs(session['voice_dir'], exist_ok=True)
-            return[
-                gr.update(value=session['language']),
-                update_gr_voice_list(id),
-                update_gr_tts_engine_list(id),
-                update_gr_custom_model_list(id),
-                update_gr_fine_tuned_list(id)
-            ]
+            if selected:
+                session = context.get_session(id)
+                previous = session['language']
+                new = default_language_code if selected == 'zzz' else selected
+                session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
+                session['language'] = new
+                os.makedirs(session['voice_dir'], exist_ok=True)
+                return[
+                    gr.update(value=session['language']),
+                    update_gr_voice_list(id),
+                    update_gr_tts_engine_list(id),
+                    update_gr_custom_model_list(id),
+                    update_gr_fine_tuned_list(id)
+                ]
+            return[gr.update(), gr.update(), gr.update(), gr.update(), gr.update()]
 
         def check_custom_model_tts(custom_model_dir, tts_engine):
             dir_path = os.path.join(custom_model_dir, tts_engine)
@@ -2880,14 +2821,16 @@ def web_interface(args, ctx):
                 return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), update_gr_voice_list(id), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 
         def change_gr_fine_tuned_list(selected, id):
-            session = context.get_session(id)
-            visible = False
-            if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                if selected == 'internal':
-                    visible = visible_gr_group_custom_model
-            session['fine_tuned'] = selected
-            session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
-            return update_gr_voice_list(id), gr.update(visible=visible)
+            if selected:
+                session = context.get_session(id)
+                visible = False
+                if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
+                    if selected == 'internal':
+                        visible = visible_gr_group_custom_model
+                session['fine_tuned'] = selected
+                session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
+                return update_gr_voice_list(id), gr.update(visible=visible)
+            return gr.update(), gr.update()
 
         def change_gr_custom_model_list(selected, id):
             session = context.get_session(id)
@@ -3411,7 +3354,6 @@ def web_interface(args, ctx):
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
         interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
-        
     except OSError as e:
         error = f'Connection error: {e}'
         alert_exception(error)

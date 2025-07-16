@@ -6,6 +6,7 @@ import shutil
 import socket
 import subprocess
 import sys
+import tempfile
 
 from pathlib import Path
 from lib import *
@@ -48,12 +49,12 @@ def check_and_install_requirements(file_path):
     try:
         from importlib.metadata import version, PackageNotFoundError
         try:
-            import regex as re
-            from tqdm import tqdm
-        except Exception as e:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', 'regex', 'tqdm'])
-            import regex as re 
-            from tqdm import tqdm
+            from packaging.specifiers import SpecifierSet
+        except ImportError:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
+            from packaging.specifiers import SpecifierSet
+        import regex as re
+        from tqdm import tqdm
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
             packages = [
@@ -63,29 +64,46 @@ def check_and_install_requirements(file_path):
             ]
         missing_packages = []
         for package in packages:
-            pkg_name = re.split(r'[<>=]', re.sub(r'\[.*?\]', '', package), 1)[0].strip()
+            # remove extras so '[lang]==x.y' becomes 'pkg==x.y'
+            clean_pkg = re.sub(r'\[.*?\]', '', package)
+            pkg_name  = re.split(r'[<>=]', clean_pkg, 1)[0].strip()
             try:
                 installed_version = version(pkg_name)
             except PackageNotFoundError:
                 error = f'{package} is missing.'
                 print(error)
                 missing_packages.append(package)
-                pass
+            else:
+                # get specifier from clean_pkg, not from the raw string
+                spec_str = clean_pkg[len(pkg_name):].strip()
+                if spec_str:
+                    spec = SpecifierSet(spec_str)
+                    if installed_version not in spec:
+                        error = (f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".')
+                        print(error)
+                        missing_packages.append(package)
         if missing_packages:
-            msg = '\nInstalling missing packages...\n'
+            msg = '\nInstalling missing or upgrade packages...\n'
             print(msg)
+            tmp_dir = tempfile.mkdtemp()
             os.environ['TMPDIR'] = tmp_dir
             result = subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-            with tqdm(total=len(packages), desc='Installation 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
+            with tqdm(total=len(packages),
+                      desc='Installation 0.00%',
+                      bar_format='{desc}: {n_fmt}/{total_fmt} ',
+                      unit='step') as t:
                 for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
                     try:
-                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', package])
+                        subprocess.check_call([
+                            sys.executable, '-m', 'pip', 'install',
+                            '--no-cache-dir', '--use-pep517', package
+                        ])
                         t.update(1)
                     except subprocess.CalledProcessError as e:
                         error = f'Failed to install {package}: {e}'
                         print(error)
-                        return False          
+                        return False
             msg = '\nAll required packages are installed.'
             print(msg)
         return True

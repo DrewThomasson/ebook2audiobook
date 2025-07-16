@@ -6,7 +6,9 @@ demucs
 docker
 ebooklib
 fastapi
-gradio
+flashtext
+fugashi
+gradio==5.35.0
 hangul-romanize
 indic-nlp-library
 iso-639
@@ -15,6 +17,7 @@ soynlp
 pythainlp
 mutagen
 nvidia-ml-py
+phonemizer-fork
 pydub
 pyannote-audio
 PyOpenGL

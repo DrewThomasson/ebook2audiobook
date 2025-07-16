@@ -65,7 +65,7 @@ def normalize_audio_file(input_file, output_file):
     ffmpeg_cmd += [
         '-filter_complex', filter_complex,
         '-map', '[audio]',
-        '-ar', '44100',
+        '-ar', '24000',
         '-y', output_file
     ]
     try:
