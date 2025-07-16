@@ -2056,6 +2056,22 @@ def web_interface(args, ctx):
                 .progress-bar.svelte-ls20lj {
                     background: orange !important;
                 }
+                
+                #glass-overlay {
+                    position: fixed;
+                    top: 0; left: 0;
+                    width: 100vw; height: 100vh;
+                    background: rgba(255, 255, 255, 0.6);
+                    backdrop-filter: blur(8px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.2rem;
+                    color: #333;
+                    z-index: 9999;
+                    pointer-events: all;
+                }
+
                 #gr_markdown_logo {
                     position:absolute; 
                     text-align:center;
@@ -2118,8 +2134,10 @@ def web_interface(args, ctx):
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
                 }
+            </style>
             '''
         )
+        gr_glass_mask = gr.HTML('<div id="glass-overlay">Loading… please wait</div>', elem_id='glass-overlay')
         gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
             <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
             '''
@@ -3371,7 +3389,8 @@ def web_interface(args, ctx):
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
-        interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
+        #interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
+        interface.launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
     except OSError as e:
         error = f'Connection error: {e}'
         alert_exception(error)
