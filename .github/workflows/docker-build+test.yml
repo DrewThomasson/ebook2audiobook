@@ -270,7 +270,7 @@ jobs:
 
 
   final_push:
-    needs: run_tests
+    needs: build
     if: ${{ !failure() || inputs.require_all_tests == false }}
     runs-on: self-hosted
     env:
@@ -382,7 +382,7 @@ jobs:
 
   
   build_variants:
-      needs: run_tests
+      needs: build
       if: ${{ !failure() || inputs.require_all_tests == false }}
       runs-on: self-hosted
       strategy:
@@ -534,7 +534,7 @@ jobs:
 
 
   huggingface-build:
-    needs: run_tests
+    needs: build
     if: ${{ !failure() || inputs.require_all_tests == false }}
     runs-on: self-hosted
     steps:
