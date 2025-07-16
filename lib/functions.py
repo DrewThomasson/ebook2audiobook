@@ -39,7 +39,6 @@ import stanza
 import torch
 import uvicorn
 
-from flashtext import KeywordProcessor
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
@@ -742,7 +741,6 @@ def get_sentences(text, lang, tts_engine):
         return best_index
 
     def split_sentence(sentence):
-        sentence = sentence.strip()
         if not re.search(r'[^\W_]', sentence, re.UNICODE):
             return []
         if len(sentence) <= max_chars:
@@ -769,7 +767,7 @@ def get_sentences(text, lang, tts_engine):
         if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != TTS_ENGINES['BARK']:
             end = ' -' if delim_used == ' ' else end
         part1 = sentence[:split_index].rstrip()
-        part2 = sentence[split_index:].lstrip(' ,;:')
+        part2 = sentence[split_index:].lstrip(' ,;:!?-.')
         result = []
         if len(part1) <= max_chars:
             if part1 and part1[-1].isalpha():
@@ -919,14 +917,14 @@ def get_num2words_compat(lang_iso1):
 def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
     try:
         year = int(year_str)
+        first_two = int(year_str[:2])
+        last_two = int(year_str[2:])
         lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
-        if len(year_str) != 4 or not year_str.isdigit():
+        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
             else:
                 return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
-        first_two = int(year_str[:2])
-        last_two = int(year_str[2:])
         if is_num2words_compat:
             return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}" 
         else:
@@ -999,12 +997,21 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
-        kp = KeywordProcessor(case_sensitive=False)
-        for abbr, expansion in abbreviations_mapping[lang].items():
-            key = abbr.rstrip('.')
-            kp.add_keyword(key, expansion)
-            kp.add_keyword(key + '.', expansion)
-        text = kp.replace_keywords(text)
+        def _replace_abbreviations(match: re.Match) -> str:
+            token = match.group(1)
+            for k, expansion in mapping.items():
+                if token.lower() == k.lower():
+                    return expansion
+            return token  # fallback
+        mapping = abbreviations_mapping[lang]
+        # Sort keys by descending length so longer ones match first
+        keys = sorted(mapping.keys(), key=len, reverse=True)
+        # Build a regex that only matches whole “words” (tokens) exactly
+        pattern = re.compile(
+            r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
+            flags=re.IGNORECASE
+        )
+        text = pattern.sub(_replace_abbreviations, text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
@@ -1772,7 +1779,7 @@ def convert_ebook(args, ctx=None):
                                 if len(session['metadata']['language']) == 2:
                                     lang_array = languages.get(part1=session['language'])
                                     if lang_array:
-                                        session['metadata']['language'] = lang_array.part3     
+                                        session['metadata']['language'] = lang_array.part3
                             except Exception as e:
                                 pass                         
                             if session['metadata']['language'] != session['language']:
@@ -2745,6 +2752,9 @@ def web_interface(args, ctx):
                 previous = session['language']
                 new = default_language_code if selected == 'zzz' else selected
                 session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
+                session['voice'] = session['voice'].replace(f'/{previous}/',f'/{new}/') if session['voice'] is not None else None
+                if session['voice'] is not None:
+                    session['voice'] = session['voice'] if os.path.exists(session['voice']) else None
                 session['language'] = new
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 return[
