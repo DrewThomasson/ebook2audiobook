@@ -31,7 +31,6 @@ import zipfile
 
 import ebooklib
 import gradio as gr
-import jieba
 import psutil
 import pymupdf4llm
 import regex as re
@@ -677,6 +676,7 @@ def get_sentences(text, lang, tts_engine):
 
     def segment_ideogramms(text):
         if lang == 'zho':
+            import jieba
             return list(jieba.cut(text))
         elif lang == 'jpn':
             sudachi = dictionary.Dictionary().create()
