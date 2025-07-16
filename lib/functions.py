@@ -999,7 +999,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
         kp = KeywordProcessor(case_sensitive=False)
-        kp.set_word_boundaries(' \t\n\r.,!?()"\'«»[]{}')
+        kp.non_word_boundaries = set()
         for abbr, expansion in abbreviations_mapping[lang].items():
             key = abbr.rstrip('.')
             kp.add_keyword(key, expansion)
