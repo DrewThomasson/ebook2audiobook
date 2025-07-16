@@ -25,7 +25,6 @@ dependencies = [
 	"docker",
 	"ebooklib",
 	"fastapi",
-	"flashtext",
 	"fugashi",
 	"gradio==5.35.0",
 	"hangul-romanize",
@@ -48,8 +47,8 @@ dependencies = [
 	"pymupdf4llm",
 	"sudachipy",
 	"sudachidict_core",
-	"transformers==4.53.2",
-	"coqui-tts[languages]==0.27.0",
+	"transformers==4.51.3",
+	"coqui-tts[languages]==0.26.0",
 	"torchvggish"
 ]
 readme = "README.md"
