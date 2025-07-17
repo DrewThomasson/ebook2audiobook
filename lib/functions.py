@@ -2074,6 +2074,7 @@ def web_interface(args, ctx):
                 }
                 #glass-mask.hide {
                     opacity: 0;
+                    pointer-events: none;
                 }
                 #gr_markdown_logo {
                     position:absolute; 
