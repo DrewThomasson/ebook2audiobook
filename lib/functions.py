@@ -3077,11 +3077,11 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update(value='<div id="glass-mask" class="hide"></div>')
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update(value='<div id="glass-mask" class="hide"></div>', elem_id='glass-mask')
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
-                return gr.update(), gr.update(), gr.update(), gr.update(value=f'<div id="glass-mask">{error}</div>')
+                return gr.update(), gr.update(), gr.update(), gr.update(value=f'<div id="glass-mask">{error}</div>', elem_id='glass-mask')
 
         def save_session(id, state):
             try:
