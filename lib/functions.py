@@ -2072,11 +2072,10 @@ def web_interface(args, ctx):
                     color: #fff !important;
                     z-index: 9999 !important;
                     pointer-events: all !important;
-                    transition: opacity 1s ease-out !important;
+                    transition: opacity 1s ease-out;
                 }
                 #glass-mask.hide {
                     opacity: 0 !important;
-                    display: none !important;
                     pointer-events: none !important;
                 }
                 #gr_markdown_logo {
