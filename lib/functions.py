@@ -2143,7 +2143,7 @@ def web_interface(args, ctx):
             </style>
             '''
         )
-        gr_glass_mask = gr.HTML(value=f'<div id="glass-mask">{init_msg}</div>', elem_id='glass-mask')
+        gr_glass_mask = gr.HTML(f'<div id="glass-mask">{init_msg}</div>', elem_id='glass-mask')
         gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
             <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
             '''
@@ -3077,11 +3077,11 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update(value='<div id="glass-mask" class="hide"></div>', elem_id='glass-mask')
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update(value='<div id="glass-mask" class="hide"></div>')
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
-                return gr.update(), gr.update(), gr.update(), gr.update(value=f'<div id="glass-mask">{error}</div>', elem_id='glass-mask')
+                return gr.update(), gr.update(), gr.update(), gr.update(value=f'<div id="glass-mask">{error}</div>')
 
         def save_session(id, state):
             try:
