@@ -2494,10 +2494,7 @@ def web_interface(args, ctx):
             session['audiobook'] = selected
             visible = True if len(audiobook_options) else False
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
-        
-        def update_gr_glass_mask(str='', attr=''):
-            return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
-        
+
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
                 if session is None:
@@ -3080,11 +3077,11 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), update_gr_glass_mask(attr='class="hide"')
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update(elem_classes='hide')
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
-                return gr.update(), gr.update(), gr.update(), update_gr_glass_mask(str=error)
+                return gr.update(), gr.update(), gr.update(), gr.update(value=f'<div id="glass-mask">{error}</div>')
 
         def save_session(id, state):
             try:
