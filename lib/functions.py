@@ -1969,7 +1969,60 @@ def web_interface(args, ctx):
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
     )
 
-    with gr.Blocks(theme=theme, delete_cache=(86400, 86400)) as demo:
+    js_startup = """
+        () => {
+            // Define the global function ONCE
+            if (typeof window.redraw_audiobook_player !== 'function') {
+                window.redraw_audiobook_player = () => {
+                    try {
+                        const audio = document.querySelector('#gr_audiobook_player audio');
+                        if (audio) {
+                            const url = new URL(window.location);
+                            const theme = url.searchParams.get('__theme');
+                            let osTheme;
+                            let audioFilter = '';
+                            if (theme) {
+                                if (theme === 'dark') {
+                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                } 
+                            } else {
+                                osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                                if (osTheme) {
+                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                }
+                            }
+                            if (!audio.style.transition) {
+                                audio.style.transition = 'filter 1s ease';
+                            }
+                            audio.style.filter = audioFilter;
+                        }
+                    } catch (e) {
+                        console.log('redraw_audiobook_player error:', e);
+                    }
+                };
+            }
+            // Now safely call it after the audio element is available
+            const tryRun = () => {
+                const audio = document.querySelector('#gr_audiobook_player audio');
+                if (audio && typeof window.redraw_audiobook_player === 'function') {
+                    window.redraw_audiobook_player();
+                } else {
+                    setTimeout(tryRun, 100);
+                }
+            };
+            tryRun();
+            // Return localStorage data if needed
+            try {
+                const data = window.localStorage.getItem('data');
+                if (data) return JSON.parse(data);
+            } catch (e) {
+                console.log("JSON parse error:", e);
+            }
+            return null;
+        }
+        """
+
+    with gr.Blocks(theme=theme, delete_cache=(86400, 86400), js=js_startup) as app:
         main_html = gr.HTML(
             '''
             <style>
@@ -3332,72 +3385,13 @@ def web_interface(args, ctx):
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
             outputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_modal]
         )
-        js_startup = """
-            () => {
-                // Define the global function ONCE
-                if (typeof window.redraw_audiobook_player !== 'function') {
-                    window.redraw_audiobook_player = () => {
-                        try {
-                            const audio = document.querySelector('#gr_audiobook_player audio');
-                            if (audio) {
-                                const url = new URL(window.location);
-                                const theme = url.searchParams.get('__theme');
-                                let osTheme;
-                                let audioFilter = '';
-                                if (theme) {
-                                    if (theme === 'dark') {
-                                        audioFilter = 'invert(1) hue-rotate(180deg)';
-                                    } 
-                                } else {
-                                    osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-                                    if (osTheme) {
-                                        audioFilter = 'invert(1) hue-rotate(180deg)';
-                                    }
-                                }
-                                if (!audio.style.transition) {
-                                    audio.style.transition = 'filter 1s ease';
-                                }
-                                audio.style.filter = audioFilter;
-                            }
-                        } catch (e) {
-                            console.log('redraw_audiobook_player error:', e);
-                        }
-                    };
-                }
-
-                // Now safely call it after the audio element is available
-                const tryRun = () => {
-                    const audio = document.querySelector('#gr_audiobook_player audio');
-                    if (audio && typeof window.redraw_audiobook_player === 'function') {
-                        window.redraw_audiobook_player();
-                    } else {
-                        setTimeout(tryRun, 100);
-                    }
-                };
-                tryRun();
-
-                // Return localStorage data if needed
-                try {
-                    const data = window.localStorage.getItem('data');
-                    if (data) return JSON.parse(data);
-                } catch (e) {
-                    console.log("JSON parse error:", e);
-                }
-
-                return null;
-            }
-            """
-        demo.load(
-            fn=None,
-            _js=js_startup,
-            outputs=[gr_read_data]
-        )
     try:
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
-        demo.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
+        app.load(fn=None, outputs=[gr_read_data])
+        app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
     except OSError as e:
         error = f'Connection error: {e}'
         alert_exception(error)
