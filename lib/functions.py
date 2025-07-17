@@ -3387,7 +3387,7 @@ def web_interface(args, ctx):
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
         show_alert({"type": "info", "msg": msg})
-        os.environ['no_proxy'] = ' ,'.join(all_ips)
+        #os.environ['no_proxy'] = ' ,'.join(all_ips)
         #interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
         interface.launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
     except OSError as e:
