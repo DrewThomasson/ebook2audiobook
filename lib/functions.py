@@ -2075,7 +2075,7 @@ def web_interface(args, ctx):
                     transition: opacity 2s ease-out 10s !important;
                 }
                 #glass-mask.hide {
-                    opacity: 0 !important;
+                    
                     pointer-events: none !important;
                 }
                 #gr_markdown_logo {
