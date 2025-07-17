@@ -3018,7 +3018,6 @@ def web_interface(args, ctx):
 
         def change_gr_read_data(data, state):
             msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
-            print('-------------------change_gr_read_data---------------------')
             try:
                 if data is None:
                     session = context.get_session(str(uuid.uuid4()))
