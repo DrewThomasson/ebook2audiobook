@@ -2725,8 +2725,9 @@ def web_interface(args, ctx):
                     ]
                 if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
-                    if session['voice'] in [models[TTS_ENGINES['XTTSv2']]['internal']['voice'], models[TTS_ENGINES['BARK']]['internal']['voice']]:
-                        session['voice'] = None
+                    if session['voice'] is not None:
+                        if session['voice'] in [models[TTS_ENGINES['XTTSv2']]['internal']['voice'], models[TTS_ENGINES['BARK']]['internal']['voice']]:
+                            session['voice'] = None
                 else:
                     if session['voice'] is None:
                         session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
