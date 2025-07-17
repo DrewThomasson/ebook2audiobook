@@ -2484,7 +2484,7 @@ def web_interface(args, ctx):
                     gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), gr.update(active=True)
                 )
             except Exception as e:
-                error = f'change_gr_read_data(): {e}'
+                error = f'restore_interface(): {e}'
                 alert_exception(error)
                 outputs = outputs = tuple([gr.update() for _ in range(20)]) # 20 is the total count of the return[] above
                 return outputs
