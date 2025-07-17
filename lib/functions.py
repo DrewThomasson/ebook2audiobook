@@ -3389,7 +3389,7 @@ def web_interface(args, ctx):
                 return null;
             }
             """,
-            outputs=[gr_read_data]
+            outputs=gr_read_data
         )
     try:
         all_ips = get_all_ip_addresses()
