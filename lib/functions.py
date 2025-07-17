@@ -70,13 +70,13 @@ from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 
-import logging
-logging.basicConfig(
-    format="%(asctime)s %(name)s %(levelname)s %(message)s",
-    level=logging.DEBUG
-)
-logging.getLogger("gradio").setLevel(logging.DEBUG)
-logging.getLogger("httpx").setLevel(logging.DEBUG)
+#import logging
+#logging.basicConfig(
+#    format="%(asctime)s %(name)s %(levelname)s %(message)s",
+#    level=logging.DEBUG
+#)
+#logging.getLogger("gradio").setLevel(logging.DEBUG)
+#logging.getLogger("httpx").setLevel(logging.DEBUG)
 
 context = None
 lock = threading.Lock()
