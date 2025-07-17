@@ -74,4 +74,4 @@ output_formats = ['aac', 'flac', 'mp3', 'm4b', 'm4a', 'mp4', 'mov', 'ogg', 'wav'
 default_audio_proc_format = 'flac' # or 'mp3', 'aac', 'm4a', 'm4b', 'amr', '3gp', 'alac'. 'wav' format is ok but limited to process files < 4GB
 default_output_format = 'm4b'
 
-outpout_split_hours = 6 # if the final ouput esceed outpout_split_hours * 2 hours split it by final parts of outpout_split_hours around each
+outpout_split_hours = 6 # if the final ouput esceed outpout_split_hours * 2 hours the final file will be splitted by outpout_split_hours + the end if any.
