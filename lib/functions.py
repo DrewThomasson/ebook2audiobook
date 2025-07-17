@@ -963,7 +963,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
         if is_num2words_compat:
             return num2words(num, lang=lang_iso1)
         else:
-            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in num)
+            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(num))
     return number_re.sub(clean_num, text)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
@@ -1969,7 +1969,7 @@ def web_interface(args, ctx):
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
     )
 
-    with gr.Blocks(theme=theme, delete_cache=(86400, 86400)) as interface:
+    with gr.Blocks(theme=theme, delete_cache=(86400, 86400)) as demo:
         main_html = gr.HTML(
             '''
             <style>
@@ -3332,7 +3332,7 @@ def web_interface(args, ctx):
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
             outputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_modal]
         )
-        interface.load(
+        demo.load(
             fn=None,
             js="""
             () => {
@@ -3396,7 +3396,7 @@ def web_interface(args, ctx):
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
-        interface.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
+        demo.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
     except OSError as e:
         error = f'Connection error: {e}'
         alert_exception(error)
