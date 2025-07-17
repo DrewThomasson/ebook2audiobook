@@ -2079,8 +2079,8 @@ def web_interface(args, ctx):
                     pointer-events: none !important;
                 }
                 #gr_markdown_logo {
-                    position:absolute; 
-                    text-align:center;
+                    position: absolute !important; 
+                    text-align: right !important;
                 }
                 #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                     height: 140px !important;
