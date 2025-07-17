@@ -947,6 +947,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
     # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
     number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
     def clean_num(match):
+        print(f'----------------{lang_iso1}----------------')
         tok = unicodedata.normalize('NFKC', match.group())
         # pass through infinities/nans
         if tok.lower() in ('inf', 'infinity', 'nan'):
