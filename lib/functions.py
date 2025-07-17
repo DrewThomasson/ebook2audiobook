@@ -3332,9 +3332,7 @@ def web_interface(args, ctx):
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
             outputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_modal]
         )
-        demo.load(
-            fn=None,
-            js="""
+        js_startup = """
             () => {
                 // Define the global function ONCE
                 if (typeof window.redraw_audiobook_player !== 'function') {
@@ -3388,7 +3386,10 @@ def web_interface(args, ctx):
 
                 return null;
             }
-            """,
+            """
+        demo.load(
+            fn=None,
+            _js=js_startup,
             outputs=[gr_read_data]
         )
     try:
