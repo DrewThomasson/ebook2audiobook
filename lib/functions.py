@@ -2307,7 +2307,7 @@ def web_interface(args, ctx):
         gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
         
         gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(f'<div id="glass-mask">{init_msg}</div>', elem_id='glass-mask')
+        gr_glass_mask = gr.HTML(f'<div id="glass-mask">{init_msg}</div>')
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn_hidden = gr.Button(elem_id='confirm_yes_btn_hidden', value='', visible=False)
         gr_confirm_no_btn_hidden = gr.Button(elem_id='confirm_no_btn_hidden', value='', visible=False)
