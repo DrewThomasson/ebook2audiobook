@@ -2143,7 +2143,6 @@ def web_interface(args, ctx):
             </style>
             '''
         )
-        gr_glass_mask = gr.HTML()
         gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
             <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
             '''
@@ -2308,6 +2307,7 @@ def web_interface(args, ctx):
         gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
         
         gr_modal = gr.HTML(visible=False)
+        gr_glass_mask = gr.HTML(f'<div id="glass-mask">{init_msg}</div>', elem_id='glass-mask')
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn_hidden = gr.Button(elem_id='confirm_yes_btn_hidden', value='', visible=False)
         gr_confirm_no_btn_hidden = gr.Button(elem_id='confirm_no_btn_hidden', value='', visible=False)
