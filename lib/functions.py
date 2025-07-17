@@ -2060,6 +2060,7 @@ def web_interface(args, ctx):
                 
                 #glass-mask {
                     position: fixed !important;
+                    display: none !important;
                     top: 0 !important;
                     left: 0 !important;
                     width: 100vw !important; 
