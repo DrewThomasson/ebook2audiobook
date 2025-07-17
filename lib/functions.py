@@ -2071,12 +2071,12 @@ def web_interface(args, ctx):
                     font-size: 1.2rem !important;
                     color: #fff !important;
                     z-index: 9999 !important;
-                    pointer-events: all !important;
+                    pointer-events: none !important;
                     transition: opacity 1s ease-out !important;
                 }
                 #glass-mask.hide {
                     opacity: 0 !important;
-                    pointer-events: none !important;
+                    pointer-events: all !important;
                 }
                 #gr_markdown_logo {
                     position: absolute !important; 
