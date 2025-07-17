@@ -3295,7 +3295,7 @@ def web_interface(args, ctx):
         gr_write_data.change(
             fn=None,
             inputs=[gr_write_data],
-            _js='''
+            js='''
                 (data)=>{
                     if(data){
                         localStorage.clear();
@@ -3334,7 +3334,7 @@ def web_interface(args, ctx):
         )
         interface.load(
             fn=None,
-            _js="""
+            js="""
             () => {
                 // Define the global function ONCE
                 if (typeof window.redraw_audiobook_player !== 'function') {
