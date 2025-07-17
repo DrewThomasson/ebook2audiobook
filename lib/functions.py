@@ -2071,8 +2071,12 @@ def web_interface(args, ctx):
                     font-size: 1.2rem !important;
                     color: #fff !important;
                     z-index: 9999 !important;
-                    transition: opacity 2s ease-out !important;
+                    transition: opacity 2s ease-out 2s !important;
                     pointer-events: all !important;
+                }
+                #glass-mask.hide {
+                    opacity: 0 !important;
+                    pointer-events: none !important;
                 }
                 #gr_markdown_logo {
                     position: absolute !important; 
@@ -2490,7 +2494,8 @@ def web_interface(args, ctx):
             visible = True if len(audiobook_options) else False
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
         
-        def update_gr_glass_mask(str=glass_mask_msg, attr=''):
+        async def update_gr_glass_mask(str=glass_mask_msg, attr=''):
+            await asyncio.sleep(3)
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
         
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
@@ -3075,7 +3080,7 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), update_gr_glass_mask(attr='style="opacity: 0; pointer-events: none"')
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), update_gr_glass_mask(attr='class="hide"')
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
