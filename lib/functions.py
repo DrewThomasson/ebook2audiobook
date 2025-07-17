@@ -2059,30 +2059,31 @@ def web_interface(args, ctx):
                 }
                 
                 #glass-mask {
-                    position: fixed;
-                    top: 0; left: 0;
-                    width: 100vw; height: 100vh;
-                    background: rgba(0,0,0,0.3);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 1.2rem;
-                    color: #fff;
-                    z-index: 9999;
-                    pointer-events: all;
-                    transition: opacity 1s ease-out;
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100vw !important; 
+                    height: 100vh !important;
+                    background: rgba(0,0,0,0.3) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    font-size: 1.2rem !important;
+                    color: #fff !important;
+                    z-index: 9999 !important;
+                    pointer-events: all !important;
+                    transition: opacity 1s ease-out !important;
                 }
                 #glass-mask.hide {
-                    opacity: 0;
-                    pointer-events: none;
-                    display: none;
+                    opacity: 0 !important;
+                    pointer-events: none !important;
                 }
                 #gr_markdown_logo {
                     position:absolute; 
                     text-align:center;
                 }
                 #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
-                    height: 140px !important !important;
+                    height: 140px !important;
                 }
                 #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                     display: none !important;
