@@ -1929,6 +1929,7 @@ def web_interface(args, ctx):
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
+    init_msg = 'Initialization, please wait...'
     ebook_src = None
     language_options = [
         (
@@ -2061,7 +2062,7 @@ def web_interface(args, ctx):
                     position: fixed;
                     top: 0; left: 0;
                     width: 100vw; height: 100vh;
-                    background: rgba(0,0,0,0.5);
+                    background: rgba(0,0,0,0.4);
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -2135,7 +2136,7 @@ def web_interface(args, ctx):
             </style>
             '''
         )
-        gr_glass_mask = gr.HTML('<div id="glass-overlay">Loading… please wait</div>', elem_id='glass-overlay')
+        gr_glass_mask = gr.HTML(f'<div id="glass-overlay">{init_msg}</div>', elem_id='glass-overlay')
         gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
             <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
             '''
