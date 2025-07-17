@@ -2058,7 +2058,7 @@ def web_interface(args, ctx):
                     background: orange !important;
                 }
                 
-                #glass-overlay {
+                #glass-mask {
                     position: fixed;
                     top: 0; left: 0;
                     width: 100vw; height: 100vh;
@@ -2136,7 +2136,7 @@ def web_interface(args, ctx):
             </style>
             '''
         )
-        gr_glass_mask = gr.HTML(f'<div id="glass-overlay">{init_msg}</div>', elem_id='glass-overlay')
+        gr_glass_mask = gr.HTML(f'<div id="glass-mask">{init_msg}</div>', elem_id='glass-mask')
         gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
             <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
             '''
@@ -3011,7 +3011,7 @@ def web_interface(args, ctx):
 
         def change_gr_read_data(data, state):
             msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
-            print('change_gr_read_data....')
+            print('-------------------change_gr_read_data---------------------')
             try:
                 if data is None:
                     session = context.get_session(str(uuid.uuid4()))
@@ -3070,11 +3070,11 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id'])
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update(value='<div id="glass-mask" style="display:none"></div>')
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
-                return gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update(value=f'<div id="glass-mask">{error}</div>')
 
         def save_session(id, state):
             try:
@@ -3303,7 +3303,7 @@ def web_interface(args, ctx):
         gr_read_data.change(
             fn=change_gr_read_data,
             inputs=[gr_read_data, gr_state],
-            outputs=[gr_write_data, gr_state, gr_session]
+            outputs=[gr_write_data, gr_state, gr_session, gr_glass_mask]
         ).then(
             fn=restore_interface,
             inputs=[gr_session],
