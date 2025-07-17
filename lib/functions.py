@@ -2072,7 +2072,7 @@ def web_interface(args, ctx):
                     color: #fff !important;
                     z-index: 9999 !important;
                     pointer-events: all !important;
-                    transition: opacity 2s ease-out;
+                    transition: opacity 4s ease-out;
                 }
                 #glass-mask.hide {
                     opacity: 0 !important;
