@@ -3080,7 +3080,7 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), update_gr_glass_mask(state='class="hide"')
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), update_gr_glass_mask(attr='class="hide"')
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
