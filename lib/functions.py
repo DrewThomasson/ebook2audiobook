@@ -2481,10 +2481,12 @@ def web_interface(args, ctx):
                     update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
                     gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
                     gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
-                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), gr.update(active=True), gr.update()
+                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), gr.update(active=True)
                 )
             except Exception as e:
-                outputs = outputs = tuple([gr.update() for _ in range(20)] + [gr.update(value=str(e))]) # 20 is the total count of the return[] above
+                error = f'change_gr_read_data(): {e}'
+                alert_exception(error)
+                outputs = outputs = tuple([gr.update() for _ in range(20)]) # 20 is the total count of the return[] above
                 return outputs
 
         def refresh_interface(id):
@@ -3083,11 +3085,11 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update()
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id'])
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
-                return gr.update(), gr.update(), gr.update(), update_gr_glass_mask(str=error)
+                return gr.update(), gr.update(), gr.update()
 
         def save_session(id, state):
             try:
@@ -3316,7 +3318,7 @@ def web_interface(args, ctx):
         gr_read_data.change(
             fn=change_gr_read_data,
             inputs=[gr_read_data, gr_state],
-            outputs=[gr_write_data, gr_state, gr_session, gr_glass_mask]
+            outputs=[gr_write_data, gr_state, gr_session]
         ).then(
             fn=restore_interface,
             inputs=[gr_session],
@@ -3325,7 +3327,7 @@ def web_interface(args, ctx):
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
                 gr_output_format_list, gr_audiobook_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
-                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp, gr_bark_waveform_temp, gr_timer, gr_glass_mask
+                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp, gr_bark_waveform_temp, gr_timer
             ]
         ).then(
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
