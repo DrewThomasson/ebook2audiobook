@@ -3204,7 +3204,7 @@ def web_interface(args, ctx):
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
         ).then(
             fn=None,
-            js="()=>window.redraw_audiobook_player()"
+            _js="()=>window.redraw_audiobook_player()"
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -3295,7 +3295,7 @@ def web_interface(args, ctx):
         gr_write_data.change(
             fn=None,
             inputs=[gr_write_data],
-            js='''
+            _js='''
                 (data)=>{
                     if(data){
                         localStorage.clear();
@@ -3334,7 +3334,7 @@ def web_interface(args, ctx):
         )
         interface.load(
             fn=None,
-            js="""
+            _js="""
             () => {
                 // Define the global function ONCE
                 if (typeof window.redraw_audiobook_player !== 'function') {
