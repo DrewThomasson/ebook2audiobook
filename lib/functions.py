@@ -2071,7 +2071,7 @@ def web_interface(args, ctx):
                     font-size: 1.2rem !important;
                     color: #fff !important;
                     z-index: 9999 !important;
-                    transition: opacity 10s ease-out 10s !important;
+                    transition: opacity 2s ease-out !important;
                     pointer-events: all !important;
                 }
                 #gr_markdown_logo {
