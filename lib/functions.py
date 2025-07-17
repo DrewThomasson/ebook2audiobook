@@ -2070,6 +2070,10 @@ def web_interface(args, ctx):
                     color: #fff;
                     z-index: 9999;
                     pointer-events: all;
+                    transition: opacity 1s ease-out;
+                }
+                #glass-mask.hide {
+                    opacity: 0;
                 }
                 #gr_markdown_logo {
                     position:absolute; 
@@ -3070,7 +3074,7 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update(value='<div id="glass-mask" style="display:none"></div>')
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update(value='<div id="glass-mask" class="hide"></div>')
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
