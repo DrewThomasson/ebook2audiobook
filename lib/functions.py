@@ -2452,36 +2452,40 @@ def web_interface(args, ctx):
             DependencyError(error)
 
         def restore_interface(id):
-            session = context.get_session(id)
-            ebook_data = None
-            file_count = session['ebook_mode']
-            if isinstance(session['ebook_list'], list) and file_count == 'directory':
-                #ebook_data = session['ebook_list']
+            try:
+                session = context.get_session(id)
                 ebook_data = None
-            elif isinstance(session['ebook'], str) and file_count == 'single':
-                ebook_data = session['ebook']
-            else:
-                ebook_data = None
-            ### XTTSv2 Params
-            session['temperature'] = session['temperature'] if session['temperature'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']
-            session['length_penalty'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']
-            session['num_beams'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']
-            session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']
-            session['top_k'] = session['top_k'] if session['top_k'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']
-            session['top_p'] = session['top_p'] if session['top_p'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']
-            session['speed'] = session['speed'] if session['speed'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']
-            session['enable_text_splitting'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting']
-            ### BARK Params
-            session['text_temp'] = session['text_temp'] if session['text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
-            session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
-            return (
-                gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
-                gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
-                update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
-                gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
-                gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
-                gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), gr.update(active=True)
-            )
+                file_count = session['ebook_mode']
+                if isinstance(session['ebook_list'], list) and file_count == 'directory':
+                    #ebook_data = session['ebook_list']
+                    ebook_data = None
+                elif isinstance(session['ebook'], str) and file_count == 'single':
+                    ebook_data = session['ebook']
+                else:
+                    ebook_data = None
+                ### XTTSv2 Params
+                session['temperature'] = session['temperature'] if session['temperature'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']
+                session['length_penalty'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']
+                session['num_beams'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']
+                session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']
+                session['top_k'] = session['top_k'] if session['top_k'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']
+                session['top_p'] = session['top_p'] if session['top_p'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']
+                session['speed'] = session['speed'] if session['speed'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']
+                session['enable_text_splitting'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting']
+                ### BARK Params
+                session['text_temp'] = session['text_temp'] if session['text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
+                session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
+                return (
+                    gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
+                    gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
+                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
+                    gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
+                    gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
+                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), gr.update(active=True), gr.update()
+                )
+            except Exception as e:
+                outputs = outputs = tuple([gr.update() for _ in range(20)] + [gr.update(value=str(e))]) # 20 is the total count of the return[] above
+                return outputs
 
         def refresh_interface(id):
             session = context.get_session(id)
@@ -3079,7 +3083,7 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), update_gr_glass_mask(attr='class="hide"')
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
@@ -3321,8 +3325,11 @@ def web_interface(args, ctx):
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
                 gr_output_format_list, gr_audiobook_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
-                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp, gr_bark_waveform_temp, gr_timer
+                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp, gr_bark_waveform_temp, gr_timer, gr_glass_mask
             ]
+        ).then(
+            fn=lambda: update_gr_glass_mask(str='', attr:'class="hide"'),
+            outputs=[gr_glass_mask]
         )
         gr_confirm_yes_btn_hidden.click(
             fn=confirm_deletion,
