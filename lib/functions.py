@@ -1929,7 +1929,7 @@ def web_interface(args, ctx):
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
-    init_msg = 'Initialization, please wait...'
+    glass_mask_msg = 'Initialization, please wait...'
     ebook_src = None
     language_options = [
         (
@@ -2064,7 +2064,7 @@ def web_interface(args, ctx):
                     left: 0 !important;
                     width: 100vw !important; 
                     height: 100vh !important;
-                    background: rgba(0,0,0,0.5) !important;
+                    background: rgba(0,0,0,0.6) !important;
                     display: flex !important;
                     align-items: center !important;
                     justify-content: center !important;
@@ -2072,10 +2072,10 @@ def web_interface(args, ctx):
                     color: #fff !important;
                     z-index: 9999 !important;
                     pointer-events: all !important;
-                    transition: opacity 2s ease-out 10s !important;
                 }
                 #glass-mask.hide {
-                    
+                    transition: opacity 2s ease-out 10s !important;
+                    opacity: 0 !important;
                     pointer-events: none !important;
                 }
                 #gr_markdown_logo {
@@ -2307,7 +2307,7 @@ def web_interface(args, ctx):
         gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
         
         gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(f'<div id="glass-mask">{init_msg}</div>')
+        gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn_hidden = gr.Button(elem_id='confirm_yes_btn_hidden', value='', visible=False)
         gr_confirm_no_btn_hidden = gr.Button(elem_id='confirm_no_btn_hidden', value='', visible=False)
@@ -2494,7 +2494,7 @@ def web_interface(args, ctx):
             visible = True if len(audiobook_options) else False
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
         
-        def update_gr_glass_mask(str='', attr=''):
+        def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
         
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
