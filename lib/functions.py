@@ -3328,7 +3328,7 @@ def web_interface(args, ctx):
                 gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp, gr_bark_waveform_temp, gr_timer, gr_glass_mask
             ]
         ).then(
-            fn=lambda: update_gr_glass_mask(str='', attr:'class="hide"'),
+            fn=lambda: update_gr_glass_mask(str='', attr='class="hide"'),
             outputs=[gr_glass_mask]
         )
         gr_confirm_yes_btn_hidden.click(
