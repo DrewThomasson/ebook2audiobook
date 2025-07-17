@@ -2061,12 +2061,12 @@ def web_interface(args, ctx):
                     position: fixed;
                     top: 0; left: 0;
                     width: 100vw; height: 100vh;
-                    background: rgba(255,255,255,1.0);
+                    background: rgba(0,0,0,0.5);
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     font-size: 1.2rem;
-                    color: #333;
+                    color: #fff;
                     z-index: 9999;
                     pointer-events: all;
                 }
