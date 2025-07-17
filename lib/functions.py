@@ -946,7 +946,6 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
 def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
     # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
     number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
-    print(f'----------------{lang_iso1}----------------')
     def clean_num(match):
         tok = unicodedata.normalize('NFKC', match.group())
         # pass through infinities/nans
@@ -1650,6 +1649,8 @@ def convert_ebook(args, ctx=None):
                         args['language_iso1'] = lang_array.part1 
                 else:
                     args['language_iso1'] = None
+                if args['language_iso1'] == 'zh':
+                    args['language_iso1'] = 'zh_CN'
             except Exception as e:
                 pass
 
