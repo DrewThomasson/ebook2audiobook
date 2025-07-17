@@ -3335,52 +3335,52 @@ def web_interface(args, ctx):
         app.load(
             fn=None,
             js="""
-                () => {
+                ()=>{
                     // Define the global function ONCE
-                    if (typeof window.redraw_audiobook_player !== 'function') {
-                        window.redraw_audiobook_player = () => {
-                            try {
+                    if(typeof window.redraw_audiobook_player !== 'function'){
+                        window.redraw_audiobook_player = ()=>{
+                            try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
-                                if (audio) {
+                                if(audio){
                                     const url = new URL(window.location);
                                     const theme = url.searchParams.get('__theme');
                                     let osTheme;
                                     let audioFilter = '';
-                                    if (theme) {
-                                        if (theme === 'dark') {
+                                    if(theme){
+                                        if(theme === 'dark'){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         } 
-                                    } else {
+                                    }else{
                                         osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-                                        if (osTheme) {
+                                        if(osTheme){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
                                     }
-                                    if (!audio.style.transition) {
+                                    if(!audio.style.transition){
                                         audio.style.transition = 'filter 1s ease';
                                     }
                                     audio.style.filter = audioFilter;
                                 }
-                            } catch (e) {
+                            }catch(e){
                                 console.log('redraw_audiobook_player error:', e);
                             }
                         };
                     }
                     // Now safely call it after the audio element is available
-                    const tryRun = () => {
+                    const tryRun = ()=>{
                         const audio = document.querySelector('#gr_audiobook_player audio');
-                        if (audio && typeof window.redraw_audiobook_player === 'function') {
+                        if(audio && typeof window.redraw_audiobook_player === 'function'){
                             window.redraw_audiobook_player();
-                        } else {
+                        }else{
                             setTimeout(tryRun, 100);
                         }
                     };
                     tryRun();
                     // Return localStorage data if needed
-                    try {
+                    try{
                         const data = window.localStorage.getItem('data');
                         if (data) return JSON.parse(data);
-                    } catch (e) {
+                    }catch(e){
                         console.log("JSON parse error:", e);
                     }
                     return null;
