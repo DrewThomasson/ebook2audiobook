@@ -2287,8 +2287,8 @@ def web_interface(args, ctx):
                 )
         gr_state = gr.State(value={"hash": None})
         gr_state_alert = gr.State(value={"type": None,"msg": None})
-        gr_read_data = gr.JSON()
-        gr_write_data = gr.JSON()
+        gr_read_data = gr.JSON(visible=False)
+        gr_write_data = gr.JSON(visible=False)
         gr_conversion_progress = gr.Textbox(elem_id='gr_conversion_progress', label='Progress')
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
@@ -3011,6 +3011,7 @@ def web_interface(args, ctx):
 
         def change_gr_read_data(data, state):
             msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
+            print('change_gr_read_data....')
             try:
                 if data is None:
                     session = context.get_session(str(uuid.uuid4()))
