@@ -2494,8 +2494,7 @@ def web_interface(args, ctx):
             visible = True if len(audiobook_options) else False
             return gr.update(value=selected), gr.update(value=selected), gr.update(visible=visible)
         
-        async def update_gr_glass_mask(str=glass_mask_msg, attr=''):
-            await asyncio.sleep(3)
+        def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
         
         def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
