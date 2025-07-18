@@ -2725,14 +2725,14 @@ def web_interface(args, ctx):
                     ]
                 if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
-                    if session['voice'] is not None:
-                        if session['voice'] in [models[TTS_ENGINES['XTTSv2']]['internal']['voice'], models[TTS_ENGINES['BARK']]['internal']['voice']]:
-                            session['voice'] = None
                 else:
-                    if session['voice'] is None:
-                        session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())
-                session['voice'] = session['voice'] if session['voice'] in [option[1] for option in voice_options] else voice_options[0][1]
+                default_voice_index = voice_options.index(models[session['tts_engine']][session['fine_tuned']]['voice'])
+                session['voice'] = (
+                    session.get('voice')
+                    if session.get('voice') in [opt[1] for opt in voice_options]
+                    else voice_options[default_voice_index][1]
+                )
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
