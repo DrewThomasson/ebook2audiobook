@@ -2734,9 +2734,6 @@ def web_interface(args, ctx):
                 if default_voice is None:
                     session['voice'] = default_voice
                 else:
-                    default_lang_voice = default_voice.replace(f"/{models[session['tts_engine']][session['fine_tuned']]['lang']}/", f"/{session['language']}/")
-                    if os.path.exists(default_lang_voice):
-                        default_voice = default_lang_voice
                     session['voice'] = (
                         session.get('voice')
                         if session.get('voice') in [opt[1] for opt in voice_options]
@@ -2806,11 +2803,12 @@ def web_interface(args, ctx):
                 previous = session['language']
                 new = selected
                 session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
-                if session['voice'] is not None:
-                    new_voice_path = session['voice'].replace(f'/{previous}/',f'/{new}/')
-                    session['voice'] =  new_voice_path if os.path.exists(new_voice_path) else session['voice']
-                session['language'] = selected
                 os.makedirs(session['voice_dir'], exist_ok=True)
+                if session['voice'] is not None:
+                    new_voice_path = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice'])
+                    if os.path.exists(new_voice_path):
+                       session['voice'] = new_voice_path
+                session['language'] = selected
                 return[
                     gr.update(value=session['language']),
                     update_gr_tts_engine_list(id),
