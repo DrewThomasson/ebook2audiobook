@@ -2734,6 +2734,7 @@ def web_interface(args, ctx):
                     session['voice'] = (
                         session.get('voice')
                         if session.get('voice') in [opt[1] for opt in voice_options]
+                        else default_voice if default_voice in [opt[1] for opt in voice_options]
                         else voice_options[0][1]
                     )
                 return gr.update(choices=voice_options, value=session['voice'])
