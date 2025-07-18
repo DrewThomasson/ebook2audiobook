@@ -3178,7 +3178,7 @@ def web_interface(args, ctx):
         ).then(
             fn=update_gr_voice_list,
             inputs=[gr_session],
-            output=[gr_voice_list]
+            outputs=[gr_voice_list]
         )
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
@@ -3187,7 +3187,7 @@ def web_interface(args, ctx):
         ).then(
             fn=update_gr_voice_list,
             inputs=[gr_session],
-            output=[gr_voice_list]        
+            outputs=[gr_voice_list]        
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
@@ -3196,7 +3196,7 @@ def web_interface(args, ctx):
         ).then(
             fn=update_gr_voice_list,
             inputs=[gr_session],
-            output=[gr_voice_list]        
+            outputs=[gr_voice_list]        
         )
         gr_custom_model_file.upload(
             fn=change_gr_custom_model_file,
