@@ -2732,7 +2732,7 @@ def web_interface(args, ctx):
                     session['voice'] = default_voice
                 else:
                     if session['voice'] is not None:                  
-                        default_voice_index = next((i for i, opt in enumerate(voice_options) if opt[1] == default_voice), 0)
+                        default_voice_index = next((i for i, opt in enumerate(voice_options) if opt[1] == default_voice), default_voice)
                         session['voice'] = (
                             session.get('voice')
                             if session.get('voice') in [opt[1] for opt in voice_options]
