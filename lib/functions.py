@@ -2813,7 +2813,7 @@ def web_interface(args, ctx):
                     update_gr_custom_model_list(id),
                     update_gr_fine_tuned_list(id)
                 ]
-            return[gr.update(), gr.update(), gr.update(), gr.update()
+            return (gr.update(), gr.update(), gr.update(), gr.update())
 
         def check_custom_model_tts(custom_model_dir, tts_engine):
             dir_path = os.path.join(custom_model_dir, tts_engine)
