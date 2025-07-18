@@ -2735,8 +2735,8 @@ def web_interface(args, ctx):
                     session['voice'] = default_voice
                 else:
                     session['voice'] = (
-                        session.get('voice')
-                        if session.get('voice') in [opt[1] for opt in voice_options]
+                        session['voice']
+                        if session['voice'] in [opt[1] for opt in voice_options]
                         else default_voice if default_voice in [opt[1] for opt in voice_options]
                         else voice_options[0][1]
                     )
