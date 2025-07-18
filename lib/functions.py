@@ -2479,11 +2479,11 @@ def web_interface(args, ctx):
                 session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
                 return (
                     gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
-                    gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
+                    gr.update(value=session['language']), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
                     update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
                     gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
                     gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
-                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), gr.update(active=True)
+                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id), gr.update(active=True)
                 )
             except Exception as e:
                 error = f'restore_interface(): {e}'
@@ -2494,7 +2494,10 @@ def web_interface(args, ctx):
         def refresh_interface(id):
             session = context.get_session(id)
             session['status'] = None
-            return gr.update(interactive=False), gr.update(value=None), update_gr_voice_list(id), update_gr_audiobook_list(id), gr.update(value=session['audiobook']), gr.update(visible=False)
+            return (
+                    gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
+                    gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id)
+            )
 
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
@@ -2652,14 +2655,14 @@ def web_interface(args, ctx):
                         msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return update_gr_voice_list(id), gr.update(), gr.update(), gr.update(visible=False)
+                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id)
                     elif method == 'confirm_custom_model_del':
                         selected_name = os.path.basename(custom_model)
                         shutil.rmtree(custom_model, ignore_errors=True)                           
                         msg = f'Custom model {selected_name} deleted!'
                         session['custom_model'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), update_gr_custom_model_list(id), gr.update(), gr.update(visible=False)
+                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update()
                     elif method == 'confirm_audiobook_del':
                         selected_name = os.path.basename(audiobook)
                         if os.path.isdir(audiobook):
@@ -2669,7 +2672,7 @@ def web_interface(args, ctx):
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(), update_gr_audiobook_list(id), gr.update(visible=False)
+                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update()
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
@@ -2810,10 +2813,10 @@ def web_interface(args, ctx):
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 return[
                     gr.update(value=session['language']),
-                    update_gr_voice_list(id),
                     update_gr_tts_engine_list(id),
                     update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id)
+                    update_gr_fine_tuned_list(id),
+                    update_gr_voice_list(id)
                 ]
             return[gr.update(), gr.update(), gr.update(), gr.update(), gr.update()]
 
@@ -2872,14 +2875,18 @@ def web_interface(args, ctx):
                     visible_custom_model = False
                 return (
                        gr.update(value=show_rating(session['tts_engine'])), 
-                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
+                       gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
                        gr.update(label=f"*Upload {session['tts_engine']} Model (Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
-                       gr.update(label=f"My {session['tts_engine']} custom models")
+                       gr.update(label=f"My {session['tts_engine']} custom models"), update_gr_voice_list(id)
                 )
             else:
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                     bark_visible = visible_gr_tab_bark_params
-                return gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), update_gr_voice_list(id), gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
+                return (
+                        gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), 
+                        gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label=''),
+                        update_gr_voice_list(id)
+                )
                 
         def change_gr_fine_tuned_list(selected, id):
             if selected:
@@ -2890,7 +2897,7 @@ def web_interface(args, ctx):
                         visible = visible_gr_group_custom_model
                 session['fine_tuned'] = selected
                 session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
-                return update_gr_voice_list(id), gr.update(visible=visible)
+                return gr.update(visible=visible), update_gr_voice_list(id)
             return gr.update(), gr.update()
 
         def change_gr_custom_model_list(selected, id):
@@ -3174,17 +3181,17 @@ def web_interface(args, ctx):
         gr_language.change(
             fn=change_gr_language,
             inputs=[gr_language, gr_session],
-            outputs=[gr_language, gr_voice_list, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list]
+            outputs=[gr_language, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_voice_list]
         )
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_voice_list, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
+            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_voice_list] 
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
             inputs=[gr_fine_tuned_list, gr_session],
-            outputs=[gr_voice_list, gr_group_custom_model]
+            outputs=[gr_group_custom_model, gr_voice_list]
         )
         gr_custom_model_file.upload(
             fn=change_gr_custom_model_file,
@@ -3299,16 +3306,16 @@ def web_interface(args, ctx):
         ).then(
             fn=submit_convert_btn,
             inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_voice_list, gr_language, 
+                gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, 
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                gr_bark_text_temp, gr_bark_waveform_temp
+                gr_bark_text_temp, gr_bark_waveform_temp, gr_voice_list
             ],
             outputs=[gr_conversion_progress]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
-            outputs=[gr_convert_btn, gr_ebook_file, gr_voice_list, gr_audiobook_list, gr_audiobook_player, gr_modal]
+            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
         )
         gr_write_data.change(
             fn=None,
@@ -3333,11 +3340,11 @@ def web_interface(args, ctx):
             fn=restore_interface,
             inputs=[gr_session],
             outputs=[
-                gr_ebook_file, gr_ebook_mode, gr_device, gr_language, gr_voice_list,
+                gr_ebook_file, gr_ebook_mode, gr_device, gr_language,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
                 gr_output_format_list, gr_audiobook_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
-                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp, gr_bark_waveform_temp, gr_timer
+                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp, gr_bark_waveform_temp, gr_voice_list, gr_timer
             ]
         ).then(
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
@@ -3346,12 +3353,12 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn_hidden.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
-            outputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_modal]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
         )
         gr_confirm_no_btn_hidden.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-            outputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_modal]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
         )
         app.load(
             fn=None,
