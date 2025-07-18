@@ -2730,7 +2730,8 @@ def web_interface(args, ctx):
                 default_voice = models[session['tts_engine']][session['fine_tuned']]['voice']
                 if default_voice is None:
                     session['voice'] = default_voice
-                else:              
+                else:             
+                    alert_exception(session['voice'])
                     session['voice'] = (
                         session.get('voice')
                         if session.get('voice') in [opt[1] for opt in voice_options]
