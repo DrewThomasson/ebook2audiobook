@@ -2728,12 +2728,15 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                 default_voice = models[session['tts_engine']][session['fine_tuned']]['voice']
-                default_voice_index = next((i for i, opt in enumerate(voice_options) if opt[1] == default_voice), 0)
-                session['voice'] = (
-                    session.get('voice')
-                    if session.get('voice') in [opt[1] for opt in voice_options]
-                    else voice_options[default_voice_index][1]
-                )
+                if default_voice == None:
+                    session['voice'] = default_voice
+                else:
+                    default_voice_index = next((i for i, opt in enumerate(voice_options) if opt[1] == default_voice), 0)
+                    session['voice'] = (
+                        session.get('voice')
+                        if session.get('voice') in [opt[1] for opt in voice_options]
+                        else voice_options[default_voice_index][1]
+                    )
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
