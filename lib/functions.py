@@ -2731,7 +2731,7 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                 default_voice = models[session['tts_engine']][session['fine_tuned']]['voice']
-                default_voice = default_voice.replace("/eng/", f"/session['language']/") if default_voice is not None and session['fine_tuned'] == 'internal' else default_voice
+                default_voice = default_voice.replace('/eng/', f"/session['language']/") if default_voice is not None and session['fine_tuned'] == 'internal' else default_voice
                 if default_voice is None:
                     session['voice'] = default_voice
                 else:
@@ -2802,19 +2802,16 @@ def web_interface(args, ctx):
             if selected:
                 session = context.get_session(id)
                 previous = session['language']
-                new = default_language_code if selected == 'zzz' else selected
+                new = selected
                 session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
-                session['voice'] = session['voice'].replace(f'/{previous}/',f'/{new}/') if session['voice'] is not None else None
-                if session['voice'] is not None:
-                    session['voice'] = session['voice'] if os.path.exists(session['voice']) else None
-                session['language'] = new
+                session['voice'] = session['voice'].replace(f'/{previous}/',f'/{new}/') if session['voice'] is not None and os.path.exists(session['voice']) else session['voice']
+                session['language'] = selected
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 return[
                     gr.update(value=session['language']),
                     update_gr_tts_engine_list(id),
                     update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id),
-                    update_gr_voice_list(id)
+                    update_gr_fine_tuned_list(id)
                 ]
             return[gr.update(), gr.update(), gr.update(), gr.update(), gr.update()]
 
@@ -2875,15 +2872,14 @@ def web_interface(args, ctx):
                        gr.update(value=show_rating(session['tts_engine'])), 
                        gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
                        gr.update(label=f"*Upload {session['tts_engine']} Model (Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
-                       gr.update(label=f"My {session['tts_engine']} custom models"), update_gr_voice_list(id)
+                       gr.update(label=f"My {session['tts_engine']} custom models")
                 )
             else:
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                     bark_visible = visible_gr_tab_bark_params
                 return (
                         gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), 
-                        gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label=''),
-                        update_gr_voice_list(id)
+                        gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Fine Tuned Model not available for {session['tts_engine']}"), gr.update(label='')
                 )
                 
         def change_gr_fine_tuned_list(selected, id):
@@ -2894,8 +2890,8 @@ def web_interface(args, ctx):
                     if selected == 'internal':
                         visible = visible_gr_group_custom_model
                 session['fine_tuned'] = selected
-                return gr.update(visible=visible), update_gr_voice_list(id)
-            return gr.update(), gr.update()
+                return gr.update(visible=visible)
+            return gr.update()
 
         def change_gr_custom_model_list(selected, id):
             session = context.get_session(id)
@@ -3178,17 +3174,29 @@ def web_interface(args, ctx):
         gr_language.change(
             fn=change_gr_language,
             inputs=[gr_language, gr_session],
-            outputs=[gr_language, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_voice_list]
+            outputs=[gr_language, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list]
+        ).then(
+            fn=update_gr_voice_list,
+            inputs=[gr_session],
+            output=[gr_voice_list]
         )
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_voice_list] 
+            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
+        ).then(
+            fn=update_gr_voice_list,
+            inputs=[gr_session],
+            output=[gr_voice_list]        
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
             inputs=[gr_fine_tuned_list, gr_session],
-            outputs=[gr_group_custom_model, gr_voice_list]
+            outputs=[gr_group_custom_model]
+        ).then(
+            fn=update_gr_voice_list,
+            inputs=[gr_session],
+            output=[gr_voice_list]        
         )
         gr_custom_model_file.upload(
             fn=change_gr_custom_model_file,
