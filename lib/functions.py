@@ -2809,6 +2809,7 @@ def web_interface(args, ctx):
                     new_voice_path = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice'])
                     if os.path.exists(new_voice_path):
                        session['voice'] = new_voice_path
+                print(f"----------{session['voice']}-------------")
                 session['language'] = selected
                 return[
                     gr.update(value=session['language']),
