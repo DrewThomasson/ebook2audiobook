@@ -2804,7 +2804,9 @@ def web_interface(args, ctx):
                 previous = session['language']
                 new = selected
                 session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
-                session['voice'] = session['voice'].replace(f'/{previous}/',f'/{new}/') if session['voice'] is not None and os.path.exists(session['voice']) else session['voice']
+                if session['voice'] is not None:
+                    new_voice_path = session['voice'].replace(f'/{previous}/',f'/{new}/')
+                    session['voice'] =  new_voice_path if os.path.exists(new_voice_path) else session['voice']
                 session['language'] = selected
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 return[
