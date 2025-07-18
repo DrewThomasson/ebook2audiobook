@@ -2813,7 +2813,7 @@ def web_interface(args, ctx):
                     update_gr_custom_model_list(id),
                     update_gr_fine_tuned_list(id)
                 ]
-            return[gr.update(), gr.update(), gr.update(), gr.update(), gr.update()]
+            return[gr.update(), gr.update(), gr.update(), gr.update()
 
         def check_custom_model_tts(custom_model_dir, tts_engine):
             dir_path = os.path.join(custom_model_dir, tts_engine)
@@ -2924,7 +2924,7 @@ def web_interface(args, ctx):
                         show_alert(state)
             return
 
-        def submit_convert_btn(id, device, ebook_file, tts_engine, voice, language, custom_model, fine_tuned, output_format, temperature, length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp):
+        def submit_convert_btn(id, device, ebook_file, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp):
             try:
                 session = context.get_session(id)
                 args = {
@@ -3311,10 +3311,10 @@ def web_interface(args, ctx):
         ).then(
             fn=submit_convert_btn,
             inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, 
+                gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, gr_voice_list
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                gr_bark_text_temp, gr_bark_waveform_temp, gr_voice_list
+                gr_bark_text_temp, gr_bark_waveform_temp
             ],
             outputs=[gr_conversion_progress]
         ).then(
