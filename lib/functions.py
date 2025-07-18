@@ -2728,10 +2728,10 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                 default_voice = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if default_voice == None:
+                if default_voice is None:
                     session['voice'] = default_voice
                 else:
-                    if session['voice'] != None:                  
+                    if session['voice'] is not None:                  
                         default_voice_index = next((i for i, opt in enumerate(voice_options) if opt[1] == default_voice), 0)
                         session['voice'] = (
                             session.get('voice')
