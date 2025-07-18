@@ -2730,7 +2730,7 @@ def web_interface(args, ctx):
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())
-                default_voice = models[session['tts_engine']][session['fine_tuned']]['voice']
+                default_voice = models[session['tts_engine']][session['fine_tuned']]['voice'].replace("/eng/", f"/session['language']/") if session['fine_tuned'] == 'internal' else models[session['tts_engine']][session['fine_tuned']]['voice']
                 if default_voice is None:
                     session['voice'] = default_voice
                 else:
@@ -2893,7 +2893,6 @@ def web_interface(args, ctx):
                     if selected == 'internal':
                         visible = visible_gr_group_custom_model
                 session['fine_tuned'] = selected
-                session['voice'] = models[session['tts_engine']][session['fine_tuned']]['voice']
                 return gr.update(visible=visible), update_gr_voice_list(id)
             return gr.update(), gr.update()
 
