@@ -2741,8 +2741,6 @@ def web_interface(args, ctx):
                             else default_voice if default_voice in [opt[1] for opt in voice_options]
                             else voice_options[0][1]
                         )
-                    else:
-                        session['voice'] = default_voice
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
