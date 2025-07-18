@@ -2730,14 +2730,16 @@ def web_interface(args, ctx):
                 default_voice = models[session['tts_engine']][session['fine_tuned']]['voice']
                 if default_voice is None:
                     session['voice'] = default_voice
-                else:             
-                    alert_exception(session['voice'])
-                    session['voice'] = (
-                        session.get('voice')
-                        if session.get('voice') in [opt[1] for opt in voice_options]
-                        else default_voice if default_voice in [opt[1] for opt in voice_options]
-                        else voice_options[0][1]
-                    )
+                else:
+                    if session['voice'] is not None:
+                        session['voice'] = (
+                            session.get('voice')
+                            if session.get('voice') in [opt[1] for opt in voice_options]
+                            else default_voice if default_voice in [opt[1] for opt in voice_options]
+                            else voice_options[0][1]
+                        )
+                    else:
+                        session['voice'] = default_voice
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
