@@ -2731,6 +2731,7 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                 default_voice = models[session['tts_engine']][session['fine_tuned']]['voice']
+                print(f'------------ {voice_options} ---------')
                 if default_voice is None:
                     session['voice'] = default_voice
                 else:
