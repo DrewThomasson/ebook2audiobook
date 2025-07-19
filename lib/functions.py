@@ -2737,8 +2737,15 @@ def web_interface(args, ctx):
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
                 if default_voice_path is None:
                     session['voice'] = default_voice_path
-                print(f"----------{session['voice']}------------")
-                print(f'-----------{voice_options}-------------')
+                else:
+                    voice_names = {opt[0] for opt in voice_options}
+                    default_voice = os.path.splitext(pattern.sub('', default_voice_path))[0]
+                    session['voice'] = (
+                        session['voice']
+                        if session.get('voice') in paths
+                        else default_voice_path if default_voice in voice_names
+                        else (voice_options[0][1] if voice_options else None)
+                    )
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
