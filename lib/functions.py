@@ -915,7 +915,7 @@ def get_date_entities(text, stanza_nlp):
 
 def get_num2words_compat(lang_iso1):
     try:
-        num2words(1, lang=lang_iso1)
+        num2words(1, lang=lang_iso1.replace('zh', 'zh_CN'))
         print(f'-----------num2words for {lang_iso1}: true')
         return True
     except NotImplementedError:
@@ -930,6 +930,7 @@ def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
         first_two = int(year_str[:2])
         last_two = int(year_str[2:])
         lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
+        lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
         if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
             if is_num2words_compat:
                 return num2words(year, lang=lang_iso1)
@@ -963,6 +964,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
         if not math.isfinite(num) or abs(num) > max_single_value:
             return tok
         if is_num2words_compat:
+            lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
             return num2words(num, lang=lang_iso1)
         else:
             return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(num))
