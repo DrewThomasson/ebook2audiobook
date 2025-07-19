@@ -915,7 +915,7 @@ def get_date_entities(text, stanza_nlp):
 
 def get_num2words_compat(lang_iso1):
     try:
-        test = num2words(int(1), lang=lang_iso1.replace('zh', 'zh_CN'))
+        test = num2words(1, lang=lang_iso1.replace('zh', 'zh_CN'))
         return True
     except NotImplementedError:
         return False
@@ -2741,10 +2741,11 @@ def web_interface(args, ctx):
                         voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}/")
                         session['voice'] = voice_lang_path if os.path.exists(voice_lang_path) else default_voice_path
                 else:
-                    voice_names, paths = {o[0] for o in voice_options}, {o[1] for o in voice_options}
-                    
+                    _, paths = {o[0] for o in voice_options}, {o[1] for o in voice_options}
+                    current_voice_path_eng = session['voice'].replace(f"/{session['language']}/", f'/eng/')
                     session['voice'] = (
                         session['voice'] if session['voice'] in paths else 
+                        current_voice_path_eng if os.path.exists(current_voice_path_eng) else
                         default_voice_path if default_voice_path in paths else
                         voice_options[0][1]
                     )
