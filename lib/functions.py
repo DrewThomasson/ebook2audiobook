@@ -1808,31 +1808,31 @@ def convert_ebook(args, ctx=None):
                                     if convert_chapters2audio(session):
                                         exported_files = combine_audio_chapters(session)               
                                         if len(exported_files) > 0:
-                                            #chapters_dirs = [
-                                            #    dir_name for dir_name in os.listdir(session['process_dir'])
-                                            #    if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
-                                            #]
-                                            #shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
-                                            #if is_gui_process:
-                                            #    if len(chapters_dirs) > 1:
-                                            #        if os.path.exists(session['chapters_dir']):
-                                            #            shutil.rmtree(session['chapters_dir'], ignore_errors=True)
-                                            #        if os.path.exists(session['epub_path']):
-                                            #            os.remove(session['epub_path'])
-                                            #        if os.path.exists(session['cover']):
-                                            #            os.remove(session['cover'])
-                                            #    else:
-                                            #        if os.path.exists(session['process_dir']):
-                                            #            shutil.rmtree(session['process_dir'], ignore_errors=True)
-                                            #else:
-                                            #    if os.path.exists(session['voice_dir']):
-                                            #        if not any(os.scandir(session['voice_dir'])):
-                                            #            shutil.rmtree(session['voice_dir'], ignore_errors=True)
-                                            #    if os.path.exists(session['custom_model_dir']):
-                                            #        if not any(os.scandir(session['custom_model_dir'])):
-                                            #            shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
-                                            #    if os.path.exists(session['session_dir']):
-                                            #        shutil.rmtree(session['session_dir'], ignore_errors=True)
+                                            chapters_dirs = [
+                                                dir_name for dir_name in os.listdir(session['process_dir'])
+                                                if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
+                                            ]
+                                            shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
+                                            if is_gui_process:
+                                                if len(chapters_dirs) > 1:
+                                                    if os.path.exists(session['chapters_dir']):
+                                                        shutil.rmtree(session['chapters_dir'], ignore_errors=True)
+                                                    if os.path.exists(session['epub_path']):
+                                                        os.remove(session['epub_path'])
+                                                    if os.path.exists(session['cover']):
+                                                        os.remove(session['cover'])
+                                                else:
+                                                    if os.path.exists(session['process_dir']):
+                                                        shutil.rmtree(session['process_dir'], ignore_errors=True)
+                                            else:
+                                                if os.path.exists(session['voice_dir']):
+                                                    if not any(os.scandir(session['voice_dir'])):
+                                                        shutil.rmtree(session['voice_dir'], ignore_errors=True)
+                                                if os.path.exists(session['custom_model_dir']):
+                                                    if not any(os.scandir(session['custom_model_dir'])):
+                                                        shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
+                                                if os.path.exists(session['session_dir']):
+                                                    shutil.rmtree(session['session_dir'], ignore_errors=True)
                                             progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
                                             session['audiobook'] = exported_files[-1]
                                             print(info_session)
