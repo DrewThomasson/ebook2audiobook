@@ -2713,8 +2713,8 @@ def web_interface(args, ctx):
                             )
                             for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
                         ]
-                keys = {key for key, _ in builtin_options}
-                voice_options = builtin_options + [row for row in eng_options if row[0] not in keys]
+                eng_options = [row for row in eng_options if row[0] not in builtin_options.keys()]
+                voice_options = builtin_options + eng_options
                 voice_options += bark_options
                 if session['voice_dir'] is not None:
                     parent_dir = Path(session['voice_dir']).parent
@@ -2731,7 +2731,6 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                 default_voice = models[session['tts_engine']][session['fine_tuned']]['voice']
-                print(f"------------ {session['voice']} ---------")
                 if default_voice is None:
                     session['voice'] = default_voice
                 else:
@@ -2809,7 +2808,6 @@ def web_interface(args, ctx):
                     new_voice_path = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice'])
                     if os.path.exists(new_voice_path):
                        session['voice'] = new_voice_path
-                print(f"----------{session['voice']}-------------")
                 session['language'] = selected
                 return[
                     gr.update(value=session['language']),
