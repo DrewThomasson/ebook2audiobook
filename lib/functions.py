@@ -2702,6 +2702,8 @@ def web_interface(args, ctx):
                         for base in [os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0]]
                         if base not in builtin_options
                     ]
+                if 'KumarDahl' in builtin_options:
+                    print("------------- OK ----------")
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                     lang_array = languages.get(part3=session['language'])
                     if lang_array:
