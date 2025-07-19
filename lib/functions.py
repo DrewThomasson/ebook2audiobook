@@ -2735,15 +2735,18 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if default_voice_path is None:
-                    session['voice'] = default_voice_path
+                default_voice_lang = models[session['tts_engine']][session['fine_tuned']]['lang']
+                if session['voice'] is None:
+                    if voice_options[0][1] is not None:
+                        voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}")
+                        session['voice'] = voice_lang_path if os.path.exists(voice_lang_path) else default_voice_path
                 else:
                     voice_names, paths = {o[0] for o in voice_options}, {o[1] for o in voice_options}
-                    default_voice = os.path.splitext(pattern.sub('', default_voice_path))[0]
+                    voice_lang_path = session['voice'].replace(f'/{default_voice_lang}/', f"/{session['language']}")
                     session['voice'] = (
                         session['voice']
                         if session.get('voice') in paths
-                        else default_voice_path if default_voice in voice_names
+                        else voice_lang_path if os.path.exists(voice_lang_path)
                         else (voice_options[0][1] if voice_options else None)
                     )
                 return gr.update(choices=voice_options, value=session['voice'])
