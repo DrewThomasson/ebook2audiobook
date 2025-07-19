@@ -2817,11 +2817,11 @@ def web_interface(args, ctx):
                     if os.path.exists(new_voice_path):
                         session['voice'] = new_voice_path
                     else:
-                        new_voice_path = session['voice'].replace(f'/eng/', f'/{selected}/')
+                        new_voice_path = session['voice'].replace('/eng/', f'/{selected}/')
                         if os.path.exists(new_voice_path):
                             session['voice'] = new_voice_path
                         else:
-                            new_voice_path = session['voice'].replace(f'/{prev}/', f'/eng/')
+                            new_voice_path = session['voice'].replace(f'/{prev}/', '/eng/')
                             if os.path.exists(new_voice_path):
                                 session['voice'] = new_voice_path           
                 session['language'] = selected
