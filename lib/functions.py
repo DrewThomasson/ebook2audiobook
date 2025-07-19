@@ -2713,42 +2713,39 @@ def web_interface(args, ctx):
                         speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
                         pattern_speaker = re.compile(r"^.*?_speaker_(\d+)$")
                         bark_options = [
-                            (
-                                pattern_speaker.sub(r"Speaker \1", f.stem),
-                                str(f.with_suffix(".wav"))
-                            )
+                            (pattern_speaker.sub(r"Speaker \1", f.stem), str(f.with_suffix(".wav")))
                             for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
                         ]
                 voice_options = builtin_options + eng_options + bark_options
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                os.makedirs(session['voice_dir'], exist_ok=True)
                 if session['voice_dir'] is not None:
                     parent_dir = Path(session['voice_dir']).parent
                     voice_options += [
-                        (
-                            os.path.splitext(pattern.sub('', f.name))[0],
-                            str(f)
-                        )
+                        (os.path.splitext(pattern.sub('', f.name))[0], str(f))
                         for f in parent_dir.rglob(file_pattern)
                         if f.is_file()
                     ]
                 if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 else:
-                    voice_options = sorted(voice_options, key=lambda x: x[0].lower())
+                    voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
                 default_voice_lang = models[session['tts_engine']][session['fine_tuned']]['lang']
+                default_voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}/")
+                default_voice_path = default_voice_lang_path if os.path.exists(default_voice_lang_path) else default_voice_path
                 if session['voice'] is None:
                     if voice_options[0][1] is not None:
-                        voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}/")
-                        session['voice'] = voice_lang_path if os.path.exists(voice_lang_path) else default_voice_path
+                        session['voice'] = default_voice_path
                 else:
-                    _, paths = {o[0] for o in voice_options}, {o[1] for o in voice_options}
-                    current_voice_path_eng = session['voice'].replace(f"/{session['language']}/", f'/eng/')
-                    session['voice'] = (
-                        session['voice'] if session['voice'] in paths else 
-                        current_voice_path_eng if os.path.exists(current_voice_path_eng) else
-                        default_voice_path if default_voice_path in paths else
-                        voice_options[0][1]
+                    current_voice_name = os.path.splitext(pattern.sub('', os.path.basename(session['voice'])))[0]
+                    current_voice_path = next(
+                        (path for path, name in voice_options if name == current_voice_name), False
                     )
+                    if current_voice_path:
+                        session['voice'] = current_voice_path
+                    else:
+                        session['voice'] = default_voice_path
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
@@ -2809,22 +2806,7 @@ def web_interface(args, ctx):
         def change_gr_language(selected, id):
             if selected:
                 session = context.get_session(id)
-                prev = session['language']
-                session['voice_dir'] = session['voice_dir'].replace(f'/{prev}/', f'/{selected}/')
-                os.makedirs(session['voice_dir'], exist_ok=True)
-                if session['voice'] is not None:
-                    new_voice_path = session['voice'].replace(f'/{prev}/', f'/{selected}/')
-                    if os.path.exists(new_voice_path):
-                        session['voice'] = new_voice_path
-                    else:
-                        new_voice_path = session['voice'].replace('/eng/', f'/{selected}/')
-                        if os.path.exists(new_voice_path):
-                            session['voice'] = new_voice_path
-                        else:
-                            new_voice_path = session['voice'].replace(f'/{prev}/', '/eng/')
-                            if os.path.exists(new_voice_path):
-                                session['voice'] = new_voice_path       
-                    print(f"------------------- {session['voice']} -------------")
+                prev = session['language']      
                 session['language'] = selected
                 return[
                     gr.update(value=session['language']),
