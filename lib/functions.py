@@ -2807,12 +2807,11 @@ def web_interface(args, ctx):
         def change_gr_language(selected, id):
             if selected:
                 session = context.get_session(id)
-                previous = session['language']
-                new = selected
-                session['voice_dir'] = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice_dir'])
+                prev = session['language']
+                session['voice_dir'] = session['voice_dir'].replace(f'/{prev}/', f'/{selected}/')
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 if session['voice'] is not None:
-                    new_voice_path = re.sub(rf'([\\/]){re.escape(previous)}$', rf'\1{new}', session['voice'])
+                    new_voice_path = session['voice'].replace(f'/{prev}/', f'/{selected}/')
                     if os.path.exists(new_voice_path):
                        session['voice'] = new_voice_path
                 session['language'] = selected
