@@ -2741,6 +2741,7 @@ def web_interface(args, ctx):
                         voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}/")
                         session['voice'] = voice_lang_path if os.path.exists(voice_lang_path) else default_voice_path
                 else:
+                    voice_names, paths = {o[0] for o in voice_options}, {o[1] for o in voice_options}
                     session['voice'] = (
                         session['voice']
                         if session.get('voice') in paths else 
