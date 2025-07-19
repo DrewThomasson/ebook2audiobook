@@ -2749,6 +2749,7 @@ def web_interface(args, ctx):
                         else voice_lang_path if os.path.exists(voice_lang_path)
                         else (voice_options[0][1] if voice_options else None)
                     )
+                    print(f"-----------{session['voice']}------------")
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
