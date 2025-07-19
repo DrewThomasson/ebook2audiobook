@@ -2738,11 +2738,11 @@ def web_interface(args, ctx):
                 default_voice_lang = models[session['tts_engine']][session['fine_tuned']]['lang']
                 if session['voice'] is None:
                     if voice_options[0][1] is not None:
-                        voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}")
+                        voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}/")
                         session['voice'] = voice_lang_path if os.path.exists(voice_lang_path) else default_voice_path
                 else:
                     voice_names, paths = {o[0] for o in voice_options}, {o[1] for o in voice_options}
-                    voice_lang_path = session['voice'].replace(f'/{default_voice_lang}/', f"/{session['language']}")
+                    voice_lang_path = session['voice'].replace(f'/{default_voice_lang}/', f"/{session['language']}/")
                     session['voice'] = (
                         session['voice']
                         if session.get('voice') in paths
