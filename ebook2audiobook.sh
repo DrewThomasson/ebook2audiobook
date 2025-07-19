@@ -48,7 +48,7 @@ SCRIPT_MODE="$NATIVE"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox")
+REQUIRED_PROGRAMS=("curl" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
 
