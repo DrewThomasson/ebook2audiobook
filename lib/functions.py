@@ -1649,8 +1649,6 @@ def convert_ebook(args, ctx=None):
                         args['language_iso1'] = lang_array.part1 
                 else:
                     args['language_iso1'] = None
-                if args['language_iso1'] == 'zh':
-                    args['language_iso1'] = 'zh_CN'
             except Exception as e:
                 pass
 
