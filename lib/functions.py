@@ -2691,28 +2691,29 @@ def web_interface(args, ctx):
                 file_pattern = "*_24000.wav"
                 eng_options = []
                 bark_options = []
+                pattern = re.compile(r'_24000\.wav$')
                 builtin_options = [
-                    (os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0], str(f))
+                    (os.path.splitext(pattern.sub('', f.name))[0], str(f))
                     for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
                 ]
                 if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
+                    builtin_names = {t[0]: None for t in builtin_options}
                     eng_options = [
                         (base, str(f))
-                        for f in Path(os.path.join(voices_dir, "eng")).rglob(file_pattern)
-                        for base in [os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0]]
-                        if base not in builtin_options
+                        for f in root.rglob(file_pattern)
+                        for base in [os.path.splitext(pattern.sub('', f.name))[0]]
+                        if base not in builtin_names
                     ]
-                if 'KumarDahl' in builtin_options:
-                    print("------------- OK ----------")
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                     lang_array = languages.get(part3=session['language'])
                     if lang_array:
                         lang_iso1 = lang_array.part1 
                         lang = lang_iso1.lower()
                         speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
+                        pattern_speaker = re.compile(r"^.*?_speaker_(\d+)$")
                         bark_options = [
                             (
-                                re.sub(r"^.*?_speaker_(\d+)$", r"Speaker \1", f.stem),
+                                pattern_speaker.sub(r"Speaker \1", f.stem),
                                 str(f.with_suffix(".wav"))
                             )
                             for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
@@ -2722,7 +2723,7 @@ def web_interface(args, ctx):
                     parent_dir = Path(session['voice_dir']).parent
                     voice_options += [
                         (
-                            os.path.splitext(re.sub(r'_24000\.wav$', '', f.name))[0],
+                            os.path.splitext(pattern.sub('', f.name))[0],
                             str(f)
                         )
                         for f in parent_dir.rglob(file_pattern)
