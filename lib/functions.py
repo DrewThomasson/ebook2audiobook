@@ -2715,7 +2715,7 @@ def web_interface(args, ctx):
                         ]
                 builtin_names = {t[0] for t in builtin_options}
                 eng_options = [row for row in eng_options if row[0] not in builtin_names]
-                print(f"-----------{eng_options}--------------")
+                print(f"-----------{builtin_names}--------------")
                 voice_options = builtin_options + eng_options
                 voice_options += bark_options
                 if session['voice_dir'] is not None:
