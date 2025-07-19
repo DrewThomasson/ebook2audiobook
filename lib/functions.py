@@ -2815,7 +2815,11 @@ def web_interface(args, ctx):
                 if session['voice'] is not None:
                     new_voice_path = session['voice'].replace(f'/{prev}/', f'/{selected}/')
                     if os.path.exists(new_voice_path):
-                       session['voice'] = new_voice_path
+                        session['voice'] = new_voice_path
+                    else:
+                        new_voice_path = session['voice'].replace(f'/{prev}/', f'/eng/')
+                        if os.path.exists(new_voice_path):
+                            session['voice'] = new_voice_path
                 session['language'] = selected
                 return[
                     gr.update(value=session['language']),
