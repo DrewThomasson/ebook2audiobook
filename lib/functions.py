@@ -2746,6 +2746,7 @@ def web_interface(args, ctx):
                         session['voice'] = current_voice_path
                     else:
                         session['voice'] = default_voice_path
+                    print(f"------------session voice: {session['voice']}---------------")
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
