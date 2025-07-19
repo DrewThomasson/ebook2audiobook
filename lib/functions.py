@@ -597,6 +597,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             return None
         text_array = []
         handled_tables = set()
+        multi_break_re = re.compile(r'(?:\r\n|\r|\n){2,}')
         for typ, payload in items:
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
@@ -619,7 +620,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     if line:
                         text_array.append(line.strip())
             else:
-                text_array.append(payload.strip())
+                text = payload.strip()
+                if not text:
+                    continue
+                text = multi_break_re.sub(' [pause] ', text)
+                text_array.append(text.strip())
         text = "\n".join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
@@ -962,8 +967,8 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
         if not math.isfinite(num) or abs(num) > max_single_value:
             return tok
         if is_num2words_compat:
-            lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
-            return num2words(num, lang=lang_iso1)
+            lang = lang_iso1.replace('zh', 'zh_CN')
+            return num2words(num, lang=lang)
         else:
             return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(num))
     return number_re.sub(clean_num, text)
