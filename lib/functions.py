@@ -2740,13 +2740,12 @@ def web_interface(args, ctx):
                 else:
                     current_voice_name = os.path.splitext(pattern.sub('', os.path.basename(session['voice'])))[0]
                     current_voice_path = next(
-                        (path for path, name in voice_options if name == current_voice_name), False
+                        (path for name, path in voice_options if name == current_voice_name), False
                     )
                     if current_voice_path:
                         session['voice'] = current_voice_path
                     else:
                         session['voice'] = default_voice_path
-                    print(f"------------session voice: {voice_options}---------------")
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
