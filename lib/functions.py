@@ -2713,7 +2713,8 @@ def web_interface(args, ctx):
                             )
                             for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
                         ]
-                eng_options = [row for row in eng_options if row[0] not in builtin_options.keys()]
+                builtin_names = {t[0] for t in builtin_options}
+                eng_options = [row for row in eng_options if row[0] not in builtin_names]
                 print(f"-----------{eng_options}--------------")
                 voice_options = builtin_options + eng_options
                 voice_options += bark_options
