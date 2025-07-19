@@ -2742,10 +2742,11 @@ def web_interface(args, ctx):
                         session['voice'] = voice_lang_path if os.path.exists(voice_lang_path) else default_voice_path
                 else:
                     voice_names, paths = {o[0] for o in voice_options}, {o[1] for o in voice_options}
+                    
                     session['voice'] = (
-                        session['voice']
-                        if session.get('voice') in paths else 
-                        default_voice_path
+                        session['voice'] if session['voice'] in paths else 
+                        default_voice_path if default_voice_path in paths else
+                        voice_options[0][1]
                     )
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
