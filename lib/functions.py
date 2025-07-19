@@ -2738,7 +2738,7 @@ def web_interface(args, ctx):
                 if default_voice_path is None:
                     session['voice'] = default_voice_path
                 else:
-                    voice_names = {opt[0] for opt in voice_options}
+                    voice_names, paths = {o[0] for o in voice_options}, {o[1] for o in voice_options}
                     default_voice = os.path.splitext(pattern.sub('', default_voice_path))[0]
                     session['voice'] = (
                         session['voice']
