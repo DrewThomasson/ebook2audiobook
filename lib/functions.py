@@ -2731,9 +2731,10 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                default_voice_lang = models[session['tts_engine']][session['fine_tuned']]['lang']
-                default_voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}/")
-                default_voice_path = default_voice_lang_path if os.path.exists(default_voice_lang_path) else default_voice_path
+                if default_voice_path is not None:
+                    default_voice_lang = models[session['tts_engine']][session['fine_tuned']]['lang']
+                    default_voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}/")
+                    default_voice_path = default_voice_lang_path if os.path.exists(default_voice_lang_path) else default_voice_path
                 if session['voice'] is None:
                     if voice_options[0][1] is not None:
                         session['voice'] = default_voice_path
