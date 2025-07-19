@@ -2734,14 +2734,15 @@ def web_interface(args, ctx):
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())
-                default_voice = models[session['tts_engine']][session['fine_tuned']]['voice']
+                default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
+                default_voice = os.path.splitext(pattern.sub('', default_voice_path))[0] if default_voice_path is not None else None
                 if default_voice is None:
                     session['voice'] = default_voice
                 else:
                     session['voice'] = (
                         session['voice']
                         if session['voice'] in [opt[1] for opt in voice_options]
-                        else default_voice if default_voice in [opt[1] for opt in voice_options]
+                        else default_voice_path if default_voice in [opt[0] for opt in voice_options]
                         else voice_options[0][1]
                     )
                 return gr.update(choices=voice_options, value=session['voice'])
