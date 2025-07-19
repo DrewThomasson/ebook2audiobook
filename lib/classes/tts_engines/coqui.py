@@ -467,7 +467,7 @@ class Coqui:
                         audio_segments.append(silence_tensor.clone())
                         continue
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                        trim_audio_buffer = 0.06
+                        trim_audio_buffer = 0.12
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
                             settings['gpt_cond_latent'], settings['speaker_embedding'] = settings['latent_embedding'][settings['voice_path']]
                         else:
@@ -751,7 +751,7 @@ class Coqui:
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
-                        trim_audio_buffer = 0.004
+                        trim_audio_buffer = 0.008
                         speaker_argument = {}
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                         if settings['voice_path'] is not None:
