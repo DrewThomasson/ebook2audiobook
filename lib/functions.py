@@ -916,8 +916,10 @@ def get_date_entities(text, stanza_nlp):
 def get_num2words_compat(lang_iso1):
     try:
         num2words(1, lang=lang_iso1)
+        print(f'-----------num2words for {lang_iso1}: true')
         return True
     except NotImplementedError:
+        print(f'-----------num2words for {lang_iso1}: false')
         return False
     except Exception as e:
         return False
