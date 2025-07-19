@@ -2820,6 +2820,7 @@ def web_interface(args, ctx):
                         new_voice_path = session['voice'].replace('/eng/', f'/{selected}/')
                         if os.path.exists(new_voice_path):
                             session['voice'] = new_voice_path
+                            print(f"------------------- {session['voice']} -------------")
                         else:
                             new_voice_path = session['voice'].replace(f'/{prev}/', '/eng/')
                             if os.path.exists(new_voice_path):
