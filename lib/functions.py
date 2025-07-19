@@ -2698,9 +2698,10 @@ def web_interface(args, ctx):
                 ]
                 if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
                     builtin_names = {t[0]: None for t in builtin_options}
+                    eng_dir = Path(os.path.join(voices_dir, "eng"))
                     eng_options = [
                         (base, str(f))
-                        for f in root.rglob(file_pattern)
+                        for f in eng_dir.rglob(file_pattern)
                         for base in [os.path.splitext(pattern.sub('', f.name))[0]]
                         if base not in builtin_names
                     ]
