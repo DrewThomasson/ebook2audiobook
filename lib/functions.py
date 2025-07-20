@@ -578,6 +578,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             tag.decompose()
 
         # helper to walk in document order
+        print(f'-------------{node}-----------')
         def walk(node):
             for child in node.children:
                 if isinstance(child, NavigableString):
