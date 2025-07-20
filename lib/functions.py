@@ -713,132 +713,132 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         DependencyError(e)
         return None
 
-    def get_sentences(text, lang, tts_engine):
-        max_chars = language_mapping[lang]['max_chars'] + 2
+def get_sentences(text, lang, tts_engine):
+	max_chars = language_mapping[lang]['max_chars'] + 2
 
-        def combine_punctuation(raw_list):
-            if not raw_list:
-                return raw_list
-            result = [raw_list[0]]
-            extended_punct_set = set(punctuation_split_set)
-            extended_punct_set.add("'")
-            i = 1
-            while i < len(raw_list):
-                curr_sentence = raw_list[i]
-                while curr_sentence and curr_sentence[0] in extended_punct_set and len(result[-1]) + 1 <= max_chars:
-                    result[-1] += curr_sentence[0]
-                    curr_sentence = curr_sentence[1:]
-                if curr_sentence.strip():
-                    if not result[-1].endswith(' '):
-                        result[-1] += ' '
-                    result.append(curr_sentence.lstrip())
-                i += 1
-            return result
+	def combine_punctuation(raw_list):
+		if not raw_list:
+			return raw_list
+		result = [raw_list[0]]
+		extended_punct_set = set(punctuation_split_set)
+		extended_punct_set.add("'")
+		i = 1
+		while i < len(raw_list):
+			curr_sentence = raw_list[i]
+			while curr_sentence and curr_sentence[0] in extended_punct_set and len(result[-1]) + 1 <= max_chars:
+				result[-1] += curr_sentence[0]
+				curr_sentence = curr_sentence[1:]
+			if curr_sentence.strip():
+				if not result[-1].endswith(' '):
+					result[-1] += ' '
+				result.append(curr_sentence.lstrip())
+			i += 1
+		return result
 
-        def segment_ideogramms(text):
-            if lang == 'zho':
-                import jieba
-                return list(jieba.cut(text))
-            elif lang == 'jpn':
-                sudachi = dictionary.Dictionary().create()
-                mode = tokenizer.Tokenizer.SplitMode.C
-                return [m.surface() for m in sudachi.tokenize(text, mode)]
-            elif lang == 'kor':
-                ltokenizer = LTokenizer()
-                return ltokenizer.tokenize(text)
-            elif lang in ['tha', 'lao', 'mya', 'khm']:
-                return word_tokenize(text, engine='newmm')
-            else:
-                pattern_split = [re.escape(p) for p in punctuation_split_set]
-                pattern = f"({'|'.join(pattern_split)})"
-                return re.split(pattern, text)
+	def segment_ideogramms(text):
+		if lang == 'zho':
+			import jieba
+			return list(jieba.cut(text))
+		elif lang == 'jpn':
+			sudachi = dictionary.Dictionary().create()
+			mode = tokenizer.Tokenizer.SplitMode.C
+			return [m.surface() for m in sudachi.tokenize(text, mode)]
+		elif lang == 'kor':
+			ltokenizer = LTokenizer()
+			return ltokenizer.tokenize(text)
+		elif lang in ['tha', 'lao', 'mya', 'khm']:
+			return word_tokenize(text, engine='newmm')
+		else:
+			pattern_split = [re.escape(p) for p in punctuation_split_set]
+			pattern = f"({'|'.join(pattern_split)})"
+			return re.split(pattern, text)
 
-        def split_sentence(sentence):
-            if not re.search(r'[^\W_]', sentence, re.UNICODE):
-                return []
-            if len(sentence) <= max_chars:
-                if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                    if sentence and sentence[-1].isalpha():
-                        return [sentence + ' -']
-                return [sentence]
-            # (splitting logic as before...)
+	def split_sentence(sentence):
+		if not re.search(r'[^\W_]', sentence, re.UNICODE):
+			return []
+		if len(sentence) <= max_chars:
+			if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+				if sentence and sentence[-1].isalpha():
+					return [sentence + ' -']
+			return [sentence]
+		# (splitting logic as before...)
 
-        # Original punctuation split—**do NOT include '‡pause‡' in punctuation_split**
-        punctuations = sorted(punctuation_split, key=len, reverse=True)
-        pattern_split = '|'.join(map(re.escape, punctuations))
-        pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
+	# Original punctuation split—**do NOT include '‡pause‡' in punctuation_split**
+	punctuations = sorted(punctuation_split, key=len, reverse=True)
+	pattern_split = '|'.join(map(re.escape, punctuations))
+	pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
 
-        raw_list = []
-        for match in re.finditer(pattern, text):
-            s = match.group(1).strip()
-            if s:
-                if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                    tokens = segment_ideogramms(s)
-                    if isinstance(tokens, list):
-                        raw_list.append(''.join(tokens))
-                    else:
-                        raw_list.append(str(tokens))
-                else:
-                    raw_list.append(s)
+	raw_list = []
+	for match in re.finditer(pattern, text):
+		s = match.group(1).strip()
+		if s:
+			if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+				tokens = segment_ideogramms(s)
+				if isinstance(tokens, list):
+					raw_list.append(''.join(tokens))
+				else:
+					raw_list.append(str(tokens))
+			else:
+				raw_list.append(s)
 
-        raw_list = combine_punctuation(raw_list)
+	raw_list = combine_punctuation(raw_list)
 
-        # **Now split '‡pause‡' after initial punctuation-based split**
-        def split_pause_markers(raw_list):
-            result = []
-            for chunk in raw_list:
-                parts = chunk.split('‡pause‡')
-                for i, part in enumerate(parts):
-                    part = part.strip()
-                    if part:
-                        result.append(part)
-                    if i < len(parts) - 1:
-                        result.append('‡pause‡')
-            return result
-        raw_list = split_pause_markers(raw_list)
+	# **Now split '‡pause‡' after initial punctuation-based split**
+	def split_pause_markers(raw_list):
+		result = []
+		for chunk in raw_list:
+			parts = chunk.split('‡pause‡')
+			for i, part in enumerate(parts):
+				part = part.strip()
+				if part:
+					result.append(part)
+				if i < len(parts) - 1:
+					result.append('‡pause‡')
+		return result
+	raw_list = split_pause_markers(raw_list)
 
-        min_tokens = 5
-        final_list = []
-        buffer = ""
-        for chunk in raw_list:
-            if chunk == '‡pause‡':
-                if buffer:
-                    final_list.append(buffer)
-                    buffer = ""
-                final_list.append('‡pause‡')
-                continue
-            tokens = re.findall(r'\w+', chunk, re.UNICODE)
-            if len(tokens) < min_tokens:
-                buffer = (buffer + " " + chunk).strip()
-            else:
-                if buffer:
-                    combined = (buffer + " " + chunk).strip()
-                    combined_tokens = re.findall(r'\w+', combined, re.UNICODE)
-                    if len(combined_tokens) >= min_tokens:
-                        final_list.append(combined)
-                        buffer = ""
-                    else:
-                        buffer = combined
-                else:
-                    final_list.append(chunk)
-        if buffer:
-            if final_list and final_list[-1] != '‡pause‡':
-                prev = final_list.pop()
-                merged = (prev + " " + buffer).strip()
-                final_list.append(merged)
-            else:
-                final_list.append(buffer)
-        sentences = []
-        for sentence in final_list:
-            if sentence == '‡pause‡':
-                sentences.append('‡pause‡')
-            else:
-                sentence = sentence.strip()
-                if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-                    sentences.extend(split_sentence(sentence))
-        # Remove any pause-only or empty sentence fragments before returning
-        sentences = [s for s in sentences if s.strip() and s.strip() != '‡pause‡']
-        return sentences
+	min_tokens = 5
+	final_list = []
+	buffer = ""
+	for chunk in raw_list:
+		if chunk == '‡pause‡':
+			if buffer:
+				final_list.append(buffer)
+				buffer = ""
+			final_list.append('‡pause‡')
+			continue
+		tokens = re.findall(r'\w+', chunk, re.UNICODE)
+		if len(tokens) < min_tokens:
+			buffer = (buffer + " " + chunk).strip()
+		else:
+			if buffer:
+				combined = (buffer + " " + chunk).strip()
+				combined_tokens = re.findall(r'\w+', combined, re.UNICODE)
+				if len(combined_tokens) >= min_tokens:
+					final_list.append(combined)
+					buffer = ""
+				else:
+					buffer = combined
+			else:
+				final_list.append(chunk)
+	if buffer:
+		if final_list and final_list[-1] != '‡pause‡':
+			prev = final_list.pop()
+			merged = (prev + " " + buffer).strip()
+			final_list.append(merged)
+		else:
+			final_list.append(buffer)
+	sentences = []
+	for sentence in final_list:
+		if sentence == '‡pause‡':
+			sentences.append('‡pause‡')
+		else:
+			sentence = sentence.strip()
+			if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+				sentences.extend(split_sentence(sentence))
+	# Remove any pause-only or empty sentence fragments before returning
+	sentences = [s for s in sentences if s.strip() and s.strip() != '‡pause‡']
+	return sentences
 
 def get_ram():
     vm = psutil.virtual_memory()
