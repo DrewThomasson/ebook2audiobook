@@ -896,7 +896,6 @@ def get_sentences(text, lang, tts_engine):
             sentences.extend(split_sentence(sentence))
     if not sentences and text.strip():
         sentences = split_sentence(text.strip())
-    sentences = [s for s in filtered if s and re.search(r'\w', s, re.UNICODE)]
     return sentences
 
 def get_ram():
