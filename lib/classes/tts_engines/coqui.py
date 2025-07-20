@@ -458,8 +458,7 @@ class Coqui:
                 sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
                     sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
-                silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(1.2, 2.1) * 100) / 100))) # 1.4 seconds
-                extra_audio_buffer = 0
+                silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.7, 1.4) * 100) / 100))) # 0.7 to 1.4 seconds
                 audio_segments = []
                 for text_part in sentence_parts:
                     text_part = text_part.strip()
@@ -467,7 +466,7 @@ class Coqui:
                         audio_segments.append(silence_tensor.clone())
                         continue
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                        trim_audio_buffer = 0.06
+                        trim_audio_buffer = 0.006
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
                             settings['gpt_cond_latent'], settings['speaker_embedding'] = settings['latent_embedding'][settings['voice_path']]
                         else:
@@ -751,7 +750,6 @@ class Coqui:
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
-                        trim_audio_buffer = 0.004
                         speaker_argument = {}
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                         if settings['voice_path'] is not None:
@@ -774,10 +772,11 @@ class Coqui:
                 if audio_segments and torch.equal(audio_segments[-1], silence_tensor):
                     audio_segments = audio_segments[:-1]
                 if audio_segments:
-                    audio_tensor = torch.cat(audio_segments, dim=-1)
                     if not text_part.endswith('-') and not text_part[-1].isalnum():
-                        extra_audio_buffer = int(np.random.uniform(1.2, 2.1) * 100) / 100
-                    audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer + extra_audio_buffer).unsqueeze(0)
+                        audio_segments.append(silence_tensor.clone())
+                    audio_tensor = torch.cat(audio_segments, dim=-1)
+                    if text_part.endswith('-') or text_part[-1].isalnum():
+                        audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                     start_time = self.sentences_total_time
                     duration = audio_tensor.shape[-1] / settings['samplerate']
                     end_time = start_time + duration

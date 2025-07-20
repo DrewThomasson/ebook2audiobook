@@ -36,24 +36,26 @@ def detect_gender(voice_path):
         return None
 
 def trim_audio(audio_data, samplerate, silence_threshold=0.003, buffer_sec=0.005):
-    # Ensure audio_data is a PyTorch tensor
-    if isinstance(audio_data, list):  
-        audio_data = torch.tensor(audio_data)
-    if isinstance(audio_data, torch.Tensor):
-        if audio_data.is_cuda:
-            audio_data = audio_data.cpu()           
-        # Detect non-silent indices
-        non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
-        if len(non_silent_indices) == 0:
-            return torch.tensor([], device=audio_data.device)
-        # Calculate start and end trimming indices with buffer
-        start_index = max(non_silent_indices[0] - int(buffer_sec * samplerate), 0)
-        end_index = non_silent_indices[-1] + int(buffer_sec * samplerate)
-        # Trim the audio
-        trimmed_audio = audio_data[start_index:end_index]
-        return trimmed_audio
-    error = "audio_data must be a PyTorch tensor or a list of numerical values."
-    raise TypeError(error)
+	# Ensure audio_data is a PyTorch tensor
+	if isinstance(audio_data, list):  
+		audio_data = torch.tensor(audio_data, dtype=torch.float32)  # Ensure dtype and always float32 for audio
+	if isinstance(audio_data, torch.Tensor):
+		if audio_data.ndim != 1:
+			error = "audio_data must be a 1D tensor (mono audio)."
+			raise ValueError(error)
+		if audio_data.is_cuda:
+			audio_data = audio_data.cpu()           
+		# Detect non-silent indices
+		non_silent_indices = torch.where(audio_data.abs() > silence_threshold)[0]
+		if len(non_silent_indices) == 0:
+			return torch.tensor([], dtype=audio_data.dtype)  # Preserves dtype
+		# Calculate start and end trimming indices with buffer
+		start_index = max(non_silent_indices[0].item() - int(buffer_sec * samplerate), 0)
+		end_index = min(non_silent_indices[-1].item() + int(buffer_sec * samplerate), audio_data.size(0))  # Clamp end to signal length
+		trimmed_audio = audio_data[start_index:end_index]
+		return trimmed_audio
+	error = "audio_data must be a PyTorch tensor or a list of numerical values."
+	raise TypeError(error)
 
 def normalize_audio(input_file, output_file, samplerate):
     filter_complex = (

@@ -576,6 +576,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
+
+        # tags after which we always add a [pause]
+        pause_after_tags = {"p", "div", "span"}  # you requested span too
+
         # helper to walk in document order
         def walk(node):
             for child in node.children:
@@ -584,24 +588,78 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     if text:
                         yield ("text", text)
                 elif isinstance(child, Tag):
-                    if child.name in heading_tags:
+                    name = child.name.lower()
+                    if name in heading_tags:
                         title = child.get_text(strip=True)
                         if title:
                             yield ("heading", title)
-                    elif child.name == "table":
+                    elif name == "table":
                         yield ("table", child)
+                    elif name == "br":
+                        yield ("br", None)
                     else:
-                        yield from walk(child)
+                        # Recurse into other tags
+                        produced_something = False
+                        if name in pause_after_tags:
+                            # Walk children; then emit a pause marker
+                            for inner in walk(child):
+                                produced_something = True
+                                yield inner
+                            # Only add pause if something textual/structural came out
+                            if produced_something:
+                                yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
+                        else:
+                            yield from walk(child)
+
         items = list(walk(body))
         if not items:
             return None
+
+        # Process items to insert pauses for <br> runs and pause-request markers
+        processed = []
+        br_run = 0
+
+        def append_pause():
+            if processed and processed[-1][0] == "pause":
+                return  # avoid duplicate
+            processed.append(("pause", "[pause]"))
+
+        for typ, payload in items:
+            if typ == "br":
+                br_run += 1
+                continue
+            # Resolve any pending br run
+            if br_run:
+                if br_run >= 2:
+                    append_pause()  # pause *after* the run
+                # single br_run == 1 is ignored (adjust if you want a pause or newline)
+                br_run = 0
+            if typ == "pause-request":
+                append_pause()
+            else:
+                processed.append((typ, payload))
+        # Tail run
+        if br_run >= 2:
+            append_pause()
+
+        items = processed  # replace with processed sequence
+
         text_array = []
         handled_tables = set()
-        multi_break_re = re.compile(r'(?:\r\n|\r|\n){2,}')
+
         for typ, payload in items:
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
-                text_array.append(f"{raw_text}.[pause]")
+                # Always add pause after heading (but avoid duplicate if previous already pause)
+                if text_array and text_array[-1] == "[pause]":
+                    text_array.append(raw_text.strip())
+                    text_array.append("[pause]")
+                else:
+                    text_array.append(f"{raw_text.strip()} [pause]")
+            elif typ == "pause":
+                # Add pause if not duplicate
+                if not text_array or text_array[-1] != "[pause]":
+                    text_array.append("[pause]")
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -613,18 +671,19 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 headers = [c.get_text(strip=True) for c in rows[0].find_all(["td", "th"])]
                 for row in rows[1:]:
                     cells = [c.get_text(strip=True).replace('\xa0', ' ') for c in row.find_all("td")]
-                    if len(cells) == len(headers):
+                    if not cells:
+                        continue
+                    if len(cells) == len(headers) and headers:
                         line = " — ".join(f"{h}: {c}" for h, c in zip(headers, cells))
                     else:
                         line = " — ".join(cells)
                     if line:
                         text_array.append(line.strip())
-            else:
+            else:  # "text"
                 text = payload.strip()
-                if not text:
-                    continue
-                text = multi_break_re.sub(' [pause] ', text)
-                text_array.append(text.strip())
+                if text:
+                    text_array.append(text)
+
         text = "\n".join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
