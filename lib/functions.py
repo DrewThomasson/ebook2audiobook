@@ -763,7 +763,6 @@ def get_sentences(text, lang, tts_engine):
 			return [sentence]
 		# (splitting logic as before...)
 
-	# Original punctuation split—**do NOT include '‡pause‡' in punctuation_split**
 	punctuations = sorted(punctuation_split, key=len, reverse=True)
 	pattern_split = '|'.join(map(re.escape, punctuations))
 	pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
@@ -780,40 +779,20 @@ def get_sentences(text, lang, tts_engine):
 					raw_list.append(str(tokens))
 			else:
 				raw_list.append(s)
-
 	raw_list = combine_punctuation(raw_list)
 
-	# **Now split '‡pause‡' after initial punctuation-based split**
-	def split_pause_markers(raw_list):
-		result = []
-		for chunk in raw_list:
-			parts = chunk.split('‡pause‡')
-			for i, part in enumerate(parts):
-				part = part.strip()
-				if part:
-					result.append(part)
-				if i < len(parts) - 1:
-					result.append('‡pause‡')
-		return result
-	raw_list = split_pause_markers(raw_list)
-
+	# Do NOT split on '‡pause‡', just process as text
 	min_tokens = 5
 	final_list = []
 	buffer = ""
 	for chunk in raw_list:
-		if chunk == '‡pause‡':
-			if buffer:
-				final_list.append(buffer)
-				buffer = ""
-			final_list.append('‡pause‡')
-			continue
-		tokens = re.findall(r'\w+', chunk, re.UNICODE)
+		tokens = re.findall(r'\w+', chunk.replace('‡pause‡','').strip(), re.UNICODE)
 		if len(tokens) < min_tokens:
 			buffer = (buffer + " " + chunk).strip()
 		else:
 			if buffer:
 				combined = (buffer + " " + chunk).strip()
-				combined_tokens = re.findall(r'\w+', combined, re.UNICODE)
+				combined_tokens = re.findall(r'\w+', combined.replace('‡pause‡','').strip(), re.UNICODE)
 				if len(combined_tokens) >= min_tokens:
 					final_list.append(combined)
 					buffer = ""
@@ -822,22 +801,19 @@ def get_sentences(text, lang, tts_engine):
 			else:
 				final_list.append(chunk)
 	if buffer:
-		if final_list and final_list[-1] != '‡pause‡':
-			prev = final_list.pop()
-			merged = (prev + " " + buffer).strip()
-			final_list.append(merged)
-		else:
-			final_list.append(buffer)
+		prev = final_list.pop() if final_list else ""
+		merged = (prev + " " + buffer).strip() if prev else buffer
+		final_list.append(merged)
+
 	sentences = []
 	for sentence in final_list:
-		if sentence == '‡pause‡':
-			sentences.append('‡pause‡')
-		else:
-			sentence = sentence.strip()
-			if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-				sentences.extend(split_sentence(sentence))
-	# Remove any pause-only or empty sentence fragments before returning
-	sentences = [s for s in sentences if s.strip() and s.strip() != '‡pause‡']
+		sentence = sentence.strip()
+		if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+			sentences.extend(split_sentence(sentence))
+
+	# **Do NOT filter out '‡pause‡' here! Keep it at end of sentence if present!**
+	sentences = [s.strip() for s in sentences if s.strip()]
+
 	return sentences
 
 def get_ram():
