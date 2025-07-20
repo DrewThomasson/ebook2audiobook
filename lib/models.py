@@ -175,6 +175,14 @@ models = {
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
+        "Awkwafina": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/Awkwafina",
+            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"Awkwafina_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
+        },
         "BobOdenkirk": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
