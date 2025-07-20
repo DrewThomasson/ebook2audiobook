@@ -805,14 +805,11 @@ def get_sentences(text, lang, tts_engine):
         return best_index
 
     def split_sentence(sentence):
-        # Check for any alphanumeric utf8 char (but not just _)
         if not re.search(r'[^\W_]', sentence, re.UNICODE):
             return []
-        # Token threshold for Tacotron2 (minimum tokens per segment)
         min_tokens = 5
         tokens = re.findall(r'\w+', sentence, re.UNICODE)
         if len(tokens) < min_tokens:
-            # Too few tokens, don't split at all, just add a dash if needed
             if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
@@ -843,11 +840,13 @@ def get_sentences(text, lang, tts_engine):
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:!?-.')
         result = []
-        # MIN TOKENS: only split if both sides meet threshold!
-        part1_tokens = re.findall(r'\w+', part1, re.UNICODE)
-        part2_tokens = re.findall(r'\w+', part2, re.UNICODE)
-        # If either segment is too short, don't split—return whole as one part with dash if needed
+        # **STRIP part1 and part2 before tokenizing!**
+        part1_stripped = part1.strip()
+        part2_stripped = part2.strip()
+        part1_tokens = re.findall(r'\w+', part1_stripped, re.UNICODE)
+        part2_tokens = re.findall(r'\w+', part2_stripped, re.UNICODE)
         if len(part1_tokens) < min_tokens or len(part2_tokens) < min_tokens:
+            # DO NOT SPLIT if either side is too short
             if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
