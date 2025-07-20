@@ -139,7 +139,9 @@ punctuation_split = [
     # Lao
     '໌', 'ໍ',
     # Misc (global)
-    '—', '!', '?', ':', ';'
+    '—', '!', '?', ':', ';',
+    # special tts
+    '‡pause‡'
 ]
 punctuation_split_set = set(punctuation_split)
 

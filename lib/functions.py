@@ -749,8 +749,8 @@ def get_sentences(text, lang, tts_engine):
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             return word_tokenize(text, engine='newmm')
         else:
-            pattern_split = [re.escape(p) for p in punctuation_split_set]
-            pattern = f"({'|'.join(pattern_split)})"
+            pattern_split = '|'.join(map(re.escape, punctuation_split_set))
+            pattern = f"({pattern_split})"
             return re.split(pattern, text)
 
     def split_sentence(sentence):
@@ -762,10 +762,24 @@ def get_sentences(text, lang, tts_engine):
                     return [sentence + ' -']
             return [sentence]
 
-    punctuations = sorted(punctuation_split, key=len, reverse=True)
-    pattern_split = '|'.join(map(re.escape, punctuations))
-    pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
+    # --- Split out all '‡pause‡' as its own element ---
+    def split_pause_markers(raw_list):
+        result = []
+        for chunk in raw_list:
+            parts = chunk.split('‡pause‡')
+            for i, part in enumerate(parts):
+                part = part.strip()
+                if part:
+                    result.append(part)
+                if i < len(parts) - 1:
+                    result.append('‡pause‡')
+        return result
 
+    # Robust punctuation split regex: NO character class, just alternation
+    punctuations = sorted(punctuation_split, key=len, reverse=True)  # Longer ones first
+    pattern_split = '|'.join(map(re.escape, punctuations))
+    # Splits at any punctuation, keeps punctuation at end of segment
+    pattern = rf"(.*?(?<!\d)({pattern_split})(?!\d))(\s+|$)"
     raw_list = []
     for match in re.finditer(pattern, text):
         s = match.group(1).strip()
@@ -779,18 +793,8 @@ def get_sentences(text, lang, tts_engine):
             else:
                 raw_list.append(s)
     raw_list = combine_punctuation(raw_list)
-    def split_pause_markers(raw_list):
-        result = []
-        for chunk in raw_list:
-            parts = chunk.split('‡pause‡')
-            for i, part in enumerate(parts):
-                part = part.strip()
-                if part:
-                    result.append(part)
-                if i < len(parts) - 1:
-                    result.append('‡pause‡')
-        return result
     raw_list = split_pause_markers(raw_list)
+    # --- Merge consecutive short segments (excluding pauses) ---
     min_tokens = 5
     final_list = []
     buffer = ""
