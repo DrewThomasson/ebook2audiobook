@@ -577,10 +577,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         for tag in soup(["script", "style"]):
             tag.decompose()
 
-        # onvert <br> tags to newline so multi-break detection can work
-        for br in soup.find_all("br"):
-            br.replace_with("\n")
-
         # helper to walk in document order
         def walk(node):
             for child in node.children:
@@ -589,29 +585,47 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     if text:
                         yield ("text", text)
                 elif isinstance(child, Tag):
-                    if child.name in heading_tags:
+                    name = child.name.lower()
+                    if name in heading_tags:
                         title = child.get_text(strip=True)
                         if title:
                             yield ("heading", title)
-                    elif child.name == "table":
+                    elif name == "table":
                         yield ("table", child)
+                    elif name == "br":
+                        yield ("br", None)
                     else:
                         yield from walk(child)
 
         items = list(walk(body))
         if not items:
             return None
+        # collapse runs of 2+ consecutive <br> markers into a single pause item
+        collapsed_items = []
+        br_run = 0
+        for typ, payload in items:
+            if typ == "br":
+                br_run += 1
+                continue
+            # we hit a non-br; if we had a run of br's, decide whether to insert pause
+            if br_run >= 2:
+                collapsed_items.append(("pause", "[pause]"))
+            # (if br_run == 1 we ignore a single <br>; adjust if needed)
+            br_run = 0
+            collapsed_items.append((typ, payload))
+        # tail run
+        if br_run >= 2:
+            collapsed_items.append(("pause", "[pause]"))
+        items = collapsed_items  # replace original list
         text_array = []
         handled_tables = set()
-
-        # compile regex once (runs of 2+ consecutive CR/LF line breaks)
-        multi_break_re = re.compile(r'(?:\r\n|\r|\n){2,}')
-
         for typ, payload in items:
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
-                # remove unintended dot before [pause]; was f"{raw_text}.[pause]"
+                # ensure we do not add an unintended dot before [pause]
                 text_array.append(f"{raw_text} [pause]")
+            elif typ == "pause":
+                text_array.append("[pause]")
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -629,19 +643,13 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         line = " — ".join(cells)
                     if line:
                         text_array.append(line.strip())
-            else:
+            else:  # typ == "text"
                 text = payload.strip()
                 if not text:
                     continue
-                # replace runs of >=2 line breaks with a single pause token
-                # (single line breaks left as-is)
-                text = multi_break_re.sub(' [pause] ', text)
-                # normalize spacing around inserted [pause]
-                text = re.sub(r'\s*\[pause\]\s*', ' [pause] ', text)
-                # collapse excessive internal whitespace
-                text = re.sub(r'[ \t\f\v]+', ' ', text)
-                text_array.append(text.strip())
-
+                # OPTIONAL (uncomment if you still want to detect literal newline runs inside a single text node):
+                # text = multi_break_re.sub(' [pause] ', text)
+                text_array.append(text)
         text = "\n".join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
