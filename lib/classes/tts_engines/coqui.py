@@ -456,10 +456,28 @@ class Coqui:
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
                 sentence_parts = sentence.split('‡pause‡')
-                print(f'-----------{sentence_parts}-------------')
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
                     sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.7, 1.4) * 100) / 100))) # 0.7 to 1.4 seconds
+                min_token_length = 5
+                merged_sentence_parts = []
+                buffer = ""
+                for i, text_part in enumerate(sentence_parts):
+                    stripped = text_part.strip()
+                    if not stripped or not re.search(r'\w', stripped, flags=re.UNICODE) or len(stripped) < MIN_LENGTH:
+                        # Too short: merge with buffer (or with the next part)
+                        buffer += " " + stripped
+                    else:
+                        # Prepend buffer if exists
+                        if buffer:
+                            merged_sentence_parts.append((buffer + " " + stripped).strip())
+                            buffer = ""
+                        else:
+                            merged_sentence_parts.append(stripped)
+                # If any buffer remains, add it
+                if buffer.strip():
+                    merged_sentence_parts.append(buffer.strip())
+                sentence_parts = merged_sentence_parts
                 audio_segments = []
                 for text_part in sentence_parts:
                     text_part = text_part.strip()
