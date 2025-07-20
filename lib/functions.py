@@ -860,28 +860,33 @@ def get_sentences(text, lang, tts_engine):
         s = match.group(1).strip()
         if not s:
             continue
-        # Count alphanumeric "tokens" in s
+        # Always combine ideogramms for CJK first
+        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            tokens = segment_ideogramms(s)
+            s = ''.join(tokens) if isinstance(tokens, list) else str(tokens)
+        # Now, test for min_tokens
         tokens = re.findall(r'\w+', s, re.UNICODE)
         if len(tokens) < min_tokens:
-            # Not enough tokens: merge with buffer or previous
+            # Too short: accumulate in buffer
             buffer = (buffer + " " + s).strip()
         else:
-            # If there's a buffered fragment, flush it first
+            # Long enough: first flush buffer if it exists and combined with this chunk is long enough
             if buffer:
-                raw_list.append(buffer)
-                buffer = ""
-            if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                tokens = segment_ideogramms(s)
-                if isinstance(tokens, list):
-                    raw_list.append(''.join(tokens))
+                combined = (buffer + " " + s).strip()
+                combined_tokens = re.findall(r'\w+', combined, re.UNICODE)
+                if len(combined_tokens) >= min_tokens:
+                    raw_list.append(combined)
+                    buffer = ""
                 else:
-                    raw_list.append(str(tokens))
+                    # If buffer+current still not enough, keep accumulating
+                    buffer = combined
             else:
                 raw_list.append(s)
-    # If buffer left at end, add it
+    # After loop, flush any remaining buffer ONLY if it's long enough
     if buffer:
-        raw_list.append(buffer)
-    print(raw_list)
+        tokens = re.findall(r'\w+', buffer, re.UNICODE)
+        if len(tokens) >= min_tokens:
+            raw_list.append(buffer)
     raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
