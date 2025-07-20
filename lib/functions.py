@@ -854,9 +854,22 @@ def get_sentences(text, lang, tts_engine):
     # build pattern: don’t split on any punctuation if it’s between two digits
     pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
     raw_list = []
+    min_tokens = 5
+    buffer = ""
     for match in re.finditer(pattern, text):
         s = match.group(1).strip()
-        if s:
+        if not s:
+            continue
+        # Count alphanumeric "tokens" in s
+        tokens = re.findall(r'\w+', s, re.UNICODE)
+        if len(tokens) < min_tokens:
+            # Not enough tokens: merge with buffer or previous
+            buffer = (buffer + " " + s).strip()
+        else:
+            # If there's a buffered fragment, flush it first
+            if buffer:
+                raw_list.append(buffer)
+                buffer = ""
             if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 tokens = segment_ideogramms(s)
                 if isinstance(tokens, list):
@@ -865,6 +878,9 @@ def get_sentences(text, lang, tts_engine):
                     raw_list.append(str(tokens))
             else:
                 raw_list.append(s)
+    # If buffer left at end, add it
+    if buffer:
+        raw_list.append(buffer)
     raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
         tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
@@ -874,21 +890,6 @@ def get_sentences(text, lang, tts_engine):
         tmp_list = raw_list
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
-    min_tokens = 5
-    filtered_tmp = []
-    buffer = ""
-    for sent in tmp_list:
-        tokens = re.findall(r'\w+', sent, re.UNICODE)
-        if len(tokens) < min_tokens:
-            buffer = (buffer + " " + sent).strip()
-        else:
-            if buffer:
-                filtered_tmp.append(buffer)
-                buffer = ""
-            filtered_tmp.append(sent)
-    if buffer:
-        filtered_tmp.append(buffer)
-    tmp_list = [s for s in filtered_tmp if s and re.search(r'\w', s, re.UNICODE)]
     sentences = []
     for sentence in tmp_list:
         sentence = sentence.strip()
