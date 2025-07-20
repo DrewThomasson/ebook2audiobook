@@ -463,7 +463,7 @@ class Coqui:
                     part = sentence[last:start]
                     token_count = len(re.findall(r'\w+', part, flags=re.UNICODE))
                     if token_count < min_tokens:
-                        # Too short: replace with ' - ' and continue (don't split)
+                        print("Too short: replace with ' - ' and continue (don't split)")
                         if sentence_parts:
                             sentence_parts[-1] = sentence_parts[-1].rstrip() + ' - '
                         else:
