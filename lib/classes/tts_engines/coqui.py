@@ -772,7 +772,7 @@ class Coqui:
                 if audio_segments and torch.equal(audio_segments[-1], silence_tensor):
                     audio_segments = audio_segments[:-1]
                 if audio_segments:
-                    if not text_part.endswith('-') and not text_part[-1].isalnum():
+                    if (text_part.endswith('‡pause‡') or (text_part and not text_part.endswith('-') and not text_part[-1].isalnum())):
                         audio_segments.append(silence_tensor.clone())
                     audio_tensor = torch.cat(audio_segments, dim=-1)
                     if text_part.endswith('-') or text_part[-1].isalnum():
