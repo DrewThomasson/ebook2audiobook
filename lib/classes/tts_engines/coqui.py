@@ -459,11 +459,7 @@ class Coqui:
                     sentence = [p.replace('.', ' — ') for p in sentence]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.7, 1.4) * 100) / 100))) # 0.7 to 1.4 seconds
                 audio_segments = []
-                
                 sentence = sentence.strip()
-                if not sentence:
-                    audio_segments.append(silence_tensor.clone())
-                    continue
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                     trim_audio_buffer = 0.006
                     if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
@@ -767,11 +763,7 @@ class Coqui:
                     sourceTensor = self._tensor_type(audio_sentence)
                     audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                     audio_segments.append(audio_tensor)
-                    audio_segments.append(silence_tensor.clone())
-                    
-                    
-                    
-                    
+                    audio_segments.append(silence_tensor.clone())  
                 if audio_segments and torch.equal(audio_segments[-1], silence_tensor):
                     audio_segments = audio_segments[:-1]
                 if audio_segments:
