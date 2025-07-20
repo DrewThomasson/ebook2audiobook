@@ -858,7 +858,7 @@ def get_sentences(text, lang, tts_engine):
     buffer = ""
     for match in re.finditer(pattern, text):
         s = match.group(1).strip()
-        if not s:
+        if not s or s == '‡pause‡':
             continue
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             tokens = segment_ideogramms(s)
