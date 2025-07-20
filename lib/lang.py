@@ -118,6 +118,8 @@ punctuation_list = [
 punctuation_list_set = set(punctuation_list)
 
 punctuation_split = [
+    # special tts
+    '‡pause‡',
     # Western
     '.', ',',
     # Arabic-Persian
