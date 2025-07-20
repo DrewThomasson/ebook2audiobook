@@ -874,6 +874,21 @@ def get_sentences(text, lang, tts_engine):
         tmp_list = raw_list
     if tmp_list and tmp_list[-1] == 'Start':
         tmp_list.pop()
+    min_tokens = 5
+    filtered_tmp = []
+    buffer = ""
+    for sent in tmp_list:
+        tokens = re.findall(r'\w+', sent, re.UNICODE)
+        if len(tokens) < min_tokens:
+            buffer = (buffer + " " + sent).strip()
+        else:
+            if buffer:
+                filtered_tmp.append(buffer)
+                buffer = ""
+            filtered_tmp.append(sent)
+    if buffer:
+        filtered_tmp.append(buffer)
+    tmp_list = [s for s in filtered_tmp if s and re.search(r'\w', s, re.UNICODE)]
     sentences = []
     for sentence in tmp_list:
         sentence = sentence.strip()
@@ -881,22 +896,6 @@ def get_sentences(text, lang, tts_engine):
             sentences.extend(split_sentence(sentence))
     if not sentences and text.strip():
         sentences = split_sentence(text.strip())
-    # Some TTS needs more than 4 tokens
-    min_tokens = 5
-    filtered = []
-    buffer = ""
-    for sent in sentences:
-        tokens = re.findall(r'\w+', sent, re.UNICODE)
-        print(f'---------------length: {len(tokens)}---------------')
-        if len(tokens) < min_tokens:
-            buffer = (buffer + " " + sent).strip()
-        else:
-            if buffer:
-                filtered.append(buffer)
-                buffer = ""
-            filtered.append(sent)
-    if buffer:
-        filtered.append(buffer)
     sentences = [s for s in filtered if s and re.search(r'\w', s, re.UNICODE)]
     return sentences
 
