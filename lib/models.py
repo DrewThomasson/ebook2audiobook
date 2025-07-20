@@ -170,7 +170,7 @@ models = {
         "AsmrRacoon": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/AsmrRacoon",
+            "sub": "xtts-v2/eng/AsmrRacoon/",
             "voice": os.path.join(voices_dir, "eng", "adult", "male", f"AsmrRacoon_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
@@ -178,7 +178,7 @@ models = {
         "Awkwafina": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/Awkwafina",
+            "sub": "xtts-v2/eng/Awkwafina/",
             "voice": os.path.join(voices_dir, "eng", "adult", "female", f"Awkwafina_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
