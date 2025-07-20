@@ -544,7 +544,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         print(msg)
         for doc in all_docs:
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
-            print(sentences_list)
             if sentences_list is not None:
                 chapters.append(sentences_list)
         return toc, chapters
@@ -806,13 +805,25 @@ def get_sentences(text, lang, tts_engine):
         return best_index
 
     def split_sentence(sentence):
+        # Check for any alphanumeric utf8 char (but not just _)
         if not re.search(r'[^\W_]', sentence, re.UNICODE):
             return []
+        # Token threshold for Tacotron2 (minimum tokens per segment)
+        min_tokens = 5
+        tokens = re.findall(r'\w+', sentence, re.UNICODE)
+        if len(tokens) < min_tokens:
+            # Too few tokens, don't split at all, just add a dash if needed
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                if sentence and sentence[-1].isalpha():
+                    return [sentence + ' -']
+            return [sentence]
+
         if len(sentence) <= max_chars:
             if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
+
         split_index = find_best_split_point_prioritize_punct(sentence, max_chars)
         if split_index == -1:
             mid = len(sentence) // 2
@@ -827,6 +838,7 @@ def get_sentences(text, lang, tts_engine):
                     split_index = before
                 else:
                     split_index = before if (mid - before) <= (after - mid) else after
+
         delim_used = sentence[split_index - 1] if split_index > 0 else None
         end = ''
         if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != TTS_ENGINES['BARK']:
@@ -834,6 +846,17 @@ def get_sentences(text, lang, tts_engine):
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:!?-.')
         result = []
+
+        # MIN TOKENS: only split if both sides meet threshold!
+        part1_tokens = re.findall(r'\w+', part1, re.UNICODE)
+        part2_tokens = re.findall(r'\w+', part2, re.UNICODE)
+        # If either segment is too short, don't split—return whole as one part with dash if needed
+        if len(part1_tokens) < min_tokens or len(part2_tokens) < min_tokens:
+            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                if sentence and sentence[-1].isalpha():
+                    return [sentence + ' -']
+            return [sentence]
+
         if len(part1) <= max_chars:
             if part1 and part1[-1].isalpha():
                 part1 += end
