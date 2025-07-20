@@ -807,20 +807,11 @@ def get_sentences(text, lang, tts_engine):
     def split_sentence(sentence):
         if not re.search(r'[^\W_]', sentence, re.UNICODE):
             return []
-        min_tokens = 5
-        tokens = re.findall(r'\w+', sentence, re.UNICODE)
-        if len(tokens) < min_tokens:
-            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                if sentence and sentence[-1].isalpha():
-                    return [sentence + ' -']
-            return [sentence]
-
         if len(sentence) <= max_chars:
             if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-
         split_index = find_best_split_point_prioritize_punct(sentence, max_chars)
         if split_index == -1:
             mid = len(sentence) // 2
@@ -835,7 +826,6 @@ def get_sentences(text, lang, tts_engine):
                     split_index = before
                 else:
                     split_index = before if (mid - before) <= (after - mid) else after
-
         delim_used = sentence[split_index - 1] if split_index > 0 else None
         end = ''
         if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != TTS_ENGINES['BARK']:
@@ -843,20 +833,6 @@ def get_sentences(text, lang, tts_engine):
         part1 = sentence[:split_index].rstrip()
         part2 = sentence[split_index:].lstrip(' ,;:!?-.')
         result = []
-
-        # **STRIP part1 and part2 before tokenizing!**
-        part1_stripped = part1.strip()
-        part2_stripped = part2.strip()
-        part1_tokens = re.findall(r'\w+', part1_stripped, re.UNICODE)
-        part2_tokens = re.findall(r'\w+', part2_stripped, re.UNICODE)
-
-        if len(part1_tokens) < min_tokens or len(part2_tokens) < min_tokens:
-            # DO NOT SPLIT if either side is too short
-            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                if sentence and sentence[-1].isalpha():
-                    return [sentence + ' -']
-            return [sentence]
-
         if len(part1) <= max_chars:
             if part1 and part1[-1].isalpha():
                 part1 += end
@@ -905,6 +881,22 @@ def get_sentences(text, lang, tts_engine):
             sentences.extend(split_sentence(sentence))
     if not sentences and text.strip():
         sentences = split_sentence(text.strip())
+    # Some TTS needs more than 4 tokens
+    min_tokens = 5
+    filtered = []
+    buffer = ""
+    for sent in sentences:
+        tokens = re.findall(r'\w+', sent, re.UNICODE)
+        if len(tokens) < min_tokens:
+            buffer = (buffer + " " + sent).strip()
+        else:
+            if buffer:
+                filtered.append(buffer)
+                buffer = ""
+            filtered.append(sent)
+    if buffer:
+        filtered.append(buffer)
+    sentences = [s for s in filtered if s and re.search(r'\w', s, re.UNICODE)]
     return sentences
 
 def get_ram():
