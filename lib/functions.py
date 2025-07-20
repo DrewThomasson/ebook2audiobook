@@ -860,17 +860,13 @@ def get_sentences(text, lang, tts_engine):
         s = match.group(1).strip()
         if not s:
             continue
-        # Always combine ideogramms for CJK first
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             tokens = segment_ideogramms(s)
             s = ''.join(tokens) if isinstance(tokens, list) else str(tokens)
-        # Now, test for min_tokens
         tokens = re.findall(r'\w+', s, re.UNICODE)
         if len(tokens) < min_tokens:
-            # Too short: accumulate in buffer
             buffer = (buffer + " " + s).strip()
         else:
-            # Long enough: first flush buffer if it exists and combined with this chunk is long enough
             if buffer:
                 combined = (buffer + " " + s).strip()
                 combined_tokens = re.findall(r'\w+', combined, re.UNICODE)
@@ -878,14 +874,16 @@ def get_sentences(text, lang, tts_engine):
                     raw_list.append(combined)
                     buffer = ""
                 else:
-                    # If buffer+current still not enough, keep accumulating
                     buffer = combined
             else:
                 raw_list.append(s)
-    # After loop, flush any remaining buffer ONLY if it's long enough
+    # After loop, flush any remaining buffer (merge with previous if needed)
     if buffer:
-        tokens = re.findall(r'\w+', buffer, re.UNICODE)
-        if len(tokens) >= min_tokens:
+        if raw_list:
+            prev = raw_list.pop()
+            merged = (prev + " " + buffer).strip()
+            raw_list.append(merged)
+        else:
             raw_list.append(buffer)
     raw_list = combine_punctuation(raw_list)
     if len(raw_list) > 1:
