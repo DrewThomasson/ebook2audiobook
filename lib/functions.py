@@ -725,11 +725,9 @@ def get_sentences(text, lang, tts_engine):
         i = 1
         while i < len(raw_list):
             curr_sentence = raw_list[i]
-            # While the current sentence starts with a punctuation and adding it does not exceed max_chars
             while curr_sentence and curr_sentence[0] in extended_punct_set and len(result[-1]) + 1 <= max_chars:
                 result[-1] += curr_sentence[0]
                 curr_sentence = curr_sentence[1:]
-            # If there's anything left, treat as a new sentence
             if curr_sentence.strip():
                 if not result[-1].endswith(' '):
                     result[-1] += ' '
@@ -755,55 +753,6 @@ def get_sentences(text, lang, tts_engine):
             pattern = f"({'|'.join(pattern_split)})"
             return re.split(pattern, text)
 
-    def join_ideogramms(idg_list):
-        buffer = ''
-        for sentence in idg_list:
-            if not sentence.strip() or not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-                continue
-            buffer += sentence
-            if sentence in punctuation_split_set:
-                if len(buffer) > max_chars:
-                    for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
-                        if part.strip() and not all(c in punctuation_split_set for c in part):
-                            yield part
-                    buffer = ''
-                else:
-                    if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
-                        yield buffer
-                    buffer = ''
-            elif len(buffer) >= max_chars:
-                if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
-                    yield buffer
-                buffer = ''
-        if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
-            yield buffer
-
-    def find_best_split_point_prioritize_punct(sentence, max_chars):
-        best_index = -1
-        min_diff = float('inf')
-        punctuation_priority = '.!?,;:'
-        space_priority = ' '
-        if not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-            return best_index
-        for i in range(1, min(len(sentence), max_chars)):
-            if sentence[i] in punctuation_priority:
-                left_len = i
-                right_len = len(sentence) - i
-                diff = abs(left_len - right_len)
-                if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
-                    best_index = i + 1
-                    min_diff = diff
-        if best_index == -1:
-            for i in range(1, min(len(sentence), max_chars)):
-                if sentence[i] in space_priority:
-                    left_len = i
-                    right_len = len(sentence) - i
-                    diff = abs(left_len - right_len)
-                    if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
-                        best_index = i + 1
-                        min_diff = diff
-        return best_index
-
     def split_sentence(sentence):
         if not re.search(r'[^\W_]', sentence, re.UNICODE):
             return []
@@ -812,86 +761,77 @@ def get_sentences(text, lang, tts_engine):
                 if sentence and sentence[-1].isalpha():
                     return [sentence + ' -']
             return [sentence]
-        split_index = find_best_split_point_prioritize_punct(sentence, max_chars)
-        if split_index == -1:
-            mid = len(sentence) // 2
-            before = sentence.rfind(' ', 0, mid)
-            after = sentence.find(' ', mid)
-            if before == -1 and after == -1:
-                split_index = mid
-            else:
-                if before == -1:
-                    split_index = after
-                elif after == -1:
-                    split_index = before
-                else:
-                    split_index = before if (mid - before) <= (after - mid) else after
-        delim_used = sentence[split_index - 1] if split_index > 0 else None
-        end = ''
-        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != TTS_ENGINES['BARK']:
-            end = ' -' if delim_used == ' ' else end
-        part1 = sentence[:split_index].rstrip()
-        part2 = sentence[split_index:].lstrip(' ,;:!?-.')
-        result = []
-        if len(part1) <= max_chars:
-            if part1 and part1[-1].isalpha():
-                part1 += end
-            result.append(part1)
-        else:
-            result.extend(split_sentence(part1))
-        if part2:
-            if len(part2) <= max_chars:
-                if part2 and part2[-1].isalpha():
-                    if tts_engine != TTS_ENGINES['BARK']:
-                        part2 += ' -'
-                result.append(part2)
-            else:
-                result.extend(split_sentence(part2))
-        return result
 
     punctuations = sorted(punctuation_split, key=len, reverse=True)
     pattern_split = '|'.join(map(re.escape, punctuations))
-    # build pattern: don’t split on any punctuation if it’s between two digits
     pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
+
     raw_list = []
-    min_tokens = 5
-    buffer = ""
     for match in re.finditer(pattern, text):
         s = match.group(1).strip()
-        if not s or s == '‡pause‡':
+        if s:
+            if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                tokens = segment_ideogramms(s)
+                if isinstance(tokens, list):
+                    raw_list.append(''.join(tokens))
+                else:
+                    raw_list.append(str(tokens))
+            else:
+                raw_list.append(s)
+    raw_list = combine_punctuation(raw_list)
+    def split_pause_markers(raw_list):
+        result = []
+        for chunk in raw_list:
+            parts = chunk.split('‡pause‡')
+            for i, part in enumerate(parts):
+                part = part.strip()
+                if part:
+                    result.append(part)
+                if i < len(parts) - 1:
+                    result.append('‡pause‡')
+        return result
+    raw_list = split_pause_markers(raw_list)
+    min_tokens = 5
+    final_list = []
+    buffer = ""
+    for chunk in raw_list:
+        if chunk == '‡pause‡':
+            if buffer:
+                final_list.append(buffer)
+                buffer = ""
+            final_list.append('‡pause‡')
             continue
-        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-            tokens = segment_ideogramms(s)
-            s = ''.join(tokens) if isinstance(tokens, list) else str(tokens)
-        tokens = re.findall(r'\w+', s, re.UNICODE)
+        tokens = re.findall(r'\w+', chunk, re.UNICODE)
         if len(tokens) < min_tokens:
-            buffer = (buffer + " " + s).strip()
+            buffer = (buffer + " " + chunk).strip()
         else:
             if buffer:
-                combined = (buffer + " " + s).strip()
+                combined = (buffer + " " + chunk).strip()
                 combined_tokens = re.findall(r'\w+', combined, re.UNICODE)
                 if len(combined_tokens) >= min_tokens:
-                    raw_list.append(combined)
+                    final_list.append(combined)
                     buffer = ""
                 else:
                     buffer = combined
             else:
-                raw_list.append(s)
-    # After loop, flush any remaining buffer (merge with previous if needed)
+                final_list.append(chunk)
     if buffer:
-        if raw_list:
-            prev = raw_list.pop()
+        if final_list and final_list[-1] != '‡pause‡':
+            prev = final_list.pop()
             merged = (prev + " " + buffer).strip()
-            raw_list.append(merged)
+            final_list.append(merged)
         else:
-            raw_list.append(buffer)
+            final_list.append(buffer)
     sentences = []
-    for sentence in raw_list:
-        sentence = sentence.strip()
-        if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-            sentences.extend(split_sentence(sentence))
-    if not sentences and text.strip():
-        sentences = split_sentence(text.strip())
+    for sentence in final_list:
+        if sentence == '‡pause‡':
+            sentences.append('‡pause‡')
+        else:
+            sentence = sentence.strip()
+            if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+                sentences.extend(split_sentence(sentence))
+    # Remove any pause-only or empty sentence fragments before returning
+    sentences = [s for s in sentences if s.strip() and s.strip() != '‡pause‡']
     return sentences
 
 def get_ram():
