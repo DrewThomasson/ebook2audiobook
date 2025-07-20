@@ -576,6 +576,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
+
+        # onvert <br> tags to newline so multi-break detection can work
+        for br in soup.find_all("br"):
+            br.replace_with("\n")
+
         # helper to walk in document order
         def walk(node):
             for child in node.children:
@@ -592,16 +597,21 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         yield ("table", child)
                     else:
                         yield from walk(child)
+
         items = list(walk(body))
         if not items:
             return None
         text_array = []
         handled_tables = set()
+
+        # compile regex once (runs of 2+ consecutive CR/LF line breaks)
         multi_break_re = re.compile(r'(?:\r\n|\r|\n){2,}')
+
         for typ, payload in items:
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
-                text_array.append(f"{raw_text}.[pause]")
+                # remove unintended dot before [pause]; was f"{raw_text}.[pause]"
+                text_array.append(f"{raw_text} [pause]")
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -623,8 +633,15 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 text = payload.strip()
                 if not text:
                     continue
+                # replace runs of >=2 line breaks with a single pause token
+                # (single line breaks left as-is)
                 text = multi_break_re.sub(' [pause] ', text)
+                # normalize spacing around inserted [pause]
+                text = re.sub(r'\s*\[pause\]\s*', ' [pause] ', text)
+                # collapse excessive internal whitespace
+                text = re.sub(r'[ \t\f\v]+', ' ', text)
                 text_array.append(text.strip())
+
         text = "\n".join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
