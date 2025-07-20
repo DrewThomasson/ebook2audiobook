@@ -887,7 +887,7 @@ def get_sentences(text, lang, tts_engine):
     buffer = ""
     for sent in sentences:
         tokens = re.findall(r'\w+', sent, re.UNICODE)
-        print(f'---------------length: {len{tokens}}---------------')
+        print(f'---------------length: {len{tokens)}---------------')
         if len(tokens) < min_tokens:
             buffer = (buffer + " " + sent).strip()
         else:
