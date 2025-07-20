@@ -464,7 +464,7 @@ class Coqui:
                 buffer = ""
                 for i, text_part in enumerate(sentence_parts):
                     stripped = text_part.strip()
-                    if not stripped or not re.search(r'\w', stripped, flags=re.UNICODE) or len(stripped) < MIN_LENGTH:
+                    if not stripped or not re.search(r'\w', stripped, flags=re.UNICODE) or len(stripped) < min_token_length:
                         # Too short: merge with buffer (or with the next part)
                         buffer += " " + stripped
                     else:
