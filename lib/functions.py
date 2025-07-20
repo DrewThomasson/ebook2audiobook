@@ -544,6 +544,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         print(msg)
         for doc in all_docs:
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
+            print(sentences_list)
             if sentences_list is not None:
                 chapters.append(sentences_list)
         return toc, chapters

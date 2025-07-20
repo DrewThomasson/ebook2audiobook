@@ -475,7 +475,6 @@ class Coqui:
                     last = end
                 if last < len(sentence):
                     sentence_parts.append(sentence[last:])
-
                 # Clean up: remove empties, trim
                 sentence_parts = [p.strip() for p in sentence_parts if p.strip()]
                 print(f'---------------{sentence_parts}---------------')
