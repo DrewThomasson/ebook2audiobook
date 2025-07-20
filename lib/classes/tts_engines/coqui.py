@@ -462,8 +462,9 @@ class Coqui:
                     start, end = m.span()
                     part = sentence[last:start]
                     token_count = len(re.findall(r'\w+', part, flags=re.UNICODE))
-                    if token_count < min_tokens:
-                        print("Too short: replace with ' - ' and continue (don't split)")
+                    has_alphanum = bool(re.search(r'\w', part, flags=re.UNICODE))
+                    if token_count < min_tokens or not has_alphanum:
+                        # Too short or not alphanumeric: replace with ' - ', don't split
                         if sentence_parts:
                             sentence_parts[-1] = sentence_parts[-1].rstrip() + ' - '
                         else:
@@ -472,8 +473,11 @@ class Coqui:
                         sentence_parts.append(part)
                         sentence_parts.append('‡pause‡')
                     last = end
+                # Add any trailing part
                 if last < len(sentence):
                     sentence_parts.append(sentence[last:])
+
+                # Clean up: remove empties, trim
                 sentence_parts = [p.strip() for p in sentence_parts if p.strip()]
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
                     sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
