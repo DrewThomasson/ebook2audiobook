@@ -477,7 +477,6 @@ class Coqui:
                     sentence_parts.append(sentence[last:])
                 # Clean up: remove empties, trim
                 sentence_parts = [p.strip() for p in sentence_parts if p.strip()]
-                print(f'---------------{sentence_parts}---------------')
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
                     sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.7, 1.4) * 100) / 100))) # 0.7 to 1.4 seconds
