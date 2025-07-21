@@ -383,6 +383,14 @@ models = {
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
+        "SubZeroMKX": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/SubZeroMKX/",
+            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"SubZeroMKX_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
+        },
         "WhisperSalemASMR": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
