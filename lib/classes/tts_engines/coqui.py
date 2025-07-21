@@ -462,7 +462,7 @@ class Coqui:
                 audio_segments = []
                 for text_part in sentence_parts:
                     text_part = text_part.strip()
-                    if not text_part:
+                    if not text_part or not re.search(r'\w', text_part, flags=re.UNICODE):
                         audio_segments.append(silence_tensor.clone())
                         continue
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
@@ -772,8 +772,6 @@ class Coqui:
                 if audio_segments and torch.equal(audio_segments[-1], silence_tensor):
                     audio_segments = audio_segments[:-1]
                 if audio_segments:
-                    if not text_part.endswith('-') and not text_part[-1].isalnum():
-                        audio_segments.append(silence_tensor.clone())
                     audio_tensor = torch.cat(audio_segments, dim=-1)
                     if text_part.endswith('-') or text_part[-1].isalnum():
                         audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
