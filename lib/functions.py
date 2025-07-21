@@ -576,7 +576,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
-
         # tags after which we always add a [pause]
         pause_after_tags = {"p", "div", "span"}  # you requested span too
 
@@ -610,20 +609,17 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
                         else:
                             yield from walk(child)
-
-        items = list(walk(body))
-        if not items:
-            return None
-
-        # Process items to insert pauses for <br> runs and pause-request markers
-        processed = []
-        br_run = 0
-
         def append_pause():
             if processed and processed[-1][0] == "pause":
                 return  # avoid duplicate
             processed.append(("pause", "[pause]"))
 
+        items = list(walk(body))
+        if not items:
+            return None
+        # Process items to insert pauses for <br> runs and pause-request markers
+        processed = []
+        br_run = 0
         for typ, payload in items:
             if typ == "br":
                 br_run += 1
@@ -641,12 +637,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # Tail run
         if br_run >= 2:
             append_pause()
-
         items = processed  # replace with processed sequence
-
         text_array = []
         handled_tables = set()
-
         for typ, payload in items:
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
@@ -683,7 +676,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 text = payload.strip()
                 if text:
                     text_array.append(text)
-
         text = "\n".join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
