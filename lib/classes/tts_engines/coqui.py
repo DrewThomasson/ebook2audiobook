@@ -456,27 +456,6 @@ class Coqui:
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
                 sentence_parts = []
-                min_tokens = 5
-                last = 0
-                for m in re.finditer(r'‡pause‡', sentence):
-                    start, end = m.span()
-                    part = sentence[last:start]
-                    token_count = len(re.findall(r'\w+', part, flags=re.UNICODE))
-                    has_alphanum = bool(re.search(r'\w', part, flags=re.UNICODE))
-                    if token_count < min_tokens or not has_alphanum:
-                        # Too short or not alphanumeric: replace with ' - ', don't split
-                        if sentence_parts:
-                            sentence_parts[-1] = sentence_parts[-1].rstrip() + ' - '
-                        else:
-                            sentence_parts.append(part.rstrip() + ' - ')
-                    else:
-                        sentence_parts.append(part)
-                        sentence_parts.append('‡pause‡')
-                    last = end
-                if last < len(sentence):
-                    sentence_parts.append(sentence[last:])
-                # Clean up: remove empties, trim
-                sentence_parts = [p.strip() for p in sentence_parts if p.strip()]
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
                     sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.7, 1.4) * 100) / 100))) # 0.7 to 1.4 seconds

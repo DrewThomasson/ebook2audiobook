@@ -1,6 +1,6 @@
 import os
 
-install_info = '''
+install_info = r'''
 After the first run, you are free to use your command line with:
 # go into ebook2audiobook folder then:
 ----------------------------------
