@@ -44,9 +44,7 @@ jobs:
       - name: Clone ebook2audiobook
         shell: bash
         run: |
-          [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
-          # [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout workflow-patch-1) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout workflow-patch-1
-
+          [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}
 
       - name: Initalize conda for Unidict
         shell: bash
