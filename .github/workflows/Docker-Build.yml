@@ -1,0 +1,208 @@
+name: Mac E2A Test+DockerBuild
+
+on:
+  workflow_dispatch:
+    inputs:
+      wipeAndReinstall:
+        type: boolean
+        description: 'Wipe & Re-Install E2A'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - CODE_OF_CONDUCT.md
+      - LICENSE
+      - README.md
+      - readme/**
+      - dockerfiles/**
+      - Notebooks/**
+
+jobs:
+  macos-E2A:
+    runs-on: [self-hosted, macos]
+
+    steps:
+      - name: Print runner info
+        run: |
+          echo "Running on:"
+          uname -a
+          sw_vers
+
+      - name: Print current commit SHA (GitHub variable)
+        run: echo "Current commit SHA is ${{ github.sha }}"
+
+      - name: Wipe & Re-Install E2A
+        if: ${{ inputs.wipeAndReinstall }}
+        run: rm -rf ~/ebook2audiobook
+
+      - name: Clone ebook2audiobook
+        shell: bash
+        run: |
+          [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
+
+      - name: Initalize conda for Unidict
+        shell: bash
+        run: |
+          echo "Initializing conda..."
+          # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
+          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          echo "conda initilized!"
+
+      - name: Ebook2audiobook install
+        shell: bash
+        run: |
+          echo "Running help install test..."
+          # ./ebook2audiobook.sh --help
+          cd ~/ebook2audiobook
+          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+
+      - name: English TACOTRON2 Custom-Voice headless single test
+        shell: bash
+        run: |
+          echo "Running English TACOTRON2 Custom-Voice headless single test..."
+          cd ~/ebook2audiobook
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+
+      - name: English FAIRSEQ Custom-Voice headless single test
+        shell: bash
+        run: |
+          echo "Running English FAIRSEQ Custom-Voice headless single test..."
+          cd ~/ebook2audiobook
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+          
+      #- name: Unusual FAIRSEQ Custom-Voice headless single test
+      #  shell: bash
+      #  run: |
+      #    echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
+      #    cd ~/ebook2audiobook
+      #    ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English VITS Custom-Voice headless single test
+        shell: bash
+        run: |
+          echo "Running English VITS Custom-Voice headless single test..."
+
+          cd ~/ebook2audiobook
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English YOURTTS Custom-Voice headless batch test
+        shell: bash
+        run: |
+          echo "Running English YOURTTS Custom-Voice headless batch test..."
+          cd ~/ebook2audiobook
+          ./ebook2audiobook.sh --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+
+      - name: Default XTTSv2 headless Custom-Voice single test
+        shell: bash
+        run: |
+          echo "Running Default XTTSv2 headless Custom-Voice single test..."
+          cd ~/ebook2audiobook
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
+        shell: bash
+        run: |
+          echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
+          cd ~/ebook2audiobook
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained
+
+      #- name: English BARK Custom-Voice headless single test
+      #  shell: bash
+      #  run: |
+      #    echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
+      #    cd ~/ebook2audiobook
+      #    ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+
+
+
+
+  DockerBuild:
+    needs: macos-E2A
+    runs-on: [self-hosted, macos]
+    steps:
+
+      - name: Wipe & Re-Clone E2A E2ADockerBuild
+        if: ${{ inputs.wipeAndReinstall }}
+        run: rm -rf ~/E2ADockerBuild/ebook2audiobook
+
+      - name: Clone ebook2audiobook into E2ADockerBuild
+        shell: bash
+        run: |
+          [ -d ~/E2ADockerBuild/ebook2audiobook ] && (cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook && cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
+
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker-container
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=${GITHUB_SHA::9}" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          if [ -z "$TAG" ] || [ "$TAG" == "null" ]; then TAG="latest"; fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Debug Print Variables
+        run: |
+          echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}"
+          echo "GIT_HASH=${GIT_HASH}"
+          echo "RELEASE_TAG=${RELEASE_TAG}"
+
+      - name: Build and Push Release Docker Image
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          docker buildx build --pull --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH} \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG} \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+            --push .
+
+  huggingface-build:
+    needs: macos-E2A
+    runs-on: [self-hosted, macos]
+    steps:
+
+      - name: Wipe & Re-Clone E2A E2ADockerBuild
+        if: ${{ inputs.wipeAndReinstall }}
+        run: rm -rf ~/E2ADockerBuild/ebook2audiobook
+
+      - name: Clone ebook2audiobook into E2ADockerBuild
+        shell: bash
+        run: |
+          [ -d ~/E2ADockerBuild/ebook2audiobook ] && (cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook && cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker-container
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Huggingface Docker Image
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          docker buildx build --platform linux/amd64 \
+            -f dockerfiles/HuggingfaceDockerfile \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
+            --push .
+
+            
