@@ -51,7 +51,8 @@ jobs:
         run: |
           echo "Initializing conda..."
           # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          #source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          source "$(conda info --base)/etc/profile.d/conda.sh"
           echo "conda initilized!"
 
       - name: Ebook2audiobook install
