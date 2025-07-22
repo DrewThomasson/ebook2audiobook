@@ -103,7 +103,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/urd-script_davanagari-test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English VITS Custom-Voice headless single test
         shell: bash
