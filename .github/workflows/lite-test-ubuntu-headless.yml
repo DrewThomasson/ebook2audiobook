@@ -21,7 +21,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Get Git Commit Hash
-        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+        run: echo "GIT_HASH=${GITHUB_SHA::9}" >> $GITHUB_ENV
 
       - name: Get Latest Release Tag
         run: |
