@@ -1,0 +1,113 @@
+name: Test macOS Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  macos-E2A:
+    runs-on: [self-hosted, macos]
+
+    steps:
+      - name: Print runner info
+        run: |
+          echo "Running on:"
+          uname -a
+          sw_vers
+
+      - name: Print current commit SHA (GitHub variable)
+        run: echo "Current commit SHA is ${{ github.sha }}"
+
+
+      - name: Clone ebook2audiobook to short path
+        shell: bash
+        run: |
+          [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
+          # [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout workflow-patch-1) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout workflow-patch-1
+
+
+      - name: Initalize conda for Unidict
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Initializing conda..."
+          # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
+          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          echo "conda initilized!"
+
+      - name: Ebook2audiobook install
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Running help install test..."
+          export TMPDIR=/tmp
+          # ./ebook2audiobook.sh --help
+          cd ebook2audiobook
+          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+
+      - name: English TACOTRON2 Custom-Voice headless single test
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Running English TACOTRON2 Custom-Voice headless single test..."
+          export TMPDIR=/tmp
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+
+      - name: English FAIRSEQ Custom-Voice headless single test
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Running English FAIRSEQ Custom-Voice headless single test..."
+          export TMPDIR=/tmp
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+          
+      - name: Unusual FAIRSEQ Custom-Voice headless single test
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
+          export TMPDIR=/tmp
+          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English VITS Custom-Voice headless single test
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Running English VITS Custom-Voice headless single test..."
+          export TMPDIR=/tmp
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English YOURTTS Custom-Voice headless batch test
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Running English YOURTTS Custom-Voice headless batch test..."
+          export TMPDIR=/tmp
+          ./ebook2audiobook.sh --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+
+      - name: Default XTTSv2 headless Custom-Voice single test
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Running Default XTTSv2 headless Custom-Voice single test..."
+          export TMPDIR=/tmp
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+
+      - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
+          export TMPDIR=/tmp
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained
+
+      - name: English BARK Custom-Voice headless single test
+        shell: bash
+        working-directory: ~/ebook2audiobook
+        run: |
+          echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
+          export TMPDIR=/tmp
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+

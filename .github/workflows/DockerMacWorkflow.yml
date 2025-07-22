@@ -1,0 +1,114 @@
+name: Release Build and Huggingface Update
+
+on:
+  workflow_dispatch:
+
+jobs:
+  final_push:
+    runs-on: macos-latest
+    steps:
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker-container
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          if [ -z "$TAG" ] || [ "$TAG" == "null" ]; then TAG="latest"; fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Debug Print Variables
+        run: |
+          echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}"
+          echo "GIT_HASH=${GIT_HASH}"
+          echo "RELEASE_TAG=${RELEASE_TAG}"
+
+      - name: Build and Push Release Docker Image
+        run: |
+          cd ~/ebook2audiobook
+          docker buildx build --pull --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH} \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG} \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+            --push .
+
+  huggingface-build:
+    needs: final_push
+    runs-on: macos-latest
+    steps:
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker-container
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          if [ -z "$TAG" ] || [ "$TAG" == "null" ]; then TAG="latest"; fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Build and Push Huggingface Docker Image
+        run: |
+          cd ~/ebook2audiobook
+          docker buildx build --platform linux/amd64 \
+            -f dockerfiles/HuggingfaceDockerfile \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
+            --push .
+
+  update-huggingface:
+    needs: huggingface-build
+    runs-on: macos-latest
+    steps:
+      - name: Set up Git
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+
+      - name: Install Git LFS
+        run: |
+          brew install git-lfs
+          git lfs install
+
+      - name: Configure Huggingface Credentials
+        run: |
+          echo "machine hf-prod.huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" > ~/.netrc
+          echo "machine huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" >> ~/.netrc
+
+      - name: Clone and Update Huggingface Space
+        run: |
+          git clone https://huggingface.co/spaces/drewThomasson/ebook2audiobook
+          cd ebook2audiobook
+          VERSION=$(curl -s https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/${GIT_HASH}/VERSION.txt | tr -d ' \t\n')
+          echo "Updating README with version $VERSION"
+          sed -i '' "s/^title: Ebook2audiobook v[0-9.]\+/title: Ebook2audiobook v$VERSION/" README.md
+          if [ ! -f updates.txt ]; then
+            echo "update" > updates.txt
+          else
+            echo "update" >> updates.txt
+          fi
+          git add README.md updates.txt
+          git commit -m "Update version in README to $VERSION and add update entry"
+          git push
