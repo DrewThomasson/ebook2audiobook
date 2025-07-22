@@ -72,12 +72,13 @@ jobs:
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
           
-      #- name: Unusual FAIRSEQ Custom-Voice headless single test
-      #  shell: bash
-      #  run: |
-      #    echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
-      #    cd ~/ebook2audiobook
-      #    ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      - name: Unusual FAIRSEQ Custom-Voice headless single test
+        shell: bash
+        continue-on-error: true
+        run: |
+          echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
+          cd ~/ebook2audiobook
+          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English VITS Custom-Voice headless single test
         shell: bash
@@ -109,12 +110,13 @@ jobs:
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained
 
-      #- name: English BARK Custom-Voice headless single test
-      #  shell: bash
-      #  run: |
-      #    echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
-      #    cd ~/ebook2audiobook
-      #    ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+      - name: English BARK Custom-Voice headless single test
+        shell: bash
+        continue-on-error: true
+        run: |
+          echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
+          cd ~/ebook2audiobook
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
 
 
