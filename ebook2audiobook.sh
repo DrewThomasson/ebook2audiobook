@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -e  # Exit immediately if any command fails
+
 if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
     export SWITCHED_TO_ZSH=1
     exec env zsh "$0" "$@"
