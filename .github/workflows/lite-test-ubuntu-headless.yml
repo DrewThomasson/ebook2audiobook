@@ -35,7 +35,7 @@ jobs:
 
       - name: Ebook2audiobook install
         shell: bash
-        working-directory: ~/ebook2audiobook
+        working-directory: $HOME/ebook2audiobook
         run: |
           echo "Running help install test..."
           export TMPDIR=/tmp
