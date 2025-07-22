@@ -57,6 +57,13 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          # Safely initialize conda (portable across systems)
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+
+          # Now deactivate safely
+          conda deactivate
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
 
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
