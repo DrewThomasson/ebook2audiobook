@@ -1,117 +1,18 @@
-name: lite test
+name: Mac Release Build and Huggingface Update
+
 on:
   workflow_dispatch:
-    inputs:
-      docker_tag:
-        description: 'Docker tag to use for testing'
-        required: false
-        default: 'lite_dev_v25'
-        type: string
-      tts_engine:
-        description: 'TTS Engine to use'
-        required: false
-        default: 'bark'
-        type: choice
-        options:
-          - all
-          - fairseq
-          - vits
-          - yourtts
-          - xtts
-          - bark
-      mode:
-        description: 'Processing mode'
-        required: false
-        default: 'single'
-        type: choice
-        options:
-          - all
-          - single
-          - batch
-      use_custom_voice:
-        description: 'Use custom voice'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - all
-          - true
-          - false
-      language:
-        description: 'Language code(s) - comma-separated (e.g., eng,spa,fra)'
-        required: false
-        default: 'eng'
-        type: string
-      run_help_test:
-        description: 'Run help command test'
-        required: false
-        default: 'true'
-        type: boolean
-      rebuild_docker:
-        description: 'Rebuild Docker image from scratch'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
-      save_outputs:
-        description: 'Cache previously loaded models.'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
-      custom_entrypoint:
-        description: 'Custom entrypoint (leave empty for default)'
-        required: false
-        default: ''
-        type: string
-  # Comment out these lines to disable auto-trigger on push:
-  # push:
-  #   branches:
-  #     - v25
-  #   paths-ignore:
-  #     - CODE_OF_CONDUCT.md
-  #     - LICENSE
-  #     - README.md
-  #     - readme/**
-  #     - dockerfiles/**
-  #     - Notebooks/**
 
 jobs:
-  build:
-    runs-on: [self-hosted, Linux, ARM64]
-    env:
-      # Add default values for all parameters when triggered by push, using the same defaults as workflow_dispatch
-      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
-      TTS_ENGINE: ${{ github.event_name == 'workflow_dispatch' && inputs.tts_engine || 'bark' }}
-      MODE: ${{ github.event_name == 'workflow_dispatch' && inputs.mode || 'single' }}
-      USE_CUSTOM_VOICE: ${{ github.event_name == 'workflow_dispatch' && inputs.use_custom_voice || 'false' }}
-      LANGUAGE: ${{ github.event_name == 'workflow_dispatch' && inputs.language || 'eng' }}
-      RUN_HELP_TEST: ${{ github.event_name == 'workflow_dispatch' && inputs.run_help_test || 'true' }}
-      REBUILD_DOCKER: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_docker || 'false' }}
-      SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
-      CUSTOM_ENTRYPOINT: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_entrypoint || '' }}
-    outputs:
-      test_matrix: ${{ steps.generate_matrix.outputs.test_matrix }}
-      help_test: ${{ steps.generate_matrix.outputs.help_test }}
+  final_push:
+    runs-on: macos-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
 
-      # Set up Docker Buildx conditionally based on OS
-      - name: Set up Docker Buildx (Windows)
-        if: runner.os == 'Windows'
-        uses: docker/setup-buildx-action@v2
-
-      - name: Set up Docker Buildx (Unix)
-        if: runner.os != 'Windows'
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
           driver: docker-container
-          buildkitd-flags: --allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -119,401 +20,95 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Get Git Commit Hash
       - name: Get Git Commit Hash
-        id: git_hash
         run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
-        shell: bash
 
-      # Create upload script that will be used for modified docker images
-      - name: Create upload script
+      - name: Get Latest Release Tag
         run: |
-          cat > upload.sh << 'EOF'
-          #!/bin/bash
-          set -e
-          
-          # Check if we have arguments - if so, run the original entrypoint with those arguments
-          if [ $# -gt 0 ]; then
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          if [ -z "$TAG" ] || [ "$TAG" == "null" ]; then TAG="latest"; fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
 
-            # Check if this is just a help request
-            if [[ "$*" == *"--help"* || "$1" == "-h" ]]; then
-              # Just run the help command without checking for outputs
-              python app.py "$@"
-              exit $?
-            fi
-
-            # First run the original process with the provided arguments
-            python app.py "$@"
-            
-            # Step 2: Find and package the audiobooks
-            echo "=== Searching for generated audiobooks ==="
-            OUTDIR=${OUTDIR:-/app/audiobooks}
-            find $OUTDIR -name "*.m4b" -o -name "*.mp3" > /tmp/found_files.txt
-            
-            if [ -s /tmp/found_files.txt ]; then
-              echo "✅ Found audiobook files"
-              mkdir -p /tmp/audiobooks_to_upload
-              
-              while IFS= read -r file; do
-                echo "Copying $file to upload directory"
-                cp "$file" /tmp/audiobooks_to_upload/
-              done < /tmp/found_files.txt
-              
-              # Install zip if not already installed
-              if ! command -v zip &> /dev/null; then
-                echo "Installing zip..."
-                apt-get update
-                apt-get install -y zip
-              fi
-              
-              # Step 3: Create zip file
-              cd /tmp
-              zip -r audiobooks.zip audiobooks_to_upload
-              
-              # Step 4: Upload to file sharing service
-              echo "=== Uploading audiobooks ==="
-              UPLOAD_URL=$(curl -F "file=@audiobooks.zip" https://0x0.st)
-              echo "✅ UPLOAD_URL: $UPLOAD_URL"
-            else
-              echo "❌ No audiobook files found!"
-              echo "DEBUG: Contents of directories:"
-              find $OUTDIR -type f
-              exit 1
-            fi
-          else
-            # No arguments provided, print usage
-            echo "Usage: $0 [original app.py arguments]"
-            echo "Example: $0 --headless --script_mode full_docker --language eng --tts_engine fairseq"
-            exit 1
-          fi
-          EOF
-          
-          chmod +x upload.sh
-        shell: bash
-
-      # Check if we should update existing image or rebuild
-      - name: Check for existing image and update if needed
-        # Note: For push events, default is to NOT rebuild (same as workflow_dispatch default)
-        if: env.REBUILD_DOCKER == 'false'
-        id: check_image
+      - name: Debug Print Variables
         run: |
-          echo "Checking for existing Docker image..."
-          if docker pull ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}; then
-            echo "🔄 Existing image found, updating with latest code instead of rebuilding"
-            
-            # Create a temporary Dockerfile without using heredoc
-            echo "FROM ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}" > Dockerfile.update
-            echo "WORKDIR /app" >> Dockerfile.update
-            echo "" >> Dockerfile.update
-            echo "# Copy new code over the existing code" >> Dockerfile.update
-            echo "COPY . ." >> Dockerfile.update
-            echo "# Copy our upload script" >> Dockerfile.update
-            echo "COPY upload.sh /app/upload.sh" >> Dockerfile.update
-            echo "RUN chmod +x /app/upload.sh" >> Dockerfile.update
-            echo "# Override the entrypoint to use our script by default" >> Dockerfile.update
-            echo "ENTRYPOINT [\"/app/upload.sh\"]" >> Dockerfile.update
-            
-            # Build and push the updated image
-            docker buildx build --platform linux/arm64 \
-              -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
-              -f Dockerfile.update \
-              --push .
-            
-            echo "✅ Image updated successfully with latest code and upload functionality"
-            echo "rebuild_needed=false" >> $GITHUB_OUTPUT
-          else
-            echo "❗ No existing image found or pull failed, will perform full rebuild"
-            echo "rebuild_needed=true" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
+          echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}"
+          echo "GIT_HASH=${GIT_HASH}"
+          echo "RELEASE_TAG=${RELEASE_TAG}"
 
-      # Build and Push Docker Image (full rebuild)
-      - name: Build and Push Docker Image
-        if: github.event_name != 'workflow_dispatch' || env.REBUILD_DOCKER == 'true' || steps.check_image.outputs.rebuild_needed == 'true'
+      - name: Build and Push Release Docker Image
         run: |
-          echo "🏗️ Building full Docker image from scratch..."
-          docker buildx build --platform linux/arm64 \
-            --build-arg SKIP_XTTS_TEST=true \
-            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} \
+          cd ~/ebook2audiobook
+          docker buildx build --pull --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH} \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG} \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
             --push .
-          echo "✅ Full image build and push complete"
-        shell: bash
 
-      # Generate test matrix directly in the build job
-      - name: Generate test matrix
-        id: generate_matrix
-        run: |
-          # Define parameters for the test matrix
-          ENGINES=("fairseq" "vits" "yourtts" "xtts" "bark")
-          MODES=("single" "batch")
-          VOICES=("default" "custom")
-          
-          # Process language input - split by comma and trim whitespace
-          IFS=',' read -ra LANG_ARRAY <<< "${{ env.LANGUAGE }}"
-          LANGS=()
-          for lang in "${LANG_ARRAY[@]}"; do
-            # Trim whitespace
-            lang=$(echo "$lang" | xargs)
-            if [[ -n "$lang" ]]; then
-              LANGS+=("$lang")
-            fi
-          done
-          
-          # If "all" is specified for language, use the predefined list of languages
-          if [[ "${{ env.LANGUAGE }}" == "all" ]]; then
-            LANGS=("eng" "urd-script_devanagari")
-          fi
-          
-          # If no valid languages provided, default to English
-          if [[ ${#LANGS[@]} -eq 0 ]]; then
-            LANGS=("eng")
-          fi
-          
-          echo "Languages to test: ${LANGS[*]}"
-          
-          # Filter based on input parameters
-          if [[ "${{ env.TTS_ENGINE }}" != "all" ]]; then
-            ENGINES=("${{ env.TTS_ENGINE }}")
-          fi
-          
-          if [[ "${{ env.MODE }}" != "all" ]]; then
-            MODES=("${{ env.MODE }}")
-          fi
-          
-          if [[ "${{ env.USE_CUSTOM_VOICE }}" != "all" ]]; then
-            if [[ "${{ env.USE_CUSTOM_VOICE }}" == "true" ]]; then
-              VOICES=("custom")
-            else
-              VOICES=("default")
-            fi
-          fi
-          
-          # Create the matrix directly as a JSON string
-          echo "test_matrix=[]" >> $GITHUB_OUTPUT
-          
-          # Temporary file for building the matrix
-          touch matrix_temp.json
-          echo "[]" > matrix_temp.json
-          
-          # Generate regular tests
-          for ENGINE in "${ENGINES[@]}"; do
-            for MODE in "${MODES[@]}"; do
-              for VOICE in "${VOICES[@]}"; do
-                for LANG in "${LANGS[@]}"; do
-                  NAME="${LANG} ${ENGINE} headless"
-                  if [[ "$VOICE" == "custom" ]]; then
-                    NAME="${NAME} Custom-Voice"
-                  fi
-                  NAME="${NAME} ${MODE} test"
-                  
-                  # Build command with proper escaping
-                  if [[ "$MODE" == "single" ]]; then
-                    EBOOK_PARAM="--ebook tools/workflow-testing/test1.txt"
-                  else
-                    EBOOK_PARAM="--ebooks_dir tools/workflow-testing"
-                  fi
-                  
-                  if [[ "$VOICE" == "custom" ]]; then
-                    VOICE_PARAM="--voice voices/eng/elder/male/DavidAttenborough_24000.wav"
-                  else
-                    VOICE_PARAM=""
-                  fi
-                  
-                  CMD="--headless --script_mode full_docker --language ${LANG} --tts_engine ${ENGINE} ${EBOOK_PARAM} ${VOICE_PARAM}"
-                  
-                  # Safely append to the matrix
-                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix_temp.json > matrix_temp2.json
-                  mv matrix_temp2.json matrix_temp.json
-                done
-              done
-            done
-          done
-          
-          # Add special XTTS fine-tuned tests if XTTS is included
-          if [[ "${{ env.TTS_ENGINE }}" == "all" || "${{ env.TTS_ENGINE }}" == "xtts" ]]; then
-            if [[ "${{ env.MODE }}" == "all" || "${{ env.MODE }}" == "single" ]]; then
-              # Run XTTS fine-tuned tests for each language that matches eng
-              for LANG in "${LANGS[@]}"; do
-                if [[ "$LANG" == "eng" ]]; then
-                  NAME="English XTTS headless fine-tuned XTTS model single test"
-                  CMD="--headless --script_mode full_docker --language eng --ebook tools/workflow-testing/test1.txt --tts_engine xtts --fine_tuned AiExplained"
-                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix_temp.json > matrix_temp2.json
-                  mv matrix_temp2.json matrix_temp.json
-                fi
-              done
-            fi
-            
-            if [[ "${{ env.MODE }}" == "all" || "${{ env.MODE }}" == "batch" ]]; then
-              # Run XTTS fine-tuned tests for each language that matches eng
-              for LANG in "${LANGS[@]}"; do
-                if [[ "$LANG" == "eng" ]]; then
-                  NAME="English XTTS headless fine-tuned XTTS model batch test"
-                  CMD="--headless --script_mode full_docker --language eng --ebooks_dir tools/workflow-testing --tts_engine xtts --fine_tuned AiExplained"
-                  jq --arg name "$NAME" --arg cmd "$CMD" '. += [{"name": $name, "cmd": $cmd}]' matrix_temp.json > matrix_temp2.json
-                  mv matrix_temp2.json matrix_temp.json
-                fi
-              done
-            fi
-          fi
-          
-          # Set output for test matrix in the correct format
-          MATRIX_JSON=$(cat matrix_temp.json)
-          # Use proper multiline string syntax for GITHUB_OUTPUT
-          echo "test_matrix<<EOF" >> $GITHUB_OUTPUT
-          echo "$MATRIX_JSON" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          
-          # Set output for help test
-          if [[ "${{ env.RUN_HELP_TEST }}" == "true" ]]; then
-            echo "help_test=true" >> $GITHUB_OUTPUT
-          else
-            echo "help_test=false" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
-
-  run_help_test:
-    needs: build
-    if: needs.build.outputs.help_test == 'true'
-    runs-on: [self-hosted, Linux, ARM64]
-    env:
-      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
-      CUSTOM_ENTRYPOINT: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_entrypoint || '' }}
+  huggingface-build:
+    needs: final_push
+    runs-on: macos-latest
     steps:
-      - name: Prune dangling Docker images
-        run: docker image prune -f
-        
-      - name: Run help command test
-        run: |
-          echo "Running help command test"
-          
-          # Check if we need to use the custom entrypoint or the default one
-          if [[ -n "${{ env.CUSTOM_ENTRYPOINT }}" ]]; then
-            ENTRYPOINT_OVERRIDE="--entrypoint ${{ env.CUSTOM_ENTRYPOINT }}"
-          else
-            ENTRYPOINT_OVERRIDE=""
-          fi
-          
-          set +e
-          docker run --rm --pull=always --gpus all $ENTRYPOINT_OVERRIDE ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --help
-          STATUS=$?
-          set -e
-          
-          if [ $STATUS -ne 0 ]; then
-            echo "GPU run failed, trying without GPU support..."
-            docker run --rm --pull=always $ENTRYPOINT_OVERRIDE ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} --help
-          fi
-        shell: bash
 
-  run_tests:
-    needs: build
-    runs-on: [self-hosted, Linux, ARM64]
-    strategy:
-      fail-fast: false
-      matrix: 
-        test: ${{ fromJson(needs.build.outputs.test_matrix) }}
-    env:
-      DOCKER_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.docker_tag || 'lite_dev_v25' }}
-      SAVE_OUTPUTS: ${{ github.event_name == 'workflow_dispatch' && inputs.save_outputs || 'false' }}
-      CUSTOM_ENTRYPOINT: ${{ github.event_name == 'workflow_dispatch' && inputs.custom_entrypoint || '' }}
-    steps:
-      - name: Prune dangling Docker images
-        run: docker image prune -f
-      
-      - name: Run ${{ matrix.test.name }} test
-        id: run_test
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker-container
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
         run: |
-          echo "Running test: ${{ matrix.test.name }}"
-          echo "Command: ${{ matrix.test.cmd }}"
-          
-          # Generate a unique container name for this test
-          CONTAINER_NAME="test_container_${{ github.run_id }}_${{ strategy.job-index }}"
-          
-          # Create a temporary file to store the output
-          OUTPUT_FILE=$(mktemp)
-          
-          # Check if we need to use the custom entrypoint or the default one
-          if [[ -n "${{ env.CUSTOM_ENTRYPOINT }}" ]]; then
-            ENTRYPOINT_OVERRIDE="--entrypoint ${{ env.CUSTOM_ENTRYPOINT }}"
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          if [ -z "$TAG" ] || [ "$TAG" == "null" ]; then TAG="latest"; fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Build and Push Huggingface Docker Image
+        run: |
+          cd ~/ebook2audiobook
+          docker buildx build --platform linux/amd64 \
+            -f dockerfiles/HuggingfaceDockerfile \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
+            --push .
+
+  update-huggingface:
+    needs: huggingface-build
+    runs-on: macos-latest
+    steps:
+      - name: Set up Git
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+
+      - name: Install Git LFS
+        run: |
+          brew install git-lfs
+          git lfs install
+
+      - name: Configure Huggingface Credentials
+        run: |
+          echo "machine hf-prod.huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" > ~/.netrc
+          echo "machine huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" >> ~/.netrc
+
+      - name: Clone and Update Huggingface Space
+        run: |
+          git clone https://huggingface.co/spaces/drewThomasson/ebook2audiobook
+          cd ebook2audiobook
+          VERSION=$(curl -s https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/${GIT_HASH}/VERSION.txt | tr -d ' \t\n')
+          echo "Updating README with version $VERSION"
+          sed -i '' "s/^title: Ebook2audiobook v[0-9.]\+/title: Ebook2audiobook v$VERSION/" README.md
+          if [ ! -f updates.txt ]; then
+            echo "update" > updates.txt
           else
-            ENTRYPOINT_OVERRIDE=""
+            echo "update" >> updates.txt
           fi
-          
-          # First try with GPU
-          set +e
-          docker run --name $CONTAINER_NAME --pull=always --gpus all $ENTRYPOINT_OVERRIDE ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
-          TEST_STATUS=$?
-          set -e
-          
-          # If GPU run failed, try without GPU but keep the container
-          if [ $TEST_STATUS -ne 0 ]; then
-            echo "GPU run failed, trying without GPU support..."
-            # Remove the previous container
-            docker rm $CONTAINER_NAME || true
-            
-            # Clear the output file for the next run
-            > "$OUTPUT_FILE"
-            
-            set +e
-            # Run without GPU
-            docker run --name $CONTAINER_NAME --pull=always $ENTRYPOINT_OVERRIDE ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }} ${{ matrix.test.cmd }} 2>&1 | tee "$OUTPUT_FILE"
-            TEST_STATUS=$?
-            set -e
-          fi
-          
-          # Extract the upload URL if any from the output
-          UPLOAD_URL=$(grep -o "UPLOAD_URL: http.*" "$OUTPUT_FILE" | cut -d' ' -f2)
-          if [ -n "$UPLOAD_URL" ]; then
-            echo "📁 Audiobooks uploaded to: $UPLOAD_URL"
-          else
-            echo "❌ No audiobook upload URL found in the output."
-          fi
-          
-          # Check if we should save the outputs
-          if [[ "${{ env.SAVE_OUTPUTS }}" == "true" ]]; then
-            echo "Test completed with status $TEST_STATUS"
-            echo "Saving container state with all outputs..."
-            
-            # Check if container exists before committing
-            if docker container inspect $CONTAINER_NAME &>/dev/null; then
-              # Commit the container with all outputs
-              docker commit $CONTAINER_NAME ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
-              
-              # Login to Docker Hub again
-              echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
-              
-              # Push the image with all outputs
-              echo "Pushing image with all outputs..."
-              docker push ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${{ env.DOCKER_TAG }}
-              
-              echo "Container state with all outputs preserved successfully."
-            else
-              echo "Container $CONTAINER_NAME doesn't exist, skipping commit"
-            fi
-          else
-            echo "Test completed with status $TEST_STATUS"
-            echo "SAVE_OUTPUTS is set to false - not preserving any outputs"
-          fi
-          
-          # Remove the container
-          docker rm $CONTAINER_NAME || true
-          
-          # If the test failed, print the output again
-          if [ $TEST_STATUS -ne 0 ]; then
-            echo "========================== TEST FAILED ==========================="
-            echo "Here is the output from the failed run:"
-            echo "=============================================================="
-            cat "$OUTPUT_FILE"
-            echo "=============================================================="
-            if [[ "${{ env.SAVE_OUTPUTS }}" == "true" ]]; then
-              echo "Test failed but container state has been preserved."
-            else
-              echo "Test failed and outputs were not preserved (SAVE_OUTPUTS=false)."
-            fi
-          fi
-          
-          # Clean up the temporary file
-          rm -f "$OUTPUT_FILE"
-          
-          # Exit with the test's status
-          exit $TEST_STATUS
-        shell: bash
+          git add README.md updates.txt
+          git commit -m "Update version in README to $VERSION and add update entry"
+          git push
