@@ -55,6 +55,10 @@ jobs:
           echo "Running help install test..."
           # ./ebook2audiobook.sh --help
           cd ~/ebook2audiobook
+          # Safely initialize conda (portable across systems)
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+
+          # Now deactivate safely
           conda deactivate
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
 
