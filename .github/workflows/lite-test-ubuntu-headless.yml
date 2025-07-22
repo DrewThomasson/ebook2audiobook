@@ -38,8 +38,7 @@ jobs:
       - name: Clone ebook2audiobook
         shell: bash
         run: |
-          [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
-
+          [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}
       - name: Initalize conda for Unidict
         shell: bash
         run: |
@@ -55,6 +54,13 @@ jobs:
           # ./ebook2audiobook.sh --help
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+
+      - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
+        shell: bash
+        run: |
+          echo "Adding set -e at beginning of ebook2audiobook.sh (for error passing)..."
+          cd ~/ebook2audiobook
+          sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
@@ -134,7 +140,7 @@ jobs:
       - name: Clone ebook2audiobook into E2ADockerBuild
         shell: bash
         run: |
-          [ -d ~/E2ADockerBuild/ebook2audiobook ] && (cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook && cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
+          [ -d ~/E2ADockerBuild/ebook2audiobook ] && (cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook && cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}
 
 
       - name: Set up Docker Buildx
@@ -185,7 +191,7 @@ jobs:
       - name: Clone ebook2audiobook into E2ADockerBuild
         shell: bash
         run: |
-          [ -d ~/E2ADockerBuild/ebook2audiobook ] && (cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook && cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
+          [ -d ~/E2ADockerBuild/ebook2audiobook ] && (cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook && cd ~/E2ADockerBuild/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2

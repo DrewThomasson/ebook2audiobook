@@ -55,6 +55,13 @@ jobs:
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
 
+      - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
+        shell: bash
+        run: |
+          echo "Adding set -e at beginning of ebook2audiobook.sh (for error passing)..."
+          cd ~/ebook2audiobook
+          sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
+
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
         run: |
