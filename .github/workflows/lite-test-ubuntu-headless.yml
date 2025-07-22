@@ -21,13 +21,12 @@ jobs:
       - name: Clone ebook2audiobook to short path
         shell: bash
         run: |
-          [ -d $HOME/ebook2audiobook ] && (cd $HOME/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git $HOME/ebook2audiobook && cd $HOME/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
-          # [ -d $HOME/ebook2audiobook ] && (cd $HOME/ebook2audiobook && git fetch --all && git checkout workflow-patch-1) || git clone https://github.com/DrewThomasson/ebook2audiobook.git $HOME/ebook2audiobook && cd $HOME/ebook2audiobook && git fetch --all && git checkout workflow-patch-1
+          [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
+          # [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout workflow-patch-1) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout workflow-patch-1
 
 
       - name: Initalize conda for Unidict
         shell: bash
-        working-directory: $HOME/ebook2audiobook
         run: |
           echo "Initializing conda..."
           # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
@@ -36,7 +35,7 @@ jobs:
 
       - name: Ebook2audiobook install
         shell: bash
-        working-directory: $HOME/ebook2audiobook
+        working-directory: ~/ebook2audiobook
         run: |
           echo "Running help install test..."
           export TMPDIR=/tmp
@@ -46,7 +45,7 @@ jobs:
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
-        working-directory: $HOME/ebook2audiobook
+        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English TACOTRON2 Custom-Voice headless single test..."
           export TMPDIR=/tmp
@@ -55,7 +54,7 @@ jobs:
 
       - name: English FAIRSEQ Custom-Voice headless single test
         shell: bash
-        working-directory: $HOME/ebook2audiobook
+        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English FAIRSEQ Custom-Voice headless single test..."
           export TMPDIR=/tmp
@@ -64,7 +63,7 @@ jobs:
           
       - name: Unusual FAIRSEQ Custom-Voice headless single test
         shell: bash
-        working-directory: $HOME/ebook2audiobook
+        working-directory: ~/ebook2audiobook
         run: |
           echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
           export TMPDIR=/tmp
@@ -72,7 +71,7 @@ jobs:
 
       - name: English VITS Custom-Voice headless single test
         shell: bash
-        working-directory: $HOME/ebook2audiobook
+        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English VITS Custom-Voice headless single test..."
           export TMPDIR=/tmp
@@ -80,7 +79,7 @@ jobs:
 
       - name: English YOURTTS Custom-Voice headless batch test
         shell: bash
-        working-directory: $HOME/ebook2audiobook
+        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English YOURTTS Custom-Voice headless batch test..."
           export TMPDIR=/tmp
@@ -89,7 +88,7 @@ jobs:
 
       - name: Default XTTSv2 headless Custom-Voice single test
         shell: bash
-        working-directory: $HOME/ebook2audiobook
+        working-directory: ~/ebook2audiobook
         run: |
           echo "Running Default XTTSv2 headless Custom-Voice single test..."
           export TMPDIR=/tmp
@@ -97,7 +96,7 @@ jobs:
 
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
         shell: bash
-        working-directory: $HOME/ebook2audiobook
+        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           export TMPDIR=/tmp
@@ -105,7 +104,7 @@ jobs:
 
       - name: English BARK Custom-Voice headless single test
         shell: bash
-        working-directory: $HOME/ebook2audiobook
+        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           export TMPDIR=/tmp
@@ -149,7 +148,7 @@ jobs:
 
       - name: Build and Push Release Docker Image
         run: |
-          cd $HOME/ebook2audiobook
+          cd ~/ebook2audiobook
           docker buildx build --pull --platform linux/amd64,linux/arm64 \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH} \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG} \
@@ -175,7 +174,7 @@ jobs:
 
       - name: Build and Push Huggingface Docker Image
         run: |
-          cd $HOME/ebook2audiobook
+          cd ~/ebook2audiobook
           docker buildx build --platform linux/amd64 \
             -f dockerfiles/HuggingfaceDockerfile \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
@@ -197,8 +196,8 @@ jobs:
 
       - name: Configure Huggingface Credentials
         run: |
-          echo "machine hf-prod.huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" > $HOME/.netrc
-          echo "machine huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" >> $HOME/.netrc
+          echo "machine hf-prod.huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" > ~/.netrc
+          echo "machine huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" >> ~/.netrc
 
       - name: Clone and Update Huggingface Space
         run: |
