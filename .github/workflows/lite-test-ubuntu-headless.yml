@@ -5,7 +5,7 @@ on:
 
 jobs:
   final_push:
-    runs-on: macos-latest
+    runs-on: [self-hosted, macos]
     steps:
 
       - name: Set up Docker Buildx
@@ -46,7 +46,7 @@ jobs:
 
   huggingface-build:
     needs: final_push
-    runs-on: macos-latest
+    runs-on: [self-hosted, macos]
     steps:
 
       - name: Set up Docker Buildx
@@ -80,7 +80,7 @@ jobs:
 
   update-huggingface:
     needs: huggingface-build
-    runs-on: macos-latest
+    runs-on: [self-hosted, macos]
     steps:
       - name: Set up Git
         run: |
