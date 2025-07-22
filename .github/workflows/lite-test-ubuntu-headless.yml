@@ -37,83 +37,67 @@ jobs:
         shell: bash
         run: |
           echo "Running help install test..."
-          export TMPDIR=/tmp
           # ./ebook2audiobook.sh --help
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
-        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English TACOTRON2 Custom-Voice headless single test..."
-          export TMPDIR=/tmp
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
 
       - name: English FAIRSEQ Custom-Voice headless single test
         shell: bash
-        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English FAIRSEQ Custom-Voice headless single test..."
-          export TMPDIR=/tmp
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
           
       - name: Unusual FAIRSEQ Custom-Voice headless single test
         shell: bash
-        working-directory: ~/ebook2audiobook
         run: |
           echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
-          export TMPDIR=/tmp
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English VITS Custom-Voice headless single test
         shell: bash
-        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English VITS Custom-Voice headless single test..."
-          export TMPDIR=/tmp
+
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English YOURTTS Custom-Voice headless batch test
         shell: bash
-        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English YOURTTS Custom-Voice headless batch test..."
-          export TMPDIR=/tmp
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
 
       - name: Default XTTSv2 headless Custom-Voice single test
         shell: bash
-        working-directory: ~/ebook2audiobook
         run: |
           echo "Running Default XTTSv2 headless Custom-Voice single test..."
-          export TMPDIR=/tmp
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
         shell: bash
-        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
-          export TMPDIR=/tmp
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained
 
       - name: English BARK Custom-Voice headless single test
         shell: bash
-        working-directory: ~/ebook2audiobook
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
-          export TMPDIR=/tmp
           cd ~/ebook2audiobook
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
