@@ -40,14 +40,14 @@ jobs:
         run: |
           [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git reset --hard ${{ github.sha }}
  
-      #- name: Initalize conda for Unidict
-      #  shell: bash
-      #  run: |
-      #    echo "Initializing conda..."
-      #    # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
-      #    #source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
-      #    source "$(conda info --base)/etc/profile.d/conda.sh"
-      #    echo "conda initilized!"
+      - name: Initalize conda for Unidict
+        shell: bash
+        run: |
+          echo "Initializing conda..."
+          # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
+          #source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          echo "conda initilized!"
 
       - name: Ebook2audiobook install
         shell: bash
@@ -55,6 +55,7 @@ jobs:
           echo "Running help install test..."
           # ./ebook2audiobook.sh --help
           cd ~/ebook2audiobook
+          conda deactivate
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
 
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
