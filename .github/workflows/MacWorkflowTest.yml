@@ -1,7 +1,11 @@
-name: Test macOS Runner
+name: Mac E2A Test+DockerBuild
 
 on:
   workflow_dispatch:
+    inputs:
+      wipeAndReinstall:
+        type: boolean
+        description: 'Wipe & Re-Install E2A'
 
 jobs:
   macos-E2A:
@@ -17,8 +21,11 @@ jobs:
       - name: Print current commit SHA (GitHub variable)
         run: echo "Current commit SHA is ${{ github.sha }}"
 
+      - name: Wipe & Re-Install E2A
+        if: ${{ inputs.wipeAndReinstall }}
+        run: rm -rf /ebook2audiobook
 
-      - name: Clone ebook2audiobook to short path
+      - name: Clone ebook2audiobook
         shell: bash
         run: |
           [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
