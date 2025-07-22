@@ -1,9 +1,9 @@
-name: Cleanup Offline Self-Hosted Runners
+name: Cleanup Offline Self-Hosted Docker Runners
 
 on:
-  schedule:
-    # Run daily at 3 AM UTC
-    - cron: '0 3 * * *'
+  # schedule:
+  #   Run daily at 3 AM UTC
+  #   - cron: '0 3 * * *'
   workflow_dispatch: # Allow manual triggering
 
 jobs:
