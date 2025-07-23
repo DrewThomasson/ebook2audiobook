@@ -76,8 +76,11 @@ jobs:
           if [ -d "$REPO_DIR" ]; then
             echo "==> Reusing existing repo"
             cd "$REPO_DIR"
+            # Set correct remote and fix ambiguous refs
             git remote set-url origin "$REPO_URL"
-            git fetch origin --prune
+            git remote set-head origin -a
+            git remote prune origin
+            git fetch --all --prune
       
             echo "==> Cleaning working directory"
             git reset --hard
@@ -86,6 +89,9 @@ jobs:
             echo "==> Cloning fresh"
             git clone "$REPO_URL" "$REPO_DIR"
             cd "$REPO_DIR"
+            git remote set-head origin -a
+            git remote prune origin
+            git fetch --all --prune
             FRESH_CLONE=1
           fi
       
@@ -97,7 +103,7 @@ jobs:
             git fetch origin "$HEAD_REF":"origin/$HEAD_REF"
       
             # Reset to base branch
-            git checkout -B "$BASE_REF" "origin/$BASE_REF"
+            git checkout -B "$BASE_REF" "remotes/origin/$BASE_REF"
             git reset --hard "origin/$BASE_REF"
             git clean -xdf
       
