@@ -37,7 +37,6 @@ on:
     types:
       - published
 
-
 jobs:
   macos-E2A:
     runs-on: [self-hosted, macos]
@@ -84,25 +83,6 @@ jobs:
           mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
           find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
 
-
-      #- name: Initalize conda for Unidict
-      #  shell: bash
-      #  run: |
-      #    echo "Initializing conda..."
-      #    # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
-      #    #source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
-      #    source "$(conda info --base)/etc/profile.d/conda.sh"
-      #    echo "conda initilized!"
-
-      #- name: Ebook2audiobook install
-      #  shell: bash
-      #  run: |
-      #    echo "Running help install test..."
-      #    cd ~/ebook2audiobook
-      #    source "$(conda info --base)/etc/profile.d/conda.sh"
-      #    conda deactivate
-      #    ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
-
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
         shell: bash
         run: |
@@ -111,7 +91,6 @@ jobs:
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
           sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
-
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
