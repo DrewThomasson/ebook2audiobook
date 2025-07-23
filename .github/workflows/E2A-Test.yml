@@ -57,7 +57,7 @@ jobs:
       - name: Wipe & Re-Install E2A
         if: ${{ inputs.wipeAndReinstall }}
         shell: bash
-        run: rm -rf /ebook2audiobook
+        run: rm -rf ~/ebook2audiobook
 
       - name: Clone ebook2audiobook
         shell: bash
