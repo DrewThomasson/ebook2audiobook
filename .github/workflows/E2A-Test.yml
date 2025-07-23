@@ -184,7 +184,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" --output_dir ~/ebook2audiobook/audiobooks/BARK
+          ./ebook2audiobook.sh  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" --output_dir ~/ebook2audiobook/audiobooks/BARK 
 
       - name: Upload audiobooks folder artifact
         if: always()
