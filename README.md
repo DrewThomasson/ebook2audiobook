@@ -89,7 +89,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
 - [Docker](#docker-gpu-options) 
   - [GPU options](#docker-gpu-options)
-  - [Docker Run](#running-the-docker-container)
+  - [Docker Run](#running-the-pre-built-docker-container)
   - [Docker Build](#building-the-docker-container)
   - [Docker Compose](#docker-compose)
   - [Docker headless guide](#docker-headless-guide)
@@ -343,12 +343,12 @@ TIP: if it needs some more pauses, just add '###' or '[pause]' between the words
 
 #### Docker GPU Options
 
-Available tags: `latest` (CUDA 11.8), `cpu`
+Available pre-build tags: `latest` (CUDA 11.8)
 #### Edit: IF GPU isn't detected then you'll have to build the image -> [Building the Docker Container](#building-the-docker-container)
 
 
 
-#### Running the Docker Container
+#### Running the pre-built Docker Container
 
  -Run with CPU only
 ```powershell

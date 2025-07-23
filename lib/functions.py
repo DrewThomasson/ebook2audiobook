@@ -854,28 +854,35 @@ def get_sentences(text, lang, tts_engine):
     # build pattern: don’t split on any punctuation if it’s between two digits
     pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
     raw_list = []
+    min_tokens = 6
+    buffer = ""
     for match in re.finditer(pattern, text):
         s = match.group(1).strip()
-        if s:
-            if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                tokens = segment_ideogramms(s)
-                if isinstance(tokens, list):
-                    raw_list.append(''.join(tokens))
-                else:
-                    raw_list.append(str(tokens))
+        if not s:
+            continue
+        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            tokens = segment_ideogramms(s)
+            if isinstance(tokens, list):
+                raw_list.append(''.join(tokens))
             else:
-                raw_list.append(s)
-    raw_list = combine_punctuation(raw_list)
-    if len(raw_list) > 1:
-        tmp_list = [raw_list[i] + raw_list[i + 1] for i in range(0, len(raw_list) - 1, 2)]
-        if len(raw_list) % 2 != 0:
-            tmp_list.append(raw_list[-1])
-    else:
-        tmp_list = raw_list
-    if tmp_list and tmp_list[-1] == 'Start':
-        tmp_list.pop()
+                raw_list.append(str(tokens))
+        else:
+            if buffer:
+                s = buffer + " " + s
+                buffer = ""
+            if len(s.split()) < min_tokens:
+                buffer = s  # Not enough tokens, save for next
+                continue
+            raw_list.append(s)
+    if buffer and lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        if raw_list:
+            raw_list[-1] += " " + buffer
+        else:
+            raw_list.append(buffer)  
+    combine_list = combine_punctuation(raw_list)
+    print(combine_list)
     sentences = []
-    for sentence in tmp_list:
+    for sentence in combine_list:
         sentence = sentence.strip()
         if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
             sentences.extend(split_sentence(sentence))
@@ -1018,10 +1025,11 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
         if not math.isfinite(num) or abs(num) > max_single_value:
             return tok
         if is_num2words_compat:
-            lang = lang_iso1.replace('zh', 'zh_CN')
-            return num2words(num, lang=lang)
+            new_lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
+            return num2words(num, lang=new_lang_iso1)
         else:
-            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in str(num))
+            phoneme_map = language_math_phonemes.get(lang, language_math_phonemes.get(default_language_code, language_math_phonemes['eng']))
+            return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
     return number_re.sub(clean_num, text)
 
 def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
@@ -1107,7 +1115,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Pattern 1: Add a space between UTF-8 characters and numbers
     text = re.sub(r'(?<=[\p{L}])(?=\d)|(?<=\d)(?=[\p{L}])', ' ', text)
     # Replace special chars with words
-    specialchars = specialchars_mapping.get(lang, specialchars_mapping['eng'])
+    specialchars = specialchars_mapping.get(lang, specialchars_mapping.get(default_language_code, specialchars_mapping['eng']))
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
     text = text.translate(specialchars_table)
     text = ' '.join(text.split())
@@ -2729,6 +2737,7 @@ def web_interface(args, ctx):
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
                         return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update()
+                return gr.update(), gr.update(), gr.update(visible=False), gr.update()
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
