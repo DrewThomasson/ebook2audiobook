@@ -106,7 +106,6 @@ jobs:
           
       - name: Unusual FAIRSEQ Custom-Voice headless single test
         shell: bash
-        continue-on-error: true
         run: |
           echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
