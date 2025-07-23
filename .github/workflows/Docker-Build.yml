@@ -17,155 +17,15 @@ on:
       - dockerfiles/**
       - Notebooks/**
 
+  workflow_run:
+    workflows: ["Mac E2A Test"]
+    types:
+      - completed
+    branches:
+      - main
+
 jobs:
-  macos-E2A:
-    runs-on: [self-hosted, macos]
-
-    steps:
-      - name: Print runner info
-        run: |
-          echo "Running on:"
-          uname -a
-          sw_vers
-
-      - name: Print current commit SHA (GitHub variable)
-        run: echo "Current commit SHA is ${{ github.sha }}"
-
-      - name: Wipe & Re-Install E2A
-        if: ${{ inputs.wipeAndReinstall }}
-        run: rm -rf ~/ebook2audiobook
-
-      - name: Clone ebook2audiobook
-        shell: bash
-        run: |
-          if [ -d ~/ebook2audiobook ]; then
-            cd ~/ebook2audiobook
-            git fetch --all
-            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
-          else
-            git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook
-            cd ~/ebook2audiobook
-            git fetch --all
-            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
-          fi
-
-      - name: Initalize conda for Unidict
-        shell: bash
-        run: |
-          echo "Initializing conda..."
-          # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
-          #source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          echo "conda initilized!"
-
-      - name: Ebook2audiobook install
-        shell: bash
-        run: |
-          echo "Running help install test..."
-          # ./ebook2audiobook.sh --help
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          # Safely initialize conda (portable across systems)
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-
-          # Now deactivate safely
-          conda deactivate
-          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
-
-      - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
-        shell: bash
-        run: |
-          echo "Adding set -e at beginning of ebook2audiobook.sh (for error passing)..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
-
-      - name: English TACOTRON2 Custom-Voice headless single test
-        shell: bash
-        run: |
-          echo "Running English TACOTRON2 Custom-Voice headless single test..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-
-      - name: English FAIRSEQ Custom-Voice headless single test
-        shell: bash
-        run: |
-          echo "Running English FAIRSEQ Custom-Voice headless single test..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-          
-      - name: Unusual FAIRSEQ Custom-Voice headless single test
-        shell: bash
-        run: |
-          echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/urd-script_davanagari-test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: English VITS Custom-Voice headless single test
-        shell: bash
-        run: |
-          echo "Running English VITS Custom-Voice headless single test..."
-
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: English YOURTTS Custom-Voice headless batch test
-        shell: bash
-        run: |
-          echo "Running English YOURTTS Custom-Voice headless batch test..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-
-      - name: Default XTTSv2 headless Custom-Voice single test
-        shell: bash
-        run: |
-          echo "Running Default XTTSv2 headless Custom-Voice single test..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-      - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
-        shell: bash
-        run: |
-          echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained
-
-      - name: English BARK Custom-Voice headless single test
-        shell: bash
-        run: |
-          echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-
-
-
-
-
   DockerBuild:
-    needs: macos-E2A
     runs-on: [self-hosted, macos]
     steps:
 
@@ -223,8 +83,12 @@ jobs:
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
             --push .
 
+      - name: Prune docker & buildx
+        run: |
+          docker system prune -af --volumes
+          docker buildx prune -af
+
   huggingface-build:
-    needs: macos-E2A
     runs-on: [self-hosted, macos]
     steps:
 
@@ -265,5 +129,10 @@ jobs:
             -f dockerfiles/HuggingfaceDockerfile \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
             --push .
+
+      - name: Prune docker & buildx
+        run: |
+          docker system prune -af --volumes
+          docker buildx prune -af
 
             
