@@ -768,12 +768,12 @@ class Coqui:
                         sourceTensor = self._tensor_type(audio_part)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                         audio_segments.append(audio_tensor)
-                        audio_segments.append(silence_tensor.clone())
+                sentence = ' '.join(sentence_parts)
                 if audio_segments and torch.equal(audio_segments[-1], silence_tensor):
                     audio_segments = audio_segments[:-1]
                 if audio_segments:
                     audio_tensor = torch.cat(audio_segments, dim=-1)
-                    if text_part.endswith('-') or text_part[-1].isalnum():
+                    if sentence.endswith('-') or sentence[-1].isalnum():
                         audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                     start_time = self.sentences_total_time
                     duration = audio_tensor.shape[-1] / settings['samplerate']
@@ -782,7 +782,7 @@ class Coqui:
                     sentence_obj = {
                         "start": start_time,
                         "end": end_time,
-                        "text": sentence.replace('‡pause‡', '. '),
+                        "text": sentence,
                         "resume_check": self.sentence_idx
                     }
                     self.sentence_idx = append_sentence2vtt(sentence_obj, self.vtt_path)
