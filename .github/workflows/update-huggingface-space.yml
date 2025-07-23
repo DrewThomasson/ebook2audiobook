@@ -11,7 +11,7 @@ on:
         default: 'drewThomasson/ebook2audiobook'
         type: string
   workflow_run:
-    workflows: ["Mac E2A Test+DockerBuild"]
+    workflows: ["Docker Build"]
     types:
       - completed
 
