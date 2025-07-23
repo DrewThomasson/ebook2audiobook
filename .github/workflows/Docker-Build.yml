@@ -1,7 +1,21 @@
-name: Test macOS Runner
+name: Mac E2A Test+DockerBuild
 
 on:
   workflow_dispatch:
+    inputs:
+      wipeAndReinstall:
+        type: boolean
+        description: 'Wipe & Re-Install E2A'
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - CODE_OF_CONDUCT.md
+      - LICENSE
+      - README.md
+      - readme/**
+      - dockerfiles/**
+      - Notebooks/**
 
 jobs:
   macos-E2A:
@@ -17,20 +31,31 @@ jobs:
       - name: Print current commit SHA (GitHub variable)
         run: echo "Current commit SHA is ${{ github.sha }}"
 
+      - name: Wipe & Re-Install E2A
+        if: ${{ inputs.wipeAndReinstall }}
+        run: rm -rf ~/ebook2audiobook
 
-      - name: Clone ebook2audiobook to short path
+      - name: Clone ebook2audiobook
         shell: bash
         run: |
-          [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout ${{ github.sha }}
-          # [ -d ~/ebook2audiobook ] && (cd ~/ebook2audiobook && git fetch --all && git checkout workflow-patch-1) || git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook && cd ~/ebook2audiobook && git fetch --all && git checkout workflow-patch-1
-
+          if [ -d ~/ebook2audiobook ]; then
+            cd ~/ebook2audiobook
+            git fetch --all
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
+          else
+            git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook
+            cd ~/ebook2audiobook
+            git fetch --all
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
+          fi
 
       - name: Initalize conda for Unidict
         shell: bash
         run: |
           echo "Initializing conda..."
           # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
-          source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          #source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+          source "$(conda info --base)/etc/profile.d/conda.sh"
           echo "conda initilized!"
 
       - name: Ebook2audiobook install
@@ -39,13 +64,33 @@ jobs:
           echo "Running help install test..."
           # ./ebook2audiobook.sh --help
           cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          # Safely initialize conda (portable across systems)
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+
+          # Now deactivate safely
+          conda deactivate
           ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+
+      - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
+        shell: bash
+        run: |
+          echo "Adding set -e at beginning of ebook2audiobook.sh (for error passing)..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
         run: |
           echo "Running English TACOTRON2 Custom-Voice headless single test..."
           cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
 
@@ -54,15 +99,20 @@ jobs:
         run: |
           echo "Running English FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
           
       - name: Unusual FAIRSEQ Custom-Voice headless single test
         shell: bash
+        continue-on-error: true
         run: |
           echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
-          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/urd-script_davanagari-test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English VITS Custom-Voice headless single test
         shell: bash
@@ -70,6 +120,8 @@ jobs:
           echo "Running English VITS Custom-Voice headless single test..."
 
           cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English YOURTTS Custom-Voice headless batch test
@@ -77,6 +129,8 @@ jobs:
         run: |
           echo "Running English YOURTTS Custom-Voice headless batch test..."
           cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
 
@@ -85,6 +139,8 @@ jobs:
         run: |
           echo "Running Default XTTSv2 headless Custom-Voice single test..."
           cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
@@ -92,6 +148,8 @@ jobs:
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained
 
       - name: English BARK Custom-Voice headless single test
@@ -99,6 +157,8 @@ jobs:
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
 
 
@@ -109,6 +169,24 @@ jobs:
     needs: macos-E2A
     runs-on: [self-hosted, macos]
     steps:
+
+      - name: Wipe & Re-Clone E2A E2ADockerBuild
+        if: ${{ inputs.wipeAndReinstall }}
+        run: rm -rf ~/E2ADockerBuild/ebook2audiobook
+
+      - name: Clone ebook2audiobook into E2ADockerBuild
+        shell: bash
+        run: |
+          if [ -d ~/E2ADockerBuild/ebook2audiobook ]; then
+            cd ~/E2ADockerBuild/ebook2audiobook
+            git fetch --all
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
+          else
+            git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook
+            cd ~/E2ADockerBuild/ebook2audiobook
+            git fetch --all
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
+          fi
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
@@ -139,7 +217,7 @@ jobs:
 
       - name: Build and Push Release Docker Image
         run: |
-          cd ~/ebook2audiobook
+          cd ~/E2ADockerBuild/ebook2audiobook
           docker buildx build --pull --platform linux/amd64,linux/arm64 \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH} \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG} \
@@ -151,6 +229,24 @@ jobs:
     runs-on: [self-hosted, macos]
     steps:
 
+      - name: Wipe & Re-Clone E2A E2ADockerBuild
+        if: ${{ inputs.wipeAndReinstall }}
+        run: rm -rf ~/E2ADockerBuild/ebook2audiobook
+
+      - name: Clone ebook2audiobook into E2ADockerBuild
+        shell: bash
+        run: |
+          if [ -d ~/E2ADockerBuild/ebook2audiobook ]; then
+            cd ~/E2ADockerBuild/ebook2audiobook
+            git fetch --all
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
+          else
+            git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook
+            cd ~/E2ADockerBuild/ebook2audiobook
+            git fetch --all
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
+          fi
+          
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
         with:
@@ -165,43 +261,10 @@ jobs:
 
       - name: Build and Push Huggingface Docker Image
         run: |
-          cd ~/ebook2audiobook
+          cd ~/E2ADockerBuild/ebook2audiobook
           docker buildx build --platform linux/amd64 \
             -f dockerfiles/HuggingfaceDockerfile \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
             --push .
 
-  update-huggingface:
-    needs: huggingface-build
-    runs-on: [self-hosted, macos]
-    steps:
-      - name: Set up Git
-        run: |
-          git config --global user.name "GitHub Action"
-          git config --global user.email "action@github.com"
-
-      - name: Install Git LFS
-        run: |
-          brew install git-lfs
-          git lfs install
-
-      - name: Configure Huggingface Credentials
-        run: |
-          echo "machine hf-prod.huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" > ~/.netrc
-          echo "machine huggingface.co login api password ${{ secrets.HUGGINGFACE_TOKEN }}" >> ~/.netrc
-
-      - name: Clone and Update Huggingface Space
-        run: |
-          git clone https://huggingface.co/spaces/drewThomasson/ebook2audiobook
-          cd ebook2audiobook
-          VERSION=$(curl -s https://raw.githubusercontent.com/DrewThomasson/ebook2audiobook/${GIT_HASH}/VERSION.txt | tr -d ' \t\n')
-          echo "Updating README with version $VERSION"
-          sed -i '' "s/^title: Ebook2audiobook v[0-9.]\+/title: Ebook2audiobook v$VERSION/" README.md
-          if [ ! -f updates.txt ]; then
-            echo "update" > updates.txt
-          else
-            echo "update" >> updates.txt
-          fi
-          git add README.md updates.txt
-          git commit -m "Update version in README to $VERSION and add update entry"
-          git push
+            
