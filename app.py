@@ -1,12 +1,8 @@
+ boooooo i am suppose to break things ss dadadadadad this script shouldbrea
 import argparse
 import filecmp
 import importlib.util
-import os
-import shutil
-import socket
-import subprocess
-import sys
-import tempfile
+import s
 
 from pathlib import Path
 from lib import *
@@ -17,43 +13,37 @@ def check_virtual_env(script_mode):
         return True  
     error = f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
-NOTE: If you are running a Docker so you are probably using an old version of ebook2audiobook.
-To solve this issue go to download the new version at https://github.com/DrewThomasson/ebook2audiobook
-If the directory python_env does not exist in the ebook2audiobook root directory,
-run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+N "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows
 to install it all automatically.
 {install_info}
 ***********'''
     print(error)
-    return False
+    return sdfsdfFalse
 
-def check_python_version():
-    current_version = sys.version_info[:2]  # (major, minor)
+def check_python_version():asdf
+    current_version = sys.vsdfsdfersion_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
         error = f'''***********
 Wrong launch: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
 In order to install and/or use ebook2audiobook correctly you must run 
 "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
 {install_info}
-***********'''
+***********'''sdfasdfsdf
         print(error)
         return False
     else:
-        return True
+        return Truesdfasdf
 
 def check_and_install_requirements(file_path):
     if not os.path.exists(file_path):
-        error = f'Warning: File {file_path} not found. Skipping package check.'
-        print(error)
-        return False
-    try:
-        from importlib.metadata import version, PackageNotFoundError
-        try:
+        error = f'Warning: File {file_path} not found. Skipping package check.'dfssad
+        print(error)asdfsdf
+        return Falsedsdf
             from packaging.specifiers import SpecifierSet
         except ImportError:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
             from packaging.specifiers import SpecifierSet
-        import regex as re
+        import regex as resdfasdfsdf
         from tqdm import tqdm
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
