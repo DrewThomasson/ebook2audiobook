@@ -51,12 +51,6 @@ jobs:
           uname -a
           sw_vers
 
-      - name: Create Audiobook Output folders for Artifacts
-        shell: bash
-        run: |
-          mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
-          find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
-
       - name: Print current commit SHA (GitHub variable)
         shell: bash
         run: echo "Current commit SHA is ${{ github.sha }}"
@@ -83,6 +77,13 @@ jobs:
               ./ebook2audiobook.sh --help
             fi
           fi
+
+      - name: Create Audiobook Output folders for Artifacts
+        shell: bash
+        run: |
+          mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
+          find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
+
 
       #- name: Initalize conda for Unidict
       #  shell: bash
