@@ -48,7 +48,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: audiobooks
-          path: ${{ env.HOME }}/ebook2audiobook/audiobooks
+          path: ~/ebook2audiobook/audiobooks
           
       - name: Print runner info
         run: |
