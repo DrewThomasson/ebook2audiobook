@@ -52,7 +52,6 @@ jobs:
       
             echo "==> Cleaning working directory"
             git reset --hard
-            git clean -xdf
           else
             echo "==> Cloning fresh"
             git clone "$REPO_URL" "$REPO_DIR"
@@ -73,7 +72,6 @@ jobs:
             # Reset to base branch
             git checkout -B "$BASE_REF" "remotes/origin/$BASE_REF"
             git reset --hard "origin/$BASE_REF"
-            git clean -xdf
       
             # Merge PR source
             if ! git merge --no-ff --no-edit "origin/$HEAD_REF"; then
@@ -85,7 +83,6 @@ jobs:
             git fetch origin "$TRIGGER_SHA"
             git checkout --detach "$TRIGGER_SHA"
             git reset --hard "$TRIGGER_SHA"
-            git clean -xdf
           fi
       
           echo "==> Final repo state:"
