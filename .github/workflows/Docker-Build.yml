@@ -145,7 +145,6 @@ jobs:
 
       - name: English BARK Custom-Voice headless single test
         shell: bash
-        continue-on-error: true
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook

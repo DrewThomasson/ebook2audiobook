@@ -102,7 +102,6 @@ jobs:
           
       - name: Unusual FAIRSEQ Custom-Voice headless single test
         shell: bash
-        continue-on-error: true
         run: |
           echo "Running Unusual FAIRSEQ Custom-Voice headless single test..."
           cd ~/ebook2audiobook
@@ -150,7 +149,6 @@ jobs:
 
       - name: English BARK Custom-Voice headless single test
         shell: bash
-        continue-on-error: true
         run: |
           echo "Running English XTTSv2 headless fine-tuned XTTSv2 model single test..."
           cd ~/ebook2audiobook
