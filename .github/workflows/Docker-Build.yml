@@ -223,6 +223,11 @@ jobs:
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
             --push .
 
+      - name: Prune docker & buildx
+        run: |
+          docker system prune -af --volumes
+          docker buildx prune -af
+
   huggingface-build:
     needs: macos-E2A
     runs-on: [self-hosted, macos]
@@ -265,5 +270,10 @@ jobs:
             -f dockerfiles/HuggingfaceDockerfile \
             -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
             --push .
+
+      - name: Prune docker & buildx
+        run: |
+          docker system prune -af --volumes
+          docker buildx prune -af
 
             
