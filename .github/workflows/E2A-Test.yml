@@ -52,7 +52,7 @@ jobs:
 
       - name: Print current commit SHA (GitHub variable)
         shell: bash
-        run: echo "Current commit SHA is ${{ github.sha }}"
+        run: echo "Current commit SHA is ${{ github.event.pull_request.head.sha || github.sha }}"
 
       - name: Wipe & Re-Install E2A
         if: ${{ inputs.wipeAndReinstall }}
