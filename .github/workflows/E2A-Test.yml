@@ -6,6 +6,7 @@ on:
       wipeAndReinstall:
         type: boolean
         description: 'Wipe & Re-Install E2A'
+
   pull_request:
     branches:
       - main
@@ -21,6 +22,20 @@ on:
       - dockerfiles/**
       - Notebooks/**
 
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - CODE_OF_CONDUCT.md
+      - LICENSE
+      - README.md
+      - readme/**
+      - dockerfiles/**
+      - Notebooks/**
+
+  release:
+    types:
+      - published
 
 
 jobs:
