@@ -47,12 +47,12 @@ jobs:
           if [ -d ~/ebook2audiobook ]; then
             cd ~/ebook2audiobook
             git fetch --all
-            git reset --hard ${{ github.sha }}
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
           else
             git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/ebook2audiobook
             cd ~/ebook2audiobook
             git fetch --all
-            git reset --hard ${{ github.sha }}
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
           fi
 
       - name: Initalize conda for Unidict
