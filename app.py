@@ -1,48 +1,145 @@
-sdfsdfsoisdfoijsdfjoidfsjoidfs sdfsdfjkdsf import argparse
+import argparse
 import filecmp
 import importlib.util
-import ossdfsdfs
-imporfsdft ssdfsdhutil
+import os
+import shutil
 import socket
-imporsdft subprocess
-import sdf
-imporsdsdft tempfile
-dfsdf
-sdfsdffrom pathlib import Path
+import subprocess
+import sys
+import tempfile
+
+from pathlib import Path
 from lib import *
 
 def check_virtual_env(script_mode):
     current_version = sys.version_info[:2]  # (major, minor)
-    if str(os.path.bafsd
-    error = f'''*****sdf
+    if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
+        return True  
+    error = f'''***********
+Wrong launch! ebook2audiobook must run in its own virtual environment!
+NOTE: If you are running a Docker so you are probably using an old version of ebook2audiobook.
+To solve this issue go to download the new version at https://github.com/DrewThomasson/ebook2audiobook
+If the directory python_env does not exist in the ebook2audiobook root directory,
+run your command with "./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows
+to install it all automatically.
+{install_info}
+***********'''
     print(error)
     return False
 
-def check_python_version():sdfsd
+def check_python_version():
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
-        error = f'''*fsdfd
-def check_and_install_reqsdfuirements(file_path):
-    if not osfsdfsdfsdsdfdsff
+        error = f'''***********
+Wrong launch: Your OS Python version is not compatible! (current: {current_version[0]}.{current_version[1]})
+In order to install and/or use ebook2audiobook correctly you must run 
+"./ebook2audiobook.sh" for Linux and Mac or "ebook2audiobook.cmd" for Windows.
+{install_info}
+***********'''
+        print(error)
+        return False
+    else:
+        return True
+
+def check_and_install_requirements(file_path):
+    if not os.path.exists(file_path):
+        error = f'Warning: File {file_path} not found. Skipping package check.'
+        print(error)
+        return False
+    try:
+        from importlib.metadata import version, PackageNotFoundError
+        try:
+            from packaging.specifiers import SpecifierSet
+        except ImportError:
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
+            from packaging.specifiers import SpecifierSet
+        import regex as re
+        from tqdm import tqdm
+        with open(file_path, 'r') as f:
+            contents = f.read().replace('\r', '\n')
+            packages = [
+                pkg.strip()
+                for pkg in contents.splitlines()
+                if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)
+            ]
+        missing_packages = []
+        for package in packages:
+            # remove extras so '[lang]==x.y' becomes 'pkg==x.y'
+            clean_pkg = re.sub(r'\[.*?\]', '', package)
+            pkg_name  = re.split(r'[<>=]', clean_pkg, 1)[0].strip()
+            try:
+                installed_version = version(pkg_name)
+            except PackageNotFoundError:
+                error = f'{package} is missing.'
+                print(error)
+                missing_packages.append(package)
+            else:
+                # get specifier from clean_pkg, not from the raw string
+                spec_str = clean_pkg[len(pkg_name):].strip()
+                if spec_str:
+                    spec = SpecifierSet(spec_str)
+                    if installed_version not in spec:
+                        error = (f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".')
+                        print(error)
+                        missing_packages.append(package)
+        if missing_packages:
+            msg = '\nInstalling missing or upgrade packages...\n'
+            print(msg)
+            tmp_dir = tempfile.mkdtemp()
+            os.environ['TMPDIR'] = tmp_dir
+            result = subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
+            with tqdm(total=len(packages),
+                      desc='Installation 0.00%',
+                      bar_format='{desc}: {n_fmt}/{total_fmt} ',
+                      unit='step') as t:
+                for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
+                    try:
+                        subprocess.check_call([
+                            sys.executable, '-m', 'pip', 'install',
+                            '--no-cache-dir', '--use-pep517', package
+                        ])
+                        t.update(1)
+                    except subprocess.CalledProcessError as e:
+                        error = f'Failed to install {package}: {e}'
+                        print(error)
+                        return False
+            msg = '\nAll required packages are installed.'
+            print(msg)
         return True
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
         raise SystemExit(error)
         return False
-       sfsdfsdfsddsd_patdfsdf
+       
+def check_dictionary():
+    import unidic
+    unidic_path = unidic.DICDIR
+    dicrc = os.path.join(unidic_path, 'dicrc')
+    if not os.path.exists(dicrc) or os.path.getsize(dicrc) == 0:
+        try:
+            error = 'UniDic dictionary not found or incomplete. Downloading now...'
+            print(error)
+            subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
+        except subprocess.CalledProcessError as e:
+            error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting...'
+            raise SystemExit(error)
+            return False
+    return True
+
 def is_port_in_use(port):
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(('0.0.0.0', port)) == 0
 
-def main():fsdf
+def main():
     # Argument parser to handle optional parameters with descriptions
-    pafsdfsdrser = argparse.ArgumentParser(
+    parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
         epilog='''
-Example usagefsd:    
-Windows:fsdf
-    Gradisdfsdfo/GUI:
-    ebook2audiobook.cmsdfsdd
+Example usage:    
+Windows:
+    Gradio/GUI:
+    ebook2audiobook.cmd
     Headless mode:
     ebook2audiobook.cmd --headless --ebook '/path/to/file'
 Linux/Mac:
