@@ -45,21 +45,25 @@ jobs:
     steps:
           
       - name: Print runner info
+        shell: bash
         run: |
           echo "Running on:"
           uname -a
           sw_vers
 
       - name: Create Audiobook Output folders for Artifacts
+        shell: bash
         run: |
           mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
           find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
 
       - name: Print current commit SHA (GitHub variable)
+        shell: bash
         run: echo "Current commit SHA is ${{ github.sha }}"
 
       - name: Wipe & Re-Install E2A
         if: ${{ inputs.wipeAndReinstall }}
+        shell: bash
         run: rm -rf /ebook2audiobook
 
       - name: Clone ebook2audiobook
@@ -74,31 +78,29 @@ jobs:
             cd ~/ebook2audiobook
             git fetch --all
             git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
+            if ! ./ebook2audiobook.sh --help; then
+              source "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" 2>/dev/null && conda deactivate || true
+              ./ebook2audiobook.sh --help
+            fi
           fi
 
-      - name: Initalize conda for Unidict
-        shell: bash
-        run: |
-          echo "Initializing conda..."
-          # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
-          #source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          echo "conda initilized!"
+      #- name: Initalize conda for Unidict
+      #  shell: bash
+      #  run: |
+      #    echo "Initializing conda..."
+      #    # Properly initialize Conda, if needed (Needed for unidict to download) you may need a diff for mac and windows and mac depending on the runner
+      #    #source /opt/homebrew/Caskroom/miniconda/base/etc/profile.d/conda.sh
+      #    source "$(conda info --base)/etc/profile.d/conda.sh"
+      #    echo "conda initilized!"
 
-      - name: Ebook2audiobook install
-        shell: bash
-        run: |
-          echo "Running help install test..."
-          # ./ebook2audiobook.sh --help
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          # Safely initialize conda (portable across systems)
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-
-          # Now deactivate safely
-          conda deactivate
-          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
+      #- name: Ebook2audiobook install
+      #  shell: bash
+      #  run: |
+      #    echo "Running help install test..."
+      #    cd ~/ebook2audiobook
+      #    source "$(conda info --base)/etc/profile.d/conda.sh"
+      #    conda deactivate
+      #    ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine yourtts
 
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
         shell: bash
