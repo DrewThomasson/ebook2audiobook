@@ -43,6 +43,13 @@ jobs:
     runs-on: [self-hosted, macos]
 
     steps:
+
+      - name: Upload audiobooks folder artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: audiobooks
+          path: ${{ env.HOME }}/ebook2audiobook/audiobooks
+          
       - name: Print runner info
         run: |
           echo "Running on:"
@@ -179,4 +186,3 @@ jobs:
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav"
-      
