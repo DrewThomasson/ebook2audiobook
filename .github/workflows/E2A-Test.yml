@@ -21,6 +21,8 @@ on:
       - readme/**
       - dockerfiles/**
       - Notebooks/**
+      - .github/workflows/stale.yml
+      - .github/workflows/custom-command.yml
 
   push:
     branches:
@@ -32,6 +34,8 @@ on:
       - readme/**
       - dockerfiles/**
       - Notebooks/**
+      - .github/workflows/stale.yml
+      - .github/workflows/custom-command.yml
 
   release:
     types:
