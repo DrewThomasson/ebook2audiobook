@@ -716,91 +716,57 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
 def get_sentences(text, lang, tts_engine):
     max_chars = language_mapping[lang]['max_chars'] - 2
     min_tokens = 5
-    ideogram_langs = ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']
-    pause_marker = '‡pause‡'
+    ideogram_langs = ['zho','jpn','kor','tha','lao','mya','khm']
+    pause = '‡pause‡'
 
-    def segment_ideogramms(txt):
-        if lang == 'zho':
-            import jieba
-            return list(jieba.cut(txt))
-        elif lang == 'jpn':
-            sudachi = dictionary.Dictionary().create()
-            mode = tokenizer.Tokenizer.SplitMode.C
-            return [m.surface() for m in sudachi.tokenize(txt, mode)]
-        elif lang == 'kor':
-            return LTokenizer().tokenize(txt)
-        elif lang in ideogram_langs:
-            return word_tokenize(txt, engine='newmm')
-        else:
-            return [txt]
-
-    def join_ideogramms(tokens):
-        # split only on other hard punctuation (pause handled separately)
-        hard_set = punctuation_split_hard_set - {pause_marker}
-        buffer = ''
-        for tok in tokens:
-            if not tok.strip():
-                continue
-            buffer += tok
-            # if we hit the pause marker, flush immediately (preserves it at end)
-            if tok == pause_marker:
-                yield buffer
-                buffer = ''
-                continue
-            # otherwise flush on any other hard punctuation or length
-            if tok in hard_set or len(buffer) >= max_chars:
-                yield buffer
-                buffer = ''
-        if buffer:
-            yield buffer
-
-    # --- IDEOGRAM BRANCH ---
-    if lang in ideogram_langs:
-        # ensure pause_marker is its own token
-        text_prepped = text.replace(pause_marker, f' {pause_marker} ')
-        tokens = segment_ideogramms(text_prepped)
-        return list(join_ideogramms(tokens))
-
-    # --- NON‑IDEOGRAM BRANCH ---
-    import re
-    hard_marks = [pause_marker] + [
-        p for p in sorted(punctuation_split_hard_set, key=len, reverse=True)
-        if p != pause_marker
-    ]
-    pattern = re.compile(rf"(.*?(?:{'|'.join(map(re.escape, hard_marks))}))(?:\s+|$)", re.DOTALL)
+    # build the same hard‐split regex you already had (pause omitted—handled by chunking)
+    other_hard = sorted(punctuation_split_hard_set - {pause}, key=len, reverse=True)
+    hard_pattern = '|'.join(map(re.escape, other_hard))
+    hard_re = re.compile(rf"(.*?(?:{hard_pattern}))(?:\s+|$)", re.DOTALL)
 
     sentences = []
-    buffer = ''
-    for m in pattern.finditer(text):
-        frag = m.group(1).strip()
-        if not frag:
+    buffer = ""
+
+    # 1) chop into chunks that end in pause (except maybe the last)
+    parts = text.split(pause)
+    for idx, part in enumerate(parts):
+        part = part.strip()
+        if not part:
             continue
-
-        if buffer:
-            frag = buffer + ' ' + frag
-            buffer = ''
-
-        # pause precedence
-        if frag.endswith(pause_marker):
-            sentences.append(frag)
-            continue
-
-        # min_tokens buffering
-        if len(frag.split()) < min_tokens:
-            buffer = frag
-            continue
-
-        # max_chars slicing
-        if len(frag) > max_chars:
-            for i in range(0, len(frag), max_chars):
-                sentences.append(frag[i:i+max_chars].strip())
+        # re‑attach the pause marker to all but the final piece
+        if idx < len(parts) - 1:
+            chunk = part + pause
         else:
-            sentences.append(frag)
+            chunk = part
 
-    # flush any remaining buffer
+        # 2) run your old finditer on each chunk
+        for m in hard_re.finditer(chunk):
+            frag = m.group(1).strip()
+            if not frag:
+                continue
+
+            # your original buffering / slicing logic:
+            if frag.endswith(pause):
+                sentences.append(frag); continue
+            if lang in ideogram_langs:
+                # CJK segmentation + rejoin, etc.
+                toks = segment_ideogramms(frag)
+                frag = ''.join(toks)
+            if buffer:
+                frag = buffer + " " + frag
+                buffer = ""
+            if len(frag.split()) < min_tokens:
+                buffer = frag; continue
+            if len(frag) > max_chars:
+                for i in range(0, len(frag), max_chars):
+                    sentences.append(frag[i:i+max_chars].strip())
+            else:
+                sentences.append(frag)
+
+    # 3) flush leftover buffer as before
     if buffer:
         buf = buffer.strip()
-        if buf.endswith(pause_marker):
+        if buf.endswith(pause):
             sentences.append(buf)
         elif len(buf.split()) < min_tokens:
             sentences.append(buf)
