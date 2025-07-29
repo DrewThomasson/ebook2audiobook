@@ -714,22 +714,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         return None
 
 def get_sentences(text, lang, tts_engine):
-    def segment_ideogramms(text):
-        if lang == 'zho':
-            import jieba
-            return list(jieba.cut(text))
-        elif lang == 'jpn':
-            sudachi = dictionary.Dictionary().create()
-            mode = tokenizer.Tokenizer.SplitMode.C
-            return [m.surface() for m in sudachi.tokenize(text, mode)]
-        elif lang == 'kor':
-            ltokenizer = LTokenizer()
-            return ltokenizer.tokenize(text)
-        elif lang in ['tha', 'lao', 'mya', 'khm']:
-            return word_tokenize(text, engine='newmm')
-        else:
-            return [text]
-
     max_chars = language_mapping[lang]['max_chars'] - 2
     min_tokens = 5
     # Step 1: Split first by ‡pause‡, keeping it as a separate element
