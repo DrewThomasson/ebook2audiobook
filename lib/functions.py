@@ -763,15 +763,33 @@ def get_sentences(text, lang, tts_engine):
     punctuation_split = [p for p in punctuation_split_hard_set]
     pattern_split = '|'.join(map(re.escape, punctuation_split))
     pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
-    sentences = []
+    hard_list = []
     for s in pause_list:
         if s == TTS_SML['pause']:
-            sentences.append(s)
+            hard_list.append(s)
         else:
             for m in pattern.finditer(s):
                 text_part = m.group(1).strip()
                 if text_part:
+                    hard_list.append(text_part)
+    # Step 3: check if some hard_list are exceeding max_chars so use soft punctuations
+    punctuation_split = [p for p in punctuation_split_soft_set]
+    pattern_split = '|'.join(map(re.escape, punctuation_split))
+    pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
+    sentences = []
+    for s in hard_list:
+        if s == TTS_SML['pause']:
+            sentences.append(s)
+        elif len(s) > max_chars:
+            for m in pattern.finditer(s):
+                text_part = m.group(1).strip()
+                if text_part:
                     sentences.append(text_part)
+            # if nothing matched (no soft punctuation), just append whole s
+            if not any(len(ch) < len(s) for ch in sentences if ch in s):
+                sentences.append(s)
+        else:
+            sentences.append(s)
     print(sentences)
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         result = []
