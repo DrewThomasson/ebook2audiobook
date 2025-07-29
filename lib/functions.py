@@ -2603,7 +2603,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'click_gr_voice_del_btn(): {e}'
                 alert_exception(error)
-            return gr.update(), gr.update(visible=False)
+            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
         def click_gr_custom_model_del_btn(selected, id):
             try:
@@ -2615,7 +2615,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'Could not delete the custom model {selected_name}!'
                 alert_exception(error)
-            return gr.update(), gr.update(visible=False)
+            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
         def click_gr_audiobook_del_btn(selected, id):
             try:
@@ -2627,7 +2627,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'Could not delete the audiobook {selected_name}!'
                 alert_exception(error)
-            return gr.update(), gr.update(visible=False)
+            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
         def confirm_deletion(voice_path, custom_model, audiobook, id, method=None):
             try:
@@ -2660,12 +2660,12 @@ def web_interface(args, ctx):
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update()
-                return gr.update(), gr.update(), gr.update(visible=False), gr.update()
+                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
-            return gr.update(), gr.update(), gr.update(), gr.update(visible=False)
+            return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                 
         def prepare_audiobook_download(selected):
             if os.path.exists(selected):
@@ -3352,12 +3352,12 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         gr_confirm_no_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         app.load(
             fn=None,
