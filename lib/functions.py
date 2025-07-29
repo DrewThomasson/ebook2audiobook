@@ -774,18 +774,18 @@ def get_sentences(text, lang, tts_engine):
     sentences = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
     sentences = [s if s == TTS_SML['pause'] else s.strip() for s in sentences if s.strip() or s == TTS_SML['pause']]
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-        idg_list = []
+        result = []
         for s in sentences:
             if s == TTS_SML['pause']:
-                idg_list.append(s)
+                result.append(s)
             else:
                 tokens = segment_ideogramms(s)
                 if isinstance(tokens, list):
-                    idg_list.extend([t for t in tokens if t.strip()])
+                    result.extend([t for t in tokens if t.strip()])
                 else:
                     if tokens.strip():
-                        idg_list.append(tokens)
-        return list(join_ideogramms(idg_list))
+                        result.append(tokens)
+        return list(join_ideogramms(result))
     else:
         return sentences
 
