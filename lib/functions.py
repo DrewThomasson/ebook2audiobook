@@ -737,12 +737,6 @@ def get_sentences(text, lang, tts_engine):
         buffer = ''
         for sentence in idg_list:
             if sentence == TTS_SML['pause']:
-                # If buffer is not empty, yield it before yielding the pause
-                if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
-                    if len(buffer.split()) >= min_tokens or not buffer.split():
-                        yield buffer
-                    buffer = ''
-                yield sentence
                 continue
             if not sentence.strip() or not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
                 continue
@@ -785,7 +779,7 @@ def get_sentences(text, lang, tts_engine):
                 else:
                     if tokens.strip():
                         result.append(tokens)
-        return ''.join_ideogramms(result)
+        return list(join_ideogramms(result))
     else:
         return sentences
 
