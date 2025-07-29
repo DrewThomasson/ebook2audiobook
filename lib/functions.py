@@ -720,8 +720,8 @@ def get_sentences(text, lang, tts_engine):
     pause_split = re.split(r'(‡pause‡)', text)
     # Clean up: Remove empty strings, strip whitespace from non-pause elements
     pause_split = [s if s == '‡pause‡' else s.strip() for s in pause_split if s.strip() or s == '‡pause‡']
-    print(pause_split)  # debug
-    return pause_split  # debug
+    print(f'pause_split: {len(pause_split)}: {pause_split}')
+    return pause_split
 
 def get_ram():
     vm = psutil.virtual_memory()
