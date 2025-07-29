@@ -729,9 +729,7 @@ def get_sentences(text, lang, tts_engine):
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             return word_tokenize(text, engine='newmm')
         else:
-            splitters = ['‡pause‡'] + [p for p in punctuation_split_hard_set if p != '‡pause‡']
-            pattern = f"({'|'.join(map(re.escape, splitters))})"
-            return re.split(pattern, text)
+            return [text]
 
     def join_ideogramms(idg_list):
         buffer = ''
@@ -756,11 +754,25 @@ def get_sentences(text, lang, tts_engine):
         if buffer:
             yield buffer
 
-    max_chars = language_mapping[lang]['max_chars'] + 2
+    max_chars = language_mapping[lang]['max_chars']
     min_tokens = 5
     # Step 1: Split first by ‡pause‡, keeping it as a separate element
-    sentences = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
-    sentences = [s if s == TTS_SML['pause'] else s.strip() for s in sentences if s.strip() or s == TTS_SML['pause']]
+    pause_list = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
+    pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
+    # Step 2: split with punctuation_split_hard_set
+    punctuation_split = [p for p in punctuation_split_hard_set]
+    # build a regex that captures each punctuation as its own group
+    pattern_split = '|'.join(map(re.escape, punctuation_split))
+    pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
+    sentences = []
+    for s in pause_list:
+        if s == TTS_SML['pause']:
+            sentences.append(s)
+        else:
+            for m in pattern.finditer(s):
+                chunk = m.group(1).strip()
+                if chunk:
+                    sentences.append(chunk)
     print(sentences)
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         result = []
