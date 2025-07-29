@@ -745,7 +745,7 @@ def get_sentences(text, lang, tts_engine):
                 yield token
                 continue
             # Replace punctuation with space for TACOTRON2 engines
-            if tts_engine in TTS_ENGINES['TACOTRON2'] and token in punctuation_split_hard_set:
+            if tts_engine in TTS_ENGINES['TACOTRON2'] and token in punctuation_split_soft_set:
                 buffer += ' '
             else:
                 buffer += token
