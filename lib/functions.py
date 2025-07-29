@@ -735,45 +735,43 @@ def get_sentences(text, lang, tts_engine):
             return [txt]
 
     def join_ideogramms(tokens):
-        # only split on hard punctuation (excluding the pause marker)
+        # split only on other hard punctuation (pause handled separately)
         hard_set = punctuation_split_hard_set - {pause_marker}
         buffer = ''
         for tok in tokens:
             if not tok.strip():
                 continue
             buffer += tok
-            # if this token *is* the pause marker, flush immediately (preserving it)
+            # if we hit the pause marker, flush immediately (preserves it at end)
             if tok == pause_marker:
                 yield buffer
                 buffer = ''
                 continue
-            # otherwise flush on any other hard punctuation or length limit
+            # otherwise flush on any other hard punctuation or length
             if tok in hard_set or len(buffer) >= max_chars:
                 yield buffer
                 buffer = ''
         if buffer:
             yield buffer
 
-    # --- Ideogram branch ---
+    # --- IDEOGRAM BRANCH ---
     if lang in ideogram_langs:
-        # ensure pause_marker stands alone
-        text_prepped = text.replace(pause_marker, f'{pause_marker}')
-        toks = segment_ideogramms(text_prepped)
-        return list(join_ideogramms(toks))
+        # ensure pause_marker is its own token
+        text_prepped = text.replace(pause_marker, f' {pause_marker} ')
+        tokens = segment_ideogramms(text_prepped)
+        return list(join_ideogramms(tokens))
 
-    # --- Non‑ideogram branch ---
+    # --- NON‑IDEOGRAM BRANCH ---
     import re
-    # build hard‑split regex with pause first
     hard_marks = [pause_marker] + [
         p for p in sorted(punctuation_split_hard_set, key=len, reverse=True)
         if p != pause_marker
     ]
-    pattern_split = '|'.join(map(re.escape, hard_marks))
-    hard_re = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
+    pattern = re.compile(rf"(.*?(?:{'|'.join(map(re.escape, hard_marks))}))(?:\s+|$)", re.DOTALL)
 
     sentences = []
     buffer = ''
-    for m in hard_re.finditer(text):
+    for m in pattern.finditer(text):
         frag = m.group(1).strip()
         if not frag:
             continue
@@ -782,24 +780,24 @@ def get_sentences(text, lang, tts_engine):
             frag = buffer + ' ' + frag
             buffer = ''
 
-        # pause_marker precedence
+        # pause precedence
         if frag.endswith(pause_marker):
             sentences.append(frag)
             continue
 
-        # buffer under‑length fragments
+        # min_tokens buffering
         if len(frag.split()) < min_tokens:
             buffer = frag
             continue
 
-        # slice over‑length fragments
+        # max_chars slicing
         if len(frag) > max_chars:
             for i in range(0, len(frag), max_chars):
-                sentences.append(frag[i : i + max_chars].strip())
+                sentences.append(frag[i:i+max_chars].strip())
         else:
             sentences.append(frag)
 
-    # flush remaining buffer
+    # flush any remaining buffer
     if buffer:
         buf = buffer.strip()
         if buf.endswith(pause_marker):
@@ -808,7 +806,7 @@ def get_sentences(text, lang, tts_engine):
             sentences.append(buf)
         elif len(buf) > max_chars:
             for i in range(0, len(buf), max_chars):
-                sentences.append(buf[i : i + max_chars].strip())
+                sentences.append(buf[i:i+max_chars].strip())
         else:
             sentences.append(buf)
     print(sentences)
