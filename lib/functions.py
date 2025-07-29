@@ -729,33 +729,65 @@ def get_sentences(text, lang, tts_engine):
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             return word_tokenize(text, engine='newmm')
         else:
-            # use hard splitters including pause at the front
             splitters = ['‡pause‡'] + [p for p in punctuation_hard_split_set if p != '‡pause‡']
             pattern = f"({'|'.join(map(re.escape, splitters))})"
             return re.split(pattern, text)
 
+    def join_ideogramms(idg_list):
+        buffer = ''
+        for sentence in idg_list:
+            if sentence == TTS_SML['pause']:
+                # If buffer is not empty, yield it before yielding the pause
+                if buffer.strip() and not all(c in punctuation_hard_split_set for c in buffer):
+                    if len(buffer.split()) >= min_tokens or not buffer.split():
+                        yield buffer
+                    buffer = ''
+                yield sentence
+                continue
+            if not sentence.strip() or not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+                continue
+            buffer += sentence
+            if sentence in punctuation_hard_split_set:
+                if len(buffer) > max_chars:
+                    for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
+                        if part.strip() and not all(c in punctuation_hard_split_set for c in part):
+                            if len(part.split()) >= min_tokens or not part.split():
+                                yield part
+                    buffer = ''
+                else:
+                    if buffer.strip() and not all(c in punctuation_hard_split_set for c in buffer):
+                        if len(buffer.split()) >= min_tokens or not buffer.split():
+                            yield buffer
+                    buffer = ''
+            elif len(buffer) >= max_chars:
+                if buffer.strip() and not all(c in punctuation_hard_split_set for c in buffer):
+                    if len(buffer.split()) >= min_tokens or not buffer.split():
+                        yield buffer
+                buffer = ''
+        if buffer.strip() and not all(c in punctuation_hard_split_set for c in buffer):
+            if len(buffer.split()) >= min_tokens or not buffer.split():
+                yield buffer
+
     max_chars = language_mapping[lang]['max_chars'] + 2
     min_tokens = 5
     # Step 1: Split first by ‡pause‡, keeping it as a separate element
-    pause_list = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
-    # Clean up: Remove empty strings, strip whitespace from non-pause elements
-    pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
+    sentences = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
+    sentences = [s if s == TTS_SML['pause'] else s.strip() for s in sentences if s.strip() or s == TTS_SML['pause']]
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-        result = []
-        for s in pause_list:
+        idg_list = []
+        for s in sentences:
             if s == TTS_SML['pause']:
-                result.append(s)
+                idg_list.append(s)
             else:
-                # flatten the tokens from segment_ideogramms
                 tokens = segment_ideogramms(s)
                 if isinstance(tokens, list):
-                    result.extend([t for t in tokens if t.strip()])
+                    idg_list.extend([t for t in tokens if t.strip()])
                 else:
                     if tokens.strip():
-                        result.append(tokens)
-        return result
+                        idg_list.append(tokens)
+        return list(join_ideogramms(idg_list))
     else:
-        return pause_list
+        return sentences
 
 def get_ram():
     vm = psutil.virtual_memory()
