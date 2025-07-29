@@ -714,69 +714,34 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         return None
 
 def get_sentences(text, lang, tts_engine):
+    def segment_ideogramms(text):
+        if lang == 'zho':
+            import jieba
+            return list(jieba.cut(text))
+        elif lang == 'jpn':
+            sudachi = dictionary.Dictionary().create()
+            mode = tokenizer.Tokenizer.SplitMode.C
+            return [m.surface() for m in sudachi.tokenize(text, mode)]
+        elif lang == 'kor':
+            ltokenizer = LTokenizer()
+            return ltokenizer.tokenize(text)
+        elif lang in ['tha', 'lao', 'mya', 'khm']:
+            return word_tokenize(text, engine='newmm')
+        else:
+            return [text]
+
     max_chars = language_mapping[lang]['max_chars'] - 2
     min_tokens = 5
-    ideogram_langs = ['zho','jpn','kor','tha','lao','mya','khm']
-    pause = '‡pause‡'
-
-    # build the same hard‐split regex you already had (pause omitted—handled by chunking)
-    other_hard = sorted(punctuation_split_hard_set - {pause}, key=len, reverse=True)
-    hard_pattern = '|'.join(map(re.escape, other_hard))
-    hard_re = re.compile(rf"(.*?(?:{hard_pattern}))(?:\s+|$)", re.DOTALL)
-
-    sentences = []
-    buffer = ""
-
-    # 1) chop into chunks that end in pause (except maybe the last)
-    parts = text.split(pause)
-    for idx, part in enumerate(parts):
-        part = part.strip()
-        if not part:
-            continue
-        # re‑attach the pause marker to all but the final piece
-        if idx < len(parts) - 1:
-            chunk = part + pause
-        else:
-            chunk = part
-
-        # 2) run your old finditer on each chunk
-        for m in hard_re.finditer(chunk):
-            frag = m.group(1).strip()
-            if not frag:
-                continue
-
-            # your original buffering / slicing logic:
-            if frag.endswith(pause):
-                sentences.append(frag); continue
-            if lang in ideogram_langs:
-                # CJK segmentation + rejoin, etc.
-                toks = segment_ideogramms(frag)
-                frag = ''.join(toks)
-            if buffer:
-                frag = buffer + " " + frag
-                buffer = ""
-            if len(frag.split()) < min_tokens:
-                buffer = frag; continue
-            if len(frag) > max_chars:
-                for i in range(0, len(frag), max_chars):
-                    sentences.append(frag[i:i+max_chars].strip())
-            else:
-                sentences.append(frag)
-
-    # 3) flush leftover buffer as before
-    if buffer:
-        buf = buffer.strip()
-        if buf.endswith(pause):
-            sentences.append(buf)
-        elif len(buf.split()) < min_tokens:
-            sentences.append(buf)
-        elif len(buf) > max_chars:
-            for i in range(0, len(buf), max_chars):
-                sentences.append(buf[i:i+max_chars].strip())
-        else:
-            sentences.append(buf)
-    print(sentences)
-    return sentences
+    # Step 1: Split first by ‡pause‡, keeping it as a separate element
+    pause_split = re.split(r'(‡pause‡)', text)
+    # Clean up: Remove empty strings, strip whitespace from non-pause elements
+    pause_split = [s if s == '‡pause‡' else s.strip() for s in pause_split if s.strip() or s == '‡pause‡']
+    # For subsequent splitting, build the punctuations list WITHOUT '‡pause‡'
+    punctuations = [p for p in sorted(punctuation_hard_split_set, key=len, reverse=True) if p != '‡pause‡']
+    pattern_split = '|'.join(map(re.escape, punctuations))
+    pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
+    print(pause_split)  # debug
+    return pause_split  # debug
 
 def get_ram():
     vm = psutil.virtual_memory()
