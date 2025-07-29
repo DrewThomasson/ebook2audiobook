@@ -736,17 +736,23 @@ def get_sentences(text, lang, tts_engine):
     def join_ideogramms(idg_list):
         buffer = ''
         for token in idg_list:
+            # 1) On pause: flush & emit buffer, then the pause
             if token == TTS_SML['pause']:
                 if buffer:
                     yield buffer
                     buffer = ''
                 yield token
                 continue
-            # If adding the next token would overflow, yield buffer first
-            if len(buffer) + len(token) > max_chars and buffer:
+
+            # 2) If adding this token would overflow, flush current buffer first
+            if buffer and len(buffer) + len(token) > max_chars:
                 yield buffer
                 buffer = ''
+
+            # 3) Append the token (word, punctuation, whatever)
             buffer += token
+
+        # 4) Flush any trailing text
         if buffer:
             yield buffer
 
