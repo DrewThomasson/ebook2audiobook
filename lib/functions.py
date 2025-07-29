@@ -738,35 +738,32 @@ def get_sentences(text, lang, tts_engine):
         token_count = 0
         for token in idg_list:
             if token == TTS_SML['pause']:
-                # flush buffer before yielding pause
-                if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
+                if buffer.strip():
                     yield buffer
                     buffer = ''
                     token_count = 0
                 yield token
                 continue
 
-            if not token.strip() or not bool(re.search(r'[^\W_]', token, re.UNICODE)):
-                continue  # skip empty or non-word tokens
-
+            # Do NOT skip punctuation; always add all tokens
             buffer += token
-            token_count += 1
+            # Only count tokens that are not pure punctuation or whitespace
+            if re.search(r'[^\W_]', token, re.UNICODE):
+                token_count += 1
 
-            # Always yield at punctuation
             if token in punctuation_split_hard_set:
-                if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
-                    if token_count >= min_tokens or True:  # always yield at punct
-                        yield buffer
-                buffer = ''
-                token_count = 0
-            # If buffer is too long, force a split (even if no punct)
+                # yield at punctuation, keeping it in buffer
+                if buffer.strip():
+                    yield buffer
+                    buffer = ''
+                    token_count = 0
             elif len(buffer) >= max_chars:
-                yield buffer
-                buffer = ''
-                token_count = 0
+                if buffer.strip():
+                    yield buffer
+                    buffer = ''
+                    token_count = 0
 
-        # flush whatever remains, even if under min_tokens
-        if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
+        if buffer.strip():
             yield buffer
 
     max_chars = language_mapping[lang]['max_chars'] + 2
