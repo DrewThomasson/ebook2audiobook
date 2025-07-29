@@ -729,7 +729,7 @@ def get_sentences(text, lang, tts_engine):
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             return word_tokenize(text, engine='newmm')
         else:
-            splitters = ['‡pause‡'] + [p for p in punctuation_hard_split_set if p != '‡pause‡']
+            splitters = ['‡pause‡'] + [p for p in punctuation_split_hard_set if p != '‡pause‡']
             pattern = f"({'|'.join(map(re.escape, splitters))})"
             return re.split(pattern, text)
 
@@ -738,7 +738,7 @@ def get_sentences(text, lang, tts_engine):
         for sentence in idg_list:
             if sentence == TTS_SML['pause']:
                 # If buffer is not empty, yield it before yielding the pause
-                if buffer.strip() and not all(c in punctuation_hard_split_set for c in buffer):
+                if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
                     if len(buffer.split()) >= min_tokens or not buffer.split():
                         yield buffer
                     buffer = ''
@@ -747,24 +747,24 @@ def get_sentences(text, lang, tts_engine):
             if not sentence.strip() or not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
                 continue
             buffer += sentence
-            if sentence in punctuation_hard_split_set:
+            if sentence in punctuation_split_hard_set:
                 if len(buffer) > max_chars:
                     for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
-                        if part.strip() and not all(c in punctuation_hard_split_set for c in part):
+                        if part.strip() and not all(c in punctuation_split_hard_set for c in part):
                             if len(part.split()) >= min_tokens or not part.split():
                                 yield part
                     buffer = ''
                 else:
-                    if buffer.strip() and not all(c in punctuation_hard_split_set for c in buffer):
+                    if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
                         if len(buffer.split()) >= min_tokens or not buffer.split():
                             yield buffer
                     buffer = ''
             elif len(buffer) >= max_chars:
-                if buffer.strip() and not all(c in punctuation_hard_split_set for c in buffer):
+                if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
                     if len(buffer.split()) >= min_tokens or not buffer.split():
                         yield buffer
                 buffer = ''
-        if buffer.strip() and not all(c in punctuation_hard_split_set for c in buffer):
+        if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
             if len(buffer.split()) >= min_tokens or not buffer.split():
                 yield buffer
 
