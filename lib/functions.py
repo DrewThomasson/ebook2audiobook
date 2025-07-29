@@ -714,13 +714,48 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         return None
 
 def get_sentences(text, lang, tts_engine):
-    max_chars = language_mapping[lang]['max_chars'] - 2
+
+    def segment_ideogramms(text):
+        if lang == 'zho':
+            import jieba
+            return list(jieba.cut(text))
+        elif lang == 'jpn':
+            sudachi = dictionary.Dictionary().create()
+            mode = tokenizer.Tokenizer.SplitMode.C
+            return [m.surface() for m in sudachi.tokenize(text, mode)]
+        elif lang == 'kor':
+            ltokenizer = LTokenizer()
+            return ltokenizer.tokenize(text)
+        elif lang in ['tha', 'lao', 'mya', 'khm']:
+            return word_tokenize(text, engine='newmm')
+        else:
+            # use hard splitters including pause at the front
+            splitters = ['‡pause‡'] + [p for p in punctuation_hard_split_set if p != '‡pause‡']
+            pattern = f"({'|'.join(map(re.escape, splitters))})"
+            return re.split(pattern, text)
+
+    max_chars = language_mapping[lang]['max_chars'] + 2
     min_tokens = 5
     # Step 1: Split first by ‡pause‡, keeping it as a separate element
-    pause_split = re.split(r'(‡pause‡)', text)
+    pause_list = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
     # Clean up: Remove empty strings, strip whitespace from non-pause elements
-    pause_split = [s if s == TTS_SML['pause'] else s.strip() for s in pause_split if s.strip() or s == TTS_SML['pause']]
-    return pause_split
+    pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
+    if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+        result = []
+        for s in pause_list:
+            if s == TTS_SML['pause']:
+                result.append(s)
+            else:
+                # flatten the tokens from segment_ideogramms
+                tokens = segment_ideogramms(s)
+                if isinstance(tokens, list):
+                    result.extend([t for t in tokens if t.strip()])
+                else:
+                    if tokens.strip():
+                        result.append(tokens)
+        return result
+    else:
+        return pause_list
 
 def get_ram():
     vm = psutil.virtual_memory()
@@ -1467,7 +1502,7 @@ def delete_unused_tmp_dirs(web_dir, days, session):
         os.path.join(voices_dir, '__sessions')
     ]
     current_user_dirs = {
-        f"ebook-{session['id']}",
+        f"proc-{session['id']}",
         f"web-{session['id']}",
         f"voice-{session['id']}",
         f"model-{session['id']}"
@@ -1630,7 +1665,7 @@ def convert_ebook(args, ctx=None):
                     if not bool:
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
-                    session['session_dir'] = os.path.join(tmp_dir, f"ebook-{session['id']}")
+                    session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['ebook'].encode()).hexdigest()}")
                     session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                     session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
