@@ -2299,8 +2299,8 @@ def web_interface(args, ctx):
         gr_modal = gr.HTML(visible=False)
         gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=True)
-        gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=True)
+        gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
+        gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def load_audio_cues(vtt_path):
             def to_seconds(ts):
@@ -2592,7 +2592,7 @@ def web_interface(args, ctx):
                             parent_path = Path(session['voice_dir']).parent.resolve()
                             if parent_path in selected_path.parents:
                                 msg = f'Are you sure to delete {speaker}...'
-                                return gr.update(value='confirm_voice_del'), gr.update(value=show_modal('confirm', msg),visible=True)
+                                return gr.update(value='confirm_voice_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
                             else:
                                 error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
                                 show_alert({"type": "warning", "msg": error})
@@ -2611,7 +2611,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = os.path.basename(selected)
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm', msg),visible=True)
+                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
                 error = f'Could not delete the custom model {selected_name}!'
                 alert_exception(error)
@@ -2623,7 +2623,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = os.path.basename(selected)
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm', msg),visible=True)
+                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
                 error = f'Could not delete the audiobook {selected_name}!'
                 alert_exception(error)
@@ -3158,7 +3158,7 @@ def web_interface(args, ctx):
         gr_voice_del_btn.click(
             fn=click_gr_voice_del_btn,
             inputs=[gr_voice_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal]
+            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         gr_device.change(
             fn=change_gr_device,
@@ -3209,7 +3209,7 @@ def web_interface(args, ctx):
         gr_custom_model_del_btn.click(
             fn=click_gr_custom_model_del_btn,
             inputs=[gr_custom_model_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal]
+            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         gr_output_format_list.change(
             fn=change_gr_output_format_list,
@@ -3233,7 +3233,7 @@ def web_interface(args, ctx):
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal]
+            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         ########### XTTSv2 Params
         gr_xtts_temperature.change(
