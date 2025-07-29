@@ -777,6 +777,7 @@ def get_sentences(text, lang, tts_engine):
     pattern_split = '|'.join(map(re.escape, punctuation_split))
     pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
     sentences = []
+    print(hard_list)
     for s in hard_list:
         if s == TTS_SML['pause']:
             sentences.append(s)
@@ -790,7 +791,6 @@ def get_sentences(text, lang, tts_engine):
                 sentences.append(s)
         else:
             sentences.append(s)
-    print(sentences)
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         result = []
         for s in sentences:
