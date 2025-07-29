@@ -763,6 +763,7 @@ def get_sentences(text, lang, tts_engine):
     punctuation_split = [p for p in punctuation_split_hard_set]
     pattern_split = '|'.join(map(re.escape, punctuation_split))
     pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
+    print(pause_list)
     hard_list = []
     for s in pause_list:
         if s == TTS_SML['pause']:
@@ -777,7 +778,6 @@ def get_sentences(text, lang, tts_engine):
     pattern_split = '|'.join(map(re.escape, punctuation_split))
     pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
     sentences = []
-    print(hard_list)
     for s in hard_list:
         if s == TTS_SML['pause']:
             sentences.append(s)
