@@ -735,35 +735,19 @@ def get_sentences(text, lang, tts_engine):
 
     def join_ideogramms(idg_list):
         buffer = ''
-        token_count = 0
         for token in idg_list:
             if token == TTS_SML['pause']:
-                if buffer.strip():
+                if buffer:
                     yield buffer
                     buffer = ''
-                    token_count = 0
                 yield token
                 continue
-
-            # If adding token would overflow, yield buffer first
-            if len(buffer) + len(token) > max_chars:
-                if buffer.strip():
-                    yield buffer
-                    buffer = ''
-                    token_count = 0
-
+            # If adding the next token would overflow, yield buffer first
+            if len(buffer) + len(token) > max_chars and buffer:
+                yield buffer
+                buffer = ''
             buffer += token
-            if re.search(r'[^\W_]', token, re.UNICODE):
-                token_count += 1
-
-            # On punctuation: yield buffer and clear it
-            if token in punctuation_split_hard_set:
-                if buffer.strip():
-                    yield buffer
-                    buffer = ''
-                    token_count = 0
-
-        if buffer.strip():
+        if buffer:
             yield buffer
 
     max_chars = language_mapping[lang]['max_chars'] + 2
