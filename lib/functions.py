@@ -776,7 +776,6 @@ def get_sentences(text, lang, tts_engine):
             else:
                 # no hard‑split punctuation found → keep whole sentence
                 hard_list.append(s)
-    print(hard_list)
     # Step 3: check if some hard_list are exceeding max_chars so use soft punctuations
     pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
     pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
@@ -785,15 +784,17 @@ def get_sentences(text, lang, tts_engine):
         if s == TTS_SML['pause']:
             sentences.append(s)
         elif len(s) > max_chars:
-            for m in pattern.finditer(s):
-                text_part = m.group(1).strip()
-                if text_part:
-                    sentences.append(text_part)
-            # if nothing matched (no soft punctuation), just append whole s
-            if not any(len(ch) < len(s) for ch in sentences if ch in s):
+            parts = pattern.findall(s)
+            if parts:
+                for text_part in parts:
+                    text_part = text_part.strip()
+                    if text_part:
+                        sentences.append(text_part)
+            else:
                 sentences.append(s)
         else:
             sentences.append(s)
+    print(sentences)
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         result = []
         for s in sentences:
