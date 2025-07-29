@@ -719,8 +719,7 @@ def get_sentences(text, lang, tts_engine):
     # Step 1: Split first by ‡pause‡, keeping it as a separate element
     pause_split = re.split(r'(‡pause‡)', text)
     # Clean up: Remove empty strings, strip whitespace from non-pause elements
-    pause_split = [s if s == '‡pause‡' else s.strip() for s in pause_split if s.strip() or s == '‡pause‡']
-    print(f'pause_split: {len(pause_split)}: {pause_split}')
+    pause_split = [s if s == TTS_SML['pause'] else s.strip() for s in pause_split if s.strip() or s == TTS_SML['pause']]
     return pause_split
 
 def get_ram():
@@ -923,11 +922,11 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
-    # Replace ### and [pause] with ‡pause‡ (‡ = double dagger U+2021)
-    text = re.sub(r'(###|\[pause\])', '‡pause‡', text)
+    # Replace ### and [pause] with TTS_SML['[pause]'] (‡ = double dagger U+2021)
+    text = re.sub(r'(###|\[pause\])', TTS_SML['pause'], text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, '‡pause‡', text)
+    text = re.sub(pattern, TTS_SML['pause'], text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
@@ -1223,7 +1222,7 @@ def combine_audio_chapters(session):
             for filename, chapter_title in part_chapters:
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
-                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), chapter_title.replace('‡pause‡', ''))
+                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), chapter_title.replace(TTS_SML['pause'], ''))
                 ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
                 ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
                 ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
