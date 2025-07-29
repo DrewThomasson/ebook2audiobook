@@ -781,11 +781,10 @@ def get_sentences(text, lang, tts_engine):
         if s == TTS_SML['pause']:
             sentences.append(s)
         elif len(s) > max_chars:
-            # split long chunk on soft punctuation
             for m in pattern.finditer(s):
-                chunk = m.group(1).strip()
-                if chunk:
-                    sentences.append(chunk)
+                text_part = m.group(1).strip()
+                if text_part:
+                    sentences.append(text_part)
             # if nothing matched (no soft punctuation), just append whole s
             if not any(len(ch) < len(s) for ch in sentences if ch in s):
                 sentences.append(s)
@@ -2300,8 +2299,8 @@ def web_interface(args, ctx):
         gr_modal = gr.HTML(visible=False)
         gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
-        gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
+        gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=True)
+        gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=True)
 
         def load_audio_cues(vtt_path):
             def to_seconds(ts):
