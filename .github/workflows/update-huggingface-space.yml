@@ -10,6 +10,10 @@ on:
         required: true
         default: 'drewThomasson/ebook2audiobook'
         type: string
+  workflow_run:
+    workflows: ["Docker Build"]
+    types:
+      - completed
 
 jobs:
   check-space:

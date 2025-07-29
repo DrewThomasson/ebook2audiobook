@@ -1,0 +1,191 @@
+name: Docker Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      wipeAndReinstall:
+        type: boolean
+        description: 'Wipe & Re-Install E2A'
+
+  workflow_run:
+    workflows: ["Mac E2A Test"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  DockerBuild:
+    runs-on: [self-hosted, macos]
+    steps:
+
+      - name: Wipe & Re-Clone E2A E2ADockerBuild
+        if: ${{ inputs.wipeAndReinstall }}
+        run: rm -rf ~/E2ADockerBuild/ebook2audiobook
+
+      - name: Clone ebook2audiobook
+        shell: bash
+        run: |
+          set -e
+      
+          REPO_DIR=~/E2ADockerBuild/ebook2audiobook
+          REPO_URL="https://github.com/${{ github.repository }}"
+          IS_PR="${{ github.event_name == 'pull_request' }}"
+          BASE_REF="${{ github.event.pull_request.base.ref }}"
+          HEAD_REF="${{ github.event.pull_request.head.ref }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          TRIGGER_SHA="${{ github.sha }}"
+          FRESH_CLONE=0
+      
+          echo "==> Event: ${{ github.event_name }}"
+          echo "==> Repo: $REPO_URL"
+      
+          # Clone or reuse
+          if [ -d "$REPO_DIR" ]; then
+            echo "==> Reusing existing repo"
+            cd "$REPO_DIR"
+            # Set correct remote and fix ambiguous refs
+            git remote set-url origin "$REPO_URL"
+            git remote set-head origin -a
+            git remote prune origin
+            git fetch --all --prune
+      
+            echo "==> Cleaning working directory"
+            git reset --hard
+          else
+            echo "==> Cloning fresh"
+            git clone "$REPO_URL" "$REPO_DIR"
+            cd "$REPO_DIR"
+            git remote set-head origin -a
+            git remote prune origin
+            git fetch --all --prune
+            FRESH_CLONE=1
+          fi
+      
+          if [ "$IS_PR" = "true" ]; then
+            echo "==> PR detected: simulating GitHub merge (base: $BASE_REF ← head: $HEAD_REF)"
+      
+            # Fetch both branches
+            git fetch origin "$BASE_REF":"origin/$BASE_REF"
+            git fetch origin "$HEAD_REF":"origin/$HEAD_REF"
+      
+            # Reset to base branch
+            git checkout -B "$BASE_REF" "remotes/origin/$BASE_REF"
+            git reset --hard "origin/$BASE_REF"
+      
+            # Merge PR source
+            if ! git merge --no-ff --no-edit "origin/$HEAD_REF"; then
+              echo "❌ Merge conflict simulating PR merge"
+              exit 1
+            fi
+          else
+            echo "==> Not a PR: checking out triggered commit directly"
+            git fetch origin "$TRIGGER_SHA"
+            git checkout --detach "$TRIGGER_SHA"
+            git reset --hard "$TRIGGER_SHA"
+          fi
+      
+          echo "==> Final repo state:"
+          git status
+          git log -1 --oneline
+      
+          if [ "$FRESH_CLONE" -eq 1 ]; then
+            echo "==> Running ./ebook2audiobook.sh --help because this was a fresh clone"
+            if ! ./ebook2audiobook.sh --help; then
+              echo "==> Attempting fallback with conda deactivation"
+              source "$(conda info --base 2>/dev/null)/etc/profile.d/conda.sh" 2>/dev/null && conda deactivate || true
+              ./ebook2audiobook.sh --help
+            fi
+          else
+            echo "==> Skipping script run because repo already existed"
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker-container
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Get Git Commit Hash
+        run: echo "GIT_HASH=${GITHUB_SHA::9}" >> $GITHUB_ENV
+
+      - name: Get Latest Release Tag
+        run: |
+          TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+          if [ -z "$TAG" ] || [ "$TAG" == "null" ]; then TAG="latest"; fi
+          echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
+
+      - name: Debug Print Variables
+        run: |
+          echo "DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}"
+          echo "GIT_HASH=${GIT_HASH}"
+          echo "RELEASE_TAG=${RELEASE_TAG}"
+
+      - name: Build and Push Release Docker Image
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          docker buildx build --pull --platform linux/amd64,linux/arm64 \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${GIT_HASH} \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:${RELEASE_TAG} \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:latest \
+            --push .
+
+      - name: Prune docker & buildx
+        run: |
+          docker system prune -af --volumes
+          docker buildx prune -af
+
+  huggingface-build:
+    runs-on: [self-hosted, macos]
+    steps:
+
+      - name: Wipe & Re-Clone E2A E2ADockerBuild
+        if: ${{ inputs.wipeAndReinstall }}
+        run: rm -rf ~/E2ADockerBuild/ebook2audiobook
+
+      - name: Clone ebook2audiobook into E2ADockerBuild
+        shell: bash
+        run: |
+          if [ -d ~/E2ADockerBuild/ebook2audiobook ]; then
+            cd ~/E2ADockerBuild/ebook2audiobook
+            git fetch --all
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
+          else
+            git clone https://github.com/DrewThomasson/ebook2audiobook.git ~/E2ADockerBuild/ebook2audiobook
+            cd ~/E2ADockerBuild/ebook2audiobook
+            git fetch --all
+            git reset --hard ${{ github.event.pull_request.head.sha || github.sha }}
+          fi
+          
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+        with:
+          driver: docker-container
+          buildkitd-flags: "--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and Push Huggingface Docker Image
+        run: |
+          cd ~/E2ADockerBuild/ebook2audiobook
+          docker buildx build --platform linux/amd64 \
+            -f dockerfiles/HuggingfaceDockerfile \
+            -t ${{ secrets.DOCKER_USERNAME }}/ebook2audiobook:HuggingfaceSpace \
+            --push .
+
+      - name: Prune docker & buildx
+        run: |
+          docker system prune -af --volumes
+          docker buildx prune -af
+
+            

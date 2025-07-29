@@ -1,0 +1,17 @@
+name: Custom Command Runner
+
+on:
+  workflow_dispatch:
+    inputs:
+      custom_command:
+        description: 'Enter a shell command to run on self-hosted Mac'
+        required: true
+        default: 'echo Hello from Mac!'
+
+jobs:
+  CustomCommand:
+    runs-on: [self-hosted, macos]
+    steps:
+      - name: Run Custom Command
+        run: |
+          eval "${{ github.event.inputs.custom_command }}"
