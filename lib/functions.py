@@ -716,15 +716,64 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
 def get_sentences(text, lang, tts_engine):
     max_chars = language_mapping[lang]['max_chars'] - 2
     min_tokens = 5
-    cjk_langs = ['zho','jpn','kor','tha','lao','mya','khm']
-    pause = '‡pause‡'
+    cjk_langs = ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']
+    pause_marker = '‡pause‡'
+    # full punctuation set for CJK join logic
+    punctuation_split_set = punctuation_split_hard_set | punctuation_split_soft_set
 
-    # Build the master hard‐split pattern (pause first)
-    hard_marks = [pause] + [
+    def segment_ideogramms(text):
+        if lang == 'zho':
+            import jieba
+            return list(jieba.cut(text))
+        elif lang == 'jpn':
+            sudachi = dictionary.Dictionary().create()
+            mode = tokenizer.Tokenizer.SplitMode.C
+            return [m.surface() for m in sudachi.tokenize(text, mode)]
+        elif lang == 'kor':
+            ltokenizer = LTokenizer()
+            return ltokenizer.tokenize(text)
+        elif lang in cjk_langs:
+            return word_tokenize(text, engine='newmm')
+        else:
+            return [text]
+
+    def join_ideogramms(idg_list):
+        buffer = ''
+        for token in idg_list:
+            if not token.strip() or not bool(re.search(r'[^\W_]', token, re.UNICODE)):
+                continue
+            buffer += token
+            if token in punctuation_split_set:
+                if len(buffer) > max_chars:
+                    for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
+                        if part.strip() and not all(c in punctuation_split_set for c in part):
+                            yield part
+                    buffer = ''
+                else:
+                    if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+                        yield buffer
+                    buffer = ''
+            elif len(buffer) >= max_chars:
+                if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+                    yield buffer
+                buffer = ''
+        if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+            yield buffer
+
+    # --- CJK path: split and join by ideograms ---
+    if lang in cjk_langs:
+        # ensure pause_marker is its own token
+        prepped = text.replace(pause_marker, f' {pause_marker} ')
+        tokens = segment_ideogramms(prepped)
+        return list(join_ideogramms(tokens))
+
+    # --- Non‑CJK path: hard split on punctuation_split_hard_set (pause first) ---
+    punctuations = [pause_marker] + [
         p for p in sorted(punctuation_split_hard_set, key=len, reverse=True)
-        if p != pause
+        if p != pause_marker
     ]
-    hard_re = re.compile(rf"(.*?(?:{'|'.join(map(re.escape, hard_marks))}))(?:\s+|$)", re.DOTALL)
+    pattern_split = '|'.join(map(re.escape, punctuations))
+    hard_re = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
 
     sentences = []
     buffer = ""
@@ -734,44 +783,38 @@ def get_sentences(text, lang, tts_engine):
         if not frag:
             continue
 
-        # For CJK: first run your tokenizer to get words/characters,
-        # then re-join them into a single string for the rest of the pipeline
-        if lang in cjk_langs:
-            tokens = segment_ideogramms(frag)
-            frag = ''.join(tokens)
-
-        # Prepend buffered tiny bits
+        # prepend any leftover buffer
         if buffer:
-            frag = buffer + ' ' + frag
-            buffer = ''
+            frag = buffer + " " + frag
+            buffer = ""
 
-        # Always flush pause‐ended fragments immediately
-        if frag.endswith(pause):
+        # pause precedence: flush immediately if ends with marker
+        if frag.endswith(pause_marker):
             sentences.append(frag)
             continue
 
-        # Buffer anything under min_tokens
+        # enforce min_tokens by buffering
         if len(frag.split()) < min_tokens:
             buffer = frag
             continue
 
-        # Slice anything over max_chars
+        # enforce max_chars by slicing
         if len(frag) > max_chars:
             for i in range(0, len(frag), max_chars):
-                sentences.append(frag[i:i+max_chars].strip())
+                sentences.append(frag[i : i + max_chars].strip())
         else:
             sentences.append(frag)
 
-    # Final buffer flush
+    # flush any remaining buffer
     if buffer:
         buf = buffer.strip()
-        if buf.endswith(pause):
+        if buf.endswith(pause_marker):
             sentences.append(buf)
         elif len(buf.split()) < min_tokens:
             sentences.append(buf)
         elif len(buf) > max_chars:
             for i in range(0, len(buf), max_chars):
-                sentences.append(buf[i:i+max_chars].strip())
+                sentences.append(buf[i : i + max_chars].strip())
         else:
             sentences.append(buf)
     print(sentences)
