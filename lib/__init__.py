@@ -21,7 +21,8 @@ from .lang import (
     abbreviations_mapping, chapter_word_mapping, default_language_code,
     emojis_array, install_info, language_mapping, language_math_phonemes,
     language_tts, os, punctuation_list, punctuation_list_set,
-    punctuation_split, punctuation_split_set, punctuation_switch,
+    punctuation_split_hard, punctuation_split_hard_set, punctuation_split_soft,
+    punctuation_split_soft_set, punctuation_switch,
     specialchars_mapping, specialchars_remove, year_to_decades_languages
 )
 
@@ -49,7 +50,7 @@ __all__ = [
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code",
     "emojis_array", "install_info", "language_mapping",
     "language_math_phonemes", "language_tts", "os",
-    "punctuation_list", "punctuation_list_set", "punctuation_split",
-    "punctuation_split_set", "punctuation_switch",
+    "punctuation_list", "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
+    "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
     "specialchars_mapping", "specialchars_remove", "year_to_decades_languages"
 ]

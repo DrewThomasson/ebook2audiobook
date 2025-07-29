@@ -13,6 +13,7 @@ indic-nlp-library
 iso-639
 jieba
 soynlp
+num2words
 pythainlp
 mutagen
 nvidia-ml-py

@@ -714,22 +714,26 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         return None
 
 def get_sentences(text, lang, tts_engine):
-    max_chars = language_mapping[lang]['max_chars'] + 2
+    max_chars = language_mapping[lang]['max_chars']
+    min_tokens = 5
+    punctuation_split_set = punctuation_split_hard_set | punctuation_split_soft_set
+    splitters_list = ['‡pause‡'] + list(punctuation_split_set)
 
     def combine_punctuation(raw_list):
         if not raw_list:
             return raw_list
         result = [raw_list[0]]
-        extended_punct_set = set(punctuation_split_set)
-        extended_punct_set.add("'")
         i = 1
         while i < len(raw_list):
             curr_sentence = raw_list[i]
-            # While the current sentence starts with a punctuation and adding it does not exceed max_chars
-            while curr_sentence and curr_sentence[0] in extended_punct_set and len(result[-1]) + 1 <= max_chars:
+            # While the current sentence starts with a punctuation, hasn't hit max_chars,
+            # and the previous sentence does NOT already end with '‡pause‡'
+            while (curr_sentence
+                   and curr_sentence[0] in punctuation_split_set
+                   and len(result[-1]) + 1 <= max_chars
+                   and not result[-1].endswith('‡pause‡')):
                 result[-1] += curr_sentence[0]
                 curr_sentence = curr_sentence[1:]
-            # If there's anything left, treat as a new sentence
             if curr_sentence.strip():
                 if not result[-1].endswith(' '):
                     result[-1] += ' '
@@ -751,7 +755,7 @@ def get_sentences(text, lang, tts_engine):
         elif lang in ['tha', 'lao', 'mya', 'khm']:
             return word_tokenize(text, engine='newmm')
         else:
-            pattern_split = [re.escape(p) for p in punctuation_split_set]
+            pattern_split = [re.escape(p) for p in splitters_list]
             pattern = f"({'|'.join(pattern_split)})"
             return re.split(pattern, text)
 
@@ -779,12 +783,21 @@ def get_sentences(text, lang, tts_engine):
             yield buffer
 
     def find_best_split_point_prioritize_punct(sentence, max_chars):
+        # 1) Always split right after a full pause marker, if it fits
+        pause = '‡pause‡'
+        idx = sentence.find(pause)
+        if idx != -1 and (idx + len(pause)) <= max_chars:
+            return idx + len(pause)
         best_index = -1
         min_diff = float('inf')
-        punctuation_priority = '.!?,;:'
+        # 2) Only single‐char hard punctuation here
+        hard_chars = [p for p in punctuation_split_hard_set if len(p) == 1]
+        punctuation_priority = ''.join(hard_chars)
         space_priority = ' '
+        # no real letters? bail
         if not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
             return best_index
+        # scan for best single‐char punctuation split
         for i in range(1, min(len(sentence), max_chars)):
             if sentence[i] in punctuation_priority:
                 left_len = i
@@ -793,6 +806,7 @@ def get_sentences(text, lang, tts_engine):
                 if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
                     best_index = i + 1
                     min_diff = diff
+        # if none found, scan for spaces
         if best_index == -1:
             for i in range(1, min(len(sentence), max_chars)):
                 if sentence[i] in space_priority:
@@ -849,42 +863,70 @@ def get_sentences(text, lang, tts_engine):
                 result.extend(split_sentence(part2))
         return result
 
-    punctuations = sorted(punctuation_split, key=len, reverse=True)
-    pattern_split = '|'.join(map(re.escape, punctuations))
-    # build pattern: don’t split on any punctuation if it’s between two digits
-    pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
+    # --- 1) split first on HARD punctuation only (pause top priority) ---
+    pause_chunks = text.split('‡pause‡')
+    hard_list = sorted(punctuation_split_hard_set, key=len, reverse=True)
+    hard_pattern = '|'.join(map(re.escape, hard_list))
+    hard_re = re.compile(rf"(.*?(?<!\d)(?:{hard_pattern})(?!\d))(\s+|$)", re.DOTALL)
+    raw_hard = []
+    for idx, chunk in enumerate(pause_chunks):
+       chunk = chunk.strip()
+       if not chunk:
+           continue
+       # re‑append the pause marker to every chunk except the last
+       if idx < len(pause_chunks) - 1:
+           chunk += ' ‡pause‡'
+       # now run your existing HARD split on this chunk
+       for m in hard_re.finditer(chunk):
+           frag = m.group(1).strip()
+           if frag:
+               raw_hard.append(frag)
+       rest = hard_re.sub('', chunk).strip()
+       if rest:
+           raw_hard.append(rest)
+
+    # --- 2) for any fragment > max_chars, split on SOFT punctuation ---
     raw_list = []
-    min_tokens = 6
+    soft_chars = ''.join(re.escape(p) for p in sorted(punctuation_split_soft_set, key=len, reverse=True))
+    soft_re = re.compile(rf"(.*?(?<!\d)(?:[{soft_chars}])(?!\d))(\s+|$)", re.DOTALL)
+    for frag in raw_hard:
+        if len(frag) > max_chars and any(c in punctuation_split_soft_set for c in frag):
+            for sm in soft_re.finditer(frag):
+                part = sm.group(1).strip()
+                if part:
+                    raw_list.append(part)
+            tail = soft_re.sub('', frag).strip()
+            if tail:
+                raw_list.append(tail)
+        else:
+            raw_list.append(frag)
+
     buffer = ""
-    for match in re.finditer(pattern, text):
-        s = match.group(1).strip()
-        if not s:
-            continue
+    processed = []
+    for s in raw_list:
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             tokens = segment_ideogramms(s)
-            if isinstance(tokens, list):
-                raw_list.append(''.join(tokens))
-            else:
-                raw_list.append(str(tokens))
+            processed.append(''.join(tokens) if isinstance(tokens, list) else str(tokens))
         else:
             if buffer:
                 s = buffer + " " + s
                 buffer = ""
             if len(s.split()) < min_tokens:
-                buffer = s  # Not enough tokens, save for next
+                buffer = s
                 continue
-            raw_list.append(s)
+            processed.append(s)
     if buffer and lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-        if raw_list:
-            raw_list[-1] += " " + buffer
+        if processed:
+            processed[-1] += " " + buffer
         else:
-            raw_list.append(buffer)  
-    combine_list = combine_punctuation(raw_list)
-    print(combine_list)
+            processed.append(buffer)
+
+    combine_list = combine_punctuation(processed)
+
     sentences = []
     for sentence in combine_list:
         sentence = sentence.strip()
-        if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
+        if re.search(r'[^\W_]', sentence, re.UNICODE):
             sentences.extend(split_sentence(sentence))
     if not sentences and text.strip():
         sentences = split_sentence(text.strip())
@@ -1109,7 +1151,11 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace parentheses with double quotes
     text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # Escape special characters in the punctuation list for regex
-    pattern = '|'.join(map(re.escape, punctuation_split))
+    pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
+    # Reduce multiple consecutive punctuations
+    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
+    # Escape special characters in the punctuation list for regex
+    pattern = '|'.join(map(re.escape, punctuation_split_soft_set))
     # Reduce multiple consecutive punctuations
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     # Pattern 1: Add a space between UTF-8 characters and numbers
@@ -1490,8 +1536,8 @@ def combine_audio_chapters(session):
             filepath = os.path.join(session['chapters_dir'], file)
             durations.append(get_audio_duration(filepath))
         total_duration = sum(durations)
-        max_part_duration = outpout_split_hours * 3600
-        needs_split = total_duration > (outpout_split_hours * 2) * 3600
+        max_part_duration = output_split_hours * 3600
+        needs_split = total_duration > (output_split_hours * 2) * 3600
 
         # --- Split into parts by duration ---
         part_files = []
@@ -2375,8 +2421,8 @@ def web_interface(args, ctx):
         gr_modal = gr.HTML(visible=False)
         gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_yes_btn_hidden = gr.Button(elem_id='confirm_yes_btn_hidden', value='', visible=False)
-        gr_confirm_no_btn_hidden = gr.Button(elem_id='confirm_no_btn_hidden', value='', visible=False)
+        gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
+        gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def load_audio_cues(vtt_path):
             def to_seconds(ts):
@@ -2474,8 +2520,8 @@ def web_interface(args, ctx):
         def show_confirm():
             return '''
             <div class="confirm-buttons">
-                <button class="confirm_yes_btn" onclick="document.querySelector('#confirm_yes_btn_hidden').click()">✔</button>
-                <button class="confirm_no_btn" onclick="document.querySelector('#confirm_no_btn_hidden').click()">⨉</button>
+                <button class="confirm_yes_btn" onclick="document.querySelector('#confirm_yes_btn').click()">✔</button>
+                <button class="confirm_no_btn" onclick="document.querySelector('#confirm_no_btn').click()">⨉</button>
             </div>
             '''
 
@@ -3425,12 +3471,12 @@ def web_interface(args, ctx):
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
             outputs=[gr_glass_mask]
         )
-        gr_confirm_yes_btn_hidden.click(
+        gr_confirm_yes_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
             outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
         )
-        gr_confirm_no_btn_hidden.click(
+        gr_confirm_no_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
             outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
