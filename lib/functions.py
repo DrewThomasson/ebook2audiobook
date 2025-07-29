@@ -780,13 +780,12 @@ def get_sentences(text, lang, tts_engine):
                 result.append(s)
             else:
                 tokens = segment_ideogramms(s)
-                print(tokens)
                 if isinstance(tokens, list):
                     result.extend([t for t in tokens if t.strip()])
                 else:
                     if tokens.strip():
                         result.append(tokens)
-        return list(join_ideogramms(result))
+        return ''.join_ideogramms(result)
     else:
         return sentences
 
