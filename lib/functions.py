@@ -780,6 +780,7 @@ def get_sentences(text, lang, tts_engine):
                         result.append(tokens)
         return list(join_ideogramms(result))
     else:
+        print(sentences)
         return sentences
 
 def get_ram():
