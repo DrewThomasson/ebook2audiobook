@@ -716,25 +716,54 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
 def get_sentences(text, lang, tts_engine):
     max_chars = language_mapping[lang]['max_chars'] - 2
     min_tokens = 5
-    cjk_langs = ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']
+    ideogram_langs = ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']
     pause_marker = '‡pause‡'
 
-    def segment_ideogramms(segment):
+    def segment_ideogramms(txt):
         if lang == 'zho':
             import jieba
-            return list(jieba.cut(segment))
+            return list(jieba.cut(txt))
         elif lang == 'jpn':
             sudachi = dictionary.Dictionary().create()
             mode = tokenizer.Tokenizer.SplitMode.C
-            return [m.surface() for m in sudachi.tokenize(segment, mode)]
+            return [m.surface() for m in sudachi.tokenize(txt, mode)]
         elif lang == 'kor':
-            return LTokenizer().tokenize(segment)
-        elif lang in cjk_langs:
-            return word_tokenize(segment, engine='newmm')
+            return LTokenizer().tokenize(txt)
+        elif lang in ideogram_langs:
+            return word_tokenize(txt, engine='newmm')
         else:
-            return [segment]
+            return [txt]
 
-    # Build hard‐split regex, with pause_marker first
+    def join_ideogramms(tokens):
+        # only split on hard punctuation (excluding the pause marker)
+        hard_set = punctuation_split_hard_set - {pause_marker}
+        buffer = ''
+        for tok in tokens:
+            if not tok.strip():
+                continue
+            buffer += tok
+            # if this token *is* the pause marker, flush immediately (preserving it)
+            if tok == pause_marker:
+                yield buffer
+                buffer = ''
+                continue
+            # otherwise flush on any other hard punctuation or length limit
+            if tok in hard_set or len(buffer) >= max_chars:
+                yield buffer
+                buffer = ''
+        if buffer:
+            yield buffer
+
+    # --- Ideogram branch ---
+    if lang in ideogram_langs:
+        # ensure pause_marker stands alone
+        text_prepped = text.replace(pause_marker, f'{pause_marker}')
+        toks = segment_ideogramms(text_prepped)
+        return list(join_ideogramms(toks))
+
+    # --- Non‑ideogram branch ---
+    import re
+    # build hard‑split regex with pause first
     hard_marks = [pause_marker] + [
         p for p in sorted(punctuation_split_hard_set, key=len, reverse=True)
         if p != pause_marker
@@ -743,41 +772,34 @@ def get_sentences(text, lang, tts_engine):
     hard_re = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
 
     sentences = []
-    buffer = ""
-
+    buffer = ''
     for m in hard_re.finditer(text):
         frag = m.group(1).strip()
         if not frag:
             continue
 
-        # --- Pause precedence: immediate flush if this fragment ends with the marker ---
+        if buffer:
+            frag = buffer + ' ' + frag
+            buffer = ''
+
+        # pause_marker precedence
         if frag.endswith(pause_marker):
             sentences.append(frag)
             continue
 
-        # CJK path: tokenize and re‐join
-        if lang in cjk_langs:
-            tokens = segment_ideogramms(frag)
-            frag = ''.join(tokens)
-
-        # Prepend any buffered tiny fragment
-        if buffer:
-            frag = buffer + " " + frag
-            buffer = ""
-
-        # Buffer under‐length fragments
+        # buffer under‑length fragments
         if len(frag.split()) < min_tokens:
             buffer = frag
             continue
 
-        # Slice over‐length fragments
+        # slice over‑length fragments
         if len(frag) > max_chars:
             for i in range(0, len(frag), max_chars):
                 sentences.append(frag[i : i + max_chars].strip())
         else:
             sentences.append(frag)
 
-    # Flush any remaining buffer
+    # flush remaining buffer
     if buffer:
         buf = buffer.strip()
         if buf.endswith(pause_marker):
