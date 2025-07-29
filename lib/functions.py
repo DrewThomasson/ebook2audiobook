@@ -2643,14 +2643,14 @@ def web_interface(args, ctx):
                         msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id)
+                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_custom_model_del':
                         selected_name = os.path.basename(custom_model)
                         shutil.rmtree(custom_model, ignore_errors=True)                           
                         msg = f'Custom model {selected_name} deleted!'
                         session['custom_model'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update()
+                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_audiobook_del':
                         selected_name = os.path.basename(audiobook)
                         if os.path.isdir(audiobook):
