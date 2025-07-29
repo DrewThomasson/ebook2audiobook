@@ -769,13 +769,14 @@ def get_sentences(text, lang, tts_engine):
         else:
             parts = pattern.findall(s)
             if parts:
-                for chunk in parts:
-                    chunk = chunk.strip()
-                    if chunk:
-                        hard_list.append(chunk)
+                for text_part in parts:
+                    text_part = text_part.strip()
+                    if text_part:
+                        hard_list.append(text_part)
             else:
                 # no hard‑split punctuation found → keep whole sentence
                 hard_list.append(s)
+    print(hard_list)
     # Step 3: check if some hard_list are exceeding max_chars so use soft punctuations
     pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
     pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
