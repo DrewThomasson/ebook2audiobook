@@ -744,11 +744,7 @@ def get_sentences(text, lang, tts_engine):
                     token_count = 0
                 yield token
                 continue
-            # Replace punctuation with space for TACOTRON2 engines
-            if tts_engine in TTS_ENGINES['TACOTRON2'] and token in punctuation_split_soft_set:
-                buffer += ' '
-            else:
-                buffer += token
+            buffer += token
             # Only count tokens that are not pure punctuation or whitespace
             if re.search(r'[^\W_]', token, re.UNICODE):
                 token_count += 1
