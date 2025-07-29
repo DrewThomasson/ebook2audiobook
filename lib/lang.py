@@ -117,9 +117,6 @@ punctuation_list = [
 ]
 punctuation_list_set = set(punctuation_list)
 
-# === HARD / SOFT PUNCTUATION ===============================================
-# '‡pause‡' is always hard
-
 punctuation_split_hard = [
 	# Western
 	'.', '!', '?', '…', '‽',         # sentence terminators
@@ -130,12 +127,8 @@ punctuation_split_hard = [
 	'！', '？',                       # full-width exclamation/question (hard for zho/jpn/kor)
 	# Indic
 	'।', '॥',                           # danda, double danda
-	# Thai
-	# keep 'ฯ' soft by default (see soft list)
 	# Ethiopic
 	'።', '፧',                         # full stop, question mark
-	# Hebrew
-	# '״' stays soft (quotation mark)
 	# Tibetan
 	'།',                                # shad (end of verse/sentence)
 	# Khmer
