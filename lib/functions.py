@@ -744,22 +744,25 @@ def get_sentences(text, lang, tts_engine):
                     token_count = 0
                 yield token
                 continue
+
+            # If adding token would overflow, yield buffer first
+            if len(buffer) + len(token) > max_chars:
+                if buffer.strip():
+                    yield buffer
+                    buffer = ''
+                    token_count = 0
+
             buffer += token
             if re.search(r'[^\W_]', token, re.UNICODE):
                 token_count += 1
+
             # On punctuation: yield buffer and clear it
             if token in punctuation_split_hard_set:
                 if buffer.strip():
                     yield buffer
                     buffer = ''
                     token_count = 0
-                continue
-            # Enforce max_chars: break buffer into <=max_chars segments
-            while len(buffer) > max_chars:
-                part = buffer[:max_chars]
-                yield part
-                buffer = buffer[max_chars:]
-                # Note: This may break inside a word for CJK, but that's standard for overflow
+
         if buffer.strip():
             yield buffer
 
