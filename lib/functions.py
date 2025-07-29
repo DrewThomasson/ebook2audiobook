@@ -736,10 +736,6 @@ def get_sentences(text, lang, tts_engine):
     pause_split = re.split(r'(‡pause‡)', text)
     # Clean up: Remove empty strings, strip whitespace from non-pause elements
     pause_split = [s if s == '‡pause‡' else s.strip() for s in pause_split if s.strip() or s == '‡pause‡']
-    # For subsequent splitting, build the punctuations list WITHOUT '‡pause‡'
-    punctuations = [p for p in sorted(punctuation_hard_split_set, key=len, reverse=True) if p != '‡pause‡']
-    pattern_split = '|'.join(map(re.escape, punctuations))
-    pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
     print(pause_split)  # debug
     return pause_split  # debug
 
