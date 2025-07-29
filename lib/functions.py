@@ -1665,7 +1665,10 @@ def convert_ebook(args, ctx=None):
                     if not bool:
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
+                    old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
+                    if os.path.isdir(old_session_dir):
+                        os.rename(old_session_dir, session['session_dir'])
                     session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['ebook'].encode()).hexdigest()}")
                     session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                     session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
