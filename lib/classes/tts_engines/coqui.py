@@ -431,7 +431,7 @@ class Coqui:
             if tts:
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
                     sentence = sentence.replace('.', ' — ')
-                silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.8, 1.6) * 100) / 100))) # 0.8 to 1.6 seconds
+                silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.6, 1.4) * 100) / 100))) # 0.8 to 1.6 seconds
                 if sentence == TTS_SML['pause']:
                     self.audio_segments.append(silence_tensor.clone())
                     return True

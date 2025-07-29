@@ -761,18 +761,36 @@ def get_sentences(text, lang, tts_engine):
     pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
     # Step 2: split with punctuation_split_hard_set
     punctuation_split = [p for p in punctuation_split_hard_set]
-    # build a regex that captures each punctuation as its own group
+    pattern_split = '|'.join(map(re.escape, punctuation_split))
+    pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
+    hard_list = []
+    for s in pause_list:
+        if s == TTS_SML['pause']:
+            hard_list.append(s)
+        else:
+            for m in pattern.finditer(s):
+                text_part = m.group(1).strip()
+                if text_part:
+                    hard_list.append(text_part)
+    # Step 3: check if some sentences are exceeding max_chars so use soft punctuations
+    punctuation_split = [p for p in punctuation_split_soft_set]
     pattern_split = '|'.join(map(re.escape, punctuation_split))
     pattern = re.compile(rf"(.*?(?:{pattern_split}))(?:\s+|$)", re.DOTALL)
     sentences = []
-    for s in pause_list:
+    for s in hard_list:
         if s == TTS_SML['pause']:
             sentences.append(s)
-        else:
+        elif len(s) > max_chars:
+            # split long chunk on soft punctuation
             for m in pattern.finditer(s):
                 chunk = m.group(1).strip()
                 if chunk:
                     sentences.append(chunk)
+            # if nothing matched (no soft punctuation), just append whole s
+            if not any(len(ch) < len(s) for ch in sentences if ch in s):
+                sentences.append(s)
+        else:
+            sentences.append(s)
     print(sentences)
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         result = []
