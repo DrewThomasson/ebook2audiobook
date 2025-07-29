@@ -735,32 +735,39 @@ def get_sentences(text, lang, tts_engine):
 
     def join_ideogramms(idg_list):
         buffer = ''
-        for sentence in idg_list:
-            if sentence == TTS_SML['pause']:
-                continue
-            if not sentence.strip() or not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-                continue
-            buffer += sentence
-            if sentence in punctuation_split_hard_set:
-                if len(buffer) > max_chars:
-                    for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
-                        if part.strip() and not all(c in punctuation_split_hard_set for c in part):
-                            if len(part.split()) >= min_tokens or not part.split():
-                                yield part
-                    buffer = ''
-                else:
-                    if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
-                        if len(buffer.split()) >= min_tokens or not buffer.split():
-                            yield buffer
-                    buffer = ''
-            elif len(buffer) >= max_chars:
+        token_count = 0
+        for token in idg_list:
+            if token == TTS_SML['pause']:
+                # flush buffer before yielding pause
                 if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
-                    if len(buffer.split()) >= min_tokens or not buffer.split():
+                    yield buffer
+                    buffer = ''
+                    token_count = 0
+                yield token
+                continue
+
+            if not token.strip() or not bool(re.search(r'[^\W_]', token, re.UNICODE)):
+                continue  # skip empty or non-word tokens
+
+            buffer += token
+            token_count += 1
+
+            # Always yield at punctuation
+            if token in punctuation_split_hard_set:
+                if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
+                    if token_count >= min_tokens or True:  # always yield at punct
                         yield buffer
                 buffer = ''
-        if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
-            if len(buffer.split()) >= min_tokens or not buffer.split():
+                token_count = 0
+            # If buffer is too long, force a split (even if no punct)
+            elif len(buffer) >= max_chars:
                 yield buffer
+                buffer = ''
+                token_count = 0
+
+        # flush whatever remains, even if under min_tokens
+        if buffer.strip() and not all(c in punctuation_split_hard_set for c in buffer):
+            yield buffer
 
     max_chars = language_mapping[lang]['max_chars'] + 2
     min_tokens = 5
