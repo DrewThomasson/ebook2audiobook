@@ -773,7 +773,6 @@ def get_sentences(text, lang, tts_engine):
     # Step 1: Split first by ‡pause‡, keeping it as a separate element
     sentences = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
     sentences = [s if s == TTS_SML['pause'] else s.strip() for s in sentences if s.strip() or s == TTS_SML['pause']]
-    print(sentences)
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         result = []
         for s in sentences:
@@ -781,6 +780,7 @@ def get_sentences(text, lang, tts_engine):
                 result.append(s)
             else:
                 tokens = segment_ideogramms(s)
+                print(tokens)
                 if isinstance(tokens, list):
                     result.extend([t for t in tokens if t.strip()])
                 else:
