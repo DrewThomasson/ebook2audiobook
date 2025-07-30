@@ -835,10 +835,10 @@ def get_sentences(text, lang, tts_engine):
                         if len(text_part) + 1 + len(w) <= max_chars:
                             text_part += ' ' + w
                         else:
-                            sentences.append(text_part)
+                            sentences.append(text_part.strip())
                             text_part = w
                     if text_part:
-                        sentences.append(text_part)
+                        sentences.append(text_part.strip())
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
