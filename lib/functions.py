@@ -1170,14 +1170,14 @@ def convert_chapters2audio(session):
                             print(msg)
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                         if success:                           
-                            percentage = (sentence_number / total_sentences) * 100
                             if sentence != TTS_SML['pause']:
+                                percentage = (sentence_number / total_sentences) * 100
                                 t.set_description(f'Converting {percentage:.2f}%')
                                 msg = f"\nSentence: {sentence}"
                                 print(msg)
+                                t.update(1)
                         else:
                             return False
-                        t.update(1)
                     if progress_bar is not None:
                         progress_bar(sentence_number / total_sentences)
                     if sentence != TTS_SML['pause']:
