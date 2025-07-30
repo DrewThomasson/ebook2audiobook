@@ -553,34 +553,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return None, None
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
-    try:
-        heading_tags = {f'h{i}' for i in range(1, 7)}
-        raw_html = doc.get_body_content().decode("utf-8")
-        soup = BeautifulSoup(raw_html, 'html.parser')
-        body = soup.body
-        if not body or not body.get_text(strip=True):
-            return None
-        # Skip known non-chapter types
-        epub_type = body.get("epub:type", "").lower()
-        if not epub_type:
-            section_tag = soup.find("section")
-            if section_tag:
-                epub_type = section_tag.get("epub:type", "").lower()
-        excluded = {
-            "frontmatter", "backmatter", "toc", "titlepage", "colophon",
-            "acknowledgments", "dedication", "glossary", "index",
-            "appendix", "bibliography", "copyright-page", "landmark"
-        }
-        if any(part in epub_type for part in excluded):
-            return None
-        # remove scripts/styles
-        for tag in soup(["script", "style"]):
-            tag.decompose()
-        # tags after which we always add a [pause]
-        pause_after_tags = {"p", "div", "span"}  # you requested span too
 
-        # helper to walk in document order
-        def walk(node):
+    def walk(node):
+        try:
             for child in node.children:
                 if isinstance(child, NavigableString):
                     text = child.strip()
@@ -609,11 +584,41 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
                         else:
                             yield from walk(child)
-        def append_pause():
-            if processed and processed[-1][0] == "pause":
-                return  # avoid duplicate
-            processed.append(("pause", "[pause]"))
+        except Exception as e:
+            error = f'filter_chapter() walk() error: {e}'
+            DependencyError(error)
+            return None
 
+    def append_pause():
+        if processed and processed[-1][0] == "pause":
+            return  # avoid duplicate
+        processed.append(("pause", TTS_SML['pause']))
+
+    try:
+        heading_tags = {f'h{i}' for i in range(1, 7)}
+        raw_html = doc.get_body_content().decode("utf-8")
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        body = soup.body
+        if not body or not body.get_text(strip=True):
+            return None
+        # Skip known non-chapter types
+        epub_type = body.get("epub:type", "").lower()
+        if not epub_type:
+            section_tag = soup.find("section")
+            if section_tag:
+                epub_type = section_tag.get("epub:type", "").lower()
+        excluded = {
+            "frontmatter", "backmatter", "toc", "titlepage", "colophon",
+            "acknowledgments", "dedication", "glossary", "index",
+            "appendix", "bibliography", "copyright-page", "landmark"
+        }
+        if any(part in epub_type for part in excluded):
+            return None
+        # remove scripts/styles
+        for tag in soup(["script", "style"]):
+            tag.decompose()
+        # tags after which we always add a pause
+        pause_after_tags = {"p", "div", "span"}
         items = list(walk(body))
         if not items:
             return None
@@ -643,16 +648,16 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         for typ, payload in items:
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
-                # Always add pause after heading (but avoid duplicate if previous already pause)
-                if text_array and text_array[-1] == "[pause]":
+                # Always add TWO pauses after heading
+                if text_array and text_array[-1] == TTS_SML['pause']:
                     text_array.append(raw_text.strip())
-                    text_array.append("[pause]")
+                    text_array.append(TTS_SML['pause'])
+                    text_array.append(TTS_SML['pause'])
                 else:
-                    text_array.append(f"{raw_text.strip()} [pause]")
+                    text_array.append(f"{raw_text.strip()} {TTS_SML['pause']} {TTS_SML['pause']}")
             elif typ == "pause":
-                # Add pause if not duplicate
-                if not text_array or text_array[-1] != "[pause]":
-                    text_array.append("[pause]")
+                if not text_array or text_array[-1] != TTS_SML['pause']:
+                    text_array.append(TTS_SML['pause'])
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -710,123 +715,136 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         text = re.sub(punctuation_pattern_space, r' \1 ', text)
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
-        DependencyError(e)
+        error = f'filter_chapter() error: {e}'
+        DependencyError(error)
         return None
 
 def get_sentences(text, lang, tts_engine):
 
     def segment_ideogramms(text):
-        if lang == 'zho':
-            import jieba
-            return list(jieba.cut(text))
-        elif lang == 'jpn':
-            sudachi = dictionary.Dictionary().create()
-            mode = tokenizer.Tokenizer.SplitMode.C
-            return [m.surface() for m in sudachi.tokenize(text, mode)]
-        elif lang == 'kor':
-            ltokenizer = LTokenizer()
-            return ltokenizer.tokenize(text)
-        elif lang in ['tha', 'lao', 'mya', 'khm']:
-            return word_tokenize(text, engine='newmm')
-        else:
+        try:
+            if lang == 'zho':
+                import jieba
+                return list(jieba.cut(text))
+            elif lang == 'jpn':
+                sudachi = dictionary.Dictionary().create()
+                mode = tokenizer.Tokenizer.SplitMode.C
+                return [m.surface() for m in sudachi.tokenize(text, mode)]
+            elif lang == 'kor':
+                ltokenizer = LTokenizer()
+                return ltokenizer.tokenize(text)
+            elif lang in ['tha', 'lao', 'mya', 'khm']:
+                return word_tokenize(text, engine='newmm')
+            else:
+                return [text]
+        except Exception as e:
+            DependencyError(e)
             return [text]
 
     def join_ideogramms(idg_list):
-        buffer = ''
-        for token in idg_list:
-            # 1) On pause: flush & emit buffer, then the pause
-            if token == TTS_SML['pause']:
-                if buffer:
+        try:
+            buffer = ''
+            for token in idg_list:
+                # 1) On pause: flush & emit buffer, then the pause
+                if token == TTS_SML['pause']:
+                    if buffer:
+                        yield buffer
+                        buffer = ''
+                    yield token
+                    continue
+
+                # 2) If adding this token would overflow, flush current buffer first
+                if buffer and len(buffer) + len(token) > max_chars:
                     yield buffer
                     buffer = ''
-                yield token
-                continue
 
-            # 2) If adding this token would overflow, flush current buffer first
-            if buffer and len(buffer) + len(token) > max_chars:
+                # 3) Append the token (word, punctuation, whatever)
+                buffer += token
+
+            # 4) Flush any trailing text
+            if buffer:
                 yield buffer
-                buffer = ''
-
-            # 3) Append the token (word, punctuation, whatever)
-            buffer += token
-
-        # 4) Flush any trailing text
-        if buffer:
+        except Exception as e:
+            DependencyError(e)
             yield buffer
-
-    max_chars = language_mapping[lang]['max_chars']
-    min_tokens = 5
-    # Step 1: Split first by ‡pause‡, keeping it as a separate element
-    pause_list = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
-    pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
-    # Step 2: split with punctuation_split_hard_set
-    pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
-    pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
-    hard_list = []
-    for s in pause_list:
-        if s == TTS_SML['pause']:
-            hard_list.append(s)
-        else:
-            parts = pattern.findall(s)
-            if parts:
-                for text_part in parts:
-                    text_part = text_part.strip()
-                    if text_part:
-                        hard_list.append(text_part)
-            else:
-                # no hard‑split punctuation found → keep whole sentence
+    try:
+        max_chars = language_mapping[lang]['max_chars']
+        min_tokens = 5
+        # Step 1: Split first by ‡pause‡, keeping it as a separate element
+        pause_list = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
+        pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
+        # Step 2: split with punctuation_split_hard_set
+        pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
+        pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
+        hard_list = []
+        for s in pause_list:
+            if s == TTS_SML['pause']:
                 hard_list.append(s)
-    # Step 3: check if some hard_list are exceeding max_chars so use soft punctuations
-    pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
-    pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
-    soft_list = []
-    for s in hard_list:
-        if s == TTS_SML['pause']:
-            soft_list.append(s)
-        elif len(s) > max_chars:
-            parts = pattern.findall(s)
-            if parts:
-                for text_part in parts:
-                    text_part = text_part.strip()
-                    if text_part:
-                        soft_list.append(text_part)
+            else:
+                parts = pattern.findall(s)
+                if parts:
+                    for text_part in parts:
+                        text_part = text_part.strip()
+                        if text_part:
+                            hard_list.append(text_part)
+                else:
+                    # no hard‑split punctuation found → keep whole sentence
+                    hard_list.append(s)
+        # Step 3: check if some hard_list are exceeding max_chars so use soft punctuations
+        pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
+        pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
+        soft_list = []
+        for s in hard_list:
+            if s == TTS_SML['pause']:
+                soft_list.append(s)
+            elif len(s) > max_chars:
+                parts = pattern.findall(s)
+                if parts:
+                    for text_part in parts:
+                        text_part = text_part.strip()
+                        if text_part:
+                            soft_list.append(text_part)
+                else:
+                    soft_list.append(s)
             else:
                 soft_list.append(s)
-        else:
-            soft_list.append(s)
-    if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-        result = []
-        for s in soft_list:
-            if s == TTS_SML['pause']:
-                result.append(s)
-            else:
-                tokens = segment_ideogramms(s)
-                if isinstance(tokens, list):
-                    result.extend([t for t in tokens if t.strip()])
+        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            result = []
+            for s in soft_list:
+                if s == TTS_SML['pause']:
+                    result.append(s)
                 else:
-                    if tokens.strip():
-                        result.append(tokens)
-        return list(join_ideogramms(result))
-    else:
-        # Step 4: split any remaining over‑length sentences on spaces
-        sentences = []
-        for s in soft_list:
-            if s == TTS_SML['pause'] or len(s) <= max_chars:
-                # keep pauses and short sentences as‑is
-                sentences.append(s)
-            else:
-                words = s.split(' ')
-                text_part = words[0]
-                for w in words[1:]:
-                    if len(text_part) + 1 + len(w) <= max_chars:
-                        text_part += ' ' + w
+                    tokens = segment_ideogramms(s)
+                    if isinstance(tokens, list):
+                        result.extend([t for t in tokens if t.strip()])
                     else:
+                        if tokens.strip():
+                            result.append(tokens)
+            return list(join_ideogramms(result))
+        else:
+            # Step 4: split any remaining over‑length sentences on spaces
+            sentences = []
+            for s in soft_list:
+                if s == TTS_SML['pause'] or len(s) <= max_chars:
+                    # keep pauses and short sentences as‑is
+                    sentences.append(s)
+                else:
+                    words = s.split(' ')
+                    text_part = words[0]
+                    for w in words[1:]:
+                        if len(text_part) + 1 + len(w) <= max_chars:
+                            text_part += ' ' + w
+                        else:
+                            sentences.append(text_part)
+                            text_part = w
+                    if text_part:
                         sentences.append(text_part)
-                        text_part = w
-                if text_part:
-                    sentences.append(text_part)
-        return sentences
-
+            return sentences
+    except Exception as e:
+        error = f'get_sentences() error: {e}'
+        print(error)
+        return None  
+        
 def get_ram():
     vm = psutil.virtual_memory()
     return vm.total // (1024 ** 3)
