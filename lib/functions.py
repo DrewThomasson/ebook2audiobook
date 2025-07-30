@@ -779,25 +779,24 @@ def get_sentences(text, lang, tts_engine):
     # Step 3: check if some hard_list are exceeding max_chars so use soft punctuations
     pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
     pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
-    sentences = []
+    soft_list = []
     for s in hard_list:
         if s == TTS_SML['pause']:
-            sentences.append(s)
+            soft_list.append(s)
         elif len(s) > max_chars:
             parts = pattern.findall(s)
             if parts:
                 for text_part in parts:
                     text_part = text_part.strip()
                     if text_part:
-                        sentences.append(text_part)
+                        soft_list.append(text_part)
             else:
-                sentences.append(s)
+                soft_list.append(s)
         else:
-            sentences.append(s)
-    print(sentences)
+            soft_list.append(s)
     if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
         result = []
-        for s in sentences:
+        for s in soft_list:
             if s == TTS_SML['pause']:
                 result.append(s)
             else:
@@ -809,6 +808,23 @@ def get_sentences(text, lang, tts_engine):
                         result.append(tokens)
         return list(join_ideogramms(result))
     else:
+        # Step 4: split any remaining over‑length sentences on spaces
+        sentences = []
+        for s in soft_list:
+            if s == TTS_SML['pause'] or len(s) <= max_chars:
+                # keep pauses and short sentences as‑is
+                sentences.append(s)
+            else:
+                words = s.split(' ')
+                text_part = words[0]
+                for w in words[1:]:
+                    if len(text_part) + 1 + len(w) <= max_chars:
+                        text_part += ' ' + w
+                    else:
+                        sentences.append(text_part)
+                        text_part = w
+                if text_part:
+                    sentences.append(text_part)
         return sentences
 
 def get_ram():
