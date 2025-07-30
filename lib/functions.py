@@ -1164,7 +1164,8 @@ def convert_chapters2audio(session):
                         t.update(1)
                     if progress_bar is not None:
                         progress_bar(sentence_number / total_sentences)
-                    sentence_number += 1
+                    if sentence != TTS_SML['pause']:
+                        sentence_number += 1
                 if progress_bar is not None:
                     progress_bar(sentence_number / total_sentences)
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
