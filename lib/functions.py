@@ -648,7 +648,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         for typ, payload in items:
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
-                # Always add  pause after heading
+                # Always add pause after heading (but avoid duplicate if previous already pause)
                 if text_array and text_array[-1] == TTS_SML['pause']:
                     text_array.append(raw_text.strip())
                     text_array.append(TTS_SML['pause'])
