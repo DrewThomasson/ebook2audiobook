@@ -789,7 +789,7 @@ def get_sentences(text, lang, tts_engine):
                 else:
                     # no hard‑split punctuation found → keep whole sentence
                     hard_list.append(s)
-        # Step 3: check if some hard_list are exceeding max_chars so use soft punctuations
+        # Step 3: check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         soft_list = []
@@ -797,12 +797,28 @@ def get_sentences(text, lang, tts_engine):
             if s == TTS_SML['pause']:
                 soft_list.append(s)
             elif len(s) > max_chars:
-                parts = pattern.findall(s)
+                parts = [p.strip() for p in pattern.findall(s) if p.strip()]
                 if parts:
-                    for text_part in parts:
-                        text_part = text_part.strip()
-                        if text_part:
-                            soft_list.append(text_part)
+                    buffer = ''
+                    for part in parts:
+                        # always treat pauses as their own chunk
+                        if part == TTS_SML['pause']:
+                            if buffer:
+                                soft_list.append(buffer)
+                                buffer = ''
+                            soft_list.append(part)
+                            continue
+                        if not buffer:
+                            buffer = part
+                            continue
+                        if len(buffer.split()) < min_tokens:
+                            buffer = buffer + ' ' + part
+                        else:
+                            # buffer is large enough: flush it, start new one
+                            soft_list.append(buffer)
+                            buffer = part
+                    if buffer:
+                        soft_list.append(buffer)
                 else:
                     soft_list.append(s)
             else:
