@@ -738,14 +738,14 @@ class Coqui:
                     if is_audio_data_valid(audio_sentence):
                         sourceTensor = self._tensor_type(audio_sentence)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                        if entence[-1].isalnum():
+                            audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         self.audio_segments.append(audio_tensor)
                         if not re.search(r'\w$', sentence, flags=re.UNICODE):
                             silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.4, 0.8) * 100) / 100)))
                             self.audio_segments.append(silence_tensor.clone())
                         if self.audio_segments:
                             audio_tensor = torch.cat(self.audio_segments, dim=-1)
-                            #if entence[-1].isalnum():
-                            #    audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                             start_time = self.sentences_total_time
                             duration = audio_tensor.shape[-1] / settings['samplerate']
                             end_time = start_time + duration
