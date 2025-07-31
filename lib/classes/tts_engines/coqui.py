@@ -431,9 +431,8 @@ class Coqui:
             if tts:
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
                     sentence = sentence.replace('.', ' — ')
-                silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(3.6, 5.2) * 100) / 100))) # 0.6 to 1.2 seconds
                 if sentence == TTS_SML['pause']:
-                    print('ADDING PAUSE TENSOR')
+                    silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(1.0, 1.8) * 100) / 100))) # 1.0 to 1.8 seconds
                     self.audio_segments.append(silence_tensor.clone())
                     return True
                 else:
@@ -741,13 +740,12 @@ class Coqui:
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                         self.audio_segments.append(audio_tensor)
                         if not re.search(r'\w$', sentence, flags=re.UNICODE):
-                            print('ADDING PAUSE FOR NON ALPHA CHAR ENDING')
                             silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.4, 0.8) * 100) / 100)))
                             self.audio_segments.append(silence_tensor.clone())
                         if self.audio_segments:
                             audio_tensor = torch.cat(self.audio_segments, dim=-1)
-                            if sentence.endswith('-') or sentence[-1].isalnum():
-                                audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                            #if entence[-1].isalnum():
+                            #    audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                             start_time = self.sentences_total_time
                             duration = audio_tensor.shape[-1] / settings['samplerate']
                             end_time = start_time + duration
