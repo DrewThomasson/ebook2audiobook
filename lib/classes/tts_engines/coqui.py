@@ -433,6 +433,7 @@ class Coqui:
                     sentence = sentence.replace('.', ' — ')
                 silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.6, 1.2) * 100) / 100))) # 0.6 to 1.2 seconds
                 if sentence == TTS_SML['pause']:
+                    print('ADDING PAUSE TENSOR')
                     self.audio_segments.append(silence_tensor.clone())
                     return True
                 else:
@@ -740,7 +741,8 @@ class Coqui:
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                         self.audio_segments.append(audio_tensor)
                         if not re.search(r'\w$', sentence, flags=re.UNICODE):
-                            silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100)))
+                            print('ADDING PAUSE FOR NON ALPHA CHAR ENDING')
+                            silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.4, 0.8) * 100) / 100)))
                             self.audio_segments.append(silence_tensor.clone())
                         if self.audio_segments:
                             audio_tensor = torch.cat(self.audio_segments, dim=-1)
