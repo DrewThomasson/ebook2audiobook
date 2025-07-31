@@ -1159,6 +1159,7 @@ def convert_chapters2audio(session):
                 start = sentence_number
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
+                print(f'---------------{sentences}-------------')
                 for i, sentence in enumerate(sentences):
                     if session['cancellation_requested']:
                         msg = 'Cancel requested'
