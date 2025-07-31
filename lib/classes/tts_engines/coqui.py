@@ -738,7 +738,7 @@ class Coqui:
                     if is_audio_data_valid(audio_sentence):
                         sourceTensor = self._tensor_type(audio_sentence)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                        if entence[-1].isalnum():
+                        if sentence[-1].isalnum():
                             audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         self.audio_segments.append(audio_tensor)
                         if not re.search(r'\w$', sentence, flags=re.UNICODE):
