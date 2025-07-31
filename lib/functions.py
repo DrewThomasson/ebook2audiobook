@@ -1155,7 +1155,7 @@ def convert_chapters2audio(session):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
                 sentences = session['chapters'][x]
-                sentences_count = len(sentences)
+                sentences_count = sum(1 for row in sentences if row != TTS_SML['pause'])
                 start = sentence_number
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
