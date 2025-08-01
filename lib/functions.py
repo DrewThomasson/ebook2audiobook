@@ -782,16 +782,33 @@ def get_sentences(text, lang, tts_engine):
         for s in pause_list:
             if s == TTS_SML['pause']:
                 hard_list.append(s)
-            else:
-                parts = pattern.findall(s)
+            elif len(s) > max_chars:
+                parts = [p.strip() for p in pattern.findall(s) if p.strip()]
                 if parts:
-                    for text_part in parts:
-                        text_part = text_part.strip()
-                        if text_part:
-                            hard_list.append(text_part)
+                    buffer = ''
+                    for part in parts:
+                        # always treat pauses as their own chunk
+                        if part == TTS_SML['pause']:
+                            if buffer:
+                                hard_list.append(buffer)
+                                buffer = ''
+                            hard_list.append(part)
+                            continue
+                        if not buffer:
+                            buffer = part
+                            continue
+                        if len(buffer.split()) < min_tokens:
+                            buffer = buffer + ' ' + part
+                        else:
+                            # buffer is large enough: flush it, start new one
+                            hard_list.append(buffer)
+                            buffer = part
+                    if buffer:
+                        hard_list.append(buffer)
                 else:
-                    # no hard‑split punctuation found → keep whole sentence
                     hard_list.append(s)
+            else:
+                hard_list.append(s)
         # Step 3: check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
@@ -1155,8 +1172,9 @@ def convert_chapters2audio(session):
         total_sentences_with_pauses = sum(len(array) for array in session['chapters'])
         total_sentences = sum(sum(1 for row in chapter if row != TTS_SML['pause']) for chapter in session['chapters'])
         sentence_number = 0
+        msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
+        print(msg)
         with tqdm(total=total_sentences_with_pauses, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
-            msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
             for x in range(0, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
