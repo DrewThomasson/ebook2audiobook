@@ -841,7 +841,6 @@ def get_sentences(text, lang, tts_engine):
             sentences = []
             for s in soft_list:
                 if s == TTS_SML['pause'] or len(s) <= max_chars:
-                    # keep pauses and short sentences as‑is
                     sentences.append(s)
                 else:
                     words = s.split(' ')
@@ -853,6 +852,9 @@ def get_sentences(text, lang, tts_engine):
                             sentences.append(text_part.strip())
                             text_part = w
                     if text_part:
+                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part
+                        if not any(ch.isalnum() for ch in cleaned)
+                            continue
                         sentences.append(text_part.strip())
             return sentences
     except Exception as e:
@@ -1159,7 +1161,6 @@ def convert_chapters2audio(session):
                 start = sentence_number
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
-                print(f'---------------{sentences}-------------')
                 for i, sentence in enumerate(sentences):
                     if session['cancellation_requested']:
                         msg = 'Cancel requested'
