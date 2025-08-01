@@ -1,5 +1,5 @@
 from .models import (
-    TTS_ENGINES, default_fine_tuned, default_tts_engine, 
+    TTS_ENGINES, TTS_SML, default_fine_tuned, default_tts_engine, 
     default_engine_settings, default_vc_model, default_voice_detection_model,
     loaded_tts, max_custom_model, max_custom_voices,
     max_tts_in_memory, max_upload_size, models, os, voices_dir
@@ -14,20 +14,21 @@ from .conf import (
     max_python_version, min_python_version, models_dir, os,
     output_formats, platform, prog_version, python_env_dir,
     requirements_file, tmp_dir, tmp_expire, tts_dir, voice_formats,
-    voices_dir, outpout_split_hours
+    voices_dir, output_split_hours
 )
 
 from .lang import (
     abbreviations_mapping, chapter_word_mapping, default_language_code,
     emojis_array, install_info, language_mapping, language_math_phonemes,
     language_tts, os, punctuation_list, punctuation_list_set,
-    punctuation_split, punctuation_split_set, punctuation_switch,
+    punctuation_split_hard, punctuation_split_hard_set, punctuation_split_soft,
+    punctuation_split_soft_set, punctuation_switch,
     specialchars_mapping, specialchars_remove, year_to_decades_languages
 )
 
 __all__ = [
     # from models
-    "TTS_ENGINES", "default_fine_tuned", "default_tts_engine",
+    "TTS_ENGINES", "TTS_SML", "default_fine_tuned", "default_tts_engine",
     "default_engine_settings", "default_vc_model", "default_voice_detection_model",
     "loaded_tts", "max_custom_model",
     "max_custom_voices", "max_tts_in_memory", "max_upload_size",
@@ -43,13 +44,13 @@ __all__ = [
     "max_python_version", "min_python_version", "models_dir", "os",
     "output_formats", "platform", "prog_version", "python_env_dir",
     "requirements_file", "tmp_dir", "tmp_expire", "tts_dir",
-    "voice_formats", "voices_dir", "outpout_split_hours",
+    "voice_formats", "voices_dir", "output_split_hours",
 
     # from lang
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code",
     "emojis_array", "install_info", "language_mapping",
     "language_math_phonemes", "language_tts", "os",
-    "punctuation_list", "punctuation_list_set", "punctuation_split",
-    "punctuation_split_set", "punctuation_switch",
+    "punctuation_list", "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
+    "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
     "specialchars_mapping", "specialchars_remove", "year_to_decades_languages"
 ]

@@ -7,12 +7,13 @@ docker
 ebooklib
 fastapi
 fugashi
-gradio==5.35.0
+gradio>=5.38.2
 hangul-romanize
 indic-nlp-library
 iso-639
 jieba
 soynlp
+num2words
 pythainlp
 mutagen
 nvidia-ml-py

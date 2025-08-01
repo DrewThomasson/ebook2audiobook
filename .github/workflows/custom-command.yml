@@ -9,7 +9,7 @@ on:
         default: 'echo Hello from Mac!'
 
 jobs:
-  DockerBuild:
+  CustomCommand:
     runs-on: [self-hosted, macos]
     steps:
       - name: Run Custom Command

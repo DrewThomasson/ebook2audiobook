@@ -553,34 +553,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return None, None
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
-    try:
-        heading_tags = {f'h{i}' for i in range(1, 7)}
-        raw_html = doc.get_body_content().decode("utf-8")
-        soup = BeautifulSoup(raw_html, 'html.parser')
-        body = soup.body
-        if not body or not body.get_text(strip=True):
-            return None
-        # Skip known non-chapter types
-        epub_type = body.get("epub:type", "").lower()
-        if not epub_type:
-            section_tag = soup.find("section")
-            if section_tag:
-                epub_type = section_tag.get("epub:type", "").lower()
-        excluded = {
-            "frontmatter", "backmatter", "toc", "titlepage", "colophon",
-            "acknowledgments", "dedication", "glossary", "index",
-            "appendix", "bibliography", "copyright-page", "landmark"
-        }
-        if any(part in epub_type for part in excluded):
-            return None
-        # remove scripts/styles
-        for tag in soup(["script", "style"]):
-            tag.decompose()
-        # tags after which we always add a [pause]
-        pause_after_tags = {"p", "div", "span"}  # you requested span too
 
-        # helper to walk in document order
-        def walk(node):
+    def walk(node):
+        try:
             for child in node.children:
                 if isinstance(child, NavigableString):
                     text = child.strip()
@@ -609,11 +584,41 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
                         else:
                             yield from walk(child)
-        def append_pause():
-            if processed and processed[-1][0] == "pause":
-                return  # avoid duplicate
-            processed.append(("pause", "[pause]"))
+        except Exception as e:
+            error = f'filter_chapter() walk() error: {e}'
+            DependencyError(error)
+            return None
 
+    def append_pause():
+        if processed and processed[-1][0] == "pause":
+            return  # avoid duplicate
+        processed.append(("pause", TTS_SML['pause']))
+
+    try:
+        heading_tags = {f'h{i}' for i in range(1, 7)}
+        raw_html = doc.get_body_content().decode("utf-8")
+        soup = BeautifulSoup(raw_html, 'html.parser')
+        body = soup.body
+        if not body or not body.get_text(strip=True):
+            return None
+        # Skip known non-chapter types
+        epub_type = body.get("epub:type", "").lower()
+        if not epub_type:
+            section_tag = soup.find("section")
+            if section_tag:
+                epub_type = section_tag.get("epub:type", "").lower()
+        excluded = {
+            "frontmatter", "backmatter", "toc", "titlepage", "colophon",
+            "acknowledgments", "dedication", "glossary", "index",
+            "appendix", "bibliography", "copyright-page", "landmark"
+        }
+        if any(part in epub_type for part in excluded):
+            return None
+        # remove scripts/styles
+        for tag in soup(["script", "style"]):
+            tag.decompose()
+        # tags after which we always add a pause
+        pause_after_tags = {"p", "div", "span"}
         items = list(walk(body))
         if not items:
             return None
@@ -644,15 +649,14 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
                 # Always add pause after heading (but avoid duplicate if previous already pause)
-                if text_array and text_array[-1] == "[pause]":
+                if text_array and text_array[-1] == TTS_SML['pause']:
                     text_array.append(raw_text.strip())
-                    text_array.append("[pause]")
+                    text_array.append(TTS_SML['pause'])
                 else:
-                    text_array.append(f"{raw_text.strip()} [pause]")
+                    text_array.append(f"{raw_text.strip()} {TTS_SML['pause']}")
             elif typ == "pause":
-                # Add pause if not duplicate
-                if not text_array or text_array[-1] != "[pause]":
-                    text_array.append("[pause]")
+                if not text_array or text_array[-1] != TTS_SML['pause']:
+                    text_array.append(TTS_SML['pause'])
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -710,186 +714,157 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         text = re.sub(punctuation_pattern_space, r' \1 ', text)
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
-        DependencyError(e)
+        error = f'filter_chapter() error: {e}'
+        DependencyError(error)
         return None
 
 def get_sentences(text, lang, tts_engine):
-    max_chars = language_mapping[lang]['max_chars'] + 2
-
-    def combine_punctuation(raw_list):
-        if not raw_list:
-            return raw_list
-        result = [raw_list[0]]
-        extended_punct_set = set(punctuation_split_set)
-        extended_punct_set.add("'")
-        i = 1
-        while i < len(raw_list):
-            curr_sentence = raw_list[i]
-            # While the current sentence starts with a punctuation and adding it does not exceed max_chars
-            while curr_sentence and curr_sentence[0] in extended_punct_set and len(result[-1]) + 1 <= max_chars:
-                result[-1] += curr_sentence[0]
-                curr_sentence = curr_sentence[1:]
-            # If there's anything left, treat as a new sentence
-            if curr_sentence.strip():
-                if not result[-1].endswith(' '):
-                    result[-1] += ' '
-                result.append(curr_sentence.lstrip())
-            i += 1
-        return result
 
     def segment_ideogramms(text):
-        if lang == 'zho':
-            import jieba
-            return list(jieba.cut(text))
-        elif lang == 'jpn':
-            sudachi = dictionary.Dictionary().create()
-            mode = tokenizer.Tokenizer.SplitMode.C
-            return [m.surface() for m in sudachi.tokenize(text, mode)]
-        elif lang == 'kor':
-            ltokenizer = LTokenizer()
-            return ltokenizer.tokenize(text)
-        elif lang in ['tha', 'lao', 'mya', 'khm']:
-            return word_tokenize(text, engine='newmm')
-        else:
-            pattern_split = [re.escape(p) for p in punctuation_split_set]
-            pattern = f"({'|'.join(pattern_split)})"
-            return re.split(pattern, text)
+        try:
+            if lang == 'zho':
+                import jieba
+                return list(jieba.cut(text))
+            elif lang == 'jpn':
+                sudachi = dictionary.Dictionary().create()
+                mode = tokenizer.Tokenizer.SplitMode.C
+                return [m.surface() for m in sudachi.tokenize(text, mode)]
+            elif lang == 'kor':
+                ltokenizer = LTokenizer()
+                return ltokenizer.tokenize(text)
+            elif lang in ['tha', 'lao', 'mya', 'khm']:
+                return word_tokenize(text, engine='newmm')
+            else:
+                return [text]
+        except Exception as e:
+            DependencyError(e)
+            return [text]
 
     def join_ideogramms(idg_list):
-        buffer = ''
-        for sentence in idg_list:
-            if not sentence.strip() or not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-                continue
-            buffer += sentence
-            if sentence in punctuation_split_set:
-                if len(buffer) > max_chars:
-                    for part in [buffer[i:i + max_chars] for i in range(0, len(buffer), max_chars)]:
-                        if part.strip() and not all(c in punctuation_split_set for c in part):
-                            yield part
-                    buffer = ''
-                else:
-                    if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+        try:
+            buffer = ''
+            for token in idg_list:
+                # 1) On pause: flush & emit buffer, then the pause
+                if token == TTS_SML['pause']:
+                    if buffer:
                         yield buffer
-                    buffer = ''
-            elif len(buffer) >= max_chars:
-                if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
+                        buffer = ''
+                    yield token
+                    continue
+
+                # 2) If adding this token would overflow, flush current buffer first
+                if buffer and len(buffer) + len(token) > max_chars:
                     yield buffer
-                buffer = ''
-        if buffer.strip() and not all(c in punctuation_split_set for c in buffer):
-            yield buffer
+                    buffer = ''
 
-    def find_best_split_point_prioritize_punct(sentence, max_chars):
-        best_index = -1
-        min_diff = float('inf')
-        punctuation_priority = '.!?,;:'
-        space_priority = ' '
-        if not bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-            return best_index
-        for i in range(1, min(len(sentence), max_chars)):
-            if sentence[i] in punctuation_priority:
-                left_len = i
-                right_len = len(sentence) - i
-                diff = abs(left_len - right_len)
-                if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
-                    best_index = i + 1
-                    min_diff = diff
-        if best_index == -1:
-            for i in range(1, min(len(sentence), max_chars)):
-                if sentence[i] in space_priority:
-                    left_len = i
-                    right_len = len(sentence) - i
-                    diff = abs(left_len - right_len)
-                    if left_len <= max_chars and right_len <= max_chars and diff < min_diff:
-                        best_index = i + 1
-                        min_diff = diff
-        return best_index
+                # 3) Append the token (word, punctuation, whatever)
+                buffer += token
 
-    def split_sentence(sentence):
-        if not re.search(r'[^\W_]', sentence, re.UNICODE):
-            return []
-        if len(sentence) <= max_chars:
-            if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-                if sentence and sentence[-1].isalpha():
-                    return [sentence + ' -']
-            return [sentence]
-        split_index = find_best_split_point_prioritize_punct(sentence, max_chars)
-        if split_index == -1:
-            mid = len(sentence) // 2
-            before = sentence.rfind(' ', 0, mid)
-            after = sentence.find(' ', mid)
-            if before == -1 and after == -1:
-                split_index = mid
-            else:
-                if before == -1:
-                    split_index = after
-                elif after == -1:
-                    split_index = before
-                else:
-                    split_index = before if (mid - before) <= (after - mid) else after
-        delim_used = sentence[split_index - 1] if split_index > 0 else None
-        end = ''
-        if lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm'] and tts_engine != TTS_ENGINES['BARK']:
-            end = ' -' if delim_used == ' ' else end
-        part1 = sentence[:split_index].rstrip()
-        part2 = sentence[split_index:].lstrip(' ,;:!?-.')
-        result = []
-        if len(part1) <= max_chars:
-            if part1 and part1[-1].isalpha():
-                part1 += end
-            result.append(part1)
-        else:
-            result.extend(split_sentence(part1))
-        if part2:
-            if len(part2) <= max_chars:
-                if part2 and part2[-1].isalpha():
-                    if tts_engine != TTS_ENGINES['BARK']:
-                        part2 += ' -'
-                result.append(part2)
-            else:
-                result.extend(split_sentence(part2))
-        return result
-
-    punctuations = sorted(punctuation_split, key=len, reverse=True)
-    pattern_split = '|'.join(map(re.escape, punctuations))
-    # build pattern: don’t split on any punctuation if it’s between two digits
-    pattern = rf"(.*?(?<!\d)[{pattern_split}](?!\d))(\s+|$)"
-    raw_list = []
-    min_tokens = 6
-    buffer = ""
-    for match in re.finditer(pattern, text):
-        s = match.group(1).strip()
-        if not s:
-            continue
-        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-            tokens = segment_ideogramms(s)
-            if isinstance(tokens, list):
-                raw_list.append(''.join(tokens))
-            else:
-                raw_list.append(str(tokens))
-        else:
+            # 4) Flush any trailing text
             if buffer:
-                s = buffer + " " + s
-                buffer = ""
-            if len(s.split()) < min_tokens:
-                buffer = s  # Not enough tokens, save for next
-                continue
-            raw_list.append(s)
-    if buffer and lang not in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
-        if raw_list:
-            raw_list[-1] += " " + buffer
+                yield buffer
+        except Exception as e:
+            DependencyError(e)
+            yield buffer
+    try:
+        max_chars = language_mapping[lang]['max_chars']
+        min_tokens = 5
+        # tacotron2 apparently does not like double quotes
+        if tts_engine == TTS_ENGINES['TACOTRON2']:
+            text = text.replace('"', '')
+        # Step 1: Split first by ‡pause‡, keeping it as a separate element
+        pause_list = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
+        pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
+        # Step 2: split with punctuation_split_hard_set
+        pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
+        pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
+        hard_list = []
+        for s in pause_list:
+            if s == TTS_SML['pause']:
+                hard_list.append(s)
+            else:
+                parts = pattern.findall(s)
+                if parts:
+                    for text_part in parts:
+                        text_part = text_part.strip()
+                        if text_part:
+                            hard_list.append(text_part)
+                else:
+                    # no hard‑split punctuation found → keep whole sentence
+                    hard_list.append(s)
+        # Step 3: check if some hard_list entries exceed max_chars, so split on soft punctuation
+        pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
+        pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
+        soft_list = []
+        for s in hard_list:
+            if s == TTS_SML['pause']:
+                soft_list.append(s)
+            elif len(s) > max_chars:
+                parts = [p.strip() for p in pattern.findall(s) if p.strip()]
+                if parts:
+                    buffer = ''
+                    for part in parts:
+                        # always treat pauses as their own chunk
+                        if part == TTS_SML['pause']:
+                            if buffer:
+                                soft_list.append(buffer)
+                                buffer = ''
+                            soft_list.append(part)
+                            continue
+                        if not buffer:
+                            buffer = part
+                            continue
+                        if len(buffer.split()) < min_tokens:
+                            buffer = buffer + ' ' + part
+                        else:
+                            # buffer is large enough: flush it, start new one
+                            soft_list.append(buffer)
+                            buffer = part
+                    if buffer:
+                        soft_list.append(buffer)
+                else:
+                    soft_list.append(s)
+            else:
+                soft_list.append(s)
+        if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+            result = []
+            for s in soft_list:
+                if s == TTS_SML['pause']:
+                    result.append(s)
+                else:
+                    tokens = segment_ideogramms(s)
+                    if isinstance(tokens, list):
+                        result.extend([t for t in tokens if t.strip()])
+                    else:
+                        if tokens.strip():
+                            result.append(tokens)
+            return list(join_ideogramms(result))
         else:
-            raw_list.append(buffer)  
-    combine_list = combine_punctuation(raw_list)
-    print(combine_list)
-    sentences = []
-    for sentence in combine_list:
-        sentence = sentence.strip()
-        if bool(re.search(r'[^\W_]', sentence, re.UNICODE)):
-            sentences.extend(split_sentence(sentence))
-    if not sentences and text.strip():
-        sentences = split_sentence(text.strip())
-    return sentences
-
+            # Step 4: split any remaining over‑length sentences on spaces
+            sentences = []
+            for s in soft_list:
+                if s == TTS_SML['pause'] or len(s) <= max_chars:
+                    sentences.append(s)
+                else:
+                    words = s.split(' ')
+                    text_part = words[0]
+                    for w in words[1:]:
+                        if len(text_part) + 1 + len(w) <= max_chars:
+                            text_part += ' ' + w
+                        else:
+                            sentences.append(text_part.strip())
+                            text_part = w
+                    if text_part:
+                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                        if not any(ch.isalnum() for ch in cleaned):
+                            continue
+                        sentences.append(text_part.strip())
+            return sentences
+    except Exception as e:
+        error = f'get_sentences() error: {e}'
+        print(error)
+        return None  
+        
 def get_ram():
     vm = psutil.virtual_memory()
     return vm.total // (1024 ** 3)
@@ -1090,11 +1065,11 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
-    # Replace ### and [pause] with ‡pause‡ (‡ = double dagger U+2021)
-    text = re.sub(r'(###|\[pause\])', '‡pause‡', text)
+    # Replace ### and [pause] with TTS_SML['[pause]'] (‡ = double dagger U+2021)
+    text = re.sub(r'(###|\[pause\])', TTS_SML['pause'], text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, '‡pause‡', text)
+    text = re.sub(pattern, TTS_SML['pause'], text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
@@ -1109,7 +1084,11 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # Replace parentheses with double quotes
     text = re.sub(r'\(([^)]+)\)', r'"\1"', text)
     # Escape special characters in the punctuation list for regex
-    pattern = '|'.join(map(re.escape, punctuation_split))
+    pattern = '|'.join(map(re.escape, punctuation_split_hard_set))
+    # Reduce multiple consecutive punctuations
+    text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
+    # Escape special characters in the punctuation list for regex
+    pattern = '|'.join(map(re.escape, punctuation_split_soft_set))
     # Reduce multiple consecutive punctuations
     text = re.sub(rf'(\s*({pattern})\s*)+', r'\2 ', text).strip()
     # Pattern 1: Add a space between UTF-8 characters and numbers
@@ -1173,15 +1152,16 @@ def convert_chapters2audio(session):
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
         total_chapters = len(session['chapters'])
-        total_sentences = sum(len(array) for array in session['chapters'])
+        total_sentences_with_pauses = sum(len(array) for array in session['chapters'])
+        total_sentences = sum(sum(1 for row in chapter if row != TTS_SML['pause']) for chapter in session['chapters'])
         sentence_number = 0
-        with tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+        with tqdm(total=total_sentences_with_pauses, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
             for x in range(0, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
                 sentences = session['chapters'][x]
-                sentences_count = len(sentences)
+                sentences_count = sum(1 for row in sentences if row != TTS_SML['pause'])
                 start = sentence_number
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
@@ -1195,19 +1175,19 @@ def convert_chapters2audio(session):
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence)
-                        if success:                           
-                            percentage = (sentence_number / total_sentences) * 100
+                        if success:
+                            total_progress = ((x + 1) * (i + 1)) / total_sentences_with_pauses
+                            if progress_bar is not None:
+                                progress_bar(total_progress)
+                            percentage = total_progress * 100
                             t.set_description(f'Converting {percentage:.2f}%')
-                            msg = f"\nSentence: {sentence}"
+                            msg = f"\nSentence: {sentence}" if sentence != TTS_SML['pause'] else f"SML: {sentence}"
                             print(msg)
+                            t.update(1)
                         else:
                             return False
-                        t.update(1)
-                    if progress_bar is not None:
-                        progress_bar(sentence_number / total_sentences)
-                    sentence_number += 1
-                if progress_bar is not None:
-                    progress_bar(sentence_number / total_sentences)
+                    if sentence != TTS_SML['pause']:
+                        sentence_number += 1
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
                 msg = f"End of Block {chapter_num}"
                 print(msg)
@@ -1386,7 +1366,7 @@ def combine_audio_chapters(session):
             for filename, chapter_title in part_chapters:
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
-                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), chapter_title.replace('‡pause‡', ''))
+                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), chapter_title.replace(TTS_SML['pause'], ''))
                 ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
                 ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
                 ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
@@ -1490,8 +1470,8 @@ def combine_audio_chapters(session):
             filepath = os.path.join(session['chapters_dir'], file)
             durations.append(get_audio_duration(filepath))
         total_duration = sum(durations)
-        max_part_duration = outpout_split_hours * 3600
-        needs_split = total_duration > (outpout_split_hours * 2) * 3600
+        max_part_duration = output_split_hours * 3600
+        needs_split = total_duration > (output_split_hours * 2) * 3600
 
         # --- Split into parts by duration ---
         part_files = []
@@ -1631,7 +1611,7 @@ def delete_unused_tmp_dirs(web_dir, days, session):
         os.path.join(voices_dir, '__sessions')
     ]
     current_user_dirs = {
-        f"ebook-{session['id']}",
+        f"proc-{session['id']}",
         f"web-{session['id']}",
         f"voice-{session['id']}",
         f"model-{session['id']}"
@@ -1794,7 +1774,10 @@ def convert_ebook(args, ctx=None):
                     if not bool:
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
-                    session['session_dir'] = os.path.join(tmp_dir, f"ebook-{session['id']}")
+                    old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
+                    session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
+                    if os.path.isdir(old_session_dir):
+                        os.rename(old_session_dir, session['session_dir'])
                     session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['ebook'].encode()).hexdigest()}")
                     session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                     session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
@@ -2375,8 +2358,8 @@ def web_interface(args, ctx):
         gr_modal = gr.HTML(visible=False)
         gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_yes_btn_hidden = gr.Button(elem_id='confirm_yes_btn_hidden', value='', visible=False)
-        gr_confirm_no_btn_hidden = gr.Button(elem_id='confirm_no_btn_hidden', value='', visible=False)
+        gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
+        gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def load_audio_cues(vtt_path):
             def to_seconds(ts):
@@ -2474,8 +2457,8 @@ def web_interface(args, ctx):
         def show_confirm():
             return '''
             <div class="confirm-buttons">
-                <button class="confirm_yes_btn" onclick="document.querySelector('#confirm_yes_btn_hidden').click()">✔</button>
-                <button class="confirm_no_btn" onclick="document.querySelector('#confirm_no_btn_hidden').click()">⨉</button>
+                <button class="confirm_yes_btn" onclick="document.querySelector('#confirm_yes_btn').click()">✔</button>
+                <button class="confirm_no_btn" onclick="document.querySelector('#confirm_no_btn').click()">⨉</button>
             </div>
             '''
 
@@ -2668,7 +2651,7 @@ def web_interface(args, ctx):
                             parent_path = Path(session['voice_dir']).parent.resolve()
                             if parent_path in selected_path.parents:
                                 msg = f'Are you sure to delete {speaker}...'
-                                return gr.update(value='confirm_voice_del'), gr.update(value=show_modal('confirm', msg),visible=True)
+                                return gr.update(value='confirm_voice_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
                             else:
                                 error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
                                 show_alert({"type": "warning", "msg": error})
@@ -2679,7 +2662,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'click_gr_voice_del_btn(): {e}'
                 alert_exception(error)
-            return gr.update(), gr.update(visible=False)
+            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
         def click_gr_custom_model_del_btn(selected, id):
             try:
@@ -2687,11 +2670,11 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = os.path.basename(selected)
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm', msg),visible=True)
+                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
                 error = f'Could not delete the custom model {selected_name}!'
                 alert_exception(error)
-            return gr.update(), gr.update(visible=False)
+            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
         def click_gr_audiobook_del_btn(selected, id):
             try:
@@ -2699,11 +2682,11 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = os.path.basename(selected)
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm', msg),visible=True)
+                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
                 error = f'Could not delete the audiobook {selected_name}!'
                 alert_exception(error)
-            return gr.update(), gr.update(visible=False)
+            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
         def confirm_deletion(voice_path, custom_model, audiobook, id, method=None):
             try:
@@ -2719,14 +2702,14 @@ def web_interface(args, ctx):
                         msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id)
+                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_custom_model_del':
                         selected_name = os.path.basename(custom_model)
                         shutil.rmtree(custom_model, ignore_errors=True)                           
                         msg = f'Custom model {selected_name} deleted!'
                         session['custom_model'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update()
+                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_audiobook_del':
                         selected_name = os.path.basename(audiobook)
                         if os.path.isdir(audiobook):
@@ -2736,12 +2719,12 @@ def web_interface(args, ctx):
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update()
-                return gr.update(), gr.update(), gr.update(visible=False), gr.update()
+                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
-            return gr.update(), gr.update(), gr.update(), gr.update(visible=False)
+            return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                 
         def prepare_audiobook_download(selected):
             if os.path.exists(selected):
@@ -2932,7 +2915,7 @@ def web_interface(args, ctx):
             session['tts_engine'] = engine
             default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
             if default_voice_path is None:
-                session['vocie'] = default_voice_path
+                session['voice'] = default_voice_path
             bark_visible = False
             if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                 visible_custom_model = True
@@ -3234,7 +3217,7 @@ def web_interface(args, ctx):
         gr_voice_del_btn.click(
             fn=click_gr_voice_del_btn,
             inputs=[gr_voice_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal]
+            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         gr_device.change(
             fn=change_gr_device,
@@ -3285,7 +3268,7 @@ def web_interface(args, ctx):
         gr_custom_model_del_btn.click(
             fn=click_gr_custom_model_del_btn,
             inputs=[gr_custom_model_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal]
+            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         gr_output_format_list.change(
             fn=change_gr_output_format_list,
@@ -3309,7 +3292,7 @@ def web_interface(args, ctx):
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal]
+            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         ########### XTTSv2 Params
         gr_xtts_temperature.change(
@@ -3425,15 +3408,15 @@ def web_interface(args, ctx):
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
             outputs=[gr_glass_mask]
         )
-        gr_confirm_yes_btn_hidden.click(
+        gr_confirm_yes_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
-        gr_confirm_no_btn_hidden.click(
+        gr_confirm_no_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         app.load(
             fn=None,
