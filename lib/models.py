@@ -12,6 +12,10 @@ TTS_ENGINES = {
     "YOURTTS": "yourtts"
 }
 
+TTS_SML = {
+    "pause": "‡pause‡"
+}
+
 default_tts_engine = TTS_ENGINES['XTTSv2']
 default_fine_tuned = 'internal'
 

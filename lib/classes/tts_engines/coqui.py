@@ -43,34 +43,8 @@ class Coqui:
             self.sentence_idx = 1
             self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
-            self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')       
-            self.max_chars = language_mapping.get(self.session['language'], {}).get("max_chars") + 2
-            list_split = [
-                # Western
-                '.', ',',
-                # Arabic-Persian
-                '،',
-                # CJK
-                '。', '，', '、', '·', '…',
-                # Indic
-                '।', '॥',
-                # Thai
-                'ฯ',
-                # Ethiopic
-                '፡', '።', '፣', '፤', '፥', '፦', '፧',
-                # Hebrew
-                '״',
-                # Tibetan
-                '།', '༎',
-                # Khmer
-                '។', '៕',
-                # Lao
-                '໌', 'ໍ',
-                # Misc (global)
-                '—', '!', '?', ':', ';'
-            ]
-            punctuation_class = "[" + "".join(re.escape(ch) for ch in list_split) + "]"
-            self.punc_re = re.compile(punctuation_class)
+            self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')    
+            self.audio_segments = []
             self._build()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -439,7 +413,7 @@ class Coqui:
             trim_audio_buffer = 0.004
             settings = self.params[self.session['tts_engine']]
             final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
-            sentence = sentence.rstrip()
+            sentence = sentence.strip()
             settings['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
@@ -455,16 +429,13 @@ class Coqui:
                         return False
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
-                sentence_parts = sentence.split('‡pause‡')
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
-                    sentence_parts = [p.replace('.', ' — ') for p in sentence_parts]
-                silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.7, 1.4) * 100) / 100))) # 0.7 to 1.4 seconds
-                audio_segments = []
-                for text_part in sentence_parts:
-                    text_part = text_part.strip()
-                    if not text_part or not re.search(r'\w', text_part, flags=re.UNICODE):
-                        audio_segments.append(silence_tensor.clone())
-                        continue
+                    sentence = sentence.replace('.', ' — ')
+                if sentence == TTS_SML['pause']:
+                    silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(1.0, 1.8) * 100) / 100))) # 1.0 to 1.8 seconds
+                    self.audio_segments.append(silence_tensor.clone())
+                    return True
+                else:
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.006
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
@@ -493,15 +464,15 @@ class Coqui:
                         }
                         with torch.no_grad():
                             result = tts.inference(
-                                text=text_part,
+                                text=sentence,
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=settings['gpt_cond_latent'],
                                 speaker_embedding=settings['speaker_embedding'],
                                 **fine_tuned_params
                             )
-                        audio_part = result.get('wav')
-                        if is_audio_data_valid(audio_part):
-                            audio_part = audio_part.tolist()
+                        audio_sentence = result.get('wav')
+                        if is_audio_data_valid(audio_sentence):
+                            audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['BARK']:
                         trim_audio_buffer = 0.002
                         '''
@@ -543,14 +514,14 @@ class Coqui:
                         ]
                         with torch.no_grad():
                             torch.manual_seed(67878789)
-                            audio_part, _ = tts.generate_audio(
-                                text_part,
+                            audio_sentence, _ = tts.generate_audio(
+                                sentence,
                                 history_prompt=history_prompt,
                                 silent=True,
                                 **fine_tuned_params
                             )                                
-                        if is_audio_data_valid(audio_part):
-                            audio_part = audio_part.tolist()
+                        if is_audio_data_valid(audio_sentence):
+                            audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
                         speaker_argument = {}
                         if self.session['language'] == 'eng' and 'vctk/vits' in models[self.session['tts_engine']]['internal']['sub']:
@@ -565,7 +536,7 @@ class Coqui:
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
-                                text=text_part,
+                                text=sentence,
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
@@ -603,7 +574,7 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                audio_part = tts_vc.voice_conversion(
+                                audio_sentence = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
                                     target_wav=settings['voice_path']
                                 )
@@ -617,8 +588,8 @@ class Coqui:
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
                         else:
-                            audio_part = tts.tts(
-                                text=text_part,
+                            audio_sentence = tts.tts(
+                                text=sentence,
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
@@ -630,7 +601,7 @@ class Coqui:
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
-                                text=text_part,
+                                text=sentence,
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
@@ -668,7 +639,7 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                audio_part = tts_vc.voice_conversion(
+                                audio_sentence = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
                                     target_wav=settings['voice_path']
                                 )
@@ -681,8 +652,8 @@ class Coqui:
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
                         else:
-                            audio_part = tts.tts(
-                                text=text_part,
+                            audio_sentence = tts.tts(
+                                text=sentence,
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
@@ -693,7 +664,7 @@ class Coqui:
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
-                                text=text_part,
+                                text=sentence,
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
@@ -731,7 +702,7 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                audio_part = tts_vc.voice_conversion(
+                                audio_sentence = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
                                     target_wav=settings['voice_path']
                                 )
@@ -745,8 +716,8 @@ class Coqui:
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
                         else:
-                            audio_part = tts.tts(
-                                text=text_part,
+                            audio_sentence = tts.tts(
+                                text=sentence,
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
@@ -759,41 +730,42 @@ class Coqui:
                             voice_key = default_engine_settings[TTS_ENGINES['YOURTTS']]['voices']['ElectroMale-2']
                             speaker_argument = {"speaker": voice_key}
                         with torch.no_grad():
-                            audio_part = tts.tts(
-                                text=text_part,
+                            audio_sentence = tts.tts(
+                                text=sentence,
                                 language=language,
                                 **speaker_argument
                             )
-                    if is_audio_data_valid(audio_part):
-                        sourceTensor = self._tensor_type(audio_part)
+                    if is_audio_data_valid(audio_sentence):
+                        sourceTensor = self._tensor_type(audio_sentence)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                        audio_segments.append(audio_tensor)
-                sentence = ' '.join(sentence_parts)
-                if audio_segments and torch.equal(audio_segments[-1], silence_tensor):
-                    audio_segments = audio_segments[:-1]
-                if audio_segments:
-                    audio_tensor = torch.cat(audio_segments, dim=-1)
-                    if sentence.endswith('-') or sentence[-1].isalnum():
-                        audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                    start_time = self.sentences_total_time
-                    duration = audio_tensor.shape[-1] / settings['samplerate']
-                    end_time = start_time + duration
-                    self.sentences_total_time = end_time
-                    sentence_obj = {
-                        "start": start_time,
-                        "end": end_time,
-                        "text": sentence,
-                        "resume_check": self.sentence_idx
-                    }
-                    self.sentence_idx = append_sentence2vtt(sentence_obj, self.vtt_path)
-                    if self.sentence_idx:
-                        torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
-                        del audio_tensor
-                if os.path.exists(final_sentence_file):
-                    return True
-                else:
-                    error = f"Cannot create {final_sentence_file}"
-                    print(error)
+                        if sentence[-1].isalnum():
+                            audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
+                        self.audio_segments.append(audio_tensor)
+                        if not re.search(r'\w$', sentence, flags=re.UNICODE):
+                            silence_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.4, 0.8) * 100) / 100)))
+                            self.audio_segments.append(silence_tensor.clone())
+                        if self.audio_segments:
+                            audio_tensor = torch.cat(self.audio_segments, dim=-1)
+                            start_time = self.sentences_total_time
+                            duration = audio_tensor.shape[-1] / settings['samplerate']
+                            end_time = start_time + duration
+                            self.sentences_total_time = end_time
+                            sentence_obj = {
+                                "start": start_time,
+                                "end": end_time,
+                                "text": sentence,
+                                "resume_check": self.sentence_idx
+                            }
+                            self.sentence_idx = append_sentence2vtt(sentence_obj, self.vtt_path)
+                            if self.sentence_idx:
+                                torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
+                                del audio_tensor
+                        self.audio_segments = []
+                        if os.path.exists(final_sentence_file):
+                            return True
+                        else:
+                            error = f"Cannot create {final_sentence_file}"
+                            print(error)
             else:
                 error = f"convert() error: {self.session['tts_engine']} is None"
                 print(error)

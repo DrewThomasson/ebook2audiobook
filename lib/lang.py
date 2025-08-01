@@ -117,31 +117,44 @@ punctuation_list = [
 ]
 punctuation_list_set = set(punctuation_list)
 
-punctuation_split = [
-    # Western
-    '.', ',',
-    # Arabic-Persian
-    '،',
-    # CJK
-    '。', '，', '、', '·', '…',
-    # Indic
-    '।', '॥',
-    # Thai
-    'ฯ',
-    # Ethiopic
-    '፡', '።', '፣', '፤', '፥', '፦', '፧',
-    # Hebrew
-    '״',
-    # Tibetan
-    '།', '༎',
-    # Khmer
-    '។', '៕',
-    # Lao
-    '໌', 'ໍ',
-    # Misc (global)
-    '—', '!', '?', ':', ';'
+punctuation_split_hard = [
+	# Western
+	'.', '!', '?', '…', '‽',         # sentence terminators
+	# Arabic–Persian
+	'؟',                             # Arabic question mark (hard)
+	# CJK (Chinese/Japanese/Korean)
+	'。',                             # full stop
+	'！', '？',                       # full-width exclamation/question (hard for zho/jpn/kor)
+	# Indic
+	'।', '॥',                           # danda, double danda
+	# Ethiopic
+	'።', '፧',                         # full stop, question mark
+	# Tibetan
+	'།',                                # shad (end of verse/sentence)
+	# Khmer
+	'។', '៕'                            # full stop, end sign
 ]
-punctuation_split_set = set(punctuation_split)
+punctuation_split_hard_set = set(punctuation_split_hard)
+
+punctuation_split_soft = [
+	# Western
+	',', ':', ';', '—',
+	# Arabic–Persian
+	'،',
+	# CJK
+	'，', '、', '·',
+	# Thai
+	'ฯ',
+	# Ethiopic
+	'፡', '፣', '፤', '፥', '፦',
+	# Hebrew
+	'״',
+	# Tibetan
+	'༎',
+	# Lao
+	'໌', 'ໍ'
+]
+punctuation_split_soft_set = set(punctuation_split_soft)
 
 emojis_array = [
 	r"\U0001F600-\U0001F64F",  # Emoticons

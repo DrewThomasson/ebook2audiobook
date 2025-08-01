@@ -69,6 +69,11 @@ def check_and_install_requirements(file_path):
             pkg_name  = re.split(r'[<>=]', clean_pkg, 1)[0].strip()
             try:
                 installed_version = version(pkg_name)
+                if pkg_name == 'num2words':
+                    code = "ZH_CN"
+                    spec = importlib.util.find_spec(f"num2words.lang_{code}")
+                    if spec is None:
+                        missing_packages.append(package)
             except PackageNotFoundError:
                 error = f'{package} is missing.'
                 print(error)
@@ -95,9 +100,14 @@ def check_and_install_requirements(file_path):
                       unit='step') as t:
                 for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
                     try:
+                        if package == 'num2words':
+                            pkgs = ['git+https://github.com/savoirfairelinux/num2words.git', '--force']
+                        else:
+                            pkgs = [package]
                         subprocess.check_call([
                             sys.executable, '-m', 'pip', 'install',
-                            '--no-cache-dir', '--use-pep517', package
+                            '--no-cache-dir', '--use-pep517',
+                            *pkgs
                         ])
                         t.update(1)
                     except subprocess.CalledProcessError as e:
