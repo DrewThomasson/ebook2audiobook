@@ -782,33 +782,16 @@ def get_sentences(text, lang, tts_engine):
         for s in pause_list:
             if s == TTS_SML['pause']:
                 hard_list.append(s)
-            elif len(s) > max_chars:
-                parts = [p.strip() for p in pattern.findall(s) if p.strip()]
-                if parts:
-                    buffer = ''
-                    for part in parts:
-                        # always treat pauses as their own chunk
-                        if part == TTS_SML['pause']:
-                            if buffer:
-                                hard_list.append(buffer)
-                                buffer = ''
-                            hard_list.append(part)
-                            continue
-                        if not buffer:
-                            buffer = part
-                            continue
-                        if len(buffer.split()) < min_tokens:
-                            buffer = buffer + ' ' + part
-                        else:
-                            # buffer is large enough: flush it, start new one
-                            hard_list.append(buffer)
-                            buffer = part
-                    if buffer:
-                        hard_list.append(buffer)
-                else:
-                    hard_list.append(s)
             else:
-                hard_list.append(s)
+                parts = pattern.findall(s)
+                if parts:
+                    for text_part in parts:
+                        text_part = text_part.strip()
+                        if text_part:
+                            hard_list.append(text_part)
+                else:
+                    # no hard‑split punctuation found → keep whole sentence
+                    hard_list.append(s)
         # Step 3: check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
