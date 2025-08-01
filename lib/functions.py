@@ -769,6 +769,9 @@ def get_sentences(text, lang, tts_engine):
     try:
         max_chars = language_mapping[lang]['max_chars']
         min_tokens = 5
+        # tacotron2 apparently does not like double quotes
+        if tts_engine == TTS_ENGINES['TACOTRON2']:
+            text = text.replace('"', '')
         # Step 1: Split first by ‡pause‡, keeping it as a separate element
         pause_list = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
         pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
