@@ -1155,7 +1155,7 @@ def convert_chapters2audio(session):
         total_sentences_with_pauses = sum(len(array) for array in session['chapters'])
         total_sentences = sum(sum(1 for row in chapter if row != TTS_SML['pause']) for chapter in session['chapters'])
         sentence_number = 0
-        with tqdm(total=total_sentences, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+        with tqdm(total=total_sentences_with_pauses, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
             for x in range(0, total_chapters):
                 chapter_num = x + 1
