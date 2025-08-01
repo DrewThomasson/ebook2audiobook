@@ -2912,7 +2912,7 @@ def web_interface(args, ctx):
             session['tts_engine'] = engine
             default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
             if default_voice_path is None:
-                session['vocie'] = default_voice_path
+                session['voice'] = default_voice_path
             bark_visible = False
             if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                 visible_custom_model = True
