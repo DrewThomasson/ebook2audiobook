@@ -1173,15 +1173,13 @@ def convert_chapters2audio(session):
                         if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
-                        if sentence == TTS_SML['pause']:
-                            print(TTS_SML['pause'])
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                         if success:
                             if progress_bar is not None:
                                 progress_bar(sentence_number / total_sentences)
                             percentage = (sentence_number / total_sentences) * 100
                             t.set_description(f'Converting {percentage:.2f}%')
-                            msg = f"\nSentence: {sentence}" if sentence != TTS_SML['pause'] else f"\SML: {sentence}"
+                            msg = f"\nSentence: {sentence}" if sentence != TTS_SML['pause'] else f"SML: {sentence}"
                             print(msg)
                             t.update(1)
                         else:
