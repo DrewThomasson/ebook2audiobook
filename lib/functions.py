@@ -2659,7 +2659,7 @@ def web_interface(args, ctx):
                         except Exception as e:
                             error = f'Could not delete the voice file {selected}!'
                             alert_exception(error)
-                return gr.update(), gr.update(visible=False)
+                return gr.update(), gr.update(visible=False), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
                 error = f'click_gr_voice_del_btn(): {e}'
                 alert_exception(error)
