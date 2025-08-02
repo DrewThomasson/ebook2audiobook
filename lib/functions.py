@@ -2782,7 +2782,7 @@ def web_interface(args, ctx):
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
                 if session['voice'] is None:
                     if voice_options[0][1] is not None:
-                        default_name = Path(default_voice_path).stem.replace('_24000','').replace('_16000')
+                        default_name = Path(default_voice_path).stem.replace('_24000','').replace('_16000', '')
                         for name, value in voice_options:
                             if name == default_name:
                                 session['voice'] = value
