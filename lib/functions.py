@@ -2783,6 +2783,7 @@ def web_interface(args, ctx):
                 if session['voice'] is None:
                     if voice_options[0][1] is not None:
                         default_name = Path(default_voice_path).stem
+                        print(f'------------{default_name}----------')
                         for name, value in voice_options:
                             if name == default_name:
                                 session['voice'] = value
