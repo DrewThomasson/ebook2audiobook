@@ -684,7 +684,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         for start, end, date_text in date_spans:
                             # Append text before this date
                             result.append(text[last_pos:start])
-                            processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), lang, lang_iso1, is_num2words_compat), date_text)
+                            processed = re.sub(r"\b\d{4}\b", lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat), date_text)
                             if not processed:
                                 break
                             result.append(processed)
@@ -692,7 +692,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         # Append remaining text
                         result.append(text[last_pos:])
                         text = ''.join(result)
-        text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+        text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
@@ -954,28 +954,6 @@ def get_num2words_compat(lang_iso1):
     except Exception as e:
         return False
 
-def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
-    try:
-        year = int(year_str)
-        first_two = int(year_str[:2])
-        last_two = int(year_str[2:])
-        lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
-        lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
-        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
-            if is_num2words_compat:
-                return num2words(year, lang=lang_iso1)
-            else:
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
-        if is_num2words_compat:
-            return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}" 
-        else:
-            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in first_two) + ' ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in last_two)
-    except Exception as e:
-        error = f'year_to_words() error: {e}'
-        print(error)
-        raise
-        return False
-
 def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
     # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
     number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
@@ -1001,7 +979,88 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
             return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
     return number_re.sub(clean_num, text)
 
-def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+def year2words(year_str, lang, lang_iso1, is_num2words_compat):
+    try:
+        year = int(year_str)
+        first_two = int(year_str[:2])
+        last_two = int(year_str[2:])
+        lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
+        lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
+        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
+            if is_num2words_compat:
+                return num2words(year, lang=lang_iso1)
+            else:
+                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
+        if is_num2words_compat:
+            return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}" 
+        else:
+            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in first_two) + ' ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in last_two)
+    except Exception as e:
+        error = f'year2words() error: {e}'
+        print(error)
+        raise
+        return False
+
+def clock2words(time, lang, is_num2words_compat):
+    parts = [int(p) for p in str(time).replace('.', ':').split(':')]
+    hour = parts[0]
+    minute = parts[1] if len(parts) > 1 else 0
+    second = parts[2] if len(parts) > 2 else None
+    lang = lang.lower()
+    lc = language_clock.get(lang)
+    if not lc:
+        parts = []
+        hour_word = num2words(hour, lang=lang)
+        minute_word = num2words(minute, lang=lang)
+        parts.append(hour_word)
+        if minute != 0:
+            parts.append(minute_word)
+        if second is not None and second > 0:
+            second_word = num2words(second, lang=lang)
+            parts.append(second_word)
+        return " ".join(parts)
+    h = hour
+    m = minute
+    next_hour = (h + 1) % 24
+    special_hours = lc.get("special_hours", {})
+    if m == 0 and (second is None or second == 0):
+        if h in special_hours:
+            phrase = special_hours[h]
+        else:
+            hour_word = num2words(h, lang=lang)
+            phrase = lc["oclock"].format(hour=hour_word)
+    elif m == 15:
+        hour_word = num2words(h, lang=lang)
+        phrase = lc["quarter_past"].format(hour=hour_word)
+    elif m == 30:
+        if lang == "deu":
+            next_hour_word = num2words(next_hour, lang=lang)
+            phrase = lc["half_past"].format(next_hour=next_hour_word)
+        else:
+            hour_word = num2words(h, lang=lang)
+            phrase = lc["half_past"].format(hour=hour_word)
+    elif m == 45:
+        next_hour_word = num2words(next_hour, lang=lang)
+        phrase = lc["quarter_to"].format(next_hour=next_hour_word)
+    elif m < 30:
+        hour_word = num2words(h, lang=lang)
+        if m == 0:
+            phrase = lc["oclock"].format(hour=hour_word)
+        else:
+            minute_word = num2words(m, lang=lang)
+            phrase = lc["past"].format(hour=hour_word, minute=minute_word)
+    else:
+        next_hour_word = num2words(next_hour, lang=lang)
+        minute_to_hour = 60 - m
+        minute_word = num2words(minute_to_hour, lang=lang)
+        phrase = lc["to"].format(next_hour=next_hour_word, minute=minute_word)
+    if second is not None and second > 0:
+        second_word = num2words(second, lang=lang)
+        second_phrase = lc["second"].format(second=second_word)
+        phrase = lc["full"].format(phrase=phrase, second_phrase=second_phrase)
+    return phrase
+
+def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     
     def replace_ambiguous(match):
         # handles "num SYMBOL num" and "SYMBOL num"
@@ -1012,6 +1071,9 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         return match.group(0)
 
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+    # Regex to match all times (hh:mm, hh:mm:ss, h:m, h:m:s)
+    time_pattern = r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?'
+    text = re.sub(time_pattern, lambda m: clock2words(m.group(0), lang, is_num2words_compat), text)
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
