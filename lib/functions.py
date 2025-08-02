@@ -637,8 +637,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 br_run = 0
             #if typ == "pause-request":
             #    append_pause()
-            else:
-                processed.append((typ, payload))
+            #else:
+            processed.append((typ, payload))
         # Tail run
         #if br_run >= 2:
         #    append_pause()
