@@ -733,7 +733,7 @@ def get_sentences(text, lang, tts_engine):
             buffer = ''
             for token in idg_list:
                 # 1) On pause: flush & emit buffer, then the pause
-                if token == TTS_SML['pause']:
+                if token.strip() in TTS_SML.values():
                     if buffer:
                         yield buffer
                         buffer = ''
@@ -760,14 +760,19 @@ def get_sentences(text, lang, tts_engine):
         # tacotron2 apparently does not like double quotes
         if tts_engine == TTS_ENGINES['TACOTRON2']:
             text = text.replace('"', '')
-        # Step 1: Split first by ‡pause‡, keeping it as a separate element
-        pause_list = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
-        pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
-        # Step 2: split with punctuation_split_hard_set
+        # Step 1: Split first by ‡pause‡ and ‡break‡, keeping them as separate elements
+        sml_list = re.split(
+            rf'({re.escape(TTS_SML["pause"])}|{re.escape(TTS_SML["break"])})', text
+        )
+        sml_list = [
+            s if s in (TTS_SML['pause'], TTS_SML['break']) else s.strip()
+            for s in sml_list if s.strip() or s in (TTS_SML['pause'], TTS_SML['break'])
+        ]
+        # Step 3: split with punctuation_split_hard_set
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         hard_list = []
-        for s in pause_list:
+        for s in sml_list:
             if s == TTS_SML['pause']:
                 hard_list.append(s)
             else:
@@ -780,7 +785,7 @@ def get_sentences(text, lang, tts_engine):
                 else:
                     # no hard‑split punctuation found → keep whole sentence
                     hard_list.append(s)
-        # Step 3: check if some hard_list entries exceed max_chars, so split on soft punctuation
+        # Step 4: check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         soft_list = []
@@ -828,7 +833,7 @@ def get_sentences(text, lang, tts_engine):
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
-            # Step 4: split any remaining over‑length sentences on spaces
+            # Step extra: split any remaining over‑length sentences on spaces
             sentences = []
             for s in soft_list:
                 if s == TTS_SML['pause'] or len(s) <= max_chars:
