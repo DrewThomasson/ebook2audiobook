@@ -1150,7 +1150,7 @@ def convert_chapters2audio(session):
         sentence_number = 0
         msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
         print(msg)
-        with tqdm(total=total_iterations, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence  # NOTE: this must be the number of iterations already done, not real sentences) as t:
+        with tqdm(total=total_iterations, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
