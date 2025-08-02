@@ -589,7 +589,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             return None
 
     try:
-        heading_tags = {f'h{i}' for i in range(1, 5)}
+        heading_tags = [f'h{i}' for i in range(1, 5)]
         break_tags = ['br', 'p']
         pause_tags = ['div', 'span']
         proc_tags = heading_tags + break_tags + pause_tags
