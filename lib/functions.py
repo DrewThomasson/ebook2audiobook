@@ -632,16 +632,16 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             # Resolve any pending br run
             if br_run:
                 #if br_run >= 2:
-                    #append_pause()  # pause *after* the run
+                #    append_pause()  # pause *after* the run
                 # single br_run == 1 is ignored (adjust if you want a pause or newline)
                 br_run = 0
-            if typ == "pause-request":
-                append_pause()
+            #if typ == "pause-request":
+            #    append_pause()
             else:
                 processed.append((typ, payload))
         # Tail run
-        if br_run >= 2:
-            append_pause()
+        #if br_run >= 2:
+        #    append_pause()
         items = processed  # replace with processed sequence
         text_array = []
         handled_tables = set()
