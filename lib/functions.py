@@ -416,7 +416,7 @@ def convert2epub(session):
                 '--epub-version=3',
                 '--flow-size=0',
                 '--chapter-mark=pagebreak',
-                '--page-breaks-before', "//*[name()='h1' or name()='h2']",
+                '--page-breaks-before', "//*[name()='h1' or name()='h2' or name()='h3' or name()='h4' or name()='h5']",
                 '--disable-font-rescaling',
                 '--pretty-print',
                 '--smarten-punctuation',
@@ -569,19 +569,18 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                             yield ("heading", title)
                     elif name == "table":
                         yield ("table", child)
-                    elif name == "br":
-                        yield ("br", None)
                     else:
-                        # Recurse into other tags
-                        produced_something = False
-                        if name in pause_after_tags:
-                            # Walk children; then emit a pause marker
+                        return_data = False
+                        if name in proc_tags:
                             for inner in walk(child):
-                                produced_something = True
+                                return_data = True
                                 yield inner
                             # Only add pause if something textual/structural came out
-                            if produced_something:
-                                yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
+                            if return_data:
+                                if name in break_tags:
+                                    yield ("break-request", None)
+                                elif name in heading_tags or name in pause_tags:
+                                    yield ("pause-request", None)                                 
                         else:
                             yield from walk(child)
         except Exception as e:
@@ -589,13 +588,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             DependencyError(error)
             return None
 
-    def append_pause():
-        if processed and processed[-1][0] == "pause":
-            return  # avoid duplicate
-        processed.append(("pause", TTS_SML['pause']))
-
     try:
-        heading_tags = {f'h{i}' for i in range(1, 7)}
+        heading_tags = {f'h{i}' for i in range(1, 5)}
+        break_tags = ['br', 'p']
+        pause_tags = ['div', 'span']
+        proc_tags = heading_tags + break_tags + pause_tags
         raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
@@ -617,31 +614,21 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
-        # tags after which we always add a pause
-        pause_after_tags = {"div", "span"}
         items = list(walk(body))
         if not items:
             return None
-        # Process items to insert pauses for <br> runs and pause-request markers
+        # Process items to insert breaks and pauses
         processed = []
         br_run = 0
         for typ, payload in items:
-            if typ == "br":
-                br_run += 1
-                continue
-            # Resolve any pending br run
-            if br_run:
-                if br_run >= 2:
-                    append_pause()  # pause *after* the run
-                # single br_run == 1 is ignored (adjust if you want a pause or newline)
-                br_run = 0
-            if typ == "pause-request":
-                append_pause()
+            elif typ == 'break-request':
+                if processed and processed[-1][0] != "break": # avoid duplicates
+                    processed.append(("pause", TTS_SML['break']))
+            elif typ == 'pause-request':
+                if processed and processed[-1][0] != "pause": # avoid duplicates
+                    processed.append(("pause", TTS_SML['pause']))
             else:
                 processed.append((typ, payload))
-        # Tail run
-        if br_run >= 2:
-            append_pause()
         items = processed
         text_array = []
         handled_tables = set()
@@ -1177,7 +1164,7 @@ def convert_chapters2audio(session):
                             print(msg)
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                         if success:
-                            total_progress = ((x + 1) * i ) / total_sentences_with_pauses
+                            total_progress = ((x + 1) * i ) + 1 / total_sentences_with_pauses
                             if progress_bar is not None:
                                 progress_bar(total_progress)
                             percentage = total_progress * 100
