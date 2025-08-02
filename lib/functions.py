@@ -1177,7 +1177,7 @@ def convert_chapters2audio(session):
                             print(msg)
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                         if success:
-                            total_progress = ((x + 1) * (i + 1)) / total_sentences_with_pauses
+                            total_progress = ((x + 1) * i ) / total_sentences_with_pauses
                             if progress_bar is not None:
                                 progress_bar(total_progress)
                             percentage = total_progress * 100
