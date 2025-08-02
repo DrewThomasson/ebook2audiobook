@@ -580,8 +580,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 produced_something = True
                                 yield inner
                             # Only add pause if something textual/structural came out
-                            if produced_something:
-                                yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
+                            #if produced_something:
+                            #    yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
                         else:
                             yield from walk(child)
         except Exception as e:
@@ -631,18 +631,18 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 continue
             # Resolve any pending br run
             if br_run:
-                #if br_run >= 2:
-                #    append_pause()  # pause *after* the run
+                if br_run >= 2:
+                    append_pause()  # pause *after* the run
                 # single br_run == 1 is ignored (adjust if you want a pause or newline)
                 br_run = 0
-            #if typ == "pause-request":
-            #    append_pause()
-            #else:
-            processed.append((typ, payload))
+            if typ == "pause-request":
+                append_pause()
+            else:
+                processed.append((typ, payload))
         # Tail run
-        #if br_run >= 2:
-        #    append_pause()
-        items = processed  # replace with processed sequence
+        if br_run >= 2:
+            append_pause()
+        items = processed
         text_array = []
         handled_tables = set()
         for typ, payload in items:
