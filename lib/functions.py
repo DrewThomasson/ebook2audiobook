@@ -580,8 +580,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 produced_something = True
                                 yield inner
                             # Only add pause if something textual/structural came out
-                            #if produced_something:
-                            #    yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
+                            if produced_something:
+                                yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
                         else:
                             yield from walk(child)
         except Exception as e:
@@ -618,7 +618,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         for tag in soup(["script", "style"]):
             tag.decompose()
         # tags after which we always add a pause
-        pause_after_tags = {"p", "div", "span"}
+        pause_after_tags = {"div", "span"}
         items = list(walk(body))
         if not items:
             return None
