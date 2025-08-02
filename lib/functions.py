@@ -2785,8 +2785,18 @@ def web_interface(args, ctx):
                     default_voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}/")
                     default_voice_path = default_voice_lang_path if os.path.exists(default_voice_lang_path) else default_voice_path
                 if session['voice'] is None:
-                    if voice_options[0][1] is not None:
-                        session['voice'] = default_voice_path
+                    if voice_options and voice_options[0][1] is not None:
+                        default_name = Path(default_voice_path).stem
+                        for name, value in voice_options:
+                            if name == default_name:
+                                session['voice'] = value
+                                break
+                        else:
+                            values = [v for _, v in voice_options]
+                            if default_voice_path in values:
+                                session['voice'] = default_voice_path
+                            else:
+                                session['voice'] = voice_options[0][1]
                 else:
                     current_voice_name = os.path.splitext(pattern.sub('', os.path.basename(session['voice'])))[0]
                     current_voice_path = next(
