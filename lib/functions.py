@@ -1843,6 +1843,8 @@ def convert_ebook(args, ctx=None):
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(session):
+                                        msg = 'Conversion successful. Combining sentences and chapters...'
+                                        show_alert({"type": "info", "msg": msg})
                                         exported_files = combine_audio_chapters(session)               
                                         if len(exported_files) > 0:
                                             chapters_dirs = [
