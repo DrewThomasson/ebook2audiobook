@@ -432,7 +432,7 @@ class Coqui:
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
                     sentence = sentence.replace('.', ' — ')
                 if sentence == TTS_SML['break']:
-                    break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.4, 0.7) * 100) / 100))) # 0.4 to 0.7 seconds
+                    break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100))) # 0.4 to 0.7 seconds
                     self.audio_segments.append(break_tensor.clone())
                     return True
                 elif sentence == TTS_SML['pause']:
@@ -746,7 +746,7 @@ class Coqui:
                             audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
                         self.audio_segments.append(audio_tensor)
                         if not re.search(r'\w$', sentence, flags=re.UNICODE):
-                            break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.4, 0.7) * 100) / 100)))
+                            break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100)))
                             self.audio_segments.append(break_tensor.clone())
                         if self.audio_segments:
                             audio_tensor = torch.cat(self.audio_segments, dim=-1)
