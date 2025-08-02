@@ -631,8 +631,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 continue
             # Resolve any pending br run
             if br_run:
-                if br_run >= 2:
-                    append_pause()  # pause *after* the run
+                #if br_run >= 2:
+                    #append_pause()  # pause *after* the run
                 # single br_run == 1 is ignored (adjust if you want a pause or newline)
                 br_run = 0
             if typ == "pause-request":
