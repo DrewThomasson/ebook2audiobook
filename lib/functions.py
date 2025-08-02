@@ -1145,12 +1145,12 @@ def convert_chapters2audio(session):
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
         total_chapters = len(session['chapters'])
-        total_sentences_with_sml = sum(len(array) for array in session['chapters'])
+        total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
         total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
         sentence_number = 0
         msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
         print(msg)
-        with tqdm(total=total_sentences_with_sml, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+        with tqdm(total=total_iterations, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence  # NOTE: this must be the number of iterations already done, not real sentences) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
@@ -1170,18 +1170,19 @@ def convert_chapters2audio(session):
                             print(msg)
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                         if success:
-                            total_progress = ((x + 1) * i ) + 1 / total_sentences_with_sml
+                            total_progress = (t.n + 1) / total_iterations
+                            is_sentence = sentence.strip() not in TTS_SML.values()
                             if progress_bar is not None:
                                 progress_bar(total_progress)
                             percentage = total_progress * 100
                             t.set_description(f'Converting {percentage:.2f}%')
-                            msg = f"\nSentence: {sentence}" if sentence not in TTS_SML.values() else f"SML: {sentence}"
+                            msg = f"\nSentence: {sentence}" if is_sentence else f"SML: {sentence}"
                             print(msg)
-                            t.update(1)
                         else:
                             return False
                     if sentence.strip() not in TTS_SML.values():
                         sentence_number += 1
+                    t.update(1)  # advance for every iteration, including SML
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
                 msg = f"End of Block {chapter_num}"
                 print(msg)
