@@ -621,9 +621,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         processed = []
         br_run = 0
         for typ, payload in items:
-            elif typ == 'break-request':
+            if typ == 'break-request':
                 if processed and processed[-1][0] != "break": # avoid duplicates
-                    processed.append(("pause", TTS_SML['break']))
+                    processed.append(("break", TTS_SML['break']))
             elif typ == 'pause-request':
                 if processed and processed[-1][0] != "pause": # avoid duplicates
                     processed.append(("pause", TTS_SML['pause']))
@@ -641,9 +641,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     text_array.append(TTS_SML['pause'])
                 else:
                     text_array.append(f"{raw_text.strip()} {TTS_SML['pause']}")
+            elif typ == "break":
+                text_array.append(TTS_SML['break'])
             elif typ == "pause":
-                if not text_array or text_array[-1] != TTS_SML['pause']:
-                    text_array.append(TTS_SML['pause'])
+                text_array.append(TTS_SML['pause'])
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -1139,17 +1140,17 @@ def convert_chapters2audio(session):
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
         total_chapters = len(session['chapters'])
-        total_sentences_with_pauses = sum(len(array) for array in session['chapters'])
-        total_sentences = sum(sum(1 for row in chapter if row != TTS_SML['pause']) for chapter in session['chapters'])
+        total_sentences_with_sml = sum(len(array) for array in session['chapters'])
+        total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
         sentence_number = 0
         msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
         print(msg)
-        with tqdm(total=total_sentences_with_pauses, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
+        with tqdm(total=total_sentences_with_sml, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
                 sentences = session['chapters'][x]
-                sentences_count = sum(1 for row in sentences if row != TTS_SML['pause'])
+                sentences_count = sum(1 for row in sentences if row.strip() not in TTS_SML.values())
                 start = sentence_number
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
@@ -1164,17 +1165,17 @@ def convert_chapters2audio(session):
                             print(msg)
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                         if success:
-                            total_progress = ((x + 1) * i ) + 1 / total_sentences_with_pauses
+                            total_progress = ((x + 1) * i ) + 1 / total_sentences_with_sml
                             if progress_bar is not None:
                                 progress_bar(total_progress)
                             percentage = total_progress * 100
                             t.set_description(f'Converting {percentage:.2f}%')
-                            msg = f"\nSentence: {sentence}" if sentence != TTS_SML['pause'] else f"SML: {sentence}"
+                            msg = f"\nSentence: {sentence}" if sentence not in TTS_SML.values() else f"SML: {sentence}"
                             print(msg)
                             t.update(1)
                         else:
                             return False
-                    if sentence != TTS_SML['pause']:
+                    if sentence.strip() not in TTS_SML.values():
                         sentence_number += 1
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
                 msg = f"End of Block {chapter_num}"

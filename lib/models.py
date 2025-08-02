@@ -13,6 +13,7 @@ TTS_ENGINES = {
 }
 
 TTS_SML = {
+    "break": "‡break‡",
     "pause": "‡pause‡"
 }
 
