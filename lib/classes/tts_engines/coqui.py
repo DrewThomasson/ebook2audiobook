@@ -604,11 +604,11 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                if self.tts_vc_key == 'freevc24':
+                                if self.tts_vc_key in ['freevc24', 'openvoice_v2']:
                                     settings['samplerate'] = 24000
                                     source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                     target_wav = settings['voice_path']
-                                elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
+                                elif self.tts_vc_key in ['knnvc', 'openvoice_v1']:
                                     settings['samplerate'] = 16000
                                     source_wav = tmp_out_wav
                                     target_wav = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
@@ -677,11 +677,11 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                if self.tts_vc_key == 'freevc24':
+                                if self.tts_vc_key in ['freevc24', 'openvoice_v2']:
                                     settings['samplerate'] = 24000
                                     source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                     target_wav = settings['voice_path']
-                                elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
+                                elif self.tts_vc_key in ['knnvc', 'openvoice_v1']:
                                     settings['samplerate'] = 16000
                                     source_wav = tmp_out_wav
                                     target_wav = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
@@ -750,11 +750,11 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                if self.tts_vc_key == 'freevc24':
+                                if self.tts_vc_key in ['freevc24', 'openvoice_v2']:
                                     settings['samplerate'] = 24000
                                     source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                     target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
-                                elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
+                                elif self.tts_vc_key in ['knnvc', 'openvoice_v1']:
                                     settings['samplerate'] = 16000
                                     source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                     target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
