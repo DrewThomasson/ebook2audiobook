@@ -13,7 +13,6 @@ import soundfile as sf
 import torch
 import torchaudio
 
-from TTS.utils.audio import AudioProcessor
 from huggingface_hub import hf_hub_download
 from pathlib import Path
 from pprint import pprint
@@ -406,10 +405,10 @@ class Coqui:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
             
-    def _resample_wav(self, wav_path, expected_sr):
+    def _resample_wav(self, tts, wav_path, expected_sr):
         wav, sr = sf.read(wav_path)
+        ap = tts.ap   # <-- Get the AudioProcessor from your loaded TTS model!
         if sr != expected_sr:
-            ap = AudioProcessor(resample=True, sample_rate=expected_sr)
             wav = ap.resample(wav, sr)
         return wav
 
@@ -588,7 +587,7 @@ class Coqui:
                             if tts_vc:
                                 if self.tts_vc_key == 'freevc24':
                                     settings['samplerate'] = 24000
-                                    source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
+                                    source_wav = self._resample_wav(self.tts_vc, tmp_out_wav, settings['samplerate'])
                                     target_wav = settings['voice_path']
                                 elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 16000
@@ -661,7 +660,7 @@ class Coqui:
                             if tts_vc:
                                 if self.tts_vc_key == 'freevc24':
                                     settings['samplerate'] = 24000
-                                    source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
+                                    source_wav = self._resample_wav(self.tts_vc, tmp_out_wav, settings['samplerate'])
                                     target_wav = settings['voice_path']
                                 elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 16000
@@ -734,12 +733,12 @@ class Coqui:
                             if tts_vc:
                                 if self.tts_vc_key == 'freevc24':
                                     settings['samplerate'] = 24000
-                                    source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
-                                    target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
+                                    source_wav = self._resample_wav(self.tts_vc, tmp_out_wav, settings['samplerate'])
+                                    target_wav = self._resample_wav(self.tts_vc, settings['voice_path'], settings['samplerate'])
                                 elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 16000
-                                    source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
-                                    target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
+                                    source_wav = self._resample_wav(self.tts_vc, tmp_out_wav, settings['samplerate'])
+                                    target_wav = self._resample_wav(self.tts_vc, settings['voice_path'], settings['samplerate'])
                                 audio_sentence = tts_vc.voice_conversion(
                                     source_wav=source_wav,
                                     target_wav=target_wav
