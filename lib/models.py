@@ -12,16 +12,17 @@ TTS_ENGINES = {
     "YOURTTS": "yourtts"
 }
 
+TTS_SML = {
+    "break": "‡break‡",
+    "pause": "‡pause‡"
+}
+
+
 TTS_VOICE_CONVERSION = {
     "freevc24": "voice_conversion_models/multilingual/vctk/freevc24",
     "knnvc": "voice_conversion_models/multilingual/multi-dataset/knnvc",
     "openvoice_v1": "voice_conversion_models/multilingual/multi-dataset/openvoice_v1",
     "openvoice_v2": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2"
-}
-
-TTS_SML = {
-    "break": "‡break‡",
-    "pause": "‡pause‡"
 }
 
 default_tts_engine = TTS_ENGINES['XTTSv2']
