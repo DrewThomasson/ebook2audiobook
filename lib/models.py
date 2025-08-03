@@ -26,7 +26,7 @@ TTS_VOICE_CONVERSION = {
     "openvoice_v1": "voice_conversion_models/multilingual/multi-dataset/openvoice_v1",
     "openvoice_v2": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2"
 }
-default_vc_model = TTS_VOICE_CONVERSION['openvoice_v2']
+default_vc_model = TTS_VOICE_CONVERSION['knnvc']
 
 default_voice_detection_model = 'drewThomasson/segmentation'
 
