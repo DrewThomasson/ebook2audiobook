@@ -586,7 +586,10 @@ class Coqui:
                                 error = f'Engine {self.tts_vc_key} is None'
                                 print(error)
                                 return False
-                            settings['samplerate'] = 16000
+                            if self.tts_vc_key == 'freevc24':
+                                settings['samplerate'] = 24000
+                            elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
+                                settings['samplerate'] = 16000
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
@@ -714,7 +717,10 @@ class Coqui:
                                 error = f'Engine {self.tts_vc_key} is None'
                                 print(error)
                                 return False
-                            settings['samplerate'] = 16000
+                            if self.tts_vc_key == 'freevc24':
+                                settings['samplerate'] = 24000
+                            elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
+                                settings['samplerate'] = 16000
                             if os.path.exists(tmp_in_wav):
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):

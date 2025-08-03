@@ -12,22 +12,22 @@ TTS_ENGINES = {
     "YOURTTS": "yourtts"
 }
 
+TTS_VOICE_CONVERSION = {
+    "freevc24": "voice_conversion_models/multilingual/vctk/freevc24",
+    "knnvc": "voice_conversion_models/multilingual/multi-dataset/knnvc",
+    "openvoice_v1": "voice_conversion_models/multilingual/multi-dataset/openvoice_v1",
+    "openvoice_v2": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2"
+}
+
 TTS_SML = {
     "break": "‡break‡",
     "pause": "‡pause‡"
 }
 
 default_tts_engine = TTS_ENGINES['XTTSv2']
-default_fine_tuned = 'internal'
-
-r"""
-voice_conversion_models/multilingual/vctk/freevc24
-voice_conversion_models/multilingual/multi-dataset/knnvc
-voice_conversion_models/multilingual/multi-dataset/openvoice_v1
-voice_conversion_models/multilingual/multi-dataset/openvoice_v2
-"""
-default_vc_model = 'voice_conversion_models/multilingual/multi-dataset/knnvc'
+default_vc_model = TTS_VOICE_CONVERSION['freevc24']
 default_voice_detection_model = 'drewThomasson/segmentation'
+default_fine_tuned = 'internal'
 
 max_tts_in_memory = 2 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM).
 max_custom_model = 100
