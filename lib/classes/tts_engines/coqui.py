@@ -406,7 +406,7 @@ class Coqui:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
             
-    def _resample_wav(wav_path, expected_sr):
+    def _resample_wav(self, wav_path, expected_sr):
         wav, sr = sf.read(wav_path)
         if sr != expected_sr:
             ap = AudioProcessor(resample=True, sample_rate=expected_sr)
