@@ -416,7 +416,7 @@ def convert2epub(session):
                 '--epub-version=3',
                 '--flow-size=0',
                 '--chapter-mark=pagebreak',
-                '--page-breaks-before', "//*[name()='h1' or name()='h2']",
+                '--page-breaks-before', "//*[name()='h1' or name()='h2' or name()='h3' or name()='h4' or name()='h5']",
                 '--disable-font-rescaling',
                 '--pretty-print',
                 '--smarten-punctuation',
@@ -569,19 +569,18 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                             yield ("heading", title)
                     elif name == "table":
                         yield ("table", child)
-                    elif name == "br":
-                        yield ("br", None)
                     else:
-                        # Recurse into other tags
-                        produced_something = False
-                        if name in pause_after_tags:
-                            # Walk children; then emit a pause marker
+                        return_data = False
+                        if name in proc_tags:
                             for inner in walk(child):
-                                produced_something = True
+                                return_data = True
                                 yield inner
                             # Only add pause if something textual/structural came out
-                            if produced_something:
-                                yield ("pause-request", None)  # marker meaning "add a pause if not duplicate"
+                            if return_data:
+                                if name in break_tags:
+                                    yield ("break-request", None)
+                                elif name in heading_tags or name in pause_tags:
+                                    yield ("pause-request", None)                                 
                         else:
                             yield from walk(child)
         except Exception as e:
@@ -589,13 +588,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             DependencyError(error)
             return None
 
-    def append_pause():
-        if processed and processed[-1][0] == "pause":
-            return  # avoid duplicate
-        processed.append(("pause", TTS_SML['pause']))
-
     try:
-        heading_tags = {f'h{i}' for i in range(1, 7)}
+        heading_tags = [f'h{i}' for i in range(1, 5)]
+        break_tags = ['br', 'p']
+        pause_tags = ['div', 'span']
+        proc_tags = heading_tags + break_tags + pause_tags
         raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
@@ -617,32 +614,22 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
-        # tags after which we always add a pause
-        pause_after_tags = {"p", "div", "span"}
         items = list(walk(body))
         if not items:
             return None
-        # Process items to insert pauses for <br> runs and pause-request markers
+        # Process items to insert breaks and pauses
         processed = []
         br_run = 0
         for typ, payload in items:
-            if typ == "br":
-                br_run += 1
-                continue
-            # Resolve any pending br run
-            if br_run:
-                if br_run >= 2:
-                    append_pause()  # pause *after* the run
-                # single br_run == 1 is ignored (adjust if you want a pause or newline)
-                br_run = 0
-            if typ == "pause-request":
-                append_pause()
+            if typ == 'break-request':
+                if processed and processed[-1][0] != "break": # avoid duplicates
+                    processed.append(("break", TTS_SML['break']))
+            elif typ == 'pause-request':
+                if processed and processed[-1][0] != "pause": # avoid duplicates
+                    processed.append(("pause", TTS_SML['pause']))
             else:
                 processed.append((typ, payload))
-        # Tail run
-        if br_run >= 2:
-            append_pause()
-        items = processed  # replace with processed sequence
+        items = processed
         text_array = []
         handled_tables = set()
         for typ, payload in items:
@@ -654,9 +641,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     text_array.append(TTS_SML['pause'])
                 else:
                     text_array.append(f"{raw_text.strip()} {TTS_SML['pause']}")
+            elif typ == "break":
+                text_array.append(TTS_SML['break'])
             elif typ == "pause":
-                if not text_array or text_array[-1] != TTS_SML['pause']:
-                    text_array.append(TTS_SML['pause'])
+                text_array.append(TTS_SML['pause'])
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -689,13 +677,14 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 # Check if there are positive integers so possible date to convert
                 if bool(re.search(r'\b\d+\b', text)):
                     date_spans = get_date_entities(text, stanza_nlp)
+                    print(f'date spans: {date_spans}')
                     if date_spans:
                         result = []
                         last_pos = 0
                         for start, end, date_text in date_spans:
                             # Append text before this date
                             result.append(text[last_pos:start])
-                            processed = re.sub(r"\b\d{4}\b", lambda m: year_to_words(m.group(), lang, lang_iso1, is_num2words_compat), date_text)
+                            processed = re.sub(r"\b\d{4}\b", lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat), date_text)
                             if not processed:
                                 break
                             result.append(processed)
@@ -703,7 +692,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         # Append remaining text
                         result.append(text[last_pos:])
                         text = ''.join(result)
-        text = math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+        text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
@@ -745,7 +734,7 @@ def get_sentences(text, lang, tts_engine):
             buffer = ''
             for token in idg_list:
                 # 1) On pause: flush & emit buffer, then the pause
-                if token == TTS_SML['pause']:
+                if token.strip() in TTS_SML.values():
                     if buffer:
                         yield buffer
                         buffer = ''
@@ -772,14 +761,19 @@ def get_sentences(text, lang, tts_engine):
         # tacotron2 apparently does not like double quotes
         if tts_engine == TTS_ENGINES['TACOTRON2']:
             text = text.replace('"', '')
-        # Step 1: Split first by ‡pause‡, keeping it as a separate element
-        pause_list = re.split(rf'({re.escape(TTS_SML["pause"])})', text)
-        pause_list = [s if s == TTS_SML['pause'] else s.strip() for s in pause_list if s.strip() or s == TTS_SML['pause']]
-        # Step 2: split with punctuation_split_hard_set
+        # Step 1: Split first by ‡pause‡ and ‡break‡, keeping them as separate elements
+        sml_list = re.split(
+            rf'({re.escape(TTS_SML["pause"])}|{re.escape(TTS_SML["break"])})', text
+        )
+        sml_list = [
+            s if s in (TTS_SML['pause'], TTS_SML['break']) else s.strip()
+            for s in sml_list if s.strip() or s in (TTS_SML['pause'], TTS_SML['break'])
+        ]
+        # Step 3: split with punctuation_split_hard_set
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         hard_list = []
-        for s in pause_list:
+        for s in sml_list:
             if s == TTS_SML['pause']:
                 hard_list.append(s)
             else:
@@ -792,7 +786,7 @@ def get_sentences(text, lang, tts_engine):
                 else:
                     # no hard‑split punctuation found → keep whole sentence
                     hard_list.append(s)
-        # Step 3: check if some hard_list entries exceed max_chars, so split on soft punctuation
+        # Step 4: check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         soft_list = []
@@ -840,7 +834,7 @@ def get_sentences(text, lang, tts_engine):
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
-            # Step 4: split any remaining over‑length sentences on spaces
+            # Step extra: split any remaining over‑length sentences on spaces
             sentences = []
             for s in soft_list:
                 if s == TTS_SML['pause'] or len(s) <= max_chars:
@@ -960,28 +954,6 @@ def get_num2words_compat(lang_iso1):
     except Exception as e:
         return False
 
-def year_to_words(year_str, lang, lang_iso1, is_num2words_compat):
-    try:
-        year = int(year_str)
-        first_two = int(year_str[:2])
-        last_two = int(year_str[2:])
-        lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
-        lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
-        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
-            if is_num2words_compat:
-                return num2words(year, lang=lang_iso1)
-            else:
-                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
-        if is_num2words_compat:
-            return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}" 
-        else:
-            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in first_two) + ' ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in last_two)
-    except Exception as e:
-        error = f'year_to_words() error: {e}'
-        print(error)
-        raise
-        return False
-
 def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
     # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
     number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
@@ -1007,7 +979,88 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
             return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
     return number_re.sub(clean_num, text)
 
-def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+def year2words(year_str, lang, lang_iso1, is_num2words_compat):
+    try:
+        year = int(year_str)
+        first_two = int(year_str[:2])
+        last_two = int(year_str[2:])
+        lang_iso1 = lang_iso1 if lang in language_math_phonemes.keys() else default_language_code
+        lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
+        if not year_str.isdigit() or len(year_str) != 4 or last_two < 10:
+            if is_num2words_compat:
+                return num2words(year, lang=lang_iso1)
+            else:
+                return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in year_str)
+        if is_num2words_compat:
+            return f"{num2words(first_two, lang=lang_iso1)} {num2words(last_two, lang=lang_iso1)}" 
+        else:
+            return ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in first_two) + ' ' + ' '.join(language_math_phonemes[lang].get(ch, ch) for ch in last_two)
+    except Exception as e:
+        error = f'year2words() error: {e}'
+        print(error)
+        raise
+        return False
+
+def clock2words(time, lang, is_num2words_compat):
+    parts = [int(p) for p in str(time).replace('.', ':').split(':')]
+    hour = parts[0]
+    minute = parts[1] if len(parts) > 1 else 0
+    second = parts[2] if len(parts) > 2 else None
+    lang = lang.lower()
+    lc = language_clock.get(lang)
+    if not lc:
+        parts = []
+        hour_word = num2words(hour, lang=lang)
+        minute_word = num2words(minute, lang=lang)
+        parts.append(hour_word)
+        if minute != 0:
+            parts.append(minute_word)
+        if second is not None and second > 0:
+            second_word = num2words(second, lang=lang)
+            parts.append(second_word)
+        return " ".join(parts)
+    h = hour
+    m = minute
+    next_hour = (h + 1) % 24
+    special_hours = lc.get("special_hours", {})
+    if m == 0 and (second is None or second == 0):
+        if h in special_hours:
+            phrase = special_hours[h]
+        else:
+            hour_word = num2words(h, lang=lang)
+            phrase = lc["oclock"].format(hour=hour_word)
+    elif m == 15:
+        hour_word = num2words(h, lang=lang)
+        phrase = lc["quarter_past"].format(hour=hour_word)
+    elif m == 30:
+        if lang == "deu":
+            next_hour_word = num2words(next_hour, lang=lang)
+            phrase = lc["half_past"].format(next_hour=next_hour_word)
+        else:
+            hour_word = num2words(h, lang=lang)
+            phrase = lc["half_past"].format(hour=hour_word)
+    elif m == 45:
+        next_hour_word = num2words(next_hour, lang=lang)
+        phrase = lc["quarter_to"].format(next_hour=next_hour_word)
+    elif m < 30:
+        hour_word = num2words(h, lang=lang)
+        if m == 0:
+            phrase = lc["oclock"].format(hour=hour_word)
+        else:
+            minute_word = num2words(m, lang=lang)
+            phrase = lc["past"].format(hour=hour_word, minute=minute_word)
+    else:
+        next_hour_word = num2words(next_hour, lang=lang)
+        minute_to_hour = 60 - m
+        minute_word = num2words(minute_to_hour, lang=lang)
+        phrase = lc["to"].format(next_hour=next_hour_word, minute=minute_word)
+    if second is not None and second > 0:
+        second_word = num2words(second, lang=lang)
+        second_phrase = lc["second"].format(second=second_word)
+        phrase = lc["full"].format(phrase=phrase, second_phrase=second_phrase)
+    return phrase
+
+def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     
     def replace_ambiguous(match):
         # handles "num SYMBOL num" and "SYMBOL num"
@@ -1018,6 +1071,9 @@ def math2word(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         return match.group(0)
 
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+    # Regex to match all times (hh:mm, hh:mm:ss, h:m, h:m:s)
+    time_pattern = r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?'
+    text = re.sub(time_pattern, lambda m: clock2words(m.group(0), lang, is_num2words_compat), text)
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
@@ -1152,16 +1208,17 @@ def convert_chapters2audio(session):
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
         total_chapters = len(session['chapters'])
-        total_sentences_with_pauses = sum(len(array) for array in session['chapters'])
-        total_sentences = sum(sum(1 for row in chapter if row != TTS_SML['pause']) for chapter in session['chapters'])
+        total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
+        total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
         sentence_number = 0
-        with tqdm(total=total_sentences_with_pauses, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=resume_sentence) as t:
-            msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
+        msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
+        print(msg)
+        with tqdm(total=total_iterations, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
                 sentences = session['chapters'][x]
-                sentences_count = sum(1 for row in sentences if row != TTS_SML['pause'])
+                sentences_count = sum(1 for row in sentences if row.strip() not in TTS_SML.values())
                 start = sentence_number
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
@@ -1176,18 +1233,19 @@ def convert_chapters2audio(session):
                             print(msg)
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                         if success:
-                            total_progress = ((x + 1) * (i + 1)) / total_sentences_with_pauses
+                            total_progress = (t.n + 1) / total_iterations
+                            is_sentence = sentence.strip() not in TTS_SML.values()
                             if progress_bar is not None:
                                 progress_bar(total_progress)
                             percentage = total_progress * 100
                             t.set_description(f'Converting {percentage:.2f}%')
-                            msg = f"\nSentence: {sentence}" if sentence != TTS_SML['pause'] else f"SML: {sentence}"
+                            msg = f"\nSentence: {sentence}" if is_sentence else f"SML: {sentence}"
                             print(msg)
-                            t.update(1)
                         else:
                             return False
-                    if sentence != TTS_SML['pause']:
+                    if sentence.strip() not in TTS_SML.values():
                         sentence_number += 1
+                    t.update(1)  # advance for every iteration, including SML
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
                 msg = f"End of Block {chapter_num}"
                 print(msg)
@@ -1848,6 +1906,8 @@ def convert_ebook(args, ctx=None):
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(session):
+                                        msg = 'Conversion successful. Combining sentences and chapters...'
+                                        show_alert({"type": "info", "msg": msg})
                                         exported_files = combine_audio_chapters(session)               
                                         if len(exported_files) > 0:
                                             chapters_dirs = [
@@ -2658,7 +2718,7 @@ def web_interface(args, ctx):
                         except Exception as e:
                             error = f'Could not delete the voice file {selected}!'
                             alert_exception(error)
-                return gr.update(), gr.update(visible=False)
+                return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
             except Exception as e:
                 error = f'click_gr_voice_del_btn(): {e}'
                 alert_exception(error)
@@ -2779,13 +2839,19 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if default_voice_path is not None:
-                    default_voice_lang = models[session['tts_engine']][session['fine_tuned']]['lang']
-                    default_voice_lang_path = default_voice_path.replace(f'/{default_voice_lang}/', f"/{session['language']}/")
-                    default_voice_path = default_voice_lang_path if os.path.exists(default_voice_lang_path) else default_voice_path
                 if session['voice'] is None:
                     if voice_options[0][1] is not None:
-                        session['voice'] = default_voice_path
+                        default_name = Path(default_voice_path).stem.replace('_24000','').replace('_16000', '')
+                        for name, value in voice_options:
+                            if name == default_name:
+                                session['voice'] = value
+                                break
+                        else:
+                            values = [v for _, v in voice_options]
+                            if default_voice_path in values:
+                                session['voice'] = default_voice_path
+                            else:
+                                session['voice'] = voice_options[0][1]
                 else:
                     current_voice_name = os.path.splitext(pattern.sub('', os.path.basename(session['voice'])))[0]
                     current_voice_path = next(
