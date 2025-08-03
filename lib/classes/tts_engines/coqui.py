@@ -588,13 +588,14 @@ class Coqui:
                             if tts_vc:
                                 if self.tts_vc_key == 'freevc24':
                                     settings['samplerate'] = 24000
-                                    tmp_out_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
+                                    source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                     target_wav = settings['voice_path']
                                 elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 16000
+                                    source_wav = tmp_out_wav
                                     target_wav = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
                                 audio_sentence = tts_vc.voice_conversion(
-                                    source_wav=tmp_out_wav,
+                                    source_wav=source_wav,
                                     target_wav=target_wav
                                 )
                             else:
@@ -658,13 +659,14 @@ class Coqui:
                             if tts_vc:
                                 if self.tts_vc_key == 'freevc24':
                                     settings['samplerate'] = 24000
-                                    tmp_out_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
+                                    source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                     target_wav = settings['voice_path']
                                 elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 16000
+                                    source_wav = tmp_out_wav
                                     target_wav = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
                                 audio_sentence = tts_vc.voice_conversion(
-                                    source_wav=tmp_out_wav,
+                                    source_wav=source_wav,
                                     target_wav=target_wav
                                 )
                             else:
@@ -675,6 +677,8 @@ class Coqui:
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
+                            if os.path.exists(source_wav)
+                                os.remove(source_wav)
                         else:
                             audio_sentence = tts.tts(
                                 text=sentence,
@@ -728,13 +732,14 @@ class Coqui:
                             if tts_vc:
                                 if self.tts_vc_key == 'freevc24':
                                     settings['samplerate'] = 24000
-                                    tmp_out_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
+                                    source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                     target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
                                 elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 16000
+                                    source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                     target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
                                 audio_sentence = tts_vc.voice_conversion(
-                                    source_wav=tmp_out_wav,
+                                    source_wav=source_wav,
                                     target_wav=target_wav
                                 )
                             else:
