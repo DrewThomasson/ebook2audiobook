@@ -25,7 +25,7 @@ TTS_SML = {
 }
 
 default_tts_engine = TTS_ENGINES['XTTSv2']
-default_vc_model = TTS_VOICE_CONVERSION['freevc24']
+default_vc_model = TTS_VOICE_CONVERSION['openvoice_v2']
 default_voice_detection_model = 'drewThomasson/segmentation'
 default_fine_tuned = 'internal'
 
