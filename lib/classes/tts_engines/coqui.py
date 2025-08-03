@@ -406,7 +406,7 @@ class Coqui:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
             
-    def _get_resampler(orig_sr, target_sr):
+    def _get_resampler(self, orig_sr, target_sr):
         key = (orig_sr, target_sr)
         if key not in self.resampler_cache:
             self.resampler_cache[key] = torchaudio.transforms.Resample(
@@ -421,7 +421,7 @@ class Coqui:
         if waveform.size(0) > 1:
             waveform = waveform.mean(dim=0, keepdim=True)
         if orig_sr != expected_sr:
-            resampler = _get_resampler(orig_sr, expected_sr)
+            resampler = self._get_resampler(orig_sr, expected_sr)
             waveform = resampler(waveform)
         wav_tensor = waveform.squeeze(0)
         wav_numpy = wav_tensor.cpu().numpy()
