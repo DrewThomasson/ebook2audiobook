@@ -604,9 +604,7 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                if self.tts_vc_key in ['freevc24']:
-                                    settings['samplerate'] = 24000
-                                elif self.tts_vc_key in ['openvoice_v1', 'openvoice_v2']:
+                                if self.tts_vc_key in ['freevc24', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 22050
                                 elif self.tts_vc_key in ['knnvc']:
                                     settings['samplerate'] = 16000
@@ -677,9 +675,7 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                if self.tts_vc_key in ['freevc24']:
-                                    settings['samplerate'] = 24000
-                                elif self.tts_vc_key in ['openvoice_v1', 'openvoice_v2']:
+                                if self.tts_vc_key in ['freevc24', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 22050
                                 elif self.tts_vc_key in ['knnvc']:
                                     settings['samplerate'] = 16000
@@ -750,9 +746,7 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                if self.tts_vc_key in ['freevc24']:
-                                    settings['samplerate'] = 24000
-                                elif self.tts_vc_key in ['openvoice_v1', 'openvoice_v2']:
+                                if self.tts_vc_key in ['freevc24', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 22050
                                 elif self.tts_vc_key in ['knnvc']:
                                     settings['samplerate'] = 16000
