@@ -44,6 +44,7 @@ class Coqui:
             self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')    
+            self.resampler_cache = {}
             self.audio_segments = []
             self._build()
         except Exception as e:
@@ -405,12 +406,30 @@ class Coqui:
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
             
-    def _resample_wav(self, tts, wav_path, expected_sr):
-        wav, sr = sf.read(wav_path)
-        ap = tts.ap   # <-- Get the AudioProcessor from your loaded TTS model!
-        if sr != expected_sr:
-            wav = ap.resample(wav, sr)
-        return wav
+    def _get_resampler(orig_sr, target_sr):
+        key = (orig_sr, target_sr)
+        if key not in self.resampler_cache:
+            self.resampler_cache[key] = torchaudio.transforms.Resample(
+                orig_freq=orig_sr, new_freq=target_sr
+            )
+        return self.resampler_cache[key]
+
+    def _resample_wav(self, wav_path, expected_sr):
+        waveform, orig_sr = torchaudio.load(wav_path)
+        if orig_sr == expected_sr and waveform.size(0) == 1:
+            return wav_path
+        if waveform.size(0) > 1:
+            waveform = waveform.mean(dim=0, keepdim=True)
+        if orig_sr != expected_sr:
+            resampler = _get_resampler(orig_sr, expected_sr)
+            waveform = resampler(waveform)
+        wav_tensor = waveform.squeeze(0)
+        wav_numpy = wav_tensor.cpu().numpy()
+        tmp_fh = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+        tmp_path = tmp_fh.name
+        tmp_fh.close()
+        sf.write(tmp_path, wav_numpy, expected_sr, subtype="PCM_16")
+        return tmp_path
 
     def convert(self, sentence_number, sentence):
         global xtts_builtin_speakers_list
