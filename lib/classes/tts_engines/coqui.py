@@ -13,6 +13,7 @@ import soundfile as sf
 import torch
 import torchaudio
 
+from TTS.utils.audio import AudioProcessor
 from huggingface_hub import hf_hub_download
 from pathlib import Path
 from pprint import pprint
@@ -404,6 +405,13 @@ class Coqui:
             return torch.tensor(audio_data, dtype=torch.float32)
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
+            
+    def _resample_wav(wav_path, expected_sr):
+        wav, sr = sf.read(wav_path)
+        if sr != expected_sr:
+            ap = AudioProcessor(resample=True, sample_rate=expected_sr)
+            wav = ap.resample(wav, sr)
+        return wav
 
     def convert(self, sentence_number, sentence):
         global xtts_builtin_speakers_list
@@ -578,9 +586,16 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
+                                if self.tts_vc_key == 'freevc24':
+                                    settings['samplerate'] = 24000
+                                    tmp_out_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
+                                    target_wav = settings['voice_path']
+                                elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
+                                    settings['samplerate'] = 16000
+                                    target_wav = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
                                 audio_sentence = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
-                                    target_wav=settings['voice_path']
+                                    target_wav=target_wav
                                 )
                             else:
                                 error = f'Engine {self.tts_vc_key} is None'
@@ -598,7 +613,6 @@ class Coqui:
                     elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                         speaker_argument = {}
                         if settings['voice_path'] is not None:
-                            settings['voice_path'] = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
@@ -642,9 +656,16 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
+                                if self.tts_vc_key == 'freevc24':
+                                    settings['samplerate'] = 24000
+                                    tmp_out_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
+                                    target_wav = settings['voice_path']
+                                elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
+                                    settings['samplerate'] = 16000
+                                    target_wav = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
                                 audio_sentence = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
-                                    target_wav=settings['voice_path']
+                                    target_wav=target_wav
                                 )
                             else:
                                 error = f'Engine {self.tts_vc_key} is None'
@@ -705,9 +726,16 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
+                                if self.tts_vc_key == 'freevc24':
+                                    settings['samplerate'] = 24000
+                                    tmp_out_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
+                                    target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
+                                elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
+                                    settings['samplerate'] = 16000
+                                    target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
                                 audio_sentence = tts_vc.voice_conversion(
                                     source_wav=tmp_out_wav,
-                                    target_wav=settings['voice_path']
+                                    target_wav=target_wav
                                 )
                             else:
                                 error = f'Engine {self.tts_vc_key} is None'
@@ -726,8 +754,8 @@ class Coqui:
                         speaker_argument = {}
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                         if settings['voice_path'] is not None:
-                            settings['voice_path'] = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
-                            speaker_argument = {"speaker_wav": settings['voice_path']}
+                            speaker_wav = re.sub(r'_24000\.wav$', '_16000.wav', settings['voice_path'])
+                            speaker_argument = {"speaker_wav": speaker_wav}
                         else:
                             voice_key = default_engine_settings[TTS_ENGINES['YOURTTS']]['voices']['ElectroMale-2']
                             speaker_argument = {"speaker": voice_key}
