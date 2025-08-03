@@ -587,7 +587,7 @@ class Coqui:
                             if tts_vc:
                                 if self.tts_vc_key == 'freevc24':
                                     settings['samplerate'] = 24000
-                                    source_wav = self._resample_wav(self.tts, tmp_out_wav, settings['samplerate'])
+                                    source_wav = self._resample_wav(tts_vc, tmp_out_wav, settings['samplerate'])
                                     target_wav = settings['voice_path']
                                 elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 16000
@@ -660,7 +660,7 @@ class Coqui:
                             if tts_vc:
                                 if self.tts_vc_key == 'freevc24':
                                     settings['samplerate'] = 24000
-                                    source_wav = self._resample_wav(self.tts, tmp_out_wav, settings['samplerate'])
+                                    source_wav = self._resample_wav(tts_vc, tmp_out_wav, settings['samplerate'])
                                     target_wav = settings['voice_path']
                                 elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 16000
@@ -733,12 +733,12 @@ class Coqui:
                             if tts_vc:
                                 if self.tts_vc_key == 'freevc24':
                                     settings['samplerate'] = 24000
-                                    source_wav = self._resample_wav(self.tts, tmp_out_wav, settings['samplerate'])
-                                    target_wav = self._resample_wav(self.tts, settings['voice_path'], settings['samplerate'])
+                                    source_wav = self._resample_wav(tts_vc, tmp_out_wav, settings['samplerate'])
+                                    target_wav = self._resample_wav(tts_vc, settings['voice_path'], settings['samplerate'])
                                 elif self.tts_vc_key in ['knnvc', 'openvoice_v1', 'openvoice_v2']:
                                     settings['samplerate'] = 16000
-                                    source_wav = self._resample_wav(self.tts, tmp_out_wav, settings['samplerate'])
-                                    target_wav = self._resample_wav(self.tts, settings['voice_path'], settings['samplerate'])
+                                    source_wav = self._resample_wav(tts_vc, tmp_out_wav, settings['samplerate'])
+                                    target_wav = self._resample_wav(tts_vc, settings['voice_path'], settings['samplerate'])
                                 audio_sentence = tts_vc.voice_conversion(
                                     source_wav=source_wav,
                                     target_wav=target_wav
