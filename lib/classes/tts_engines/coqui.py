@@ -606,6 +606,8 @@ class Coqui:
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
+                            if os.path.exists(source_wav):
+                                os.remove(source_wav)
                         else:
                             audio_sentence = tts.tts(
                                 text=sentence,
@@ -677,7 +679,7 @@ class Coqui:
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
-                            if os.path.exists(source_wav)
+                            if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
                             audio_sentence = tts.tts(
@@ -750,6 +752,8 @@ class Coqui:
                                 os.remove(tmp_in_wav)
                             if os.path.exists(tmp_out_wav):
                                 os.remove(tmp_out_wav)
+                            if os.path.exists(source_wav):
+                                os.remove(source_wav)
                         else:
                             audio_sentence = tts.tts(
                                 text=sentence,
