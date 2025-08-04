@@ -1219,7 +1219,7 @@ def convert_chapters2audio(session):
         total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
         total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
         sentence_number = 0
-        msg = f"--------------------------------------------------\nA total of {total_chapters} blocks and {total_sentences} sentences.\n--------------------------------------------------\n"
+        msg = f"--------------------------------------------------\nA total of {total_chapters} blocks and {total_sentences} sentences.\n--------------------------------------------------"
         print(msg)
         with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
