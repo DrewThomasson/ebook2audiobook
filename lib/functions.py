@@ -772,7 +772,7 @@ def get_sentences(text, lang, tts_engine):
             text = text.replace('"', '')
         # Step 1: Split first by ‡pause‡ and ‡break‡, keeping them as separate elements
         sml_list = re.split(
-            rf'({re.escape(TTS_SML['pause'])}|{re.escape(TTS_SML['break'])})', text
+            rf"({re.escape(TTS_SML['pause'])}|{re.escape(TTS_SML['break'])})", text
         )
         sml_list = [
             s.strip() if s in (TTS_SML['pause'], TTS_SML['break']) else s.strip()
