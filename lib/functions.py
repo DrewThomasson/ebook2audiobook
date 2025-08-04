@@ -743,23 +743,26 @@ def get_sentences(text, lang, tts_engine):
     def join_ideogramms(idg_list):
         try:
             buffer = ''
-            # List or tuple of tokens that must never be appended to buffer
-            sml_tokens = tuple(TTS_SML.values())
-            for token in idg_list:
-             # 1) On sml token: flush & emit buffer, then emit the token
-                if token.strip() in sml_tokens:
-                    if buffer:
+            special_tokens = sorted(TTS_SML.values(), key=len, reverse=True)  # e.g. ['‡pause‡', '‡break‡']
+            i = 0
+            while i < len(idg_list):
+                # Try to match any special token starting at position i
+                for tok in special_tokens:
+                    if ''.join(idg_list[i:i+len(tok)]) == tok:
+                        # On match: flush buffer, yield token
+                        if buffer:
+                            yield buffer
+                            buffer = ''
+                        yield tok
+                        i += len(tok)
+                        break
+                else:
+                    token = idg_list[i]
+                    if buffer and len(buffer) + len(token) > max_chars:
                         yield buffer
                         buffer = ''
-                    yield token
-                    continue
-                # 2) If adding this token would overflow, flush current buffer first
-                if buffer and len(buffer) + len(token) > max_chars:
-                    yield buffer
-                    buffer = ''
-                # 3) Append the token (word, punctuation, whatever) unless it's a sml token (already checked)
-                buffer += token
-            # 4) Flush any trailing text
+                    buffer += token
+                    i += 1
             if buffer:
                 yield buffer
         except Exception as e:
