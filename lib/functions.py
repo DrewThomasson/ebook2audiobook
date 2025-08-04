@@ -1221,7 +1221,7 @@ def convert_chapters2audio(session):
         sentence_number = 0
         msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
         print(msg)
-        with tqdm(total=total_iterations, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
+        with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
@@ -1246,7 +1246,7 @@ def convert_chapters2audio(session):
                             if progress_bar is not None:
                                 progress_bar(total_progress)
                             percentage = total_progress * 100
-                            t.set_description(f'Converting {percentage:.2f}%')
+                            t.set_description(f'{percentage:.2f}%')
                             msg = f"\nSentence: {sentence}" if is_sentence else f"SML: {sentence}"
                             print(msg)
                         else:
