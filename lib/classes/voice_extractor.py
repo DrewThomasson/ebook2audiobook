@@ -245,15 +245,12 @@ class VoiceExtractor:
                 process.wait()
                 if process.returncode != 0:
                     error = f'_normalize_audio(): process.returncode: {process.returncode}'
-                    break
                 elif not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
                     error = f'_normalize_audio() error: {output_file} was not created or is empty.'
-                    break
                 else:
                     self.final_files.append(output_file)
             except subprocess.CalledProcessError as e:
                 error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
-                break
             shutil.rmtree(self.demucs_dir, ignore_errors=True)
             if os.path.exists(process_file):
                 os.remove(process_file)
