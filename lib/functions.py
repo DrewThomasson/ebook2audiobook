@@ -1247,7 +1247,7 @@ def convert_chapters2audio(session):
                                 progress_bar(total_progress)
                             percentage = total_progress * 100
                             t.set_description(f'{percentage:.2f}%')
-                            msg = f"\nSentence: {sentence}" if is_sentence else f"SML: {sentence}"
+                            msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
                         else:
                             return False
