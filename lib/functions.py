@@ -1241,7 +1241,17 @@ def convert_chapters2audio(session):
                         if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
-                        success = tts_manager.convert_sentence2audio(sentence_number, sentence)
+                        # Extract character information if present
+                        character_name = None
+                        processed_sentence = sentence
+                        if sentence.startswith("__CHARACTER__"):
+                            parts = sentence.split("__:", 1)
+                            if len(parts) == 2:
+                                character_info = parts[0].replace("__CHARACTER__", "")
+                                character_name = character_info
+                                processed_sentence = parts[1]
+                        
+                        success = tts_manager.convert_sentence2audio(sentence_number, processed_sentence, character_name)
                         if success:
                             total_progress = (t.n + 1) / total_iterations
                             is_sentence = sentence.strip() not in TTS_SML.values()
@@ -1715,7 +1725,339 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-def convert_ebook_batch(args, ctx):
+def load_character_json(characters_path):
+    """Load and validate character JSON file"""
+    try:
+        with open(characters_path, 'r', encoding='utf-8') as f:
+            characters = json.load(f)
+        
+        if not isinstance(characters, list):
+            raise ValueError("Character JSON must be a list of character objects")
+        
+        # Validate required fields
+        for char in characters:
+            if not isinstance(char, dict):
+                raise ValueError("Each character must be a dictionary")
+            if 'normalized_name' not in char:
+                raise ValueError("Character missing required field 'normalized_name'")
+            if 'inferred_gender' not in char:
+                raise ValueError("Character missing required field 'inferred_gender'")
+            if 'inferred_age_category' not in char:
+                raise ValueError("Character missing required field 'inferred_age_category'")
+            if 'language' not in char:
+                raise ValueError("Character missing required field 'language'")
+                
+        return characters
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON format: {e}")
+    except Exception as e:
+        raise ValueError(f"Error loading character JSON: {e}")
+
+def parse_script_text(script_path):
+    """Parse pre-tagged text script and extract character dialogue segments"""
+    try:
+        with open(script_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        segments = []
+        # Split by lines and process each line
+        lines = content.split('\n')
+        
+        for line_num, line in enumerate(lines, 1):
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Check for character tag format: <CharacterName>: dialogue text
+            character_match = re.match(r'^<([^>]+)>:\s*(.*)$', line)
+            if character_match:
+                character_name = character_match.group(1).strip()
+                dialogue = character_match.group(2).strip()
+                if dialogue:
+                    segments.append({
+                        'type': 'character',
+                        'character': character_name,
+                        'text': dialogue,
+                        'line_number': line_num
+                    })
+            else:
+                # Non-tagged text (narrator or untagged content)
+                segments.append({
+                    'type': 'narrator',
+                    'character': None,
+                    'text': line,
+                    'line_number': line_num
+                })
+        
+        return segments
+    except Exception as e:
+        raise ValueError(f"Error parsing script text: {e}")
+
+def find_voice_for_character(character, characters_data, language, voices_dir):
+    """Find appropriate voice file for a character based on metadata"""
+    try:
+        # Find character in JSON data
+        char_data = None
+        for char in characters_data:
+            if char['normalized_name'] == character:
+                char_data = char
+                break
+        
+        if not char_data:
+            return None
+            
+        # If specific voice is provided, use it
+        if char_data.get('voice') and char_data['voice'] != 'null' and char_data['voice'] is not None:
+            # Look for the specific voice file
+            voice_name = char_data['voice']
+            # Search in the voices directory structure
+            for root, dirs, files in os.walk(voices_dir):
+                for file in files:
+                    if file.startswith(voice_name) and file.endswith('_24000.wav'):
+                        return os.path.join(root, file)
+                    elif file.startswith(voice_name) and file.endswith('.wav'):
+                        return os.path.join(root, file)
+        
+        # Use automatic selection based on metadata
+        char_language = char_data.get('language', language)
+        gender = char_data.get('inferred_gender', 'adult')
+        age_category = char_data.get('inferred_age_category', 'adult')
+        
+        # Construct path: voices_dir/{language}/{age_category}/{gender}/
+        voice_dir = os.path.join(voices_dir, char_language, age_category, gender)
+        
+        if os.path.exists(voice_dir):
+            # Find a suitable voice file (prefer _24000.wav)
+            voice_files = []
+            for file in os.listdir(voice_dir):
+                if file.endswith('_24000.wav'):
+                    voice_files.append(os.path.join(voice_dir, file))
+            
+            if voice_files:
+                # Return the first available voice
+                return voice_files[0]
+            
+            # Fallback to any .wav file in the directory
+            for file in os.listdir(voice_dir):
+                if file.endswith('.wav'):
+                    return os.path.join(voice_dir, file)
+        
+        return None
+    except Exception as e:
+        print(f"Error finding voice for character {character}: {e}")
+        return None
+
+def convert_script(args, ctx=None):
+    """Convert pre-tagged script with character JSON to audiobook"""
+    try:
+        global is_gui_process, context        
+        error = None
+        id = None
+        
+        if args['language'] is not None:
+            # Validate script and characters files exist
+            if not os.path.exists(args['script']):
+                error = f"Script file does not exist: {args['script']}"
+                print(error)
+                return error, False
+                
+            if not os.path.exists(args['characters']):
+                error = f"Characters file does not exist: {args['characters']}"
+                print(error)
+                return error, False
+            
+            try:
+                if len(args['language']) == 2:
+                    lang_array = languages.get(part1=args['language'])
+                    if lang_array:
+                        args['language'] = lang_array.part3
+                        args['language_iso1'] = lang_array.part1
+                elif len(args['language']) == 3:
+                    lang_array = languages.get(part3=args['language'])
+                    if lang_array:
+                        args['language'] = lang_array.part3
+                        args['language_iso1'] = lang_array.part1 
+                else:
+                    args['language_iso1'] = None
+            except Exception as e:
+                pass
+
+            if args['language'] not in language_mapping.keys():
+                error = 'The language you provided is not (yet) supported'
+                print(error)
+                return error, False
+
+            if ctx is not None:
+                context = ctx
+            is_gui_process = args['is_gui_process']
+            id = args['session'] if args['session'] is not None else str(uuid.uuid4())
+            session = context.get_session(id)
+            
+            # Setup session similar to convert_ebook
+            session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE   
+            session['ebook'] = args['script']  # Use script path as "ebook" path
+            session['script_path'] = args['script']
+            session['characters_path'] = args['characters']
+            session['ebook_list'] = None
+            session['device'] = args['device']
+            session['language'] = args['language']
+            session['language_iso1'] = args['language_iso1']
+            session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
+            session['custom_model'] = args['custom_model'] if not is_gui_process or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
+            session['fine_tuned'] = args['fine_tuned']
+            session['output_format'] = args['output_format']
+            session['temperature'] =  args['temperature']
+            session['length_penalty'] = args['length_penalty']
+            session['num_beams'] = args['num_beams']
+            session['repetition_penalty'] = args['repetition_penalty']
+            session['top_k'] =  args['top_k']
+            session['top_p'] = args['top_p']
+            session['speed'] = args['speed']
+            session['enable_text_splitting'] = args['enable_text_splitting']
+            session['text_temp'] =  args['text_temp']
+            session['waveform_temp'] =  args['waveform_temp']
+            session['audiobooks_dir'] = args['audiobooks_dir']
+            session['voice'] = args['voice']
+            
+            # Load character data and script
+            try:
+                characters_data = load_character_json(args['characters'])
+                script_segments = parse_script_text(args['script'])
+                session['characters_data'] = characters_data
+                session['script_segments'] = script_segments
+            except ValueError as e:
+                error = str(e)
+                print(error)
+                return error, False
+            
+            # Process the script similar to how ebook is processed
+            return process_script_conversion(session)
+            
+        else:
+            error = 'Language parameter is required'
+            print(error)
+            return error, False
+            
+    except Exception as e:
+        print(f'convert_script() Exception: {e}')
+        return str(e), False
+
+def process_script_conversion(session):
+    """Process the script conversion similar to ebook conversion"""
+    try:
+        # Set up directories similar to ebook processing
+        session['session_dir'] = os.path.join(tmp_dir, f"script-{session['id']}")
+        session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['script_path'].encode()).hexdigest()}")
+        session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+        session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')
+        
+        # Create directories
+        os.makedirs(session['chapters_dir'], exist_ok=True)
+        os.makedirs(session['chapters_dir_sentences'], exist_ok=True)
+        
+        # Set up voice directory for character voices
+        session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+        os.makedirs(session['voice_dir'], exist_ok=True)
+        
+        # Convert script segments to chapters format
+        session['filename_noext'] = os.path.splitext(os.path.basename(session['script_path']))[0]
+        session['final_name'] = get_sanitized(session['filename_noext'] + '.' + session['output_format'])
+        
+        # Create metadata similar to ebook
+        session['metadata'] = {
+            'title': session['filename_noext'],
+            'creator': 'Unknown',
+            'language': session['language']
+        }
+        
+        # Convert script segments to chapter sentences
+        chapters = process_script_segments(session)
+        session['chapters'] = chapters
+        session['toc'] = [{'title': f'Chapter {i+1}', 'file': f'chapter_{i+1}'} for i in range(len(chapters))]
+        
+        if session['chapters'] is not None:
+            if convert_chapters2audio(session):
+                msg = 'Conversion successful. Combining sentences and chapters...'
+                print(msg)
+                exported_files = combine_audio_chapters(session)               
+                if len(exported_files) > 0:
+                    # Cleanup
+                    if not is_gui_process:
+                        if os.path.exists(session['voice_dir']):
+                            if not any(os.scandir(session['voice_dir'])):
+                                shutil.rmtree(session['voice_dir'], ignore_errors=True)
+                        if os.path.exists(session['session_dir']):
+                            shutil.rmtree(session['session_dir'], ignore_errors=True)
+                    
+                    progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
+                    session['audiobook'] = exported_files[-1]
+                    return progress_status, True
+                else:
+                    error = 'combine_audio_chapters() error: exported_files not created!'
+                    print(error)
+                    return error, False
+            else:
+                error = 'convert_chapters2audio() failed!'
+                print(error)
+                return error, False
+        else:
+            error = 'Script processing failed!'
+            print(error)
+            return error, False
+            
+    except Exception as e:
+        error = f'process_script_conversion() Exception: {e}'
+        print(error)
+        return error, False
+
+def process_script_segments(session):
+    """Convert script segments into chapter format compatible with existing TTS system"""
+    try:
+        segments = session['script_segments']
+        characters_data = session['characters_data']
+        
+        # Group segments into chapters (for now, put all in one chapter)
+        # This can be enhanced later to support chapter breaks
+        sentences = []
+        
+        for segment in segments:
+            text = segment['text']
+            if not text or not text.strip():
+                continue
+                
+            character = segment.get('character')
+            
+            if character:
+                # Find appropriate voice for this character
+                voice_path = find_voice_for_character(character, characters_data, session['language'], voices_dir)
+                if voice_path:
+                    # Store character voice mapping for TTS processing
+                    if not hasattr(session, 'character_voices'):
+                        session['character_voices'] = {}
+                    session['character_voices'][character] = voice_path
+                    print(f"Mapped character '{character}' to voice: {os.path.basename(voice_path)}")
+                else:
+                    print(f"Warning: No voice found for character '{character}', using default voice")
+            
+            # Process text similar to filter_chapter
+            processed_sentences = get_sentences(text, session['language'], session['tts_engine'])
+            
+            # Add character metadata to sentences for TTS processing
+            for sentence in processed_sentences:
+                if character and sentence.strip() not in TTS_SML.values():
+                    # Mark sentence with character information
+                    sentence_with_char = f"__CHARACTER__{character}__:{sentence}"
+                    sentences.append(sentence_with_char)
+                else:
+                    sentences.append(sentence)
+        
+        # Return as single chapter for now
+        return [sentences] if sentences else []
+        
+    except Exception as e:
+        error = f'process_script_segments() error: {e}'
+        print(error)
+        return None
     global context
     context = ctx
     if isinstance(args['ebook_list'], list):

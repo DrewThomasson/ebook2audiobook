@@ -431,7 +431,7 @@ class Coqui:
         sf.write(tmp_path, wav_numpy, expected_sr, subtype="PCM_16")
         return tmp_path
 
-    def convert(self, sentence_number, sentence):
+    def convert(self, sentence_number, sentence, character_name=None):
         global xtts_builtin_speakers_list
         try:
             speaker = None
@@ -440,8 +440,16 @@ class Coqui:
             settings = self.params[self.session['tts_engine']]
             final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             sentence = sentence.strip()
+            
+            # Handle character-specific voice selection
+            character_voice_path = None
+            if character_name and hasattr(self.session, 'character_voices') and character_name in self.session['character_voices']:
+                character_voice_path = self.session['character_voices'][character_name]
+                print(f"Using character voice for '{character_name}': {os.path.basename(character_voice_path)}")
+            
             settings['voice_path'] = (
-                self.session['voice'] if self.session['voice'] is not None 
+                character_voice_path if character_voice_path is not None
+                else self.session['voice'] if self.session['voice'] is not None 
                 else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
                 else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
             )
