@@ -677,7 +677,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 # Check if there are positive integers so possible date to convert
                 if bool(re.search(r'\b\d+\b', text)):
                     date_spans = get_date_entities(text, stanza_nlp)
-                    print(f'date spans: {date_spans}')
                     if date_spans:
                         result = []
                         last_pos = 0
