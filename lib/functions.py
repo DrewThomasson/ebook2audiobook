@@ -860,7 +860,7 @@ def get_sentences(text, lang, tts_engine):
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
-                        sentences.append(f'{text_part.strip()}-')
+                        sentences.append(text_part.strip())
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'

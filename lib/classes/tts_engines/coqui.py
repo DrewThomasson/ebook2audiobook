@@ -451,6 +451,8 @@ class Coqui:
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
+                    if sentence[-1].isalnum():
+                        sentence = f'{sentence} —'
                     sentence = sentence.replace('.', ' — ')
                 if sentence == TTS_SML['break']:
                     break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100))) # 0.4 to 0.7 seconds
