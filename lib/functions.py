@@ -746,7 +746,7 @@ def get_sentences(text, lang, tts_engine):
             # List or tuple of tokens that must never be appended to buffer
             sml_tokens = tuple(TTS_SML.values())
             for token in idg_list:
-             # 1) On special token: flush & emit buffer, then emit the token
+             # 1) On sml token: flush & emit buffer, then emit the token
                 if token.strip() in sml_tokens:
                     if buffer:
                         yield buffer
@@ -757,7 +757,7 @@ def get_sentences(text, lang, tts_engine):
                 if buffer and len(buffer) + len(token) > max_chars:
                     yield buffer
                     buffer = ''
-                # 3) Append the token (word, punctuation, whatever) unless it's a special token (already checked)
+                # 3) Append the token (word, punctuation, whatever) unless it's a sml token (already checked)
                 buffer += token
             # 4) Flush any trailing text
             if buffer:
