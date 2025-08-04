@@ -677,7 +677,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 # Check if there are positive integers so possible date to convert
                 if bool(re.search(r'\b\d+\b', text)):
                     date_spans = get_date_entities(text, stanza_nlp)
-                    print(f'date spans: {date_spans}')
                     if date_spans:
                         result = []
                         last_pos = 0
@@ -708,6 +707,18 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         return None
 
 def get_sentences(text, lang, tts_engine):
+
+    def regex_split_inclusive(text, pattern):
+        result = []
+        last_end = 0
+        for match in pattern.finditer(text):
+            result.append(text[last_end:match.end()].strip())
+            last_end = match.end()
+        if last_end < len(text):
+            tail = text[last_end:].strip()
+            if tail:
+                result.append(tail)
+        return result
 
     def segment_ideogramms(text):
         try:
@@ -740,21 +751,19 @@ def get_sentences(text, lang, tts_engine):
                         buffer = ''
                     yield token
                     continue
-
                 # 2) If adding this token would overflow, flush current buffer first
                 if buffer and len(buffer) + len(token) > max_chars:
                     yield buffer
                     buffer = ''
-
                 # 3) Append the token (word, punctuation, whatever)
                 buffer += token
-
             # 4) Flush any trailing text
             if buffer:
                 yield buffer
         except Exception as e:
             DependencyError(e)
             yield buffer
+
     try:
         max_chars = language_mapping[lang]['max_chars']
         min_tokens = 5
@@ -777,7 +786,7 @@ def get_sentences(text, lang, tts_engine):
             if s == TTS_SML['pause']:
                 hard_list.append(s)
             else:
-                parts = pattern.findall(s)
+                parts = regex_split_inclusive(s, pattern)
                 if parts:
                     for text_part in parts:
                         text_part = text_part.strip()
@@ -786,6 +795,7 @@ def get_sentences(text, lang, tts_engine):
                 else:
                     # no hard‑split punctuation found → keep whole sentence
                     hard_list.append(s)
+
         # Step 4: check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
@@ -794,7 +804,7 @@ def get_sentences(text, lang, tts_engine):
             if s == TTS_SML['pause']:
                 soft_list.append(s)
             elif len(s) > max_chars:
-                parts = [p.strip() for p in pattern.findall(s) if p.strip()]
+                parts = [p.strip() for p in regex_split_inclusive(s, pattern) if p.strip()]
                 if parts:
                     buffer = ''
                     for part in parts:
@@ -857,7 +867,7 @@ def get_sentences(text, lang, tts_engine):
     except Exception as e:
         error = f'get_sentences() error: {e}'
         print(error)
-        return None  
+        return None
         
 def get_ram():
     vm = psutil.virtual_memory()
