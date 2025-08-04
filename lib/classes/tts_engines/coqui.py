@@ -306,7 +306,7 @@ class Coqui:
                                 new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
                                 proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
                                 torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate'], format='wav')
-                                if normalize_audio(proc_voice_path, new_voice_path, 24000):
+                                if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate):
                                     del audio_data, sourceTensor, audio_tensor  
                                     if self.session['tts_engine'] != TTS_ENGINES['XTTSv2']:
                                         del tts

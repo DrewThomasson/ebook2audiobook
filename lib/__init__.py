@@ -7,8 +7,9 @@ from .models import (
 
 from .conf import (
     FULL_DOCKER, NATIVE, audiobooks_cli_dir, audiobooks_gradio_dir,
-    audiobooks_host_dir, debug_mode, default_audio_proc_format, default_device,
-    default_gpu_wiki, default_output_format, device_list, ebook_formats,
+    audiobooks_host_dir, debug_mode, default_audio_proc_samplerate, 
+    default_audio_proc_format, default_device, default_gpu_wiki, 
+    default_output_format, device_list, ebook_formats,
     ebooks_dir, interface_component_options, interface_concurrency_limit,
     interface_host, interface_port, interface_shared_tmp_expire,
     max_python_version, min_python_version, models_dir, os,
@@ -36,9 +37,9 @@ __all__ = [
 
     # from conf
     "FULL_DOCKER", "NATIVE", "audiobooks_cli_dir", "audiobooks_gradio_dir",
-    "audiobooks_host_dir", "debug_mode", "default_audio_proc_format",
-    "default_device", "default_gpu_wiki", "default_output_format",
-    "device_list", "ebook_formats", "ebooks_dir",
+    "audiobooks_host_dir", "debug_mode", "default_audio_proc_samplerate",
+    "default_audio_proc_format", "default_device", "default_gpu_wiki",
+    "default_output_format", "device_list", "ebook_formats", "ebooks_dir",
     "interface_component_options", "interface_concurrency_limit",
     "interface_host", "interface_port", "interface_shared_tmp_expire",
     "max_python_version", "min_python_version", "models_dir", "os",
