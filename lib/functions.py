@@ -743,25 +743,36 @@ def get_sentences(text, lang, tts_engine):
     def join_ideogramms(idg_list):
         try:
             buffer = ''
-            special_tokens = sorted(TTS_SML.values(), key=len, reverse=True)  # e.g. ['‡pause‡', '‡break‡']
+            special_tokens = set(TTS_SML.values())  # {'‡pause‡', '‡break‡', ...}
+            max_token_len = max(len(tok) for tok in special_tokens)
             i = 0
             while i < len(idg_list):
-                # Try to match any special token starting at position i
-                for tok in special_tokens:
-                    if ''.join(idg_list[i:i+len(tok)]) == tok:
-                        # On match: flush buffer, yield token
-                        if buffer:
+                if idg_list[i] == '‡':
+                    # Try to match any special token at this position
+                    found = False
+                    for tok in special_tokens:
+                        L = len(tok)
+                        if ''.join(idg_list[i:i+L]) == tok:
+                            if buffer:
+                                yield buffer
+                                buffer = ''
+                            yield tok
+                            i += L
+                            found = True
+                            break
+                    if not found:
+                        # It's a stray '‡', treat as normal char
+                        if buffer and len(buffer) + 1 > max_chars:
                             yield buffer
                             buffer = ''
-                        yield tok
-                        i += len(tok)
-                        break
+                        buffer += idg_list[i]
+                        i += 1
                 else:
-                    token = idg_list[i]
-                    if buffer and len(buffer) + len(token) > max_chars:
+                    # Normal char, just join as before
+                    if buffer and len(buffer) + 1 > max_chars:
                         yield buffer
                         buffer = ''
-                    buffer += token
+                    buffer += idg_list[i]
                     i += 1
             if buffer:
                 yield buffer
