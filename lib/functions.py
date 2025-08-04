@@ -709,30 +709,39 @@ def get_sentences(text, lang, tts_engine):
         return result
 
     def segment_ideogramms(text):
+        sml_pattern = "|".join(re.escape(token) for token in sml_tokens)
+        segments = re.split(f"({sml_pattern})", text)
+        result = []
         try:
-            if lang == 'zho':
-                import jieba
-                return list(jieba.cut(text))
-            elif lang == 'jpn':
-                sudachi = dictionary.Dictionary().create()
-                mode = tokenizer.Tokenizer.SplitMode.C
-                return [m.surface() for m in sudachi.tokenize(text, mode)]
-            elif lang == 'kor':
-                ltokenizer = LTokenizer()
-                return ltokenizer.tokenize(text)
-            elif lang in ['tha', 'lao', 'mya', 'khm']:
-                return word_tokenize(text, engine='newmm')
-            else:
-                return [text]
+            for segment in segments:
+                if not segment:
+                    continue
+                # If the segment is a SML token, keep as its own
+                if re.fullmatch(SML_TOKEN_PATTERN, segment):
+                    result.append(segment)
+                else:
+                    if lang == 'zho':
+                        import jieba
+                        result.extend([t for t in jieba.cut(segment) if t.strip()])
+                    elif lang == 'jpn':
+                        sudachi = dictionary.Dictionary().create()
+                        mode = tokenizer.Tokenizer.SplitMode.C
+                        result.extend([m.surface() for m in sudachi.tokenize(segment, mode) if m.surface().strip()])
+                    elif lang == 'kor':
+                        ltokenizer = LTokenizer()
+                        result.extend([t for t in ltokenizer.tokenize(segment) if t.strip()])
+                    elif lang in ['tha', 'lao', 'mya', 'khm']:
+                        result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
+                    else:
+                        result.append(segment)
+            return result
         except Exception as e:
             DependencyError(e)
-            return [text]
+            return [text]   
 
     def join_ideogramms(idg_list):
         try:
             buffer = ''
-            # List or tuple of tokens that must never be appended to buffer
-            sml_tokens = tuple(TTS_SML.values())
             for token in idg_list:
              # 1) On sml token: flush & emit buffer, then emit the token
                 if token.strip() in sml_tokens:
@@ -761,13 +770,13 @@ def get_sentences(text, lang, tts_engine):
         # tacotron2 apparently does not like double quotes
         if tts_engine == TTS_ENGINES['TACOTRON2']:
             text = text.replace('"', '')
-        # Step 1: Split first by ‡pause‡ and ‡break‡, keeping them as separate elements
-        sml_tokens = (TTS_SML['pause'], TTS_SML['break'])
+        # List or tuple of tokens that must never be appended to buffer
+        sml_tokens = tuple(TTS_SML.values())
         sml_list = re.split(
             rf"({'|'.join(map(re.escape, sml_tokens))})", text
         )
         sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
-        # Step 3: split with punctuation_split_hard_set
+        # Split with punctuation_split_hard_set
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         hard_list = []
@@ -785,7 +794,7 @@ def get_sentences(text, lang, tts_engine):
                     # no hard‑split punctuation found → keep whole sentence
                     hard_list.append(s)
 
-        # Step 4: check if some hard_list entries exceed max_chars, so split on soft punctuation
+        # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         soft_list = []
@@ -833,7 +842,7 @@ def get_sentences(text, lang, tts_engine):
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
-            # Step extra: split any remaining over‑length sentences on spaces
+            # Split any remaining over‑length sentences on spaces
             sentences = []
             for s in soft_list:
                 if s == TTS_SML['pause'] or len(s) <= max_chars:
