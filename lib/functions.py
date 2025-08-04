@@ -743,37 +743,33 @@ def get_sentences(text, lang, tts_engine):
     def join_ideogramms(idg_list):
         try:
             buffer = ''
-            special_tokens = set(TTS_SML.values())  # {'‡pause‡', '‡break‡', ...}
-            max_token_len = max(len(tok) for tok in special_tokens)
+            special_tokens = set(TTS_SML.values())  # e.g. {'‡pause‡', '‡break‡'}
             i = 0
             while i < len(idg_list):
                 if idg_list[i] == '‡':
                     # Try to match any special token at this position
-                    found = False
+                    matched_token = None
                     for tok in special_tokens:
                         L = len(tok)
                         if ''.join(idg_list[i:i+L]) == tok:
-                            if buffer:
-                                yield buffer
-                                buffer = ''
-                            yield tok
-                            i += L
-                            found = True
+                            matched_token = tok
                             break
-                    if not found:
-                        # It's a stray '‡', treat as normal char
-                        if buffer and len(buffer) + 1 > max_chars:
+                    if matched_token:
+                        # Flush buffer before yielding special token separately
+                        if buffer:
                             yield buffer
                             buffer = ''
+                        yield matched_token
+                        i += len(matched_token)
+                    else:
+                        # '‡' char not part of special token, just append
                         buffer += idg_list[i]
                         i += 1
                 else:
-                    # Normal char, just join as before
-                    if buffer and len(buffer) + 1 > max_chars:
-                        yield buffer
-                        buffer = ''
+                    # Normal char, append to buffer
                     buffer += idg_list[i]
                     i += 1
+            # Flush remaining buffer at the end
             if buffer:
                 yield buffer
         except Exception as e:
