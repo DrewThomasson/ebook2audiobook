@@ -717,7 +717,7 @@ def get_sentences(text, lang, tts_engine):
                 if not segment:
                     continue
                 # If the segment is a SML token, keep as its own
-                if re.fullmatch(SML_TOKEN_PATTERN, segment):
+                if re.fullmatch(sml_pattern, segment):
                     result.append(segment)
                 else:
                     if lang == 'zho':
