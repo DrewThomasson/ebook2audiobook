@@ -668,7 +668,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 text = payload.strip()
                 if text:
                     text_array.append(text)
-        text = ' '.join(text_array)
+        text = "\n".join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
         if stanza_nlp:
@@ -743,33 +743,23 @@ def get_sentences(text, lang, tts_engine):
     def join_ideogramms(idg_list):
         try:
             buffer = ''
-            special_tokens = set(TTS_SML.values())  # e.g. {'‡pause‡', '‡break‡'}
-            i = 0
-            while i < len(idg_list):
-                if idg_list[i] == '‡':
-                    # Try to match any special token at this position
-                    matched_token = None
-                    for tok in special_tokens:
-                        L = len(tok)
-                        if ''.join(idg_list[i:i+L]) == tok:
-                            matched_token = tok
-                            break
-                    if matched_token:
-                        # Flush buffer before yielding special token separately
-                        if buffer:
-                            yield buffer
-                            buffer = ''
-                        yield matched_token
-                        i += len(matched_token)
-                    else:
-                        # '‡' char not part of special token, just append
-                        buffer += idg_list[i]
-                        i += 1
-                else:
-                    # Normal char, append to buffer
-                    buffer += idg_list[i]
-                    i += 1
-            # Flush remaining buffer at the end
+            # List or tuple of tokens that must never be appended to buffer
+            sml_tokens = tuple(TTS_SML.values())
+            for token in idg_list:
+             # 1) On sml token: flush & emit buffer, then emit the token
+                if token.strip() in sml_tokens:
+                    if buffer:
+                        yield buffer
+                        buffer = ''
+                    yield token
+                    continue
+                # 2) If adding this token would overflow, flush current buffer first
+                if buffer and len(buffer) + len(token) > max_chars:
+                    yield buffer
+                    buffer = ''
+                # 3) Append the token (word, punctuation, whatever) unless it's a sml token (already checked)
+                buffer += token
+            # 4) Flush any trailing text
             if buffer:
                 yield buffer
         except Exception as e:
