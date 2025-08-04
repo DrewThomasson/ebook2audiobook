@@ -575,12 +575,12 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                             for inner in walk(child):
                                 return_data = True
                                 yield inner
-                            # Only add pause if something textual/structural came out
+                            # Only add break or pause if something textual/structural came out
                             if return_data:
                                 if name in break_tags:
-                                    yield ("break-request", None)
+                                    yield ("break", TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
-                                    yield ("pause-request", None)                                 
+                                    yield ("pause", TTS_SML['pause'])                                 
                         else:
                             yield from walk(child)
         except Exception as e:
@@ -614,44 +614,31 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
-        items = list(walk(body))
-        if not items:
+        tuples_list = list(walk(body))
+        if not tuples_list:
             return None
-        # Process items to insert breaks and pauses
-        processed = []
-        br_run = 0
-        for typ, payload in items:
-            if typ == 'break-request':
-                if processed and processed[-1][0] != 'break': # avoid duplicates
-                    processed.append(("break", TTS_SML['break']))
-            elif typ == 'pause-request':
-                if processed and processed[-1][0] != 'pause': # avoid duplicates
-                    processed.append(('pause', TTS_SML['pause']))
-            else:
-                processed.append((typ, payload))
-        items = processed
         text_array = []
         handled_tables = set()
-        for typ, payload in items:
+        prev_typ = None
+        for typ, payload in tuples_list:
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
-                # Always add pause after heading (but avoid duplicate if previous already pause)
-                if text_array and text_array[-1] == TTS_SML['pause']:
-                    text_array.append(raw_text.strip())
-                    text_array.append(TTS_SML['pause'])
-                else:
-                    text_array.append(f"{raw_text.strip()} {TTS_SML['pause']}")
+                text_array.append(raw_text.strip())
             elif typ == "break":
-                text_array.append(f" {TTS_SML['break']} ")
+                if prev_typ != 'break':
+                    text_array.append(TTS_SML['break'])
             elif typ == 'pause':
-                text_array.append(f" {TTS_SML['pause']} ")
+                if prev_typ != 'pause':
+                    text_array.append(TTS_SML['pause'])
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
+                    prev_typ = typ
                     continue
                 handled_tables.add(table)
                 rows = table.find_all("tr")
                 if not rows:
+                    prev_typ = typ
                     continue
                 headers = [c.get_text(strip=True) for c in rows[0].find_all(["td", "th"])]
                 for row in rows[1:]:
@@ -664,11 +651,12 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         line = " — ".join(cells)
                     if line:
                         text_array.append(line.strip())
-            else:  # "text"
+            else:
                 text = payload.strip()
                 if text:
                     text_array.append(text)
-        text = "\n".join(text_array)
+            prev_typ = typ
+        text = ''.join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
         if stanza_nlp:
