@@ -743,9 +743,11 @@ def get_sentences(text, lang, tts_engine):
     def join_ideogramms(idg_list):
         try:
             buffer = ''
+            # List or tuple of tokens that must never be appended to buffer
+            sml_tokens = tuple(TTS_SML.values())
             for token in idg_list:
-                # 1) On pause: flush & emit buffer, then the pause
-                if token.strip() in TTS_SML.values():
+             # 1) On special token: flush & emit buffer, then emit the token
+                if token.strip() in sml_tokens:
                     if buffer:
                         yield buffer
                         buffer = ''
@@ -755,14 +757,15 @@ def get_sentences(text, lang, tts_engine):
                 if buffer and len(buffer) + len(token) > max_chars:
                     yield buffer
                     buffer = ''
-                # 3) Append the token (word, punctuation, whatever)
+                # 3) Append the token (word, punctuation, whatever) unless it's a special token (already checked)
                 buffer += token
             # 4) Flush any trailing text
             if buffer:
                 yield buffer
         except Exception as e:
             DependencyError(e)
-            yield buffer
+            if buffer:
+                yield buffer
 
     try:
         max_chars = language_mapping[lang]['max_chars'] - 4
@@ -771,13 +774,11 @@ def get_sentences(text, lang, tts_engine):
         if tts_engine == TTS_ENGINES['TACOTRON2']:
             text = text.replace('"', '')
         # Step 1: Split first by ‡pause‡ and ‡break‡, keeping them as separate elements
+        sml_tokens = (TTS_SML['pause'], TTS_SML['break'])
         sml_list = re.split(
-            rf"({re.escape(TTS_SML['pause'])}|{re.escape(TTS_SML['break'])})", text
+            rf"({'|'.join(map(re.escape, sml_tokens))})", text
         )
-        sml_list = [
-            s.strip() if s in (TTS_SML['pause'], TTS_SML['break']) else s.strip()
-            for s in sml_list if s.strip() or s in (TTS_SML['pause'], TTS_SML['break'])
-        ]
+        sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
         # Step 3: split with punctuation_split_hard_set
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
