@@ -698,8 +698,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         text = normalize_text(text, lang, lang_iso1, tts_engine)
         # Ensure space before and after punctuation_list
         #pattern_space = re.escape(''.join(punctuation_list))
-        #punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space)
-        #text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        #punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
+        #text = re.sub(punctuation_pattern_space, r' \1', text)
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         error = f'filter_chapter() error: {e}'
@@ -765,7 +765,7 @@ def get_sentences(text, lang, tts_engine):
             yield buffer
 
     try:
-        max_chars = language_mapping[lang]['max_chars']
+        max_chars = language_mapping[lang]['max_chars'] - 4
         min_tokens = 5
         # tacotron2 apparently does not like double quotes
         if tts_engine == TTS_ENGINES['TACOTRON2']:
