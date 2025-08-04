@@ -2058,6 +2058,8 @@ def process_script_segments(session):
         error = f'process_script_segments() error: {e}'
         print(error)
         return None
+
+def convert_ebook_batch(args, ctx):
     global context
     context = ctx
     if isinstance(args['ebook_list'], list):
