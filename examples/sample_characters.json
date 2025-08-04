@@ -1,0 +1,29 @@
+[
+  {
+    "normalized_name": "Elena",
+    "inferred_gender": "female", 
+    "inferred_age_category": "adult",
+    "tts_engine": "XTTSv2",
+    "language": "eng",
+    "voice": null,
+    "description": "Young princess, brave and determined"
+  },
+  {
+    "normalized_name": "Merlin",
+    "inferred_gender": "male", 
+    "inferred_age_category": "elder",
+    "tts_engine": "XTTSv2",
+    "language": "eng",
+    "voice": null,
+    "description": "Wise old wizard, mentor figure"
+  },
+  {
+    "normalized_name": "Narrator",
+    "inferred_gender": "male", 
+    "inferred_age_category": "adult",
+    "tts_engine": "XTTSv2",
+    "language": "eng",
+    "voice": null,
+    "description": "Story narrator, neutral descriptive voice"
+  }
+]

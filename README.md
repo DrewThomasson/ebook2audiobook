@@ -108,6 +108,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - 📚 Splits eBook into chapters for organized audio.
 - 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) (and more).
 - 🗣️ Optional voice cloning with your own voice file.
+- 🎭 **NEW:** Multi-character voice support with automatic voice assignment based on character metadata.
 - 🌍 Supports +1110 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 - 🖥️ Designed to run on 4GB RAM.
 
@@ -202,6 +203,54 @@ to let the web page reconnect to the new connection socket.**
   - **[--language]**: Language code in ISO-639-3 (i.e.: ita for italian, eng for english, deu for german...).<br>
     Default language is eng and --language is optional for default language set in ./lib/lang.py.<br>
     The ISO-639-1 2 letters codes are also supported.
+
+### Multi-Character Voice Usage 🎭
+Convert pre-tagged scripts with automatic character voice assignment:
+   - **Linux/MacOS**:
+     ```bash
+     ./ebook2audiobook.sh --headless --script <path_to_script_file> \
+         --characters <path_to_characters_json> --language [language_code]
+     ```
+   - **Windows**
+     ```bash
+     ebook2audiobook.cmd --headless --script <path_to_script_file> \
+         --characters <path_to_characters_json> --language [language_code]
+     ```
+     
+  - **[--script]**: Path to pre-tagged text script with `<CharacterName>: dialogue` format
+  - **[--characters]**: Path to character JSON file with voice metadata
+  - **[--voice]**: Default voice for narrator and fallback (optional)
+
+**Example script format:**
+```text
+This is narrator text.
+
+<Alice>: Hello everyone! I'm excited to be here.
+
+<Bob>: Nice to meet you, Alice. Welcome to our story.
+```
+
+**Example characters.json:**
+```json
+[
+  {
+    "normalized_name": "Alice",
+    "inferred_gender": "female", 
+    "inferred_age_category": "adult",
+    "language": "eng",
+    "voice": null
+  },
+  {
+    "normalized_name": "Bob",
+    "inferred_gender": "male", 
+    "inferred_age_category": "adult", 
+    "language": "eng",
+    "voice": "CustomMaleVoice"
+  }
+]
+```
+
+📖 **[Complete Multi-Character Guide](MULTI_CHARACTER_GUIDE.md)** | 📁 **[Example Files](examples/)**
 
 
 ###  Example of Custom Model Zip Upload

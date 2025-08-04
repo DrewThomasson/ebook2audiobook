@@ -1,0 +1,33 @@
+Welcome to the Multi-Character Audiobook Demo. This sample story demonstrates how to use multiple character voices.
+
+<Narrator>: Once upon a time, in a land far away, there lived a young princess named Elena and a wise old wizard named Merlin.
+
+<Elena>: Good morning, Merlin! What brings you to the castle today?
+
+<Merlin>: Good morning, Princess Elena. I come bearing news of great importance.
+
+The princess looked concerned as she gestured for the wizard to sit down.
+
+<Elena>: Please, tell me what troubles you. Is the kingdom in danger?
+
+<Merlin>: Not danger, my dear, but a great opportunity. The Crystal of Knowledge has been discovered in the Northern Mountains.
+
+<Elena>: The Crystal of Knowledge? I've only heard stories about it. Is it real?
+
+<Merlin>: Indeed it is real, and it has the power to bring wisdom and prosperity to our land. But the journey to retrieve it will be perilous.
+
+The princess stood up with determination in her eyes.
+
+<Elena>: Then we must go! When do we leave?
+
+<Merlin>: We? Princess, this journey is too dangerous for someone of your station.
+
+<Elena>: Merlin, with all due respect, I am not just 'someone of my station.' I am the future queen of this kingdom, and its welfare is my responsibility.
+
+The old wizard smiled, recognizing the strength and wisdom that would make her a great leader.
+
+<Merlin>: Very well, Princess. We leave at dawn. Prepare yourself well, for the path ahead will test both our courage and our friendship.
+
+<Elena>: I wouldn't have it any other way, old friend.
+
+And so began the greatest adventure of their lives, one that would forge an unbreakable bond between the young princess and the wise wizard.

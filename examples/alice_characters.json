@@ -1,0 +1,38 @@
+[
+  {
+    "normalized_name": "Alice",
+    "inferred_gender": "female", 
+    "inferred_age_category": "child",
+    "tts_engine": "XTTSv2",
+    "language": "eng",
+    "voice": null,
+    "description": "Young girl, curious and adventurous"
+  },
+  {
+    "normalized_name": "WhiteRabbit",
+    "inferred_gender": "male", 
+    "inferred_age_category": "adult",
+    "tts_engine": "XTTSv2",
+    "language": "eng",
+    "voice": "QuirkyMaleVoice",
+    "description": "Anxious rabbit, always rushing"
+  },
+  {
+    "normalized_name": "CheshireCat",
+    "inferred_gender": "male", 
+    "inferred_age_category": "adult",
+    "tts_engine": "XTTSv2",
+    "language": "eng",
+    "voice": "MysteriousMaleVoice",
+    "description": "Mysterious cat with a mischievous grin"
+  },
+  {
+    "normalized_name": "QueenOfHearts",
+    "inferred_gender": "female", 
+    "inferred_age_category": "adult",
+    "tts_engine": "XTTSv2",
+    "language": "eng",
+    "voice": null,
+    "description": "Tyrannical queen, loud and commanding"
+  }
+]
