@@ -1697,9 +1697,11 @@ def delete_unused_tmp_dirs(web_dir, days, session):
                             dir_ctime = os.path.getctime(full_dir_path)
                             if dir_mtime < threshold_time and dir_ctime < threshold_time:
                                 shutil.rmtree(full_dir_path, ignore_errors=True)
-                                print(f"Deleted expired session: {full_dir_path}")
+                                msg = f"Deleted expired session: {full_dir_path}"
+                                print(msg)
                         except Exception as e:
-                            print(f"Error deleting {full_dir_path}: {e}")
+                            error = f"Error deleting {full_dir_path}: {e}"
+                            print(error)
 
 def compare_file_metadata(f1, f2):
     if os.path.getsize(f1) != os.path.getsize(f2):
@@ -1897,7 +1899,7 @@ def convert_ebook(args, ctx=None):
                                     for value, attributes in data:
                                         metadata[key] = value
                             metadata['language'] = session['language']
-                            metadata['title'] = metadata['title'] if metadata['title'] else os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ')
+                            metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
                             metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                             session['metadata'] = metadata                  
                             try:
@@ -2750,7 +2752,7 @@ def web_interface(args, ctx):
             try:
                 if selected is not None:
                     session = context.get_session(id)
-                    selected_name = os.path.basename(selected)
+                    selected_name = Path(selected).stem
                     msg = f'Are you sure to delete {selected_name}...'
                     return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
@@ -2763,7 +2765,7 @@ def web_interface(args, ctx):
                 if method is not None:
                     session = context.get_session(id)
                     if method == 'confirm_voice_del':
-                        selected_name = os.path.basename(voice_path)
+                        selected_name = Path(voice_path).stem
                         pattern = re.sub(r'\.wav$', '*.wav', voice_path)
                         files2remove = glob(pattern)
                         for file in files2remove:
@@ -2781,7 +2783,7 @@ def web_interface(args, ctx):
                         show_alert({"type": "warning", "msg": msg})
                         return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_audiobook_del':
-                        selected_name = os.path.basename(audiobook)
+                        selected_name = Path(audiobook).stem
                         if os.path.isdir(audiobook):
                             shutil.rmtree(selected, ignore_errors=True)
                         elif os.path.exists(audiobook):
