@@ -2809,9 +2809,8 @@ def web_interface(args, ctx):
                 file_pattern = "*.wav"
                 eng_options = []
                 bark_options = []
-                pattern = re.compile(r'\.wav$')
                 builtin_options = [
-                    (os.path.splitext(pattern.sub('', f.name))[0], str(f))
+                    (os.path.splitext(f.name)[0], str(f))
                     for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
                 ]
                 if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
@@ -2820,7 +2819,7 @@ def web_interface(args, ctx):
                     eng_options = [
                         (base, str(f))
                         for f in eng_dir.rglob(file_pattern)
-                        for base in [os.path.splitext(pattern.sub('', f.name))[0]]
+                        for base in [os.path.splitext(f.name)[0]]
                         if base not in builtin_names
                     ]
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -2840,7 +2839,7 @@ def web_interface(args, ctx):
                 if session['voice_dir'] is not None:
                     parent_dir = Path(session['voice_dir']).parent
                     voice_options += [
-                        (os.path.splitext(pattern.sub('', f.name))[0], str(f))
+                        (os.path.splitext(f.name)[0], str(f))
                         for f in parent_dir.rglob(file_pattern)
                         if f.is_file()
                     ]
@@ -2863,7 +2862,7 @@ def web_interface(args, ctx):
                             else:
                                 session['voice'] = voice_options[0][1]
                 else:
-                    current_voice_name = os.path.splitext(pattern.sub('', os.path.basename(session['voice'])))[0]
+                    current_voice_name = os.path.splitext(os.path.basename(session['voice']))[0]
                     current_voice_path = next(
                         (path for name, path in voice_options if name == current_voice_name), False
                     )
