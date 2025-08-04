@@ -622,11 +622,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         br_run = 0
         for typ, payload in items:
             if typ == 'break-request':
-                if processed and processed[-1][0] != "break": # avoid duplicates
+                if processed and processed[-1][0] != 'break': # avoid duplicates
                     processed.append(("break", TTS_SML['break']))
             elif typ == 'pause-request':
-                if processed and processed[-1][0] != "pause": # avoid duplicates
-                    processed.append(("pause", TTS_SML['pause']))
+                if processed and processed[-1][0] != 'pause': # avoid duplicates
+                    processed.append(('pause', TTS_SML['pause']))
             else:
                 processed.append((typ, payload))
         items = processed
@@ -642,9 +642,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 else:
                     text_array.append(f"{raw_text.strip()} {TTS_SML['pause']}")
             elif typ == "break":
-                text_array.append(TTS_SML['break'])
-            elif typ == "pause":
-                text_array.append(TTS_SML['pause'])
+                text_array.append(f" {TTS_SML['break']} ")
+            elif typ == 'pause':
+                text_array.append(f" {TTS_SML['pause']} ")
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -772,10 +772,10 @@ def get_sentences(text, lang, tts_engine):
             text = text.replace('"', '')
         # Step 1: Split first by ‡pause‡ and ‡break‡, keeping them as separate elements
         sml_list = re.split(
-            rf'({re.escape(TTS_SML["pause"])}|{re.escape(TTS_SML["break"])})', text
+            rf'({re.escape(TTS_SML['pause'])}|{re.escape(TTS_SML['break'])})', text
         )
         sml_list = [
-            s if s in (TTS_SML['pause'], TTS_SML['break']) else s.strip()
+            s.strip() if s in (TTS_SML['pause'], TTS_SML['break']) else s.strip()
             for s in sml_list if s.strip() or s in (TTS_SML['pause'], TTS_SML['break'])
         ]
         # Step 3: split with punctuation_split_hard_set
@@ -1132,10 +1132,10 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Replace ### and [pause] with TTS_SML['[pause]'] (‡ = double dagger U+2021)
-    text = re.sub(r'(###|\[pause\])', TTS_SML['pause'], text)
+    text = re.sub(r'(###|\[pause\])', f" {TTS_SML['pause']} ", text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, TTS_SML['pause'], text)
+    text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
