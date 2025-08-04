@@ -601,10 +601,7 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                if self.tts_vc_key in ['freevc24', 'openvoice_v1', 'openvoice_v2']:
-                                    settings['samplerate'] = 22050
-                                elif self.tts_vc_key in ['knnvc']:
-                                    settings['samplerate'] = 16000
+                                settings['samplerate'] = TTS_VOICE_CONVERSION[self.tts_vc_key]['samplerate']
                                 source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                 target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
                                 audio_sentence = tts_vc.voice_conversion(
@@ -672,10 +669,7 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                if self.tts_vc_key in ['freevc24', 'openvoice_v1', 'openvoice_v2']:
-                                    settings['samplerate'] = 22050
-                                elif self.tts_vc_key in ['knnvc']:
-                                    settings['samplerate'] = 16000
+                                settings['samplerate'] = TTS_VOICE_CONVERSION[self.tts_vc_key]['samplerate']
                                 source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                 target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
                                 audio_sentence = tts_vc.voice_conversion(
@@ -745,10 +739,7 @@ class Coqui:
                                 tmp_out_wav = tmp_in_wav
                             tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                             if tts_vc:
-                                if self.tts_vc_key in ['freevc24', 'openvoice_v1', 'openvoice_v2']:
-                                    settings['samplerate'] = 22050
-                                elif self.tts_vc_key in ['knnvc']:
-                                    settings['samplerate'] = 16000
+                                settings['samplerate'] = TTS_VOICE_CONVERSION[self.tts_vc_key]['samplerate']
                                 source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
                                 target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
                                 audio_sentence = tts_vc.voice_conversion(

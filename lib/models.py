@@ -21,12 +21,12 @@ TTS_SML = {
 
 
 TTS_VOICE_CONVERSION = {
-    "freevc24": "voice_conversion_models/multilingual/vctk/freevc24",
-    "knnvc": "voice_conversion_models/multilingual/multi-dataset/knnvc",
-    "openvoice_v1": "voice_conversion_models/multilingual/multi-dataset/openvoice_v1",
-    "openvoice_v2": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2"
+    "freevc24": {"path": "voice_conversion_models/multilingual/vctk/freevc24", "samplerate": 24000},
+    "knnvc": {"path": "voice_conversion_models/multilingual/multi-dataset/knnvc", "samplerate": 16000},
+    "openvoice_v1": {"path": "voice_conversion_models/multilingual/multi-dataset/openvoice_v1", "samplerate": 22050},
+    "openvoice_v2": {"path": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2", "samplerate": 22050}
 }
-default_vc_model = TTS_VOICE_CONVERSION['knnvc']
+default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
 
 default_voice_detection_model = 'drewThomasson/segmentation'
 
