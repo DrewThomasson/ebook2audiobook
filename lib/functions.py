@@ -708,7 +708,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
 
 def get_sentences(text, lang, tts_engine):
 
-    def regex_split_inclusive(text, pattern):
+    def split_inclusive(text, pattern):
         result = []
         last_end = 0
         for match in pattern.finditer(text):
@@ -786,7 +786,7 @@ def get_sentences(text, lang, tts_engine):
             if s == TTS_SML['pause']:
                 hard_list.append(s)
             else:
-                parts = regex_split_inclusive(s, pattern)
+                parts = split_inclusive(s, pattern)
                 if parts:
                     for text_part in parts:
                         text_part = text_part.strip()
@@ -804,7 +804,7 @@ def get_sentences(text, lang, tts_engine):
             if s == TTS_SML['pause']:
                 soft_list.append(s)
             elif len(s) > max_chars:
-                parts = [p.strip() for p in regex_split_inclusive(s, pattern) if p.strip()]
+                parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
                 if parts:
                     buffer = ''
                     for part in parts:
@@ -1824,7 +1824,7 @@ def convert_ebook(args, ctx=None):
                             error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                 if session['voice'] is not None:                  
                     voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
-                    final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
+                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
                     if not os.path.exists(final_voice_file):
                         extractor = VoiceExtractor(session, session['voice'], voice_name)
                         status, msg = extractor.extract_voice()
@@ -2684,7 +2684,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
                     voice_name = get_sanitized(voice_name)
-                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}_24000.wav')
+                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
                     extractor = VoiceExtractor(session, f, voice_name)
                     status, msg = extractor.extract_voice()
                     if status:
@@ -2710,7 +2710,7 @@ def web_interface(args, ctx):
         def click_gr_voice_del_btn(selected, id):
             try:
                 if selected is not None:
-                    speaker = re.sub(r'_(24000|16000)\.wav$|\.npz$', '', os.path.basename(selected))
+                    speaker = re.sub(r'\.wav$|\.npz$', '', os.path.basename(selected))
                     if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['YOURTTS']]['voices'].keys():
                         error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
@@ -2764,12 +2764,12 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     if method == 'confirm_voice_del':
                         selected_name = os.path.basename(voice_path)
-                        pattern = re.sub(r'_(24000|16000)\.wav$', '_*.wav', voice_path)
+                        pattern = re.sub(r'\.wav$', '*.wav', voice_path)
                         files2remove = glob(pattern)
                         for file in files2remove:
                             os.remove(file)
                         shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
-                        msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
+                        msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
                         return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
@@ -2806,10 +2806,10 @@ def web_interface(args, ctx):
                 nonlocal voice_options
                 session = context.get_session(id)
                 lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                file_pattern = "*_24000.wav"
+                file_pattern = "*.wav"
                 eng_options = []
                 bark_options = []
-                pattern = re.compile(r'_24000\.wav$')
+                pattern = re.compile(r'\.wav$')
                 builtin_options = [
                     (os.path.splitext(pattern.sub('', f.name))[0], str(f))
                     for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
@@ -2851,7 +2851,7 @@ def web_interface(args, ctx):
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
                 if session['voice'] is None:
                     if voice_options[0][1] is not None:
-                        default_name = Path(default_voice_path).stem.replace('_24000','').replace('_16000', '')
+                        default_name = Path(default_voice_path).stem
                         for name, value in voice_options:
                             if name == default_name:
                                 session['voice'] = value
