@@ -1836,7 +1836,7 @@ def convert_ebook(args, ctx=None):
                         if status:
                             session['voice'] = final_voice_file
                         else:
-                            error = 'extractor.extract_voice()() failed! Check if you audio file is compatible.'
+                            error = f'VoiceExtractor.extract_voice() failed! {msg}'
                             print(error)
             if error is None:
                 if session['script_mode'] == NATIVE:
