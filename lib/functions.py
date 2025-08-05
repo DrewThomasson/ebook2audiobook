@@ -820,17 +820,17 @@ def get_sentences(text, lang, tts_engine):
                             soft_list.append(buffer)
                             buffer = part
                     if buffer:
-                       cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
+                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         soft_list.append(buffer)
                 else:
-                   cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                    cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                     if not any(ch.isalnum() for ch in cleaned):
                         continue
                     soft_list.append(s)
             else:
-               cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                 if not any(ch.isalnum() for ch in cleaned):
                     continue
                 soft_list.append(s)
