@@ -227,7 +227,7 @@ class VoiceExtractor:
                 '-y', process_file
             ]
             error = None
-            ffmpeg_cmd[-3] = rate
+            ffmpeg_cmd[-3] = str(rate)
             output_file = re.sub(r'_proc\.wav$', f'.wav', process_file)
             ffmpeg_cmd[-1] = output_file
             try:
