@@ -88,7 +88,7 @@ def normalize_audio(input_file, output_file, samplerate):
         )
         return True
     except subprocess.CalledProcessError as e:
-        error = f"_normalize_audio() error: {input_file}: {e}"
+        error = f"normalize_audio() error: {input_file}: {e}"
         print(error)
         return False
 

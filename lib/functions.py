@@ -575,12 +575,12 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                             for inner in walk(child):
                                 return_data = True
                                 yield inner
-                            # Only add pause if something textual/structural came out
+                            # Only add break or pause if something textual/structural came out
                             if return_data:
                                 if name in break_tags:
-                                    yield ("break-request", None)
+                                    yield ("break", TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
-                                    yield ("pause-request", None)                                 
+                                    yield ("pause", TTS_SML['pause'])                                 
                         else:
                             yield from walk(child)
         except Exception as e:
@@ -614,44 +614,31 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
-        items = list(walk(body))
-        if not items:
+        tuples_list = list(walk(body))
+        if not tuples_list:
             return None
-        # Process items to insert breaks and pauses
-        processed = []
-        br_run = 0
-        for typ, payload in items:
-            if typ == 'break-request':
-                if processed and processed[-1][0] != "break": # avoid duplicates
-                    processed.append(("break", TTS_SML['break']))
-            elif typ == 'pause-request':
-                if processed and processed[-1][0] != "pause": # avoid duplicates
-                    processed.append(("pause", TTS_SML['pause']))
-            else:
-                processed.append((typ, payload))
-        items = processed
         text_array = []
         handled_tables = set()
-        for typ, payload in items:
+        prev_typ = None
+        for typ, payload in tuples_list:
             if typ == "heading":
                 raw_text = replace_roman_numbers(payload, lang)
-                # Always add pause after heading (but avoid duplicate if previous already pause)
-                if text_array and text_array[-1] == TTS_SML['pause']:
-                    text_array.append(raw_text.strip())
-                    text_array.append(TTS_SML['pause'])
-                else:
-                    text_array.append(f"{raw_text.strip()} {TTS_SML['pause']}")
+                text_array.append(raw_text.strip())
             elif typ == "break":
-                text_array.append(TTS_SML['break'])
-            elif typ == "pause":
-                text_array.append(TTS_SML['pause'])
+                if prev_typ != 'break':
+                    text_array.append(TTS_SML['break'])
+            elif typ == 'pause':
+                if prev_typ != 'pause':
+                    text_array.append(TTS_SML['pause'])
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
+                    prev_typ = typ
                     continue
                 handled_tables.add(table)
                 rows = table.find_all("tr")
                 if not rows:
+                    prev_typ = typ
                     continue
                 headers = [c.get_text(strip=True) for c in rows[0].find_all(["td", "th"])]
                 for row in rows[1:]:
@@ -664,11 +651,12 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         line = " — ".join(cells)
                     if line:
                         text_array.append(line.strip())
-            else:  # "text"
+            else:
                 text = payload.strip()
                 if text:
                     text_array.append(text)
-        text = "\n".join(text_array)
+            prev_typ = typ
+        text = ''.join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
         if stanza_nlp:
@@ -697,9 +685,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         text = text.translate(specialchars_remove_table)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
         # Ensure space before and after punctuation_list
-        pattern_space = re.escape(''.join(punctuation_list))
-        punctuation_pattern_space = r'\s*([{}])\s*'.format(pattern_space)
-        text = re.sub(punctuation_pattern_space, r' \1 ', text)
+        #pattern_space = re.escape(''.join(punctuation_list))
+        #punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
+        #text = re.sub(punctuation_pattern_space, r' \1', text)
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         error = f'filter_chapter() error: {e}'
@@ -708,7 +696,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
 
 def get_sentences(text, lang, tts_engine):
 
-    def regex_split_inclusive(text, pattern):
+    def split_inclusive(text, pattern):
         result = []
         last_end = 0
         for match in pattern.finditer(text):
@@ -721,31 +709,42 @@ def get_sentences(text, lang, tts_engine):
         return result
 
     def segment_ideogramms(text):
+        sml_pattern = "|".join(re.escape(token) for token in sml_tokens)
+        segments = re.split(f"({sml_pattern})", text)
+        result = []
         try:
-            if lang == 'zho':
-                import jieba
-                return list(jieba.cut(text))
-            elif lang == 'jpn':
-                sudachi = dictionary.Dictionary().create()
-                mode = tokenizer.Tokenizer.SplitMode.C
-                return [m.surface() for m in sudachi.tokenize(text, mode)]
-            elif lang == 'kor':
-                ltokenizer = LTokenizer()
-                return ltokenizer.tokenize(text)
-            elif lang in ['tha', 'lao', 'mya', 'khm']:
-                return word_tokenize(text, engine='newmm')
-            else:
-                return [text]
+            for segment in segments:
+                if not segment:
+                    continue
+                # If the segment is a SML token, keep as its own
+                if re.fullmatch(sml_pattern, segment):
+                    result.append(segment)
+                else:
+                    if lang == 'zho':
+                        import jieba
+                        result.extend([t for t in jieba.cut(segment) if t.strip()])
+                    elif lang == 'jpn':
+                        sudachi = dictionary.Dictionary().create()
+                        mode = tokenizer.Tokenizer.SplitMode.C
+                        result.extend([m.surface() for m in sudachi.tokenize(segment, mode) if m.surface().strip()])
+                    elif lang == 'kor':
+                        ltokenizer = LTokenizer()
+                        result.extend([t for t in ltokenizer.tokenize(segment) if t.strip()])
+                    elif lang in ['tha', 'lao', 'mya', 'khm']:
+                        result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
+                    else:
+                        result.append(segment)
+            return result
         except Exception as e:
             DependencyError(e)
-            return [text]
+            return [text]   
 
     def join_ideogramms(idg_list):
         try:
             buffer = ''
             for token in idg_list:
-                # 1) On pause: flush & emit buffer, then the pause
-                if token.strip() in TTS_SML.values():
+             # 1) On sml token: flush & emit buffer, then emit the token
+                if token.strip() in sml_tokens:
                     if buffer:
                         yield buffer
                         buffer = ''
@@ -755,30 +754,29 @@ def get_sentences(text, lang, tts_engine):
                 if buffer and len(buffer) + len(token) > max_chars:
                     yield buffer
                     buffer = ''
-                # 3) Append the token (word, punctuation, whatever)
+                # 3) Append the token (word, punctuation, whatever) unless it's a sml token (already checked)
                 buffer += token
             # 4) Flush any trailing text
             if buffer:
                 yield buffer
         except Exception as e:
             DependencyError(e)
-            yield buffer
+            if buffer:
+                yield buffer
 
     try:
-        max_chars = language_mapping[lang]['max_chars']
+        max_chars = language_mapping[lang]['max_chars'] - 4
         min_tokens = 5
         # tacotron2 apparently does not like double quotes
         if tts_engine == TTS_ENGINES['TACOTRON2']:
             text = text.replace('"', '')
-        # Step 1: Split first by ‡pause‡ and ‡break‡, keeping them as separate elements
+        # List or tuple of tokens that must never be appended to buffer
+        sml_tokens = tuple(TTS_SML.values())
         sml_list = re.split(
-            rf'({re.escape(TTS_SML["pause"])}|{re.escape(TTS_SML["break"])})', text
+            rf"({'|'.join(map(re.escape, sml_tokens))})", text
         )
-        sml_list = [
-            s if s in (TTS_SML['pause'], TTS_SML['break']) else s.strip()
-            for s in sml_list if s.strip() or s in (TTS_SML['pause'], TTS_SML['break'])
-        ]
-        # Step 3: split with punctuation_split_hard_set
+        sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
+        # Split with punctuation_split_hard_set
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         hard_list = []
@@ -786,17 +784,15 @@ def get_sentences(text, lang, tts_engine):
             if s == TTS_SML['pause']:
                 hard_list.append(s)
             else:
-                parts = regex_split_inclusive(s, pattern)
+                parts = split_inclusive(s, pattern)
                 if parts:
                     for text_part in parts:
                         text_part = text_part.strip()
                         if text_part:
                             hard_list.append(text_part)
                 else:
-                    # no hard‑split punctuation found → keep whole sentence
                     hard_list.append(s)
-
-        # Step 4: check if some hard_list entries exceed max_chars, so split on soft punctuation
+        # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         soft_list = []
@@ -804,7 +800,7 @@ def get_sentences(text, lang, tts_engine):
             if s == TTS_SML['pause']:
                 soft_list.append(s)
             elif len(s) > max_chars:
-                parts = [p.strip() for p in regex_split_inclusive(s, pattern) if p.strip()]
+                parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
                 if parts:
                     buffer = ''
                     for part in parts:
@@ -821,14 +817,22 @@ def get_sentences(text, lang, tts_engine):
                         if len(buffer.split()) < min_tokens:
                             buffer = buffer + ' ' + part
                         else:
-                            # buffer is large enough: flush it, start new one
                             soft_list.append(buffer)
                             buffer = part
                     if buffer:
+                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
+                        if not any(ch.isalnum() for ch in cleaned):
+                            continue
                         soft_list.append(buffer)
                 else:
+                    cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                    if not any(ch.isalnum() for ch in cleaned):
+                        continue
                     soft_list.append(s)
             else:
+                cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                if not any(ch.isalnum() for ch in cleaned):
+                    continue
                 soft_list.append(s)
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
@@ -844,7 +848,6 @@ def get_sentences(text, lang, tts_engine):
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
-            # Step extra: split any remaining over‑length sentences on spaces
             sentences = []
             for s in soft_list:
                 if s == TTS_SML['pause'] or len(s) <= max_chars:
@@ -859,7 +862,7 @@ def get_sentences(text, lang, tts_engine):
                             sentences.append(text_part.strip())
                             text_part = w
                     if text_part:
-                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         sentences.append(text_part.strip())
@@ -1132,10 +1135,10 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
     # Replace ### and [pause] with TTS_SML['[pause]'] (‡ = double dagger U+2021)
-    text = re.sub(r'(###|\[pause\])', TTS_SML['pause'], text)
+    text = re.sub(r'(###|\[pause\])', f" {TTS_SML['pause']} ", text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
-    text = re.sub(pattern, TTS_SML['pause'], text)
+    text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
     # Replace single newlines ("\n" or "\r") with spaces
     text = re.sub(r'\r\n|\r|\n', ' ', text)
     # Replace punctuations causing hallucinations
@@ -1221,9 +1224,9 @@ def convert_chapters2audio(session):
         total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
         total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
         sentence_number = 0
-        msg = f'A total of {total_chapters} blocks and {total_sentences} sentences...'
+        msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
         print(msg)
-        with tqdm(total=total_iterations, desc='conversion 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
+        with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
                 chapter_audio_file = f'chapter_{chapter_num}.{default_audio_proc_format}'
@@ -1248,8 +1251,8 @@ def convert_chapters2audio(session):
                             if progress_bar is not None:
                                 progress_bar(total_progress)
                             percentage = total_progress * 100
-                            t.set_description(f'Converting {percentage:.2f}%')
-                            msg = f"\nSentence: {sentence}" if is_sentence else f"SML: {sentence}"
+                            t.set_description(f'{percentage:.2f}%')
+                            msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
                         else:
                             return False
@@ -1697,9 +1700,11 @@ def delete_unused_tmp_dirs(web_dir, days, session):
                             dir_ctime = os.path.getctime(full_dir_path)
                             if dir_mtime < threshold_time and dir_ctime < threshold_time:
                                 shutil.rmtree(full_dir_path, ignore_errors=True)
-                                print(f"Deleted expired session: {full_dir_path}")
+                                msg = f"Deleted expired session: {full_dir_path}"
+                                print(msg)
                         except Exception as e:
-                            print(f"Error deleting {full_dir_path}: {e}")
+                            error = f"Error deleting {full_dir_path}: {e}"
+                            print(error)
 
 def compare_file_metadata(f1, f2):
     if os.path.getsize(f1) != os.path.getsize(f2):
@@ -1824,14 +1829,14 @@ def convert_ebook(args, ctx=None):
                             error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                 if session['voice'] is not None:                  
                     voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
-                    final_voice_file = os.path.join(session['voice_dir'],f'{voice_name}_24000.wav')
+                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
                     if not os.path.exists(final_voice_file):
                         extractor = VoiceExtractor(session, session['voice'], voice_name)
                         status, msg = extractor.extract_voice()
                         if status:
                             session['voice'] = final_voice_file
                         else:
-                            error = 'extractor.extract_voice()() failed! Check if you audio file is compatible.'
+                            error = f'VoiceExtractor.extract_voice() failed! {msg}'
                             print(error)
             if error is None:
                 if session['script_mode'] == NATIVE:
@@ -1897,7 +1902,7 @@ def convert_ebook(args, ctx=None):
                                     for value, attributes in data:
                                         metadata[key] = value
                             metadata['language'] = session['language']
-                            metadata['title'] = metadata['title'] if metadata['title'] else os.path.splitext(os.path.basename(session['ebook']))[0].replace('_',' ')
+                            metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
                             metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
                             session['metadata'] = metadata                  
                             try:
@@ -2684,7 +2689,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     voice_name = os.path.splitext(os.path.basename(f))[0].replace('&', 'And')
                     voice_name = get_sanitized(voice_name)
-                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}_24000.wav')
+                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
                     extractor = VoiceExtractor(session, f, voice_name)
                     status, msg = extractor.extract_voice()
                     if status:
@@ -2710,8 +2715,24 @@ def web_interface(args, ctx):
         def click_gr_voice_del_btn(selected, id):
             try:
                 if selected is not None:
-                    speaker = re.sub(r'_(24000|16000)\.wav$|\.npz$', '', os.path.basename(selected))
-                    if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['YOURTTS']]['voices'].keys():
+                    speaker_path = os.path.abspath(selected)
+                    speaker = re.sub(r'\.wav$|\.npz$', '', os.path.basename(selected))
+                    builtin_root = os.path.join(voices_dir, session['language'])
+                    sessions_root = os.path.join(voices_dir, '__sessions')
+                    is_in_sessions = os.path.commonpath([speaker_path, os.path.abspath(sessions_root)]) == os.path.abspath(sessions_root)
+                    is_in_builtin = os.path.commonpath([speaker_path, os.path.abspath(builtin_root)]) == os.path.abspath(builtin_root)
+                    is_builtin_name = any(
+                        speaker in settings.get('voices', {})
+                        for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
+                    )
+                    if is_builtin_name and is_in_builtin:
+                        error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
+                        show_alert({"type": "warning", "msg": error})
+                    is_builtin = any(
+                        speaker in settings.get('voices', {})
+                        for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
+                    )
+                    if is_builtin and is_in_builtin:
                         error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
                     else:
@@ -2750,7 +2771,7 @@ def web_interface(args, ctx):
             try:
                 if selected is not None:
                     session = context.get_session(id)
-                    selected_name = os.path.basename(selected)
+                    selected_name = Path(selected).stem
                     msg = f'Are you sure to delete {selected_name}...'
                     return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
@@ -2763,13 +2784,13 @@ def web_interface(args, ctx):
                 if method is not None:
                     session = context.get_session(id)
                     if method == 'confirm_voice_del':
-                        selected_name = os.path.basename(voice_path)
-                        pattern = re.sub(r'_(24000|16000)\.wav$', '_*.wav', voice_path)
+                        selected_name = Path(voice_path).stem
+                        pattern = re.sub(r'\.wav$', '*.wav', voice_path)
                         files2remove = glob(pattern)
                         for file in files2remove:
                             os.remove(file)
                         shutil.rmtree(os.path.join(os.path.dirname(voice_path), 'bark', selected_name), ignore_errors=True)
-                        msg = f"Voice file {re.sub(r'_(24000|16000).wav$', '', selected_name)} deleted!"
+                        msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
                         return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
@@ -2781,7 +2802,7 @@ def web_interface(args, ctx):
                         show_alert({"type": "warning", "msg": msg})
                         return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_audiobook_del':
-                        selected_name = os.path.basename(audiobook)
+                        selected_name = Path(audiobook).stem
                         if os.path.isdir(audiobook):
                             shutil.rmtree(selected, ignore_errors=True)
                         elif os.path.exists(audiobook):
@@ -2806,12 +2827,11 @@ def web_interface(args, ctx):
                 nonlocal voice_options
                 session = context.get_session(id)
                 lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
-                file_pattern = "*_24000.wav"
+                file_pattern = "*.wav"
                 eng_options = []
                 bark_options = []
-                pattern = re.compile(r'_24000\.wav$')
                 builtin_options = [
-                    (os.path.splitext(pattern.sub('', f.name))[0], str(f))
+                    (os.path.splitext(f.name)[0], str(f))
                     for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
                 ]
                 if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
@@ -2820,7 +2840,7 @@ def web_interface(args, ctx):
                     eng_options = [
                         (base, str(f))
                         for f in eng_dir.rglob(file_pattern)
-                        for base in [os.path.splitext(pattern.sub('', f.name))[0]]
+                        for base in [os.path.splitext(f.name)[0]]
                         if base not in builtin_names
                     ]
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -2840,7 +2860,7 @@ def web_interface(args, ctx):
                 if session['voice_dir'] is not None:
                     parent_dir = Path(session['voice_dir']).parent
                     voice_options += [
-                        (os.path.splitext(pattern.sub('', f.name))[0], str(f))
+                        (os.path.splitext(f.name)[0], str(f))
                         for f in parent_dir.rglob(file_pattern)
                         if f.is_file()
                     ]
@@ -2851,7 +2871,7 @@ def web_interface(args, ctx):
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
                 if session['voice'] is None:
                     if voice_options[0][1] is not None:
-                        default_name = Path(default_voice_path).stem.replace('_24000','').replace('_16000', '')
+                        default_name = Path(default_voice_path).stem
                         for name, value in voice_options:
                             if name == default_name:
                                 session['voice'] = value
@@ -2863,7 +2883,7 @@ def web_interface(args, ctx):
                             else:
                                 session['voice'] = voice_options[0][1]
                 else:
-                    current_voice_name = os.path.splitext(pattern.sub('', os.path.basename(session['voice'])))[0]
+                    current_voice_name = os.path.splitext(os.path.basename(session['voice']))[0]
                     current_voice_path = next(
                         (path for name, path in voice_options if name == current_voice_name), False
                     )

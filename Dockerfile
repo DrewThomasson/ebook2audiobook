@@ -106,13 +106,11 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
 # Do a test run to pre-download and bake base models into the image, but only if SKIP_XTTS_TEST is not true
 RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
         echo "Running XTTS test to pre-download models..." && \
-        echo "This is a test sentence." > test.txt && \
         if [ "$TORCH_VERSION" = "xpu" ]; then \
             TORCH_DEVICE_BACKEND_AUTOLOAD=0 python app.py --headless --ebook test.txt --script_mode full_docker; \
         else \
-            python app.py --headless --ebook test.txt --script_mode full_docker; \
+            python app.py --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --script_mode full_docker; \
         fi && \
-        rm test.txt; \
     else \
         echo "Skipping XTTS test run as requested."; \
     fi

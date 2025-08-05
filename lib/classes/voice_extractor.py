@@ -10,7 +10,7 @@ from io import BytesIO
 from pydub import AudioSegment, silence
 from pydub.silence import detect_silence
 
-from lib.conf import voice_formats
+from lib.conf import voice_formats, default_audio_proc_samplerate
 from lib.models import TTS_ENGINES, models
 from lib.classes.background_detector import BackgroundDetector
 
@@ -25,7 +25,6 @@ class VoiceExtractor:
         self.samplerate = models[session['tts_engine']][session['fine_tuned']]['samplerate']
         self.output_dir = self.session['voice_dir']
         self.demucs_dir = os.path.join(self.output_dir, 'htdemucs', voice_name)
-        self.final_files = []
         self.silence_threshold = -60
 
     def _validate_format(self):
@@ -204,8 +203,10 @@ class VoiceExtractor:
             raise ValueError(error)
 
     def _normalize_audio(self):
-        try:                 
-            process_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
+        error = ''
+        try:
+            proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
+            final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_track]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
@@ -222,50 +223,36 @@ class VoiceExtractor:
             ffmpeg_cmd += [
                 '-filter_complex', filter_complex,
                 '-map', '[audio]',
-                '-ar', 'null',
-                '-y', process_file
+                '-ar', f'{default_audio_proc_samplerate}',
+                '-y', proc_voice_file
             ]
-            error = None
-            for rate in ['16000', '24000']:
-                ffmpeg_cmd[-3] = rate
-                output_file = re.sub(r'\.wav$', f'_{rate}.wav', process_file)
-                ffmpeg_cmd[-1] = output_file
-                try:
-                    process = subprocess.Popen(
-                        ffmpeg_cmd,
-                        env={},
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.STDOUT,
-                        text=True,
-                        universal_newlines=True,
-                        encoding='utf-8'
-                    )
-                    for line in process.stdout:
-                        print(line, end='')  # Print each line of stdout
-                    process.wait()
-                    if process.returncode != 0:
-                        error = f'_normalize_audio(): process.returncode: {process.returncode}'
-                        break
-                    elif not os.path.exists(output_file) or os.path.getsize(output_file) == 0:
-                        error = f'_normalize_audio() error: {output_file} was not created or is empty.'
-                        break
-                    else:
-                        self.final_files.append(output_file)
-                except subprocess.CalledProcessError as e:
-                    error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
-                    break
-            shutil.rmtree(self.demucs_dir, ignore_errors=True)
-            if os.path.exists(process_file):
-                os.remove(process_file)
-            if error is None:
-                msg = 'Audio normalization successful!'
-                return True, msg
+            try:
+                process = subprocess.Popen(
+                    ffmpeg_cmd,
+                    env={},
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE,
+                    encoding='utf-8',
+                    errors='ignore'
+                )
+                for line in process.stdout:
+                    print(line, end='')  # Print each line of stdout
+                process.wait()
+                if process.returncode != 0:
+                    error = f'_normalize_audio(): process.returncode: {process.returncode}'
+                elif not os.path.exists(proc_voice_file) or os.path.getsize(proc_voice_file) == 0:
+                    error = f'_normalize_audio() error: {proc_voice_file} was not created or is empty.'
+                else:
+                    os.replace(proc_voice_file, final_voice_file)
+                    shutil.rmtree(self.demucs_dir, ignore_errors=True)
+                    msg = 'Audio normalization successful!'
+                    return True, msg
+            except subprocess.CalledProcessError as e:
+                error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
         except FileNotFoundError as e:
             error = '_normalize_audio() FileNotFoundError: {e} Input file or FFmpeg PATH not found!'
-            raise ValueError(error)
         except Exception as e:
             error = f'_normalize_audio() error: {e}'
-            raise ValueError(error)
         return False, error
 
     def extract_voice(self):
