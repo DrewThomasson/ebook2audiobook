@@ -10,7 +10,6 @@ on:
   pull_request:
     branches:
       - main
-      - v25
     types:
       - opened
       - synchronize
