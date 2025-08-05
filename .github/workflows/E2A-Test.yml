@@ -10,6 +10,7 @@ on:
   pull_request:
     branches:
       - main
+      - v25
     types:
       - opened
       - synchronize
@@ -112,7 +113,17 @@ jobs:
             # Merge PR source
             if ! git merge --no-ff --no-edit "origin/$HEAD_REF"; then
               echo "❌ Merge conflict simulating PR merge"
-              exit 1
+              echo "❌ Initial merge failed, attempting cleanup of __pycache__ and retry..."
+
+              # Remove known __pycache__ dirs that may cause conflict
+              echo "==> Cleaning up untracked files like __pycache__"
+              git clean -ffd lib/
+
+              # Retry the merge
+              if ! git merge --no-ff --no-edit "origin/$HEAD_REF"; then
+                echo "❌ Merge still failed after cleanup"
+                exit 1
+              fi
             fi
           else
             echo "==> Not a PR: checking out triggered commit directly"
@@ -159,7 +170,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON2
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON2
 
 
       - name: English FAIRSEQ Custom-Voice headless single test
@@ -169,7 +180,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
 
           
       - name: Unusual FAIRSEQ Custom-Voice headless single test
@@ -179,7 +190,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/urd-script_davanagari-test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" --output_dir ~/ebook2audiobook/audiobooks/UnFAIRSEQ
+          ./ebook2audiobook.sh --headless  --language urd-script_devanagari --ebook "tools/workflow-testing/urd-script_davanagari-test.txt" --tts_engine FAIRSEQ --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/UnFAIRSEQ
 
       - name: English VITS Custom-Voice headless single test
         shell: bash
@@ -189,7 +200,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine VITS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/VITS
 
       - name: English YOURTTS Custom-Voice headless batch test
         shell: bash
@@ -198,7 +209,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
+          ./ebook2audiobook.sh --headless  --language eng --ebooks_dir "tools/workflow-testing" --tts_engine YOURTTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/YOURTTS
 
 
       - name: Default XTTSv2 headless Custom-Voice single test
@@ -208,7 +219,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/XTTSv2
 
       - name: English XTTSv2 headless fine-tuned XTTSv2 model single test
         shell: bash
@@ -226,7 +237,7 @@ jobs:
           cd ~/ebook2audiobook
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
-          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough_24000.wav" --output_dir ~/ebook2audiobook/audiobooks/BARK 
+          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine BARK --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/BARK 
 
       - name: Upload audiobooks folder artifact
         if: always()
