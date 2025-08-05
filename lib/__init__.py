@@ -1,5 +1,5 @@
 from .models import (
-    TTS_ENGINES, TTS_SML, default_fine_tuned, default_tts_engine, 
+    TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, default_fine_tuned, default_tts_engine, 
     default_engine_settings, default_vc_model, default_voice_detection_model,
     loaded_tts, max_custom_model, max_custom_voices,
     max_tts_in_memory, max_upload_size, models, os, voices_dir
@@ -29,7 +29,7 @@ from .lang import (
 
 __all__ = [
     # from models
-    "TTS_ENGINES", "TTS_SML", "default_fine_tuned", "default_tts_engine",
+    "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "default_fine_tuned", "default_tts_engine",
     "default_engine_settings", "default_vc_model", "default_voice_detection_model",
     "loaded_tts", "max_custom_model",
     "max_custom_voices", "max_tts_in_memory", "max_upload_size",
