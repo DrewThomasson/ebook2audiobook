@@ -205,7 +205,6 @@ class VoiceExtractor:
 
     def _normalize_audio(self):
         try:
-            rate = default_audio_proc_samplerate
             process_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_track]
             filter_complex = (
@@ -223,11 +222,10 @@ class VoiceExtractor:
             ffmpeg_cmd += [
                 '-filter_complex', filter_complex,
                 '-map', '[audio]',
-                '-ar', 'null',
+                '-ar', str(default_audio_proc_samplerate),
                 '-y', process_file
             ]
             error = None
-            ffmpeg_cmd[-3] = str(rate)
             output_file = re.sub(r'_proc\.wav$', f'.wav', process_file)
             ffmpeg_cmd[-1] = output_file
             try:
