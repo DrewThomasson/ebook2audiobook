@@ -24,13 +24,13 @@ jobs:
           # The message to post on the pull request when closing it. If none provided, will not comment when closing a pull requests.
           #close-pr-message: # optional
           # The number of days old an issue or a pull request can be before marking it stale. Set to -1 to never mark issues or pull requests as stale automatically.
-          days-before-stale: 3
+          days-before-stale: 10
           # The number of days old an issue can be before marking it stale. Set to -1 to never mark issues as stale automatically. Override "days-before-stale" option regarding only the issues.
           #days-before-issue-stale: # optional
           # The number of days old a pull request can be before marking it stale. Set to -1 to never mark pull requests as stale automatically. Override "days-before-stale" option regarding only the pull requests.
           #days-before-pr-stale: # optional
           # The number of days to wait to close an issue or a pull request after it being marked stale. Set to -1 to never close stale issues or pull requests.
-          days-before-close: 2
+          days-before-close: 10
           # The number of days to wait to close an issue after it being marked stale. Set to -1 to never close stale issues. Override "days-before-close" option regarding only the issues.
           #days-before-issue-close: # optional
           # The number of days to wait to close a pull request after it being marked stale. Set to -1 to never close stale pull requests. Override "days-before-close" option regarding only the pull requests.
