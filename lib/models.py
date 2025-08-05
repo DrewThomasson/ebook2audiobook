@@ -11,23 +11,22 @@ TTS_ENGINES = {
     "TACOTRON2": "tacotron", 
     "YOURTTS": "yourtts"
 }
-default_tts_engine = TTS_ENGINES['XTTSv2']
-default_fine_tuned = 'internal'
+
+TTS_VOICE_CONVERSION = {
+    "freevc24": {"path": "voice_conversion_models/multilingual/vctk/freevc24", "samplerate": 24000},
+    "knnvc": {"path": "voice_conversion_models/multilingual/multi-dataset/knnvc", "samplerate": 16000},
+    "openvoice_v1": {"path": "voice_conversion_models/multilingual/multi-dataset/openvoice_v1", "samplerate": 22050},
+    "openvoice_v2": {"path": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2", "samplerate": 22050}
+}
 
 TTS_SML = {
     "break": "‡break‡",
     "pause": "‡pause‡"
 }
 
-
-TTS_VOICE_CONVERSION = {
-    "freevc24": "voice_conversion_models/multilingual/vctk/freevc24",
-    "knnvc": "voice_conversion_models/multilingual/multi-dataset/knnvc",
-    "openvoice_v1": "voice_conversion_models/multilingual/multi-dataset/openvoice_v1",
-    "openvoice_v2": "voice_conversion_models/multilingual/multi-dataset/openvoice_v2"
-}
-default_vc_model = TTS_VOICE_CONVERSION['knnvc']
-
+default_tts_engine = TTS_ENGINES['XTTSv2']
+default_fine_tuned = 'internal'
+default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
 default_voice_detection_model = 'drewThomasson/segmentation'
 
 max_tts_in_memory = 2 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM).
@@ -161,7 +160,7 @@ models = {
             "lang": "multi",
             "repo": "coqui/XTTS-v2",
             "sub": "tts_models/multilingual/multi-dataset/xtts_v2/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDahl_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'KumarDahl.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -169,7 +168,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/AiExplained/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"AiExplained_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'AiExplained.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -177,7 +176,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/AsmrRacoon/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"AsmrRacoon_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'AsmrRacoon.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -185,7 +184,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/Awkwafina/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"Awkwafina_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'female', 'Awkwafina.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -193,7 +192,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/BobOdenkirk/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"BobOdenkirk_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'BobOdenkirk.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -201,7 +200,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/BobRoss/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"BobRoss_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'BobRoss.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -209,7 +208,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/BrinaPalencia/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"BrinaPalencia_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'female', 'BrinaPalencia.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -217,7 +216,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/BryanCranston/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"BryanCranston_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'BryanCranston.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -225,7 +224,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/DavidAttenborough/",
-            "voice": os.path.join(voices_dir, "eng", "elder", "male", f"DavidAttenborough_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'elder', 'male', 'DavidAttenborough.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -233,7 +232,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/DeathPussInBoots/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"DeathPussInBoots_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'DeathPussInBoots.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -241,7 +240,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/DermotCrowley/",
-            "voice": os.path.join(voices_dir, "eng", "elder", "male", f"DermotCrowley_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'elder', 'male', 'DermotCrowley.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -249,7 +248,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/EvaSeymour/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"EvaSeymour_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'female', 'EvaSeymour.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -257,7 +256,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/GideonOfnirEldenRing/",
-            "voice": os.path.join(voices_dir, "eng", "elder", "male", f"GideonOfnirEldenRing_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'elder', 'male', 'GideonOfnirEldenRing.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -265,7 +264,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/GhostMW2/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"GhostMW2_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'GhostMW2.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -273,7 +272,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/JhonButlerASMR/",
-            "voice": os.path.join(voices_dir, "eng", "elder", "male", f"JhonButlerASMR_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'elder', 'male', 'JhonButlerASMR.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -281,7 +280,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/JhonMulaney/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"JhonMulaney_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'JhonMulaney.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -289,7 +288,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/JillRedfield/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"JillRedfield_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'female', 'JillRedfield.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -297,7 +296,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/JuliaWhenlan/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"JuliaWhenlan_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'female', 'JuliaWhenlan.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -305,7 +304,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/LeeHorsley/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"LeeHorsley_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'LeeHorsley.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -313,7 +312,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/MelinaEldenRing/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"MelinaEldenRing_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'female', 'MelinaEldenRing.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -321,7 +320,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/MorganFreeman/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"MorganFreeman_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'MorganFreeman.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -329,7 +328,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/NeilGaiman/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"NeilGaiman_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'NeilGaiman.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -337,7 +336,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/RainyDayHeadSpace/",
-            "voice": os.path.join(voices_dir, "eng", "elder", "male", f"RainyDayHeadSpace_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'elder', 'male', 'RainyDayHeadSpace.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -345,7 +344,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/RayPorter/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"RayPorter_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'RayPorter.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -353,7 +352,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/RelaxForAWhile/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"RelaxForAWhile_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'female', 'RelaxForAWhile.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -361,7 +360,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/RosamundPike/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"RosamundPike_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'female', 'RosamundPike.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -369,7 +368,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/ScarlettJohansson/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "female", f"ScarlettJohansson_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'female', 'ScarlettJohansson.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -377,7 +376,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/SladeTeenTitans/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"SladeTeenTitans_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'SladeTeenTitans.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -385,7 +384,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/StanleyParable/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"StanleyParable_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'StanleyParable.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -393,7 +392,7 @@ models = {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/WhisperSalemASMR/",
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"WhisperSalemASMR_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'WhisperSalemASMR.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
@@ -401,7 +400,7 @@ models = {
             "lang": "rus",
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/rus/Konishev/",
-            "voice": os.path.join(voices_dir, "rus", "adult", "male", f"Konishev_{default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'rus', 'adult', 'male', 'Konishev.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         }
@@ -411,7 +410,7 @@ models = {
             "lang": "multi",
             "repo": "erogol/bark", # suno/bark, rsxdalv/suno, tts_models/multilingual/multi-dataset/bark
             "sub": "", # {"big-bf16": "big-bf16/", "small-bf16": "small-bf16/", "big": "big/", "small": "small/"}
-            "voice": os.path.join(voices_dir, "eng", "adult", "male", f"KumarDahl_{default_engine_settings[TTS_ENGINES['BARK']]['samplerate']}.wav"),
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'KumarDahl.wav'),
             "files": default_engine_settings[TTS_ENGINES['BARK']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['BARK']]['samplerate']
         }

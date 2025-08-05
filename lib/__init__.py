@@ -1,5 +1,5 @@
 from .models import (
-    TTS_ENGINES, TTS_SML, default_fine_tuned, default_tts_engine, 
+    TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, default_fine_tuned, default_tts_engine, 
     default_engine_settings, default_vc_model, default_voice_detection_model,
     loaded_tts, max_custom_model, max_custom_voices,
     max_tts_in_memory, max_upload_size, models, os, voices_dir
@@ -7,8 +7,9 @@ from .models import (
 
 from .conf import (
     FULL_DOCKER, NATIVE, audiobooks_cli_dir, audiobooks_gradio_dir,
-    audiobooks_host_dir, debug_mode, default_audio_proc_format, default_device,
-    default_gpu_wiki, default_output_format, device_list, ebook_formats,
+    audiobooks_host_dir, debug_mode, default_audio_proc_samplerate, 
+    default_audio_proc_format, default_device, default_gpu_wiki, 
+    default_output_format, device_list, ebook_formats,
     ebooks_dir, interface_component_options, interface_concurrency_limit,
     interface_host, interface_port, interface_shared_tmp_expire,
     max_python_version, min_python_version, models_dir, os,
@@ -28,7 +29,7 @@ from .lang import (
 
 __all__ = [
     # from models
-    "TTS_ENGINES", "TTS_SML", "default_fine_tuned", "default_tts_engine",
+    "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "default_fine_tuned", "default_tts_engine",
     "default_engine_settings", "default_vc_model", "default_voice_detection_model",
     "loaded_tts", "max_custom_model",
     "max_custom_voices", "max_tts_in_memory", "max_upload_size",
@@ -36,9 +37,9 @@ __all__ = [
 
     # from conf
     "FULL_DOCKER", "NATIVE", "audiobooks_cli_dir", "audiobooks_gradio_dir",
-    "audiobooks_host_dir", "debug_mode", "default_audio_proc_format",
-    "default_device", "default_gpu_wiki", "default_output_format",
-    "device_list", "ebook_formats", "ebooks_dir",
+    "audiobooks_host_dir", "debug_mode", "default_audio_proc_samplerate",
+    "default_audio_proc_format", "default_device", "default_gpu_wiki",
+    "default_output_format", "device_list", "ebook_formats", "ebooks_dir",
     "interface_component_options", "interface_concurrency_limit",
     "interface_host", "interface_port", "interface_shared_tmp_expire",
     "max_python_version", "min_python_version", "models_dir", "os",
