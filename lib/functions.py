@@ -791,9 +791,7 @@ def get_sentences(text, lang, tts_engine):
                         if text_part:
                             hard_list.append(text_part)
                 else:
-                    # no hard‑split punctuation found → keep whole sentence
                     hard_list.append(s)
-
         # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
@@ -819,14 +817,22 @@ def get_sentences(text, lang, tts_engine):
                         if len(buffer.split()) < min_tokens:
                             buffer = buffer + ' ' + part
                         else:
-                            # buffer is large enough: flush it, start new one
                             soft_list.append(buffer)
                             buffer = part
                     if buffer:
+                       cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
+                        if not any(ch.isalnum() for ch in cleaned):
+                            continue
                         soft_list.append(buffer)
                 else:
+                   cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                    if not any(ch.isalnum() for ch in cleaned):
+                        continue
                     soft_list.append(s)
             else:
+               cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                if not any(ch.isalnum() for ch in cleaned):
+                    continue
                 soft_list.append(s)
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
@@ -842,7 +848,6 @@ def get_sentences(text, lang, tts_engine):
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
-            # Split any remaining over‑length sentences on spaces
             sentences = []
             for s in soft_list:
                 if s == TTS_SML['pause'] or len(s) <= max_chars:
@@ -857,7 +862,7 @@ def get_sentences(text, lang, tts_engine):
                             sentences.append(text_part.strip())
                             text_part = w
                     if text_part:
-                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         sentences.append(text_part.strip())
@@ -2710,8 +2715,24 @@ def web_interface(args, ctx):
         def click_gr_voice_del_btn(selected, id):
             try:
                 if selected is not None:
+                    speaker_path = os.path.abspath(selected)
                     speaker = re.sub(r'\.wav$|\.npz$', '', os.path.basename(selected))
-                    if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() or speaker in default_engine_settings[TTS_ENGINES['YOURTTS']]['voices'].keys():
+                    builtin_root = os.path.join(voices_dir, session['language'])
+                    sessions_root = os.path.join(voices_dir, '__sessions')
+                    is_in_sessions = os.path.commonpath([speaker_path, os.path.abspath(sessions_root)]) == os.path.abspath(sessions_root)
+                    is_in_builtin = os.path.commonpath([speaker_path, os.path.abspath(builtin_root)]) == os.path.abspath(builtin_root)
+                    is_builtin_name = any(
+                        speaker in settings.get('voices', {})
+                        for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
+                    )
+                    if is_builtin_name and is_in_builtin:
+                        error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
+                        show_alert({"type": "warning", "msg": error})
+                    is_builtin = any(
+                        speaker in settings.get('voices', {})
+                        for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
+                    )
+                    if is_builtin and is_in_builtin:
                         error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
                     else:
