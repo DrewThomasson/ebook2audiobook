@@ -106,7 +106,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 ## Features
 - 📚 Splits eBook into chapters for organized audio.
-- 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2) and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) (and more).
+- 🎙️ High-quality text-to-speech with [Coqui XTTSv2](https://huggingface.co/coqui/XTTS-v2), [F5-TTS](https://github.com/SWivid/F5-TTS), and [Fairseq](https://github.com/facebookresearch/fairseq/tree/main/examples/mms) (and more).
 - 🗣️ Optional voice cloning with your own voice file.
 - 🌍 Supports +1110 languages (English by default). [List of Supported languages](https://dl.fbaipublicfiles.com/mms/tts/all-tts-languages.html)
 - 🖥️ Designed to run on 4GB RAM.
@@ -327,11 +327,15 @@ Windows:
     ebook2audiobook.cmd
     Headless mode:
     ebook2audiobook.cmd --headless --ebook '/path/to/file'
+    F5-TTS:
+    ebook2audiobook.cmd --headless --ebook '/path/to/file' --tts_engine F5TTS --nfe_step 32 --cfg_strength 2.0
 Linux/Mac:
     Gradio/GUI:
     ./ebook2audiobook.sh
     Headless mode:
     ./ebook2audiobook.sh --headless --ebook '/path/to/file'
+    F5-TTS:
+    ./ebook2audiobook.sh --headless --ebook '/path/to/file' --tts_engine F5TTS --nfe_step 32 --cfg_strength 2.0
     
 Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
 
@@ -476,6 +480,48 @@ docker run --pull always --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Models-yellow?style=flat&logo=huggingface)](https://huggingface.co/drewThomasson/fineTunedTTSModels/tree/main)
 
 For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
+
+## F5-TTS Integration
+
+F5-TTS is now fully integrated into ebook2audiobook, providing high-quality, fast text-to-speech synthesis with flow matching.
+
+### F5-TTS Features
+- **High Quality**: State-of-the-art audio quality with natural-sounding speech
+- **Fast Inference**: Optimized for speed with configurable quality/speed tradeoffs  
+- **Voice Cloning**: Supports reference audio for voice cloning
+- **Multi-language**: Works with multiple languages and accents
+
+### F5-TTS Usage
+
+**Basic F5-TTS conversion:**
+```bash
+# Linux/Mac
+./ebook2audiobook.sh --headless --ebook book.epub --tts_engine F5TTS
+
+# Windows  
+ebook2audiobook.cmd --headless --ebook book.epub --tts_engine F5TTS
+```
+
+**Advanced F5-TTS with custom parameters:**
+```bash
+# Faster generation (lower quality)
+./ebook2audiobook.sh --headless --ebook book.epub --tts_engine F5TTS --nfe_step 16 --cfg_strength 1.5
+
+# Higher quality (slower generation)  
+./ebook2audiobook.sh --headless --ebook book.epub --tts_engine F5TTS --nfe_step 64 --cfg_strength 3.0
+
+# With voice cloning
+./ebook2audiobook.sh --headless --ebook book.epub --tts_engine F5TTS --voice reference_voice.wav
+```
+
+### F5-TTS Parameters
+- `--nfe_step`: Number of flow steps (default: 32). Higher values = better quality but slower
+- `--cfg_strength`: Classifier-free guidance strength (default: 2.0). Higher values = closer text following
+
+### F5-TTS Requirements  
+- Requires `f5-tts>=1.1.7` package (automatically installed)
+- GPU recommended for faster generation
+- Minimum 4GB VRAM for optimal performance
 
 
 ## Supported eBook Formats

@@ -168,6 +168,8 @@ class SessionContext:
                 "enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
                 "text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
                 "waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
+                "nfe_step": default_engine_settings[TTS_ENGINES['F5TTS']]['nfe'],
+                "cfg_strength": default_engine_settings[TTS_ENGINES['F5TTS']]['cfg_strength'],
                 "event": None,
                 "final_name": None,
                 "output_format": default_output_format,
@@ -1801,6 +1803,8 @@ def convert_ebook(args, ctx=None):
             session['enable_text_splitting'] = args['enable_text_splitting']
             session['text_temp'] =  args['text_temp']
             session['waveform_temp'] =  args['waveform_temp']
+            session['nfe_step'] = args['nfe_step']
+            session['cfg_strength'] = args['cfg_strength']
             session['audiobooks_dir'] = args['audiobooks_dir']
             session['voice'] = args['voice']
             

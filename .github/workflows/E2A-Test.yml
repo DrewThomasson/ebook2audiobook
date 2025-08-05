@@ -162,6 +162,15 @@ jobs:
           conda deactivate
           sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
 
+      - name: English F5TTS Custom-Voice headless single test
+        shell: bash
+        run: |
+          echo "Running English F5TTS Custom-Voice headless single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine F5TTS --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON2
+
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
         run: |

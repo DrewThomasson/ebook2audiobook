@@ -10,8 +10,12 @@ class TTSManager:
  
     def _build(self):
         if self.session['tts_engine'] in TTS_ENGINES.values():
-            from lib.classes.tts_engines.coqui import Coqui
-            self.tts = Coqui(self.session)
+            if self.session['tts_engine'] == TTS_ENGINES['F5TTS']:
+                from lib.classes.tts_engines.f5tts import F5TTS
+                self.tts = F5TTS(self.session)
+            else:
+                from lib.classes.tts_engines.coqui import Coqui
+                self.tts = Coqui(self.session)
             if self.tts:
                 return True
             else:
