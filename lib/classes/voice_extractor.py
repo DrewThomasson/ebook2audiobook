@@ -222,7 +222,7 @@ class VoiceExtractor:
             ffmpeg_cmd += [
                 '-filter_complex', filter_complex,
                 '-map', '[audio]',
-                '-ar', str(default_audio_proc_samplerate),
+                '-ar', f'{default_audio_proc_samplerate}',
                 '-y', process_file
             ]
             error = None
@@ -232,11 +232,10 @@ class VoiceExtractor:
                 process = subprocess.Popen(
                     ffmpeg_cmd,
                     env={},
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.STDOUT,
-                    text=True,
-                    universal_newlines=True,
-                    encoding='utf-8'
+                    stdout=subprocess.PIPE, 
+                    stderr=subprocess.PIPE,
+                    encoding='utf-8',
+                    errors='ignore'
                 )
                 for line in process.stdout:
                     print(line, end='')  # Print each line of stdout
