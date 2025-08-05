@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ebook2Audiobook v{{ version }}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6f42c1;
+            --secondary-color: #fd7e14;
+            --success-color: #198754;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #0dcaf0;
+            --dark-color: #212529;
+            --light-color: #f8f9fa;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+
+        .header {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px 15px 0 0;
+            padding: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            background: rgba(111, 66, 193, 0.05);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-area:hover {
+            background: rgba(111, 66, 193, 0.1);
+            border-color: var(--secondary-color);
+        }
+
+        .upload-area.dragover {
+            background: rgba(111, 66, 193, 0.15);
+            border-color: var(--success-color);
+        }
+
+        .nav-tabs .nav-link {
+            border: none;
+            color: var(--primary-color);
+            font-weight: 500;
+            border-radius: 10px 10px 0 0;
+            margin-right: 5px;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+        }
+
+        .form-control, .form-select {
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(111, 66, 193, 0.25);
+        }
+
+        .btn {
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .convert-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+        }
+
+        .progress-container {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 200px;
+        }
+
+        .parameter-slider {
+            margin: 15px 0;
+        }
+
+        .slider-value {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .engine-rating {
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .voice-preview {
+            max-width: 200px;
+            margin: 10px 0;
+        }
+
+        #glass-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #fff;
+            z-index: 9999;
+            transition: opacity 0.5s ease-out;
+        }
+
+        #glass-mask.d-none {
+            display: none !important;
+        }
+
+        .spinner-border {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+        }
+
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+
+        .modal-header {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+
+        .file-info {
+            background: rgba(25, 135, 84, 0.1);
+            border: 1px solid rgba(25, 135, 84, 0.3);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Glass Mask -->
+    <div id="glass-mask" class="d-none">
+        <div class="text-center">
+            <div class="spinner-border text-warning" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="mt-3">Initialization, please wait...</div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <div class="main-container">
+            <!-- Header -->
+            <div class="header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h1 class="h3 mb-0">Ebook2Audiobook</h1>
+                    <div>
+                        <span class="badge bg-light text-dark">v{{ version }}</span>
+                        <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" class="btn btn-outline-light btn-sm ms-2">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="p-4">
+                <!-- Tabs -->
+                <ul class="nav nav-tabs mb-4" id="mainTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="main-tab" data-bs-toggle="tab" data-bs-target="#main" type="button" role="tab">
+                            Main Parameters
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="xtts-tab" data-bs-toggle="tab" data-bs-target="#xtts" type="button" role="tab" {% if not visible_xtts_params %}style="display: none;"{% endif %}>
+                            XTTS Parameters
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="bark-tab" data-bs-toggle="tab" data-bs-target="#bark" type="button" role="tab" {% if not visible_bark_params %}style="display: none;"{% endif %}>
+                            BARK Parameters
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="mainTabsContent">
+                    <!-- Main Parameters Tab -->
+                    <div class="tab-pane fade show active" id="main" role="tabpanel">
+                        <form id="conversionForm">
+                            <div class="row">
+                                <!-- Left Column -->
+                                <div class="col-md-6">
+                                    <!-- File Upload Group -->
+                                    <div class="mb-4">
+                                        <div class="upload-area" id="ebook_upload_area">
+                                            <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                            <p class="mb-2 text-muted">Drag & drop your ebook here or</p>
+                                            <button type="button" class="btn btn-primary" onclick="document.getElementById('ebook_file').click()">
+                                                Choose File
+                                            </button>
+                                            <input type="file" id="ebook_file" accept=".epub,.mobi,.azw3,.fb2,.lrf,.rb,.snb,.tcr,.pdf,.txt,.rtf,.doc,.docx,.html,.odt,.azw" style="display: none;">
+                                            <div id="ebook_filename" class="file-info mt-3 d-none"></div>
+                                        </div>
+                                        
+                                        <div class="mt-3">
+                                            <input type="radio" class="btn-check" name="input_mode" id="file_mode" value="single" checked>
+                                            <label class="btn btn-outline-primary" for="file_mode">File</label>
+                                            
+                                            <input type="radio" class="btn-check" name="input_mode" id="directory_mode" value="directory">
+                                            <label class="btn btn-outline-primary" for="directory_mode">Directory</label>
+                                        </div>
+                                    </div>
+
+                                    <!-- Language Group -->
+                                    <div class="mb-4">
+                                        <label for="language" class="form-label">Language</label>
+                                        <select class="form-select" id="language" name="language">
+                                            {% for lang in language_options %}
+                                            <option value="{{ lang.code }}" {% if lang.code == current_language %}selected{% endif %}>{{ lang.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <!-- Cloning Voice Audio File Group (Optional) -->
+                                    <div class="mb-4" id="voice_group" {% if not visible_voice_file %}style="display: none;"{% endif %}>
+                                        <label class="form-label">*Cloning Voice Audio File</label>
+                                        <div class="upload-area" id="voice_upload_area">
+                                            <i class="fas fa-microphone fa-2x text-muted mb-2"></i>
+                                            <p class="mb-2 text-muted">Upload voice file for cloning</p>
+                                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('voice_file').click()">
+                                                Choose Voice File
+                                            </button>
+                                            <input type="file" id="voice_file" accept=".wav,.mp3,.flac,.m4a" style="display: none;">
+                                        </div>
+                                        
+                                        <div class="mt-3 d-flex align-items-center">
+                                            <audio id="voice_player" class="voice-preview d-none" controls></audio>
+                                            <select class="form-select flex-grow-1" id="voice_list">
+                                                <option value="">Select from available voices...</option>
+                                                {% for voice in voice_options %}
+                                                <option value="{{ voice.value }}" {% if voice.value == current_voice %}selected{% endif %}>{{ voice.label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="button" class="btn btn-outline-danger ms-2 d-none" id="voice_delete_btn">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">* Optional</small>
+                                    </div>
+
+                                    <!-- Processor Unit Group -->
+                                    <div class="mb-4">
+                                        <label class="form-label">Processor Unit</label>
+                                        <div class="btn-group d-block" role="group">
+                                            {% for device in device_options %}
+                                            <input type="radio" class="btn-check" name="device" id="device_{{ device.value }}" value="{{ device.value }}" {% if device.value == 'cpu' %}checked{% endif %}>
+                                            <label class="btn btn-outline-primary" for="device_{{ device.value }}">{{ device.label }}</label>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Right Column -->
+                                <div class="col-md-6">
+                                    <!-- TTS Engine Group -->
+                                    <div class="mb-4">
+                                        <label for="tts_engine" class="form-label">TTS Engine</label>
+                                        <select class="form-select" id="tts_engine" name="tts_engine">
+                                            <option value="">Select TTS Engine...</option>
+                                            {% for engine in tts_engine_options %}
+                                            <option value="{{ engine.value }}" {% if engine.value == current_tts_engine %}selected{% endif %}>{{ engine.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <div id="tts_engine_rating" class="engine-rating"></div>
+                                    </div>
+
+                                    <!-- Fine Tuned Models (Presets) -->
+                                    <div class="mb-4">
+                                        <label for="fine_tuned_list" class="form-label">Fine Tuned Models (Presets)</label>
+                                        <select class="form-select" id="fine_tuned_list" name="fine_tuned">
+                                            {% for model in fine_tuned_options %}
+                                            <option value="{{ model.value }}" {% if model.value == current_fine_tuned %}selected{% endif %}>{{ model.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <!-- Custom Model Upload Group -->
+                                    <div class="mb-4" id="custom_model_group" {% if not visible_custom_model %}style="display: none;"{% endif %}>
+                                        <label class="form-label">Upload Fine Tuned Model</label>
+                                        <div class="upload-area" id="custom_model_upload_area">
+                                            <i class="fas fa-file-archive fa-2x text-muted mb-2"></i>
+                                            <p class="mb-2 text-muted">Upload custom model (.zip)</p>
+                                            <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('custom_model_file').click()">
+                                                Choose Model File
+                                            </button>
+                                            <input type="file" id="custom_model_file" accept=".zip" style="display: none;">
+                                        </div>
+                                        
+                                        <div class="mt-3 d-flex align-items-center">
+                                            <select class="form-select flex-grow-1" id="custom_model_list">
+                                                <option value="">Select from uploaded models...</option>
+                                                {% for model in custom_model_options %}
+                                                <option value="{{ model.value }}">{{ model.label }}</option>
+                                                {% endfor %}
+                                            </select>
+                                            <button type="button" class="btn btn-outline-danger ms-2 d-none" id="custom_model_delete_btn">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                        <small class="text-muted">* Optional</small>
+                                    </div>
+
+                                    <!-- Session ID -->
+                                    <div class="mb-4">
+                                        <label for="session_id" class="form-label">Session ID (Optional)</label>
+                                        <input type="text" class="form-control" id="session_id" name="session_id" value="{{ session_id }}" readonly>
+                                        <small class="text-muted">Auto-generated if empty</small>
+                                    </div>
+
+                                    <!-- Output Format -->
+                                    <div class="mb-4">
+                                        <label for="output_format" class="form-label">Output Format</label>
+                                        <select class="form-select" id="output_format" name="output_format">
+                                            {% for format in output_format_options %}
+                                            <option value="{{ format.value }}">{{ format.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Convert Button -->
+                            <div class="text-center my-4">
+                                <button type="submit" class="btn btn-primary convert-btn" id="convert_btn" disabled>
+                                    📚
+                                </button>
+                            </div>
+
+                            <!-- Progress Section -->
+                            <div class="progress-container" id="progress_container" style="display: none;">
+                                <h5>Conversion Progress</h5>
+                                <div class="progress mb-3">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%" id="progress_bar"></div>
+                                </div>
+                                <div id="progress_logs" style="height: 200px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 0.9em;">
+                                    Conversion progress will appear here...
+                                </div>
+                            </div>
+
+                            <!-- Audiobook Results -->
+                            <div id="audiobook_results" class="mt-4" style="display: none;">
+                                <h5>Generated Audiobooks</h5>
+                                <div class="d-flex align-items-center mb-3">
+                                    <input type="text" class="form-control flex-grow-1" id="audiobook_text" readonly>
+                                    <audio id="audiobook_player" class="ms-3" controls style="max-width: 300px;"></audio>
+                                    <button type="button" class="btn btn-outline-success ms-2" id="audiobook_download_btn">
+                                        <i class="fas fa-download"></i>
+                                    </button>
+                                    <select class="form-select ms-2" id="audiobook_list" style="max-width: 200px;">
+                                        {% for audiobook in audiobook_options %}
+                                        <option value="{{ audiobook.value }}">{{ audiobook.label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-outline-danger ms-2" id="audiobook_delete_btn">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- XTTS Parameters Tab -->
+                    <div class="tab-pane fade" id="xtts" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-8 mx-auto">
+                                <h4 class="mb-4">Customize XTTS Parameters</h4>
+                                <p class="text-muted mb-4">Adjust the settings below to influence how the audio is generated. You can control the creativity, speed, repetition, and more.</p>
+
+                                <div class="parameter-slider">
+                                    <label for="xtts_temperature" class="form-label d-flex justify-content-between">
+                                        <span>Temperature</span>
+                                        <span class="slider-value" id="xtts_temperature_value">{{ xtts_params.temperature.value }}</span>
+                                    </label>
+                                    <input type="range" class="form-range" id="xtts_temperature" min="0.1" max="10.0" step="0.1" value="{{ xtts_params.temperature.value }}">
+                                    <small class="text-muted">Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.</small>
+                                </div>
+
+                                <div class="parameter-slider">
+                                    <label for="xtts_repetition_penalty" class="form-label d-flex justify-content-between">
+                                        <span>Repetition Penalty</span>
+                                        <span class="slider-value" id="xtts_repetition_penalty_value">{{ xtts_params.repetition_penalty.value }}</span>
+                                    </label>
+                                    <input type="range" class="form-range" id="xtts_repetition_penalty" min="1.0" max="10.0" step="0.1" value="{{ xtts_params.repetition_penalty.value }}">
+                                    <small class="text-muted">Penalizes repeated phrases. Higher values reduce repetition.</small>
+                                </div>
+
+                                <div class="parameter-slider">
+                                    <label for="xtts_top_k" class="form-label d-flex justify-content-between">
+                                        <span>Top-k Sampling</span>
+                                        <span class="slider-value" id="xtts_top_k_value">{{ xtts_params.top_k.value }}</span>
+                                    </label>
+                                    <input type="range" class="form-range" id="xtts_top_k" min="10" max="100" step="1" value="{{ xtts_params.top_k.value }}">
+                                    <small class="text-muted">Lower values restrict outputs to more likely words and increase speed at which audio generates.</small>
+                                </div>
+
+                                <div class="parameter-slider">
+                                    <label for="xtts_top_p" class="form-label d-flex justify-content-between">
+                                        <span>Top-p Sampling</span>
+                                        <span class="slider-value" id="xtts_top_p_value">{{ xtts_params.top_p.value }}</span>
+                                    </label>
+                                    <input type="range" class="form-range" id="xtts_top_p" min="0.1" max="1.0" step="0.01" value="{{ xtts_params.top_p.value }}">
+                                    <small class="text-muted">Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.</small>
+                                </div>
+
+                                <div class="parameter-slider">
+                                    <label for="xtts_speed" class="form-label d-flex justify-content-between">
+                                        <span>Speed</span>
+                                        <span class="slider-value" id="xtts_speed_value">{{ xtts_params.speed.value }}</span>
+                                    </label>
+                                    <input type="range" class="form-range" id="xtts_speed" min="0.5" max="3.0" step="0.1" value="{{ xtts_params.speed.value }}">
+                                    <small class="text-muted">Adjusts how fast the narrator will speak.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BARK Parameters Tab -->
+                    <div class="tab-pane fade" id="bark" role="tabpanel">
+                        <div class="row">
+                            <div class="col-md-8 mx-auto">
+                                <h4 class="mb-4">Customize BARK Parameters</h4>
+                                <p class="text-muted mb-4">Adjust the settings below to influence how the audio is generated, emotional and voice behavior random or more conservative.</p>
+
+                                <div class="parameter-slider">
+                                    <label for="bark_text_temp" class="form-label d-flex justify-content-between">
+                                        <span>Text Temperature</span>
+                                        <span class="slider-value" id="bark_text_temp_value">{{ bark_params.text_temp.value }}</span>
+                                    </label>
+                                    <input type="range" class="form-range" id="bark_text_temp" min="0.0" max="1.0" step="0.01" value="{{ bark_params.text_temp.value }}">
+                                    <small class="text-muted">Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.</small>
+                                </div>
+
+                                <div class="parameter-slider">
+                                    <label for="bark_waveform_temp" class="form-label d-flex justify-content-between">
+                                        <span>Waveform Temperature</span>
+                                        <span class="slider-value" id="bark_waveform_temp_value">{{ bark_params.waveform_temp.value }}</span>
+                                    </label>
+                                    <input type="range" class="form-range" id="bark_waveform_temp" min="0.0" max="1.0" step="0.01" value="{{ bark_params.waveform_temp.value }}">
+                                    <small class="text-muted">Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="deleteModalText">Are you sure you want to delete this item?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <!-- Socket.IO -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app_new.js') }}"></script>
+</body>
+</html>

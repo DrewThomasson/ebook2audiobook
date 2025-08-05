@@ -1,0 +1,352 @@
+/* Custom styles for ebook2audiobook Flask interface */
+
+/* Global scrollbar customization */
+::-webkit-scrollbar {
+    width: 6px !important;
+    height: 6px !important;
+    cursor: pointer !important;
+}
+
+::-webkit-scrollbar-track {
+    background: none transparent !important;
+    border-radius: 6px !important;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c09340 !important;
+    border-radius: 6px !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #ff8c00 !important;
+}
+
+html {
+    scrollbar-width: thin !important;
+    scrollbar-color: #c09340 none !important;
+}
+
+/* Body and layout */
+body {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.container-fluid {
+    padding: 20px;
+}
+
+/* Header */
+.header {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.header h1 {
+    margin: 0;
+    font-weight: 300;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.card-header {
+    background: rgba(255, 255, 255, 0.1);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 15px 15px 0 0 !important;
+}
+
+/* Tabs */
+.nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    border-radius: 10px 10px 0 0;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 12px 20px;
+    margin-right: 5px;
+}
+
+.nav-tabs .nav-link:hover {
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+}
+
+.nav-tabs .nav-link.active {
+    background: #667eea;
+    color: white;
+    border-bottom: 2px solid #667eea;
+}
+
+/* Upload areas */
+.upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: rgba(248, 249, 250, 0.5);
+}
+
+.upload-area:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.upload-area.drag-over {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.1);
+}
+
+.upload-area.has-file {
+    border-color: #28a745;
+    background: rgba(40, 167, 69, 0.05);
+}
+
+/* Buttons */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    padding: 8px 16px;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #56ab2f 0%, #a8e6cf 100%);
+    border: none;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(86, 171, 47, 0.4);
+}
+
+.btn-lg {
+    padding: 12px 30px;
+    font-size: 1.1rem;
+}
+
+/* Form controls */
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 8px;
+}
+
+/* Radio button groups */
+.btn-check:checked + .btn-outline-primary {
+    background-color: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+.btn-check:checked + .btn-outline-info {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: white;
+}
+
+/* Progress */
+.progress {
+    border-radius: 15px;
+    background: rgba(222, 226, 230, 0.5);
+}
+
+.progress-bar {
+    border-radius: 15px;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Glass mask overlay */
+#glass-mask {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 1.2rem !important;
+    color: #fff !important;
+    z-index: 9999 !important;
+    transition: opacity 0.3s ease-out !important;
+    pointer-events: all !important;
+    backdrop-filter: blur(5px);
+}
+
+#glass-mask.d-none {
+    display: none !important;
+}
+
+#glass-mask.hide {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Audio players */
+audio {
+    width: 100%;
+    border-radius: 8px;
+    outline: none;
+}
+
+/* Progress log */
+#progress_log {
+    border-radius: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* File preview styles */
+.file-preview {
+    background: rgba(248, 249, 250, 0.8);
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.file-preview .file-info {
+    display: flex;
+    align-items: center;
+}
+
+.file-preview .file-icon {
+    margin-right: 10px;
+    font-size: 1.2rem;
+}
+
+.file-preview .file-name {
+    font-weight: 500;
+}
+
+.file-preview .file-size {
+    color: #6c757d;
+    font-size: 0.9rem;
+    margin-left: 10px;
+}
+
+.file-preview .remove-file {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.file-preview .remove-file:hover {
+    color: #c82333;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container-fluid {
+        padding: 10px;
+    }
+    
+    .upload-area {
+        padding: 20px;
+    }
+    
+    .btn-lg {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* Alert improvements */
+.alert {
+    border-radius: 10px;
+    border: none;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, rgba(86, 171, 47, 0.1) 0%, rgba(168, 230, 207, 0.1) 100%);
+    color: #155724;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(248, 215, 218, 0.1) 100%);
+    color: #721c24;
+}
+
+.alert-warning {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 243, 205, 0.1) 100%);
+    color: #856404;
+}
+
+/* Spinner customization */
+.spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+.text-warning {
+    color: #ffc107 !important;
+}
+
+/* Badge improvements */
+.badge {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    border-radius: 6px;
+}

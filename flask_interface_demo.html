@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ebook2Audiobook v25.8.4</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        .upload-area {
+            border: 2px dashed #6c757d;
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .nav-tabs .nav-link {
+            color: white;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            margin-right: 5px;
+        }
+        .nav-tabs .nav-link.active {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .form-control, .form-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        .form-control:focus, .form-select:focus {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: #007bff;
+            color: white;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+        .form-label {
+            color: white;
+            font-weight: 500;
+        }
+        .btn-check:checked + .btn {
+            background-color: #007bff;
+            border-color: #007bff;
+        }
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <div class="header d-flex justify-content-between align-items-center py-3">
+                    <h1 class="h3 mb-0">Ebook2Audiobook</h1>
+                    <div>
+                        <span class="badge bg-success">v25.8.4</span>
+                        <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" class="btn btn-outline-light btn-sm ms-2">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Tabs -->
+                        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="main-tab" data-bs-toggle="tab" data-bs-target="#main" type="button" role="tab">
+                                    Main Parameters
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="xtts-tab" data-bs-toggle="tab" data-bs-target="#xtts" type="button" role="tab">
+                                    XTTS Parameters
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="bark-tab" data-bs-toggle="tab" data-bs-target="#bark" type="button" role="tab">
+                                    BARK Parameters
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="mainTabsContent">
+                            <!-- Main Parameters Tab -->
+                            <div class="tab-pane fade show active" id="main" role="tabpanel">
+                                <form id="conversionForm" class="mt-4">
+                                    <div class="row">
+                                        <!-- Left Column -->
+                                        <div class="col-md-6">
+                                            <!-- File Upload Group -->
+                                            <div class="form-group mb-4">
+                                                <div class="upload-area" id="ebook_upload_area">
+                                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                                    <p class="mb-0">Drag & drop your ebook here or</p>
+                                                    <button type="button" class="btn btn-primary mt-2">
+                                                        Choose File
+                                                    </button>
+                                                </div>
+                                                
+                                                <div class="mt-2">
+                                                    <input type="radio" class="btn-check" name="input_mode" id="file_mode" value="single" checked>
+                                                    <label class="btn btn-outline-primary btn-sm" for="file_mode">File</label>
+                                                    
+                                                    <input type="radio" class="btn-check" name="input_mode" id="directory_mode" value="directory">
+                                                    <label class="btn btn-outline-primary btn-sm" for="directory_mode">Directory</label>
+                                                </div>
+                                            </div>
+
+                                            <!-- Language Group -->
+                                            <div class="form-group mb-4">
+                                                <label for="language" class="form-label">Language</label>
+                                                <select class="form-select" id="language" name="language">
+                                                    <option value="en">English</option>
+                                                    <option value="es">Spanish - Español</option>
+                                                    <option value="fr">French - Français</option>
+                                                    <option value="de">German - Deutsch</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Cloning Voice Audio File Group -->
+                                            <div class="form-group mb-4" id="voice_group">
+                                                <label class="form-label">*Cloning Voice Audio File</label>
+                                                <div class="upload-area" id="voice_upload_area">
+                                                    <p class="mb-0">Upload voice file for cloning</p>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm mt-2">
+                                                        Choose Voice File
+                                                    </button>
+                                                </div>
+                                                
+                                                <!-- Voice Preview and List Row -->
+                                                <div class="row mt-3">
+                                                    <div class="col-auto">
+                                                        <!-- Voice Preview Player -->
+                                                        <div id="voice_preview" style="width: 60px; height: 60px;">
+                                                            <audio controls style="width: 60px; height: 40px;" disabled>
+                                                            </audio>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col">
+                                                        <!-- Voice List Dropdown -->
+                                                        <select class="form-select" id="voice_list">
+                                                            <option value="">Select from available voices...</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <!-- Delete Voice Button -->
+                                                        <button type="button" class="btn btn-outline-danger btn-sm d-none" style="width: 60px; height: 38px;">🗑</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <small class="text-muted">* Optional</small>
+                                            </div>
+
+                                            <!-- Processor Unit Group -->
+                                            <div class="form-group mb-4">
+                                                <label class="form-label">Processor Unit</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="device" id="device_cpu" value="cpu" checked>
+                                                    <label class="btn btn-outline-info" for="device_cpu">CPU</label>
+                                                    
+                                                    <input type="radio" class="btn-check" name="device" id="device_gpu" value="cuda">
+                                                    <label class="btn btn-outline-info" for="device_gpu">GPU</label>
+                                                    
+                                                    <input type="radio" class="btn-check" name="device" id="device_mps" value="mps">
+                                                    <label class="btn btn-outline-info" for="device_mps">MPS</label>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Right Column -->
+                                        <div class="col-md-6">
+                                            <!-- TTS Engine Group -->
+                                            <div class="form-group mb-4">
+                                                <label for="tts_engine" class="form-label">TTS Engine</label>
+                                                <select class="form-select" id="tts_engine" name="tts_engine">
+                                                    <option value="XTTSv2">XTTSv2</option>
+                                                    <option value="BARK">BARK</option>
+                                                </select>
+                                                <div id="tts_rating" class="mt-2"></div>
+                                            </div>
+
+                                            <!-- Fine Tuned Models Group -->
+                                            <div class="form-group mb-4">
+                                                <label for="fine_tuned" class="form-label">Fine Tuned Models (Presets)</label>
+                                                <select class="form-select" id="fine_tuned" name="fine_tuned">
+                                                    <option value="">Select preset...</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Upload Fine Tuned Model Group -->
+                                            <div class="form-group mb-4" id="custom_model_group">
+                                                <label class="form-label">Upload Fine Tuned Model</label>
+                                                <div class="upload-area" id="model_upload_area">
+                                                    <p class="mb-0">Upload custom model (.zip)</p>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2">
+                                                        Choose Model File
+                                                    </button>
+                                                </div>
+                                                
+                                                <!-- Custom Model List Row -->
+                                                <div class="row mt-3">
+                                                    <div class="col">
+                                                        <select class="form-select" id="custom_model_list">
+                                                            <option value="">Select from uploaded models...</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <!-- Delete Model Button -->
+                                                        <button type="button" class="btn btn-outline-danger btn-sm d-none" style="width: 60px; height: 38px;">🗑</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <small class="text-muted">* Optional</small>
+                                            </div>
+
+                                            <!-- Session Group -->
+                                            <div class="form-group mb-4">
+                                                <label for="session_id" class="form-label">Session ID (Optional)</label>
+                                                <input type="text" class="form-control" id="session_id" name="session_id" placeholder="Auto-generated if empty" readonly>
+                                            </div>
+
+                                            <!-- Output Format -->
+                                            <div class="form-group mb-4">
+                                                <label for="output_format" class="form-label">Output Format</label>
+                                                <select class="form-select" id="output_format" name="output_format">
+                                                    <option value="m4b" selected>M4B</option>
+                                                    <option value="mp3">MP3</option>
+                                                    <option value="wav">WAV</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Convert Button -->
+                                    <div class="row mt-4">
+                                        <div class="col-12 text-center">
+                                            <button type="submit" class="btn btn-success" id="convert_btn" style="font-size: 30px; width: 80px; height: 80px; border-radius: 50%;" disabled>
+                                                📚
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Progress Display -->
+                                    <div class="row mt-4">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <label for="conversion_progress" class="form-label">Progress</label>
+                                                <textarea class="form-control" id="conversion_progress" rows="4" readonly placeholder="Conversion progress will appear here..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- XTTS Parameters Tab -->
+                            <div class="tab-pane fade" id="xtts" role="tabpanel">
+                                <div class="mt-4">
+                                    <h5>Customize XTTSv2 Parameters</h5>
+                                    <p class="text-muted">Adjust the settings below to influence how the audio is generated.</p>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="temperature" class="form-label">Temperature</label>
+                                                <input type="range" class="form-range" id="temperature" min="0.1" max="10.0" step="0.1" value="0.7">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>0.1</small>
+                                                    <small>0.7</small>
+                                                    <small>10.0</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="speed" class="form-label">Speed</label>
+                                                <input type="range" class="form-range" id="speed" min="0.5" max="3.0" step="0.1" value="1.0">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>0.5</small>
+                                                    <small>1.0</small>
+                                                    <small>3.0</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BARK Parameters Tab -->
+                            <div class="tab-pane fade" id="bark" role="tabpanel">
+                                <div class="mt-4">
+                                    <h5>Customize BARK Parameters</h5>
+                                    <p class="text-muted">Adjust the settings below to influence how the audio is generated.</p>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="text_temp" class="form-label">Text Temperature</label>
+                                                <input type="range" class="form-range" id="text_temp" min="0.0" max="1.0" step="0.01" value="0.5">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>0.0</small>
+                                                    <small>0.5</small>
+                                                    <small>1.0</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="waveform_temp" class="form-label">Waveform Temperature</label>
+                                                <input type="range" class="form-range" id="waveform_temp" min="0.0" max="1.0" step="0.01" value="0.5">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>0.0</small>
+                                                    <small>0.5</small>
+                                                    <small>1.0</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

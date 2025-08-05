@@ -30,7 +30,17 @@ import uuid
 import zipfile
 
 import ebooklib
-import gradio as gr
+try:
+    import gradio as gr
+except ImportError:
+    # Gradio not available, create a mock for Flask interface compatibility
+    class MockGradio:
+        def Error(self, msg): pass
+        def Warning(self, msg): pass
+        def Info(self, msg): pass
+        def Success(self, msg): pass
+        def Progress(self, track_tqdm=True): return None
+    gr = MockGradio()
 import psutil
 import pymupdf4llm
 import regex as re
@@ -39,10 +49,24 @@ import stanza
 import torch
 import uvicorn
 
-from soynlp.tokenizer import LTokenizer
-from pythainlp.tokenize import word_tokenize
-from sudachipy import dictionary, tokenizer
-from PIL import Image
+# Optional language processing imports - only needed for specific language support
+try:
+    from soynlp.tokenizer import LTokenizer
+except ImportError:
+    LTokenizer = None
+try:
+    from pythainlp.tokenize import word_tokenize
+except ImportError:
+    word_tokenize = None
+try:
+    from sudachipy import dictionary, tokenizer
+except ImportError:
+    dictionary = None
+    tokenizer = None
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 from tqdm import tqdm
 from bs4 import BeautifulSoup, NavigableString, Tag
 from collections import Counter
@@ -51,22 +75,43 @@ from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
 from glob import glob
-from iso639 import languages
+try:
+    from iso639 import languages
+except ImportError:
+    languages = None
 from markdown import markdown
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
-from num2words import num2words
+try:
+    from num2words import num2words
+except ImportError:
+    num2words = None
 from pathlib import Path
-from pydub import AudioSegment
+try:
+    from pydub import AudioSegment
+except ImportError:
+    AudioSegment = None
 from queue import Queue, Empty
 from types import MappingProxyType
 from urllib.parse import urlparse
-from starlette.requests import ClientDisconnect
+try:
+    from starlette.requests import ClientDisconnect
+except ImportError:
+    class ClientDisconnect(Exception):
+        pass
 
 from lib import *
-from lib.classes.voice_extractor import VoiceExtractor
-from lib.classes.tts_manager import TTSManager
+try:
+    from lib.classes.voice_extractor import VoiceExtractor
+except ImportError:
+    # VoiceExtractor requires many audio processing dependencies
+    # Make it optional for basic Flask interface functionality
+    VoiceExtractor = None
+try:
+    from lib.classes.tts_manager import TTSManager
+except ImportError:
+    TTSManager = None
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 
@@ -2043,7 +2088,60 @@ def show_alert(state):
             elif state['type'] == 'success':
                 gr.Success(state['msg'])
 
+def show_rating(tts_engine):
+    """Display HTML rating for TTS engine with GPU VRAM, CPU, RAM and Realism ratings"""
+    if tts_engine == TTS_ENGINES['XTTSv2']:
+        rating = default_engine_settings[TTS_ENGINES['XTTSv2']]['rating']
+    elif tts_engine == TTS_ENGINES['BARK']:
+        rating = default_engine_settings[TTS_ENGINES['BARK']]['rating']
+    elif tts_engine == TTS_ENGINES['VITS']:
+        rating = default_engine_settings[TTS_ENGINES['VITS']]['rating']
+    elif tts_engine == TTS_ENGINES['FAIRSEQ']:
+        rating = default_engine_settings[TTS_ENGINES['FAIRSEQ']]['rating']
+    elif tts_engine == TTS_ENGINES['TACOTRON2']:
+        rating = default_engine_settings[TTS_ENGINES['TACOTRON2']]['rating']
+    elif tts_engine == TTS_ENGINES['YOURTTS']:
+        rating = default_engine_settings[TTS_ENGINES['YOURTTS']]['rating']
+    else:
+        # Default rating if engine not found
+        rating = {"GPU VRAM": 4, "CPU": 3, "RAM": 4, "Realism": 3}
+    
+    def yellow_stars(n):
+        return "".join(
+            "<span style='color:#FFD700;font-size:12px'>★</span>" for _ in range(n)
+        )
+    
+    def color_box(value):
+        if value <= 4:
+            color = "#4CAF50"  # Green = low
+        elif value <= 8:
+            color = "#FF9800"  # Orange = medium
+        else:
+            color = "#F44336"  # Red = high
+        return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
+    
+    return f"""
+    <div style='margin:0; padding:0; font-size:12px; line-height:0; height:auto; display:inline; border: none; gap:0px; align-items:center'>
+        <span style='padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
+        <span style='padding:0 10px'><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
+        <span style='padding:0 10px'><b>RAM:</b> {color_box(rating["RAM"])}</span>
+        <span style='padding:0 10px'><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
+    </div>
+    """
+
 def web_interface(args, ctx):
+    """Original Gradio-based web interface - now replaced by Flask"""
+    # Check if Flask interface should be used instead
+    use_flask = os.environ.get('USE_FLASK', 'true').lower() == 'true'
+    
+    if use_flask:
+        from lib.flask_interface import web_interface_flask
+        return web_interface_flask(args, ctx)
+    
+    # Original Gradio implementation (kept as fallback)
+    web_interface_gradio(args, ctx)
+
+def web_interface_gradio(args, ctx):
     global context
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']

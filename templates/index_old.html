@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ebook2Audiobook v{{ version }}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div id="glass-mask" class="d-none">
+        <div class="text-center">
+            <div class="spinner-border text-warning" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="mt-3">Initialization, please wait...</div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <div class="header d-flex justify-content-between align-items-center py-3">
+                    <h1 class="h3 mb-0">Ebook2Audiobook</h1>
+                    <div>
+                        <span class="badge bg-success">v{{ version }}</span>
+                        <a href="https://github.com/DrewThomasson/ebook2audiobook" target="_blank" class="btn btn-outline-light btn-sm ms-2">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <!-- Tabs -->
+                        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="main-tab" data-bs-toggle="tab" data-bs-target="#main" type="button" role="tab">
+                                    Main Parameters
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="xtts-tab" data-bs-toggle="tab" data-bs-target="#xtts" type="button" role="tab">
+                                    XTTS Parameters
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="bark-tab" data-bs-toggle="tab" data-bs-target="#bark" type="button" role="tab">
+                                    BARK Parameters
+                                </button>
+                            </li>
+                        </ul>
+
+                        <div class="tab-content" id="mainTabsContent">
+                            <!-- Main Parameters Tab -->
+                            <div class="tab-pane fade show active" id="main" role="tabpanel">
+                                <form id="conversionForm" class="mt-4">
+                                    <div class="row">
+                                        <!-- Left Column -->
+                                        <div class="col-md-6">
+                                            <!-- File Upload Group -->
+                                            <div class="form-group mb-4">
+                                                <div class="upload-area" id="ebook_upload_area">
+                                                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                                    <p class="mb-0">Drag & drop your ebook here or</p>
+                                                    <button type="button" class="btn btn-primary mt-2" onclick="document.getElementById('ebook_file').click()">
+                                                        Choose File
+                                                    </button>
+                                                    <input type="file" id="ebook_file" accept=".epub,.mobi,.azw3,.fb2,.lrf,.rb,.snb,.tcr,.pdf,.txt,.rtf,.doc,.docx,.html,.odt,.azw" style="display: none;">
+                                                    <div id="ebook_filename" class="mt-2 text-success d-none"></div>
+                                                </div>
+                                                
+                                                <div class="mt-2">
+                                                    <input type="radio" class="btn-check" name="input_mode" id="file_mode" value="single" checked>
+                                                    <label class="btn btn-outline-primary btn-sm" for="file_mode">File</label>
+                                                    
+                                                    <input type="radio" class="btn-check" name="input_mode" id="directory_mode" value="directory">
+                                                    <label class="btn btn-outline-primary btn-sm" for="directory_mode">Directory</label>
+                                                </div>
+                                            </div>
+
+                                            <!-- Language Group -->
+                                            <div class="form-group mb-4">
+                                                <label for="language" class="form-label">Language</label>
+                                                <select class="form-select" id="language" name="language">
+                                                    {% for lang in language_options %}
+                                                    <option value="{{ lang.code }}">{{ lang.name }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+
+                                            <!-- Cloning Voice Audio File Group (Optional) -->
+                                            <div class="form-group mb-4" id="voice_group">
+                                                <label class="form-label">*Cloning Voice Audio File</label>
+                                                <div class="upload-area" id="voice_upload_area">
+                                                    <p class="mb-0">Upload voice file for cloning</p>
+                                                    <button type="button" class="btn btn-outline-primary btn-sm mt-2" onclick="document.getElementById('voice_file').click()">
+                                                        Choose Voice File
+                                                    </button>
+                                                    <input type="file" id="voice_file" accept=".mp4,.m4b,.m4a,.mp3,.wav,.aac,.flac,.alac,.ogg,.aiff,.aif,.wma,.dsd,.opus,.pcmu,.pcma,.gsm" style="display: none;">
+                                                    <div id="voice_filename" class="mt-2 text-success d-none"></div>
+                                                </div>
+                                                
+                                                <!-- Voice Preview and List Row -->
+                                                <div class="row mt-3">
+                                                    <div class="col-auto">
+                                                        <!-- Voice Preview Player (60px width like Gradio) -->
+                                                        <div id="voice_preview" class="d-none" style="width: 60px; height: 60px;">
+                                                            <audio controls style="width: 60px; height: 40px;">
+                                                                <source id="voice_audio_source" src="" type="audio/mpeg">
+                                                            </audio>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col">
+                                                        <!-- Voice List Dropdown -->
+                                                        <select class="form-select" id="voice_list">
+                                                            <option value="">Select from available voices...</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <!-- Delete Voice Button -->
+                                                        <button type="button" class="btn btn-outline-danger btn-sm d-none" id="voice_delete_btn" style="width: 60px; height: 38px;">🗑</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <small class="text-muted">* Optional</small>
+                                            </div>
+
+                                            <!-- Processor Unit Group -->
+                                            <div class="form-group mb-4">
+                                                <label class="form-label">Processor Unit</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    {% for device in device_options %}
+                                                    <input type="radio" class="btn-check" name="device" id="device_{{ device.value }}" value="{{ device.value }}" {% if device.value == 'cpu' %}checked{% endif %}>
+                                                    <label class="btn btn-outline-info" for="device_{{ device.value }}">{{ device.label }}</label>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Right Column -->
+                                        <div class="col-md-6">
+                                            <!-- TTS Engine Group -->
+                                            <div class="form-group mb-4">
+                                                <label for="tts_engine" class="form-label">TTS Engine</label>
+                                                <select class="form-select" id="tts_engine" name="tts_engine">
+                                                    {% for engine in tts_engine_options %}
+                                                    <option value="{{ engine.value }}">{{ engine.label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div id="tts_rating" class="mt-2"></div>
+                                            </div>
+
+                                            <!-- Fine Tuned Models Group -->
+                                            <div class="form-group mb-4">
+                                                <label for="fine_tuned" class="form-label">Fine Tuned Models (Presets)</label>
+                                                <select class="form-select" id="fine_tuned" name="fine_tuned">
+                                                    <option value="">Select preset...</option>
+                                                </select>
+                                            </div>
+
+                                            <!-- Upload Fine Tuned Model Group -->
+                                            <div class="form-group mb-4" id="custom_model_group">
+                                                <label class="form-label">Upload Fine Tuned Model</label>
+                                                <div class="upload-area" id="model_upload_area">
+                                                    <p class="mb-0">Upload custom model (.zip)</p>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm mt-2" onclick="document.getElementById('custom_model_file').click()">
+                                                        Choose Model File
+                                                    </button>
+                                                    <input type="file" id="custom_model_file" accept=".zip" style="display: none;">
+                                                    <div id="model_filename" class="mt-2 text-success d-none"></div>
+                                                </div>
+                                                
+                                                <!-- Custom Model List Row -->
+                                                <div class="row mt-3">
+                                                    <div class="col">
+                                                        <select class="form-select" id="custom_model_list">
+                                                            <option value="">Select from uploaded models...</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-auto">
+                                                        <!-- Delete Model Button -->
+                                                        <button type="button" class="btn btn-outline-danger btn-sm d-none" id="model_delete_btn" style="width: 60px; height: 38px;">🗑</button>
+                                                    </div>
+                                                </div>
+                                                
+                                                <small class="text-muted">* Optional</small>
+                                            </div>
+
+                                            <!-- Session Group -->
+                                            <div class="form-group mb-4">
+                                                <label for="session_id" class="form-label">Session ID (Optional)</label>
+                                                <input type="text" class="form-control" id="session_id" name="session_id" placeholder="Auto-generated if empty" readonly>
+                                            </div>
+
+                                            <!-- Output Format -->
+                                            <div class="form-group mb-4">
+                                                <label for="output_format" class="form-label">Output Format</label>
+                                                <select class="form-select" id="output_format" name="output_format">
+                                                    {% for format in output_format_options %}
+                                                    <option value="{{ format.value }}" {% if format.value == 'm4b' %}selected{% endif %}>{{ format.label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Convert Button -->
+                                    <div class="row mt-4">
+                                        <div class="col-12 text-center">
+                                            <button type="submit" class="btn btn-success" id="convert_btn" style="font-size: 30px; width: 80px; height: 80px; border-radius: 50%;" disabled>
+                                                📚
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <!-- Progress Display -->
+                                    <div class="row mt-4">
+                                        <div class="col-12">
+                                            <div class="form-group">
+                                                <label for="conversion_progress" class="form-label">Progress</label>
+                                                <textarea class="form-control" id="conversion_progress" rows="4" readonly placeholder="Conversion progress will appear here..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Audiobook Results (Hidden Initially) -->
+                                    <div class="row mt-4 d-none" id="audiobook_results">
+                                        <div class="col-12">
+                                            <div class="form-group mb-3">
+                                                <label for="audiobook_text" class="form-label">Audiobook</label>
+                                                <input type="text" class="form-control" id="audiobook_text" readonly>
+                                            </div>
+                                            
+                                            <!-- Audiobook Player -->
+                                            <div class="mb-3">
+                                                <audio controls class="w-100" id="audiobook_player" style="height: 54px;">
+                                                    <source id="audiobook_audio_source" src="" type="audio/mpeg">
+                                                    Your browser does not support the audio element.
+                                                </audio>
+                                            </div>
+                                            
+                                            <!-- Audiobook Controls Row -->
+                                            <div class="row">
+                                                <div class="col-auto">
+                                                    <button type="button" class="btn btn-outline-secondary" id="audiobook_download_btn" style="width: 60px; height: 38px;">↧</button>
+                                                </div>
+                                                <div class="col">
+                                                    <select class="form-select" id="audiobook_list">
+                                                        <option value="">Select audiobook...</option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-auto">
+                                                    <button type="button" class="btn btn-outline-danger" id="audiobook_delete_btn" style="width: 60px; height: 38px;">🗑</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- XTTS Parameters Tab -->
+                            <div class="tab-pane fade" id="xtts" role="tabpanel">
+                                <div class="mt-4">
+                                    <h5>Customize XTTSv2 Parameters</h5>
+                                    <p class="text-muted">Adjust the settings below to influence how the audio is generated. You can control the creativity, speed, repetition, and more.</p>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="temperature" class="form-label">Temperature</label>
+                                                <input type="range" class="form-range" id="temperature" name="temperature" min="0.1" max="10.0" step="0.1" value="0.7">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>0.1</small>
+                                                    <small id="temperature_value">0.7</small>
+                                                    <small>10.0</small>
+                                                </div>
+                                                <small class="text-muted">Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.</small>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="repetition_penalty" class="form-label">Repetition Penalty</label>
+                                                <input type="range" class="form-range" id="repetition_penalty" name="repetition_penalty" min="1.0" max="10.0" step="0.1" value="1.0">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>1.0</small>
+                                                    <small id="repetition_penalty_value">1.0</small>
+                                                    <small>10.0</small>
+                                                </div>
+                                                <small class="text-muted">Penalizes repeated phrases. Higher values reduce repetition.</small>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="top_k" class="form-label">Top K</label>
+                                                <input type="range" class="form-range" id="top_k" name="top_k" min="10" max="100" step="1" value="50">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>10</small>
+                                                    <small id="top_k_value">50</small>
+                                                    <small>100</small>
+                                                </div>
+                                                <small class="text-muted">Lower values restrict outputs to more likely words and increase speed at which audio generates.</small>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="top_p" class="form-label">Top P</label>
+                                                <input type="range" class="form-range" id="top_p" name="top_p" min="0.1" max="1.0" step="0.01" value="0.8">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>0.1</small>
+                                                    <small id="top_p_value">0.8</small>
+                                                    <small>1.0</small>
+                                                </div>
+                                                <small class="text-muted">Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.</small>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label for="speed" class="form-label">Speed</label>
+                                                <input type="range" class="form-range" id="speed" name="speed" min="0.5" max="3.0" step="0.1" value="1.0">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>0.5</small>
+                                                    <small id="speed_value">1.0</small>
+                                                    <small>3.0</small>
+                                                </div>
+                                                <small class="text-muted">Adjusts how fast the narrator will speak.</small>
+                                            </div>
+                                            
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="enable_text_splitting" name="enable_text_splitting">
+                                                <label class="form-check-label" for="enable_text_splitting">
+                                                    Enable Text Splitting
+                                                </label>
+                                                <div><small class="text-muted">Coqui-tts builtin text splitting. Can help against hallucinations but can also be worse.</small></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BARK Parameters Tab -->
+                            <div class="tab-pane fade" id="bark" role="tabpanel">
+                                <div class="mt-4">
+                                    <h5>Customize BARK Parameters</h5>
+                                    <p class="text-muted">Adjust the settings below to influence how the audio is generated, emotional and voice behavior random or more conservative</p>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="text_temp" class="form-label">Text Temperature</label>
+                                                <input type="range" class="form-range" id="text_temp" name="text_temp" min="0.0" max="1.0" step="0.01" value="0.5">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>0.0</small>
+                                                    <small id="text_temp_value">0.5</small>
+                                                    <small>1.0</small>
+                                                </div>
+                                                <small class="text-muted">Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="waveform_temp" class="form-label">Waveform Temperature</label>
+                                                <input type="range" class="form-range" id="waveform_temp" name="waveform_temp" min="0.0" max="1.0" step="0.01" value="0.5">
+                                                <div class="d-flex justify-content-between">
+                                                    <small>0.0</small>
+                                                    <small id="waveform_temp_value">0.5</small>
+                                                    <small>1.0</small>
+                                                </div>
+                                                <small class="text-muted">Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Section -->
+        <!-- (Removed - now integrated into main form) -->
+
+        <!-- Download Section -->
+        <!-- (Removed - now integrated into main form) -->
+    </div>
+
+    <script>
+        // Immediate fallback for loading screen if CDN fails
+        setTimeout(() => {
+            const mask = document.getElementById('glass-mask');
+            if (mask && !mask.classList.contains('d-none')) {
+                console.log('Fallback: hiding loading screen after timeout');
+                mask.classList.add('d-none');
+            }
+        }, 5000);
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

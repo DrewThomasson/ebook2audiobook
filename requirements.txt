@@ -6,6 +6,8 @@ demucs
 docker
 ebooklib
 fastapi
+flask>=2.3.0
+flask-socketio>=5.3.0
 fugashi
 gradio>=5.38.2
 hangul-romanize
@@ -14,6 +16,7 @@ iso-639
 jieba
 soynlp
 num2words
+pyngrok>=6.0.0
 pythainlp
 mutagen
 nvidia-ml-py
