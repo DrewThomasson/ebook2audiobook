@@ -3446,7 +3446,7 @@ def web_interface(args, ctx):
         )
         gr_conversion_progress.change(
             fn=None,
-            js='()=>document.title = "oh cool"'
+            js='()=>window.tab_progress("43.23% 23/4532")'
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
@@ -3645,6 +3645,11 @@ def web_interface(args, ctx):
                             }catch(e){
                                 console.log('redraw_elements error:', e);
                             }
+                        };
+                    }
+                    if(typeof window.tab_progress !== 'function'){
+                        window.tab_progress = ()=>{
+                            document.title = 'AHAHAHAH';
                         };
                     }
                     // Now safely call it after the audio element is available
