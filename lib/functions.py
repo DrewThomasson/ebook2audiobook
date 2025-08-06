@@ -3614,9 +3614,8 @@ def web_interface(args, ctx):
                                         if(audio){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
-                                        console.log('----------------checkboxes', checkboxes);
                                         checkboxes.forEach(cb => {
-                                            console.log('---------------cb', cb);
+                                            cb.accentColor = '#fff'
                                         });
                                     } 
                                 }else{
@@ -3625,9 +3624,8 @@ def web_interface(args, ctx):
                                         if(audio){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
-                                        console.log('----------------checkboxes', checkboxes);
                                         checkboxes.forEach(cb => {
-                                            console.log('---------------cb', cb);
+                                            cb.accentColor = '#fff'
                                         });
                                     }
                                 }
