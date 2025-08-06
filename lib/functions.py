@@ -2165,7 +2165,7 @@ def web_interface(args, ctx):
                     height: 120px !important;
                 }
                 .wrap-inner {
-                    border: 1px solid #fff;
+                    border: 1px solid #888;
                 }
                 .block.svelte-5y6bt2 {
                     padding: 10px !important;
