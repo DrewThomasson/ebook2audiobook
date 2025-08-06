@@ -3614,6 +3614,7 @@ def web_interface(args, ctx):
                                         if(theme === 'dark'){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                             checkboxes.forEach(cb => {
+                                                console.log('AAAAHHH')
                                                 cb.style.accentColor = '#fff';
                                             });
                                         } 
@@ -3622,6 +3623,7 @@ def web_interface(args, ctx):
                                         if(osTheme){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                             checkboxes.forEach(cb => {
+                                                console.log('AAAAHHH')
                                                 cb.style.accentColor = '#fff';
                                             });
                                         }
