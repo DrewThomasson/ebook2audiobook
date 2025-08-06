@@ -31,6 +31,7 @@ python app.py --help
 default_language_code = 'eng' # ISO-639-3
 
 language_tts = {
+    "piper": {"ara": "ar", "bul": "bg", "cat": "ca", "ces": "cs", "dan": "da", "deu": "de", "ell": "el", "eng": "en", "spa": "es", "fin": "fi", "fra": "fr", "hun": "hu", "isl": "is", "ita": "it", "jpn": "ja", "kaz": "kk", "kor": "ko", "lav": "lv", "nld": "nl", "nob": "no", "pol": "pl", "por": "pt", "ron": "ro", "rus": "ru", "slk": "sk", "swe": "sv", "tur": "tr", "ukr": "uk", "vie": "vi", "zho": "zh"},
     "xtts": {"ara": "ar", "ces": "cs", "deu": "de", "eng": "en", "fra": "fr", "hin": "hi", "hun": "hu", "ita": "it", "jpn": "ja", "kor": "ko", "nld": "nl", "pol": "pl", "por": "pt", "rus": "ru", "spa": "es", "tur": "tr", "zho": "zh-cn"},
     "bark": {"deu": "de", "eng": "en", "fra": "fr", "hin": "hi", "ita": "it", "jpn": "ja", "kor": "ko", "pol": "pl", "por": "pt", "rus": "ru", "spa": "es", "tur": "tr", "zho": "zh-cn"},
     "vits": {"ben": "bn", "bul": "bg", "cat": "ca", "ces": "cs", "dan": "da", "deu": "de", "ell": "el", "eng": "en", "est": "et", "ewe": "ewe", "fas": "fa", "fin": "fi", "fra": "fr", "gle": "ga", "hau": "hau", "hrv": "hr", "hun": "hu", "ita": "it", "lav": "lv", "lin": "lin", "lit": "lt", "mlt": "mt", "nld": "nl", "pol": "pl", "por": "pt", "rom": "ro", "slk": "sk", "sln": "sl", "spa": "es", "swe": "sv", "tw_akuapem": "tw_akuapem", "tw_asante": "tw_asante", "ukr": "uk", "yor": "yor"},
