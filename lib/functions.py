@@ -2603,7 +2603,7 @@ def web_interface(args, ctx):
                 rating = default_engine_settings[TTS_ENGINES['YOURTTS']]['rating']
             def yellow_stars(n):
                 return "".join(
-                    "<span style='color:#f0cc00; font-size:12px'>★</span>" for _ in range(n)
+                    "<span style='color:#f0bc00; font-size:12px'>★</span>" for _ in range(n)
                 )
             def color_box(value):
                 if value <= 4:
