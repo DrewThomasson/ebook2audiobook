@@ -3611,10 +3611,10 @@ def web_interface(args, ctx):
                                         }
                                         elColor = '#fff';
                                     }
-                                    checkboxes.forEach(cb =>{
+                                    checkboxes.forEach(cb=>{
                                         cb.style.border = '1px solid ' + elColor;
                                     });
-                                    radios.forEach(cb =>{
+                                    radios.forEach(cb=>{
                                         cb.style.border = '1px solid ' + elColor;
                                     });
                                 }else{
@@ -3625,10 +3625,10 @@ def web_interface(args, ctx):
                                         }
                                         elColor = '#fff';
                                     }
-                                    checkboxes.forEach(cb =>{
+                                    checkboxes.forEach(cb=>{
                                         cb.style.border = '1px solid ' + elColor;
                                     });
-                                    radios.forEach(cb =>{
+                                    radios.forEach(cb=>{
                                         cb.style.border = '1px solid ' + elColor;
                                     });
                                 }
@@ -3661,7 +3661,7 @@ def web_interface(args, ctx):
                         console.log('JSON parse error:', e);
                     }
                     return null;
-                }
+                };
                 """,
             outputs=[gr_read_data]
         )
