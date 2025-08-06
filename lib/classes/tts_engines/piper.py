@@ -7,19 +7,32 @@ import tempfile
 import threading
 import uuid
 
-import numpy as np
-import regex as re
-import soundfile as sf
-import torch
-import torchaudio
+# Conditional imports for Piper TTS dependencies
+try:
+    import numpy as np
+    import regex as re
+    import soundfile as sf
+    import torch
+    import torchaudio
+    from huggingface_hub import hf_hub_download
+    from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
+    from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
+    PIPER_DEPENDENCIES_AVAILABLE = True
+except ImportError as e:
+    PIPER_DEPENDENCIES_AVAILABLE = False
+    _missing_dependency_error = str(e)
+    # Define placeholder functions for when dependencies are missing
+    def unload_tts(*args, **kwargs): pass
+    def append_sentence2vtt(*args, **kwargs): pass
+    def detect_gender(*args, **kwargs): return "unknown"
+    def trim_audio(*args, **kwargs): return args[0] if args else None
+    def normalize_audio(*args, **kwargs): return args[0] if args else None
+    def is_audio_data_valid(*args, **kwargs): return False
 
-from huggingface_hub import hf_hub_download
 from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
-from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
@@ -30,6 +43,9 @@ class Coqui:
 
     def __init__(self, session):
         try:
+            if not PIPER_DEPENDENCIES_AVAILABLE:
+                raise ImportError(f"Piper TTS dependencies not available: {_missing_dependency_error}. Please install: pip install numpy soundfile huggingface_hub piper-tts")
+            
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
