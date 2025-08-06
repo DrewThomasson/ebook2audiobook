@@ -1112,6 +1112,12 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
+def filter_sml(text):
+    for key, value in TTS_SML.items():
+        pattern = re.escape(key) if key == '###' else r'\[' + re.escape(key) + r'\]'
+        text = re.sub(pattern, f" {value} ", text)
+    return text
+
 def normalize_text(text, lang, lang_iso1, tts_engine):
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_array)}]+", flags=re.UNICODE)
@@ -1136,8 +1142,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
     text = re.sub(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?', lambda m: m.group().replace('.', '').upper(), text)
-    # Replace ### and [pause] with TTS_SML['[pause]'] (‡ = double dagger U+2021)
-    text = re.sub(r'(###|\[pause\])', f" {TTS_SML['pause']} ", text)
+    # Prepare SML tags
+    text = filter_sml(text)
     # Replace multiple newlines ("\n\n", "\r\r", "\n\r", etc.) with a ‡pause‡ 1.4sec
     pattern = r'(?:\r\n|\r|\n){2,}'
     text = re.sub(pattern, f" {TTS_SML['pause']} ", text)
