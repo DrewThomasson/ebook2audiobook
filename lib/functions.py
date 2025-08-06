@@ -3605,6 +3605,7 @@ def web_interface(args, ctx):
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
                                 const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
+                                const radios = document.querySelectorAll(\"input[type='radio']\");
                                 const url = new URL(window.location);
                                 const theme = url.searchParams.get('__theme');
                                 let osTheme;
@@ -3617,6 +3618,9 @@ def web_interface(args, ctx):
                                         checkboxes.forEach(cb => {
                                             cb.style.border = '1px solid #fff'
                                         });
+                                        radios.forEach(cb => {
+                                            cb.style.border = '1px solid #fff'
+                                        });
                                     } 
                                 }else{
                                     osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
@@ -3625,6 +3629,9 @@ def web_interface(args, ctx):
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
                                         checkboxes.forEach(cb => {
+                                            cb.style.border = '1px solid #fff'
+                                        });
+                                        radios.forEach(cb => {
                                             cb.style.border = '1px solid #fff'
                                         });
                                     }
