@@ -2165,7 +2165,7 @@ def web_interface(args, ctx):
                     height: 120px !important;
                 }
                 .wrap-inner {
-                    border: 1px solid #8c8c8c;
+                    border: 1px solid #666666;
                 }
                 .block.svelte-5y6bt2 {
                     padding: 10px !important;
@@ -3609,7 +3609,7 @@ def web_interface(args, ctx):
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
                                         checkboxes.forEach(cb => {
-                                            cb.style.border = '1px solid #ff'
+                                            cb.style.border = '1px solid #fff'
                                         });
                                         radios.forEach(cb => {
                                             cb.style.border = '1px solid #fff'
@@ -3622,7 +3622,7 @@ def web_interface(args, ctx):
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
                                         checkboxes.forEach(cb => {
-                                            cb.style.border = '1px solid #ff'
+                                            cb.style.border = '1px solid #fff'
                                         });
                                         radios.forEach(cb => {
                                             cb.style.border = '1px solid #fff'
