@@ -2295,12 +2295,14 @@ def web_interface(args, ctx):
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
                 }
-                input[type="checkbox"], input[type="radio"] {
-                    border: 2px solid #888;
-                }
                 @media (prefers-color-scheme: dark) {
-                    input[type="checkbox"], input[type="radio"] {
+                    .svelte-1a15wmk {
                         border: 2px solid #fff;
+                    }
+                }
+                @media (prefers-color-scheme: light) {
+                    .svelte-1a15wmk {
+                        border: 2px solid #888;
                     }
                 }
             </style>
