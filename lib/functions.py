@@ -3526,7 +3526,7 @@ def web_interface(args, ctx):
                 gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                gr_bark_text_temp, gr_bark_waveform_temp, output_split, output_split_hours
+                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours_list
             ],
             outputs=[gr_conversion_progress]
         ).then(
