@@ -78,7 +78,7 @@ class Coqui:
         # Default models mapping
         default_models = {
             'en': 'en_US-lessac-medium',
-            'de': 'de_DE-karlsson-medium', 
+            'de': 'de_DE-karlsson-low', 
             'es': 'es_ES-mms-medium',
             'fr': 'fr_FR-mls-medium',
             'it': 'it_IT-mms-medium',
