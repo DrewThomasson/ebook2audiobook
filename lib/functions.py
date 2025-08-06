@@ -2296,9 +2296,9 @@ def web_interface(args, ctx):
                     color: #ffffff !important;
                 }
                 input[type="checkbox"], input[type="radio"] {
-                    border: 2px solid #fff;
+                    border: 2px solid #888;
                 }
-                @media (prefers-color-scheme: light) {
+                @media (prefers-color-scheme: dark) {
                     input[type="checkbox"], input[type="radio"] {
                         border: 2px solid #fff;
                     }
