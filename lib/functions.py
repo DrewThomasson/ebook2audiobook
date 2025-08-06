@@ -2164,7 +2164,7 @@ def web_interface(args, ctx):
                 .svelte-1xyfx7i.center.boundedheight.flex{
                     height: 120px !important;
                 }
-                wrap.svelte-1hfxrpf, wrap-inner.svelte-1hfxrpf{
+                .svelte-1hfxrpf, .svelte-1hfxrpf{
                     border: 2px solid #fff;
                 }
                 .block.svelte-5y6bt2 {
