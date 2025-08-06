@@ -3604,7 +3604,7 @@ def web_interface(args, ctx):
                         window.redraw_elements = ()=>{
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
-                                const checkboxes = document.querySelectorAll('input[type='checkbox']');
+                                const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
                                 if(audio){
                                     const url = new URL(window.location);
                                     const theme = url.searchParams.get('__theme');
