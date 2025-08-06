@@ -3604,7 +3604,7 @@ def web_interface(args, ctx):
                         window.redraw_elements = ()=>{
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
-                                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+                                const checkboxes = document.querySelectorAll('input[type='checkbox']');
                                 if(audio){
                                     const url = new URL(window.location);
                                     const theme = url.searchParams.get('__theme');
@@ -3614,7 +3614,7 @@ def web_interface(args, ctx):
                                         if(theme === 'dark'){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                             checkboxes.forEach(cb => {
-                                                cb.style.accentColor = "#fff";
+                                                cb.style.accentColor = '#fff';
                                             });
                                         } 
                                     }else{
@@ -3622,7 +3622,7 @@ def web_interface(args, ctx):
                                         if(osTheme){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                             checkboxes.forEach(cb => {
-                                                cb.style.accentColor = "#fff";
+                                                cb.style.accentColor = '#fff';
                                             });
                                         }
                                     }
@@ -3651,7 +3651,7 @@ def web_interface(args, ctx):
                         const data = window.localStorage.getItem('data');
                         if (data) return JSON.parse(data);
                     }catch(e){
-                        console.log("JSON parse error:", e);
+                        console.log('JSON parse error:', e);
                     }
                     return null;
                 }
