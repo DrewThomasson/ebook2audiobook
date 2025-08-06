@@ -3603,13 +3603,13 @@ def web_interface(args, ctx):
                                 const theme = url.searchParams.get('__theme');
                                 let osTheme;
                                 let audioFilter = '';
-                                let elColor = '#fff'
+                                let elColor = '#666666'
                                 if(theme){
                                     if(theme === 'dark'){
                                         if(audio){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
-                                        elColor = '#666666';
+                                        elColor = '#fff';
                                     }
                                     checkboxes.forEach(cb =>{
                                         cb.style.border = '1px solid ' + elColor;
@@ -3623,7 +3623,7 @@ def web_interface(args, ctx):
                                         if(audio){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
-                                        elColor = '#666666';
+                                        elColor = '#fff';
                                     }
                                     checkboxes.forEach(cb =>{
                                         cb.style.border = '1px solid ' + elColor;
