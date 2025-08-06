@@ -3605,29 +3605,33 @@ def web_interface(args, ctx):
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
                                 const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
-                                if(audio){
-                                    const url = new URL(window.location);
-                                    const theme = url.searchParams.get('__theme');
-                                    let osTheme;
-                                    let audioFilter = '';
-                                    if(theme){
-                                        if(theme === 'dark'){
+                                const url = new URL(window.location);
+                                const theme = url.searchParams.get('__theme');
+                                let osTheme;
+                                let audioFilter = '';
+                                if(theme){
+                                    if(theme === 'dark'){
+                                        if(audio){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            console.log('----------------checkboxes', checkboxes);
-                                            checkboxes.forEach(cb => {
-                                                consol.e.log('---------------cb', cb);
-                                            });
-                                        } 
-                                    }else{
-                                        osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-                                        if(osTheme){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            console.log('----------------checkboxes', checkboxes);
-                                            checkboxes.forEach(cb => {
-                                                consol.e.log('---------------cb', cb);
-                                            });
                                         }
+                                        console.log('----------------checkboxes', checkboxes);
+                                        checkboxes.forEach(cb => {
+                                            consol.e.log('---------------cb', cb);
+                                        });
+                                    } 
+                                }else{
+                                    osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                                    if(osTheme){
+                                        if(audio){
+                                            audioFilter = 'invert(1) hue-rotate(180deg)';
+                                        }
+                                        console.log('----------------checkboxes', checkboxes);
+                                        checkboxes.forEach(cb => {
+                                            consol.e.log('---------------cb', cb);
+                                        });
                                     }
+                                }
+                                if(audio){
                                     if(!audio.style.transition){
                                         audio.style.transition = 'filter 1s ease';
                                     }
