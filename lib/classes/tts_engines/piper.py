@@ -15,6 +15,8 @@ try:
     import torch
     import torchaudio
     from huggingface_hub import hf_hub_download
+    from piper import PiperVoice  # Import piper here to check availability
+    # Import common utils with all their dependencies
     from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
     from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
     PIPER_DEPENDENCIES_AVAILABLE = True
@@ -28,6 +30,11 @@ except ImportError as e:
     def trim_audio(*args, **kwargs): return args[0] if args else None
     def normalize_audio(*args, **kwargs): return args[0] if args else None
     def is_audio_data_valid(*args, **kwargs): return False
+    # Define placeholder PiperVoice class
+    class PiperVoice:
+        @staticmethod
+        def load(*args, **kwargs):
+            return None
 
 from pathlib import Path
 from pprint import pprint
@@ -114,7 +121,6 @@ class Coqui:
                 return loaded_tts[key]['engine']
             unload_tts(device, [self.tts_key, self.tts_vc_key])
             with lock:
-                from piper import PiperVoice
                 # Download the model files if needed
                 model_file, config_file = self._download_model(model_path)
                 tts = PiperVoice.load(model_file, config_file)
@@ -213,7 +219,6 @@ class Coqui:
             unload_tts(device, [self.tts_key])
             with lock:
                 checkpoint_dir = kwargs.get('checkpoint_dir')
-                from piper import PiperVoice
                 model_file = os.path.join(checkpoint_dir, 'model.onnx')
                 config_file = os.path.join(checkpoint_dir, 'config.json')
                 tts = PiperVoice.load(model_file, config_file)
