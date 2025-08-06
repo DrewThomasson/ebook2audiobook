@@ -2767,6 +2767,7 @@ def web_interface(args, ctx):
         def click_gr_voice_del_btn(selected, id):
             try:
                 if selected is not None:
+                    session = context.get_session(id)
                     speaker_path = os.path.abspath(selected)
                     speaker = re.sub(r'\.wav$|\.npz$', '', os.path.basename(selected))
                     builtin_root = os.path.join(voices_dir, session['language'])
@@ -2783,7 +2784,6 @@ def web_interface(args, ctx):
                         show_alert({"type": "warning", "msg": error})
                         return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
                     try:
-                        session = context.get_session(id)
                         selected_path = Path(selected).resolve()
                         parent_path = Path(session['voice_dir']).parent.resolve()
                         if parent_path in selected_path.parents:
