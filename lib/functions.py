@@ -2155,6 +2155,14 @@ def web_interface(args, ctx):
                     scrollbar-width: thin !important;
                     scrollbar-color: #c09340 none !important;
                 }
+                input[type="checkbox"], input[type="radio"] {
+                    border: 2px solid #fff;
+                }
+                @media (prefers-color-scheme: light) {
+                    input[type="checkbox"], input[type="radio"] {
+                        border: 2px solid #fff;
+                    }
+                }
                 .svelte-1xyfx7i.center.boundedheight.flex{
                     height: 120px !important;
                 }
@@ -2212,8 +2220,7 @@ def web_interface(args, ctx):
                 }
                 .progress-bar.svelte-ls20lj {
                     background: orange !important;
-                }
-                
+                }  
                 #glass-mask {
                     position: fixed !important;
                     top: 0 !important;
@@ -3446,7 +3453,7 @@ def web_interface(args, ctx):
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_group_audiobook_list]
         ).then(
             fn=None,
-            js='()=>window.redraw_audiobook_player()'
+            js='()=>window.redraw_elements()'
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -3583,8 +3590,8 @@ def web_interface(args, ctx):
             js="""
                 ()=>{
                     // Define the global function ONCE
-                    if(typeof window.redraw_audiobook_player !== 'function'){
-                        window.redraw_audiobook_player = ()=>{
+                    if(typeof window.redraw_elements !== 'function'){
+                        window.redraw_elements = ()=>{
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
                                 if(audio){
@@ -3608,15 +3615,15 @@ def web_interface(args, ctx):
                                     audio.style.filter = audioFilter;
                                 }
                             }catch(e){
-                                console.log('redraw_audiobook_player error:', e);
+                                console.log('redraw_elements error:', e);
                             }
                         };
                     }
                     // Now safely call it after the audio element is available
                     const tryRun = ()=>{
                         const audio = document.querySelector('#gr_audiobook_player audio');
-                        if(audio && typeof window.redraw_audiobook_player === 'function'){
-                            window.redraw_audiobook_player();
+                        if(audio && typeof window.redraw_elements === 'function'){
+                            window.redraw_elements();
                         }else{
                             setTimeout(tryRun, 100);
                         }
