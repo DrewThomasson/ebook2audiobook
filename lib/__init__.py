@@ -15,7 +15,7 @@ from .conf import (
     max_python_version, min_python_version, models_dir, os,
     output_formats, platform, prog_version, python_env_dir,
     requirements_file, tmp_dir, tmp_expire, tts_dir, voice_formats,
-    voices_dir, output_split_hours
+    voices_dir, default_output_split, default_output_split_hours
 )
 
 from .lang import (
@@ -45,7 +45,7 @@ __all__ = [
     "max_python_version", "min_python_version", "models_dir", "os",
     "output_formats", "platform", "prog_version", "python_env_dir",
     "requirements_file", "tmp_dir", "tmp_expire", "tts_dir",
-    "voice_formats", "voices_dir", "output_split_hours",
+    "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours",
 
     # from lang
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code",

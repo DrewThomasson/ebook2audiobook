@@ -171,6 +171,8 @@ class SessionContext:
                 "event": None,
                 "final_name": None,
                 "output_format": default_output_format,
+                "output_split": default_output_split,
+                "output_split_hours": default_output_split_hours,
                 "metadata": {
                     "title": None, 
                     "creator": None,
@@ -1541,76 +1543,102 @@ def combine_audio_chapters(session):
             filepath = os.path.join(session['chapters_dir'], file)
             durations.append(get_audio_duration(filepath))
         total_duration = sum(durations)
-        max_part_duration = output_split_hours * 3600
-        needs_split = total_duration > (output_split_hours * 2) * 3600
-
-        # --- Split into parts by duration ---
-        part_files = []
-        part_chapter_indices = []
-        cur_part = []
-        cur_indices = []
-        cur_duration = 0
-        for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
-            if cur_part and (cur_duration + dur > max_part_duration):
+        exported_files = []
+        if session.get('output_split'):
+            # --- Split into parts by duration ---
+            part_files = []
+            part_chapter_indices = []
+            cur_part = []
+            cur_indices = []
+            cur_duration = 0
+            max_part_duration = session['output_split_hours'] * 3600
+            needs_split = total_duration > (session['output_split_hours'] * 2) * 3600
+            for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
+                if cur_part and (cur_duration + dur > max_part_duration):
+                    part_files.append(cur_part)
+                    part_chapter_indices.append(cur_indices)
+                    cur_part = []
+                    cur_indices = []
+                    cur_duration = 0
+                cur_part.append(file)
+                cur_indices.append(idx)
+                cur_duration += dur
+            if cur_part:
                 part_files.append(cur_part)
                 part_chapter_indices.append(cur_indices)
-                cur_part = []
-                cur_indices = []
-                cur_duration = 0
-            cur_part.append(file)
-            cur_indices.append(idx)
-            cur_duration += dur
-        if cur_part:
-            part_files.append(cur_part)
-            part_chapter_indices.append(cur_indices)
 
-        exported_files = []
+            for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    # --- Batch merging logic ---
+                    batch_size = 1024
+                    chunk_list = []
+                    for i in range(0, len(part_file_list), batch_size):
+                        batch = part_file_list[i:i + batch_size]
+                        txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
+                        out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
+                        with open(txt, 'w') as f:
+                            for file in batch:
+                                path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
+                                f.write(f"file '{path}'\n")
+                        chunk_list.append((txt, out))
+                    with Pool(cpu_count()) as pool:
+                        results = pool.starmap(assemble_chunks, chunk_list)
+                    if not all(results):
+                        print(f"assemble_segments() One or more chunks failed for part {part_idx+1}.")
+                        return None
+                    # Final merge for this part
+                    combined_chapters_file = os.path.join(
+                        session['process_dir'],
+                        f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
+                    )
+                    final_list = os.path.join(tmpdir, f'part_{part_idx+1:02d}_final.txt')
+                    with open(final_list, 'w') as f:
+                        for _, chunk_path in chunk_list:
+                            f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
+                    if not assemble_chunks(final_list, combined_chapters_file):
+                        print(f"assemble_segments() Final merge failed for part {part_idx+1}.")
+                        return None
 
-        for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
+                    # --- Generate metadata for this part ---
+                    metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
+                    part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
+                    generate_ffmpeg_metadata(part_chapters, session, metadata_file, default_audio_proc_format)
+
+                    # --- Export audio for this part ---
+                    final_file = os.path.join(
+                        session['audiobooks_dir'],
+                        f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']
+                    )
+                    if export_audio(combined_chapters_file, metadata_file, final_file):
+                        exported_files.append(final_file)
+        else:
+            # --- No splitting requested: merge all chapters at once ---
             with tempfile.TemporaryDirectory() as tmpdir:
-                # --- Batch merging logic ---
-                batch_size = 1024
-                chunk_list = []
-                for i in range(0, len(part_file_list), batch_size):
-                    batch = part_file_list[i:i + batch_size]
-                    txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
-                    out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
-                    with open(txt, 'w') as f:
-                        for file in batch:
-                            path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
-                            f.write(f"file '{path}'\n")
-                    chunk_list.append((txt, out))
-                with Pool(cpu_count()) as pool:
-                    results = pool.starmap(assemble_chunks, chunk_list)
-                if not all(results):
-                    print(f"assemble_segments() One or more chunks failed for part {part_idx+1}.")
-                    return None
-                # Final merge for this part
-                combined_chapters_file = os.path.join(
-                    session['process_dir'],
-                    f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
-                )
-                final_list = os.path.join(tmpdir, f'part_{part_idx+1:02d}_final.txt')
-                with open(final_list, 'w') as f:
-                    for _, chunk_path in chunk_list:
-                        f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-                if not assemble_chunks(final_list, combined_chapters_file):
-                    print(f"assemble_segments() Final merge failed for part {part_idx+1}.")
+                # 1) build a single ffmpeg file list
+                txt = os.path.join(tmpdir, 'all_chapters.txt')
+                merged_tmp = os.path.join(tmpdir, f'all.{default_audio_proc_format}')
+                with open(txt, 'w') as f:
+                    for file in chapter_files:
+                        path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
+                        f.write(f"file '{path}'\n")
+
+                # 2) merge into one temp file
+                if not assemble_chunks(txt, merged_tmp):
+                    print("assemble_segments() Final merge failed.")
                     return None
 
-                # --- Generate metadata for this part ---
-                metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
-                part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                generate_ffmpeg_metadata(part_chapters, session, metadata_file, default_audio_proc_format)
+                # 3) generate metadata for entire book
+                metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
+                all_chapters = list(zip(chapter_files, chapter_titles))
+                generate_ffmpeg_metadata(all_chapters, session, metadata_file, default_audio_proc_format)
 
-                # --- Export audio for this part ---
+                # 4) export in one go
                 final_file = os.path.join(
                     session['audiobooks_dir'],
-                    f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']
+                    session['final_name']
                 )
-                if export_audio(combined_chapters_file, metadata_file, final_file):
+                if export_audio(merged_tmp, metadata_file, final_file):
                     exported_files.append(final_file)
-
         return exported_files if exported_files else None
     except Exception as e:
         DependencyError(e)
@@ -1781,6 +1809,7 @@ def convert_ebook(args, ctx=None):
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
             session = context.get_session(id)
+
             session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE   
             session['ebook'] = args['ebook']
             session['ebook_list'] = args['ebook_list']
@@ -1790,7 +1819,7 @@ def convert_ebook(args, ctx=None):
             session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
             session['custom_model'] = args['custom_model'] if not is_gui_process or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
             session['fine_tuned'] = args['fine_tuned']
-            session['output_format'] = args['output_format']
+            session['voice'] = args['voice']
             session['temperature'] =  args['temperature']
             session['length_penalty'] = args['length_penalty']
             session['num_beams'] = args['num_beams']
@@ -1802,8 +1831,10 @@ def convert_ebook(args, ctx=None):
             session['text_temp'] =  args['text_temp']
             session['waveform_temp'] =  args['waveform_temp']
             session['audiobooks_dir'] = args['audiobooks_dir']
-            session['voice'] = args['voice']
-            
+            session['output_format'] = args['output_format']
+            session['output_split'] = args['output_split']    
+            session['output_split_hours'] = args['output_split_hours'] 
+
             info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
 
             if not is_gui_process:
@@ -2067,6 +2098,7 @@ def web_interface(args, ctx):
     custom_model_options = []
     fine_tuned_options = []
     audiobook_options = []
+    options_output_split_hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     
     src_label_file = 'Select a File'
     src_label_dir = 'Select a Directory'
@@ -2306,7 +2338,11 @@ def web_interface(args, ctx):
                                 gr_custom_model_markdown = gr.Markdown(elem_id='gr_markdown_custom_model', value='<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group(elem_id='gr_group_session'):
                             gr_session = gr.Textbox(label='Session', elem_id='gr_session', interactive=False)
-                        gr_output_format_list = gr.Dropdown(label='Output format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True)
+                        with gr.Group(elem_id='gr_group_output_format'):
+                            with gr.Row(elem_id='gr_row_output_format'):
+                                gr_output_format_list = gr.Dropdown(label='Output format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True)
+                                gr_output_split = gr.Checkbox(label='Split output', elem_id='gr_output_split', value=default_output_split, interactive=True)
+                                gr_output_split_hours_list = gr.Dropdown(label='Max hours / part', elem_id='gr_output_split_hours_list', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True)
             gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
             with gr_tab_xtts_params:
                 gr.Markdown(
@@ -2605,12 +2641,13 @@ def web_interface(args, ctx):
                     update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
                     gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
                     gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
-                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id), gr.update(active=True)
+                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id),
+                    gr.update(value=session['output_split']), gr.update(value=session['output_split_hours']), gr.update(active=True)
                 )
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
-                outputs = outputs = tuple([gr.update() for _ in range(20)]) # 20 is the total count of the return[] above
+                outputs = outputs = tuple([gr.update() for _ in range(22)]) # 21 is the total count of the return[] above
                 return outputs
 
         def refresh_interface(id):
@@ -3052,6 +3089,16 @@ def web_interface(args, ctx):
             session = context.get_session(id)
             session['output_format'] = val
             return
+            
+        def change_gr_output_split(val, id):
+            session = context.get_session(id)
+            session['output_split'] = val
+            return
+
+        def change_gr_output_split_hours_list(selected, id):
+            session = context.get_session(id)
+            session['output_split_hours'] = selected
+            return
 
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
@@ -3073,7 +3120,11 @@ def web_interface(args, ctx):
                         show_alert(state)
             return
 
-        def submit_convert_btn(id, device, ebook_file, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp):
+        def submit_convert_btn(
+                id, device, ebook_file, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
+                length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp,
+                output_split, output_split_hours
+            ):
             try:
                 session = context.get_session(id)
                 args = {
@@ -3088,6 +3139,7 @@ def web_interface(args, ctx):
                     "voice": voice,
                     "language": language,
                     "custom_model": custom_model,
+                    "fine_tuned": fine_tuned,
                     "output_format": output_format,
                     "temperature": float(temperature),
                     "length_penalty": float(length_penalty),
@@ -3099,7 +3151,8 @@ def web_interface(args, ctx):
                     "enable_text_splitting": enable_text_splitting,
                     "text_temp": float(text_temp),
                     "waveform_temp": float(waveform_temp),
-                    "fine_tuned": fine_tuned
+                    "output_split": output_split,
+                    "output_split_hours": output_split_hours
                 }
                 error = None
                 if args['ebook'] is None and args['ebook_list'] is None:
@@ -3371,6 +3424,16 @@ def web_interface(args, ctx):
             inputs=[gr_output_format_list, gr_session],
             outputs=None
         )
+        gr_output_split.change(
+            fn=change_gr_output_split,
+            inputs=[gr_output_split, gr_session],
+            outputs=None
+        )
+        gr_output_split_hours_list.change(
+            fn=change_gr_output_split_hours_list,
+            inputs=[gr_output_split_hours_list, gr_session],
+            outputs=None
+        )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
             inputs=[gr_audiobook_list],
@@ -3498,7 +3561,8 @@ def web_interface(args, ctx):
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
                 gr_output_format_list, gr_audiobook_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
-                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp, gr_bark_waveform_temp, gr_voice_list, gr_timer
+                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp,
+                gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours_list, gr_timer
             ]
         ).then(
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
