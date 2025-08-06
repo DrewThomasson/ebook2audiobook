@@ -18,8 +18,6 @@ from pathlib import Path
 from pprint import pprint
 
 from lib import *
-from lib.models import TTS_ENGINES, models, default_vc_model, tts_dir, default_audio_proc_format
-from lib.lang import language_tts
 from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
@@ -121,23 +119,39 @@ class Coqui:
         """Download Piper model files from HuggingFace"""
         try:
             # Create model directory
-            model_dir = os.path.join(self.cache_dir, 'piper', model_name)
+            model_dir = os.path.join(tts_dir, 'piper', model_name)
             os.makedirs(model_dir, exist_ok=True)
             
-            model_file = os.path.join(model_dir, 'model.onnx')
-            config_file = os.path.join(model_dir, 'config.json')
+            model_file = os.path.join(model_dir, f'{model_name}.onnx')
+            config_file = os.path.join(model_dir, f'{model_name}.onnx.json')
             
             # Check if files already exist
             if os.path.exists(model_file) and os.path.exists(config_file):
                 return model_file, config_file
             
-            # Download from HuggingFace
-            repo_id = f"rhasspy/piper-voices"
+            # Parse model name to get the correct path
+            # Example: en_US-lessac-medium -> en/en_US/lessac/medium/
+            parts = model_name.split('-')
+            if len(parts) >= 3:
+                lang_country = parts[0]  # en_US
+                voice_name = parts[1]    # lessac  
+                quality = parts[2]       # medium
+                
+                # Extract language code (en from en_US)
+                lang_code = lang_country.split('_')[0]
+                
+                # Build the HuggingFace path
+                hf_path = f"{lang_code}/{lang_country}/{voice_name}/{quality}/"
+            else:
+                # Fallback for unexpected format
+                hf_path = f"en/en_US/lessac/medium/"
+            
+            repo_id = "rhasspy/piper-voices"
             
             # Download model file
             hf_hub_download(
                 repo_id=repo_id,
-                filename=f"{model_name}.onnx",
+                filename=f"{hf_path}{model_name}.onnx",
                 local_dir=model_dir,
                 local_dir_use_symlinks=False
             )
@@ -145,19 +159,24 @@ class Coqui:
             # Download config file  
             hf_hub_download(
                 repo_id=repo_id,
-                filename=f"{model_name}.onnx.json",
+                filename=f"{hf_path}{model_name}.onnx.json",
                 local_dir=model_dir,
                 local_dir_use_symlinks=False
             )
             
-            # Rename downloaded files to expected names
-            downloaded_model = os.path.join(model_dir, f"{model_name}.onnx")
-            downloaded_config = os.path.join(model_dir, f"{model_name}.onnx.json")
+            # The files are downloaded with their full path, move them to the expected location
+            downloaded_model = os.path.join(model_dir, hf_path, f"{model_name}.onnx")
+            downloaded_config = os.path.join(model_dir, hf_path, f"{model_name}.onnx.json")
             
             if os.path.exists(downloaded_model):
                 shutil.move(downloaded_model, model_file)
             if os.path.exists(downloaded_config):
                 shutil.move(downloaded_config, config_file)
+            
+            # Clean up the directory structure
+            lang_dir = os.path.join(model_dir, lang_code)
+            if os.path.exists(lang_dir):
+                shutil.rmtree(lang_dir)
                 
             return model_file, config_file
             
