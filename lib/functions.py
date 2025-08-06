@@ -3099,10 +3099,10 @@ def web_interface(args, ctx):
             session['output_format'] = val
             return
             
-        def change_gr_output_split(val, id):
+        def change_gr_output_split(bool, id):
             session = context.get_session(id)
-            session['output_split'] = val
-            return
+            session['output_split'] = bool
+            return gr.update(visible=bool)
 
         def change_gr_output_split_hours_list(selected, id):
             session = context.get_session(id)
@@ -3436,7 +3436,7 @@ def web_interface(args, ctx):
         gr_output_split.change(
             fn=change_gr_output_split,
             inputs=[gr_output_split, gr_session],
-            outputs=None
+            outputs=gr_output_split_hours_list
         )
         gr_output_split_hours_list.change(
             fn=change_gr_output_split_hours_list,
