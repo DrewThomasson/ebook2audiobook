@@ -2773,13 +2773,7 @@ def web_interface(args, ctx):
                     sessions_root = os.path.join(voices_dir, '__sessions')
                     is_in_sessions = os.path.commonpath([speaker_path, os.path.abspath(sessions_root)]) == os.path.abspath(sessions_root)
                     is_in_builtin = os.path.commonpath([speaker_path, os.path.abspath(builtin_root)]) == os.path.abspath(builtin_root)
-                    is_builtin_name = any(
-                        speaker in settings.get('voices', {})
-                        for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
-                    )
-                    if is_builtin_name and is_in_builtin:
-                        error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
-                        show_alert({"type": "warning", "msg": error})
+                    # Check if voice is built-in
                     is_builtin = any(
                         speaker in settings.get('voices', {})
                         for settings in (default_engine_settings[engine] for engine in TTS_ENGINES.values())
@@ -2787,25 +2781,33 @@ def web_interface(args, ctx):
                     if is_builtin and is_in_builtin:
                         error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
-                    else:
-                        try:
-                            session = context.get_session(id)
-                            selected_path = Path(selected).resolve()
-                            parent_path = Path(session['voice_dir']).parent.resolve()
-                            if parent_path in selected_path.parents:
-                                msg = f'Are you sure to delete {speaker}...'
-                                return gr.update(value='confirm_voice_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
-                            else:
-                                error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
-                                show_alert({"type": "warning", "msg": error})
-                        except Exception as e:
-                            error = f'Could not delete the voice file {selected}!'
-                            alert_exception(error)
+                        return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                    try:
+                        session = context.get_session(id)
+                        selected_path = Path(selected).resolve()
+                        parent_path = Path(session['voice_dir']).parent.resolve()
+                        if parent_path in selected_path.parents:
+                            msg = f'Are you sure to delete {speaker}...'
+                            return (
+                                gr.update(value='confirm_voice_del'),
+                                gr.update(value=show_modal('confirm', msg), visible=True),
+                                gr.update(visible=True),
+                                gr.update(visible=True)
+                            )
+                        else:
+                            error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
+                            show_alert({"type": "warning", "msg": error})
+                            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                    except Exception as e:
+                        error = f'Could not delete the voice file {selected}!\n{e}'
+                        alert_exception(error)
+                        return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                # Fallback/default return if not selected or after errors
                 return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
             except Exception as e:
                 error = f'click_gr_voice_del_btn(): {e}'
                 alert_exception(error)
-            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
 
         def click_gr_custom_model_del_btn(selected, id):
             try:
