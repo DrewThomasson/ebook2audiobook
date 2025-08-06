@@ -2301,9 +2301,6 @@ def web_interface(args, ctx):
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
                 }
-                input {
-                  border: 2px solid #fff;
-                }
             </style>
             '''
         )
@@ -3614,6 +3611,9 @@ def web_interface(args, ctx):
                                         radios.forEach(cb => {
                                             cb.style.border = '1px solid #fff'
                                         });
+                                        document.querySelectorAll('input').forEach(el => {
+                                            el.style.border = "2px solid #FF5722";
+                                        });
                                     } 
                                 }else{
                                     osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
@@ -3626,6 +3626,9 @@ def web_interface(args, ctx):
                                         });
                                         radios.forEach(cb => {
                                             cb.style.border = '1px solid #fff'
+                                        });
+                                        document.querySelectorAll('input').forEach(el => {
+                                            el.style.border = "2px solid #FF5722";
                                         });
                                     }
                                 }
