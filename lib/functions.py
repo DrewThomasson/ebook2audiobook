@@ -2881,6 +2881,15 @@ def web_interface(args, ctx):
                     (os.path.splitext(f.name)[0], str(f))
                     for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
                 ]
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                os.makedirs(session['voice_dir'], exist_ok=True)
+                if session['voice_dir'] is not None:
+                    parent_dir = Path(session['voice_dir']).parent
+                    voice_options += [
+                        (os.path.splitext(f.name)[0], str(f))
+                        for f in parent_dir.rglob(file_pattern)
+                        if f.is_file()
+                    ]
                 if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
                     builtin_names = {t[0]: None for t in builtin_options}
                     eng_dir = Path(os.path.join(voices_dir, "eng"))
@@ -2902,15 +2911,6 @@ def web_interface(args, ctx):
                             for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
                         ]
                 voice_options = builtin_options + eng_options + bark_options
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
-                os.makedirs(session['voice_dir'], exist_ok=True)
-                if session['voice_dir'] is not None:
-                    parent_dir = Path(session['voice_dir']).parent
-                    voice_options += [
-                        (os.path.splitext(f.name)[0], str(f))
-                        for f in parent_dir.rglob(file_pattern)
-                        if f.is_file()
-                    ]
                 if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 else:
@@ -3534,7 +3534,7 @@ def web_interface(args, ctx):
             fn=submit_convert_btn,
             inputs=[
                 gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, gr_voice_list,
-                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
+                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours_list
             ],
@@ -3661,7 +3661,7 @@ def web_interface(args, ctx):
                         console.log('JSON parse error:', e);
                     }
                     return null;
-                };
+                }
                 """,
             outputs=[gr_read_data]
         )
