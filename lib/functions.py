@@ -2332,7 +2332,9 @@ def web_interface(args, ctx):
                                 gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             gr_optional_markdown = gr.Markdown(elem_id='gr_markdown_optional', value='<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group(elem_id='gr_group_device'):
-                            gr_device = gr.Radio(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], value=default_device)
+                            with gr.Row(elem_id='gr_row_device'):
+                                gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
+                                gr_session = gr.Textbox(label='Session', elem_id='gr_session', interactive=False)
                     with gr.Column(elem_id='gr_col_2', scale=3):
                         with gr.Group(elem_id='gr_group_engine'):
                             gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
@@ -2345,8 +2347,6 @@ def web_interface(args, ctx):
                                     gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                     gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                 gr_custom_model_markdown = gr.Markdown(elem_id='gr_markdown_custom_model', value='<p>&nbsp;&nbsp;* Optional</p>')
-                        with gr.Group(elem_id='gr_group_session'):
-                            gr_session = gr.Textbox(label='Session', elem_id='gr_session', interactive=False)
                         with gr.Group(elem_id='gr_group_output_format'):
                             with gr.Row(elem_id='gr_row_output_format'):
                                 gr_output_format_list = gr.Dropdown(label='Output format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=2)
