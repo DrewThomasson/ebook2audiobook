@@ -2131,7 +2131,7 @@ def web_interface(args, ctx):
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
     )
 
-    with gr.Blocks(theme=theme, delete_cache=(86400, 86400)) as app:
+    with gr.Blocks(theme=theme, title='Ebook2Audiobook', favicon_path='favicon.ico', delete_cache=(86400, 86400)) as app:
         main_html = gr.HTML(
             '''
             <style>
