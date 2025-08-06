@@ -3616,7 +3616,7 @@ def web_interface(args, ctx):
                                         }
                                         console.log('----------------checkboxes', checkboxes);
                                         checkboxes.forEach(cb => {
-                                            consol.e.log('---------------cb', cb);
+                                            console.log('---------------cb', cb);
                                         });
                                     } 
                                 }else{
@@ -3627,7 +3627,7 @@ def web_interface(args, ctx):
                                         }
                                         console.log('----------------checkboxes', checkboxes);
                                         checkboxes.forEach(cb => {
-                                            consol.e.log('---------------cb', cb);
+                                            console.log('---------------cb', cb);
                                         });
                                     }
                                 }
