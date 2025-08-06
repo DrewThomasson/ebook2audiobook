@@ -2355,8 +2355,8 @@ def web_interface(args, ctx):
                                 gr_custom_model_markdown = gr.Markdown(elem_id='gr_markdown_custom_model', value='<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group(elem_id='gr_group_output_format'):
                             with gr.Row(elem_id='gr_row_output_format'):
-                                gr_output_format_list = gr.Dropdown(label='Output format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=2)
-                                gr_output_split = gr.Checkbox(label='Split output file', elem_id='gr_output_split', value=default_output_split, interactive=True, scale=1)
+                                gr_output_format_list = gr.Dropdown(label='Output Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=2)
+                                gr_output_split = gr.Checkbox(label='Split Output File', elem_id='gr_output_split', value=default_output_split, interactive=True, scale=1)
                                 gr_output_split_hours_list = gr.Dropdown(label='Max hours / part', elem_id='gr_output_split_hours_list', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True, visible=False, scale=2)
             gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
             with gr_tab_xtts_params:
@@ -3604,6 +3604,7 @@ def web_interface(args, ctx):
                         window.redraw_elements = ()=>{
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
+                                const checkboxes = document.querySelectorAll('input[type="checkbox"]');
                                 if(audio){
                                     const url = new URL(window.location);
                                     const theme = url.searchParams.get('__theme');
@@ -3612,11 +3613,17 @@ def web_interface(args, ctx):
                                     if(theme){
                                         if(theme === 'dark'){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            checkboxes.forEach(cb => {
+                                                cb.style.border = "2px solid #fff";
+                                            });
                                         } 
                                     }else{
                                         osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                         if(osTheme){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            checkboxes.forEach(cb => {
+                                                cb.style.border = "2px solid #fff";
+                                            });
                                         }
                                     }
                                     if(!audio.style.transition){
