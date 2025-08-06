@@ -3605,7 +3605,6 @@ def web_interface(args, ctx):
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
                                 const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
-                                console.log('checkboxes', checkboxes)
                                 if(audio){
                                     const url = new URL(window.location);
                                     const theme = url.searchParams.get('__theme');
@@ -3614,16 +3613,18 @@ def web_interface(args, ctx):
                                     if(theme){
                                         if(theme === 'dark'){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            console.log('----------------checkboxes', checkboxes);
                                             checkboxes.forEach(cb => {
-                                                cb.style.accentColor = '#fff';
+                                                consol.e.log('---------------cb', cb);
                                             });
                                         } 
                                     }else{
                                         osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                         if(osTheme){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            console.log('----------------checkboxes', checkboxes);
                                             checkboxes.forEach(cb => {
-                                                cb.style.accentColor = '#fff';
+                                                consol.e.log('---------------cb', cb);
                                             });
                                         }
                                     }
