@@ -2131,7 +2131,7 @@ def web_interface(args, ctx):
         font_mono=['JetBrains Mono', 'monospace', 'Consolas', 'Menlo', 'Liberation Mono']
     )
 
-    with gr.Blocks(theme=theme, title='Ebook2Audiobook', favicon_path='favicon.ico', delete_cache=(86400, 86400)) as app:
+    with gr.Blocks(theme=theme, title='Ebook2Audiobook', delete_cache=(86400, 86400)) as app:
         main_html = gr.HTML(
             '''
             <style>
@@ -3670,7 +3670,7 @@ def web_interface(args, ctx):
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
-        app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
+        app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, favicon_path='./favicon.ico', server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
     except OSError as e:
         error = f'Connection error: {e}'
         alert_exception(error)
