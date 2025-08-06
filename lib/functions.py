@@ -3603,31 +3603,34 @@ def web_interface(args, ctx):
                                 const theme = url.searchParams.get('__theme');
                                 let osTheme;
                                 let audioFilter = '';
+                                let elColor = '#fff'
                                 if(theme){
                                     if(theme === 'dark'){
                                         if(audio){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
-                                        checkboxes.forEach(cb => {
-                                            cb.style.border = '1px solid #fff'
-                                        });
-                                        radios.forEach(cb => {
-                                            cb.style.border = '1px solid #fff'
-                                        });
-                                    } 
+                                        elColor = '#666666';
+                                    }
+                                    checkboxes.forEach(cb =>{
+                                        cb.style.border = '1px solid ' + elColor;
+                                    });
+                                    radios.forEach(cb =>{
+                                        cb.style.border = '1px solid ' + elColor;
+                                    });
                                 }else{
                                     osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                     if(osTheme){
                                         if(audio){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
-                                        checkboxes.forEach(cb => {
-                                            cb.style.border = '1px solid #fff'
-                                        });
-                                        radios.forEach(cb => {
-                                            cb.style.border = '1px solid #fff'
-                                        });
+                                        elColor = '#666666';
                                     }
+                                    checkboxes.forEach(cb =>{
+                                        cb.style.border = '1px solid ' + elColor;
+                                    });
+                                    radios.forEach(cb =>{
+                                        cb.style.border = '1px solid ' + elColor;
+                                    });
                                 }
                                 if(audio){
                                     if(!audio.style.transition){
