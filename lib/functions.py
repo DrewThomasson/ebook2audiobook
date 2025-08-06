@@ -2296,12 +2296,12 @@ def web_interface(args, ctx):
                     color: #ffffff !important;
                 }
                 @media (prefers-color-scheme: dark) {
-                    .svelte-1a15wmk {
+                    input[type="checkbox"].svelte-1a15wmk, input[type="radio"].svelte-1a15wmk {
                         border: 2px solid #fff;
                     }
                 }
                 @media (prefers-color-scheme: light) {
-                    .svelte-1a15wmk {
+                    input[type="checkbox"].svelte-1a15wmk, input[type="radio"].svelte-1a15wmk {
                         border: 2px solid #888;
                     }
                 }
