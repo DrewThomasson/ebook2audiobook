@@ -2301,15 +2301,8 @@ def web_interface(args, ctx):
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
                 }
-                @media (prefers-color-scheme: dark) {
-                    input[type="checkbox"].svelte-1a15wmk, input[type="radio"].svelte-1a15wmk {
-                        border: 2px solid #fff;
-                    }
-                }
-                @media (prefers-color-scheme: light) {
-                    input[type="checkbox"].svelte-1a15wmk, input[type="radio"].svelte-1a15wmk {
-                        border: 2px solid #888;
-                    }
+                input {
+                  border: 2px solid #fff;
                 }
             </style>
             '''
