@@ -3615,7 +3615,7 @@ def web_interface(args, ctx):
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
                                         checkboxes.forEach(cb => {
-                                            cb.accentColor = '#fff'
+                                            cb.style.accentColor = '#fff'
                                         });
                                     } 
                                 }else{
@@ -3625,7 +3625,7 @@ def web_interface(args, ctx):
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
                                         checkboxes.forEach(cb => {
-                                            cb.accentColor = '#fff'
+                                            cb.style.accentColor = '#fff'
                                         });
                                     }
                                 }
