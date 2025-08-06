@@ -2165,7 +2165,7 @@ def web_interface(args, ctx):
                     height: 120px !important;
                 }
                 .wrap-inner {
-                    border: 1px solid #888;
+                    border: 1px solid #111;
                 }
                 .block.svelte-5y6bt2 {
                     padding: 10px !important;
@@ -3609,10 +3609,10 @@ def web_interface(args, ctx):
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
                                         checkboxes.forEach(cb => {
-                                            cb.style.border = '1px solid #fff'
+                                            cb.style.border = '1px solid #888'
                                         });
                                         radios.forEach(cb => {
-                                            cb.style.border = '1px solid #fff'
+                                            cb.style.border = '1px solid #888'
                                         });
                                     } 
                                 }else{
@@ -3622,10 +3622,10 @@ def web_interface(args, ctx):
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
                                         checkboxes.forEach(cb => {
-                                            cb.style.border = '1px solid #fff'
+                                            cb.style.border = '1px solid #888'
                                         });
                                         radios.forEach(cb => {
-                                            cb.style.border = '1px solid #fff'
+                                            cb.style.border = '1px solid #888'
                                         });
                                     }
                                 }
