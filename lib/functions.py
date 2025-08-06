@@ -2881,15 +2881,6 @@ def web_interface(args, ctx):
                     (os.path.splitext(f.name)[0], str(f))
                     for f in Path(os.path.join(voices_dir, lang_dir)).rglob(file_pattern)
                 ]
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
-                os.makedirs(session['voice_dir'], exist_ok=True)
-                if session['voice_dir'] is not None:
-                    parent_dir = Path(session['voice_dir']).parent
-                    voice_options += [
-                        (os.path.splitext(f.name)[0], str(f))
-                        for f in parent_dir.rglob(file_pattern)
-                        if f.is_file()
-                    ]
                 if session['language'] in language_tts[TTS_ENGINES['XTTSv2']]:
                     builtin_names = {t[0]: None for t in builtin_options}
                     eng_dir = Path(os.path.join(voices_dir, "eng"))
@@ -2911,6 +2902,15 @@ def web_interface(args, ctx):
                             for f in speakers_path.rglob(f"{lang}_speaker_*.npz")
                         ]
                 voice_options = builtin_options + eng_options + bark_options
+                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                os.makedirs(session['voice_dir'], exist_ok=True)
+                if session['voice_dir'] is not None:
+                    parent_dir = Path(session['voice_dir']).parent
+                    voice_options += [
+                        (os.path.splitext(f.name)[0], str(f))
+                        for f in parent_dir.rglob(file_pattern)
+                        if f.is_file()
+                    ]
                 if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 else:
@@ -2930,9 +2930,9 @@ def web_interface(args, ctx):
                             else:
                                 session['voice'] = voice_options[0][1]
                 else:
-                    current_voice_name = os.path.splitext(os.path.basename(session['voice']))[0]
+                    current_voice_name = Path(session['voice']).stem
                     current_voice_path = next(
-                        (path for name, path in voice_options if name == current_voice_name), False
+                        (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
                     )
                     if current_voice_path:
                         session['voice'] = current_voice_path
