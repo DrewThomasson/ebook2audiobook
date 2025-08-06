@@ -2155,14 +2155,6 @@ def web_interface(args, ctx):
                     scrollbar-width: thin !important;
                     scrollbar-color: #c09340 none !important;
                 }
-                input[type="checkbox"], input[type="radio"] {
-                    border: 2px solid #fff;
-                }
-                @media (prefers-color-scheme: light) {
-                    input[type="checkbox"], input[type="radio"] {
-                        border: 2px solid #fff;
-                    }
-                }
                 .svelte-1xyfx7i.center.boundedheight.flex{
                     height: 120px !important;
                 }
@@ -2302,6 +2294,14 @@ def web_interface(args, ctx):
                     border-radius: 0px !important;
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
+                }
+                input[type="checkbox"], input[type="radio"] {
+                    border: 2px solid #fff;
+                }
+                @media (prefers-color-scheme: light) {
+                    input[type="checkbox"], input[type="radio"] {
+                        border: 2px solid #fff;
+                    }
                 }
             </style>
             '''
