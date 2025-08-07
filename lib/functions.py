@@ -624,7 +624,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         prev_typ = None
         for typ, payload in tuples_list:
             if typ == "heading":
-                raw_text = replace_roman_numbers(payload, lang)
+                raw_text = roman2number(payload, lang)
                 text_array.append(raw_text.strip())
             elif typ == "break":
                 if prev_typ != 'break':
@@ -861,13 +861,15 @@ def get_sentences(text, lang, tts_engine):
                         if len(text_part) + 1 + len(w) <= max_chars:
                             text_part += ' ' + w
                         else:
-                            sentences.append(text_part.strip())
+                            text_part = roman2number(text_part.strip(), lang)
+                            sentences.append(text_part)
                             text_part = w
                     if text_part:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
-                        sentences.append(text_part.strip())
+                        text_part = roman2number(text_part.strip(), lang)
+                        sentences.append(text_part)
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
@@ -1650,8 +1652,8 @@ def combine_audio_chapters(session):
         DependencyError(e)
         return False
 
-def replace_roman_numbers(text, lang):
-    def roman2int(s):
+def roman2number(text, lang):
+    def to_num(s):
         try:
             roman = {
                 'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000,
@@ -1670,19 +1672,19 @@ def replace_roman_numbers(text, lang):
         except Exception:
             return s
 
-    def replace_chapter_match(match):
+    def to_match(match):
         chapter_word = match.group(1)
         roman_numeral = match.group(2)
         if not roman_numeral:
             return match.group(0)
-        integer_value = roman2int(roman_numeral.upper())
+        integer_value = to_num(roman_numeral.upper())
         if isinstance(integer_value, int):
             return f'{chapter_word.capitalize()} {integer_value}; '
         return match.group(0)
 
-    def replace_numeral_with_period(match):
+    def clean_numbers(match):
         roman_numeral = match.group(1)
-        integer_value = roman2int(roman_numeral.upper())
+        integer_value = to_num(roman_numeral.upper())
         if isinstance(integer_value, int):
             return f'{integer_value}. '
         return match.group(0)
@@ -1704,8 +1706,8 @@ def replace_roman_numbers(text, lang):
         r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\.+',
         re.IGNORECASE
     )
-    text = roman_chapter_pattern.sub(replace_chapter_match, text)
-    text = roman_numerals_with_period.sub(replace_numeral_with_period, text)
+    text = roman_chapter_pattern.sub(to_match, text)
+    text = roman_numerals_with_period.sub(clean_numbers, text)
     return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
