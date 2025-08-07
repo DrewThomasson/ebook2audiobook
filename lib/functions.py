@@ -657,7 +657,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 if text:
                     text_array.append(text)
             prev_typ = typ
-        text = '. '.join(text_array)
+        text = ' '.join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
         if stanza_nlp:
@@ -867,11 +867,14 @@ def get_sentences(text, lang, tts_engine):
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         pre_list.append(text_part)
-            print(pre_list)
             sentences = []
-            #    roman2number(s, lang) if len(s) <= 50 else s
-            #    for s in pre_list
-            #]
+            re_non_ws = re.compile(r'[^\W_]')
+            re_title_num = re.compile(r'^((?=[IVXLCDM])(?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})|\d+)(?=\s|$)')
+            re_punct = re.compile(r'^([IVXLCDM\d]+)[\.,:;]')
+            re_insert = re.compile(r'^([IVXLCDM\d]+)')
+                roman2number(s, lang, re_non_ws, re_title_num, re_punct, re_insert) if len(s) <= 50 else s
+                for s in pre_list
+            ]
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
@@ -1647,15 +1650,7 @@ def combine_audio_chapters(session):
         return False
 
 def roman2number(text, lang):
-    # 1) If it's a list or tuple, recurse
-    if isinstance(text, (list, tuple)):
-        return [roman2number(t, lang) for t in text]
-
-    # 2) Coerce non-strings
-    if not isinstance(text, str):
-        text = str(text)
-
-    # 3) Check for a standalone Roman numeral + dot or dash
+    # 2) Check for a standalone Roman numeral + dot or dash
     stripped = text.strip()
     m = re.fullmatch(r'(?i)([IVXLCDM]+)([.-])', stripped)
     if m:
