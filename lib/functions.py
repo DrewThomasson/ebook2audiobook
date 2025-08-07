@@ -850,10 +850,10 @@ def get_sentences(text, lang, tts_engine):
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
-            sentences = []
+            pre_list = []
             for s in soft_list:
                 if s == TTS_SML['pause'] or len(s) <= max_chars:
-                    sentences.append(s)
+                    pre_list.append(s)
                 else:
                     words = s.split(' ')
                     text_part = words[0]
@@ -861,14 +861,18 @@ def get_sentences(text, lang, tts_engine):
                         if len(text_part) + 1 + len(w) <= max_chars:
                             text_part += ' ' + w
                         else:
-                            sentences.append(text_part.strip())
+                            pre_list.append(text_part.strip())
                             text_part = w
                     if text_part:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         text_part = roman2number(text_part.strip(), lang)
-                        sentences.append(text_part)
+                        pre_list.append(text_part)
+            sentences = [
+                roman2number(s, lang) if len(s) <= 50 else s
+                for s in pre_list
+            ]
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
