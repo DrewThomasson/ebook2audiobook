@@ -3683,8 +3683,8 @@ def web_interface(args, ctx):
                         };
                     }
                     if(typeof window.tab_progress !== 'function'){
-                        window.tab_progress = ()=>{
-                            document.title = 'AHAHAHAH';
+                        window.tab_progress = (val)=>{
+                            document.title = val;
                         };
                     }
                     // Now safely call it after the audio element is available
