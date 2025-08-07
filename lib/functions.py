@@ -1654,11 +1654,10 @@ def roman2number(text, lang, re_non_ws, re_title_num, re_punct, re_insert):
         m = re_title_num.match(text)
         if m:
             num = m.group(1)
-            # Check if it's digits or ALL-UPPERCASE roman
             if num.isdigit() or (set(num) <= set("IVXLCDM")):
                 if not re_punct.match(text):
                     text = re_insert.sub(r'\1 — ', text)
-    # 2) Check for a standalone Roman numeral + dot or dash
+    # heck for a standalone Roman numeral + dot or dash
     stripped = text.strip()
     m = re.fullmatch(r'(?i)([IVXLCDM]+)([.-])', stripped)
     if m:
@@ -1686,7 +1685,7 @@ def roman2number(text, lang, re_non_ws, re_title_num, re_punct, re_insert):
         except Exception:
             pass
 
-    # helper: convert a pure Roman string to int or return original
+    # Helper: convert a pure Roman string to int or return original
     def to_num(s):
         try:
             roman_map = {
@@ -1709,13 +1708,13 @@ def roman2number(text, lang, re_non_ws, re_title_num, re_punct, re_insert):
         except Exception:
             return s
 
-    # 1) Chapter‐word + Roman
+    # Chapter‐word + Roman
     def to_match(m):
         cw, rn = m.group(1), m.group(2)
         val = to_num(rn.upper())
         return f"{cw.capitalize()} {val}; " if isinstance(val, int) else m.group(0)
 
-    # 2) Trailing‐period at start‐of‐line
+    # Trailing‐period at start‐of‐line
     def clean_numbers(m):
         raw = m.group(0)           # e.g. "IV..."
         core = re.sub(r'[^IVXLCDM]', '', raw.upper())
@@ -1723,7 +1722,7 @@ def roman2number(text, lang, re_non_ws, re_title_num, re_punct, re_insert):
         val  = to_num(core)
         return f"{val}{sep}" if isinstance(val, int) else raw
 
-    # 3) Bare Roman at start‐of‐line + "." or "-"
+    # Bare Roman at start‐of‐line + "." or "-"
     def clean_start(m):
         raw   = m.group(0)         # e.g. "VI - "
         core  = re.sub(r'[^IVXLCDM]', '', raw.upper())
@@ -1731,9 +1730,16 @@ def roman2number(text, lang, re_non_ws, re_title_num, re_punct, re_insert):
         val   = to_num(core)
         return f"{val}{sep}" if isinstance(val, int) else raw
 
+    # Convert ALL ALL-UPPERCASE Roman numerals as whole words anywhere in text
+    def bare_roman(m):
+        roman = m.group(0)
+        if roman.isupper():
+            val = to_num(roman)
+            return str(val) if isinstance(val, int) else roman
+        return roman
+
     words = chapter_word_mapping.get(lang, [])
     wp = "|".join(re.escape(w) for w in words) or r'(?!x)x'  # if empty, use impossible pattern
-
     p1 = re.compile(
         rf'\b({wp})\s+(?=[IVXLCDM])'
         r'((?:M{0,3})(?:CM|CD|D?C{0,3})'
@@ -1753,19 +1759,10 @@ def roman2number(text, lang, re_non_ws, re_title_num, re_punct, re_insert):
         r'(?P<sep>\.|\s*-\s*)',
         re.IGNORECASE
     )
-
     text = p1.sub(to_match,         text)
     text = p2.sub(clean_numbers,    text)
-    text = p3.sub(clean_start,      text)
-
-    def bare_roman(m):
-        roman = m.group(0)
-        if roman.isupper():
-            val = to_num(roman)
-            return str(val) if isinstance(val, int) else roman
-        return roman
+    text = p3.sub(clean_start,      text)      
     text = re.sub(r'\b[IVXLCDM]{2,}\b', bare_roman, text)
-
     return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
