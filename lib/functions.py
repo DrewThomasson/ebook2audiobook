@@ -579,7 +579,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 yield inner
                             # Only add break or pause if something textual/structural came out
                             if return_data:
-                                print(f'--------------- {inner} ------------')
                                 if name in break_tags:
                                     yield ("break", TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
@@ -625,7 +624,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         prev_typ = None
         for typ, payload in tuples_list:
             if typ == "heading":
-                raw_text = roman2number(payload, lang)
                 text_array.append(raw_text.strip())
             elif typ == "break":
                 if prev_typ != 'break':
@@ -682,6 +680,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         # Append remaining text
                         result.append(text[last_pos:])
                         text = ''.join(result)
+        text = roman2number(text, lang)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
