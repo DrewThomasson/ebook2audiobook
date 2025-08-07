@@ -624,6 +624,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         prev_typ = None
         for typ, payload in tuples_list:
             if typ == "heading":
+                print('--------------- heading ------------')
                 raw_text = roman2number(payload, lang)
                 text_array.append(raw_text.strip())
             elif typ == "break":
@@ -861,15 +862,13 @@ def get_sentences(text, lang, tts_engine):
                         if len(text_part) + 1 + len(w) <= max_chars:
                             text_part += ' ' + w
                         else:
-                            text_part = roman2number(text_part.strip(), lang)
-                            sentences.append(text_part)
+                            sentences.append(text_part.strip())
                             text_part = w
                     if text_part:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
-                        text_part = roman2number(text_part.strip(), lang)
-                        sentences.append(text_part)
+                        sentences.append(text_part.strip())
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
@@ -1653,6 +1652,7 @@ def combine_audio_chapters(session):
         return False
 
 def roman2number(text, lang):
+
     def to_num(s):
         try:
             roman = {
