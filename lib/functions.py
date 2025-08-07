@@ -657,7 +657,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 if text:
                     text_array.append(text)
             prev_typ = typ
-        text = ''.join(text_array)
+        text = '. '.join(text_array)
         if not re.search(r"[^\W_]", text):
             return None
         if stanza_nlp:
