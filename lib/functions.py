@@ -680,7 +680,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         # Append remaining text
                         result.append(text[last_pos:])
                         text = ''.join(result)
-        #text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+        text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
@@ -689,7 +689,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         #pattern_space = re.escape(''.join(punctuation_list))
         #punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
         #text = re.sub(punctuation_pattern_space, r' \1', text)
-        print(text)
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         error = f'filter_chapter() error: {e}'
@@ -868,10 +867,11 @@ def get_sentences(text, lang, tts_engine):
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         pre_list.append(text_part)
-            sentences = [
-                roman2number(s, lang) if len(s) <= 50 else s
-                for s in pre_list
-            ]
+            print(pre_list)
+            sentences = []
+            #    roman2number(s, lang) if len(s) <= 50 else s
+            #    for s in pre_list
+            #]
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
