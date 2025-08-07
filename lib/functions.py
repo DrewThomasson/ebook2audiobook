@@ -681,7 +681,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         # Append remaining text
                         result.append(text[last_pos:])
                         text = ''.join(result)
-        text = roman2number(text, lang)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
@@ -868,7 +867,9 @@ def get_sentences(text, lang, tts_engine):
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
-                        sentences.append(text_part.strip())
+                        text_part = text_part.strip()
+                        text_part = roman2number(text_part, lang)
+                        sentences.append(text_part)
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
@@ -1689,7 +1690,6 @@ def roman2number(text, lang):
             return f'{integer_value}. '
         return match.group(0)
 
-    # —— new helper for start‐of‐string cases ——
     def clean_start(match):
         roman   = match.group('roman')
         sep     = match.group('sep')
