@@ -680,7 +680,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                         # Append remaining text
                         result.append(text[last_pos:])
                         text = ''.join(result)
-        text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
+        #text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
