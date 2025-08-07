@@ -624,8 +624,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         prev_typ = None
         for typ, payload in tuples_list:
             if typ == "heading":
-                print('--------------- heading ------------')
                 raw_text = roman2number(payload, lang)
+                print(f'--------------- {raw_text} ------------')
                 text_array.append(raw_text.strip())
             elif typ == "break":
                 if prev_typ != 'break':
