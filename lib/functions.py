@@ -1649,7 +1649,15 @@ def combine_audio_chapters(session):
         DependencyError(e)
         return False
 
-def roman2number(text, lang):
+def roman2number(text, lang, re_non_ws, re_title_num, re_punct, re_insert):
+    if re_non_ws.search(text):
+        m = re_title_num.match(text)
+        if m:
+            num = m.group(1)
+            # Check if it's digits or ALL-UPPERCASE roman
+            if num.isdigit() or (set(num) <= set("IVXLCDM")):
+                if not re_punct.match(text):
+                    text = re_insert.sub(r'\1 — ', text)
     # 2) Check for a standalone Roman numeral + dot or dash
     stripped = text.strip()
     m = re.fullmatch(r'(?i)([IVXLCDM]+)([.-])', stripped)
