@@ -624,8 +624,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         prev_typ = None
         for typ, payload in tuples_list:
             if typ == "heading":
-                raw_text = roman2number(payload, lang)
-                text_array.append(raw_text.strip())
+                text_array.append(payload.strip())
             elif typ == "break":
                 if prev_typ != 'break':
                     text_array.append(TTS_SML['break'])
@@ -869,10 +868,10 @@ def get_sentences(text, lang, tts_engine):
                             continue
                         text_part = roman2number(text_part.strip(), lang)
                         pre_list.append(text_part)
-            sentences = [
-                roman2number(s, lang) if len(s) <= 50 else s
-                for s in pre_list
-            ]
+            #sentences = [
+            #    roman2number(s, lang) if len(s) <= 50 else s
+            #    for s in pre_list
+            #]
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
