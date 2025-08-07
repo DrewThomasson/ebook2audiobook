@@ -869,7 +869,7 @@ def get_sentences(text, lang, tts_engine):
                             continue
                         text_part = roman2number(text_part.strip(), lang)
                         sentences.append(text_part)
-            with open('voices', 'a', encoding='utf-8') as log:
+            with open('voices/test_file.txt', 'a', encoding='utf-8') as log:
                 log.write(' '.join(sentences))
             return sentences
     except Exception as e:
