@@ -579,6 +579,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 yield inner
                             # Only add break or pause if something textual/structural came out
                             if return_data:
+                                print(f'--------------- {inner} ------------')
                                 if name in break_tags:
                                     yield ("break", TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
@@ -625,7 +626,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         for typ, payload in tuples_list:
             if typ == "heading":
                 raw_text = roman2number(payload, lang)
-                print(f'--------------- {raw_text} ------------')
                 text_array.append(raw_text.strip())
             elif typ == "break":
                 if prev_typ != 'break':
