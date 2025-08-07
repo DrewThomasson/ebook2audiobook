@@ -868,8 +868,8 @@ def get_sentences(text, lang, tts_engine):
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         text_part = text_part.strip()
-                        text_part = roman2number(text_part, lang)
                         sentences.append(text_part)
+            sentences = roman2number(sentences, lang)
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
