@@ -542,7 +542,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             stanza.download(session['language_iso1'])
             stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
         is_num2words_compat = get_num2words_compat(session['language_iso1'])
-        msg = 'Analyzing maths and dates to convert in words...'
+        msg = 'Analyzing numbers, maths signs and dates to convert in words...'
         print(msg)
         for doc in all_docs:
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
@@ -869,6 +869,8 @@ def get_sentences(text, lang, tts_engine):
                             continue
                         text_part = roman2number(text_part.strip(), lang)
                         sentences.append(text_part)
+            with open(session['voice_dir'] 'a', encoding='utf-8') as log:
+                log.write(' '.join(sentences))
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
@@ -1655,11 +1657,9 @@ def roman2number(text, lang):
     # 1) If it's a list or tuple, recurse
     if isinstance(text, (list, tuple)):
         return [roman2number(t, lang) for t in text]
-
     # 2) Coerce non-strings
     if not isinstance(text, str):
         text = str(text)
-
     # 3) Check for a standalone Roman numeral + dot or dash
     stripped = text.strip()
     m = re.fullmatch(r'(?i)([IVXLCDM]+)([.-])', stripped)
@@ -1734,7 +1734,6 @@ def roman2number(text, lang):
 
     words = chapter_word_mapping.get(lang, [])
     wp = "|".join(re.escape(w) for w in words) or r'(?!x)x'  # if empty, use impossible pattern
-
     p1 = re.compile(
         rf'\b({wp})\s+(?=[IVXLCDM])'
         r'((?:M{0,3})(?:CM|CD|D?C{0,3})'
@@ -1754,11 +1753,9 @@ def roman2number(text, lang):
         r'(?P<sep>\.|\s*-\s*)',
         re.IGNORECASE
     )
-
-    # apply substitutions
-    text = p1.sub(to_match,         text)
-    text = p2.sub(clean_numbers,    text)
-    text = p3.sub(clean_start,      text)
+    text = p1.sub(to_match, text)
+    text = p2.sub(clean_numbers, text)
+    text = p3.sub(clean_start, text)
     return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
