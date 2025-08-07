@@ -1651,6 +1651,8 @@ def combine_audio_chapters(session):
         DependencyError(e)
         return False
 
+import re
+
 def roman2number(text, lang):
 
     def to_num(s):
@@ -1673,8 +1675,8 @@ def roman2number(text, lang):
             return s
 
     def to_match(match):
-        chapter_word = match.group(1)
-        roman_numeral = match.group(2)
+        chapter_word   = match.group(1)
+        roman_numeral  = match.group(2)
         if not roman_numeral:
             return match.group(0)
         integer_value = to_num(roman_numeral.upper())
@@ -1689,25 +1691,46 @@ def roman2number(text, lang):
             return f'{integer_value}. '
         return match.group(0)
 
-    # Get language-specific chapter words
-    chapter_words = chapter_word_mapping.get(lang, [])
-    # Escape and join to form regex pattern
-    escaped_words = [re.escape(word) for word in chapter_words]
-    word_pattern = "|".join(escaped_words)
-    # Now build the full regex
+    # —— new helper for start‐of‐string cases ——
+    def clean_start(match):
+        roman   = match.group('roman')
+        sep     = match.group('sep')
+        integer = to_num(roman.upper())
+        if isinstance(integer, int):
+            return f'{integer}{sep}'
+        return match.group(0)
+
+    # Get language-specific words
+    words = chapter_word_mapping.get(lang, [])
+    escaped_words = [re.escape(w) for w in words]
+    word_pattern  = "|".join(escaped_words)
+    # 1) chapter‐word pattern (unchanged)
     roman_chapter_pattern = re.compile(
         rf'\b({word_pattern})\s+'
         r'(?=[IVXLCDM])'
-        r'((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\b',
+        r'((?:M{0,3})(?:CM|CD|D?C{0,3})?'
+        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\b',
         re.IGNORECASE
     )
-    # Roman numeral with trailing period
+    # 2) trailing‐period pattern (unchanged)
     roman_numerals_with_period = re.compile(
-        r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\.+',
+        r'^(?=[IVXLCDM])'
+        r'((?:M{0,3})(?:CM|CD|D?C{0,3})?'
+        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\.+',
         re.IGNORECASE
     )
+    # 3) **new**: bare Roman at _string start_ with either "." or "-"  
+    roman_start_general = re.compile(
+        r'^(?=[IVXLCDM])'
+        r'(?P<roman>(?:M{0,3})(?:CM|CD|D?C{0,3})?'
+        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))'
+        r'(?P<sep>\.|\s*-\s*)',
+        re.IGNORECASE
+    )
+    # apply in order
     text = roman_chapter_pattern.sub(to_match, text)
     text = roman_numerals_with_period.sub(clean_numbers, text)
+    text = roman_start_general.sub(clean_start, text)
     return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
