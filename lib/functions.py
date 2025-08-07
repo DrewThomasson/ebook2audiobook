@@ -1179,14 +1179,6 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     specialchars_table = {ord(char): f" {word} " for char, word in specialchars.items()}
     text = text.translate(specialchars_table)
     text = ' '.join(text.split())
-    if bool(re.search(r'[^\W_]', text)):
-        # Add punctuation after numbers or Roman numerals at start of a chapter.
-        roman_pattern = r'^(?=[IVXLCDM])((?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))(?=\s|$)'
-        arabic_pattern = r'^(\d+)(?=\s|$)'
-        if re.match(roman_pattern, text, re.IGNORECASE) or re.match(arabic_pattern, text):
-            # Add punctuation if not already present (e.g. "II", "4")
-            if not re.match(r'^([IVXLCDM\d]+)[\.,:;]', text, re.IGNORECASE):
-                text = re.sub(r'^([IVXLCDM\d]+)', r'\1' + ' — ', text, flags=re.IGNORECASE)
     return text
 
 def convert_chapters2audio(session):
@@ -1759,12 +1751,10 @@ def roman2number(text, lang):
         re.IGNORECASE
     )
 
-    # apply substitutions
     text = p1.sub(to_match,         text)
     text = p2.sub(clean_numbers,    text)
     text = p3.sub(clean_start,      text)
 
-    # --- NEW: Convert ALL ALL-UPPERCASE Roman numerals as whole words anywhere in text (length >=2)
     def bare_roman(m):
         roman = m.group(0)
         if roman.isupper():
@@ -1772,7 +1762,6 @@ def roman2number(text, lang):
             return str(val) if isinstance(val, int) else roman
         return roman
     text = re.sub(r'\b[IVXLCDM]{2,}\b', bare_roman, text)
-    # --- END NEW
 
     return text
 
