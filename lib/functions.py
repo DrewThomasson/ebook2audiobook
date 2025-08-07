@@ -867,11 +867,11 @@ def get_sentences(text, lang, tts_engine):
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         pre_list.append(text_part)
-            sentences = []
             re_non_ws = re.compile(r'[^\W_]')
             re_title_num = re.compile(r'^((?=[IVXLCDM])(?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})|\d+)(?=\s|$)')
             re_punct = re.compile(r'^([IVXLCDM\d]+)[\.,:;]')
             re_insert = re.compile(r'^([IVXLCDM\d]+)')
+            sentences = [
                 roman2number(s, lang, re_non_ws, re_title_num, re_punct, re_insert) if len(s) <= 50 else s
                 for s in pre_list
             ]
