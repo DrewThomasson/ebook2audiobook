@@ -866,7 +866,6 @@ def get_sentences(text, lang, tts_engine):
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
-                        text_part = roman2number(text_part.strip(), lang)
                         pre_list.append(text_part)
             print(pre_list)
             sentences = []
