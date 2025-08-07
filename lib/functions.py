@@ -869,8 +869,6 @@ def get_sentences(text, lang, tts_engine):
                             continue
                         text_part = roman2number(text_part.strip(), lang)
                         sentences.append(text_part)
-            with open('voices/test_file.txt', 'a', encoding='utf-8') as log:
-                log.write(' '.join(sentences))
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
@@ -1657,9 +1655,11 @@ def roman2number(text, lang):
     # 1) If it's a list or tuple, recurse
     if isinstance(text, (list, tuple)):
         return [roman2number(t, lang) for t in text]
+
     # 2) Coerce non-strings
     if not isinstance(text, str):
         text = str(text)
+
     # 3) Check for a standalone Roman numeral + dot or dash
     stripped = text.strip()
     m = re.fullmatch(r'(?i)([IVXLCDM]+)([.-])', stripped)
@@ -1699,12 +1699,13 @@ def roman2number(text, lang):
             }
             i = 0
             num = 0
-            while i < len(s):
-                if i+1 < len(s) and s[i:i+2] in roman_map:
-                    num += roman_map[s[i:i+2]]
+            s_up = s.upper()
+            while i < len(s_up):
+                if i+1 < len(s_up) and s_up[i:i+2] in roman_map:
+                    num += roman_map[s_up[i:i+2]]
                     i += 2
                 else:
-                    num += roman_map.get(s[i], 0)
+                    num += roman_map.get(s_up[i], 0)
                     i += 1
             return num if num > 0 else s
         except Exception:
@@ -1734,6 +1735,7 @@ def roman2number(text, lang):
 
     words = chapter_word_mapping.get(lang, [])
     wp = "|".join(re.escape(w) for w in words) or r'(?!x)x'  # if empty, use impossible pattern
+
     p1 = re.compile(
         rf'\b({wp})\s+(?=[IVXLCDM])'
         r'((?:M{0,3})(?:CM|CD|D?C{0,3})'
@@ -1753,9 +1755,22 @@ def roman2number(text, lang):
         r'(?P<sep>\.|\s*-\s*)',
         re.IGNORECASE
     )
-    text = p1.sub(to_match, text)
-    text = p2.sub(clean_numbers, text)
-    text = p3.sub(clean_start, text)
+
+    # apply substitutions
+    text = p1.sub(to_match,         text)
+    text = p2.sub(clean_numbers,    text)
+    text = p3.sub(clean_start,      text)
+
+    # --- NEW: Convert ALL ALL-UPPERCASE Roman numerals as whole words anywhere in text (length >=2)
+    def bare_roman(m):
+        roman = m.group(0)
+        if roman.isupper():
+            val = to_num(roman)
+            return str(val) if isinstance(val, int) else roman
+        return roman
+    text = re.sub(r'\b[IVXLCDM]{2,}\b', bare_roman, text)
+    # --- END NEW
+
     return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
