@@ -867,8 +867,7 @@ def get_sentences(text, lang, tts_engine):
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
-                        text_part = text_part.strip()
-                        text_part = roman2number(text_part, lang)
+                        text_part = roman2number(text_part.strip(), lang)
                         sentences.append(text_part)
             return sentences
     except Exception as e:
@@ -1653,94 +1652,113 @@ def combine_audio_chapters(session):
         return False
 
 def roman2number(text, lang):
-    # 1) If it's a list (or tuple), recurse on each element
+    # 1) If it's a list or tuple, recurse
     if isinstance(text, (list, tuple)):
         return [roman2number(t, lang) for t in text]
 
-    # 2) If it's not a string, coerce it (so re.sub always gets a str)
+    # 2) Coerce non-strings
     if not isinstance(text, str):
         text = str(text)
 
+    # 3) Check for a standalone Roman numeral + dot or dash
+    stripped = text.strip()
+    m = re.fullmatch(r'(?i)([IVXLCDM]+)([.-])', stripped)
+    if m:
+        roman, sep = m.group(1), m.group(2)
+        # convert
+        try:
+            roman_map = {
+                'I':1,'V':5,'X':10,'L':50,'C':100,
+                'D':500,'M':1000,
+                'IV':4,'IX':9,'XL':40,'XC':90,
+                'CD':400,'CM':900
+            }
+            i = 0
+            num = 0
+            s = roman.upper()
+            while i < len(s):
+                if i+1 < len(s) and s[i:i+2] in roman_map:
+                    num += roman_map[s[i:i+2]]
+                    i += 2
+                else:
+                    num += roman_map.get(s[i], 0)
+                    i += 1
+            if num > 0:
+                return f"{num}{sep}"
+        except Exception:
+            pass
+
+    # helper: convert a pure Roman string to int or return original
     def to_num(s):
         try:
-            roman = {
-                'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100,
-                'D': 500, 'M': 1000,
-                'IV': 4, 'IX': 9, 'XL': 40,
-                'XC': 90, 'CD': 400, 'CM': 900
+            roman_map = {
+                'I':1,'V':5,'X':10,'L':50,'C':100,
+                'D':500,'M':1000,
+                'IV':4,'IX':9,'XL':40,'XC':90,
+                'CD':400,'CM':900
             }
             i = 0
             num = 0
             while i < len(s):
-                if i+1 < len(s) and s[i:i+2] in roman:
-                    num += roman[s[i:i+2]]
+                if i+1 < len(s) and s[i:i+2] in roman_map:
+                    num += roman_map[s[i:i+2]]
                     i += 2
                 else:
-                    num += roman.get(s[i], 0)
+                    num += roman_map.get(s[i], 0)
                     i += 1
             return num if num > 0 else s
         except Exception:
             return s
 
-    def to_match(match):
-        chap = match.group(1)
-        rn   = match.group(2)
-        if not rn:
-            return match.group(0)
+    # 1) Chapter‐word + Roman
+    def to_match(m):
+        cw, rn = m.group(1), m.group(2)
         val = to_num(rn.upper())
-        if isinstance(val, int):
-            return f'{chap.capitalize()} {val}; '
-        return match.group(0)
+        return f"{cw.capitalize()} {val}; " if isinstance(val, int) else m.group(0)
 
-    def clean_numbers(match):
-        rn  = match.group(1)
-        val = to_num(rn.upper())
-        if isinstance(val, int):
-            return f'{val}. '
-        return match.group(0)
+    # 2) Trailing‐period at start‐of‐line
+    def clean_numbers(m):
+        raw = m.group(0)           # e.g. "IV..."
+        core = re.sub(r'[^IVXLCDM]', '', raw.upper())
+        sep  = raw[len(core):]     # the dots
+        val  = to_num(core)
+        return f"{val}{sep}" if isinstance(val, int) else raw
 
-    def clean_start(match):
-        rn  = match.group('roman')
-        sep = match.group('sep')
-        val = to_num(rn.upper())
-        if isinstance(val, int):
-            return f'{val}{sep}'
-        return match.group(0)
+    # 3) Bare Roman at start‐of‐line + "." or "-"
+    def clean_start(m):
+        raw   = m.group(0)         # e.g. "VI - "
+        core  = re.sub(r'[^IVXLCDM]', '', raw.upper())
+        sep   = raw[len(core):]    # the ". " or " - "
+        val   = to_num(core)
+        return f"{val}{sep}" if isinstance(val, int) else raw
 
     words = chapter_word_mapping.get(lang, [])
-    escaped = [re.escape(w) for w in words]
-    wp = "|".join(escaped)
+    wp = "|".join(re.escape(w) for w in words) or r'(?!x)x'  # if empty, use impossible pattern
 
-    # 1) chapter‐word
-    roman_chapter_pattern = re.compile(
-        rf'\b({wp})\s+'
-        r'(?=[IVXLCDM])'
+    p1 = re.compile(
+        rf'\b({wp})\s+(?=[IVXLCDM])'
         r'((?:M{0,3})(?:CM|CD|D?C{0,3})'
         r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\b',
         re.IGNORECASE
     )
-
-    # 2) trailing‐period at start of any line
-    roman_numerals_with_period = re.compile(
+    p2 = re.compile(
         r'(?m)^(?=[IVXLCDM])'
-        r'((?:M{0,3})(?:CM|CD|D?C{0,3})'
-        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\.+',
+        r'(?:M{0,3})(?:CM|CD|D?C{0,3})'
+        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})\.+',
         re.IGNORECASE
     )
-
-    # 3) bare Roman at start‐of‐line with "." or "-"
-    roman_start_general = re.compile(
+    p3 = re.compile(
         r'(?m)^(?=[IVXLCDM])'
-        r'(?P<roman>(?:M{0,3})(?:CM|CD|D?C{0,3})'
-        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))'
+        r'(?:M{0,3})(?:CM|CD|D?C{0,3})'
+        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})'
         r'(?P<sep>\.|\s*-\s*)',
         re.IGNORECASE
     )
 
-    text = roman_chapter_pattern.sub(to_match,          text)
-    text = roman_numerals_with_period.sub(clean_numbers, text)
-    text = roman_start_general.sub(clean_start,         text)
-
+    # apply substitutions
+    text = p1.sub(to_match,         text)
+    text = p2.sub(clean_numbers,    text)
+    text = p3.sub(clean_start,      text)
     return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
