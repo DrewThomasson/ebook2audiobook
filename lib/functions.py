@@ -1651,8 +1651,6 @@ def combine_audio_chapters(session):
         DependencyError(e)
         return False
 
-import re
-
 def roman2number(text, lang):
 
     def to_num(s):
