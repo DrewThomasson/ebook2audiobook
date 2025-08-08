@@ -647,9 +647,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     if not cells:
                         continue
                     if len(cells) == len(headers) and headers:
-                        line = " — ".join(f"{h}: {c}" for h, c in zip(headers, cells))
+                        line = " - ".join(f"{h}: {c}" for h, c in zip(headers, cells))
                     else:
-                        line = " — ".join(cells)
+                        line = " - ".join(cells)
                     if line:
                         text_array.append(line.strip())
             else:
