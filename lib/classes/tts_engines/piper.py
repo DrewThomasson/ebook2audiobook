@@ -63,7 +63,8 @@ class Coqui:
             self.npz_data = None
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
-            self.params = {TTS_ENGINES['PIPER']: {}}
+            # Add semitones cache to support voice cloning pitch adaptation (like VITS path)
+            self.params = {TTS_ENGINES['PIPER']: {"semitones": {}}}
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')    
             self.resampler_cache = {}
@@ -86,6 +87,15 @@ class Coqui:
                     else:
                         model_path = self._get_default_model_path()
                         tts = self._load_api(self.tts_key, model_path, self.session['device'])
+
+            # If a reference voice is provided, attempt to load the voice conversion engine
+            # to enable "cloning" via VC, similar to the VITS path.
+            if self.session.get('voice'):
+                tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
+                if not tts_vc:
+                    # Load VC model using a generic TTS API loader (separate from Piper)
+                    tts_vc = self._load_vc_engine(self.tts_vc_key, default_vc_model, self.session['device'])
+
             return (loaded_tts.get(self.tts_key) or {}).get('engine', False)
         except Exception as e:
             error = f'build() error: {e}'
@@ -115,6 +125,7 @@ class Coqui:
         return model_name
 
     def _load_api(self, key, model_path, device):
+        # Piper TTS model loader
         global lock
         try:
             if key in loaded_tts.keys():
@@ -135,6 +146,35 @@ class Coqui:
         except Exception as e:
             error = f'_load_api() error: {e}'
             print(error)
+        return False
+
+    def _load_vc_engine(self, key, model_path, device):
+        # Generic TTS/VC model loader (used for voice conversion engine), similar to coqui.py
+        global lock
+        try:
+            if key in loaded_tts.keys():
+                return loaded_tts[key]['engine']
+            unload_tts(device, [self.tts_vc_key])
+            with lock:
+                try:
+                    from TTS.api import TTS as CoquiAPI  # Lazy import to avoid hard dependency if not needed
+                except Exception as e:
+                    print(f"Voice conversion dependencies not available: {e}. Install Coqui TTS to enable cloning.")
+                    return False
+                tts = CoquiAPI(model_path)
+                if tts:
+                    if device == 'cuda':
+                        tts.cuda()
+                    else:
+                        tts.to(device)
+                    loaded_tts[key] = {"engine": tts, "config": None}
+                    msg = f'{model_path} (VC) Loaded!'
+                    print(msg)
+                    return tts
+                else:
+                    print('VC engine could not be created!')
+        except Exception as e:
+            print(f'_load_vc_engine() error: {e}')
         return False
 
     def _download_model(self, model_name):
@@ -167,6 +207,7 @@ class Coqui:
             else:
                 # Fallback for unexpected format
                 hf_path = f"en/en_US/lessac/medium/"
+                lang_code = "en"
             
             repo_id = "rhasspy/piper-voices"
             
@@ -270,6 +311,17 @@ class Coqui:
         sf.write(tmp_path, wav_numpy, expected_sr, subtype="PCM_16")
         return tmp_path
 
+    def _synthesize_with_piper(self, tts, sentence):
+        """Synthesize a sentence with Piper and return a numpy array."""
+        audio_chunks = list(tts.synthesize(sentence))
+        if audio_chunks:
+            audio_arrays = []
+            for chunk in audio_chunks:
+                audio_arrays.append(chunk.audio_float_array)
+            if audio_arrays:
+                return np.concatenate(audio_arrays)
+        return np.array([])
+
     def convert(self, sentence_number, sentence):
         try:
             speaker = None
@@ -278,10 +330,13 @@ class Coqui:
             settings = self.params[self.session['tts_engine']]
             final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
             sentence = sentence.strip()
-            
+
+            # Reference voice path (if provided) enables VC-based cloning akin to VITS path
+            settings['voice_path'] = self.session.get('voice', None)
+
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
-                if sentence[-1].isalnum():
+                if sentence and sentence[-1].isalnum():
                     sentence = f'{sentence} —'
                 if sentence == TTS_SML['break']:
                     break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100))) # 0.4 to 0.7 seconds
@@ -292,22 +347,82 @@ class Coqui:
                     self.audio_segments.append(pause_tensor.clone())
                     return True
                 else:
-                    if self.session['tts_engine'] == TTS_ENGINES['PIPER']:
-                        # Use Piper TTS to synthesize audio
-                        audio_chunks = list(tts.synthesize(sentence))
-                        if audio_chunks:
-                            # Concatenate audio chunks
-                            audio_arrays = []
-                            for chunk in audio_chunks:
-                                audio_arrays.append(chunk.audio_float_array)
-                            
-                            if audio_arrays:
-                                audio_sentence = np.concatenate(audio_arrays)
+                    # First, synthesize with Piper
+                    audio_sentence = self._synthesize_with_piper(tts, sentence)
+
+                    # If a reference voice is provided, perform VC-based cloning like VITS path
+                    if settings.get('voice_path'):
+                        try:
+                            proc_dir = os.path.join(self.session['voice_dir'], 'proc')
+                            os.makedirs(proc_dir, exist_ok=True)
+                            tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
+                            tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
+
+                            # Save Piper synthesis to tmp_in_wav
+                            if is_audio_data_valid(audio_sentence):
+                                sf.write(tmp_in_wav, audio_sentence, settings['samplerate'], subtype="PCM_16")
                             else:
-                                audio_sentence = np.array([])
-                        else:
-                            audio_sentence = np.array([])
-                            
+                                # Nothing synthesized, fall back to silent segment
+                                sf.write(tmp_in_wav, np.zeros(int(settings['samplerate'] * 0.1)), settings['samplerate'], subtype="PCM_16")
+
+                            # Determine and cache semitones shift based on gender detection
+                            if settings['voice_path'] in settings['semitones'].keys():
+                                semitones = settings['semitones'][settings['voice_path']]
+                            else:
+                                voice_path_gender = detect_gender(settings['voice_path'])
+                                voice_builtin_gender = detect_gender(tmp_in_wav)
+                                msg = f"Cloned voice seems to be {voice_path_gender}\nBuiltin voice seems to be {voice_builtin_gender}"
+                                print(msg)
+                                if voice_builtin_gender != voice_path_gender and voice_path_gender in ['male', 'female'] and voice_builtin_gender in ['male', 'female']:
+                                    semitones = -4 if voice_path_gender == 'male' else 4
+                                    msg = f"Adapting builtin voice frequencies from the clone voice..."
+                                    print(msg)
+                                else:
+                                    semitones = 0
+                                settings['semitones'][settings['voice_path']] = semitones
+
+                            # Pitch shift if needed using sox
+                            if semitones > 0:
+                                try:
+                                    cmd = [
+                                        shutil.which('sox'), tmp_in_wav,
+                                        "-r", str(settings['samplerate']), tmp_out_wav,
+                                        "pitch", str(semitones * 100)
+                                    ]
+                                    subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=False)
+                                except Exception as e:
+                                    print(f"Pitch shift failed: {e}")
+                                    tmp_out_wav = tmp_in_wav
+                            else:
+                                tmp_out_wav = tmp_in_wav
+
+                            # Load VC engine and perform conversion
+                            tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
+                            if not tts_vc:
+                                tts_vc = self._load_vc_engine(self.tts_vc_key, default_vc_model, self.session['device'])
+                            if tts_vc:
+                                # Use VC samplerate
+                                settings['samplerate'] = TTS_VOICE_CONVERSION[self.tts_vc_key]['samplerate']
+                                source_wav = self._resample_wav(tmp_out_wav, settings['samplerate'])
+                                target_wav = self._resample_wav(settings['voice_path'], settings['samplerate'])
+                                audio_sentence = tts_vc.voice_conversion(
+                                    source_wav=source_wav,
+                                    target_wav=target_wav
+                                )
+                                # Cleanup
+                                if os.path.exists(source_wav) and source_wav != tmp_out_wav:
+                                    os.remove(source_wav)
+                            else:
+                                print(f'Engine {self.tts_vc_key} is None; skipping voice cloning.')
+
+                            # Cleanup temp files
+                            if os.path.exists(tmp_in_wav):
+                                os.remove(tmp_in_wav)
+                            if os.path.exists(tmp_out_wav) and tmp_out_wav != tmp_in_wav:
+                                os.remove(tmp_out_wav)
+                        except Exception as e:
+                            print(f"Piper VC cloning path failed, proceeding with Piper voice only. Error: {e}")
+
                     if is_audio_data_valid(audio_sentence):
                         sourceTensor = self._tensor_type(audio_sentence)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
