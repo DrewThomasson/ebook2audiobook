@@ -686,9 +686,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         text = text.translate(specialchars_remove_table)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
         # Ensure space before and after punctuation_list
-        #pattern_space = re.escape(''.join(punctuation_list))
-        #punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
-        #text = re.sub(punctuation_pattern_space, r' \1', text)
+        pattern_space = re.escape(''.join(punctuation_list))
+        punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
+        text = re.sub(punctuation_pattern_space, r' \1', text)
         if tts_engine in [TTS_ENGINES['YOURTTS']]:
             text = text.replace('—', '-')
         return get_sentences(text, lang, tts_engine)
