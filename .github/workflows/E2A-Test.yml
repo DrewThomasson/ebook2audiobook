@@ -150,8 +150,8 @@ jobs:
       - name: Create Audiobook Output folders for Artifacts
         shell: bash
         run: |
-          mkdir -p ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK,PIPER}
-          find ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK,PIPER} -mindepth 1 -exec rm -rf {} +
+          mkdir -p ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK,KOKORO}
+          find ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK,KOKORO} -mindepth 1 -exec rm -rf {} +
 
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
         shell: bash
