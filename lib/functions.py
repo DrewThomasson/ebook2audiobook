@@ -2550,6 +2550,8 @@ def web_interface(args, ctx):
                 rating = default_engine_settings[TTS_ENGINES['TACOTRON2']]['rating']
             elif tts_engine == TTS_ENGINES['YOURTTS']:
                 rating = default_engine_settings[TTS_ENGINES['YOURTTS']]['rating']
+            elif tts_engine == TTS_ENGINES['PIPER']:
+                rating = default_engine_settings[TTS_ENGINES['PIPER']]['rating']
             def yellow_stars(n):
                 return "".join(
                     "<span style='color:#FFD700;font-size:12px'>★</span>" for _ in range(n)

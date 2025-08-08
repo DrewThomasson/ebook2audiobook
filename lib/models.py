@@ -180,7 +180,104 @@ models = {
             "lang": "multi",
             "repo": "rhasspy/piper-voices",
             "sub": "",
-            "voice": None,
+            "voice": os.path.join(tts_dir, "piper", "en_US-lessac-medium", "en_US-lessac-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        # Add one entry per Piper voice, tagging the correct language code
+        "en_US-lessac-medium": {
+            "lang": "eng",
+            "repo": "rhasspy/piper-voices",
+            "sub": "en/en_US/lessac/medium/",
+            "voice": os.path.join(tts_dir, "piper", "en_US-lessac-medium", "en_US-lessac-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "en_US-amy-medium": {
+            "lang": "eng",
+            "repo": "rhasspy/piper-voices",
+            "sub": "en/en_US/amy/medium/",
+            "voice": os.path.join(tts_dir, "piper", "en_US-amy-medium", "en_US-amy-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "en_US-ljspeech-medium": {
+            "lang": "eng",
+            "repo": "rhasspy/piper-voices",
+            "sub": "en/en_US/ljspeech/medium/",
+            "voice": os.path.join(tts_dir, "piper", "en_US-ljspeech-medium", "en_US-ljspeech-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "en_GB-alba-medium": {
+            "lang": "eng",
+            "repo": "rhasspy/piper-voices",
+            "sub": "en/en_GB/alba/medium/",
+            "voice": os.path.join(tts_dir, "piper", "en_GB-alba-medium", "en_GB-alba-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "de_DE-karlsson-medium": {
+            "lang": "deu",
+            "repo": "rhasspy/piper-voices",
+            "sub": "de/de_DE/karlsson/medium/",
+            "voice": os.path.join(tts_dir, "piper", "de_DE-karlsson-medium", "de_DE-karlsson-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "es_ES-mms-medium": {
+            "lang": "spa",
+            "repo": "rhasspy/piper-voices",
+            "sub": "es/es_ES/mms/medium/",
+            "voice": os.path.join(tts_dir, "piper", "es_ES-mms-medium", "es_ES-mms-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "fr_FR-mls-medium": {
+            "lang": "fra",
+            "repo": "rhasspy/piper-voices",
+            "sub": "fr/fr_FR/mls/medium/",
+            "voice": os.path.join(tts_dir, "piper", "fr_FR-mls-medium", "fr_FR-mls-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "it_IT-mms-medium": {
+            "lang": "ita",
+            "repo": "rhasspy/piper-voices",
+            "sub": "it/it_IT/mms/medium/",
+            "voice": os.path.join(tts_dir, "piper", "it_IT-mms-medium", "it_IT-mms-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "ru_RU-mms-medium": {
+            "lang": "rus",
+            "repo": "rhasspy/piper-voices",
+            "sub": "ru/ru_RU/mms/medium/",
+            "voice": os.path.join(tts_dir, "piper", "ru_RU-mms-medium", "ru_RU-mms-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "ja_JP-mms-medium": {
+            "lang": "jpn",
+            "repo": "rhasspy/piper-voices",
+            "sub": "ja/ja_JP/mms/medium/",
+            "voice": os.path.join(tts_dir, "piper", "ja_JP-mms-medium", "ja_JP-mms-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "ko_KR-mms-medium": {
+            "lang": "kor",
+            "repo": "rhasspy/piper-voices",
+            "sub": "ko/ko_KR/mms/medium/",
+            "voice": os.path.join(tts_dir, "piper", "ko_KR-mms-medium", "ko_KR-mms-medium.onnx"),
+            "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
+        },
+        "zh_CN-mms-medium": {
+            "lang": "zho",
+            "repo": "rhasspy/piper-voices",
+            "sub": "zh/zh_CN/mms/medium/",
+            "voice": os.path.join(tts_dir, "piper", "zh_CN-mms-medium", "zh_CN-mms-medium.onnx"),
             "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
         }
