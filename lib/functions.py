@@ -785,27 +785,13 @@ def get_sentences(text, lang, tts_engine):
             if s == TTS_SML['pause'] or TTS_SML['break']:
                 hard_list.append(s)
             else:
-                parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
+                parts = split_inclusive(s, pattern)
                 if parts:
-                    buffer = ''
-                    for part in parts:
-                        if not buffer:
-                            buffer = part
-                            continue
-                        if len(buffer.split()) < min_tokens:
-                            buffer = buffer + ' ' + part
-                        else:
-                            hard_list.append(buffer)
-                            buffer = part
-                    if buffer:
-                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
-                        if not any(ch.isalnum() for ch in cleaned):
-                            continue
-                        hard_list.append(buffer)
+                    for text_part in parts:
+                        text_part = text_part.strip()
+                        if text_part:
+                            hard_list.append(text_part)
                 else:
-                    cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
-                    if not any(ch.isalnum() for ch in cleaned):
-                        continue
                     hard_list.append(s)
         # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
