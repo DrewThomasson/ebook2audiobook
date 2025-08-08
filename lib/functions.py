@@ -863,7 +863,7 @@ def get_sentences(text, lang, tts_engine):
                             continue
                         pre_list.append(text_part)
             sentences = [
-                roman2number(s) if len(s) <= 60 else s
+                roman2number(s)
                 for s in pre_list
             ]
             return sentences
