@@ -4,6 +4,7 @@ from lib.conf import tts_dir, voices_dir
 loaded_tts = {}
 
 TTS_ENGINES = {
+    "KOKORO": "kokoro",
     "XTTSv2": "xtts", 
     "BARK": "bark", 
     "VITS": "vits", 
@@ -35,6 +36,14 @@ max_custom_voices = 1000
 max_upload_size = '6GB'
 
 default_engine_settings = {
+    TTS_ENGINES['KOKORO']: {
+        "samplerate": 24000,
+        "files": ['model.pth', 'config.json'],
+        "voices": {
+            "Default": "Default",
+        },
+        "rating": {"GPU VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
+    },
     TTS_ENGINES['XTTSv2']: {
         "samplerate": 24000,
         "temperature": 0.75,
@@ -155,6 +164,32 @@ default_engine_settings = {
     }
 }
 models = {
+    TTS_ENGINES['KOKORO']: {
+        "internal": {
+            "lang": "multi",
+            "repo": "hexgrad/Kokoro-82M",
+            "sub": "",
+            "voice": os.path.join(tts_dir, "kokoro", "default_voice.wav"),
+            "files": default_engine_settings[TTS_ENGINES['KOKORO']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['KOKORO']]['samplerate']
+        },
+        "Kokoro-82M": {
+            "lang": "eng",
+            "repo": "hexgrad/Kokoro-82M",
+            "sub": "",
+            "voice": os.path.join(tts_dir, "kokoro", "default_voice.wav"),
+            "files": default_engine_settings[TTS_ENGINES['KOKORO']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['KOKORO']]['samplerate']
+        },
+        "Kokoro-82M-GGUF": {
+            "lang": "eng",
+            "repo": "hexgrad/Kokoro-82M-GGUF",
+            "sub": "",
+            "voice": os.path.join(tts_dir, "kokoro", "default_voice.wav"),
+            "files": ['kokoro-v0_19.q8_0.gguf', 'config.json'],
+            "samplerate": default_engine_settings[TTS_ENGINES['KOKORO']]['samplerate']
+        }
+    },
     TTS_ENGINES['XTTSv2']: {
         "internal": {
             "lang": "multi",
