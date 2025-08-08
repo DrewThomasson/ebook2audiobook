@@ -162,15 +162,6 @@ jobs:
           conda deactivate
           sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
 
-      - name: English KOKORO headless single test
-        shell: bash
-        run: |
-          echo "Running English KOKORO headless single test..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine KOKORO --output_dir ~/ebook2audiobook/audiobooks/KOKORO
-
       - name: English PIPER headless single test
         shell: bash
         run: |
@@ -179,6 +170,15 @@ jobs:
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine PIPER --output_dir ~/ebook2audiobook/audiobooks/PIPER
+
+      - name: English KOKORO headless single test
+        shell: bash
+        run: |
+          echo "Running English KOKORO headless single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine KOKORO --output_dir ~/ebook2audiobook/audiobooks/KOKORO
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
