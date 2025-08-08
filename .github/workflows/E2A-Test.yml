@@ -153,6 +153,19 @@ jobs:
           mkdir -p ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK,KOKORO}
           find ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK,KOKORO} -mindepth 1 -exec rm -rf {} +
 
+      - name: English KOKORO headless single test
+        shell: bash
+        run: |
+          echo "Running English KOKORO headless single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine KOKORO --output_dir ~/ebook2audiobook/audiobooks/KOKORO
+          if ! find ~/ebook2audiobook/audiobooks/KOKORO -name "test1.m4b" -print -quit | grep -q .; then
+            echo "Error: test1.m4b not found: Kokoro failed" >&2
+            exit 1
+          fi
+
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
         shell: bash
         run: |
@@ -170,26 +183,6 @@ jobs:
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine PIPER --output_dir ~/ebook2audiobook/audiobooks/PIPER
-
-
-      - name: English KOKORO headless single test
-        shell: bash
-        run: |
-          echo "Running English KOKORO headless single test..."
-          cd ~/ebook2audiobook
-          source "$(conda info --base)/etc/profile.d/conda.sh"
-          conda deactivate
-          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine KOKORO --output_dir ~/ebook2audiobook/audiobooks/KOKORO
-          EXIT_CODE=$?
-      
-          if [ $EXIT_CODE -eq 138 ]; then
-            echo "Ignored error code 138 from ebook2audiobook.sh, continuing..."
-          elif [ $EXIT_CODE -ne 0 ]; then
-            echo "ebook2audiobook.sh failed with error code $EXIT_CODE"
-            exit $EXIT_CODE
-          fi
-      
-          echo "Search for output file to see if kokoro worked successfully or not"
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
