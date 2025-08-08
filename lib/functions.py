@@ -795,7 +795,7 @@ def get_sentences(text, lang, tts_engine):
                 else:
                     s = s.strip()
                     if s:
-                    hard_list.append(s)
+                        hard_list.append(s)
         # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
