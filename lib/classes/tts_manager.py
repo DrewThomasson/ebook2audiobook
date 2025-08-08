@@ -16,6 +16,9 @@ class TTSManager:
             elif self.session['tts_engine'] in [TTS_ENGINES['PIPER']]:
                 from lib.classes.tts_engines.piper import Coqui
                 self.tts = Coqui(self.session)
+            elif self.session['tts_engine'] in [TTS_ENGINES['F5TTS']]:  # ADD THIS BRANCH
+                from lib.classes.tts_engines.f5tts import Coqui
+                self.tts = Coqui(self.session)
             if self.tts:
                 return True
             else:

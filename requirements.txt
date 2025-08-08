@@ -37,3 +37,6 @@ sudachidict_core
 transformers==4.51.3
 coqui-tts[languages]==0.26.0
 torchvggish
+
+f5-tts
+einops

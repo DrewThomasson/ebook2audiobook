@@ -146,12 +146,23 @@ jobs:
             echo "==> Skipping script run because repo already existed"
           fi
 
-
       - name: Create Audiobook Output folders for Artifacts
         shell: bash
         run: |
-          mkdir -p ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
-          find ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
+          mkdir -p ~/ebook2audiobook/audiobooks/{F5TTS,PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
+          find ~/ebook2audiobook/audiobooks/{F5TTS,PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
+
+      - name: English F5TTS headless single test
+        shell: bash
+        continue-on-error: true
+        run: |
+          echo "Running English F5TTS headless single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine F5TTS --output_dir ~/ebook2audiobook/audiobooks/F5TTS
+
+
 
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
         shell: bash

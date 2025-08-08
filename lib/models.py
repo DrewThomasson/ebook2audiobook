@@ -5,6 +5,7 @@ loaded_tts = {}
 
 TTS_ENGINES = {
     "PIPER": "piper",
+    "F5TTS": "f5tts",  # added
     "XTTSv2": "xtts", 
     "BARK": "bark", 
     "VITS": "vits", 
@@ -43,6 +44,12 @@ default_engine_settings = {
             "Default": "Default",
         },
         "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 4}
+    },
+    TTS_ENGINES['F5TTS']: {
+        "samplerate": 24000,
+        "files": [],  # F5 manages/downloads its own weights
+        "voices": {"Default": "Default"},
+        "rating": {"GPU VRAM": 3, "CPU": 2, "RAM": 3, "Realism": 5},
     },
     TTS_ENGINES['XTTSv2']: {
         "samplerate": 24000,
@@ -173,6 +180,16 @@ models = {
             "files": default_engine_settings[TTS_ENGINES['PIPER']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['PIPER']]['samplerate']
         },
+    TTS_ENGINES['F5TTS']: {
+        "internal": {
+            "lang": "multi",
+            "repo": "SWivid/F5-TTS",
+            "sub": "",
+            "voice": None,
+            "files": default_engine_settings[TTS_ENGINES['F5TTS']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['F5TTS']]['samplerate'],
+        },
+    },
         # Add one entry per Piper voice, tagging the correct language code
         "en_US-lessac-medium": {
             "lang": "eng",
