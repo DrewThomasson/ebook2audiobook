@@ -2552,6 +2552,8 @@ def web_interface(args, ctx):
                 rating = default_engine_settings[TTS_ENGINES['YOURTTS']]['rating']
             elif tts_engine == TTS_ENGINES['PIPER']:
                 rating = default_engine_settings[TTS_ENGINES['PIPER']]['rating']
+            elif tts_engine == TTS_ENGINES['KOKORO']:
+                rating = default_engine_settings[TTS_ENGINES['KOKORO']]['rating']
             def yellow_stars(n):
                 return "".join(
                     "<span style='color:#FFD700;font-size:12px'>★</span>" for _ in range(n)
@@ -2883,7 +2885,7 @@ def web_interface(args, ctx):
                         for f in parent_dir.rglob(file_pattern)
                         if f.is_file()
                     ]
-                if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS'], TTS_ENGINES['PIPER']]:
+                if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS'], TTS_ENGINES['PIPER'], TTS_ENGINES['KOKORO']]:
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())

@@ -150,8 +150,21 @@ jobs:
       - name: Create Audiobook Output folders for Artifacts
         shell: bash
         run: |
-          mkdir -p ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
-          find ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
+          mkdir -p ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK,KOKORO}
+          find ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK,KOKORO} -mindepth 1 -exec rm -rf {} +
+
+      - name: English KOKORO headless single test
+        shell: bash
+        run: |
+          echo "Running English KOKORO headless single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine KOKORO --output_dir ~/ebook2audiobook/audiobooks/KOKORO
+          if ! find ~/ebook2audiobook/audiobooks/KOKORO -name "test1.m4b" -print -quit | grep -q .; then
+            echo "Error: test1.m4b not found: Kokoro failed" >&2
+            exit 1
+          fi
 
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
         shell: bash
