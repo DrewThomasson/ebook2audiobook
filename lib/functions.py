@@ -1112,6 +1112,15 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
 def roman2number(text):
 
+    # ↳ only match *well-formed* Roman numerals up to 3999
+    valid_roman = re.compile(
+        r'^(?=.)M{0,3}(CM|CD|D?C{0,3})'
+        r'(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
+        re.IGNORECASE
+    )
+    def is_valid_roman(s):
+        return bool(valid_roman.fullmatch(s))
+
     def to_int(s):
         s = s.upper()
         i, result = 0, 0
@@ -1122,13 +1131,15 @@ def roman2number(text):
                     i += len(roman)
                     break
             else:
-                return s  # Not valid roman
+                return s  # Not even a sequence of roman letters
         return result
 
     def repl_heading(m):
-        val = to_int(m.group(1))
-        return f"{val}{m.group(2)}{m.group(3)}" if isinstance(val, int) else m.group(0)
-    # Heading numerals like "IV." or "X-  "
+        roman = m.group(1)
+        if not is_valid_roman(roman):
+            return m.group(0)
+        val = to_int(roman)
+        return f"{val}{m.group(2)}{m.group(3)}"
     text = re.sub(
         r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
         repl_heading,
@@ -1137,9 +1148,11 @@ def roman2number(text):
     )
 
     def repl_standalone(m):
-        val = to_int(m.group(1))
-        return f"{val}{m.group(2)}" if isinstance(val, int) else m.group(0)
-    # Lines that are **just** a Roman plus dot/dash: e.g. "XII."
+        roman = m.group(1)
+        if not is_valid_roman(roman):
+            return m.group(0)
+        val = to_int(roman)
+        return f"{val}{m.group(2)}"
     text = re.sub(
         r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
         repl_standalone,
@@ -1148,17 +1161,19 @@ def roman2number(text):
     )
 
     def repl_word(m):
-        val = to_int(m.group(1))
-        return str(val) if isinstance(val, int) else m.group(0)
-    # Only match true standalone runs of I/V/X/L/C/D/M (length ≥2),
-    # with no ASCII letter or digit on either side:
+        roman = m.group(1)
+        if not is_valid_roman(roman):
+            return m.group(0)
+        val = to_int(roman)
+        return str(val)
     text = re.sub(
-        r'(?<![0-9A-Za-z])([IVXLCDM]{2,})(?![0-9A-Za-z])',
+        r'(?<![0-9A-Za-z])([IVXLCDM]+)(?![0-9A-Za-z])',
         repl_word,
         text
     )
 
     return text
+
 
 def filter_sml(text):
     for key, value in TTS_SML.items():
