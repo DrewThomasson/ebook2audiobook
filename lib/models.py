@@ -43,7 +43,7 @@ default_engine_settings = {
         "voices": {
             "Default": "Default",
         },
-        "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 4}
+        "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 4},
     },
     TTS_ENGINES['PIPER']: {
         "samplerate": 22050,
@@ -625,4 +625,5 @@ models = {
         }
     }
 }
+
 
