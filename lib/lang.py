@@ -49,7 +49,7 @@ punctuation_switch = {
     '„': '"',   # German-style quote
 
     # Dashes, underscores & Hyphens that might cause weird pauses
-    '–': '—',  # En dash (Unicode U+2013)
+    '–': '-',  # En dash (Unicode U+2013)
 	"_": " ",   # U+005F LOW LINE
 	"‗": " ",   # U+2017 DOUBLE LOW LINE
 	"¯": " ",   # U+00AF MACRON (technically an overline)
@@ -84,7 +84,7 @@ punctuation_switch = {
     '፡': ':',  # Ethiopic colon
     '፤': ';',  # Ethiopic semicolon
     '।': '.',   # Hindi period
-    '•': '—', # bullet (Unicode: U+2022
+    '•': '-', # bullet (Unicode: U+2022
     '›': '',  # Single Right-Pointing Angle Quotation Mark U+200A
     '#': '-', # hashtag by Em Dash
     '†': '-', # Dagger (footnote marker) U+2020
@@ -113,7 +113,7 @@ punctuation_list = [
     # Punctuation used in Lao
     '໌', 'ໍ',
     # Miscellaneous punctuation (pause-inducing, used globally)
-    '—', '‽'
+    '-', '‽'
 ]
 punctuation_list_set = set(punctuation_list)
 
@@ -138,7 +138,7 @@ punctuation_split_hard_set = set(punctuation_split_hard)
 
 punctuation_split_soft = [
 	# Western
-	',', ':', ';', '—',
+	',', ':', ';', '-',
 	# Arabic–Persian
 	'،',
 	# CJK
