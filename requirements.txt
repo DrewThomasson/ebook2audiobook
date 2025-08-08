@@ -18,6 +18,10 @@ pythainlp
 mutagen
 nvidia-ml-py
 phonemizer-fork
+piper-tts
+numpy
+soundfile
+huggingface_hub
 pydub
 pyannote-audio
 PyOpenGL
