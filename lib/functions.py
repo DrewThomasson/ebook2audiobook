@@ -708,7 +708,7 @@ def get_sentences(text, lang, tts_engine):
             last_end = match.end()
         if last_end < len(text):
             tail = text[last_end:].strip()
-            if tail and len(tail.split()) >= min_tokens:
+            if tail:
                 result.append(tail)
         return result
 
