@@ -1252,7 +1252,6 @@ def convert_chapters2audio(session):
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
-        #progress_bar = gr.Progress(track_tqdm=False) if is_gui_process else None
         tts_manager = TTSManager(session)
         if not tts_manager:
             error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
@@ -1318,8 +1317,6 @@ def convert_chapters2audio(session):
                         if success:
                             total_progress = (t.n + 1) / total_iterations
                             is_sentence = sentence.strip() not in TTS_SML.values()
-                            #if progress_bar is not None:
-                            #    progress_bar(total_progress)
                             percentage = total_progress * 100
                             t.set_description(f'{percentage:.2f}%')
                             msg = f" | {sentence}" if is_sentence else f" | {sentence}"
@@ -1759,16 +1756,14 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-def convert_ebook_batch(args, ctx):
-    global context
-    context = ctx
+def convert_ebook_batch(args, ctx=None):
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, passed = convert_ebook(args)
+                progress_status, passed = convert_ebook(args, ctx)
                 if passed is False:
                     print(f'Conversion failed: {progress_status}')
                     sys.exit(1)
@@ -2113,6 +2108,8 @@ def web_interface(args, ctx):
     
     src_label_file = 'Select a File'
     src_label_dir = 'Select a Directory'
+    
+    gr_progress_bar = gr.Progress(track_tqdm=False)
     
     visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
     visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
@@ -2468,7 +2465,6 @@ def web_interface(args, ctx):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
-        gr_progress = gr.Progress()
         gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=True)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
