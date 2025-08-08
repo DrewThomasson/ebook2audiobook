@@ -312,7 +312,7 @@ class Coqui:
             # 3) Post-process, segment timing, save
             if is_audio_data_valid(kokoro_audio):
                 audio_tensor = torch.tensor(kokoro_audio, dtype=torch.float32).unsqueeze(0)
-                audio_tensor = normalize_audio(audio_tensor, sr)
+                audio_tensor = normalize_audio(audio=audio_tensor, samplerate=sr)
                 # trim slight tail if sentence ended mid-token
                 if sentence and (sentence[-1].isalnum() or sentence[-1] == '—'):
                     audio_tensor = trim_audio(audio_tensor.squeeze(0), sr, 0.003, 0.004).unsqueeze(0)
