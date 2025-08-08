@@ -16,6 +16,9 @@ class TTSManager:
             elif self.session['tts_engine'] in [TTS_ENGINES['PIPER']]:
                 from lib.classes.tts_engines.piper import Coqui
                 self.tts = Coqui(self.session)
++            elif self.session['tts_engine'] in [TTS_ENGINES['KOKORO']]:
++                from lib.classes.tts_engines.kokoro import Coqui
++                self.tts = Coqui(self.session)
             if self.tts:
                 return True
             else:
