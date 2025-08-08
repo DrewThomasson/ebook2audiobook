@@ -5,6 +5,7 @@ loaded_tts = {}
 
 TTS_ENGINES = {
     "PIPER": "piper",
+    "KOKORO": "kokoro",
     "XTTSv2": "xtts", 
     "BARK": "bark", 
     "VITS": "vits", 
@@ -36,6 +37,14 @@ max_custom_voices = 1000
 max_upload_size = '6GB'
 
 default_engine_settings = {
+    TTS_ENGINES['KOKORO']: {
+        "samplerate": 24000,
+        "files": [],
+        "voices": {
+            "Default": "Default",
+        },
+        "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 4}
+    },
     TTS_ENGINES['PIPER']: {
         "samplerate": 22050,
         "files": ['model.onnx', 'config.json'],
@@ -164,6 +173,16 @@ default_engine_settings = {
     }
 }
 models = {
+    TTS_ENGINES['KOKORO']: {
+        "internal": {
+            "lang": "multi",
+            "repo": "onnx-community/Kokoro-82M-v1.0-ONNX",
+            "sub": "",
+            "voice": None,  # Kokoro voice selection handled internally (or by voicepacks)
+            "files": default_engine_settings[TTS_ENGINES['KOKORO']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['KOKORO']]['samplerate']
+        }
+    },
     TTS_ENGINES['PIPER']: {
         "internal": {
             "lang": "multi",
@@ -606,3 +625,4 @@ models = {
         }
     }
 }
+
