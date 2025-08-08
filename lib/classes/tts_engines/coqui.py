@@ -452,8 +452,6 @@ class Coqui:
             if tts:
                 if sentence[-1].isalnum():
                     sentence = f'{sentence} —'
-                if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
-                    sentence = sentence.replace('.', ' — ')
                 if sentence == TTS_SML['break']:
                     break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100))) # 0.4 to 0.7 seconds
                     self.audio_segments.append(break_tensor.clone())
@@ -491,7 +489,7 @@ class Coqui:
                         }
                         with torch.no_grad():
                             result = tts.inference(
-                                text=sentence,
+                                text=sentence.replace('.', ' — '),
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=settings['gpt_cond_latent'],
                                 speaker_embedding=settings['speaker_embedding'],
