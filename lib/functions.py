@@ -700,15 +700,27 @@ def get_sentences(text, lang, tts_engine):
     def split_inclusive(text, pattern):
         result = []
         last_end = 0
+        buffer = ""
         min_tokens = 5
         for match in pattern.finditer(text):
             segment = text[last_end:match.end()].strip()
+            if buffer:
+                segment = buffer + " " + segment
+                buffer = ""
             if len(segment.split()) >= min_tokens:
                 result.append(segment)
+            else:
+                buffer = segment  # accumulate until next
             last_end = match.end()
-        if last_end < len(text):
-            tail = text[last_end:].strip()
-            if tail:
+        tail = text[last_end:].strip()
+        if buffer:
+            tail = buffer + " " + tail if tail else buffer
+        if tail and len(tail.split()) >= min_tokens:
+            result.append(tail)
+        elif tail:
+            if result:
+                result[-1] += " " + tail
+            else:
                 result.append(tail)
         return result
 
