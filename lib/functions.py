@@ -805,6 +805,13 @@ def get_sentences(text, lang, tts_engine):
                 if parts:
                     buffer = ''
                     for part in parts:
+                        # always treat pauses as their own chunk
+                        if part == TTS_SML['pause']:
+                            if buffer:
+                                soft_list.append(buffer)
+                                buffer = ''
+                            soft_list.append(part)
+                            continue
                         if not buffer:
                             buffer = part
                             continue
