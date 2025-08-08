@@ -693,13 +693,14 @@ class Coqui:
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
                         speaker_argument = {}
+                        not_supported_punc_pattern = re.compile(r"[.:—]")
                         if settings['voice_path'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
-                                text=sentence.replace('—', '').strip(),
+                                text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
@@ -758,7 +759,7 @@ class Coqui:
                                 os.remove(source_wav)
                         else:
                             audio_sentence = tts.tts(
-                                text=sentence.replace('—', '').strip(),
+                                text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
