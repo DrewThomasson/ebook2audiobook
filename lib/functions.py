@@ -782,7 +782,7 @@ def get_sentences(text, lang, tts_engine):
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         hard_list = []
         for s in sml_list:
-            if s == TTS_SML['pause'] or TTS_SML['break']:
+            if s in [TTS_SML['break'], TTS_SML['pause']]:
                 hard_list.append(s)
             else:
                 parts = split_inclusive(s, pattern)
@@ -798,20 +798,13 @@ def get_sentences(text, lang, tts_engine):
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         soft_list = []
         for s in hard_list:
-            if s == TTS_SML['pause'] or TTS_SML['break']:
+            if s in [TTS_SML['break'], TTS_SML['pause']]:
                 soft_list.append(s)
             elif len(s) > max_chars:
                 parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
                 if parts:
                     buffer = ''
                     for part in parts:
-                        # always treat pauses as their own chunk
-                        if part == TTS_SML['pause']:
-                            if buffer:
-                                soft_list.append(buffer)
-                                buffer = ''
-                            soft_list.append(part)
-                            continue
                         if not buffer:
                             buffer = part
                             continue
@@ -838,7 +831,7 @@ def get_sentences(text, lang, tts_engine):
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
-                if s == TTS_SML['pause']:
+                if s in [TTS_SML['break'], TTS_SML['pause']]:
                     result.append(s)
                 else:
                     tokens = segment_ideogramms(s)
@@ -849,31 +842,13 @@ def get_sentences(text, lang, tts_engine):
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
-            pre_list = []
-            for s in soft_list:
-                if s == TTS_SML['pause'] or len(s) <= max_chars:
-                    pre_list.append(s)
-                else:
-                    words = s.split(' ')
-                    text_part = words[0]
-                    for w in words[1:]:
-                        if len(text_part) + 1 + len(w) <= max_chars:
-                            text_part += ' ' + w
-                        else:
-                            pre_list.append(text_part.strip())
-                            text_part = w
-                    if text_part:
-                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
-                        if not any(ch.isalnum() for ch in cleaned):
-                            continue
-                        pre_list.append(text_part)
             re_non_ws = re.compile(r'[^\W_]')
             re_title_num = re.compile(r'^((?=[IVXLCDM])(?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})|\d+)(?=\s|$)')
             re_punct = re.compile(r'^([IVXLCDM\d]+)[\.,:;]')
             re_insert = re.compile(r'^([IVXLCDM\d]+)')
             sentences = [
                 roman2number(s, lang, re_non_ws, re_title_num, re_punct, re_insert) if len(s) <= 50 else s
-                for s in pre_list
+                for s in soft_list
             ]
             return sentences
     except Exception as e:
