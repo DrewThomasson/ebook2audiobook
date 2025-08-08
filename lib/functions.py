@@ -647,9 +647,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     if not cells:
                         continue
                     if len(cells) == len(headers) and headers:
-                        line = " - ".join(f"{h}: {c}" for h, c in zip(headers, cells))
+                        line = " — ".join(f"{h}: {c}" for h, c in zip(headers, cells))
                     else:
-                        line = " - ".join(cells)
+                        line = " — ".join(cells)
                     if line:
                         text_array.append(line.strip())
             else:
@@ -690,8 +690,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         pattern_space = re.escape(''.join(punctuation_list))
         punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
         text = re.sub(punctuation_pattern_space, r' \1', text)
-        if tts_engine in [TTS_ENGINES['YOURTTS']]:
-            text = text.replace('—', '-')
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         error = f'filter_chapter() error: {e}'

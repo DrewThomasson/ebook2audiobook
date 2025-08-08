@@ -451,9 +451,9 @@ class Coqui:
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
                 if sentence[-1].isalnum():
-                    sentence = f'{sentence} -'
+                    sentence = f'{sentence} —'
                 if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
-                    sentence = sentence.replace('.', ' - ')
+                    sentence = sentence.replace('.', ' — ')
                 if sentence == TTS_SML['break']:
                     break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100))) # 0.4 to 0.7 seconds
                     self.audio_segments.append(break_tensor.clone())
@@ -774,14 +774,14 @@ class Coqui:
                             speaker_argument = {"speaker": voice_key}
                         with torch.no_grad():
                             audio_sentence = tts.tts(
-                                text=sentence,
+                                text=sentence.replace('—', ''),
                                 language=language,
                                 **speaker_argument
                             )
                     if is_audio_data_valid(audio_sentence):
                         sourceTensor = self._tensor_type(audio_sentence)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                        if sentence[-1].isalnum() or sentence[-1] == '-':
+                        if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.003, trim_audio_buffer).unsqueeze(0)
                         self.audio_segments.append(audio_tensor)
                         if not re.search(r'\w$', sentence, flags=re.UNICODE):
