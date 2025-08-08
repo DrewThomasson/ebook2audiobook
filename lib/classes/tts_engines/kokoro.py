@@ -205,6 +205,8 @@ class Coqui:
         # Safe default that exists in model cards; works across languages too
         return "af_heart"
 
+
+
     def convert(self, sentence_number, sentence):
         try:
             settings = self.params[self.session['tts_engine']]
@@ -312,7 +314,34 @@ class Coqui:
             # 3) Post-process, segment timing, save
             if is_audio_data_valid(kokoro_audio):
                 audio_tensor = torch.tensor(kokoro_audio, dtype=torch.float32).unsqueeze(0)
-                audio_tensor = normalize_audio(audio_tensor, samplerate=sr)
+
+                # File-based normalization round trip (match audio_filters.normalize_audio signature)
+                tmp_norm_in = None
+                tmp_norm_out = None
+                try:
+                    tmp_norm_in = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
+                    tmp_norm_out = tempfile.NamedTemporaryFile(suffix=".wav", delete=False).name
+                    # Write current tensor to disk
+                    sf.write(tmp_norm_in, audio_tensor.squeeze(0).cpu().numpy(), sr, subtype="PCM_16")
+                    # Run normalization; if it succeeds, load it back
+                    if normalize_audio(tmp_norm_in, tmp_norm_out, sr) and os.path.exists(tmp_norm_out):
+                        wav_loaded, sr_loaded = torchaudio.load(tmp_norm_out)
+                        if wav_loaded.size(0) > 1:
+                            wav_loaded = wav_loaded.mean(dim=0, keepdim=True)
+                        if sr_loaded != sr:
+                            resampler = self._get_resampler(sr_loaded, sr)
+                            wav_loaded = resampler(wav_loaded)
+                        audio_tensor = wav_loaded[:1].to(dtype=torch.float32)
+                    # else: keep original audio_tensor
+                except Exception as e:
+                    print(f"Normalization failed, using unnormalized audio. Error: {e}")
+                finally:
+                    try:
+                        if tmp_norm_in and os.path.exists(tmp_norm_in): os.remove(tmp_norm_in)
+                        if tmp_norm_out and os.path.exists(tmp_norm_out): os.remove(tmp_norm_out)
+                    except:
+                        pass
+
                 # trim slight tail if sentence ended mid-token
                 if sentence and (sentence[-1].isalnum() or sentence[-1] == '—'):
                     audio_tensor = trim_audio(audio_tensor.squeeze(0), sr, 0.003, 0.004).unsqueeze(0)
@@ -350,3 +379,12 @@ class Coqui:
             return False
         except Exception as e:
             raise ValueError(f"Kokoro.convert(): {e}")
+
+
+
+
+
+
+
+
+
