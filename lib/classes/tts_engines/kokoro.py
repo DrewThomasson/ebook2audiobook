@@ -6,8 +6,6 @@ import subprocess
 import tempfile
 import threading
 import uuid
-from pathlib import Path
-from pprint import pprint
 
 # Conditional imports for Kokoro TTS dependencies
 try:
@@ -16,18 +14,17 @@ try:
     import soundfile as sf
     import torch
     import torchaudio
-    from kokoro import KPipeline  # Import Kokoro pipeline to check availability
+    from kokoro import KPipeline  # Kokoro pipeline
     # Import common utils with all their dependencies
     from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
     from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
-    from lib import *
     KOKORO_DEPENDENCIES_AVAILABLE = True
 except ImportError as e:
     KOKORO_DEPENDENCIES_AVAILABLE = False
     _missing_dependency_error = str(e)
     # Define placeholder functions for when dependencies are missing
     def unload_tts(*args, **kwargs): pass
-    def append_sentence2vtt(*args, **kwargs): return 1
+    def append_sentence2vtt(*args, **kwargs): pass
     def detect_gender(*args, **kwargs): return "unknown"
     def trim_audio(*args, **kwargs): return args[0] if args else None
     def normalize_audio(*args, **kwargs): return args[0] if args else None
@@ -39,8 +36,13 @@ except ImportError as e:
             # yield (graphemes, phonemes, audio)
             yield "", "", np.zeros(1, dtype=np.float32)
 
-#import logging
-#logging.basicConfig(level=logging.DEBUG)
+from pathlib import Path
+from pprint import pprint
+
+from lib import *
+
+# import logging
+# logging.basicConfig(level=logging.DEBUG)
 
 lock = threading.Lock()
 
@@ -49,8 +51,8 @@ class Coqui:
     def __init__(self, session):
         try:
             if not KOKORO_DEPENDENCIES_AVAILABLE:
-                raise ImportError(f"Kokoro TTS dependencies not available: {_missing_dependency_error}. Please install: pip install kokoro soundfile numpy")
-
+                raise ImportError(f"Kokoro TTS dependencies not available: {_missing_dependency_error}. Please install: pip install kokoro soundfile numpy regex torch torchaudio")
+            
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
@@ -61,10 +63,10 @@ class Coqui:
             self.npz_data = None
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
-            # Add semitones cache to support voice cloning pitch adaptation (like VITS/Piper path)
+            # Semitones cache to support voice cloning pitch adaptation (parity with Piper)
             self.params = {TTS_ENGINES['KOKORO']: {"semitones": {}}}
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
-            self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')
+            self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')    
             self.resampler_cache = {}
             self.audio_segments = []
             self._build()
@@ -86,10 +88,10 @@ class Coqui:
                         tts = self._load_api(self.tts_key, self.session['device'])
 
             # If a reference voice is provided, attempt to load the voice conversion engine
+            # to enable "cloning" via VC, mirroring Piper.
             if self.session.get('voice'):
                 tts_vc = (loaded_tts.get(self.tts_vc_key) or {}).get('engine', False)
                 if not tts_vc:
-                    # Load VC model using a generic TTS API loader (Coqui TTS)
                     tts_vc = self._load_vc_engine(self.tts_vc_key, default_vc_model, self.session['device'])
 
             return (loaded_tts.get(self.tts_key) or {}).get('engine', False)
@@ -104,9 +106,8 @@ class Coqui:
         lang_code_iso3 = self.session.get('language', 'eng')
         return language_tts.get('kokoro', {}).get(lang_code_iso3, 'a')
 
-    def _get_default_voice(self, lang_letter):
+    def _get_default_voice(self, _lang_letter):
         """Return a safe default Kokoro voice that exists across languages."""
-        # Kokoro voices are generally cross-lingual, use a robust default
         return "af_heart"
 
     def _load_api(self, key, device):
@@ -133,7 +134,7 @@ class Coqui:
         return False
 
     def _load_vc_engine(self, key, model_path, device):
-        # Generic TTS/VC model loader (used for voice conversion engine), similar to piper.py
+        # Generic TTS/VC model loader (used for voice conversion engine), same approach as Piper
         global lock
         try:
             if key in loaded_tts.keys():
@@ -164,17 +165,17 @@ class Coqui:
     def _load_checkpoint(self, **kwargs):
         # Not used for Kokoro (no local checkpoints handled here), kept for API parity
         return False
-
+        
     def _tensor_type(self, audio_data):
         if isinstance(audio_data, torch.Tensor):
             return audio_data
-        elif isinstance(audio_data, np.ndarray):
+        elif isinstance(audio_data, np.ndarray):  
             return torch.from_numpy(audio_data).float()
-        elif isinstance(audio_data, list):
+        elif isinstance(audio_data, list):  
             return torch.tensor(audio_data, dtype=torch.float32)
         else:
             raise TypeError(f"Unsupported type for audio_data: {type(audio_data)}")
-
+            
     def _get_resampler(self, orig_sr, target_sr):
         key = (orig_sr, target_sr)
         if key not in self.resampler_cache:
@@ -203,19 +204,9 @@ class Coqui:
     def _synthesize_with_kokoro(self, tts, sentence):
         """Synthesize a sentence with Kokoro and return a numpy array."""
         try:
-            # Ensure pipeline language matches session; recreate if needed
-            config = (loaded_tts.get(self.tts_key) or {}).get('config') or {}
-            current_lang = config.get('lang_code')
-            desired_lang = self._kokoro_lang_code()
-            if current_lang != desired_lang:
-                # reload pipeline in desired language
-                loaded_tts.pop(self.tts_key, None)
-                tts = self._load_api(self.tts_key, self.session.get('device', 'cpu'))
-                if not tts:
-                    return np.array([], dtype=np.float32)
-
-            voice_id = self._get_default_voice(desired_lang)
-            gen = tts(sentence, voice=voice_id, speed=1, split_pattern=r'\n+')
+            lang_letter = (loaded_tts.get(self.tts_key) or {}).get('config', {}).get('lang_code') or self._kokoro_lang_code()
+            voice_id = self._get_default_voice(lang_letter)
+            gen = tts(sentence, voice=voice_id, speed=1.0, split_pattern=r'\n+')
             audio_arrays = []
             for _, _, audio in gen:
                 if isinstance(audio, torch.Tensor):
@@ -240,9 +231,9 @@ class Coqui:
             trim_audio_buffer = 0.004
             settings = self.params[self.session['tts_engine']]
             final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
-            sentence = (sentence or "").strip()
+            sentence = sentence.strip()
 
-            # Reference voice path (if provided) enables VC-based cloning akin to VITS/Piper path
+            # Reference voice path (if provided) enables VC-based cloning akin to Piper path
             settings['voice_path'] = self.session.get('voice', None)
 
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
@@ -274,7 +265,7 @@ class Coqui:
                                 sf.write(tmp_in_wav, audio_sentence, settings['samplerate'], subtype="PCM_16")
                             else:
                                 # Nothing synthesized, fall back to silent segment
-                                sf.write(tmp_in_wav, np.zeros(int(settings['samplerate'] * 0.1), dtype=np.float32), settings['samplerate'], subtype="PCM_16")
+                                sf.write(tmp_in_wav, np.zeros(int(settings['samplerate'] * 0.1)), settings['samplerate'], subtype="PCM_16")
 
                             # Determine and cache semitones shift based on gender detection
                             if settings['voice_path'] in settings['semitones'].keys():
@@ -292,8 +283,8 @@ class Coqui:
                                     semitones = 0
                                 settings['semitones'][settings['voice_path']] = semitones
 
-                            # Pitch shift if needed using sox
-                            if semitones != 0 and shutil.which('sox'):
+                            # Pitch shift if needed using sox (parity with Piper: only if semitones > 0)
+                            if semitones > 0:
                                 try:
                                     cmd = [
                                         shutil.which('sox'), tmp_in_wav,
@@ -337,7 +328,7 @@ class Coqui:
                     if is_audio_data_valid(audio_sentence):
                         sourceTensor = self._tensor_type(audio_sentence)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
-                        if sentence and (sentence[-1].isalnum() or sentence[-1] == '—'):
+                        if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.003, trim_audio_buffer).unsqueeze(0)
                         self.audio_segments.append(audio_tensor)
                         if not re.search(r'\w$', sentence, flags=re.UNICODE):
