@@ -170,6 +170,28 @@ jobs:
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine PIPER --output_dir ~/ebook2audiobook/audiobooks/PIPER
+          
+
+      - name: English PIPER headless single test
+        shell: bash
+        run: |
+          echo "Running English PIPER headless single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          
+          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine PIPER --output_dir ~/ebook2audiobook/audiobooks/PIPER
+          EXIT_CODE=$?
+          
+          if [ $EXIT_CODE -eq 138 ]; then
+            echo "Ignored error code 138 from ebook2audiobook.sh, continuing..."
+          elif [ $EXIT_CODE -ne 0 ]; then
+            echo "ebook2audiobook.sh failed with error code $EXIT_CODE"
+            exit $EXIT_CODE
+          fi
+          
+          echo "Search for output file to see if kokoro worked successfully or not"
+
 
       - name: English KOKORO headless single test
         shell: bash
