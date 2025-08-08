@@ -700,12 +700,15 @@ def get_sentences(text, lang, tts_engine):
     def split_inclusive(text, pattern):
         result = []
         last_end = 0
+        min_tokens = 5
         for match in pattern.finditer(text):
-            result.append(text[last_end:match.end()].strip())
+            segment = text[last_end:match.end()].strip()
+            if len(segment.split()) >= min_tokens:
+                result.append(segment)
             last_end = match.end()
         if last_end < len(text):
             tail = text[last_end:].strip()
-            if tail:
+            if tail and len(tail.split()) >= min_tokens:
                 result.append(tail)
         return result
 
@@ -782,7 +785,7 @@ def get_sentences(text, lang, tts_engine):
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         hard_list = []
         for s in sml_list:
-            if s == TTS_SML['pause']:
+            if s == TTS_SML['pause'] or TTS_SML['break']:
                 hard_list.append(s)
             else:
                 parts = split_inclusive(s, pattern)
@@ -798,20 +801,13 @@ def get_sentences(text, lang, tts_engine):
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         soft_list = []
         for s in hard_list:
-            if s == TTS_SML['pause']:
+            if s == TTS_SML['pause'] or TTS_SML['break']:
                 soft_list.append(s)
             elif len(s) > max_chars:
                 parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
                 if parts:
                     buffer = ''
                     for part in parts:
-                        # always treat pauses as their own chunk
-                        if part == TTS_SML['pause']:
-                            if buffer:
-                                soft_list.append(buffer)
-                                buffer = ''
-                            soft_list.append(part)
-                            continue
                         if not buffer:
                             buffer = part
                             continue
@@ -1117,6 +1113,122 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         )
         text = re.sub(ambiguous_pattern, replace_ambiguous, text)
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
+    return text
+    
+def roman2number(text, lang, re_non_ws, re_title_num, re_punct, re_insert):
+    if re_non_ws.search(text):
+        m = re_title_num.match(text)
+        if m:
+            num = m.group(1)
+            if num.isdigit() or (set(num) <= set("IVXLCDM")):
+                if not re_punct.match(text):
+                    text = re_insert.sub(r'\1 — ', text)
+    # heck for a standalone Roman numeral + dot or dash
+    stripped = text.strip()
+    m = re.fullmatch(r'(?i)([IVXLCDM]+)([.-])', stripped)
+    if m:
+        roman, sep = m.group(1), m.group(2)
+        # convert
+        try:
+            roman_map = {
+                'I':1,'V':5,'X':10,'L':50,'C':100,
+                'D':500,'M':1000,
+                'IV':4,'IX':9,'XL':40,'XC':90,
+                'CD':400,'CM':900
+            }
+            i = 0
+            num = 0
+            s = roman.upper()
+            while i < len(s):
+                if i+1 < len(s) and s[i:i+2] in roman_map:
+                    num += roman_map[s[i:i+2]]
+                    i += 2
+                else:
+                    num += roman_map.get(s[i], 0)
+                    i += 1
+            if num > 0:
+                return f"{num}{sep}"
+        except Exception:
+            pass
+
+    # Helper: convert a pure Roman string to int or return original
+    def to_num(s):
+        try:
+            roman_map = {
+                'I':1,'V':5,'X':10,'L':50,'C':100,
+                'D':500,'M':1000,
+                'IV':4,'IX':9,'XL':40,'XC':90,
+                'CD':400,'CM':900
+            }
+            i = 0
+            num = 0
+            s_up = s.upper()
+            while i < len(s_up):
+                if i+1 < len(s_up) and s_up[i:i+2] in roman_map:
+                    num += roman_map[s_up[i:i+2]]
+                    i += 2
+                else:
+                    num += roman_map.get(s_up[i], 0)
+                    i += 1
+            return num if num > 0 else s
+        except Exception:
+            return s
+
+    # Chapter‐word + Roman
+    def to_match(m):
+        cw, rn = m.group(1), m.group(2)
+        val = to_num(rn.upper())
+        return f"{cw.capitalize()} {val}; " if isinstance(val, int) else m.group(0)
+
+    # Trailing‐period at start‐of‐line
+    def clean_numbers(m):
+        raw = m.group(0)           # e.g. "IV..."
+        core = re.sub(r'[^IVXLCDM]', '', raw.upper())
+        sep  = raw[len(core):]     # the dots
+        val  = to_num(core)
+        return f"{val}{sep}" if isinstance(val, int) else raw
+
+    # Bare Roman at start‐of‐line + "." or "-"
+    def clean_start(m):
+        raw   = m.group(0)         # e.g. "VI - "
+        core  = re.sub(r'[^IVXLCDM]', '', raw.upper())
+        sep   = raw[len(core):]    # the ". " or " - "
+        val   = to_num(core)
+        return f"{val}{sep}" if isinstance(val, int) else raw
+
+    # Convert ALL ALL-UPPERCASE Roman numerals as whole words anywhere in text
+    def bare_roman(m):
+        roman = m.group(0)
+        if roman.isupper():
+            val = to_num(roman)
+            return str(val) if isinstance(val, int) else roman
+        return roman
+
+    words = chapter_word_mapping.get(lang, [])
+    wp = "|".join(re.escape(w) for w in words) or r'(?!x)x'  # if empty, use impossible pattern
+    p1 = re.compile(
+        rf'\b({wp})\s+(?=[IVXLCDM])'
+        r'((?:M{0,3})(?:CM|CD|D?C{0,3})'
+        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\b',
+        re.IGNORECASE
+    )
+    p2 = re.compile(
+        r'(?m)^(?=[IVXLCDM])'
+        r'(?:M{0,3})(?:CM|CD|D?C{0,3})'
+        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})\.+',
+        re.IGNORECASE
+    )
+    p3 = re.compile(
+        r'(?m)^(?=[IVXLCDM])'
+        r'(?:M{0,3})(?:CM|CD|D?C{0,3})'
+        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})'
+        r'(?P<sep>\.|\s*-\s*)',
+        re.IGNORECASE
+    )
+    text = p1.sub(to_match,         text)
+    text = p2.sub(clean_numbers,    text)
+    text = p3.sub(clean_start,      text)      
+    text = re.sub(r'\b[IVXLCDM]{2,}\b', bare_roman, text)
     return text
 
 def filter_sml(text):
@@ -1648,122 +1760,6 @@ def combine_audio_chapters(session):
     except Exception as e:
         DependencyError(e)
         return False
-
-def roman2number(text, lang, re_non_ws, re_title_num, re_punct, re_insert):
-    if re_non_ws.search(text):
-        m = re_title_num.match(text)
-        if m:
-            num = m.group(1)
-            if num.isdigit() or (set(num) <= set("IVXLCDM")):
-                if not re_punct.match(text):
-                    text = re_insert.sub(r'\1 — ', text)
-    # heck for a standalone Roman numeral + dot or dash
-    stripped = text.strip()
-    m = re.fullmatch(r'(?i)([IVXLCDM]+)([.-])', stripped)
-    if m:
-        roman, sep = m.group(1), m.group(2)
-        # convert
-        try:
-            roman_map = {
-                'I':1,'V':5,'X':10,'L':50,'C':100,
-                'D':500,'M':1000,
-                'IV':4,'IX':9,'XL':40,'XC':90,
-                'CD':400,'CM':900
-            }
-            i = 0
-            num = 0
-            s = roman.upper()
-            while i < len(s):
-                if i+1 < len(s) and s[i:i+2] in roman_map:
-                    num += roman_map[s[i:i+2]]
-                    i += 2
-                else:
-                    num += roman_map.get(s[i], 0)
-                    i += 1
-            if num > 0:
-                return f"{num}{sep}"
-        except Exception:
-            pass
-
-    # Helper: convert a pure Roman string to int or return original
-    def to_num(s):
-        try:
-            roman_map = {
-                'I':1,'V':5,'X':10,'L':50,'C':100,
-                'D':500,'M':1000,
-                'IV':4,'IX':9,'XL':40,'XC':90,
-                'CD':400,'CM':900
-            }
-            i = 0
-            num = 0
-            s_up = s.upper()
-            while i < len(s_up):
-                if i+1 < len(s_up) and s_up[i:i+2] in roman_map:
-                    num += roman_map[s_up[i:i+2]]
-                    i += 2
-                else:
-                    num += roman_map.get(s_up[i], 0)
-                    i += 1
-            return num if num > 0 else s
-        except Exception:
-            return s
-
-    # Chapter‐word + Roman
-    def to_match(m):
-        cw, rn = m.group(1), m.group(2)
-        val = to_num(rn.upper())
-        return f"{cw.capitalize()} {val}; " if isinstance(val, int) else m.group(0)
-
-    # Trailing‐period at start‐of‐line
-    def clean_numbers(m):
-        raw = m.group(0)           # e.g. "IV..."
-        core = re.sub(r'[^IVXLCDM]', '', raw.upper())
-        sep  = raw[len(core):]     # the dots
-        val  = to_num(core)
-        return f"{val}{sep}" if isinstance(val, int) else raw
-
-    # Bare Roman at start‐of‐line + "." or "-"
-    def clean_start(m):
-        raw   = m.group(0)         # e.g. "VI - "
-        core  = re.sub(r'[^IVXLCDM]', '', raw.upper())
-        sep   = raw[len(core):]    # the ". " or " - "
-        val   = to_num(core)
-        return f"{val}{sep}" if isinstance(val, int) else raw
-
-    # Convert ALL ALL-UPPERCASE Roman numerals as whole words anywhere in text
-    def bare_roman(m):
-        roman = m.group(0)
-        if roman.isupper():
-            val = to_num(roman)
-            return str(val) if isinstance(val, int) else roman
-        return roman
-
-    words = chapter_word_mapping.get(lang, [])
-    wp = "|".join(re.escape(w) for w in words) or r'(?!x)x'  # if empty, use impossible pattern
-    p1 = re.compile(
-        rf'\b({wp})\s+(?=[IVXLCDM])'
-        r'((?:M{0,3})(?:CM|CD|D?C{0,3})'
-        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3}))\b',
-        re.IGNORECASE
-    )
-    p2 = re.compile(
-        r'(?m)^(?=[IVXLCDM])'
-        r'(?:M{0,3})(?:CM|CD|D?C{0,3})'
-        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})\.+',
-        re.IGNORECASE
-    )
-    p3 = re.compile(
-        r'(?m)^(?=[IVXLCDM])'
-        r'(?:M{0,3})(?:CM|CD|D?C{0,3})'
-        r'(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})'
-        r'(?P<sep>\.|\s*-\s*)',
-        re.IGNORECASE
-    )
-    text = p1.sub(to_match,         text)
-    text = p2.sub(clean_numbers,    text)
-    text = p3.sub(clean_start,      text)      
-    text = re.sub(r'\b[IVXLCDM]{2,}\b', bare_roman, text)
-    return text
 
 def delete_unused_tmp_dirs(web_dir, days, session):
     dir_array = [
