@@ -686,9 +686,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         text = text.translate(specialchars_remove_table)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
         # Ensure space before and after punctuation_list
-        #pattern_space = re.escape(''.join(punctuation_list))
-        #punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
-        #text = re.sub(punctuation_pattern_space, r' \1', text)
+        pattern_space = re.escape(''.join(punctuation_list))
+        punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
+        text = re.sub(punctuation_pattern_space, r' \1', text)
+        if tts_engine in [TTS_ENGINES['YOURTTS']]:
+            text = text.replace('—', ' - ')
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         error = f'filter_chapter() error: {e}'
@@ -782,7 +784,7 @@ def get_sentences(text, lang, tts_engine):
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         hard_list = []
         for s in sml_list:
-            if s in [TTS_SML['break'], TTS_SML['pause']]:
+            if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
                 hard_list.append(s)
             else:
                 parts = split_inclusive(s, pattern)
@@ -798,7 +800,7 @@ def get_sentences(text, lang, tts_engine):
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
         soft_list = []
         for s in hard_list:
-            if s in [TTS_SML['break'], TTS_SML['pause']]:
+            if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
                 soft_list.append(s)
             elif len(s) > max_chars:
                 parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
@@ -842,13 +844,31 @@ def get_sentences(text, lang, tts_engine):
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
+            pre_list = []
+            for s in soft_list:
+                if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
+                    pre_list.append(s)
+                else:
+                    words = s.split(' ')
+                    text_part = words[0]
+                    for w in words[1:]:
+                        if len(text_part) + 1 + len(w) <= max_chars:
+                            text_part += ' ' + w
+                        else:
+                            pre_list.append(text_part.strip())
+                            text_part = w
+                    if text_part:
+                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
+                        if not any(ch.isalnum() for ch in cleaned):
+                            continue
+                        pre_list.append(text_part)
             re_non_ws = re.compile(r'[^\W_]')
             re_title_num = re.compile(r'^((?=[IVXLCDM])(?:M{0,3})(?:CM|CD|D?C{0,3})?(?:XC|XL|L?X{0,3})?(?:IX|IV|V?I{0,3})|\d+)(?=\s|$)')
             re_punct = re.compile(r'^([IVXLCDM\d]+)[\.,:;]')
             re_insert = re.compile(r'^([IVXLCDM\d]+)')
             sentences = [
                 roman2number(s, lang, re_non_ws, re_title_num, re_punct, re_insert) if len(s) <= 50 else s
-                for s in soft_list
+                for s in pre_list
             ]
             return sentences
     except Exception as e:
