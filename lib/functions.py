@@ -2468,8 +2468,8 @@ def web_interface(args, ctx):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
-        #gr_conversion_progress = gr.Textbox(elem_id='gr_conversion_progress', label='Progress', interactive=True)
-        gr_conversion_progress = gr.Progress()
+        gr_progress = gr.Progress()
+        gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=True)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
@@ -3450,9 +3450,9 @@ def web_interface(args, ctx):
             inputs=[gr_output_split_hours_list, gr_session],
             outputs=None
         )
-        gr_conversion_progress.change(
+        gr_progress_box.change(
             fn=None,
-            inputs=[gr_conversion_progress],
+            inputs=[gr_progress_box],
             outputs=[],
             js='(val) => { document.title = val; }'
         )
@@ -3550,7 +3550,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours_list
             ],
-            outputs=[gr_conversion_progress]
+            outputs=[gr_progress_box]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
@@ -3656,12 +3656,15 @@ def web_interface(args, ctx):
                         };
                     }
                     if(typeof window.tab_progress !== 'function'){
-                        const box = document.getElementById('gr_conversion_progress');
+                        const box = document.getElementById('gr_progress_box');
                         if (!box || window.__titleSync) return;
                         window.__titleSync = true;
                         window.tab_progress = ()=>{
                             const val = box.value ?? box.textContent ?? "";
-                            if (val) { document.title = val; }
+                            console.log('------------',val);
+                            if (val){
+                                document.title = val; 
+                            }
                         };
                         // Observe programmatic changes
                         new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
