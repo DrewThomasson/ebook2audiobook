@@ -1240,7 +1240,7 @@ def convert_chapters2audio(session):
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
-        progress_bar = gr.Progress(track_tqdm=False) if is_gui_process else None
+        #progress_bar = gr.Progress(track_tqdm=False) if is_gui_process else None
         tts_manager = TTSManager(session)
         if not tts_manager:
             error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
@@ -1306,12 +1306,13 @@ def convert_chapters2audio(session):
                         if success:
                             total_progress = (t.n + 1) / total_iterations
                             is_sentence = sentence.strip() not in TTS_SML.values()
-                            if progress_bar is not None:
-                                progress_bar(total_progress)
+                            #if progress_bar is not None:
+                            #    progress_bar(total_progress)
                             percentage = total_progress * 100
                             t.set_description(f'{percentage:.2f}%')
                             msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
+                            yield total_progress
                         else:
                             return False
                     if sentence.strip() not in TTS_SML.values():
@@ -2455,7 +2456,8 @@ def web_interface(args, ctx):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
-        gr_conversion_progress = gr.Textbox(elem_id='gr_conversion_progress', label='Progress', interactive=True)
+        #gr_conversion_progress = gr.Textbox(elem_id='gr_conversion_progress', label='Progress', interactive=True)
+        gr_conversion_progress = gr.Progress()
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
