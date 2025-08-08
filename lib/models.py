@@ -40,18 +40,7 @@ default_engine_settings = {
         "samplerate": 22050,
         "files": ['model.onnx', 'config.json'],
         "voices": {
-            "en_US-lessac-medium": "Lessac (American English)",
-            "en_US-amy-medium": "Amy (American English)",
-            "en_US-ljspeech-medium": "LJ Speech (American English)",
-            "en_GB-alba-medium": "Alba (British English)",
-            "de_DE-karlsson-medium": "Karlsson (German)",
-            "es_ES-mms-medium": "MMS (Spanish)",
-            "fr_FR-mls-medium": "MLS (French)",
-            "it_IT-mms-medium": "MMS (Italian)",
-            "ru_RU-mms-medium": "MMS (Russian)",
-            "ja_JP-mms-medium": "MMS (Japanese)",
-            "ko_KR-mms-medium": "MMS (Korean)",
-            "zh_CN-mms-medium": "MMS (Chinese)"
+            "Default": "Default",
         },
         "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 4}
     },

@@ -2828,6 +2828,23 @@ def web_interface(args, ctx):
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
+
+                # Ensure session['fine_tuned'] is valid for the current engine and get a safe default_voice_path
+                engine = session.get('tts_engine')
+                engine_models = models.get(engine, {}) or {}
+                ft = session.get('fine_tuned')
+                if ft not in engine_models:
+                    if 'internal' in engine_models:
+                        ft = 'internal'
+                    elif engine_models:
+                        ft = sorted(engine_models.keys())[0]
+                    else:
+                        ft = None
+                    session['fine_tuned'] = ft
+                default_voice_path = None
+                if ft and ft in engine_models:
+                    default_voice_path = engine_models[ft].get('voice')
+
                 lang_dir = session['language'] if session['language'] != 'con' else 'con-'  # Bypass Windows CON reserved name
                 file_pattern = "*.wav"
                 eng_options = []
@@ -2869,21 +2886,26 @@ def web_interface(args, ctx):
                 if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
                     voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                 else:
-                    voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
-                default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
+                    voice_options = sorted(voice_options, key=lambda x: x[0].lower())
+
+                # Pick a voice (or keep None) safely
                 if session['voice'] is None:
-                    if voice_options[0][1] is not None:
-                        default_name = Path(default_voice_path).stem
-                        for name, value in voice_options:
-                            if name == default_name:
-                                session['voice'] = value
-                                break
-                        else:
-                            values = [v for _, v in voice_options]
-                            if default_voice_path in values:
-                                session['voice'] = default_voice_path
+                    if voice_options and voice_options[0][1] is not None:
+                        if default_voice_path:
+                            default_name = Path(default_voice_path).stem
+                            for name, value in voice_options:
+                                if name == default_name:
+                                    session['voice'] = value
+                                    break
                             else:
-                                session['voice'] = voice_options[0][1]
+                                values = [v for _, v in voice_options]
+                                if default_voice_path in values:
+                                    session['voice'] = default_voice_path
+                                else:
+                                    session['voice'] = voice_options[0][1]
+                        else:
+                            session['voice'] = voice_options[0][1]
+                    # else: first option is 'Default' (None) or list is empty -> keep None
                 else:
                     current_voice_name = os.path.splitext(os.path.basename(session['voice']))[0]
                     current_voice_path = next(
@@ -2892,6 +2914,7 @@ def web_interface(args, ctx):
                     if current_voice_path:
                         session['voice'] = current_voice_path
                     else:
+                        # fallback to engine default (may be None)
                         session['voice'] = default_voice_path
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
@@ -3011,9 +3034,26 @@ def web_interface(args, ctx):
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
             session['tts_engine'] = engine
-            default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
+
+            # Ensure session['fine_tuned'] is valid for the newly selected engine and get a safe default_voice_path
+            engine_models = models.get(session['tts_engine'], {}) or {}
+            ft = session.get('fine_tuned')
+            if ft not in engine_models:
+                if 'internal' in engine_models:
+                    ft = 'internal'
+                elif engine_models:
+                    ft = sorted(engine_models.keys())[0]
+                else:
+                    ft = None
+                session['fine_tuned'] = ft
+            default_voice_path = None
+            if ft and ft in engine_models:
+                default_voice_path = engine_models[ft].get('voice')
+
+            # If the engine's default voice is None, keep session['voice'] as None to signal "no cloning"
             if default_voice_path is None:
-                session['voice'] = default_voice_path
+                session['voice'] = None
+
             bark_visible = False
             if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                 visible_custom_model = True
