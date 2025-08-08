@@ -542,7 +542,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             stanza.download(session['language_iso1'])
             stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
         is_num2words_compat = get_num2words_compat(session['language_iso1'])
-        msg = 'Analyzing numbers, maths signs and dates to convert in words...'
+        msg = 'Analyzing numbers, maths signs, dates and time to convert in words...'
         print(msg)
         for doc in all_docs:
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
