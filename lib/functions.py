@@ -700,27 +700,12 @@ def get_sentences(text, lang, tts_engine):
     def split_inclusive(text, pattern):
         result = []
         last_end = 0
-        buffer = ""
-        min_tokens = 5
         for match in pattern.finditer(text):
-            segment = text[last_end:match.end()].strip()
-            if buffer:
-                segment = buffer + " " + segment
-                buffer = ""
-            if len(segment.split()) >= min_tokens:
-                result.append(segment)
-            else:
-                buffer = segment  # accumulate until next
+            result.append(text[last_end:match.end()].strip())
             last_end = match.end()
-        tail = text[last_end:].strip()
-        if buffer:
-            tail = buffer + " " + tail if tail else buffer
-        if tail and len(tail.split()) >= min_tokens:
-            result.append(tail)
-        elif tail:
-            if result:
-                result[-1] += " " + tail
-            else:
+        if last_end < len(text):
+            tail = text[last_end:].strip()
+            if tail:
                 result.append(tail)
         return result
 
@@ -800,13 +785,27 @@ def get_sentences(text, lang, tts_engine):
             if s == TTS_SML['pause'] or TTS_SML['break']:
                 hard_list.append(s)
             else:
-                parts = split_inclusive(s, pattern)
+                parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
                 if parts:
-                    for text_part in parts:
-                        text_part = text_part.strip()
-                        if text_part:
-                            hard_list.append(text_part)
+                    buffer = ''
+                    for part in parts:
+                        if not buffer:
+                            buffer = part
+                            continue
+                        if len(buffer.split()) < min_tokens:
+                            buffer = buffer + ' ' + part
+                        else:
+                            hard_list.append(buffer)
+                            buffer = part
+                    if buffer:
+                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
+                        if not any(ch.isalnum() for ch in cleaned):
+                            continue
+                        hard_list.append(buffer)
                 else:
+                    cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
+                    if not any(ch.isalnum() for ch in cleaned):
+                        continue
                     hard_list.append(s)
         # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
