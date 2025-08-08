@@ -774,7 +774,7 @@ class Coqui:
                             speaker_argument = {"speaker": voice_key}
                         with torch.no_grad():
                             audio_sentence = tts.tts(
-                                text=sentence.replace('—', ''),
+                                text=sentence.replace('—', '').strip(),
                                 language=language,
                                 **speaker_argument
                             )
