@@ -1128,20 +1128,37 @@ def roman2number(text):
     def repl_heading(m):
         val = to_int(m.group(1))
         return f"{val}{m.group(2)}{m.group(3)}" if isinstance(val, int) else m.group(0)
-    text = re.sub(r'^([IVXLCDM]+)([.-])(\s+)', repl_heading, text)
+    # Heading numerals like "IV." or "X-  "
+    text = re.sub(
+        r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
+        repl_heading,
+        text,
+        flags=re.MULTILINE
+    )
 
     def repl_standalone(m):
         val = to_int(m.group(1))
         return f"{val}{m.group(2)}" if isinstance(val, int) else m.group(0)
-    text = re.sub(r'^([IVXLCDM]+)([.-])$', repl_standalone, text)
+    # Lines that are **just** a Roman plus dot/dash: e.g. "XII."
+    text = re.sub(
+        r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
+        repl_standalone,
+        text,
+        flags=re.MULTILINE
+    )
 
     def repl_word(m):
-        val = to_int(m.group(0))
+        val = to_int(m.group(1))
         return str(val) if isinstance(val, int) else m.group(0)
-    text = re.sub(r'\b[IVXLCDM]{2,}\b', repl_word, text)
+    # Only match true standalone runs of I/V/X/L/C/D/M (length ≥2),
+    # with no ASCII letter or digit on either side:
+    text = re.sub(
+        r'(?<![0-9A-Za-z])([IVXLCDM]{2,})(?![0-9A-Za-z])',
+        repl_word,
+        text
+    )
 
     return text
-
 
 def filter_sml(text):
     for key, value in TTS_SML.items():
