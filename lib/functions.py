@@ -577,7 +577,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                             for inner in walk(child):
                                 return_data = True
                                 yield inner
-                            # Only add break or pause if something textual/structural came out
                             if return_data:
                                 if name in break_tags:
                                     yield ("break", TTS_SML['break'])
@@ -769,9 +768,6 @@ def get_sentences(text, lang, tts_engine):
     try:
         max_chars = language_mapping[lang]['max_chars'] - 4
         min_tokens = 5
-        # tacotron2 apparently does not like double quotes
-        if tts_engine == TTS_ENGINES['TACOTRON2']:
-            text = text.replace('"', '')
         # List or tuple of tokens that must never be appended to buffer
         sml_tokens = tuple(TTS_SML.values())
         sml_list = re.split(
@@ -804,14 +800,14 @@ def get_sentences(text, lang, tts_engine):
             if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
                 soft_list.append(s)
             elif len(s) > max_chars:
-                parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
+                parts = [p for p in split_inclusive(s, pattern) if p]
                 if parts:
                     buffer = ''
                     for part in parts:
                         if not buffer:
                             buffer = part
                             continue
-                        if len(buffer.split()) < min_tokens:
+                        if len(buffer) < min_tokens:
                             buffer = buffer + ' ' + part
                         else:
                             buffer = buffer.strip()
@@ -843,7 +839,7 @@ def get_sentences(text, lang, tts_engine):
             result = []
             for s in soft_list:
                 if s in [TTS_SML['break'], TTS_SML['pause']]:
-                    result.append(s.strip())
+                    result.append(s)
                 else:
                     tokens = segment_ideogramms(s)
                     if isinstance(tokens, list):
@@ -865,9 +861,10 @@ def get_sentences(text, lang, tts_engine):
                         if len(text_part) + 1 + len(w) <= max_chars:
                             text_part += ' ' + w
                         else:
-                            sentences.append(text_part)
+                            text_part = text_part.strip()
+                            if text_part:
+                                sentences.append(text_part)
                             text_part = w
-                    text_part = text_part.strip()
                     if text_part:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
