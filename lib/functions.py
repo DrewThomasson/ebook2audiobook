@@ -686,9 +686,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         text = text.translate(specialchars_remove_table)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
         # Ensure space before and after punctuation_list
-        pattern_space = re.escape(''.join(punctuation_list))
-        punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
-        text = re.sub(punctuation_pattern_space, r' \1', text)
+        #pattern_space = re.escape(''.join(punctuation_list))
+        #punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
+        #text = re.sub(punctuation_pattern_space, r' \1', text)
         if tts_engine in [TTS_ENGINES['YOURTTS']]:
             text = text.replace('—', ' - ')
         return get_sentences(text, lang, tts_engine)
@@ -1300,7 +1300,7 @@ def convert_chapters2audio(session):
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
-        progress_bar = gr.Progress(track_tqdm=True) if is_gui_process else None
+        progress_bar = gr.Progress(track_tqdm=False) if is_gui_process else None
         tts_manager = TTSManager(session)
         if not tts_manager:
             error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
@@ -2515,7 +2515,7 @@ def web_interface(args, ctx):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
-        gr_conversion_progress = gr.Textbox(elem_id='gr_conversion_progress', label='Progress')
+        gr_conversion_progress = gr.Textbox(elem_id='gr_conversion_progress', label='Progress', interactive=True)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
@@ -3498,7 +3498,9 @@ def web_interface(args, ctx):
         )
         gr_conversion_progress.change(
             fn=None,
-            js='()=>window.tab_progress("43.23% 23/4532")'
+            inputs=[gr_conversion_progress],
+            outputs=[],
+            js='(val) => { document.title = val; }'
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
@@ -3700,9 +3702,17 @@ def web_interface(args, ctx):
                         };
                     }
                     if(typeof window.tab_progress !== 'function'){
-                        window.tab_progress = (val)=>{
-                            document.title = val;
+                        const box = document.getElementById('gr_conversion_progress');
+                        if (!box || window.__titleSync) return;
+                        window.__titleSync = true;
+                        window.tab_progress = ()=>{
+                            const val = box.value ?? box.textContent ?? "";
+                            if (val) { document.title = val; }
                         };
+                        // Observe programmatic changes
+                        new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
+                        // Also catch user edits
+                        box.addEventListener("input", tab_progress);
                     }
                     // Now safely call it after the audio element is available
                     const tryRun = ()=>{
