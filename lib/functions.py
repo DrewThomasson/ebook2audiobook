@@ -781,7 +781,7 @@ def get_sentences(text, lang, tts_engine):
         sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
         # Split with punctuation_split_hard_set
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
-        pattern = re.compile(rf"(.*?(?:{pattern_split}){rf'{''.join(punctuation_list.set)}'})(?=\s|$)", re.DOTALL)
+        pattern = re.compile(rf"(.*?(?:{pattern_split}){''.join(punctuation_list.set)})(?=\s|$)", re.DOTALL)
         hard_list = []
         for s in sml_list:
             if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
