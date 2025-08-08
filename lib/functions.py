@@ -735,7 +735,7 @@ def get_sentences(text, lang, tts_engine):
                     elif lang in ['tha', 'lao', 'mya', 'khm']:
                         result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
                     else:
-                        result.append(segment)
+                        result.append(segment.strip())
             return result
         except Exception as e:
             DependencyError(e)
@@ -793,6 +793,8 @@ def get_sentences(text, lang, tts_engine):
                         if text_part:
                             hard_list.append(text_part)
                 else:
+                    s = s.strip()
+                    if s:
                     hard_list.append(s)
         # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
@@ -812,34 +814,43 @@ def get_sentences(text, lang, tts_engine):
                         if len(buffer.split()) < min_tokens:
                             buffer = buffer + ' ' + part
                         else:
-                            soft_list.append(buffer)
+                            buffer = buffer.strip()
+                            if buffer:
+                                soft_list.append(buffer)
                             buffer = part
                     if buffer:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
-                        soft_list.append(buffer)
+                        buffer = buffer.strip()
+                        if buffer:
+                            soft_list.append(buffer)
                 else:
                     cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                     if not any(ch.isalnum() for ch in cleaned):
                         continue
-                    soft_list.append(s)
+                    s = s.strip()
+                    if s:
+                        soft_list.append(s)
             else:
                 cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                 if not any(ch.isalnum() for ch in cleaned):
                     continue
-                soft_list.append(s)
+                s = s.strip()
+                if s:
+                    soft_list.append(s)
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
                 if s in [TTS_SML['break'], TTS_SML['pause']]:
-                    result.append(s)
+                    result.append(s.strip())
                 else:
                     tokens = segment_ideogramms(s)
                     if isinstance(tokens, list):
                         result.extend([t for t in tokens if t.strip()])
                     else:
-                        if tokens.strip():
+                        tokens = tokens.strip()
+                        if tokens:
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
@@ -854,8 +865,9 @@ def get_sentences(text, lang, tts_engine):
                         if len(text_part) + 1 + len(w) <= max_chars:
                             text_part += ' ' + w
                         else:
-                            sentences.append(text_part.strip())
+                            sentences.append(text_part)
                             text_part = w
+                    text_part = text_part.strip()
                     if text_part:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
