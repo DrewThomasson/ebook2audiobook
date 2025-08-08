@@ -770,11 +770,9 @@ def get_sentences(text, lang, tts_engine):
         min_tokens = 5
         # List or tuple of tokens that must never be appended to buffer
         sml_tokens = tuple(TTS_SML.values())
-        sml_list = re.split(
-            rf"({'|'.join(map(re.escape, sml_tokens))})", text
-        )
+        sml_list = re.split(rf"({'|'.join(map(re.escape, sml_tokens))})", text)
         sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
-        # Split with punctuation_split_hard_set
+        print(f'sml_list: {sml_list}')
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}){''.join(punctuation_list_set)})(?=\s|$)", re.DOTALL)
         hard_list = []
@@ -792,6 +790,7 @@ def get_sentences(text, lang, tts_engine):
                     s = s.strip()
                     if s:
                         hard_list.append(s)
+        print(f'hard_list: {hard_list}')
         # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
@@ -835,6 +834,7 @@ def get_sentences(text, lang, tts_engine):
                 s = s.strip()
                 if s:
                     soft_list.append(s)
+        print(f'soft_list: {soft_list}')
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
@@ -870,6 +870,7 @@ def get_sentences(text, lang, tts_engine):
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         sentences.append(text_part)
+            print(f'sentences: {sentences}')
             return sentences
     except Exception as e:
         error = f'get_sentences() error: {e}'
