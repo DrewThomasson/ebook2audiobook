@@ -3559,7 +3559,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours_list
             ],
-            outputs=[gr_progress_bar]
+            outputs=[gr_progress_box]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
