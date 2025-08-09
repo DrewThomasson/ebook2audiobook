@@ -1973,7 +1973,7 @@ def convert_ebook(args, ctx=None):
                                         msg = 'Conversion successful. Combining sentences and chapters...'
                                         show_alert({"type": "info", "msg": msg})
                                         exported_files = combine_audio_chapters(session)               
-                                        if len(exported_files) > 0:
+                                        if exported_files is not None:
                                             chapters_dirs = [
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
