@@ -3610,22 +3610,14 @@ def web_interface(args, ctx):
                     console.log('gr_vtt_data.change triggered');
                     if(data){
                         console.log('gr_vtt_data data ok');
-                        const vtt_el = document.querySelector('#gr_vtt_data');
-                        if(vtt_el){
-                            console.log('vtt_el ok');
-                            const pre = vtt_el.querySelector('pre');
-                            const txt = pre ? pre.textContent.trim() : '';
-                            try {
-                                const parsed = txt ? JSON.parse(txt) : null;
-                                window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
-                                console.log(window.gr_vtt_data);
-                            } catch (e) {
-                                window.gr_vtt_data = [];
-                                console.log('window.gr_vtt_data failed');
-                            }                            
-                        }else{
-                            console.log('vtt_el not found');
-                        }
+                        try {
+                            const parsed = JSON.parse(data);
+                            window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
+                            console.log(window.gr_vtt_data);
+                        } catch (e) {
+                            window.gr_vtt_data = [];
+                            console.log('window.gr_vtt_data failed');
+                        }                            
                     }
                 }
             """  
