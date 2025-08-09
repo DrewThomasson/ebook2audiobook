@@ -3724,45 +3724,45 @@ def web_interface(args, ctx):
                                 if (!Array.isArray(window.gr_vtt_data)) window.gr_vtt_data = [];
                                 init();
                             };
-                        } catch (e) {
-                            console.log('custom js init error:', e);
-                        }
-                    }
-
-                    // Now safely call it after the audio element is available
-                    function tryRun() {
-                        var audio = document.querySelector('#gr_audiobook_player audio');
-                        if (!audio) {
-                            setTimeout(tryRun, 100);
-                            return;
                         }
 
-                        if (typeof window.redraw_elements === 'function') {
-                            try { 
-                                window.redraw_elements(); 
-                            } catch (e) { 
-                                console.log('redraw_elements error:', e); 
-                            }
-                        }
-
-                        if (!window.__listen_vtt_started) {
-                            if (typeof window.listen_vtt === 'function') {
-                                window.__listen_vtt_started = true;
-                                window.listen_vtt();
-                            } else {
-                                setTimeout(tryRun, 50);
+                        // Now safely call it after the audio element is available
+                        function tryRun() {
+                            var audio = document.querySelector('#gr_audiobook_player audio');
+                            if (!audio) {
+                                setTimeout(tryRun, 100);
                                 return;
                             }
-                        }
-                    }
-                    tryRun();
 
-                    // Return localStorage data if needed
-                    try{
-                        const data = window.localStorage.getItem('data');
-                        if (data) return JSON.parse(data);
-                    }catch(e){
-                        console.log('JSON parse error:', e);
+                            if (typeof window.redraw_elements === 'function') {
+                                try { 
+                                    window.redraw_elements(); 
+                                } catch (e) { 
+                                    console.log('redraw_elements error:', e); 
+                                }
+                            }
+
+                            if (!window.__listen_vtt_started) {
+                                if (typeof window.listen_vtt === 'function') {
+                                    window.__listen_vtt_started = true;
+                                    window.listen_vtt();
+                                } else {
+                                    setTimeout(tryRun, 50);
+                                    return;
+                                }
+                            }
+                        }
+                        tryRun();
+
+                        // Return localStorage data if needed
+                        try{
+                            const data = window.localStorage.getItem('data');
+                            if (data) return JSON.parse(data);
+                        }catch(e){
+                            console.log('JSON parse error:', e);
+                        }
+                    }catch (e){
+                        console.log('custom js init error:', e);
                     }
                     return null;
                 }
