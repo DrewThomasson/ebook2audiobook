@@ -29,15 +29,7 @@ import urllib.request
 import uuid
 import zipfile
 
-import ebooklib
-import gradio as gr
-import psutil
-import pymupdf4llm
-import regex as re
-import requests
-import stanza
-import torch
-import uvicorn
+import ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn, webvtt
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -2499,6 +2491,41 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
+        def load_audio_cues(path: str | None):
+            if not path:
+                return None
+            vtt_path = path
+            if not vtt_path.lower().endswith(".vtt"):
+                vtt_path = os.path.splitext(path)[0] + ".vtt"
+            if not os.path.exists(vtt_path):
+                return None
+
+            def to_seconds(ts: str) -> float:
+                # Supports H:MM:SS.mmm or MM:SS.mmm
+                parts = ts.split(":")
+                if len(parts) == 2:
+                    m, s = parts
+                    s, ms = (s.split(".") + ["0"])[:2]
+                    return int(m) * 60 + int(s) + int(ms) / 1000
+                elif len(parts) == 3:
+                    h, m, s = parts
+                    s, ms = (s.split(".") + ["0"])[:2]
+                    return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000
+                else:
+                    return 0.0
+
+            cues = []
+            try:
+                for cue in webvtt.read(vtt_path):
+                    cues.append({
+                        "start": to_seconds(cue.start),
+                        "end":   to_seconds(cue.end),
+                        "text":  cue.text.replace("\n", " ")
+                    })
+                return cues
+            except Exception:
+                return None
+
         def show_modal(type, msg):
             return f'''
             <style>
@@ -3609,16 +3636,16 @@ def web_interface(args, ctx):
         )
         app.load(
             fn=None,
-            js=r"""
+            js="""
                 ()=>{
                     // Define the global function ONCE
                     if(typeof window.redraw_elements !== 'function'){
-                        window.elColor = '#666666';
+                        window.elColor = '#666666'
                         window.redraw_elements = ()=>{
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
-                                const checkboxes = document.querySelectorAll("input[type='checkbox']");
-                                const radios = document.querySelectorAll("input[type='radio']");
+                                const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
+                                const radios = document.querySelectorAll(\"input[type='radio']\");
                                 const url = new URL(window.location);
                                 const theme = url.searchParams.get('__theme');
                                 let osTheme;
@@ -3630,8 +3657,12 @@ def web_interface(args, ctx):
                                         }
                                         window.elColor = '#fff';
                                     }
-                                    checkboxes.forEach(cb=>{ cb.style.border = '1px solid ' + window.elColor; });
-                                    radios.forEach(cb=>{ cb.style.border = '1px solid ' + window.elColor; });
+                                    checkboxes.forEach(cb=>{
+                                        cb.style.border = '1px solid ' + window.elColor;
+                                    });
+                                    radios.forEach(cb=>{
+                                        cb.style.border = '1px solid ' + window.elColor;
+                                    });
                                 }else{
                                     osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                     if(osTheme){
@@ -3640,8 +3671,12 @@ def web_interface(args, ctx):
                                         }
                                         window.elColor = '#fff';
                                     }
-                                    checkboxes.forEach(cb=>{ cb.style.border = '1px solid ' + window.elColor; });
-                                    radios.forEach(cb=>{ cb.style.border = '1px solid ' + window.elColor; });
+                                    checkboxes.forEach(cb=>{
+                                        cb.style.border = '1px solid ' + window.elColor;
+                                    });
+                                    radios.forEach(cb=>{
+                                        cb.style.border = '1px solid ' + window.elColor;
+                                    });
                                 }
                                 if(audio){
                                     if(!audio.style.transition){
@@ -3654,9 +3689,9 @@ def web_interface(args, ctx):
                             }
                         };
                     }
-
                     if(typeof window.tab_progress !== 'function'){
                         const box = document.getElementById('gr_progress_box');
+                        if (!box || window.__titleSync) return;
                         window.__titleSync = true;
                         window.tab_progress = () => {
                             const val = box?.value || box?.textContent || '';
@@ -3665,117 +3700,22 @@ def web_interface(args, ctx):
                                 document.title = '-------- ' + prct + '--------';
                             }
                         };
-                        if (box){
-                            // Observe programmatic changes
-                            new MutationObserver(window.tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
-                            // Also catch user edits
-                            box.addEventListener('input', window.tab_progress);
-                        }
+                        // Observe programmatic changes
+                        new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
+                        // Also catch user edits
+                        box.addEventListener('input', tab_progress);
                     }
-
-                    // --- VTT cues loader ---
-                    if(!window.__gr_cues_bootstrapped){
-                        window.__gr_cues_bootstrapped = true;
-                        window.gr_audio_cues = [];
-
-                        const toVttUrl = (src)=>{
-                            try{
-                                const u = new URL(src, window.location.origin);
-                                const parts = u.pathname.split('/');
-                                const last = parts.pop() || '';
-                                const dot = last.lastIndexOf('.');
-                                const newLast = (dot === -1 ? last : last.slice(0, dot)) + '.vtt';
-                                parts.push(newLast);
-                                u.pathname = parts.join('/');
-                                return u.toString();
-                            }catch{
-                                src = src || '';
-                                const qIdx = src.indexOf('?') >= 0 ? src.indexOf('?') : src.indexOf('#');
-                                const path = qIdx === -1 ? src : src.slice(0, qIdx);
-                                const suffix = qIdx === -1 ? '' : src.slice(qIdx);
-                                const dot = path.lastIndexOf('.');
-                                const base = dot === -1 ? path : path.slice(0, dot);
-                                return base + '.vtt' + suffix;
-                            }
-                        };
-
-                        const parseVtt = (text)=>{
-                            const lines = text.split(/\r?\n/); // NOTE: because js= is a raw string, this stays a valid regex
-                            const cues = [];
-                            const toSec = (ts)=>{
-                                const [h,m,rest='0'] = ts.split(':');
-                                const [s,ms='0'] = rest.split('.');
-                                return (+h)*3600 + (+m)*60 + (+s) + (+ms)/1000;
-                            };
-                            for(let i=0;i<lines.length;i++){
-                                const line = lines[i].trim();
-                                if(line.includes('-->')){
-                                    const [startRaw,endRaw] = line.split('-->').map(s=>s.trim());
-                                    const buf = [];
-                                    i++;
-                                    while(i<lines.length && lines[i].trim() !== ''){
-                                        buf.push(lines[i].trim());
-                                        i++;
-                                    }
-                                    cues.push({ start: toSec(startRaw), end: toSec(endRaw), text: buf.join(' ') });
-                                }
-                            }
-                            return cues;
-                        };
-
-                        const bindCues = ()=>{
-                            const audio = document.querySelector('#gr_audiobook_player audio');
-                            if(!audio) return;
-
-                            if(!audio.__cues_bound){
-                                audio.__cues_bound = true;
-
-                                const loadVtt = async ()=>{
-                                    const src = audio.currentSrc || audio.src;
-                                    if(!src){ window.gr_audio_cues = []; return; }
-                                    const vttUrl = toVttUrl(src);
-                                    try{
-                                        const res = await fetch(vttUrl, { cache: 'no-store' });
-                                        if(!res.ok){ window.gr_audio_cues = []; return; }
-                                        const text = await res.text();
-                                        window.gr_audio_cues = parseVtt(text);
-                                        console.log(window.gr_audio_cues);
-                                        // window.dispatchEvent(new CustomEvent('audiobookCuesLoaded', { detail: window.gr_audio_cues }));
-                                    }catch(e){
-                                        console.log('VTT fetch error:', e);
-                                        window.gr_audio_cues = [];
-                                    }
-                                };
-
-                                audio.addEventListener('loadedmetadata', loadVtt);
-                                audio.addEventListener('emptied', ()=>{ window.gr_audio_cues = []; });
-
-                                if(audio.currentSrc || audio.src) setTimeout(loadVtt, 0);
-                            }
-                        };
-
-                        const host = document.getElementById('gr_audiobook_player');
-                        if(host){
-                            const obs = new MutationObserver(()=>bindCues());
-                            obs.observe(host, { childList: true, subtree: true });
-                        }
-
-                        // expose so your tryRun can call it
-                        window.__bindCues = bindCues;
-                    }
-
                     // Now safely call it after the audio element is available
                     const tryRun = ()=>{
                         const audio = document.querySelector('#gr_audiobook_player audio');
                         if(audio && typeof window.redraw_elements === 'function'){
                             window.redraw_elements();
-                            if(typeof window.__bindCues === 'function') window.__bindCues();
                         }else{
                             setTimeout(tryRun, 100);
                         }
                     };
                     tryRun();
-
+                    // Return localStorage data if needed
                     try{
                         const data = window.localStorage.getItem('data');
                         if (data) return JSON.parse(data);
@@ -3784,7 +3724,7 @@ def web_interface(args, ctx):
                     }
                     return null;
                 }
-            """,
+                """,
             outputs=[gr_read_data]
         )
     try:
