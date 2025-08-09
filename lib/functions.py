@@ -3249,12 +3249,17 @@ def web_interface(args, ctx):
                 audiobook_options = [
                     (f, os.path.join(session['audiobooks_dir'], str(f)))
                     for f in os.listdir(session['audiobooks_dir'])
+                    if not f.lower().endswith(".vtt")  # exclude VTT files
                 ]
                 audiobook_options.sort(
                     key=lambda x: os.path.getmtime(x[1]),
                     reverse=True
                 )
-                session['audiobook'] = session['audiobook'] if session['audiobook'] in [option[1] for option in audiobook_options] else None
+                session['audiobook'] = (
+                    session['audiobook']
+                    if session['audiobook'] in [option[1] for option in audiobook_options]
+                    else None
+                )
                 if len(audiobook_options) > 0:
                     if session['audiobook'] is not None:
                         return gr.update(choices=audiobook_options, value=session['audiobook'])
