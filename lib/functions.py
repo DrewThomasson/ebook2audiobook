@@ -3670,7 +3670,7 @@ def web_interface(args, ctx):
                         window.__titleSync = true;
                         window.tab_progress = () => {
                             const val = box?.value || box?.textContent || "";
-                            const prct = val.trim().split(" ")[2];
+                            const prct = val.trim().split(" ")[3];
                             if (prct) {
                                 document.title = prct;
                             }
