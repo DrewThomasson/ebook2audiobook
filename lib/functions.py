@@ -3621,83 +3621,142 @@ def web_interface(args, ctx):
             fn=None,
             js="""
                 ()=>{
-                    // Define the global function ONCE
-                    if(typeof window.redraw_elements !== 'function'){
-                        window.redraw_elements = ()=>{
-                            try{
-                                const audio = document.querySelector('#gr_audiobook_player audio');
-                                const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
-                                const radios = document.querySelectorAll(\"input[type='radio']\");
-                                const url = new URL(window.location);
-                                const theme = url.searchParams.get('__theme');
-                                let osTheme;
-                                let audioFilter = '';
-                                let elColor = '#666666';
-                                if(theme){
-                                    if(theme === 'dark'){
-                                        if(audio){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
+                    try{
+                        // Define the global function ONCE
+                        if(typeof window.redraw_elements !== 'function'){
+                            window.redraw_elements = ()=>{
+                                try{
+                                    const audio = document.querySelector('#gr_audiobook_player audio');
+                                    const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
+                                    const radios = document.querySelectorAll(\"input[type='radio']\");
+                                    const url = new URL(window.location);
+                                    const theme = url.searchParams.get('__theme');
+                                    let osTheme;
+                                    let audioFilter = '';
+                                    let elColor = '#666666';
+                                    if(theme){
+                                        if(theme === 'dark'){
+                                            if(audio){
+                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            }
+                                            elColor = '#fff';
                                         }
-                                        elColor = '#fff';
-                                    }
-                                    checkboxes.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + elColor;
-                                    });
-                                    radios.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + elColor;
-                                    });
-                                }else{
-                                    osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-                                    if(osTheme){
-                                        if(audio){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
+                                        checkboxes.forEach(cb=>{
+                                            cb.style.border = '1px solid ' + elColor;
+                                        });
+                                        radios.forEach(cb=>{
+                                            cb.style.border = '1px solid ' + elColor;
+                                        });
+                                    }else{
+                                        osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                                        if(osTheme){
+                                            if(audio){
+                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            }
+                                            elColor = '#fff';
                                         }
-                                        elColor = '#fff';
+                                        checkboxes.forEach(cb=>{
+                                            cb.style.border = '1px solid ' + elColor;
+                                        });
+                                        radios.forEach(cb=>{
+                                            cb.style.border = '1px solid ' + elColor;
+                                        });
                                     }
-                                    checkboxes.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + elColor;
-                                    });
-                                    radios.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + elColor;
-                                    });
-                                }
-                                if(audio){
-                                    if(!audio.style.transition){
-                                        audio.style.transition = 'filter 1s ease';
+                                    if(audio){
+                                        if(!audio.style.transition){
+                                            audio.style.transition = 'filter 1s ease';
+                                        }
+                                        audio.style.filter = audioFilter;
                                     }
-                                    audio.style.filter = audioFilter;
+                                }catch(e){
+                                    console.log('redraw_elements error:', e);
                                 }
-                            }catch(e){
-                                console.log('redraw_elements error:', e);
-                            }
-                        };
-                    }
-                    if(typeof window.tab_progress !== 'function'){
-                        const box = document.getElementById('gr_progress_box');
-                        if (!box || window.__titleSync) return;
-                        window.__titleSync = true;
-                        window.tab_progress = () => {
-                            const val = box?.value || box?.textContent || '';
-                            const prct = val.trim().split(' ')[4];
-                            if(prct && /^\d+(\.\d+)?%$/.test(prct)){
-                                document.title = '-------- ' + prct + '--------';
-                            }
-                        };
-                        // Observe programmatic changes
-                        new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
-                        // Also catch user edits
-                        box.addEventListener('input', tab_progress);
-                    }
-                    // Now safely call it after the audio element is available
-                    const tryRun = ()=>{
-                        const audio = document.querySelector('#gr_audiobook_player audio');
-                        if(audio && typeof window.redraw_elements === 'function'){
-                            window.redraw_elements();
-                        }else{
-                            setTimeout(tryRun, 100);
+                            };
                         }
-                    };
+                        if(typeof window.tab_progress !== 'function'){
+                            const box = document.getElementById('gr_progress_box');
+                            if (!box || window.__titleSync) return;
+                            window.__titleSync = true;
+                            window.tab_progress = () => {
+                                const val = box?.value || box?.textContent || '';
+                                const prct = val.trim().split(' ')[4];
+                                if(prct && /^\d+(\.\d+)?%$/.test(prct)){
+                                    document.title = '-------- ' + prct + '--------';
+                                }
+                            };
+                            // Observe programmatic changes
+                            new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
+                            // Also catch user edits
+                            box.addEventListener('input', tab_progress);
+                        }
+                        // VTT listener
+                        if (typeof window.listen_vtt !== 'function') {
+                            window.listen_vtt = function () {
+                                function init() {
+                                    var vtt_el = document.querySelector('#gr_vtt_data'); // must match elem_id of gr.JSON
+                                    if (!vtt_el) {
+                                        setTimeout(init, 100);
+                                        return;
+                                    }
+
+                                    // Avoid double-binding on rerenders
+                                    if (vtt_el.__vtt_observer_bound) return;
+                                    vtt_el.__vtt_observer_bound = true;
+
+                                    function read() {
+                                        var pre = vtt_el.querySelector('pre');
+                                        var txt = pre ? pre.textContent.trim() : '';
+                                        try {
+                                            var parsed = txt ? JSON.parse(txt) : null;
+                                            window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
+                                        } catch (e) {
+                                            window.gr_vtt_data = [];
+                                        }
+                                    }
+
+                                    // Initial sync and observe updates
+                                    read();
+                                    var obs = new MutationObserver(read);
+                                    obs.observe(vtt_el, { childList: true, subtree: true, characterData: true });
+                                    vtt_el.__vtt_observer = obs;
+                                }
+
+                                if (!Array.isArray(window.gr_vtt_data)) window.gr_vtt_data = [];
+                                init();
+                            };
+                        } catch (e) {
+                            console.log('custom js init error:', e);
+                        }
+                    }
+
+                    // Now safely call it after the audio element is available
+                    function tryRun() {
+                        var audio = document.querySelector('#gr_audiobook_player audio');
+                        if (!audio) {
+                            setTimeout(tryRun, 100);
+                            return;
+                        }
+
+                        if (typeof window.redraw_elements === 'function') {
+                            try { 
+                                window.redraw_elements(); 
+                            } catch (e) { 
+                                console.log('redraw_elements error:', e); 
+                            }
+                        }
+
+                        if (!window.__listen_vtt_started) {
+                            if (typeof window.listen_vtt === 'function') {
+                                window.__listen_vtt_started = true;
+                                window.listen_vtt();
+                            } else {
+                                setTimeout(tryRun, 50);
+                                return;
+                            }
+                        }
+                    }
                     tryRun();
+
                     // Return localStorage data if needed
                     try{
                         const data = window.localStorage.getItem('data');
