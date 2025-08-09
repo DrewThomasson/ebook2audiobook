@@ -2499,20 +2499,6 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
-        def load_audio_cues(vtt_path):
-            def to_seconds(ts):
-                h, m, s = ts.split(':')
-                s, ms = s.split('.')
-                return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000
-            cues = []
-            for cue in webvtt.read(vtt_path):
-                cues.append({
-                    "start": to_seconds(cue.start),
-                    "end":   to_seconds(cue.end),
-                    "text":  cue.text.replace('\n', ' ')
-                })
-            return cues
-
         def show_modal(type, msg):
             return f'''
             <style>
@@ -3477,61 +3463,6 @@ def web_interface(args, ctx):
             outputs=[],
             js='() => { document.title = "Ebook2Audiobook"; }'
         )
-        gr_audiobook_player.change(
-            js="""
-                async (audio_url) => {
-                    if (!audio_url) {
-                        window.gr_audio_cues = [];
-                        return [null]; // for cues_json
-                    }
-                    // swap extension to .vtt (handles ?query too)
-                    const vttUrl = audio_url.replace(/\\.[^./?#]+(?=([?#]|$))/, '.vtt');
-                    let text;
-                    try {
-                        const res = await fetch(vttUrl, { cache: "no-store" });
-                        if (!res.ok) {
-                            console.warn("No VTT at:", vttUrl);
-                            window.gr_audio_cues = [];
-                            return [null];
-                        }
-                        text = await res.text();
-                    } catch (e) {
-                        console.error("VTT fetch error:", e);
-                        window.gr_audio_cues = [];
-                        return [null];
-                    }
-                    // Minimal VTT parse (timestamps + joined text)
-                    const lines = text.split(/\\r?\\n/);
-                    const cues = [];
-                    const toSec = (ts) => {
-                        const [h,m,rest] = ts.split(':');
-                        const [s,ms='0'] = rest.split('.');
-                        return (+h)*3600 + (+m)*60 + (+s) + (+ms)/1000;
-                    };
-                    for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i].trim();
-                        if (/-->/.test(line)) {
-                            const [startRaw, endRaw] = line.split('-->').map(s => s.trim());
-                            let textBuf = [];
-                            i++;
-                            while (i < lines.length && lines[i].trim() !== '') {
-                                textBuf.push(lines[i].trim());
-                                i++;
-                            }
-                            cues.push({
-                                start: toSec(startRaw),
-                                end:   toSec(endRaw),
-                                text:  textBuf.join(' ')
-                            });
-                        }
-                    }
-                    // Expose to client scripts
-                    window.gr_audio_cues = cues;
-                }
-            """,
-            inputs=[gr_audiobook_player],
-            outputs=[]
-        )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
             inputs=[gr_audiobook_list],
@@ -3685,8 +3616,8 @@ def web_interface(args, ctx):
                         window.redraw_elements = ()=>{
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
-                                const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
-                                const radios = document.querySelectorAll(\"input[type='radio']\");
+                                const checkboxes = document.querySelectorAll("input[type='checkbox']");
+                                const radios = document.querySelectorAll("input[type='radio']");
                                 const url = new URL(window.location);
                                 const theme = url.searchParams.get('__theme');
                                 let osTheme;
@@ -3731,6 +3662,7 @@ def web_interface(args, ctx):
                             }
                         };
                     }
+
                     if(typeof window.tab_progress !== 'function'){
                         const box = document.getElementById('gr_progress_box');
                         if (!box || window.__titleSync) return;
@@ -3742,22 +3674,103 @@ def web_interface(args, ctx):
                                 document.title = '-------- ' + prct + '--------';
                             }
                         };
-                        // Observe programmatic changes
                         new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
-                        // Also catch user edits
                         box.addEventListener('input', tab_progress);
                     }
+
+                    // --- VTT cues loader ---
+                    if(!window.__gr_cues_bootstrapped){
+                        window.__gr_cues_bootstrapped = true;
+                        window.gr_audio_cues = [];
+
+                        const toVttUrl = (src)=>{
+                            try{
+                                const u = new URL(src, window.location.origin);
+                                const parts = u.pathname.split('/');
+                                const last = parts.pop();
+                                if(last && last.includes('.')){
+                                    const replaced = last.replace(/\.[^.\/?#]+$/, '.vtt');
+                                    parts.push(replaced);
+                                    u.pathname = parts.join('/');
+                                }
+                                return u.toString();
+                            }catch{
+                                return (src || '').replace(/\.[^./?#]+(?=([?#]|$))/, '.vtt');
+                            }
+                        };
+
+                        const parseVtt = (text)=>{
+                            const lines = text.split(/\r?\n/);
+                            const cues = [];
+                            const toSec = (ts)=>{
+                                const [h,m,rest='0'] = ts.split(':');
+                                const [s,ms='0'] = rest.split('.');
+                                return (+h)*3600 + (+m)*60 + (+s) + (+ms)/1000;
+                            };
+                            for(let i=0;i<lines.length;i++){
+                                const line = lines[i].trim();
+                                if(/-->/.test(line)){
+                                    const [startRaw,endRaw] = line.split('-->').map(s=>s.trim());
+                                    const buf = [];
+                                    i++;
+                                    while(i<lines.length && lines[i].trim() !== ''){
+                                        buf.push(lines[i].trim());
+                                        i++;
+                                    }
+                                    cues.push({ start: toSec(startRaw), end: toSec(endRaw), text: buf.join(' ') });
+                                }
+                            }
+                            return cues;
+                        };
+
+                        const bindCues = ()=>{
+                            const audio = document.querySelector('#gr_audiobook_player audio');
+                            if(!audio) return;
+
+                            if(!audio.__cues_bound){
+                                audio.__cues_bound = true;
+
+                                const loadVtt = async ()=>{
+                                    const src = audio.currentSrc || audio.src;
+                                    if(!src){ window.gr_audio_cues = []; return; }
+                                    const vttUrl = toVttUrl(src);
+                                    try{
+                                        const res = await fetch(vttUrl, { cache: 'no-store' });
+                                        if(!res.ok){ window.gr_audio_cues = []; return; }
+                                        const text = await res.text();
+                                        window.gr_audio_cues = parseVtt(text);
+                                    }catch(e){
+                                        console.log('VTT fetch error:', e);
+                                        window.gr_audio_cues = [];
+                                    }
+                                };
+
+                                audio.addEventListener('loadedmetadata', loadVtt);
+                                audio.addEventListener('emptied', ()=>{ window.gr_audio_cues = []; });
+
+                                if(audio.currentSrc || audio.src) setTimeout(loadVtt, 0);
+                            }
+                        };
+
+                        const host = document.getElementById('gr_audiobook_player');
+                        if(host){
+                            const obs = new MutationObserver(()=>bindCues());
+                            obs.observe(host, { childList: true, subtree: true });
+                        }
+                    }
+
                     // Now safely call it after the audio element is available
                     const tryRun = ()=>{
                         const audio = document.querySelector('#gr_audiobook_player audio');
                         if(audio && typeof window.redraw_elements === 'function'){
                             window.redraw_elements();
+                            if(typeof bindCues === 'function') bindCues();
                         }else{
                             setTimeout(tryRun, 100);
                         }
                     };
                     tryRun();
-                    // Return localStorage data if needed
+
                     try{
                         const data = window.localStorage.getItem('data');
                         if (data) return JSON.parse(data);
