@@ -3695,6 +3695,7 @@ def web_interface(args, ctx):
                                 const init = ()=>{
                                     var vtt_el = document.querySelector('#gr_vtt_data');
                                     if (!vtt_el) {
+                                        console.log('vtt_el not found');
                                         setTimeout(init, 100);
                                         return;
                                     }
