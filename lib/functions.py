@@ -3459,12 +3459,6 @@ def web_interface(args, ctx):
             inputs=[gr_output_split_hours_list, gr_session],
             outputs=None
         )
-        gr_progress_box.change(
-            fn=None,
-            inputs=[gr_progress_box],
-            outputs=[],
-            js='(val) => { document.title = val; }'
-        )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
             inputs=[gr_audiobook_list],
