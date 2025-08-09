@@ -546,8 +546,13 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         print(msg)
         for doc in all_docs:
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
-            if sentences_list is not None:
+            if sentences_list is None:
+                break
+            elif len(sentences_list) > 0:
                 chapters.append(sentences_list)
+        if len(chapters) == 0:
+            error = 'No chapters found!'
+            return None, None
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -577,7 +582,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                             for inner in walk(child):
                                 return_data = True
                                 yield inner
-                            # Only add break or pause if something textual/structural came out
                             if return_data:
                                 if name in break_tags:
                                     yield ("break", TTS_SML['break'])
@@ -599,7 +603,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
         if not body or not body.get_text(strip=True):
-            return None
+            return []
         # Skip known non-chapter types
         epub_type = body.get("epub:type", "").lower()
         if not epub_type:
@@ -612,12 +616,14 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             "appendix", "bibliography", "copyright-page", "landmark"
         }
         if any(part in epub_type for part in excluded):
-            return None
+            return []
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
         tuples_list = list(walk(body))
         if not tuples_list:
+            error = 'No tuples_list from body created!'
+            print(error)
             return None
         text_array = []
         handled_tables = set()
@@ -659,6 +665,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             prev_typ = typ
         text = ' '.join(text_array)
         if not re.search(r"[^\W_]", text):
+            error = 'No valid text found!'
+            print(error)
             return None
         if stanza_nlp:
             # Check if numbers exists in the text
@@ -690,6 +698,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         pattern_space = re.escape(''.join(punctuation_list))
         punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
         text = re.sub(punctuation_pattern_space, r' \1', text)
+        sentences = get_sentences(text, lang, tts_engine)
+        if len(sentences) == 0:
+            error = 'No sentences found!'
+            print(error)
+            return None
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         error = f'filter_chapter() error: {e}'
@@ -735,7 +748,7 @@ def get_sentences(text, lang, tts_engine):
                     elif lang in ['tha', 'lao', 'mya', 'khm']:
                         result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
                     else:
-                        result.append(segment)
+                        result.append(segment.strip())
             return result
         except Exception as e:
             DependencyError(e)
@@ -769,16 +782,10 @@ def get_sentences(text, lang, tts_engine):
     try:
         max_chars = language_mapping[lang]['max_chars'] - 4
         min_tokens = 5
-        # tacotron2 apparently does not like double quotes
-        if tts_engine == TTS_ENGINES['TACOTRON2']:
-            text = text.replace('"', '')
         # List or tuple of tokens that must never be appended to buffer
         sml_tokens = tuple(TTS_SML.values())
-        sml_list = re.split(
-            rf"({'|'.join(map(re.escape, sml_tokens))})", text
-        )
+        sml_list = re.split(rf"({'|'.join(map(re.escape, sml_tokens))})", text)
         sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
-        # Split with punctuation_split_hard_set
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}){''.join(punctuation_list_set)})(?=\s|$)", re.DOTALL)
         hard_list = []
@@ -793,7 +800,9 @@ def get_sentences(text, lang, tts_engine):
                         if text_part:
                             hard_list.append(text_part)
                 else:
-                    hard_list.append(s)
+                    s = s.strip()
+                    if s:
+                        hard_list.append(s)
         # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
@@ -802,33 +811,41 @@ def get_sentences(text, lang, tts_engine):
             if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
                 soft_list.append(s)
             elif len(s) > max_chars:
-                parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
+                parts = [p for p in split_inclusive(s, pattern) if p]
                 if parts:
                     buffer = ''
                     for part in parts:
                         if not buffer:
                             buffer = part
                             continue
-                        if len(buffer.split()) < min_tokens:
+                        if len(buffer) < min_tokens:
                             buffer = buffer + ' ' + part
                         else:
-                            soft_list.append(buffer)
+                            buffer = buffer.strip()
+                            if buffer:
+                                soft_list.append(buffer)
                             buffer = part
                     if buffer:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
-                        soft_list.append(buffer)
+                        buffer = buffer.strip()
+                        if buffer:
+                            soft_list.append(buffer)
                 else:
                     cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                     if not any(ch.isalnum() for ch in cleaned):
                         continue
-                    soft_list.append(s)
+                    s = s.strip()
+                    if s:
+                        soft_list.append(s)
             else:
                 cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                 if not any(ch.isalnum() for ch in cleaned):
                     continue
-                soft_list.append(s)
+                s = s.strip()
+                if s:
+                    soft_list.append(s)
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
@@ -839,7 +856,8 @@ def get_sentences(text, lang, tts_engine):
                     if isinstance(tokens, list):
                         result.extend([t for t in tokens if t.strip()])
                     else:
-                        if tokens.strip():
+                        tokens = tokens.strip()
+                        if tokens:
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
@@ -854,7 +872,9 @@ def get_sentences(text, lang, tts_engine):
                         if len(text_part) + 1 + len(w) <= max_chars:
                             text_part += ' ' + w
                         else:
-                            sentences.append(text_part.strip())
+                            text_part = text_part.strip()
+                            if text_part:
+                                sentences.append(text_part)
                             text_part = w
                     if text_part:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
@@ -1240,7 +1260,6 @@ def convert_chapters2audio(session):
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
-        progress_bar = gr.Progress(track_tqdm=False) if is_gui_process else None
         tts_manager = TTSManager(session)
         if not tts_manager:
             error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
@@ -1279,6 +1298,10 @@ def convert_chapters2audio(session):
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
         total_chapters = len(session['chapters'])
+        if total_chapters == 0:
+            error = 'No chapters nor sentences found!'
+            print(error)
+            return False
         total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
         total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
         sentence_number = 0
@@ -1306,12 +1329,11 @@ def convert_chapters2audio(session):
                         if success:
                             total_progress = (t.n + 1) / total_iterations
                             is_sentence = sentence.strip() not in TTS_SML.values()
-                            if progress_bar is not None:
-                                progress_bar(total_progress)
                             percentage = total_progress * 100
                             t.set_description(f'{percentage:.2f}%')
                             msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
+                            yield total_progress
                         else:
                             return False
                     if sentence.strip() not in TTS_SML.values():
@@ -1592,7 +1614,6 @@ def combine_audio_chapters(session):
         if len(chapter_files) == 0:
             print('No block files exists!')
             return None
-
         # Calculate total duration
         durations = []
         for file in chapter_files:
@@ -1746,16 +1767,14 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-def convert_ebook_batch(args, ctx):
-    global context
-    context = ctx
+def convert_ebook_batch(args, ctx=None):
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, passed = convert_ebook(args)
+                progress_status, passed = convert_ebook(args, ctx)
                 if passed is False:
                     print(f'Conversion failed: {progress_status}')
                     sys.exit(1)
@@ -1953,7 +1972,7 @@ def convert_ebook(args, ctx=None):
                                         msg = 'Conversion successful. Combining sentences and chapters...'
                                         show_alert({"type": "info", "msg": msg})
                                         exported_files = combine_audio_chapters(session)               
-                                        if len(exported_files) > 0:
+                                        if exported_files is not None:
                                             chapters_dirs = [
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
@@ -2100,6 +2119,8 @@ def web_interface(args, ctx):
     
     src_label_file = 'Select a File'
     src_label_dir = 'Select a Directory'
+    
+    gr_progress_bar = gr.Progress(track_tqdm=False)
     
     visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
     visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
@@ -2455,7 +2476,7 @@ def web_interface(args, ctx):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
-        gr_conversion_progress = gr.Textbox(elem_id='gr_conversion_progress', label='Progress', interactive=True)
+        gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=True)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
@@ -3436,9 +3457,9 @@ def web_interface(args, ctx):
             inputs=[gr_output_split_hours_list, gr_session],
             outputs=None
         )
-        gr_conversion_progress.change(
+        gr_progress_box.change(
             fn=None,
-            inputs=[gr_conversion_progress],
+            inputs=[gr_progress_box],
             outputs=[],
             js='(val) => { document.title = val; }'
         )
@@ -3536,7 +3557,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours_list
             ],
-            outputs=[gr_conversion_progress]
+            outputs=[gr_progress_box]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
@@ -3642,12 +3663,15 @@ def web_interface(args, ctx):
                         };
                     }
                     if(typeof window.tab_progress !== 'function'){
-                        const box = document.getElementById('gr_conversion_progress');
+                        const box = document.getElementById('gr_progress_box');
                         if (!box || window.__titleSync) return;
                         window.__titleSync = true;
                         window.tab_progress = ()=>{
                             const val = box.value ?? box.textContent ?? "";
-                            if (val) { document.title = val; }
+                            console.log('------------',val);
+                            if (val){
+                                document.title = val; 
+                            }
                         };
                         // Observe programmatic changes
                         new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
