@@ -601,6 +601,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
         if not body or not body.get_text(strip=True):
+            error = 'No text body found!'
+            print(error)
             return None
         # Skip known non-chapter types
         epub_type = body.get("epub:type", "").lower()
@@ -620,6 +622,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             tag.decompose()
         tuples_list = list(walk(body))
         if not tuples_list:
+            error = 'No tuples_list from body created!'
+            print(error)
             return None
         text_array = []
         handled_tables = set()
@@ -661,6 +665,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             prev_typ = typ
         text = ' '.join(text_array)
         if not re.search(r"[^\W_]", text):
+            error = 'No valid text found!'
+            print(error)
             return None
         if stanza_nlp:
             # Check if numbers exists in the text
@@ -695,6 +701,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         sentences = get_sentences(text, lang, tts_engine)
         if len(sentences) == 0:
             error = 'No sentences found!'
+            print(error)
             return None
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
