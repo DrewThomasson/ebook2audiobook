@@ -1337,7 +1337,6 @@ def convert_chapters2audio(session):
                             t.set_description(f'{percentage:.2f}%')
                             msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
-                            yield total_progress
                         else:
                             return False
                     if sentence.strip() not in TTS_SML.values():
@@ -1970,7 +1969,6 @@ def convert_ebook(args, ctx=None):
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                print(session['chapters'])
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(session):
