@@ -546,13 +546,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         print(msg)
         for doc in all_docs:
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
-            if sentences_list is None:
-                break
-            elif len(sentences_list) > 0:
+            if sentences_list is not None:
                 chapters.append(sentences_list)
-        if len(chapters) == 0:
-            error = 'No chapters found!'
-            return None, None
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -582,6 +577,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                             for inner in walk(child):
                                 return_data = True
                                 yield inner
+                            # Only add break or pause if something textual/structural came out
                             if return_data:
                                 if name in break_tags:
                                     yield ("break", TTS_SML['break'])
@@ -603,7 +599,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
         if not body or not body.get_text(strip=True):
-            return []
+            return None
         # Skip known non-chapter types
         epub_type = body.get("epub:type", "").lower()
         if not epub_type:
@@ -616,14 +612,12 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             "appendix", "bibliography", "copyright-page", "landmark"
         }
         if any(part in epub_type for part in excluded):
-            return []
+            return None
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
         tuples_list = list(walk(body))
         if not tuples_list:
-            error = 'No tuples_list from body created!'
-            print(error)
             return None
         text_array = []
         handled_tables = set()
@@ -665,8 +659,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             prev_typ = typ
         text = ' '.join(text_array)
         if not re.search(r"[^\W_]", text):
-            error = 'No valid text found!'
-            print(error)
             return None
         if stanza_nlp:
             # Check if numbers exists in the text
@@ -698,11 +690,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         pattern_space = re.escape(''.join(punctuation_list))
         punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
         text = re.sub(punctuation_pattern_space, r' \1', text)
-        sentences = get_sentences(text, lang, tts_engine)
-        if len(sentences) == 0:
-            error = 'No sentences found!'
-            print(error)
-            return None
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         error = f'filter_chapter() error: {e}'
@@ -782,10 +769,16 @@ def get_sentences(text, lang, tts_engine):
     try:
         max_chars = language_mapping[lang]['max_chars'] - 4
         min_tokens = 5
+        # tacotron2 apparently does not like double quotes
+        if tts_engine == TTS_ENGINES['TACOTRON2']:
+            text = text.replace('"', '')
         # List or tuple of tokens that must never be appended to buffer
         sml_tokens = tuple(TTS_SML.values())
-        sml_list = re.split(rf"({'|'.join(map(re.escape, sml_tokens))})", text)
+        sml_list = re.split(
+            rf"({'|'.join(map(re.escape, sml_tokens))})", text
+        )
         sml_list = [s for s in sml_list if s.strip() or s in sml_tokens]
+        # Split with punctuation_split_hard_set
         pattern_split = '|'.join(map(re.escape, punctuation_split_hard_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}){''.join(punctuation_list_set)})(?=\s|$)", re.DOTALL)
         hard_list = []
@@ -811,14 +804,14 @@ def get_sentences(text, lang, tts_engine):
             if s in [TTS_SML['break'], TTS_SML['pause']] or len(s) <= max_chars:
                 soft_list.append(s)
             elif len(s) > max_chars:
-                parts = [p for p in split_inclusive(s, pattern) if p]
+                parts = [p.strip() for p in split_inclusive(s, pattern) if p.strip()]
                 if parts:
                     buffer = ''
                     for part in parts:
                         if not buffer:
                             buffer = part
                             continue
-                        if len(buffer) < min_tokens:
+                        if len(buffer.split()) < min_tokens:
                             buffer = buffer + ' ' + part
                         else:
                             buffer = buffer.strip()
@@ -850,7 +843,7 @@ def get_sentences(text, lang, tts_engine):
             result = []
             for s in soft_list:
                 if s in [TTS_SML['break'], TTS_SML['pause']]:
-                    result.append(s)
+                    result.append(s.strip())
                 else:
                     tokens = segment_ideogramms(s)
                     if isinstance(tokens, list):
@@ -872,10 +865,9 @@ def get_sentences(text, lang, tts_engine):
                         if len(text_part) + 1 + len(w) <= max_chars:
                             text_part += ' ' + w
                         else:
-                            text_part = text_part.strip()
-                            if text_part:
-                                sentences.append(text_part)
+                            sentences.append(text_part)
                             text_part = w
+                    text_part = text_part.strip()
                     if text_part:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
@@ -1255,7 +1247,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = ' '.join(text.split())
     return text
 
-def convert_chapters2audio(session):
+def convert_chapters2audio(session, progress_bar=None):
     try:
         if session['cancellation_requested']:
             print('Cancel requested')
@@ -1298,10 +1290,6 @@ def convert_chapters2audio(session):
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
         total_chapters = len(session['chapters'])
-        if total_chapters == 0:
-            error = 'No chapters nor sentences found!'
-            print(error)
-            return False
         total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
         total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
         sentence_number = 0
@@ -1768,14 +1756,16 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-def convert_ebook_batch(args, ctx=None):
+def convert_ebook_batch(args, ctx):
+    global context
+    context = ctx
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, passed = convert_ebook(args, ctx)
+                progress_status, passed = convert_ebook(args)
                 if passed is False:
                     print(f'Conversion failed: {progress_status}')
                     sys.exit(1)
@@ -1973,7 +1963,7 @@ def convert_ebook(args, ctx=None):
                                         msg = 'Conversion successful. Combining sentences and chapters...'
                                         show_alert({"type": "info", "msg": msg})
                                         exported_files = combine_audio_chapters(session)               
-                                        if exported_files is not None:
+                                        if len(exported_files) > 0:
                                             chapters_dirs = [
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
                                                 if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
