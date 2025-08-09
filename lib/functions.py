@@ -3686,21 +3686,28 @@ def web_interface(args, ctx):
                         const toVttUrl = (src)=>{
                             try{
                                 const u = new URL(src, window.location.origin);
+                                // swap only the filename's extension
                                 const parts = u.pathname.split('/');
-                                const last = parts.pop();
-                                if(last && last.includes('.')){
-                                    const replaced = last.replace(/\.[^.\/?#]+$/, '.vtt');
-                                    parts.push(replaced);
-                                    u.pathname = parts.join('/');
-                                }
+                                const last = parts.pop() || '';
+                                const dot = last.lastIndexOf('.');
+                                const newLast = (dot === -1 ? last : last.slice(0, dot)) + '.vtt';
+                                parts.push(newLast);
+                                u.pathname = parts.join('/');
                                 return u.toString();
                             }catch{
-                                return (src || '').replace(/\.[^./?#]+(?=([?#]|$))/, '.vtt');
+                                // Fallback without regex
+                                src = src || '';
+                                const qIdx = src.search(/[?#]/);               // ok as a string method, not a regex literal in code
+                                const path = qIdx === -1 ? src : src.slice(0, qIdx);
+                                const suffix = qIdx === -1 ? '' : src.slice(qIdx);
+                                const dot = path.lastIndexOf('.');
+                                const base = dot === -1 ? path : path.slice(0, dot);
+                                return base + '.vtt' + suffix;
                             }
                         };
 
                         const parseVtt = (text)=>{
-                            const lines = text.split(/\r?\n/);
+                            const lines = text.split(/\r?\n/);                 // this one is fine (kept)
                             const cues = [];
                             const toSec = (ts)=>{
                                 const [h,m,rest='0'] = ts.split(':');
@@ -3709,7 +3716,7 @@ def web_interface(args, ctx):
                             };
                             for(let i=0;i<lines.length;i++){
                                 const line = lines[i].trim();
-                                if(/-->/.test(line)){
+                                if(line.includes('-->')){                      // avoid regex here too
                                     const [startRaw,endRaw] = line.split('-->').map(s=>s.trim());
                                     const buf = [];
                                     i++;
@@ -3739,6 +3746,8 @@ def web_interface(args, ctx):
                                         if(!res.ok){ window.gr_audio_cues = []; return; }
                                         const text = await res.text();
                                         window.gr_audio_cues = parseVtt(text);
+                                        // Optional: notify listeners
+                                        // window.dispatchEvent(new CustomEvent('audiobookCuesLoaded', { detail: window.gr_audio_cues }));
                                     }catch(e){
                                         console.log('VTT fetch error:', e);
                                         window.gr_audio_cues = [];
@@ -3758,6 +3767,7 @@ def web_interface(args, ctx):
                             obs.observe(host, { childList: true, subtree: true });
                         }
                     }
+                    // --- end VTT cues loader ---
 
                     // Now safely call it after the audio element is available
                     const tryRun = ()=>{
