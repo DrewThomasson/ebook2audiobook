@@ -3670,8 +3670,8 @@ def web_interface(args, ctx):
                         window.__titleSync = true;
                         window.tab_progress = () => {
                             const val = box?.value || box?.textContent || '';
-                            const prct = val.trim().split(' ')[3];
-                            if(prct){
+                            const prct = val.trim().split(' ')[4];
+                            if(prct){ # && /^\d+(\.\d+)?%$/.test(prct)
                                 document.title = prct;
                             }else{
                                 document.title = 'Ebook2Audiobook'
