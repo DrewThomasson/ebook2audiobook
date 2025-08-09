@@ -3739,6 +3739,7 @@ def web_interface(args, ctx):
                                         if(!res.ok){ window.gr_audio_cues = []; return; }
                                         const text = await res.text();
                                         window.gr_audio_cues = parseVtt(text);
+                                        console.log(window.gr_audio_cues);
                                         // window.dispatchEvent(new CustomEvent('audiobookCuesLoaded', { detail: window.gr_audio_cues }));
                                     }catch(e){
                                         console.log('VTT fetch error:', e);
