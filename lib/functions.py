@@ -3669,9 +3669,9 @@ def web_interface(args, ctx):
                         if (!box || window.__titleSync) return;
                         window.__titleSync = true;
                         window.tab_progress = () => {
-                            const val = box?.value || box?.textContent || "";
+                            const val = box?.value || box?.textContent || '';
                             const prct = val.trim().split(" ")[3];
-                            if(prct && /^\d+(\.\d+)?%$/.test(prct)){
+                            if(prct){
                                 document.title = prct;
                             }else{
                                 document.title = 'Ebook2Audiobook'
@@ -3680,7 +3680,7 @@ def web_interface(args, ctx):
                         // Observe programmatic changes
                         new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
                         // Also catch user edits
-                        box.addEventListener("input", tab_progress);
+                        box.addEventListener('input', tab_progress);
                     }
                     // Now safely call it after the audio element is available
                     const tryRun = ()=>{
