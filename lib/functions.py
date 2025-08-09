@@ -3636,7 +3636,7 @@ def web_interface(args, ctx):
         )
         app.load(
             fn=None,
-            js="""
+            js=r"""
                 ()=>{
                     // Define the global function ONCE
                     if(typeof window.redraw_elements !== 'function'){
