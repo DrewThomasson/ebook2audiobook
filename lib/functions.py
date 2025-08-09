@@ -1603,7 +1603,7 @@ def combine_audio_chapters(session):
                         if audio:
                             audio.save()
                 final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
-                proc_vtt_path = os.path.join(self.session['process_dir'], final_vtt)
+                proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
                 final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
                 shutil.move(proc_vtt_path, final_vtt_path)
                 return True
