@@ -2496,8 +2496,8 @@ def web_interface(args, ctx):
             try:
                 for cue in webvtt.read(vtt_path):
                     cues.append({
-                        "start": to_seconds(cue.start),
-                        "end":   to_seconds(cue.end),
+                        "start": round(to_seconds(cue.start), 2),
+                        "end":   round(to_seconds(cue.end), 2),
                         "text":  cue.text.replace("\n", " ")
                     })
                 return cues
