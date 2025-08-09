@@ -3720,14 +3720,24 @@ def web_interface(args, ctx):
                             init();
                         };
                     }
+
                     // Now safely call it after the audio element is available
                     const tryRun = ()=>{
                         const audio = document.querySelector('#gr_audiobook_player audio');
-                        if(audio && typeof window.redraw_elements === 'function'){
-                            window.redraw_elements();
-                            window.listen_vtt();
-                        }else{
-                            setTimeout(tryRun, 100);
+                        if(!audio){ setTimeout(tryRun, 100); return; }
+
+                        if(typeof window.redraw_elements === 'function'){
+                            try{ window.redraw_elements(); } catch(e){ console.log('redraw_elements error:', e); }
+                        }
+
+                        if(!window.__listen_vtt_started){
+                            if (typeof window.listen_vtt === 'function') {
+                                window.__listen_vtt_started = true;
+                                window.listen_vtt();
+                            }else{
+                                setTimeout(tryRun, 50);
+                                return;
+                            }
                         }
                     };
                     tryRun();
