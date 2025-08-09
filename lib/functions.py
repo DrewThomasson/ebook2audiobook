@@ -1602,6 +1602,13 @@ def combine_audio_chapters(session):
                             audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
                         if audio:
                             audio.save()
+                final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
+                proc_vtt_path = os.path.join(self.session['process_dir'], final_vtt)
+                final_vtt_path = os.path.join(
+                    session['audiobooks_dir'],
+                    final_vtt
+                )
+                shutil.move(proc_vtt_path, final_vtt_path)
                 return True
             else:
                 error = process.returncode
