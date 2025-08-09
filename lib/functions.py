@@ -3709,6 +3709,7 @@ def web_interface(args, ctx):
                                         try {
                                             var parsed = txt ? JSON.parse(txt) : null;
                                             window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
+                                            console.log('window.gr_vtt_data:', window.gr_vtt_data);
                                         } catch (e) {
                                             window.gr_vtt_data = [];
                                         }
