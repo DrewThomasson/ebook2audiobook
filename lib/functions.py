@@ -3623,7 +3623,6 @@ def web_interface(args, ctx):
                 ()=>{
                     // Define the global function ONCE
                     if(typeof window.redraw_elements !== 'function'){
-                        window.elColor = '#666666'
                         window.redraw_elements = ()=>{
                             try{
                                 const audio = document.querySelector('#gr_audiobook_player audio');
@@ -3633,18 +3632,19 @@ def web_interface(args, ctx):
                                 const theme = url.searchParams.get('__theme');
                                 let osTheme;
                                 let audioFilter = '';
+                                let elColor = '#666666';
                                 if(theme){
                                     if(theme === 'dark'){
                                         if(audio){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
-                                        window.elColor = '#fff';
+                                        elColor = '#fff';
                                     }
                                     checkboxes.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + window.elColor;
+                                        cb.style.border = '1px solid ' + elColor;
                                     });
                                     radios.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + window.elColor;
+                                        cb.style.border = '1px solid ' + elColor;
                                     });
                                 }else{
                                     osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
@@ -3652,13 +3652,13 @@ def web_interface(args, ctx):
                                         if(audio){
                                             audioFilter = 'invert(1) hue-rotate(180deg)';
                                         }
-                                        window.elColor = '#fff';
+                                        elColor = '#fff';
                                     }
                                     checkboxes.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + window.elColor;
+                                        cb.style.border = '1px solid ' + elColor;
                                     });
                                     radios.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + window.elColor;
+                                        cb.style.border = '1px solid ' + elColor;
                                     });
                                 }
                                 if(audio){
