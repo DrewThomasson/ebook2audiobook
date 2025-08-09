@@ -3668,11 +3668,11 @@ def web_interface(args, ctx):
                         const box = document.getElementById('gr_progress_box');
                         if (!box || window.__titleSync) return;
                         window.__titleSync = true;
-                        window.tab_progress = ()=>{
-                            const val = box.value ?? box.textContent ?? "";
-                            console.log('------------',val);
-                            if (val){
-                                document.title = val; 
+                        window.tab_progress = () => {
+                            const val = box?.value || box?.textContent || "";
+                            const percentage = val.trim().split(" ")[1];
+                            if (percentage) {
+                                document.title = percentage;
                             }
                         };
                         // Observe programmatic changes
