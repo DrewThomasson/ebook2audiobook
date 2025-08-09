@@ -1298,7 +1298,7 @@ def convert_chapters2audio(session):
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
         total_chapters = len(session['chapters'])
-        if len(total_chapters) == 0:
+        if total_chapters == 0:
             error = 'No chapterrs found!'
             print(error)
             return False
