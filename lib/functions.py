@@ -3478,56 +3478,56 @@ def web_interface(args, ctx):
             js='() => { document.title = "Ebook2Audiobook"; }'
         )
         gr_audiobook_player.change(
-            js=gr.JS("""
-            async (audio_url) => {
-                if (!audio_url) {
-                    window.gr_audio_cues = [];
-                    return [null]; // for cues_json
-                }
-                // swap extension to .vtt (handles ?query too)
-                const vttUrl = audio_url.replace(/\\.[^./?#]+(?=([?#]|$))/, '.vtt');
-                let text;
-                try {
-                    const res = await fetch(vttUrl, { cache: "no-store" });
-                    if (!res.ok) {
-                        console.warn("No VTT at:", vttUrl);
+            js="""
+                async (audio_url) => {
+                    if (!audio_url) {
+                        window.gr_audio_cues = [];
+                        return [null]; // for cues_json
+                    }
+                    // swap extension to .vtt (handles ?query too)
+                    const vttUrl = audio_url.replace(/\\.[^./?#]+(?=([?#]|$))/, '.vtt');
+                    let text;
+                    try {
+                        const res = await fetch(vttUrl, { cache: "no-store" });
+                        if (!res.ok) {
+                            console.warn("No VTT at:", vttUrl);
+                            window.gr_audio_cues = [];
+                            return [null];
+                        }
+                        text = await res.text();
+                    } catch (e) {
+                        console.error("VTT fetch error:", e);
                         window.gr_audio_cues = [];
                         return [null];
                     }
-                    text = await res.text();
-                } catch (e) {
-                    console.error("VTT fetch error:", e);
-                    window.gr_audio_cues = [];
-                    return [null];
-                }
-                // Minimal VTT parse (timestamps + joined text)
-                const lines = text.split(/\\r?\\n/);
-                const cues = [];
-                const toSec = (ts) => {
-                    const [h,m,rest] = ts.split(':');
-                    const [s,ms='0'] = rest.split('.');
-                    return (+h)*3600 + (+m)*60 + (+s) + (+ms)/1000;
-                };
-                for (let i = 0; i < lines.length; i++) {
-                    const line = lines[i].trim();
-                    if (/-->/.test(line)) {
-                        const [startRaw, endRaw] = line.split('-->').map(s => s.trim());
-                        let textBuf = [];
-                        i++;
-                        while (i < lines.length && lines[i].trim() !== '') {
-                            textBuf.push(lines[i].trim());
+                    // Minimal VTT parse (timestamps + joined text)
+                    const lines = text.split(/\\r?\\n/);
+                    const cues = [];
+                    const toSec = (ts) => {
+                        const [h,m,rest] = ts.split(':');
+                        const [s,ms='0'] = rest.split('.');
+                        return (+h)*3600 + (+m)*60 + (+s) + (+ms)/1000;
+                    };
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        if (/-->/.test(line)) {
+                            const [startRaw, endRaw] = line.split('-->').map(s => s.trim());
+                            let textBuf = [];
                             i++;
+                            while (i < lines.length && lines[i].trim() !== '') {
+                                textBuf.push(lines[i].trim());
+                                i++;
+                            }
+                            cues.push({
+                                start: toSec(startRaw),
+                                end:   toSec(endRaw),
+                                text:  textBuf.join(' ')
+                            });
                         }
-                        cues.push({
-                            start: toSec(startRaw),
-                            end:   toSec(endRaw),
-                            text:  textBuf.join(' ')
-                        });
                     }
+                    // Expose to client scripts
+                    window.gr_audio_cues = cues;
                 }
-                // Expose to client scripts
-                window.gr_audio_cues = cues;
-            }
             """),
             inputs=[gr_audiobook_player],
             outputs=[cues_json],  # or [] if you don’t want any UI output
