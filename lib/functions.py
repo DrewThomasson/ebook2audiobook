@@ -548,6 +548,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
             if sentences_list is not None:
                 chapters.append(sentences_list)
+        if len(chapters) == 0:
+            error = 'No chapters found!'
+            return None, None
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
@@ -689,6 +692,10 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         pattern_space = re.escape(''.join(punctuation_list))
         punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
         text = re.sub(punctuation_pattern_space, r' \1', text)
+        sentences = get_sentences(text, lang, tts_engine)
+        if len(sentences) == 0:
+            error = 'No sentences found!'
+            return None
         return get_sentences(text, lang, tts_engine)
     except Exception as e:
         error = f'filter_chapter() error: {e}'
@@ -1288,6 +1295,10 @@ def convert_chapters2audio(session):
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
         total_chapters = len(session['chapters'])
+        if total_chapters == 0:
+            error = 'No chapters nor sentences found!'
+            print(error)
+            return False
         total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
         total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
         sentence_number = 0
