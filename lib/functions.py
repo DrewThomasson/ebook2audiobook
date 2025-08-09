@@ -2122,7 +2122,7 @@ def web_interface(args, ctx):
     src_label_file = 'Select a File'
     src_label_dir = 'Select a Directory'
     
-    gr_progress_bar = gr.Progress(track_tqdm=False)
+    gr_progress_bar = gr.Progress(track_tqdm=True)
     
     visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
     visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
