@@ -2680,12 +2680,12 @@ def web_interface(args, ctx):
             session = context.get_session(id)
             session['audiobook'] = selected
             visible = True if len(audiobook_options) else False
-            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(visible=visible)
+            return gr.update(value=selected), gr.update(value=selected), gr.update(Fvl=load_vtt_data(selected)), gr.update(visible=visible)
         
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
         
-        def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, load_vtt_data(selected)session=None):
+        def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
