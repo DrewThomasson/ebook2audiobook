@@ -3609,7 +3609,7 @@ def web_interface(args, ctx):
         )
         app.load(
             fn=None,
-            js="""
+            js=r"""
                 ()=>{
                     // Define the global function ONCE
                     if(typeof window.redraw_elements !== 'function'){
@@ -3630,12 +3630,8 @@ def web_interface(args, ctx):
                                         }
                                         elColor = '#fff';
                                     }
-                                    checkboxes.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + elColor;
-                                    });
-                                    radios.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + elColor;
-                                    });
+                                    checkboxes.forEach(cb=>{ cb.style.border = '1px solid ' + elColor; });
+                                    radios.forEach(cb=>{ cb.style.border = '1px solid ' + elColor; });
                                 }else{
                                     osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                     if(osTheme){
@@ -3644,12 +3640,8 @@ def web_interface(args, ctx):
                                         }
                                         elColor = '#fff';
                                     }
-                                    checkboxes.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + elColor;
-                                    });
-                                    radios.forEach(cb=>{
-                                        cb.style.border = '1px solid ' + elColor;
-                                    });
+                                    checkboxes.forEach(cb=>{ cb.style.border = '1px solid ' + elColor; });
+                                    radios.forEach(cb=>{ cb.style.border = '1px solid ' + elColor; });
                                 }
                                 if(audio){
                                     if(!audio.style.transition){
@@ -3665,7 +3657,6 @@ def web_interface(args, ctx):
 
                     if(typeof window.tab_progress !== 'function'){
                         const box = document.getElementById('gr_progress_box');
-                        if (!box || window.__titleSync) return;
                         window.__titleSync = true;
                         window.tab_progress = () => {
                             const val = box?.value || box?.textContent || '';
@@ -3674,8 +3665,12 @@ def web_interface(args, ctx):
                                 document.title = '-------- ' + prct + '--------';
                             }
                         };
-                        new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
-                        box.addEventListener('input', tab_progress);
+                        if (box){
+                            // Observe programmatic changes
+                            new MutationObserver(window.tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
+                            // Also catch user edits
+                            box.addEventListener('input', window.tab_progress);
+                        }
                     }
 
                     // --- VTT cues loader ---
@@ -3686,7 +3681,6 @@ def web_interface(args, ctx):
                         const toVttUrl = (src)=>{
                             try{
                                 const u = new URL(src, window.location.origin);
-                                // swap only the filename's extension
                                 const parts = u.pathname.split('/');
                                 const last = parts.pop() || '';
                                 const dot = last.lastIndexOf('.');
@@ -3695,9 +3689,8 @@ def web_interface(args, ctx):
                                 u.pathname = parts.join('/');
                                 return u.toString();
                             }catch{
-                                // Fallback without regex
                                 src = src || '';
-                                const qIdx = src.search(/[?#]/);               // ok as a string method, not a regex literal in code
+                                const qIdx = src.indexOf('?') >= 0 ? src.indexOf('?') : src.indexOf('#');
                                 const path = qIdx === -1 ? src : src.slice(0, qIdx);
                                 const suffix = qIdx === -1 ? '' : src.slice(qIdx);
                                 const dot = path.lastIndexOf('.');
@@ -3707,7 +3700,7 @@ def web_interface(args, ctx):
                         };
 
                         const parseVtt = (text)=>{
-                            const lines = text.split(/\r?\n/);                 // this one is fine (kept)
+                            const lines = text.split(/\r?\n/); // NOTE: because js= is a raw string, this stays a valid regex
                             const cues = [];
                             const toSec = (ts)=>{
                                 const [h,m,rest='0'] = ts.split(':');
@@ -3716,7 +3709,7 @@ def web_interface(args, ctx):
                             };
                             for(let i=0;i<lines.length;i++){
                                 const line = lines[i].trim();
-                                if(line.includes('-->')){                      // avoid regex here too
+                                if(line.includes('-->')){
                                     const [startRaw,endRaw] = line.split('-->').map(s=>s.trim());
                                     const buf = [];
                                     i++;
@@ -3746,7 +3739,6 @@ def web_interface(args, ctx):
                                         if(!res.ok){ window.gr_audio_cues = []; return; }
                                         const text = await res.text();
                                         window.gr_audio_cues = parseVtt(text);
-                                        // Optional: notify listeners
                                         // window.dispatchEvent(new CustomEvent('audiobookCuesLoaded', { detail: window.gr_audio_cues }));
                                     }catch(e){
                                         console.log('VTT fetch error:', e);
@@ -3766,15 +3758,17 @@ def web_interface(args, ctx):
                             const obs = new MutationObserver(()=>bindCues());
                             obs.observe(host, { childList: true, subtree: true });
                         }
+
+                        // expose so your tryRun can call it
+                        window.__bindCues = bindCues;
                     }
-                    // --- end VTT cues loader ---
 
                     // Now safely call it after the audio element is available
                     const tryRun = ()=>{
                         const audio = document.querySelector('#gr_audiobook_player audio');
                         if(audio && typeof window.redraw_elements === 'function'){
                             window.redraw_elements();
-                            if(typeof bindCues === 'function') bindCues();
+                            if(typeof window.__bindCues === 'function') window.__bindCues();
                         }else{
                             setTimeout(tryRun, 100);
                         }
@@ -3789,7 +3783,7 @@ def web_interface(args, ctx):
                     }
                     return null;
                 }
-                """,
+            """,
             outputs=[gr_read_data]
         )
     try:
