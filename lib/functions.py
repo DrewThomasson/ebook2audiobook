@@ -3671,8 +3671,10 @@ def web_interface(args, ctx):
                         window.tab_progress = () => {
                             const val = box?.value || box?.textContent || "";
                             const prct = val.trim().split(" ")[3];
-                            if (prct) {
+                            if(prct && /^\d+(\.\d+)?%$/.test(prct)){
                                 document.title = prct;
+                            }else{
+                                document.title = 'Ebook2Audiobook'
                             }
                         };
                         // Observe programmatic changes
