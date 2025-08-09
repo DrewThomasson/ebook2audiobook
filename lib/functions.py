@@ -2451,7 +2451,7 @@ def web_interface(args, ctx):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
         gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
-        gr_vtt_data = gr.JSON(visible=True, elem_id='gr_vtt_data')
+        gr_vtt_data = gr.JSON(visible=False, elem_id='gr_vtt_data')
         gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=True)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
@@ -3576,17 +3576,17 @@ def web_interface(args, ctx):
         gr_write_data.change(
             fn=None,
             inputs=[gr_write_data],
-            js='''
+            js="""
                 (data)=>{
                     if(data){
                         localStorage.clear();
                         if(data['event'] != 'clear'){
                             console.log('save: ', data);
-                            window.localStorage.setItem("data", JSON.stringify(data));
+                            window.localStorage.setItem('data', JSON.stringify(data));
                         }
                     }
                 }
-            '''
+            """
         )       
         gr_read_data.change(
             fn=change_gr_read_data,
@@ -3606,6 +3606,29 @@ def web_interface(args, ctx):
         ).then(
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
             outputs=[gr_glass_mask]
+        )
+        gr_vtt_data.change(
+            fn=None,
+            inputs=[gr_vtt_data],
+            js="""
+                (data)=>{
+                    if(data){
+                        const vtt_el = document.querySelector('#gr_vtt_data');
+                        if(vtt_el){
+                            const pre = vtt_el.querySelector('pre');
+                            const txt = pre ? pre.textContent.trim() : '';
+                            try {
+                                const parsed = txt ? JSON.parse(txt) : null;
+                                window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
+                                console.log(window.gr_vtt_data);
+                            } catch (e) {
+                                window.gr_vtt_data = [];
+                                console.log('window.gr_vtt_data failed');
+                            }                            
+                        }
+                    }
+                }
+            """  
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
@@ -3689,45 +3712,6 @@ def web_interface(args, ctx):
                             // Also catch user edits
                             box.addEventListener('input', tab_progress);
                         }
-                        // VTT listener
-                        if (typeof window.listen_vtt !== 'function') {
-                            window.listen_vtt = function () {
-                                const init = ()=>{
-                                    var vtt_el = document.querySelector('#gr_vtt_data');
-                                    if (!vtt_el) {
-                                        console.log('vtt_el not found');
-                                        setTimeout(init, 100);
-                                        return;
-                                    }
-
-                                    // Avoid double-binding on rerenders
-                                    if (vtt_el.__vtt_observer_bound) return;
-                                    vtt_el.__vtt_observer_bound = true;
-
-                                    const read = ()=>{
-                                        var pre = vtt_el.querySelector('pre');
-                                        var txt = pre ? pre.textContent.trim() : '';
-                                        try {
-                                            var parsed = txt ? JSON.parse(txt) : null;
-                                            window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
-                                            console.log(window.gr_vtt_data);
-                                        } catch (e) {
-                                            window.gr_vtt_data = [];
-                                            console.log('window.gr_vtt_data failed');
-                                        }
-                                    }
-
-                                    // Initial sync and observe updates
-                                    read();
-                                    var obs = new MutationObserver(read);
-                                    obs.observe(vtt_el, { childList: true, subtree: true, characterData: true });
-                                    vtt_el.__vtt_observer = obs;
-                                }
-
-                                if (!Array.isArray(window.gr_vtt_data)) window.gr_vtt_data = [];
-                                init();
-                            };
-                        }
 
                         // Now safely call it after the audio element is available
                         function tryRun() {
@@ -3742,16 +3726,6 @@ def web_interface(args, ctx):
                                     window.redraw_elements(); 
                                 } catch (e) { 
                                     console.log('redraw_elements error:', e); 
-                                }
-                            }
-
-                            if (!window.__listen_vtt_started) {
-                                if (typeof window.listen_vtt === 'function') {
-                                    window.__listen_vtt_started = true;
-                                    window.listen_vtt();
-                                } else {
-                                    setTimeout(tryRun, 50);
-                                    return;
                                 }
                             }
                         }
