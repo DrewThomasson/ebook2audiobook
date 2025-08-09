@@ -1298,12 +1298,16 @@ def convert_chapters2audio(session):
             if resume_sentence not in missing_sentences:
                 missing_sentences.append(resume_sentence)
         total_chapters = len(session['chapters'])
-        if total_chapters == 0:
-            error = 'No chapters nor sentences found!'
+        if len(total_chapters) == 0:
+            error = 'No chapterrs found!'
             print(error)
             return False
         total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
         total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
+        if len(total_sentences) == 0:
+            error = 'No sentences found!'
+            print(error)
+            return False           
         sentence_number = 0
         msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
         print(msg)
