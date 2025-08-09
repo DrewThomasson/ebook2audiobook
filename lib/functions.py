@@ -550,12 +550,12 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 chapters.append(sentences_list)
         if len(chapters) == 0:
             error = 'No chapters found!'
-            return None, None
+            return [], []
         return toc, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
-        return None, None
+        return [], []
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
 
