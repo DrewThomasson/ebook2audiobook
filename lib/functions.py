@@ -3470,8 +3470,8 @@ def web_interface(args, ctx):
         )
         gr_audiobook_player.change(
             fn=load_vtt_data,
-            inputs=gr_audiobook_player,
-            outputs=gr_vtt_data,
+            inputs=[gr_audiobook_player],
+            outputs=[gr_vtt_data],
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
@@ -3622,7 +3622,7 @@ def web_interface(args, ctx):
             js=r"""
                 ()=>{
                     // Define the global function ONCE
-                    if(typeof(window.redraw_elements) !== 'function'){
+                    if(typeof window.redraw_elements !== 'function'){
                         window.elColor = '#666666'
                         window.redraw_elements = ()=>{
                             try{
@@ -3672,11 +3672,11 @@ def web_interface(args, ctx):
                             }
                         };
                     }
-                    if(typeof(window.tab_progress) !== 'function'){
+                    if(typeof window.tab_progress !== 'function'){
                         const box = document.getElementById('gr_progress_box');
                         if (!box || window.__titleSync) return;
                         window.__titleSync = true;
-                        window.tab_progress = ()=>{
+                        window.tab_progress = () => {
                             const val = box?.value || box?.textContent || '';
                             const prct = val.trim().split(' ')[4];
                             if(prct && /^\d+(\.\d+)?%$/.test(prct)){
@@ -3688,34 +3688,16 @@ def web_interface(args, ctx):
                         // Also catch user edits
                         box.addEventListener('input', tab_progress);
                     }
-                    /*
-                    if(typeof(window.listen_vtt !== 'function')){
-                        window.listen_vtt = ()=>{
-                            const vtt_el = document.getElementById('gr_vtt_data');
-                            const read = () => {
-                                const pre = vtt_el ? vtt_el.querySelector('pre') : null;
-                                const txt = pre ? pre.textContent.trim() : '';
-                                try { window.gr_vtt_data = txt ? JSON.parse(txt) : []; }
-                                catch { window.gr_vtt_data = []; }
-                            };
-                            read();
-                            new MutationObserver(read).observe(vtt_el, { childList: true, subtree: true, characterData: true });
-                        };
-                    }
-                    */
                     // Now safely call it after the audio element is available
                     const tryRun = ()=>{
                         const audio = document.querySelector('#gr_audiobook_player audio');
-                        const vtt_el = document.getElementById('gr_vtt_data');
-                        if(audio && vtt_el && typeof(window.redraw_elements) === 'function' && typeof(window.listen_vtt) === 'function'){
+                        if(audio && typeof window.redraw_elements === 'function'){
                             window.redraw_elements();
-                            //window.listen_vtt();
                         }else{
                             setTimeout(tryRun, 100);
                         }
                     };
                     tryRun();
-
                     // Return localStorage data if needed
                     try{
                         const data = window.localStorage.getItem('data');
@@ -3723,7 +3705,6 @@ def web_interface(args, ctx):
                     }catch(e){
                         console.log('JSON parse error:', e);
                     }
-
                     return null;
                 }
                 """,
