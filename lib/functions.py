@@ -3607,9 +3607,12 @@ def web_interface(args, ctx):
             inputs=[gr_vtt_data],
             js="""
                 (data)=>{
+                    console.log('gr_vtt_data.change triggered');
                     if(data){
+                        console.log('gr_vtt_data data ok');
                         const vtt_el = document.querySelector('#gr_vtt_data');
                         if(vtt_el){
+                            console.log('vtt_el ok');
                             const pre = vtt_el.querySelector('pre');
                             const txt = pre ? pre.textContent.trim() : '';
                             try {
@@ -3620,6 +3623,8 @@ def web_interface(args, ctx):
                                 window.gr_vtt_data = [];
                                 console.log('window.gr_vtt_data failed');
                             }                            
+                        }else{
+                            console.log('vtt_el not found');
                         }
                     }
                 }
