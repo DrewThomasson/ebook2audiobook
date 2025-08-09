@@ -3690,33 +3690,33 @@ def web_interface(args, ctx):
                     }
                     if (typeof window.listen_vtt !== 'function') {
                         window.listen_vtt = () => {
-                        const init = () => {
-                        const vtt_el = document.getElementById('gr_vtt_data'); // MUST match elem_id in Python
-                        if (!vtt_el) { setTimeout(init, 100); return; }
+                            const init = () => {
+                            const vtt_el = document.getElementById('gr_vtt_data'); // MUST match elem_id in Python
+                            if (!vtt_el) { setTimeout(init, 100); return; }
 
-                        // Avoid double-binding on rerenders
-                        if (vtt_el.__vtt_observer_bound) return;
-                        vtt_el.__vtt_observer_bound = true;
+                            // Avoid double-binding on rerenders
+                            if (vtt_el.__vtt_observer_bound) return;
+                            vtt_el.__vtt_observer_bound = true;
 
-                        const read = () => {
-                            const pre = vtt_el.querySelector('pre');
-                            const txt = pre ? pre.textContent.trim() : '';
-                            try {
-                                const parsed = txt ? JSON.parse(txt) : null;
-                                window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ?? []);
-                            } catch {
-                                window.gr_vtt_data = [];
-                            }
+                            const read = () => {
+                                const pre = vtt_el.querySelector('pre');
+                                const txt = pre ? pre.textContent.trim() : '';
+                                try {
+                                    const parsed = txt ? JSON.parse(txt) : null;
+                                    window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ?? []);
+                                } catch {
+                                    window.gr_vtt_data = [];
+                                }
+                                };
+
+                                // Initial sync and observe updates
+                                read();
+                                const obs = new MutationObserver(read);
+                                obs.observe(vtt_el, { childList: true, subtree: true, characterData: true });
+                                vtt_el.__vtt_observer = obs;
                             };
 
-                            // Initial sync and observe updates
-                            read();
-                            const obs = new MutationObserver(read);
-                            obs.observe(vtt_el, { childList: true, subtree: true, characterData: true });
-                            vtt_el.__vtt_observer = obs;
-                        };
-
-                        if (!Array.isArray(window.gr_vtt_data)) window.gr_vtt_data = [];
+                            if (!Array.isArray(window.gr_vtt_data)) window.gr_vtt_data = [];
                             init();
                         };
                     }
