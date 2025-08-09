@@ -5,30 +5,7 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse
-import asyncio
-import csv
-import fnmatch
-import hashlib
-import io
-import json
-import math
-import os
-import platform
-import random
-import shutil
-import socket
-import subprocess
-import sys
-import tempfile
-import threading
-import time
-import traceback
-import unicodedata
-import urllib.request
-import uuid
-import zipfile
-
+import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback, unicodedata, urllib.request, uuid, zipfile
 import ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn, webvtt
 
 from soynlp.tokenizer import LTokenizer

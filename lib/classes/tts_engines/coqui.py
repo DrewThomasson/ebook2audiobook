@@ -1,17 +1,5 @@
-import hashlib
-import math
-import os
-import shutil
-import subprocess
-import tempfile
-import threading
-import uuid
-
-import numpy as np
-import regex as re
-import soundfile as sf
-import torch
-import torchaudio
+import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
+import numpy as np, regex as re, soundfile as sf, torch, torchaudio
 
 from huggingface_hub import hf_hub_download
 from pathlib import Path
