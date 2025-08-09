@@ -3609,7 +3609,7 @@ def web_interface(args, ctx):
                 (data)=>{
                     console.log('gr_vtt_data.change triggered');
                     if(data){
-                        console.log('gr_vtt_data data ok');
+                        console.log('gr_vtt_data data:', data);
                         try {
                             const parsed = JSON.parse(data);
                             window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
