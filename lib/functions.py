@@ -3688,33 +3688,38 @@ def web_interface(args, ctx):
                         // Also catch user edits
                         box.addEventListener('input', tab_progress);
                     }
+
+                    // vtt listener
                     if (typeof window.listen_vtt !== 'function') {
-                        window.listen_vtt = () => {
-                            const init = () => {
-                            const vtt_el = document.getElementById('gr_vtt_data'); // MUST match elem_id in Python
-                            if (!vtt_el) { setTimeout(init, 100); return; }
-
-                            // Avoid double-binding on rerenders
-                            if (vtt_el.__vtt_observer_bound) return;
-                            vtt_el.__vtt_observer_bound = true;
-
-                            const read = () => {
-                                const pre = vtt_el.querySelector('pre');
-                                const txt = pre ? pre.textContent.trim() : '';
-                                try {
-                                    const parsed = txt ? JSON.parse(txt) : null;
-                                    window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ?? []);
-                                } catch {
-                                    window.gr_vtt_data = [];
+                        window.listen_vtt = function () {
+                            function init() {
+                                var vtt_el = document.querySelector('#gr_vtt_data'); // must match elem_id of gr.JSON
+                                if (!vtt_el) {
+                                    setTimeout(init, 100);
+                                    return;
                                 }
-                                };
+
+                                // Avoid double-binding on rerenders
+                                if (vtt_el.__vtt_observer_bound) return;
+                                vtt_el.__vtt_observer_bound = true;
+
+                                function read() {
+                                    var pre = vtt_el.querySelector('pre');
+                                    var txt = pre ? pre.textContent.trim() : '';
+                                    try {
+                                        var parsed = txt ? JSON.parse(txt) : null;
+                                        window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
+                                    } catch (e) {
+                                        window.gr_vtt_data = [];
+                                    }
+                                }
 
                                 // Initial sync and observe updates
                                 read();
-                                const obs = new MutationObserver(read);
+                                var obs = new MutationObserver(read);
                                 obs.observe(vtt_el, { childList: true, subtree: true, characterData: true });
                                 vtt_el.__vtt_observer = obs;
-                            };
+                            }
 
                             if (!Array.isArray(window.gr_vtt_data)) window.gr_vtt_data = [];
                             init();
@@ -3722,24 +3727,31 @@ def web_interface(args, ctx):
                     }
 
                     // Now safely call it after the audio element is available
-                    const tryRun = ()=>{
-                        const audio = document.querySelector('#gr_audiobook_player audio');
-                        if(!audio){ setTimeout(tryRun, 100); return; }
-
-                        if(typeof window.redraw_elements === 'function'){
-                            try{ window.redraw_elements(); } catch(e){ console.log('redraw_elements error:', e); }
+                    function tryRun() {
+                        var audio = document.querySelector('#gr_audiobook_player audio');
+                        if (!audio) {
+                            setTimeout(tryRun, 100);
+                            return;
                         }
 
-                        if(!window.__listen_vtt_started){
+                        if (typeof window.redraw_elements === 'function') {
+                            try {
+                                window.redraw_elements();
+                            } catch (e) {
+                                console.log('redraw_elements error:', e);
+                            }
+                        }
+
+                        if (!window.__listen_vtt_started) {
                             if (typeof window.listen_vtt === 'function') {
                                 window.__listen_vtt_started = true;
                                 window.listen_vtt();
-                            }else{
+                            } else {
                                 setTimeout(tryRun, 50);
                                 return;
                             }
                         }
-                    };
+                    }
                     tryRun();
 
                     // Return localStorage data if needed
