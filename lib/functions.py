@@ -603,9 +603,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
         if not body or not body.get_text(strip=True):
-            error = 'No text body found!'
-            print(error)
-            return None
+            return []
         # Skip known non-chapter types
         epub_type = body.get("epub:type", "").lower()
         if not epub_type:
