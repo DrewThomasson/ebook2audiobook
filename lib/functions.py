@@ -1304,7 +1304,7 @@ def convert_chapters2audio(session):
             return False
         total_iterations = sum(len(session['chapters'][x]) for x in range(total_chapters))
         total_sentences = sum(sum(1 for row in chapter if row.strip() not in TTS_SML.values()) for chapter in session['chapters'])
-        if len(total_sentences) == 0:
+        if total_sentences == 0:
             error = 'No sentences found!'
             print(error)
             return False           
