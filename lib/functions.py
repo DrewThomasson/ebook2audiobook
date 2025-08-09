@@ -3530,7 +3530,7 @@ def web_interface(args, ctx):
                 }
             """),
             inputs=[gr_audiobook_player],
-            outputs=[cues_json],  # or [] if you don’t want any UI output
+            outputs=[]
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
