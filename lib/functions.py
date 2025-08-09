@@ -3670,9 +3670,9 @@ def web_interface(args, ctx):
                         window.__titleSync = true;
                         window.tab_progress = () => {
                             const val = box?.value || box?.textContent || "";
-                            const percentage = val.trim().split(" ")[1];
-                            if (percentage) {
-                                document.title = percentage;
+                            const prct = val.trim().split(" ")[2];
+                            if (prct) {
+                                document.title = prct;
                             }
                         };
                         // Observe programmatic changes
