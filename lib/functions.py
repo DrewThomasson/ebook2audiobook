@@ -735,7 +735,7 @@ def get_sentences(text, lang, tts_engine):
                     elif lang in ['tha', 'lao', 'mya', 'khm']:
                         result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
                     else:
-                        result.append(segment.strip())
+                        result.append(segment)
             return result
         except Exception as e:
             DependencyError(e)
@@ -793,9 +793,7 @@ def get_sentences(text, lang, tts_engine):
                         if text_part:
                             hard_list.append(text_part)
                 else:
-                    s = s.strip()
-                    if s:
-                        hard_list.append(s)
+                    hard_list.append(s)
         # Check if some hard_list entries exceed max_chars, so split on soft punctuation
         pattern_split = '|'.join(map(re.escape, punctuation_split_soft_set))
         pattern = re.compile(rf"(.*?(?:{pattern_split}))(?=\s|$)", re.DOTALL)
@@ -814,43 +812,34 @@ def get_sentences(text, lang, tts_engine):
                         if len(buffer.split()) < min_tokens:
                             buffer = buffer + ' ' + part
                         else:
-                            buffer = buffer.strip()
-                            if buffer:
-                                soft_list.append(buffer)
+                            soft_list.append(buffer)
                             buffer = part
                     if buffer:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
-                        buffer = buffer.strip()
-                        if buffer:
-                            soft_list.append(buffer)
+                        soft_list.append(buffer)
                 else:
                     cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                     if not any(ch.isalnum() for ch in cleaned):
                         continue
-                    s = s.strip()
-                    if s:
-                        soft_list.append(s)
+                    soft_list.append(s)
             else:
                 cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                 if not any(ch.isalnum() for ch in cleaned):
                     continue
-                s = s.strip()
-                if s:
-                    soft_list.append(s)
+                soft_list.append(s)
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
                 if s in [TTS_SML['break'], TTS_SML['pause']]:
-                    result.append(s.strip())
+                    result.append(s)
                 else:
                     tokens = segment_ideogramms(s)
                     if isinstance(tokens, list):
                         result.extend([t for t in tokens if t.strip()])
                     else:
-                        tokens = tokens.strip()
-                        if tokens:
+                        if tokens.strip():
                             result.append(tokens)
             return list(join_ideogramms(result))
         else:
@@ -865,9 +854,8 @@ def get_sentences(text, lang, tts_engine):
                         if len(text_part) + 1 + len(w) <= max_chars:
                             text_part += ' ' + w
                         else:
-                            sentences.append(text_part)
+                            sentences.append(text_part.strip())
                             text_part = w
-                    text_part = text_part.strip()
                     if text_part:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part)
                         if not any(ch.isalnum() for ch in cleaned):
@@ -1247,11 +1235,12 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = ' '.join(text.split())
     return text
 
-def convert_chapters2audio(session, progress_bar=None):
+def convert_chapters2audio(session):
     try:
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
+        progress_bar = gr.Progress(track_tqdm=False) if is_gui_process else None
         tts_manager = TTSManager(session)
         if not tts_manager:
             error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
@@ -1317,11 +1306,12 @@ def convert_chapters2audio(session, progress_bar=None):
                         if success:
                             total_progress = (t.n + 1) / total_iterations
                             is_sentence = sentence.strip() not in TTS_SML.values()
+                            if progress_bar is not None:
+                                progress_bar(total_progress)
                             percentage = total_progress * 100
                             t.set_description(f'{percentage:.2f}%')
                             msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
-                            yield total_progress
                         else:
                             return False
                     if sentence.strip() not in TTS_SML.values():
@@ -2111,8 +2101,6 @@ def web_interface(args, ctx):
     src_label_file = 'Select a File'
     src_label_dir = 'Select a Directory'
     
-    gr_progress_bar = gr.Progress(track_tqdm=False)
-    
     visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
     visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
     visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
@@ -2467,7 +2455,8 @@ def web_interface(args, ctx):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False)
         gr_write_data = gr.JSON(visible=False)
-        gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=True)
+        #gr_conversion_progress = gr.Textbox(elem_id='gr_conversion_progress', label='Progress', interactive=True)
+        gr_conversion_progress = gr.Progress(track_tqdm=False)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
@@ -3448,9 +3437,9 @@ def web_interface(args, ctx):
             inputs=[gr_output_split_hours_list, gr_session],
             outputs=None
         )
-        gr_progress_box.change(
+        gr_conversion_progress.change(
             fn=None,
-            inputs=[gr_progress_box],
+            inputs=[gr_conversion_progress],
             outputs=[],
             js='(val) => { document.title = val; }'
         )
@@ -3548,7 +3537,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours_list
             ],
-            outputs=[gr_progress_box]
+            outputs=[gr_conversion_progress]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
@@ -3654,15 +3643,12 @@ def web_interface(args, ctx):
                         };
                     }
                     if(typeof window.tab_progress !== 'function'){
-                        const box = document.getElementById('gr_progress_box');
+                        const box = document.getElementById('gr_conversion_progress');
                         if (!box || window.__titleSync) return;
                         window.__titleSync = true;
                         window.tab_progress = ()=>{
                             const val = box.value ?? box.textContent ?? "";
-                            console.log('------------',val);
-                            if (val){
-                                document.title = val; 
-                            }
+                            if (val) { document.title = val; }
                         };
                         // Observe programmatic changes
                         new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
