@@ -3692,8 +3692,8 @@ def web_interface(args, ctx):
                         // VTT listener
                         if (typeof window.listen_vtt !== 'function') {
                             window.listen_vtt = function () {
-                                function init() {
-                                    var vtt_el = document.querySelector('#gr_vtt_data'); // must match elem_id of gr.JSON
+                                const init = ()=>{
+                                    var vtt_el = document.querySelector('#gr_vtt_data');
                                     if (!vtt_el) {
                                         setTimeout(init, 100);
                                         return;
@@ -3703,15 +3703,16 @@ def web_interface(args, ctx):
                                     if (vtt_el.__vtt_observer_bound) return;
                                     vtt_el.__vtt_observer_bound = true;
 
-                                    function read() {
+                                    const read = ()=>{
                                         var pre = vtt_el.querySelector('pre');
                                         var txt = pre ? pre.textContent.trim() : '';
                                         try {
                                             var parsed = txt ? JSON.parse(txt) : null;
                                             window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
-                                            console.log('window.gr_vtt_data:', window.gr_vtt_data);
+                                            console.log(window.gr_vtt_data);
                                         } catch (e) {
                                             window.gr_vtt_data = [];
+                                            console.log('window.gr_vtt_data failed');
                                         }
                                     }
 
