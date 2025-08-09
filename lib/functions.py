@@ -1310,6 +1310,7 @@ def convert_chapters2audio(session):
         sentence_number = 0
         msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
         print(msg)
+        progress_bar = gr.Progress(track_tqdm=False)
         with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
@@ -1331,6 +1332,7 @@ def convert_chapters2audio(session):
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence)
                         if success:
                             total_progress = (t.n + 1) / total_iterations
+                            progress_bar(total_progress)
                             is_sentence = sentence.strip() not in TTS_SML.values()
                             percentage = total_progress * 100
                             t.set_description(f'{percentage:.2f}%')
@@ -2121,8 +2123,6 @@ def web_interface(args, ctx):
     
     src_label_file = 'Select a File'
     src_label_dir = 'Select a Directory'
-    
-    gr_progress_bar = gr.Progress(track_tqdm=True)
     
     visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
     visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
