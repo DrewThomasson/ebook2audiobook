@@ -3528,7 +3528,7 @@ def web_interface(args, ctx):
                     // Expose to client scripts
                     window.gr_audio_cues = cues;
                 }
-            """),
+            """,
             inputs=[gr_audiobook_player],
             outputs=[]
         )
