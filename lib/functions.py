@@ -3697,7 +3697,7 @@ def web_interface(args, ctx):
                             };
                         }
                         if(typeof window.tab_progress !== 'function'){
-                            const box = document.getElementById('gr_progress_box');
+                            const box = document.querySelector('#gr_progress_box');
                             if (!box || window.__titleSync) return;
                             window.__titleSync = true;
                             window.tab_progress = () => {
