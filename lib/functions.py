@@ -2873,6 +2873,9 @@ def web_interface(args, ctx):
                             shutil.rmtree(selected, ignore_errors=True)
                         elif os.path.exists(audiobook):
                             os.remove(audiobook)
+                        vtt_path = Path(audiobook).with_suffix('.vtt')
+                        if os.path.exists(vtt_path):
+                            os.remove(vtt_path)
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
