@@ -546,7 +546,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         print(msg)
         for doc in all_docs:
             sentences_list = filter_chapter(doc, session['language'], session['language_iso1'], session['tts_engine'], stanza_nlp, is_num2words_compat)
-            if sentences_list is not None:
+            if sentences_list is None:
+                break
+            elif len(sentences_list) > 0:
                 chapters.append(sentences_list)
         if len(chapters) == 0:
             error = 'No chapters found!'
@@ -616,7 +618,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             "appendix", "bibliography", "copyright-page", "landmark"
         }
         if any(part in epub_type for part in excluded):
-            return None
+            return []
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
