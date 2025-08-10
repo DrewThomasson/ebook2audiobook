@@ -3659,7 +3659,7 @@ def web_interface(args, ctx):
                                 const gr_progress_box     = root.querySelector('#gr_progress_box');
 
                                 if (!(gr_audiobook_player && gr_audiobook_vtt && gr_progress_box)) {
-                                    // console.log('[wait] elements not ready (shadow DOM)');
+                                    console.log('[wait] elements not ready (shadow DOM)');
                                     setTimeout(waitForElements, 250);
                                     return;
                                 }
