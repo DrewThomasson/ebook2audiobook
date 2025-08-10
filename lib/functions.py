@@ -3625,7 +3625,7 @@ def web_interface(args, ctx):
                 ()=>{
                     try{
                         let init_timeout;
-                        function init(){
+                        init = ()=>{
                             const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                             const gr_vtt_data = document.querySelector('#gr_vtt_data');
                             const gr_progress_box = document.querySelector('#gr_progress_box');
@@ -3634,8 +3634,10 @@ def web_interface(args, ctx):
                         if(!init()){
                             clearTimeout(init_timeout);
                             init_timeout = setTimeout(init, 400);
+                            console.log('gr_audiobook_player && gr_vtt_data && gr_progress_box are not ready!');
                             return;
                         }
+
                         if(typeof(window.redraw_elements) !== 'function'){
                             window.elColor = '#666666'
                             window.redraw_elements = ()=>{
@@ -3686,6 +3688,7 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
+
                         if(typeof(window.load_vtt) !== 'function'){
                             window.load_vtt = ()=>{
                                 try{
@@ -3721,6 +3724,7 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
+ 
                         if(typeof(window.tab_progress) !== 'function'){
                             window.tab_progress = () => {
                                 const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
@@ -3732,8 +3736,10 @@ def web_interface(args, ctx):
                             new MutationObserver(tab_progress).observe(gr_progress_box,{attributes: true, childList: true, subtree: true, characterData: true});
                             gr_progress_box.addEventListener('input', tab_progress);
                         }
+
                         window.redraw_elements(); 
                         window.load_vtt();
+
                         // Load last saved parameters and inputs
                         const data = window.localStorage.getItem('data');
                         if(data){
