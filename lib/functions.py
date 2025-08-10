@@ -3598,7 +3598,7 @@ def web_interface(args, ctx):
             outputs=[gr_glass_mask]
         )
         gr_audiobook_vtt.change(
-            fn=lambda vtt: show_alert({"type": "info", "msg": vtt}),
+            fn=lambda gr_audiobook_vtt: show_alert({"type": "info", "msg": gr_audiobook_vtt}),
             inputs=[gr_audiobook_vtt],
             js="""
                 (data)=>{
