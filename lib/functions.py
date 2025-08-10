@@ -3457,6 +3457,11 @@ def web_interface(args, ctx):
             inputs=[gr_output_split_hours, gr_session],
             outputs=None
         )
+        gr_audiobook_vtt.change(
+            fn=None,
+            inputs=[gr_audiobook_vtt],
+            js='(data)=>{window.redraw_elements?.(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'  
+        )
         gr_progress_box.change(
             fn=None,
             inputs=[gr_progress_box],
@@ -3601,22 +3606,6 @@ def web_interface(args, ctx):
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
             outputs=[gr_glass_mask]
         )
-        gr_audiobook_vtt.change(
-            fn=None,
-            inputs=[gr_audiobook_vtt],
-            js="""
-                (data)=>{
-                    try{
-                        if(data){
-                            const vtt_blob = new Blob([data],{type: 'text/vtt'});
-                            window.audiobook_vtt_url = URL.createObjectURL(vtt_blob);
-                        }
-                    }catch(e){
-                        console.log('gr_audiobook_vtt.change error: '+e)
-                    }
-                }
-            """  
-        )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
@@ -3691,8 +3680,8 @@ def web_interface(args, ctx):
                                     if(gr_audiobook_player){
                                         const gr_audiobook_track = document.createElement('track');
                                         gr_audiobook_track.id = 'gr_audiobook_track';
-                                        gr_audiobook_track.src = path;
                                         gr_audiobook_track.default = true;
+                                        gr_audiobook_track.src = path;
                                         gr_audiobook_track.kind = 'captions';
                                         gr_audiobook_track.label = 'captions';
                                         gr_audiobook_track.addEventListener('load', ()=>{
