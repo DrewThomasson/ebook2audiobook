@@ -3629,11 +3629,14 @@ def web_interface(args, ctx):
                             const gr_vtt_data = document.querySelector('#gr_vtt_data');
                             const gr_progress_box = document.querySelector('#gr_progress_box');
                             if(!gr_audiobook_player || !gr_vtt_data || !gr_progress_box){
-                                setTimeout(init, 400);
-                                return;
+                                return false;
                             }
+                            return true;
                         }
-                        init();
+                        if(!init()){
+                            init_timeout = setTimeout(init, 400);
+                            return;
+                        }
                         if(typeof(window.redraw_elements) !== 'function'){
                             window.elColor = '#666666'
                             window.redraw_elements = ()=>{
