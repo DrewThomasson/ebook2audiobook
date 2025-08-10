@@ -3630,154 +3630,114 @@ def web_interface(args, ctx):
         app.load(
             fn=None,
             js="""
-                () => {
-                    try {
-                        if (!window.__orig_title) window.__orig_title = document.title;
-
-                        // --- helpers ---
-                        function grRoot() {
-                            return (window.gradioApp && window.gradioApp()) || document;
-                        }
-
-                        // Expose safe stubs immediately so later JS injections won't crash
-                        if (typeof window.redraw_elements !== 'function') {
-                            window.redraw_elements = function () { return false; };
-                        }
-                        if (typeof window.load_vtt !== 'function') {
-                            window.load_vtt = function () { return false; };
-                        }
-                        if (typeof window.tab_progress !== 'function') {
-                            window.tab_progress = function () { return false; };
-                        }
-
-                        // Defer boot so Gradio can render its DOM first
-                        setTimeout(() => {
-                            (function waitForElements() {
-                                const root = grRoot();
-                                const gr_audiobook_player = root.querySelector('#gr_audiobook_player');
-                                const gr_audiobook_vtt    = root.querySelector('#gr_audiobook_vtt');
-                                const gr_progress_box     = root.querySelector('#gr_progress_box');
-
-                                if (!(gr_audiobook_player && gr_audiobook_vtt && gr_progress_box)) {
-                                    console.log('[wait] elements not ready (shadow DOM)');
-                                    setTimeout(waitForElements, 250);
-                                    return;
-                                }
-
-                                // Upgrade implementations (now that elements exist)
-                                window.redraw_elements = function () {
-                                    try {
-                                        const root = grRoot();
-                                        const gr_audiobook_player = root.querySelector('#gr_audiobook_player');
-                                        if (!gr_audiobook_player) return false;
-
-                                        const url = new URL(window.location);
-                                        const theme = url.searchParams.get('__theme');
-                                        const osDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-                                        const useDark = theme ? (theme === 'dark') : !!osDark;
-
-                                        const elColor = useDark ? '#fff' : '#666';
-                                        const audioFilter = useDark ? 'invert(1) hue-rotate(180deg)' : '';
-
-                                        root.querySelectorAll("input[type='checkbox']").forEach(cb => { cb.style.border = '1px solid ' + elColor; });
-                                        root.querySelectorAll("input[type='radio']").forEach(rb => { rb.style.border = '1px solid ' + elColor; });
-
-                                        if (!gr_audiobook_player.style.transition) gr_audiobook_player.style.transition = 'filter 200ms ease';
-                                        gr_audiobook_player.style.filter = audioFilter;
-                                        return true;
-                                    } catch (e) {
-                                        console.log('redraw_elements error:', e);
-                                        return true;
-                                    }
-                                };
-
-                                window.load_vtt = function () {
-                                    try {
-                                        const root = grRoot();
-                                        const gr_audiobook_player = root.querySelector('#gr_audiobook_player');
-                                        const gr_audiobook_vtt    = root.querySelector('#gr_audiobook_vtt');
-                                        if (!gr_audiobook_player || !gr_audiobook_vtt) return false;
-
-                                        let gr_audiobook_track = root.querySelector('#gr_audiobook_track');
-                                        if (!gr_audiobook_track) {
-                                            gr_audiobook_track = document.createElement('track');
-                                            gr_audiobook_track.id = 'gr_audiobook_track';
-                                            gr_audiobook_track.default = true;
-                                            gr_audiobook_track.kind = 'captions';
-                                            gr_audiobook_track.label = 'captions';
-                                            gr_audiobook_player.appendChild(gr_audiobook_track);
+                ()=>{
+                    try{
+                        if(typeof(window.redraw_elements) !== 'function'){
+                            window.redraw_elements = ()=>{
+                                try{
+                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
+                                    const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
+                                    const radios = document.querySelectorAll(\"input[type='radio']\");
+                                    const url = new URL(window.location);
+                                    const theme = url.searchParams.get('__theme');
+                                    let osTheme;
+                                    let audioFilter = '';
+                                    let elColor = '#666666';
+                                    if(theme){
+                                        if(theme === 'dark'){
+                                            audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            elColor = '#fff';
                                         }
-
-                                        function onCueChange() {
-                                            try {
-                                                const tt = gr_audiobook_player.textTracks && gr_audiobook_player.textTracks[0];
-                                                if (!tt) { gr_audiobook_vtt.textContent = '...'; return; }
-                                                const cues = tt.activeCues;
-                                                if (cues && cues.length) {
-                                                    gr_audiobook_vtt.innerHTML = `<span class="fade-in">${[...cues].map(c => c.text).join(' ')}</span>`;
-                                                } else {
-                                                    gr_audiobook_vtt.textContent = '...';
-                                                }
-                                            } catch (e) { console.log('cuechange error:', e); }
-                                        }
-
-                                        gr_audiobook_player.addEventListener('ended', () => { gr_audiobook_vtt.textContent = '...'; });
-                                        gr_audiobook_track.addEventListener('load', () => {
-                                            try {
-                                                const tt = gr_audiobook_player.textTracks && gr_audiobook_player.textTracks[0];
-                                                if (tt) {
-                                                    tt.mode = 'showing';
-                                                    tt.addEventListener('cuechange', onCueChange);
-                                                    onCueChange();
-                                                }
-                                            } catch (e) { console.log('track load error:', e); }
+                                        checkboxes.forEach(cb=>{
+                                            cb.style.border = '1px solid ' + elColor;
                                         });
-
-                                        new MutationObserver(onCueChange)
-                                            .observe(gr_audiobook_track, { attributes: true, attributeFilter: ['src'] });
-
-                                        return true;
-                                    } catch (e) {
-                                        console.log('load_vtt error:', e);
-                                        return true;
+                                        radios.forEach(cb=>{
+                                            cb.style.border = '1px solid ' + elColor;
+                                        });
+                                    }else{
+                                        osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                                        if(osTheme){
+                                            audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            elColor = '#fff';
+                                        }
+                                        checkboxes.forEach(cb=>{
+                                            cb.style.border = '1px solid ' + elColor;
+                                        });
+                                        radios.forEach(cb=>{
+                                            cb.style.border = '1px solid ' + elColor;
+                                        });
                                     }
-                                };
-
-                                window.tab_progress = function () {
-                                    try {
-                                        const root = grRoot();
-                                        const gr_progress_box = root.querySelector('#gr_progress_box');
-                                        if (!gr_progress_box) return false;
-                                        const val = ('value' in gr_progress_box ? gr_progress_box.value : gr_progress_box.textContent) || '';
-                                        const m = String(val).match(/(\\d+(?:\\.\\d+)?)%/);
-                                        document.title = m ? '—— ' + m[1] + '% ——' : window.__orig_title;
-                                        return true;
-                                    } catch (e) {
-                                        console.log('tab_progress error:', e);
-                                        return true;
+                                    if(!gr_audiobook_player.style.transition){
+                                        gr_audiobook_player.style.transition = 'filter 1s ease';
                                     }
-                                };
-
-                                // Bind observers for progress updates (using root)
-                                new MutationObserver(window.tab_progress)
-                                    .observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
-                                gr_progress_box.addEventListener('input', window.tab_progress);
-
-                                // Initial run
-                                window.redraw_elements();
-                                window.load_vtt();
-                                window.tab_progress();
-                            })();
-                        }, 0);
-
-                        // Return immediately so Gradio can render elements (and your .then can safely call the window fns)
-                        try {
-                            const raw = window.localStorage.getItem('data');
-                            if (raw) return JSON.parse(raw);
-                        } catch (e) {
-                            console.log('localStorage error:', e);
+                                    gr_audiobook_player.style.filter = audioFilter;
+                                }catch(e){
+                                    console.log('redraw_elements error:', e);
+                                }
+                            };
                         }
-                    } catch (e) {
+                        if(typeof(window.load_vtt) !== 'function'){
+                            window.load_vtt = ()=>{
+                                try{
+                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
+                                    const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
+                                    const gr_audiobook_track = document.createElement('track');
+                                    gr_audiobook_track.id = 'gr_audiobook_track';
+                                    gr_audiobook_track.src = '';
+                                    gr_audiobook_track.default = true;
+                                    gr_audiobook_track.kind = 'captions';
+                                    gr_audiobook_track.label = 'captions';
+                                    gr_audiobook_track.addEventListener('load', ()=>{
+                                        const track = gr_audiobook_player.textTracks[0];
+                                        track.mode = 'showing';
+                                        track.addEventListener('cuechange', function(){
+                                            console.log('cuechange: ok');
+                                            if (this.activeCues){
+                                                console.log('this.activeCues: '+ this.activeCues);
+                                                if(this.activeCues[0]){
+                                                    console.log('this.activeCues[0]: '+ this.activeCues[0]);
+                                                    gr_audiobook_vtt.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                                }
+                                                return
+                                            }
+                                            gr_audiobook_vtt.innerHTML = '...';
+                                        });
+                                    });
+                                    gr_audiobook_player.appendChild(gr_audiobook_track);
+                                    gr_audiobook_player.addEventListener('ended', ()=>{
+                                        gr_audiobook_vtt.innerHTML = '...';
+                                    });
+                                }catch(e){
+                                    console.log('load_vtt error:', e);
+                                }
+                            };
+                        }                     
+                        if(typeof(window.tab_progress) !== 'function'){
+                            window.tab_progress = () => {
+                                const gr_progress_box = document.querySelector('#gr_progress_box');
+                                const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
+                                const prct = val.trim().split(' ')[4];
+                                if(prct && /^\d+(\.\d+)?%$/.test(prct)){
+                                    document.title = '-------- ' + prct + '--------';
+                                }
+                            };
+                            new MutationObserver(tab_progress).observe(gr_progress_box,{attributes: true, childList: true, subtree: true, characterData: true});
+                            gr_progress_box.addEventListener('input', tab_progress);
+                        }
+                        
+                        //window.redraw_elements(); 
+                        //window.load_vtt();
+
+                        // Load last saved parameters and inputs
+                        const data = window.localStorage.getItem('data');
+                        if(data){
+                            try{
+                                return JSON.parse(data);
+                            }catch(e){
+                                console.log('JSON parse error:', e);
+                            }
+                        }
+                    }catch(e){
                         console.log('js from app.load() error:', e);
                     }
                     return null;
