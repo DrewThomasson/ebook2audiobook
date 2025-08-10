@@ -3695,16 +3695,15 @@ def web_interface(args, ctx):
                                 vtt_track.default = true;
                                 vtt_track.kind = 'captions';
                                 vtt_track.label = 'captions';
-                                gr_audiobook_player.appendChild(vtt_track);
                                 vtt_track.addEventListener('load', ()=>{
                                     const track = gr_audiobook_player.textTracks[0];
                                     track.mode = 'showing';
                                     track.addEventListener('cuechange', function(){
-                                        console.log('cuechange: ok')
+                                        console.log('cuechange: ok');
                                         if (this.activeCues){
-                                            console.log('this.activeCues: '+ this.activeCues)
+                                            console.log('this.activeCues: '+ this.activeCues);
                                             if(this.activeCues[0]){
-                                                console.log('this.activeCues[0]: '+ this.activeCues[0])
+                                                console.log('this.activeCues[0]: '+ this.activeCues[0]);
                                                 gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
                                             }
                                             return
@@ -3712,6 +3711,7 @@ def web_interface(args, ctx):
                                         gr_vtt_data.innerHTML = '...';
                                     });
                                 });
+                                gr_audiobook_player.appendChild(vtt_track);
                                 gr_audiobook_player.addEventListener('ended', ()=>{
                                     gr_vtt_data.innerHTML = '...';
                                 });
