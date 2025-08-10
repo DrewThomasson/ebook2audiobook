@@ -3634,21 +3634,43 @@ def web_interface(args, ctx):
                     try {
                         if (!window.__orig_title) window.__orig_title = document.title;
 
+                        // --- helpers ---
+                        function grRoot() {
+                            return (window.gradioApp && window.gradioApp()) || document;
+                        }
+
+                        // Expose safe stubs immediately so later JS injections won't crash
+                        if (typeof window.redraw_elements !== 'function') {
+                            window.redraw_elements = function () { return false; };
+                        }
+                        if (typeof window.load_vtt !== 'function') {
+                            window.load_vtt = function () { return false; };
+                        }
+                        if (typeof window.tab_progress !== 'function') {
+                            window.tab_progress = function () { return false; };
+                        }
+
+                        // Defer boot so Gradio can render its DOM first
                         setTimeout(() => {
                             (function waitForElements() {
-                                const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                                const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
-                                const gr_progress_box = document.querySelector('#gr_progress_box');
+                                const root = grRoot();
+                                const gr_audiobook_player = root.querySelector('#gr_audiobook_player');
+                                const gr_audiobook_vtt    = root.querySelector('#gr_audiobook_vtt');
+                                const gr_progress_box     = root.querySelector('#gr_progress_box');
 
                                 if (!(gr_audiobook_player && gr_audiobook_vtt && gr_progress_box)) {
-                                    setTimeout(waitForElements, 200);
-                                    console.log('gr_audiobook_player && gr_audiobook_vtt && gr_progress_box not ready')
+                                    // console.log('[wait] elements not ready (shadow DOM)');
+                                    setTimeout(waitForElements, 250);
                                     return;
                                 }
 
-                                // Expose functions on window so they can be called later
-                                window.redraw_elements = function() {
+                                // Upgrade implementations (now that elements exist)
+                                window.redraw_elements = function () {
                                     try {
+                                        const root = grRoot();
+                                        const gr_audiobook_player = root.querySelector('#gr_audiobook_player');
+                                        if (!gr_audiobook_player) return false;
+
                                         const url = new URL(window.location);
                                         const theme = url.searchParams.get('__theme');
                                         const osDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -3657,19 +3679,26 @@ def web_interface(args, ctx):
                                         const elColor = useDark ? '#fff' : '#666';
                                         const audioFilter = useDark ? 'invert(1) hue-rotate(180deg)' : '';
 
-                                        document.querySelectorAll("input[type='checkbox']").forEach(cb => { cb.style.border = '1px solid ' + elColor; });
-                                        document.querySelectorAll("input[type='radio']").forEach(rb => { rb.style.border = '1px solid ' + elColor; });
+                                        root.querySelectorAll("input[type='checkbox']").forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                        root.querySelectorAll("input[type='radio']").forEach(rb => { rb.style.border = '1px solid ' + elColor; });
 
                                         if (!gr_audiobook_player.style.transition) gr_audiobook_player.style.transition = 'filter 200ms ease';
                                         gr_audiobook_player.style.filter = audioFilter;
+                                        return true;
                                     } catch (e) {
                                         console.log('redraw_elements error:', e);
+                                        return true;
                                     }
                                 };
 
-                                window.load_vtt = function() {
+                                window.load_vtt = function () {
                                     try {
-                                        let gr_audiobook_track = document.querySelector('#gr_audiobook_track');
+                                        const root = grRoot();
+                                        const gr_audiobook_player = root.querySelector('#gr_audiobook_player');
+                                        const gr_audiobook_vtt    = root.querySelector('#gr_audiobook_vtt');
+                                        if (!gr_audiobook_player || !gr_audiobook_vtt) return false;
+
+                                        let gr_audiobook_track = root.querySelector('#gr_audiobook_track');
                                         if (!gr_audiobook_track) {
                                             gr_audiobook_track = document.createElement('track');
                                             gr_audiobook_track.id = 'gr_audiobook_track';
@@ -3689,9 +3718,7 @@ def web_interface(args, ctx):
                                                 } else {
                                                     gr_audiobook_vtt.textContent = '...';
                                                 }
-                                            } catch (e) {
-                                                console.log('cuechange error:', e);
-                                            }
+                                            } catch (e) { console.log('cuechange error:', e); }
                                         }
 
                                         gr_audiobook_player.addEventListener('ended', () => { gr_audiobook_vtt.textContent = '...'; });
@@ -3703,41 +3730,47 @@ def web_interface(args, ctx):
                                                     tt.addEventListener('cuechange', onCueChange);
                                                     onCueChange();
                                                 }
-                                            } catch (e) {
-                                                console.log('track load error:', e);
-                                            }
+                                            } catch (e) { console.log('track load error:', e); }
                                         });
 
                                         new MutationObserver(onCueChange)
                                             .observe(gr_audiobook_track, { attributes: true, attributeFilter: ['src'] });
+
+                                        return true;
                                     } catch (e) {
                                         console.log('load_vtt error:', e);
+                                        return true;
                                     }
                                 };
 
-                                window.tab_progress = function() {
+                                window.tab_progress = function () {
                                     try {
+                                        const root = grRoot();
+                                        const gr_progress_box = root.querySelector('#gr_progress_box');
+                                        if (!gr_progress_box) return false;
                                         const val = ('value' in gr_progress_box ? gr_progress_box.value : gr_progress_box.textContent) || '';
                                         const m = String(val).match(/(\\d+(?:\\.\\d+)?)%/);
                                         document.title = m ? '—— ' + m[1] + '% ——' : window.__orig_title;
+                                        return true;
                                     } catch (e) {
                                         console.log('tab_progress error:', e);
+                                        return true;
                                     }
                                 };
 
-                                // Bind observers for progress updates
-                                new MutationObserver(window.tab_progress).observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
+                                // Bind observers for progress updates (using root)
+                                new MutationObserver(window.tab_progress)
+                                    .observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
                                 gr_progress_box.addEventListener('input', window.tab_progress);
 
                                 // Initial run
                                 window.redraw_elements();
                                 window.load_vtt();
                                 window.tab_progress();
-
                             })();
                         }, 0);
 
-                        // Return immediately so Gradio renders elements
+                        // Return immediately so Gradio can render elements (and your .then can safely call the window fns)
                         try {
                             const raw = window.localStorage.getItem('data');
                             if (raw) return JSON.parse(raw);
