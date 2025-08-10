@@ -3624,22 +3624,6 @@ def web_interface(args, ctx):
             js="""
                 ()=>{
                     try{
-                        function init(){
-                            try{
-                                const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                                const gr_vtt_data = document.querySelector('#gr_vtt_data');
-                                const gr_progress_box = document.querySelector('#gr_progress_box');
-                                const status = !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
-                                if(!status){
-                                    clearTimeout(init_timeout);
-                                    init_timeout = setTimeout(init, 400);
-                                    return;
-                                }
-                            }catch(e){
-                                console.log('init error:', e);
-                            }
-                        }
-
                         if(typeof(window.redraw_elements) !== 'function'){
                             window.elColor = '#666666';
                             window.redraw_elements = ()=>{
@@ -3724,6 +3708,22 @@ def web_interface(args, ctx):
                                     console.log('load_vtt error:', e);
                                 }
                             };
+                        }
+
+                        function init(){
+                            try{
+                                const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
+                                const gr_vtt_data = document.querySelector('#gr_vtt_data');
+                                const gr_progress_box = document.querySelector('#gr_progress_box');
+                                const status = !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
+                                if(!status){
+                                    clearTimeout(init_timeout);
+                                    init_timeout = setTimeout(init, 400);
+                                    return;
+                                }
+                            }catch(e){
+                                console.log('init error:', e);
+                            }
                         }
 
                         window.redraw_elements(); 
