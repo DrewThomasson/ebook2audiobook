@@ -3679,7 +3679,7 @@ def web_interface(args, ctx):
                                     const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
                                     console.log('gr_audiobook_player: ',gr_audiobook_player);
                                     if(gr_audiobook_player){
-                                        const gr_audiobook_track = document.createElement('track');
+                                        const gr_audiobook_track = document.querySelector('#gr_audiobook_track') || document.createElement('track');
                                         gr_audiobook_track.id = 'gr_audiobook_track';
                                         gr_audiobook_track.default = true;
                                         gr_audiobook_track.src = path;
