@@ -5,8 +5,8 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback, unicodedata, urllib.request, uuid, zipfile
-import ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn, webvtt
+import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
+import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -3634,6 +3634,7 @@ def web_interface(args, ctx):
                     try{
                         // Define the global function ONCE
                         if(typeof window.redraw_elements !== 'function'){
+                            window.elColor = '#666666'
                             window.redraw_elements = ()=>{
                                 try{
                                     const gr_audiobook_player = document.getElementById('gr_audiobook_player');
@@ -3643,19 +3644,18 @@ def web_interface(args, ctx):
                                     const theme = url.searchParams.get('__theme');
                                     let osTheme;
                                     let audioFilter = '';
-                                    let elColor = '#666666';
                                     if(theme){
                                         if(theme === 'dark'){
                                             if(gr_audiobook_player){
                                                 audioFilter = 'invert(1) hue-rotate(180deg)';
                                             }
-                                            elColor = '#fff';
+                                            window.elColor = '#fff';
                                         }
                                         checkboxes.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
+                                            cb.style.border = '1px solid ' + window.elColor;
                                         });
                                         radios.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
+                                            cb.style.border = '1px solid ' + window.elColor;
                                         });
                                     }else{
                                         osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
@@ -3663,13 +3663,13 @@ def web_interface(args, ctx):
                                             if(gr_audiobook_player){
                                                 audioFilter = 'invert(1) hue-rotate(180deg)';
                                             }
-                                            elColor = '#fff';
+                                            window.elColor = '#fff';
                                         }
                                         checkboxes.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
+                                            cb.style.border = '1px solid ' + window.elColor;
                                         });
                                         radios.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
+                                            cb.style.border = '1px solid ' + window.elColor;
                                         });
                                     }
                                     if(gr_audiobook_player){
