@@ -3710,10 +3710,10 @@ def web_interface(args, ctx):
                                 try{
                                     const gr_vtt_data = document.querySelector('#gr_vtt_data');
                                     if(!window.text_track){
+                                        window.text_track = document.createElement('track');
                                         window.text_track.default = true;
                                         window.text_track.kind = 'captions';
                                         window.text_track.label = 'captions';
-                                        window.text_track = document.createElement('track');
                                         gr_audiobook_player.appendChild(window.text_track);
                                     }
                                     window.text_track.addEventListener('load', ()=>{
