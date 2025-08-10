@@ -3683,24 +3683,65 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
+                        if(typeof(window.load_vtt) !== 'function'){
+                            window.load_vtt = (path)=>{
+                                try{
+                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
+                                    const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
+                                    if(gr_audiobook_player){
+                                        const gr_audiobook_track = document.createElement('track');
+                                        gr_audiobook_track.id = 'gr_audiobook_track';
+                                        gr_audiobook_track.src = path;
+                                        gr_audiobook_track.default = true;
+                                        gr_audiobook_track.kind = 'captions';
+                                        gr_audiobook_track.label = 'captions';
+                                        gr_audiobook_track.addEventListener('load', ()=>{
+                                            const track = gr_audiobook_player.textTracks[0];
+                                            track.mode = 'showing';
+                                            track.addEventListener('cuechange', function(){
+                                                console.log('cuechange: ok');
+                                                if (this.activeCues){
+                                                    console.log('this.activeCues: '+ this.activeCues);
+                                                    if(this.activeCues[0]){
+                                                        console.log('this.activeCues[0]: '+ this.activeCues[0]);
+                                                        if(gr_audiobook_vtt){
+                                                            gr_audiobook_vtt.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                                        }
+                                                    }
+                                                    return
+                                                }
+                                                if(gr_audiobook_vtt){
+                                                    gr_audiobook_vtt.innerHTML = '...';
+                                                }
+                                            });
+                                        });
+                                        gr_audiobook_player.appendChild(gr_audiobook_track);
+                                        gr_audiobook_player.addEventListener('ended', ()=>{
+                                            gr_audiobook_vtt.innerHTML = '...';
+                                        });
+                                    }
+                                }catch(e){
+                                    console.log('load_vtt error:', e);
+                                }
+                            };
+                        }
                         if(typeof window.tab_progress !== 'function'){
-                            const box = document.querySelector('#gr_progress_box');
-                            if (!box || window.__titleSync) return;
+                            const gr_progress_box = document.querySelector('#gr_progress_box');
+                            if (!gr_progress_box || window.__titleSync) return;
                             window.__titleSync = true;
                             window.tab_progress = () => {
-                                const val = box?.value || box?.textContent || '';
+                                const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
                                 const prct = val.trim().split(' ')[4];
                                 if(prct && /^\d+(\.\d+)?%$/.test(prct)){
                                     document.title = '-------- ' + prct + '--------';
                                 }
                             };
                             // Observe programmatic changes
-                            new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
+                            new MutationObserver(tab_progress).observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
                             // Also catch user edits
-                            box.addEventListener('input', tab_progress);
+                            gr_progress_box.addEventListener('input', tab_progress);
                         }
 
-                        // Now safely call it after the audio element is available
                         function tryRun(){
                             const gr_audiobook_player = document.querySelector('#gr_audiobook_player'); 
                             if(!gr_audiobook_player){
@@ -3709,34 +3750,8 @@ def web_interface(args, ctx):
                             }
                             if(typeof window.redraw_elements === 'function'){
                                 try{
-                                    const gr_vtt_data = document.querySelector('#gr_vtt_data');
-                                    if(!window.text_track){
-                                        window.text_track = document.createElement('track');
-                                        window.text_track.default = true;
-                                        window.text_track.kind = 'captions';
-                                        window.text_track.label = 'captions';
-                                        gr_audiobook_player.appendChild(window.text_track);
-                                    }
-                                    window.text_track.addEventListener('load', ()=>{
-                                        const track = gr_audiobook_player.textTracks[0];
-                                        track.mode = 'showing'; // Safari fix
-                                        track.addEventListener('cuechange', function(){
-                                            console.log('cuechange: ok')
-                                            if (this.activeCues){
-                                                console.log('this.activeCues: '+ this.activeCues)
-                                                if(this.activeCues[0]){
-                                                    console.log('this.activeCues[0]: '+ this.activeCues[0])
-                                                    gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
-                                                }
-                                                return
-                                            }
-                                            gr_vtt_data.innerHTML = '...';
-                                        });
-                                    });
-                                    gr_audiobook_player.addEventListener('ended', ()=>{
-                                        gr_vtt_data.innerHTML = '...';
-                                    });
                                     window.redraw_elements(); 
+                                    window.load_vtt(gr_audiobook_player.src);
                                 }catch(e){ 
                                     console.log('redraw_elements error:', e); 
                                 }
@@ -3744,7 +3759,6 @@ def web_interface(args, ctx):
                         }
                         tryRun();
 
-                        // Return localStorage data if needed
                         try{
                             const data = window.localStorage.getItem('data');
                             if (data) return JSON.parse(data);
