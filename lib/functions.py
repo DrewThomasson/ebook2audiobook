@@ -3720,8 +3720,11 @@ def web_interface(args, ctx):
                                         const track = gr_audiobook_player.textTracks[0];
                                         track.mode = 'showing'; // Safari fix
                                         track.addEventListener('cuechange', function(){
+                                            console.log('cuechange: ok')
                                             if (this.activeCues){
+                                                console.log('this.activeCues: '+ this.activeCues)
                                                 if(this.activeCues[0]){
+                                                    console.log('this.activeCues[0]: '+ this.activeCues[0])
                                                     gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
                                                 }
                                                 return
