@@ -2270,6 +2270,14 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
+                #gr_vtt_data {
+                    display: block;
+                    text-align: center;
+                    font-family: monospace;
+                    font-size: 14px;
+                    font-weight: bold;
+                    text-wrap: balance;
+                }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
                 }
@@ -2460,7 +2468,7 @@ def web_interface(args, ctx):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
         gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
-        gr_vtt_data = gr.JSON(visible=False, elem_id='gr_vtt_data')
+        gr_vtt_data = gr.Textbox(elem_id='gr_vtt_data', label='', visible=Falsse, interactive=True)
         gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=True)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
@@ -2481,35 +2489,17 @@ def web_interface(args, ctx):
         def load_vtt_data(path: str | None):
             if not path:
                 return None
+
             vtt_path = path
             if not vtt_path.lower().endswith(".vtt"):
                 vtt_path = os.path.splitext(path)[0] + ".vtt"
             if not os.path.exists(vtt_path):
                 return None
 
-            def to_seconds(ts: str) -> float:
-                # Supports H:MM:SS.mmm or MM:SS.mmm
-                parts = ts.split(":")
-                if len(parts) == 2:
-                    m, s = parts
-                    s, ms = (s.split(".") + ["0"])[:2]
-                    return int(m) * 60 + int(s) + int(ms) / 1000
-                elif len(parts) == 3:
-                    h, m, s = parts
-                    s, ms = (s.split(".") + ["0"])[:2]
-                    return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000
-                else:
-                    return 0.0
-
-            cues = []
             try:
-                for cue in webvtt.read(vtt_path):
-                    cues.append({
-                        "start": round(to_seconds(cue.start), 2),
-                        "end":   round(to_seconds(cue.end), 2),
-                        "text":  cue.text.replace("\n", " ")
-                    })
-                return cues
+                with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
+                    content = f.read()
+                return content
             except Exception:
                 return None
 
@@ -3616,17 +3606,10 @@ def web_interface(args, ctx):
             inputs=[gr_vtt_data],
             js="""
                 (data)=>{
-                    console.log('gr_vtt_data.change triggered');
                     if(data){
-                        console.log('gr_vtt_data data:', data);
-                        try {
-                            const parsed = JSON.parse(data);
-                            window.gr_vtt_data = Array.isArray(parsed) ? parsed : (parsed ? parsed : []);
-                            console.log(window.gr_vtt_data);
-                        } catch (e) {
-                            window.gr_vtt_data = [];
-                            console.log('window.gr_vtt_data failed');
-                        }                            
+                        const vttBlob = new Blob([data], { type: 'text/vtt' });
+                        const vttUrl = URL.createObjectURL(vttBlob);
+                        window.text_track.src = vttUrl;                 
                     }
                 }
             """  
@@ -3650,7 +3633,7 @@ def web_interface(args, ctx):
                         if(typeof window.redraw_elements !== 'function'){
                             window.redraw_elements = ()=>{
                                 try{
-                                    const audio = document.querySelector('#gr_audiobook_player audio');
+                                    const gr_audiobook_player = document.getElementById('gr_audiobook_player');
                                     const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
                                     const radios = document.querySelectorAll(\"input[type='radio']\");
                                     const url = new URL(window.location);
@@ -3660,7 +3643,7 @@ def web_interface(args, ctx):
                                     let elColor = '#666666';
                                     if(theme){
                                         if(theme === 'dark'){
-                                            if(audio){
+                                            if(gr_audiobook_player){
                                                 audioFilter = 'invert(1) hue-rotate(180deg)';
                                             }
                                             elColor = '#fff';
@@ -3674,7 +3657,7 @@ def web_interface(args, ctx):
                                     }else{
                                         osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                         if(osTheme){
-                                            if(audio){
+                                            if(gr_audiobook_player){
                                                 audioFilter = 'invert(1) hue-rotate(180deg)';
                                             }
                                             elColor = '#fff';
@@ -3686,11 +3669,11 @@ def web_interface(args, ctx):
                                             cb.style.border = '1px solid ' + elColor;
                                         });
                                     }
-                                    if(audio){
-                                        if(!audio.style.transition){
-                                            audio.style.transition = 'filter 1s ease';
+                                    if(gr_audiobook_player){
+                                        if(!gr_audiobook_player.style.transition){
+                                            gr_audiobook_player.style.transition = 'filter 1s ease';
                                         }
-                                        audio.style.filter = audioFilter;
+                                        gr_audiobook_player.style.filter = audioFilter;
                                     }
                                 }catch(e){
                                     console.log('redraw_elements error:', e);
@@ -3715,17 +3698,23 @@ def web_interface(args, ctx):
                         }
 
                         // Now safely call it after the audio element is available
-                        function tryRun() {
-                            var audio = document.querySelector('#gr_audiobook_player audio');
-                            if (!audio) {
-                                setTimeout(tryRun, 100);
+                        function tryRun(){
+                            const gr_audiobook_player = document.querySelector('#gr_audiobook_player'); 
+                            if(!gr_audiobook_player){
+                                setTimeout(tryRun, 250);
                                 return;
                             }
-
-                            if (typeof window.redraw_elements === 'function') {
-                                try { 
+                            if(typeof window.redraw_elements === 'function'){
+                                try{
+                                    if(!window.text_track){
+                                        window.text_track.default = true;
+                                        window.text_track.kind = 'captions';
+                                        window.text_track.label = 'captions';
+                                        window.text_track = document.createElement('track');
+                                        gr_audiobook_player.appendChild(window.text_track);
+                                    }
                                     window.redraw_elements(); 
-                                } catch (e) { 
+                                }catch(e){ 
                                     console.log('redraw_elements error:', e); 
                                 }
                             }
