@@ -2495,7 +2495,6 @@ def web_interface(args, ctx):
                     return None
                 with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
                     content = f.read()
-                print(content)
                 return content
             except Exception:
                 return None
@@ -2673,6 +2672,7 @@ def web_interface(args, ctx):
             )
 
         def change_gr_audiobook_list(selected, id):
+            print('change_gr_audiobook_list called')
             session = context.get_session(id)
             session['audiobook'] = selected
             visible = True if len(audiobook_options) else False
