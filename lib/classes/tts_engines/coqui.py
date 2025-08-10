@@ -778,12 +778,14 @@ class Coqui:
                             audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.003, trim_audio_buffer).unsqueeze(0)
                         self.audio_segments.append(audio_tensor)
                         if not re.search(r'\w$', sentence, flags=re.UNICODE):
-                            break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100)))
+                            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                            break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time))
                             self.audio_segments.append(break_tensor.clone())
+                            self.silence_list.append(silence_time)
                         if self.audio_segments:
                             audio_tensor = torch.cat(self.audio_segments, dim=-1)
                             start_time = self.sentences_total_time
-                            duration = (audio_tensor.shape[-1] + sum(self.silence_list)) / settings['samplerate']
+                            duration = round((audio_tensor.shape[-1] / settings['samplerate']), 2)
                             end_time = start_time + duration
                             self.sentences_total_time = end_time
                             sentence_obj = {
