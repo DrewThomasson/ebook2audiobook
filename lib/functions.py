@@ -3625,11 +3625,13 @@ def web_interface(args, ctx):
                 ()=>{
                     try{
                         let init_timeout;
-
+                        let gr_audiobook_player;
+                        let gr_vtt_data;
+                        let gr_progress_box;
                         window.init = ()=>{
-                            const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                            const gr_vtt_data = document.querySelector('#gr_vtt_data');
-                            const gr_progress_box = document.querySelector('#gr_progress_box');
+                            gr_audiobook_player = document.querySelector('#gr_audiobook_player');
+                            gr_vtt_data = document.querySelector('#gr_vtt_data');
+                            gr_progress_box = document.querySelector('#gr_progress_box');
                             const status = !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
                             if(!status){
                                 clearTimeout(init_timeout);
@@ -3643,7 +3645,6 @@ def web_interface(args, ctx):
                             window.elColor = '#666666'
                             window.redraw_elements = ()=>{
                                 try{
-                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                                     const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
                                     const radios = document.querySelectorAll(\"input[type='radio']\");
                                     const url = new URL(window.location);
@@ -3693,7 +3694,6 @@ def web_interface(args, ctx):
                         if(typeof(window.load_vtt) !== 'function'){
                             window.load_vtt = ()=>{
                                 try{
-                                    const gr_vtt_data = document.querySelector('#gr_vtt_data');
                                     const vtt_track = document.createElement('track');
                                     vtt_track.id = 'vtt_track';
                                     vtt_track.src = '';
@@ -3725,7 +3725,10 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
- 
+
+                        window.redraw_elements(); 
+                        window.load_vtt();
+                        
                         if(typeof(window.tab_progress) !== 'function'){
                             window.tab_progress = () => {
                                 const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
@@ -3737,9 +3740,6 @@ def web_interface(args, ctx):
                             new MutationObserver(tab_progress).observe(gr_progress_box,{attributes: true, childList: true, subtree: true, characterData: true});
                             gr_progress_box.addEventListener('input', tab_progress);
                         }
-
-                        window.redraw_elements(); 
-                        window.load_vtt();
 
                         // Load last saved parameters and inputs
                         const data = window.localStorage.getItem('data');
