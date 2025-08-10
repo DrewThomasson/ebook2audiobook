@@ -3628,6 +3628,7 @@ def web_interface(args, ctx):
                         let gr_audiobook_player;
                         let gr_vtt_data;
                         let gr_progress_box;
+
                         window.init = ()=>{
                             gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                             gr_vtt_data = document.querySelector('#gr_vtt_data');
