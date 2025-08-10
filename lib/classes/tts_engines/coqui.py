@@ -442,14 +442,14 @@ class Coqui:
                 if sentence[-1].isalnum():
                     sentence = f'{sentence} —'
                 if sentence == TTS_SML['break']:
-                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100)
-                    break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time) # 0.4 to 0.7 seconds
+                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                    break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
                     self.audio_segments.append(break_tensor.clone())
                     self.silence_list.append(silence_time)
                     return True
                 elif sentence == TTS_SML['pause']:
-                    silence_time = (int(np.random.uniform(1.0, 1.8) * 100) / 100))
-                    pause_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time) # 1.0 to 1.8 seconds
+                    silence_time = (int(np.random.uniform(1.0, 1.8) * 100) / 100
+                    pause_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time)) # 1.0 to 1.8 seconds
                     self.audio_segments.append(pause_tensor.clone())
                     self.silence_list.append(silence_time)
                     return True
