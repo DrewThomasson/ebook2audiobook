@@ -34,7 +34,6 @@ class Coqui:
             self.vtt_path = os.path.join(self.session['process_dir'], Path(self.session['final_name']).stem + '.vtt')    
             self.resampler_cache = {}
             self.audio_segments = []
-            self.silence_list = []
             self._build()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -445,13 +444,11 @@ class Coqui:
                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                     break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
                     self.audio_segments.append(break_tensor.clone())
-                    self.silence_list.append(silence_time)
                     return True
                 elif sentence == TTS_SML['pause']:
                     silence_time = int(np.random.uniform(1.0, 1.8) * 100) / 100
                     pause_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time)) # 1.0 to 1.8 seconds
                     self.audio_segments.append(pause_tensor.clone())
-                    self.silence_list.append(silence_time)
                     return True
                 else:
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
@@ -781,11 +778,10 @@ class Coqui:
                             silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                             break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time))
                             self.audio_segments.append(break_tensor.clone())
-                            self.silence_list.append(silence_time)
                         if self.audio_segments:
                             audio_tensor = torch.cat(self.audio_segments, dim=-1)
                             start_time = self.sentences_total_time
-                            duration = round(((audio_tensor.shape[-1] + sum(self.silence_list)) / settings['samplerate']), 2)
+                            duration = round((audio_tensor.shape[-1] / settings['samplerate']), 2)
                             end_time = start_time + duration
                             self.sentences_total_time = end_time
                             sentence_obj = {
@@ -799,7 +795,6 @@ class Coqui:
                                 torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
                                 del audio_tensor
                         self.audio_segments = []
-                        self.silence_list = []
                         if os.path.exists(final_sentence_file):
                             return True
                         else:
