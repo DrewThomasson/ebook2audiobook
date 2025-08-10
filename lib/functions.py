@@ -3686,35 +3686,39 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
-                        if(typeof(window.load_vtt) !== 'function){
+                        if(typeof(window.load_vtt) !== 'function'){
                             window.load_vtt = ()=>{
-                                const gr_vtt_data = document.querySelector('#gr_vtt_data');
-                                const vtt_track = document.createElement('track');
-                                vtt_track.id = 'vtt_track';
-                                vtt_track.src = '';
-                                vtt_track.default = true;
-                                vtt_track.kind = 'captions';
-                                vtt_track.label = 'captions';
-                                vtt_track.addEventListener('load', ()=>{
-                                    const track = gr_audiobook_player.textTracks[0];
-                                    track.mode = 'showing';
-                                    track.addEventListener('cuechange', function(){
-                                        console.log('cuechange: ok');
-                                        if (this.activeCues){
-                                            console.log('this.activeCues: '+ this.activeCues);
-                                            if(this.activeCues[0]){
-                                                console.log('this.activeCues[0]: '+ this.activeCues[0]);
-                                                gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                try{
+                                    const gr_vtt_data = document.querySelector('#gr_vtt_data');
+                                    const vtt_track = document.createElement('track');
+                                    vtt_track.id = 'vtt_track';
+                                    vtt_track.src = '';
+                                    vtt_track.default = true;
+                                    vtt_track.kind = 'captions';
+                                    vtt_track.label = 'captions';
+                                    vtt_track.addEventListener('load', ()=>{
+                                        const track = gr_audiobook_player.textTracks[0];
+                                        track.mode = 'showing';
+                                        track.addEventListener('cuechange', function(){
+                                            console.log('cuechange: ok');
+                                            if (this.activeCues){
+                                                console.log('this.activeCues: '+ this.activeCues);
+                                                if(this.activeCues[0]){
+                                                    console.log('this.activeCues[0]: '+ this.activeCues[0]);
+                                                    gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                                }
+                                                return
                                             }
-                                            return
-                                        }
+                                            gr_vtt_data.innerHTML = '...';
+                                        });
+                                    });
+                                    gr_audiobook_player.appendChild(vtt_track);
+                                    gr_audiobook_player.addEventListener('ended', ()=>{
                                         gr_vtt_data.innerHTML = '...';
                                     });
-                                });
-                                gr_audiobook_player.appendChild(vtt_track);
-                                gr_audiobook_player.addEventListener('ended', ()=>{
-                                    gr_vtt_data.innerHTML = '...';
-                                });
+                                }catch(e){
+                                    console.log('load_vtt error:', e);
+                                }
                             };
                         }
                         if(typeof(window.tab_progress) !== 'function'){
