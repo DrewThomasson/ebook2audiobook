@@ -3661,34 +3661,37 @@ def web_interface(args, ctx):
                                             cb.style.border = '1px solid ' + elColor;
                                         });
                                     }
-                                    console.log('gr_audiobook_player',gr_audiobook_player);
                                     if(gr_audiobook_player){
                                         const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
                                         const gr_audiobook_track = document.querySelector('#gr_audiobook_track') || document.createElement('track');
-                                        console.log('gr_audiobook_track',gr_audiobook_track);
                                         gr_audiobook_track.id = 'gr_audiobook_track';
                                         gr_audiobook_track.default = true;
                                         gr_audiobook_track.src = '';
                                         gr_audiobook_track.kind = 'captions';
                                         gr_audiobook_track.label = 'captions';
+                                        if (!gr_audiobook_track.parentNode) gr_audiobook_player.appendChild(gr_audiobook_track);
                                         gr_audiobook_track.addEventListener('load', ()=>{
                                             const track = gr_audiobook_player.textTracks[0];
-                                            track.mode = 'showing';
-                                            track.addEventListener('cuechange', function(){
-                                                if (this.activeCues){
-                                                    if(this.activeCues[0]){
-                                                        if(gr_audiobook_vtt){
-                                                            gr_audiobook_vtt.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                            if(track){
+                                                track.mode = 'showing';
+                                                if(!track.__cueBound){
+                                                    track.addEventListener('cuechange', function(){
+                                                        if(this.activeCues){
+                                                            if(this.activeCues[0]){
+                                                                if(gr_audiobook_vtt){
+                                                                    gr_audiobook_vtt.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                                                }
+                                                            }
+                                                            return
                                                         }
-                                                    }
-                                                    return
+                                                        if(gr_audiobook_vtt){
+                                                            gr_audiobook_vtt.innerHTML = '...';
+                                                        }
+                                                    });
+                                                    track.__cueBound = true;
                                                 }
-                                                if(gr_audiobook_vtt){
-                                                    gr_audiobook_vtt.innerHTML = '...';
-                                                }
-                                            });
+                                            }
                                         });
-                                        gr_audiobook_player.appendChild(gr_audiobook_track);
                                         gr_audiobook_player.addEventListener('ended', ()=>{
                                             gr_audiobook_vtt.innerHTML = '...';
                                         });
