@@ -3630,132 +3630,201 @@ def web_interface(args, ctx):
         app.load(
             fn=None,
             js="""
-                ()=>{
-                    try{
-                        function init(){
-                            try{
-                                const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                                const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
-                                const gr_progress_box = document.querySelector('#gr_progress_box');
-                                const status = !!(gr_audiobook_player && gr_audiobook_vtt && gr_progress_box);
-                                if(!status){
+                () => {
+                    try {
+                        // --- helpers ---
+                        const $ = (sel) => document.querySelector(sel);
+                        const $$ = (sel) => document.querySelectorAll(sel);
+                        const once = (key, fn) => {
+                            if (!window.__once_flags) window.__once_flags = new Set();
+                            if (window.__once_flags.has(key)) return false;
+                            window.__once_flags.add(key);
+                            try { fn(); } catch (e) { console.log(key + ' error:', e); }
+                            return true;
+                        };
+                        const debounce = (fn, ms=150) => {
+                            let t; return (...args)=>{ clearTimeout(t); t=setTimeout(()=>fn(...args), ms); };
+                        };
+
+                        // Keep original title for restoration
+                        if (!window.__orig_title) window.__orig_title = document.title;
+
+                        // ---------------- init loop (wait for elements) ----------------
+                        let init_timeout = null;
+                        function init() {
+                            try {
+                                const gr_audiobook_player = $('#gr_audiobook_player');
+                                const gr_audiobook_vtt    = $('#gr_audiobook_vtt');
+                                const gr_progress_box     = $('#gr_progress_box');
+                                const ready = !!(gr_audiobook_player && gr_audiobook_vtt && gr_progress_box);
+                                if (!ready) {
                                     clearTimeout(init_timeout);
-                                    init_timeout = setTimeout(init, 400);
+                                    init_timeout = setTimeout(init, 250);
                                     return;
                                 }
-                            }catch(e){
+
+                                // Run one-time setups that depend on elements being present
+                                window.redraw_elements?.();
+                                window.load_vtt?.();
+
+                                // Progress/title binding once
+                                once('bind_tab_progress', () => {
+                                    const handler = () => {
+                                        const el = $('#gr_progress_box');
+                                        if (!el) return;
+
+                                        const val = (('value' in el) ? el.value : el.textContent) || '';
+                                        const m = String(val).match(/(\\d+(?:\\.\\d+)?)%/);
+                                        if (m) {
+                                            document.title = '—— ' + m[1] + '% ——';
+                                        } else {
+                                            document.title = window.__orig_title;
+                                        }
+                                    };
+
+                                    const debounced = debounce(handler, 100);
+                                    const target = $('#gr_progress_box');
+                                    if (target) {
+                                        new MutationObserver(debounced).observe(
+                                            target,
+                                            { attributes:true, childList:true, subtree:true, characterData:true }
+                                        );
+                                        target.addEventListener('input', debounced);
+                                    }
+                                    handler(); // initial
+                                });
+
+                            } catch (e) {
                                 console.log('init error:', e);
                             }
                         }
+                        clearTimeout(init_timeout);
+                        init_timeout = setTimeout(init, 0);
 
-                        if(typeof(window.redraw_elements) !== 'function'){
-                            window.redraw_elements = ()=>{
-                                try{
-                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                                    const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
-                                    const radios = document.querySelectorAll(\"input[type='radio']\");
-                                    const url = new URL(window.location);
-                                    const theme = url.searchParams.get('__theme');
-                                    let osTheme;
-                                    let audioFilter = '';
-                                    let elColor = '#666666';
-                                    if(theme){
-                                        if(theme === 'dark'){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            elColor = '#fff';
-                                        }
-                                        checkboxes.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
-                                        });
-                                        radios.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
-                                        });
-                                    }else{
-                                        osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-                                        if(osTheme){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            elColor = '#fff';
-                                        }
-                                        checkboxes.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
-                                        });
-                                        radios.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
-                                        });
+                        // ---------------- redraw_elements ----------------
+                        if (typeof window.redraw_elements !== 'function') {
+                            window.redraw_elements = () => {
+                                try {
+                                    const player = $('#gr_audiobook_player');
+                                    if (!player) return;
+
+                                    const checkboxes = $$("input[type='checkbox']");
+                                    const radios     = $$("input[type='radio']");
+                                    const urlTheme   = new URL(window.location).searchParams.get('__theme');
+
+                                    let useDark = false;
+                                    if (urlTheme) {
+                                        useDark = (urlTheme === 'dark');
+                                    } else {
+                                        useDark = !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
                                     }
-                                    if(!gr_audiobook_player.style.transition){
-                                        gr_audiobook_player.style.transition = 'filter 1s ease';
+
+                                    const elColor = useDark ? '#fff' : '#666';
+                                    const audioFilter = useDark ? 'invert(1) hue-rotate(180deg)' : '';
+
+                                    checkboxes.forEach(cb => cb.style.border = '1px solid ' + elColor);
+                                    radios.forEach(rb => rb.style.border = '1px solid ' + elColor);
+
+                                    if (!player.style.transition) {
+                                        player.style.transition = 'filter 200ms ease';
                                     }
-                                    gr_audiobook_player.style.filter = audioFilter;
-                                }catch(e){
+                                    player.style.filter = audioFilter;
+                                } catch (e) {
                                     console.log('redraw_elements error:', e);
                                 }
                             };
                         }
 
-                        if(typeof(window.load_vtt) !== 'function'){
-                            window.load_vtt = ()=>{
-                                try{
-                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                                    const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
-                                    const gr_audiobook_track = document.createElement('track');
-                                    gr_audiobook_track.id = 'gr_audiobook_track';
-                                    gr_audiobook_track.src = '';
-                                    gr_audiobook_track.default = true;
-                                    gr_audiobook_track.kind = 'captions';
-                                    gr_audiobook_track.label = 'captions';
-                                    gr_audiobook_track.addEventListener('load', ()=>{
-                                        const track = gr_audiobook_player.textTracks[0];
-                                        track.mode = 'showing';
-                                        track.addEventListener('cuechange', function(){
-                                            console.log('cuechange: ok');
-                                            if (this.activeCues){
-                                                console.log('this.activeCues: '+ this.activeCues);
-                                                if(this.activeCues[0]){
-                                                    console.log('this.activeCues[0]: '+ this.activeCues[0]);
-                                                    gr_audiobook_vtt.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                        // ---------------- load_vtt ----------------
+                        if (typeof window.load_vtt !== 'function') {
+                            window.load_vtt = () => {
+                                try {
+                                    const player = $('#gr_audiobook_player');
+                                    const vttBox = $('#gr_audiobook_vtt');
+                                    if (!player || !vttBox) return;
+
+                                    // Prevent duplicate track/listeners
+                                    let trackEl = $('#gr_audiobook_track');
+                                    if (!trackEl) {
+                                        trackEl = document.createElement('track');
+                                        trackEl.id = 'gr_audiobook_track';
+                                        trackEl.default = true;
+                                        trackEl.kind = 'captions';
+                                        trackEl.label = 'captions';
+                                        // src is intentionally left empty here; you can set it later from Python if needed.
+                                        player.appendChild(trackEl);
+                                    }
+
+                                    const onCueChange = function() {
+                                        try {
+                                            const tt = player.textTracks && player.textTracks[0];
+                                            if (!tt) { vttBox.textContent = '...'; return; }
+                                            const cues = tt.activeCues;
+                                            if (cues && cues.length) {
+                                                // Join all active cues (some browsers may present multiple)
+                                                let text = '';
+                                                for (let i = 0; i < cues.length; i++) {
+                                                    const t = (cues[i] && cues[i].text) ? cues[i].text : '';
+                                                    text += (i ? ' ' : '') + t;
                                                 }
-                                                return
+                                                vttBox.innerHTML = `<span class="fade-in">${text}</span>`;
+                                            } else {
+                                                vttBox.textContent = '...';
                                             }
-                                            gr_audiobook_vtt.innerHTML = '...';
+                                        } catch (e) {
+                                            console.log('cuechange handler error:', e);
+                                        }
+                                    };
+
+                                    // Bind once per player instance
+                                    once('bind_player_events', () => {
+                                        player.addEventListener('ended', () => { vttBox.textContent = '...'; });
+
+                                        // When the <track> metadata is ready, show cues
+                                        trackEl.addEventListener('load', () => {
+                                            try {
+                                                const tt = player.textTracks && player.textTracks[0];
+                                                if (tt) {
+                                                    tt.mode = 'showing';
+                                                    tt.removeEventListener('cuechange', onCueChange); // avoid duplicates
+                                                    tt.addEventListener('cuechange', onCueChange);
+                                                    onCueChange();
+                                                }
+                                            } catch (e) {
+                                                console.log('track load error:', e);
+                                            }
                                         });
+
+                                        // If the track is swapped later (e.g., new src), re-bind on load
+                                        const mo = new MutationObserver(() => {
+                                            // retrigger load handler if src changes
+                                            onCueChange();
+                                        });
+                                        mo.observe(trackEl, { attributes:true, attributeFilter:['src'] });
                                     });
-                                    gr_audiobook_player.appendChild(gr_audiobook_track);
-                                    gr_audiobook_player.addEventListener('ended', ()=>{
-                                        gr_audiobook_vtt.innerHTML = '...';
-                                    });
-                                }catch(e){
+
+                                } catch (e) {
                                     console.log('load_vtt error:', e);
                                 }
                             };
                         }
 
-                        window.redraw_elements(); 
+                        // Run these immediately (they self-noop if elements aren’t present yet)
+                        window.redraw_elements();
                         window.load_vtt();
-                        
-                        if(typeof(window.tab_progress) !== 'function'){
-                            window.tab_progress = () => {
-                                const gr_progress_box = document.querySelector('#gr_progress_box');
-                                const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
-                                const prct = val.trim().split(' ')[4];
-                                if(prct && /^\d+(\.\d+)?%$/.test(prct)){
-                                    document.title = '-------- ' + prct + '--------';
-                                }
-                            };
-                            new MutationObserver(tab_progress).observe(gr_progress_box,{attributes: true, childList: true, subtree: true, characterData: true});
-                            gr_progress_box.addEventListener('input', tab_progress);
+
+                        // ---------------- return saved inputs to Python ----------------
+                        try {
+                            const raw = window.localStorage.getItem('data');
+                            if (raw) {
+                                try { return JSON.parse(raw); }
+                                catch (e) { console.log('JSON parse error:', e); }
+                            }
+                        } catch (e) {
+                            console.log('localStorage error:', e);
                         }
 
-                        // Load last saved parameters and inputs
-                        const data = window.localStorage.getItem('data');
-                        if(data){
-                            try{
-                                return JSON.parse(data);
-                            }catch(e){
-                                console.log('JSON parse error:', e);
-                            }
-                        }
-                    }catch(e){
+                    } catch (e) {
                         console.log('js from app.load() error:', e);
                     }
                     return null;
