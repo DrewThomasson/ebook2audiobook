@@ -2491,10 +2491,12 @@ def web_interface(args, ctx):
                 return None
             try:
                 vtt_path = f'{Path(path).stem}.vtt'
+                print(f'-----------{vtt_path}------------')
                 if not os.path.exists(vtt_path):
                     return None
                 with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
                     content = f.read()
+                print(f'-----------{content}------------')
                 return content
             except Exception:
                 return None
