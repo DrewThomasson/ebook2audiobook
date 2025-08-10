@@ -2468,8 +2468,8 @@ def web_interface(args, ctx):
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
         gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
-        gr_vtt_data = gr.Textbox(elem_id='gr_vtt_data', label='', visible=True)
-        gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=True)
+        gr_vtt_data = gr.Textbox(elem_id='gr_vtt_data', label='', interactive=False, visible=False)
+        gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=False)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
