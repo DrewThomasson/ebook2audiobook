@@ -3628,7 +3628,7 @@ def web_interface(args, ctx):
                             const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                             const gr_vtt_data = document.querySelector('#gr_vtt_data');
                             const gr_progress_box = document.querySelector('#gr_progress_box');
-                            if(!gr_audiobook_player || !gr_vtt_data || gr_progress_box){
+                            if(!gr_audiobook_player || !gr_vtt_data || !gr_progress_box){
                                 setTimeout(init, 400);
                                 return;
                             }
@@ -3723,7 +3723,7 @@ def web_interface(args, ctx):
                                     document.title = '-------- ' + prct + '--------';
                                 }
                             };
-                            new MutationObserver(tab_progress).observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
+                            new MutationObserver(tab_progress).observe(gr_progress_box,{attributes: true, childList: true, subtree: true, characterData: true});
                             gr_progress_box.addEventListener('input', tab_progress);
                         }
                         window.redraw_elements(); 
@@ -3737,7 +3737,7 @@ def web_interface(args, ctx):
                                 console.log('JSON parse error:', e);
                             }
                         }
-                    }catch (e){
+                    }catch(e){
                         console.log('js from app.load() error:', e);
                     }
                     return null;
