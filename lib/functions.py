@@ -3637,7 +3637,7 @@ def web_interface(args, ctx):
                         }
 
                         if(typeof(window.redraw_elements) !== 'function'){
-                            window.elColor = '#666666'
+                            window.elColor = '#666666';
                             window.redraw_elements = ()=>{
                                 try{
                                     const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
