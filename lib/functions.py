@@ -3625,14 +3625,15 @@ def web_interface(args, ctx):
                 ()=>{
                     try{
                         let init_timeout;
-                        init = ()=>{
+
+                        window.init = ()=>{
                             const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                             const gr_vtt_data = document.querySelector('#gr_vtt_data');
                             const gr_progress_box = document.querySelector('#gr_progress_box');
                             const status = !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
                             if(!status){
                                 clearTimeout(init_timeout);
-                                init_timeout = setTimeout(init, 400);
+                                init_timeout = setTimeout(window.init, 400);
                                 console.log('gr_audiobook_player && gr_vtt_data && gr_progress_box are not ready!');
                                 return;
                             }
