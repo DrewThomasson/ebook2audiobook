@@ -3480,7 +3480,7 @@ def web_interface(args, ctx):
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_group_audiobook_list]
         ).then(
             fn=None,
-            js='()=>{window.redraw_elements?.();}'
+            js='()=>{window.reset_elements?.();}'
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -3622,8 +3622,8 @@ def web_interface(args, ctx):
                 ()=>{
                     try{
                         // Define the global function ONCE
-                        if(typeof window.redraw_elements !== 'function'){
-                            window.redraw_elements = ()=>{
+                        if(typeof window.reset_elements !== 'function'){
+                            window.reset_elements = ()=>{
                                 try{
                                     const gr_audiobook_player = document.getElementById('gr_audiobook_player');
                                     const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
@@ -3661,6 +3661,7 @@ def web_interface(args, ctx):
                                             cb.style.border = '1px solid ' + elColor;
                                         });
                                     }
+                                    console.log('gr_audiobook_player',gr_audiobook_player);
                                     if(gr_audiobook_player){
                                         const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
                                         const gr_audiobook_track = document.querySelector('#gr_audiobook_track') || document.createElement('track');
@@ -3699,7 +3700,7 @@ def web_interface(args, ctx):
                                         gr_audiobook_player.style.filter = audioFilter;
                                     }
                                 }catch(e){
-                                    console.log('redraw_elements error:', e);
+                                    console.log('reset_elements error:', e);
                                 }
                             };
                         }
@@ -3739,11 +3740,11 @@ def web_interface(args, ctx):
                                 setTimeout(tryRun, 250);
                                 return;
                             }
-                            if(typeof window.redraw_elements === 'function'){
+                            if(typeof window.reset_elements === 'function'){
                                 try{
-                                    window.redraw_elements(); 
+                                    window.reset_elements(); 
                                 }catch(e){ 
-                                    console.log('redraw_elements error:', e); 
+                                    console.log('reset_elements error:', e); 
                                 }
                             }
                         }
