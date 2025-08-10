@@ -3629,13 +3629,13 @@ def web_interface(args, ctx):
                             const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                             const gr_vtt_data = document.querySelector('#gr_vtt_data');
                             const gr_progress_box = document.querySelector('#gr_progress_box');
-                            return !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
-                        }
-                        if(!init()){
-                            clearTimeout(init_timeout);
-                            init_timeout = setTimeout(init, 400);
-                            console.log('gr_audiobook_player && gr_vtt_data && gr_progress_box are not ready!');
-                            return;
+                            const status = !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
+                            if(!status){
+                                clearTimeout(init_timeout);
+                                init_timeout = setTimeout(init, 400);
+                                console.log('gr_audiobook_player && gr_vtt_data && gr_progress_box are not ready!');
+                                return;
+                            }
                         }
 
                         if(typeof(window.redraw_elements) !== 'function'){
