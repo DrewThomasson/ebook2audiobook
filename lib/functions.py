@@ -3610,6 +3610,7 @@ def web_interface(args, ctx):
                         const vttBlob = new Blob([data], { type: 'text/vtt' });
                         const vttUrl = URL.createObjectURL(vttBlob);
                         if(window.text_track){
+                            console.log(vttUrl)
                             window.text_track.src = vttUrl;
                         }
                     }
