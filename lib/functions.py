@@ -2486,18 +2486,11 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
-        def load_vtt_data(path: str | None):
-            if not path:
+        def load_vtt_data(path):
+            if not path or not os.path.exists(path):
                 return None
-
-            vtt_path = path
-            if not vtt_path.lower().endswith(".vtt"):
-                vtt_path = os.path.splitext(path)[0] + ".vtt"
-            if not os.path.exists(vtt_path):
-                return None
-
             try:
-                with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
+                with open(path, "r", encoding="utf-8-sig", errors="replace") as f:
                     content = f.read()
                 return content
             except Exception:
@@ -3607,12 +3600,11 @@ def web_interface(args, ctx):
             js="""
                 (data)=>{
                     if(data){
-                        const vttBlob = new Blob([data], { type: 'text/vtt' });
-                        const vttUrl = URL.createObjectURL(vttBlob);
-                        if(window.text_track){
-                            console.log(vttUrl)
-                            window.text_track.src = vttUrl;
-                        }
+                        const vtt_track = document.querySelector('#vtt_track');
+                        const vtt_blob = new Blob([data],{type: 'text/vtt'});
+                        const vtt_url = URL.createObjectURL(vtt_blob);
+                        vtt_track.src = vtt_url;
+                        console.log(vtt_url)
                     }
                 }
             """  
@@ -3632,12 +3624,21 @@ def web_interface(args, ctx):
             js="""
                 ()=>{
                     try{
-                        // Define the global function ONCE
-                        if(typeof window.redraw_elements !== 'function'){
+                        function init(){
+                            const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
+                            const gr_vtt_data = document.querySelector('#gr_vtt_data');
+                            const gr_progress_box = document.querySelector('#gr_progress_box');
+                            if(!gr_audiobook_player || !gr_vtt_data || gr_progress_box){
+                                setTimeout(init, 400);
+                                return;
+                            }
+                        }
+                        init();
+                        if(typeof(window.redraw_elements) !== 'function'){
                             window.elColor = '#666666'
                             window.redraw_elements = ()=>{
                                 try{
-                                    const gr_audiobook_player = document.getElementById('gr_audiobook_player');
+                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                                     const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
                                     const radios = document.querySelectorAll(\"input[type='radio']\");
                                     const url = new URL(window.location);
@@ -3683,76 +3684,62 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
-                        if(typeof window.tab_progress !== 'function'){
-                            const box = document.querySelector('#gr_progress_box');
-                            if (!box || window.__titleSync) return;
+                        if(typeof(window.load_vtt) !== 'function){
+                            const gr_vtt_data = document.querySelector('#gr_vtt_data');
+                            const vtt_track = document.createElement('track');
+                            vtt_track.id = 'vtt_track';
+                            vtt_track.src = '';
+                            vtt_track.default = true;
+                            vtt_track.kind = 'captions';
+                            vtt_track.label = 'captions';
+                            gr_audiobook_player.appendChild(vtt_track);
+                            vtt_track.addEventListener('load', ()=>{
+                                const track = gr_audiobook_player.textTracks[0];
+                                track.mode = 'showing'; // Safari fix
+                                track.addEventListener('cuechange', function(){
+                                    console.log('cuechange: ok')
+                                    if (this.activeCues){
+                                        console.log('this.activeCues: '+ this.activeCues)
+                                        if(this.activeCues[0]){
+                                            console.log('this.activeCues[0]: '+ this.activeCues[0])
+                                            gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                        }
+                                        return
+                                    }
+                                    gr_vtt_data.innerHTML = '...';
+                                });
+                            });
+                            gr_audiobook_player.addEventListener('ended', ()=>{
+                                gr_vtt_data.innerHTML = '...';
+                            });
+                        }
+                        if(typeof(window.tab_progress) !== 'function'){
+                            const gr_progress_box = document.querySelector('#gr_progress_box');
+                            if (!gr_progress_box || window.__titleSync) return;
                             window.__titleSync = true;
                             window.tab_progress = () => {
-                                const val = box?.value || box?.textContent || '';
+                                const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
                                 const prct = val.trim().split(' ')[4];
                                 if(prct && /^\d+(\.\d+)?%$/.test(prct)){
                                     document.title = '-------- ' + prct + '--------';
                                 }
                             };
-                            // Observe programmatic changes
-                            new MutationObserver(tab_progress).observe(box, { attributes: true, childList: true, subtree: true, characterData: true });
-                            // Also catch user edits
-                            box.addEventListener('input', tab_progress);
+                            new MutationObserver(tab_progress).observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
+                            gr_progress_box.addEventListener('input', tab_progress);
                         }
-
-                        // Now safely call it after the audio element is available
-                        function tryRun(){
-                            const gr_audiobook_player = document.querySelector('#gr_audiobook_player'); 
-                            if(!gr_audiobook_player){
-                                setTimeout(tryRun, 250);
-                                return;
+                        window.redraw_elements(); 
+                        window.load_vtt();
+                        // Load last saved parameters and inputs
+                        const data = window.localStorage.getItem('data');
+                        if(data){
+                            try{
+                                return JSON.parse(data);
+                            }catch(e){
+                                console.log('JSON parse error:', e);
                             }
-                            if(typeof window.redraw_elements === 'function'){
-                                try{
-                                    const gr_vtt_data = document.querySelector('#gr_vtt_data');
-                                    if(!window.text_track){
-                                        window.text_track = document.createElement('track');
-                                        window.text_track.default = true;
-                                        window.text_track.kind = 'captions';
-                                        window.text_track.label = 'captions';
-                                        gr_audiobook_player.appendChild(window.text_track);
-                                    }
-                                    window.text_track.addEventListener('load', ()=>{
-                                        const track = gr_audiobook_player.textTracks[0];
-                                        track.mode = 'showing'; // Safari fix
-                                        track.addEventListener('cuechange', function(){
-                                            console.log('cuechange: ok')
-                                            if (this.activeCues){
-                                                console.log('this.activeCues: '+ this.activeCues)
-                                                if(this.activeCues[0]){
-                                                    console.log('this.activeCues[0]: '+ this.activeCues[0])
-                                                    gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
-                                                }
-                                                return
-                                            }
-                                            gr_vtt_data.innerHTML = '...';
-                                        });
-                                    });
-                                    gr_audiobook_player.addEventListener('ended', ()=>{
-                                        gr_vtt_data.innerHTML = '...';
-                                    });
-                                    window.redraw_elements(); 
-                                }catch(e){ 
-                                    console.log('redraw_elements error:', e); 
-                                }
-                            }
-                        }
-                        tryRun();
-
-                        // Return localStorage data if needed
-                        try{
-                            const data = window.localStorage.getItem('data');
-                            if (data) return JSON.parse(data);
-                        }catch(e){
-                            console.log('JSON parse error:', e);
                         }
                     }catch (e){
-                        console.log('custom js init error:', e);
+                        console.log('js from app.load() error:', e);
                     }
                     return null;
                 }
