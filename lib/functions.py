@@ -3642,6 +3642,7 @@ def web_interface(args, ctx):
 
                                 if (!(gr_audiobook_player && gr_audiobook_vtt && gr_progress_box)) {
                                     setTimeout(waitForElements, 200);
+                                    console.log('gr_audiobook_player && gr_audiobook_vtt && gr_progress_box not ready')
                                     return;
                                 }
 
