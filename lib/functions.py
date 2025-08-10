@@ -3460,7 +3460,7 @@ def web_interface(args, ctx):
         gr_audiobook_vtt.change(
             fn=None,
             inputs=[gr_audiobook_vtt],
-            js='(data)=>{window.redraw_elements(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'  
+            js='(data)=>{window.load_vtt?.(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'  
         )
         gr_progress_box.change(
             fn=None,
