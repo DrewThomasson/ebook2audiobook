@@ -3649,9 +3649,7 @@ def web_interface(args, ctx):
                                     let audioFilter = '';
                                     if(theme){
                                         if(theme === 'dark'){
-                                            if(gr_audiobook_player){
-                                                audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            }
+                                            audioFilter = 'invert(1) hue-rotate(180deg)';
                                             window.elColor = '#fff';
                                         }
                                         checkboxes.forEach(cb=>{
@@ -3663,9 +3661,7 @@ def web_interface(args, ctx):
                                     }else{
                                         osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                         if(osTheme){
-                                            if(gr_audiobook_player){
-                                                audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            }
+                                            audioFilter = 'invert(1) hue-rotate(180deg)';
                                             window.elColor = '#fff';
                                         }
                                         checkboxes.forEach(cb=>{
@@ -3675,12 +3671,10 @@ def web_interface(args, ctx):
                                             cb.style.border = '1px solid ' + window.elColor;
                                         });
                                     }
-                                    if(gr_audiobook_player){
-                                        if(!gr_audiobook_player.style.transition){
-                                            gr_audiobook_player.style.transition = 'filter 1s ease';
-                                        }
-                                        gr_audiobook_player.style.filter = audioFilter;
+                                    if(!gr_audiobook_player.style.transition){
+                                        gr_audiobook_player.style.transition = 'filter 1s ease';
                                     }
+                                    gr_audiobook_player.style.filter = audioFilter;
                                 }catch(e){
                                     console.log('redraw_elements error:', e);
                                 }
@@ -3690,6 +3684,7 @@ def web_interface(args, ctx):
                         if(typeof(window.load_vtt) !== 'function'){
                             window.load_vtt = ()=>{
                                 try{
+                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                                     const gr_vtt_data = document.querySelector('#gr_vtt_data');
                                     const vtt_track = document.createElement('track');
                                     vtt_track.id = 'vtt_track';
