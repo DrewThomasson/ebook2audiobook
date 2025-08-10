@@ -3706,6 +3706,7 @@ def web_interface(args, ctx):
                             }
                             if(typeof window.redraw_elements === 'function'){
                                 try{
+                                    const gr_vtt_data = document.querySelector('#gr_vtt_data');
                                     if(!window.text_track){
                                         window.text_track.default = true;
                                         window.text_track.kind = 'captions';
@@ -3713,6 +3714,22 @@ def web_interface(args, ctx):
                                         window.text_track = document.createElement('track');
                                         gr_audiobook_player.appendChild(window.text_track);
                                     }
+                                    window.text_track.addEventListener('load', ()=>{
+                                        const track = gr_audiobook_player.textTracks[0];
+                                        track.mode = 'showing'; // Safari fix
+                                        track.addEventListener('cuechange', function(){
+                                            if (this.activeCues){
+                                                if(this.activeCues[0]){
+                                                    gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                                }
+                                                return
+                                            }
+                                            gr_vtt_data.innerHTML = '...';
+                                        });
+                                    });
+                                    gr_audiobook_player.addEventListener('ended', ()=>{
+                                        gr_vtt_data.innerHTML = '...';
+                                    });
                                     window.redraw_elements(); 
                                 }catch(e){ 
                                     console.log('redraw_elements error:', e); 
