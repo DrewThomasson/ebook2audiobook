@@ -3624,16 +3624,15 @@ def web_interface(args, ctx):
             js="""
                 ()=>{
                     try{
+                        let init_timeout;
                         function init(){
                             const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                             const gr_vtt_data = document.querySelector('#gr_vtt_data');
                             const gr_progress_box = document.querySelector('#gr_progress_box');
-                            if(!gr_audiobook_player || !gr_vtt_data || !gr_progress_box){
-                                return false;
-                            }
-                            return true;
+                            return !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
                         }
                         if(!init()){
+                            clearTimeout(init_timeout);
                             init_timeout = setTimeout(init, 400);
                             return;
                         }
@@ -3687,7 +3686,6 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
-                        /*
                         if(typeof(window.load_vtt) !== 'function){
                             window.load_vtt = ()=>{
                                 const gr_vtt_data = document.querySelector('#gr_vtt_data');
@@ -3719,7 +3717,6 @@ def web_interface(args, ctx):
                                 });
                             };
                         }
-                        */
                         if(typeof(window.tab_progress) !== 'function'){
                             window.tab_progress = () => {
                                 const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
@@ -3732,7 +3729,7 @@ def web_interface(args, ctx):
                             gr_progress_box.addEventListener('input', tab_progress);
                         }
                         window.redraw_elements(); 
-                        //window.load_vtt();
+                        window.load_vtt();
                         // Load last saved parameters and inputs
                         const data = window.localStorage.getItem('data');
                         if(data){
