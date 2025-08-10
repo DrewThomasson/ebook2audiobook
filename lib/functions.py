@@ -2467,9 +2467,9 @@ def web_interface(args, ctx):
         gr_state = gr.State(value={"hash": None})
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
-        gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
-        gr_vtt_data = gr.Textbox(elem_id='gr_vtt_data', label='', interactive=False, visible=True)
+        gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data'))
         gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=False)
+        gr_vtt_data = gr.Textbox(elem_id='gr_vtt_data', label='', interactive=False, visible=True
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
@@ -3599,12 +3599,16 @@ def web_interface(args, ctx):
             inputs=[gr_vtt_data],
             js="""
                 (data)=>{
-                    if(data){
-                        const vtt_track = document.querySelector('#vtt_track');
-                        const vtt_blob = new Blob([data],{type: 'text/vtt'});
-                        const vtt_url = URL.createObjectURL(vtt_blob);
-                        vtt_track.src = vtt_url;
-                        console.log(vtt_url);
+                    try{
+                        if(data){
+                            const vtt_track = document.querySelector('#vtt_track');
+                            const vtt_blob = new Blob([data],{type: 'text/vtt'});
+                            const vtt_url = URL.createObjectURL(vtt_blob);
+                            //vtt_track.src = vtt_url;
+                            console.log(vtt_url);
+                        }
+                    }catch(e){
+                        console.log('gr_vtt_data.change error: '+e)
                     }
                 }
             """  
