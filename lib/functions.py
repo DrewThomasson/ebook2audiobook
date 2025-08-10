@@ -2471,8 +2471,8 @@ def web_interface(args, ctx):
         gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=False)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
-            gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=True)
+            gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
@@ -2491,12 +2491,10 @@ def web_interface(args, ctx):
                 return None
             try:
                 vtt_path = Path(path).with_suffix('.vtt')
-                print(f'-----------{vtt_path}------------')
                 if not os.path.exists(vtt_path):
                     return None
                 with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
                     content = f.read()
-                print(f'-----------{content}------------')
                 return content
             except Exception:
                 return None
@@ -3600,7 +3598,7 @@ def web_interface(args, ctx):
             outputs=[gr_glass_mask]
         )
         gr_audiobook_vtt.change(
-            fn=None,
+            fn=lambda vtt: show_alert({"type": "info", "msg": vtt}),
             inputs=[gr_audiobook_vtt],
             js="""
                 (data)=>{
