@@ -2651,7 +2651,7 @@ def web_interface(args, ctx):
                 return (
                     gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
                     gr.update(value=session['language']), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
+                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id), gr.update(value=load_vtt_data(session['audiobook']))),
                     gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
                     gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
                     gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id),
@@ -2660,7 +2660,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
-                outputs = outputs = tuple([gr.update() for _ in range(22)]) # 21 is the total count of the return[] above
+                outputs = outputs = tuple([gr.update() for _ in range(23)]) # 21 is the total count of the return[] above
                 return outputs
 
         def refresh_interface(id):
@@ -2672,7 +2672,6 @@ def web_interface(args, ctx):
             )
 
         def change_gr_audiobook_list(selected, id):
-            print('change_gr_audiobook_list called')
             session = context.get_session(id)
             session['audiobook'] = selected
             visible = True if len(audiobook_options) else False
@@ -3589,7 +3588,7 @@ def web_interface(args, ctx):
             outputs=[
                 gr_ebook_file, gr_ebook_mode, gr_device, gr_language,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
-                gr_output_format_list, gr_audiobook_list,
+                gr_output_format_list, gr_audiobook_list, gr_audiobook_vtt,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
                 gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp,
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
