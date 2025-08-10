@@ -3662,27 +3662,11 @@ def web_interface(args, ctx):
                                         });
                                     }
                                     if(gr_audiobook_player){
-                                        if(!gr_audiobook_player.style.transition){
-                                            gr_audiobook_player.style.transition = 'filter 1s ease';
-                                        }
-                                        gr_audiobook_player.style.filter = audioFilter;
-                                    }
-                                }catch(e){
-                                    console.log('redraw_elements error:', e);
-                                }
-                            };
-                        }
-                        if(typeof(window.load_vtt) !== 'function'){
-                            window.load_vtt = (path)=>{
-                                try{
-                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                                    const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
-                                    console.log('gr_audiobook_player: ',gr_audiobook_player);
-                                    if(gr_audiobook_player){
+                                        const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
                                         const gr_audiobook_track = document.querySelector('#gr_audiobook_track') || document.createElement('track');
                                         gr_audiobook_track.id = 'gr_audiobook_track';
                                         gr_audiobook_track.default = true;
-                                        gr_audiobook_track.src = path;
+                                        gr_audiobook_track.src = '';
                                         gr_audiobook_track.kind = 'captions';
                                         gr_audiobook_track.label = 'captions';
                                         gr_audiobook_track.addEventListener('load', ()=>{
@@ -3709,6 +3693,23 @@ def web_interface(args, ctx):
                                         gr_audiobook_player.addEventListener('ended', ()=>{
                                             gr_audiobook_vtt.innerHTML = '...';
                                         });
+                                        if(!gr_audiobook_player.style.transition){
+                                            gr_audiobook_player.style.transition = 'filter 1s ease';
+                                        }
+                                        gr_audiobook_player.style.filter = audioFilter;
+                                    }
+                                }catch(e){
+                                    console.log('redraw_elements error:', e);
+                                }
+                            };
+                        }
+                        if(typeof(window.load_vtt) !== 'function'){
+                            window.load_vtt = (path)=>{
+                                try{
+                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
+                                    if(gr_audiobook_player){
+                                        const gr_audiobook_track = document.querySelector('#gr_audiobook_track');
+                                        gr_audiobook_track.src = path;
                                     }
                                 }catch(e){
                                     console.log('load_vtt error:', e);
@@ -3741,7 +3742,6 @@ def web_interface(args, ctx):
                             if(typeof window.redraw_elements === 'function'){
                                 try{
                                     window.redraw_elements(); 
-                                    window.load_vtt(gr_audiobook_player.src);
                                 }catch(e){ 
                                     console.log('redraw_elements error:', e); 
                                 }
