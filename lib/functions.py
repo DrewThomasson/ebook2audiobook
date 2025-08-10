@@ -3634,9 +3634,7 @@ def web_interface(args, ctx):
                     try {
                         if (!window.__orig_title) window.__orig_title = document.title;
 
-                        // Kick the setup after we return, to avoid blocking Gradio's render.
                         setTimeout(() => {
-                            // Wait until all required elements are present, then init once.
                             (function waitForElements() {
                                 const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                                 const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
@@ -3647,9 +3645,8 @@ def web_interface(args, ctx):
                                     return;
                                 }
 
-                                // --- original function names, kept local ---
-
-                                function redraw_elements() {
+                                // Expose functions on window so they can be called later
+                                window.redraw_elements = function() {
                                     try {
                                         const url = new URL(window.location);
                                         const theme = url.searchParams.get('__theme');
@@ -3667,9 +3664,9 @@ def web_interface(args, ctx):
                                     } catch (e) {
                                         console.log('redraw_elements error:', e);
                                     }
-                                }
+                                };
 
-                                function load_vtt() {
+                                window.load_vtt = function() {
                                     try {
                                         let gr_audiobook_track = document.querySelector('#gr_audiobook_track');
                                         if (!gr_audiobook_track) {
@@ -3678,7 +3675,6 @@ def web_interface(args, ctx):
                                             gr_audiobook_track.default = true;
                                             gr_audiobook_track.kind = 'captions';
                                             gr_audiobook_track.label = 'captions';
-                                            // src can be set later from Python
                                             gr_audiobook_player.appendChild(gr_audiobook_track);
                                         }
 
@@ -3716,9 +3712,9 @@ def web_interface(args, ctx):
                                     } catch (e) {
                                         console.log('load_vtt error:', e);
                                     }
-                                }
+                                };
 
-                                function tab_progress() {
+                                window.tab_progress = function() {
                                     try {
                                         const val = ('value' in gr_progress_box ? gr_progress_box.value : gr_progress_box.textContent) || '';
                                         const m = String(val).match(/(\\d+(?:\\.\\d+)?)%/);
@@ -3726,21 +3722,22 @@ def web_interface(args, ctx):
                                     } catch (e) {
                                         console.log('tab_progress error:', e);
                                     }
-                                }
+                                };
 
-                                // observers for progress updates
-                                new MutationObserver(tab_progress)
+                                // Bind observers for progress updates
+                                new MutationObserver(window.tab_progress)
                                     .observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
-                                gr_progress_box.addEventListener('input', tab_progress);
+                                gr_progress_box.addEventListener('input', window.tab_progress);
 
-                                // run initializations
-                                redraw_elements();
-                                load_vtt();
-                                tab_progress();
+                                // Initial run
+                                window.redraw_elements();
+                                window.load_vtt();
+                                window.tab_progress();
+
                             })();
                         }, 0);
 
-                        // Return immediately so Gradio can render elements.
+                        // Return immediately so Gradio renders elements
                         try {
                             const raw = window.localStorage.getItem('data');
                             if (raw) return JSON.parse(raw);
