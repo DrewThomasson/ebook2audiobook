@@ -3625,10 +3625,10 @@ def web_interface(args, ctx):
                 ()=>{
                     try{
                         window.init = ()=>{
-                            window.gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                            window.gr_vtt_data = document.querySelector('#gr_vtt_data');
-                            window.gr_progress_box = document.querySelector('#gr_progress_box');
-                            const status = !!(window.gr_audiobook_player && window.gr_vtt_data && window.gr_progress_box);
+                            const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
+                            const gr_vtt_data = document.querySelector('#gr_vtt_data');
+                            const gr_progress_box = document.querySelector('#gr_progress_box');
+                            const status = !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
                             if(!status){
                                 clearTimeout(init_timeout);
                                 init_timeout = setTimeout(window.init, 400);
@@ -3640,6 +3640,7 @@ def web_interface(args, ctx):
                             window.elColor = '#666666'
                             window.redraw_elements = ()=>{
                                 try{
+                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                                     const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
                                     const radios = document.querySelectorAll(\"input[type='radio']\");
                                     const url = new URL(window.location);
@@ -3648,7 +3649,9 @@ def web_interface(args, ctx):
                                     let audioFilter = '';
                                     if(theme){
                                         if(theme === 'dark'){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            if(gr_audiobook_player){
+                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            }
                                             window.elColor = '#fff';
                                         }
                                         checkboxes.forEach(cb=>{
@@ -3660,7 +3663,9 @@ def web_interface(args, ctx):
                                     }else{
                                         osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                         if(osTheme){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            if(gr_audiobook_player){
+                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            }
                                             window.elColor = '#fff';
                                         }
                                         checkboxes.forEach(cb=>{
@@ -3670,10 +3675,12 @@ def web_interface(args, ctx):
                                             cb.style.border = '1px solid ' + window.elColor;
                                         });
                                     }
-                                    if(!window.gr_audiobook_player.style.transition){
-                                        window.gr_audiobook_player.style.transition = 'filter 1s ease';
+                                    if(gr_audiobook_player){
+                                        if(!gr_audiobook_player.style.transition){
+                                            gr_audiobook_player.style.transition = 'filter 1s ease';
+                                        }
+                                        gr_audiobook_player.style.filter = audioFilter;
                                     }
-                                    window.gr_audiobook_player.style.filter = audioFilter;
                                 }catch(e){
                                     console.log('redraw_elements error:', e);
                                 }
@@ -3683,6 +3690,7 @@ def web_interface(args, ctx):
                         if(typeof(window.load_vtt) !== 'function'){
                             window.load_vtt = ()=>{
                                 try{
+                                    const gr_vtt_data = document.querySelector('#gr_vtt_data');
                                     const vtt_track = document.createElement('track');
                                     vtt_track.id = 'vtt_track';
                                     vtt_track.src = '';
@@ -3690,7 +3698,7 @@ def web_interface(args, ctx):
                                     vtt_track.kind = 'captions';
                                     vtt_track.label = 'captions';
                                     vtt_track.addEventListener('load', ()=>{
-                                        const track = window.gr_audiobook_player.textTracks[0];
+                                        const track = gr_audiobook_player.textTracks[0];
                                         track.mode = 'showing';
                                         track.addEventListener('cuechange', function(){
                                             console.log('cuechange: ok');
@@ -3698,16 +3706,16 @@ def web_interface(args, ctx):
                                                 console.log('this.activeCues: '+ this.activeCues);
                                                 if(this.activeCues[0]){
                                                     console.log('this.activeCues[0]: '+ this.activeCues[0]);
-                                                    window.gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                                    gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
                                                 }
                                                 return
                                             }
-                                            window.gr_vtt_data.innerHTML = '...';
+                                            gr_vtt_data.innerHTML = '...';
                                         });
                                     });
-                                    window.gr_audiobook_player.appendChild(vtt_track);
-                                    window.gr_audiobook_player.addEventListener('ended', ()=>{
-                                        window.gr_vtt_data.innerHTML = '...';
+                                    gr_audiobook_player.appendChild(vtt_track);
+                                    gr_audiobook_player.addEventListener('ended', ()=>{
+                                        gr_vtt_data.innerHTML = '...';
                                     });
                                 }catch(e){
                                     console.log('load_vtt error:', e);
@@ -3720,14 +3728,15 @@ def web_interface(args, ctx):
                         
                         if(typeof(window.tab_progress) !== 'function'){
                             window.tab_progress = () => {
-                                const val = window.gr_progress_box?.value || window.gr_progress_box?.textContent || '';
+                                const gr_progress_box = document.querySelector('#gr_progress_box');
+                                const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
                                 const prct = val.trim().split(' ')[4];
                                 if(prct && /^\d+(\.\d+)?%$/.test(prct)){
                                     document.title = '-------- ' + prct + '--------';
                                 }
                             };
-                            new MutationObserver(tab_progress).observe(window.gr_progress_box,{attributes: true, childList: true, subtree: true, characterData: true});
-                            window.gr_progress_box.addEventListener('input', tab_progress);
+                            new MutationObserver(tab_progress).observe(gr_progress_box,{attributes: true, childList: true, subtree: true, characterData: true});
+                            gr_progress_box.addEventListener('input', tab_progress);
                         }
 
                         // Load last saved parameters and inputs
