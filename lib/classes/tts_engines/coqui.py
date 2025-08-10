@@ -448,7 +448,7 @@ class Coqui:
                     self.silence_list.append(silence_time)
                     return True
                 elif sentence == TTS_SML['pause']:
-                    silence_time = (int(np.random.uniform(1.0, 1.8) * 100) / 100
+                    silence_time = int(np.random.uniform(1.0, 1.8) * 100) / 100
                     pause_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time)) # 1.0 to 1.8 seconds
                     self.audio_segments.append(pause_tensor.clone())
                     self.silence_list.append(silence_time)
