@@ -3609,7 +3609,9 @@ def web_interface(args, ctx):
                     if(data){
                         const vttBlob = new Blob([data], { type: 'text/vtt' });
                         const vttUrl = URL.createObjectURL(vttBlob);
-                        window.text_track.src = vttUrl;                 
+                        if(window.text_track){
+                            window.text_track.src = vttUrl;
+                        }
                     }
                 }
             """  
