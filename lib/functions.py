@@ -3598,24 +3598,8 @@ def web_interface(args, ctx):
             outputs=[gr_glass_mask]
         )
         gr_audiobook_vtt.change(
-            fn=lambda gr_audiobook_vtt: show_alert({"type": "info", "msg": gr_audiobook_vtt}),
-            inputs=[gr_audiobook_vtt],
-            js="""
-                (data)=>{
-                    try{
-                        if(data){
-                            const vtt_track = document.querySelector('#vtt_track');
-                            const vtt_blob = new Blob([data],{type: 'text/vtt'});
-                            const vtt_url = URL.createObjectURL(vtt_blob);
-                            if(vtt_track){
-                                vtt_track.src = vtt_url;
-                            }
-                        }
-                    }catch(e){
-                        console.log('gr_audiobook_vtt.change error: '+e)
-                    }
-                }
-            """  
+            fn=lambda vtt: show_alert({"type": "info", "msg": vtt}),
+            inputs=[gr_audiobook_vtt]
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
