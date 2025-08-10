@@ -2487,6 +2487,7 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def load_vtt_data(path):
+            print(f'-----------load_vtt_data: {path}------------')
             if not path or not os.path.exists(path):
                 return None
             try:
