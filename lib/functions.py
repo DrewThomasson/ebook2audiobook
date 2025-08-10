@@ -3606,15 +3606,12 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_vtt],
             js="""
                 (data)=>{
-                    console.log(data);
                     try{
                         if(data){
-                            const vtt_track = document.querySelector('#vtt_track');
+                            const gr_audiobook_track = document.querySelector('#gr_audiobook_track');
                             const vtt_blob = new Blob([data],{type: 'text/vtt'});
                             const vtt_url = URL.createObjectURL(vtt_blob);
-                            if(vtt_track){
-                                vtt_track.src = vtt_url;
-                            }
+                            gr_audiobook_track.src = vtt_url;
                         }
                     }catch(e){
                         console.log('gr_audiobook_vtt.change error: '+e)
@@ -3690,13 +3687,13 @@ def web_interface(args, ctx):
                                     const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                                     if(gr_audiobook_player){
                                         const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
-                                        const vtt_track = document.createElement('track');
-                                        vtt_track.id = 'vtt_track';
-                                        vtt_track.src = '';
-                                        vtt_track.default = true;
-                                        vtt_track.kind = 'captions';
-                                        vtt_track.label = 'captions';
-                                        vtt_track.addEventListener('load', ()=>{
+                                        const gr_audiobook_track = document.createElement('track');
+                                        gr_audiobook_track.id = 'gr_audiobook_track';
+                                        gr_audiobook_track.src = '';
+                                        gr_audiobook_track.default = true;
+                                        gr_audiobook_track.kind = 'captions';
+                                        gr_audiobook_track.label = 'captions';
+                                        gr_audiobook_track.addEventListener('load', ()=>{
                                             const track = gr_audiobook_player.textTracks[0];
                                             track.mode = 'showing';
                                             track.addEventListener('cuechange', function(){
@@ -3712,7 +3709,7 @@ def web_interface(args, ctx):
                                                 gr_audiobook_vtt.innerHTML = '...';
                                             });
                                         });
-                                        gr_audiobook_player.appendChild(vtt_track);
+                                        gr_audiobook_player.appendChild(gr_audiobook_track);
                                         gr_audiobook_player.addEventListener('ended', ()=>{
                                             gr_audiobook_vtt.innerHTML = '...';
                                         });
