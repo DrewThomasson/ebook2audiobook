@@ -3687,6 +3687,7 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
+                        /*
                         if(typeof(window.load_vtt) !== 'function){
                             window.load_vtt = ()=>{
                                 const gr_vtt_data = document.querySelector('#gr_vtt_data');
@@ -3718,6 +3719,7 @@ def web_interface(args, ctx):
                                 });
                             };
                         }
+                        */
                         if(typeof(window.tab_progress) !== 'function'){
                             window.tab_progress = () => {
                                 const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
@@ -3730,7 +3732,7 @@ def web_interface(args, ctx):
                             gr_progress_box.addEventListener('input', tab_progress);
                         }
                         window.redraw_elements(); 
-                        window.load_vtt();
+                        //window.load_vtt();
                         // Load last saved parameters and inputs
                         const data = window.localStorage.getItem('data');
                         if(data){
