@@ -3604,7 +3604,7 @@ def web_interface(args, ctx):
                         const vtt_blob = new Blob([data],{type: 'text/vtt'});
                         const vtt_url = URL.createObjectURL(vtt_blob);
                         vtt_track.src = vtt_url;
-                        console.log(vtt_url)
+                        console.log(vtt_url);
                     }
                 }
             """  
@@ -3685,38 +3685,37 @@ def web_interface(args, ctx):
                             };
                         }
                         if(typeof(window.load_vtt) !== 'function){
-                            const gr_vtt_data = document.querySelector('#gr_vtt_data');
-                            const vtt_track = document.createElement('track');
-                            vtt_track.id = 'vtt_track';
-                            vtt_track.src = '';
-                            vtt_track.default = true;
-                            vtt_track.kind = 'captions';
-                            vtt_track.label = 'captions';
-                            gr_audiobook_player.appendChild(vtt_track);
-                            vtt_track.addEventListener('load', ()=>{
-                                const track = gr_audiobook_player.textTracks[0];
-                                track.mode = 'showing'; // Safari fix
-                                track.addEventListener('cuechange', function(){
-                                    console.log('cuechange: ok')
-                                    if (this.activeCues){
-                                        console.log('this.activeCues: '+ this.activeCues)
-                                        if(this.activeCues[0]){
-                                            console.log('this.activeCues[0]: '+ this.activeCues[0])
-                                            gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                            window.load_vtt = ()=>{
+                                const gr_vtt_data = document.querySelector('#gr_vtt_data');
+                                const vtt_track = document.createElement('track');
+                                vtt_track.id = 'vtt_track';
+                                vtt_track.src = '';
+                                vtt_track.default = true;
+                                vtt_track.kind = 'captions';
+                                vtt_track.label = 'captions';
+                                gr_audiobook_player.appendChild(vtt_track);
+                                vtt_track.addEventListener('load', ()=>{
+                                    const track = gr_audiobook_player.textTracks[0];
+                                    track.mode = 'showing';
+                                    track.addEventListener('cuechange', function(){
+                                        console.log('cuechange: ok')
+                                        if (this.activeCues){
+                                            console.log('this.activeCues: '+ this.activeCues)
+                                            if(this.activeCues[0]){
+                                                console.log('this.activeCues[0]: '+ this.activeCues[0])
+                                                gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                            }
+                                            return
                                         }
-                                        return
-                                    }
+                                        gr_vtt_data.innerHTML = '...';
+                                    });
+                                });
+                                gr_audiobook_player.addEventListener('ended', ()=>{
                                     gr_vtt_data.innerHTML = '...';
                                 });
-                            });
-                            gr_audiobook_player.addEventListener('ended', ()=>{
-                                gr_vtt_data.innerHTML = '...';
-                            });
+                            };
                         }
                         if(typeof(window.tab_progress) !== 'function'){
-                            const gr_progress_box = document.querySelector('#gr_progress_box');
-                            if (!gr_progress_box || window.__titleSync) return;
-                            window.__titleSync = true;
                             window.tab_progress = () => {
                                 const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
                                 const prct = val.trim().split(' ')[4];
