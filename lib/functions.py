@@ -2338,7 +2338,7 @@ def web_interface(args, ctx):
                             with gr.Row(elem_id='gr_row_output_format'):
                                 gr_output_format_list = gr.Dropdown(label='Output Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=2)
                                 gr_output_split = gr.Checkbox(label='Split Output File', elem_id='gr_output_split', value=default_output_split, interactive=True, scale=1)
-                                gr_output_split_hours_list = gr.Dropdown(label='Max hours / part', elem_id='gr_output_split_hours_list', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True, visible=False, scale=2)
+                                gr_output_split_hours = gr.Dropdown(label='Max hours / part', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True, visible=False, scale=2)
             gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
             with gr_tab_xtts_params:
                 gr.Markdown(
@@ -3118,7 +3118,7 @@ def web_interface(args, ctx):
             session['output_split'] = bool
             return gr.update(visible=bool)
 
-        def change_gr_output_split_hours_list(selected, id):
+        def change_gr_output_split_hours(selected, id):
             session = context.get_session(id)
             session['output_split_hours'] = selected
             return
@@ -3455,11 +3455,11 @@ def web_interface(args, ctx):
         gr_output_split.change(
             fn=change_gr_output_split,
             inputs=[gr_output_split, gr_session],
-            outputs=gr_output_split_hours_list
+            outputs=gr_output_split_hours
         )
-        gr_output_split_hours_list.change(
-            fn=change_gr_output_split_hours_list,
-            inputs=[gr_output_split_hours_list, gr_session],
+        gr_output_split_hours.change(
+            fn=change_gr_output_split_hours,
+            inputs=[gr_output_split_hours, gr_session],
             outputs=None
         )
         gr_progress_box.change(
@@ -3560,7 +3560,7 @@ def web_interface(args, ctx):
                 gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours_list
+                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
             outputs=[gr_progress_box]
         ).then(
@@ -3596,7 +3596,7 @@ def web_interface(args, ctx):
                 gr_output_format_list, gr_audiobook_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
                 gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp,
-                gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours_list, gr_timer
+                gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
