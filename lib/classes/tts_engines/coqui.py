@@ -785,7 +785,7 @@ class Coqui:
                         if self.audio_segments:
                             audio_tensor = torch.cat(self.audio_segments, dim=-1)
                             start_time = self.sentences_total_time
-                            duration = round((audio_tensor.shape[-1] / settings['samplerate']), 2)
+                            duration = round(((audio_tensor.shape[-1] + sum(self.silence_list)) / settings['samplerate']), 2)
                             end_time = start_time + duration
                             self.sentences_total_time = end_time
                             sentence_obj = {
