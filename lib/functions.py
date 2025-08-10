@@ -2490,7 +2490,7 @@ def web_interface(args, ctx):
             if not path or not os.path.exists(path):
                 return None
             try:
-                vtt_path = f'{path.stem}.vtt'
+                vtt_path = Path(path).with_suffix('.vtt')
                 print(f'-----------{vtt_path}------------')
                 if not os.path.exists(vtt_path):
                     return None
