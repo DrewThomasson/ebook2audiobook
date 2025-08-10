@@ -3606,6 +3606,7 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_vtt],
             js="""
                 (data)=>{
+                    console.log(data);
                     try{
                         if(data){
                             const vtt_track = document.querySelector('#vtt_track');
