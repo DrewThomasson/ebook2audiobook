@@ -3608,10 +3608,8 @@ def web_interface(args, ctx):
                 (data)=>{
                     try{
                         if(data){
-                            const gr_audiobook_track = document.querySelector('#gr_audiobook_track');
                             const vtt_blob = new Blob([data],{type: 'text/vtt'});
-                            const vtt_url = URL.createObjectURL(vtt_blob);
-                            gr_audiobook_track.src = vtt_url;
+                            window.audiobook_vtt_url = URL.createObjectURL(vtt_blob);
                         }
                     }catch(e){
                         console.log('gr_audiobook_vtt.change error: '+e)
