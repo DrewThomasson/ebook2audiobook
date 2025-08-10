@@ -1827,7 +1827,7 @@ def convert_ebook(args, ctx=None):
             session['audiobooks_dir'] = args['audiobooks_dir']
             session['output_format'] = args['output_format']
             session['output_split'] = args['output_split']    
-            session['output_split_hours'] = args['output_split_hours'] 
+            session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
 
             info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
 
