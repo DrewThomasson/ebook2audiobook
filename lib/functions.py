@@ -3725,8 +3725,7 @@ def web_interface(args, ctx):
                                 };
 
                                 // Bind observers for progress updates
-                                new MutationObserver(window.tab_progress)
-                                    .observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
+                                new MutationObserver(window.tab_progress).observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
                                 gr_progress_box.addEventListener('input', window.tab_progress);
 
                                 // Initial run
