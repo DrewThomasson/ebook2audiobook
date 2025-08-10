@@ -3608,7 +3608,7 @@ def web_interface(args, ctx):
                             const vtt_blob = new Blob([data],{type: 'text/vtt'});
                             const vtt_url = URL.createObjectURL(vtt_blob);
                             //vtt_track.src = vtt_url;
-                            console.log(vtt_url);
+                            console.log('vvtt_url: '+vtt_url);
                         }
                     }catch(e){
                         console.log('gr_audiobook_vtt.change error: '+e)
