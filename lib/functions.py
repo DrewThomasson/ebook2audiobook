@@ -2270,7 +2270,7 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
-                #gr_vtt_data {
+                #gr_audiobook_vtt {
                     display: block;
                     text-align: center;
                     font-family: monospace;
@@ -2469,10 +2469,10 @@ def web_interface(args, ctx):
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
         gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
         gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=False)
-        gr_vtt_data = gr.Textbox(elem_id='gr_vtt_data', label='', interactive=False, visible=True)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_text = gr.Textbox(elem_id='gr_audiobook_text', label='Audiobook', interactive=False, visible=True)
+            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=True)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
@@ -3472,7 +3472,7 @@ def web_interface(args, ctx):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_vtt_data, gr_group_audiobook_list]
+            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_group_audiobook_list]
         ).then(
             fn=None,
             js='()=>window.redraw_elements()'
@@ -3597,9 +3597,9 @@ def web_interface(args, ctx):
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
             outputs=[gr_glass_mask]
         )
-        gr_vtt_data.change(
+        gr_audiobook_vtt.change(
             fn=None,
-            inputs=[gr_vtt_data],
+            inputs=[gr_audiobook_vtt],
             js="""
                 (data)=>{
                     try{
@@ -3611,7 +3611,7 @@ def web_interface(args, ctx):
                             console.log(vtt_url);
                         }
                     }catch(e){
-                        console.log('gr_vtt_data.change error: '+e)
+                        console.log('gr_audiobook_vtt.change error: '+e)
                     }
                 }
             """  
@@ -3683,7 +3683,7 @@ def web_interface(args, ctx):
                                 try{
                                     const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                                     if(gr_audiobook_player){
-                                        const gr_vtt_data = document.querySelector('#gr_vtt_data');
+                                        const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
                                         const vtt_track = document.createElement('track');
                                         vtt_track.id = 'vtt_track';
                                         vtt_track.src = '';
@@ -3699,16 +3699,16 @@ def web_interface(args, ctx):
                                                     console.log('this.activeCues: '+ this.activeCues);
                                                     if(this.activeCues[0]){
                                                         console.log('this.activeCues[0]: '+ this.activeCues[0]);
-                                                        gr_vtt_data.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                                        gr_audiobook_vtt.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
                                                     }
                                                     return
                                                 }
-                                                gr_vtt_data.innerHTML = '...';
+                                                gr_audiobook_vtt.innerHTML = '...';
                                             });
                                         });
                                         gr_audiobook_player.appendChild(vtt_track);
                                         gr_audiobook_player.addEventListener('ended', ()=>{
-                                            gr_vtt_data.innerHTML = '...';
+                                            gr_audiobook_vtt.innerHTML = '...';
                                         });
                                     }
                                 }catch(e){
@@ -3720,9 +3720,9 @@ def web_interface(args, ctx):
                         function init(){
                             try{
                                 const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                                const gr_vtt_data = document.querySelector('#gr_vtt_data');
+                                const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
                                 const gr_progress_box = document.querySelector('#gr_progress_box');
-                                const status = !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
+                                const status = !!(gr_audiobook_player && gr_audiobook_vtt && gr_progress_box);
                                 if(!status){
                                     clearTimeout(init_timeout);
                                     init_timeout = setTimeout(init, 400);
