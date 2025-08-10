@@ -47,7 +47,6 @@ dependencies = [
 	"pymupdf4llm",
 	"sudachipy",
 	"sudachidict_core",
-	"webvtt-py",
 	"transformers==4.51.3",
 	"coqui-tts[languages]==0.26.0",
 	"torchvggish"
