@@ -2209,7 +2209,7 @@ def web_interface(args, ctx):
                 }
                 .progress-bar.svelte-ls20lj {
                     background: orange !important;
-                }  
+                }
                 #glass-mask {
                     position: fixed !important;
                     top: 0 !important;
@@ -2291,6 +2291,15 @@ def web_interface(args, ctx):
                     border-radius: 0px !important;
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
+                }
+                ////////////
+                .fade-in {
+                    animation: fadeIn 0.3s ease-in;
+                    display: inline-block;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
                 }
             </style>
             '''
