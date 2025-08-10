@@ -3475,7 +3475,7 @@ def web_interface(args, ctx):
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_group_audiobook_list]
         ).then(
             fn=None,
-            js='()=>window.redraw_elements()'
+            js='()=>{window.redraw_elements?.();}'
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
