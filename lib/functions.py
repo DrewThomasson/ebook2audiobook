@@ -3624,7 +3624,7 @@ def web_interface(args, ctx):
             js="""
                 ()=>{
                     try{
-                        window.init = ()=>{
+                        function init(){
                             try{
                                 const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
                                 const gr_vtt_data = document.querySelector('#gr_vtt_data');
@@ -3632,7 +3632,7 @@ def web_interface(args, ctx):
                                 const status = !!(gr_audiobook_player && gr_vtt_data && gr_progress_box);
                                 if(!status){
                                     clearTimeout(init_timeout);
-                                    init_timeout = setTimeout(window.init, 400);
+                                    init_timeout = setTimeout(init, 400);
                                     return;
                                 }
                             }catch(e){
