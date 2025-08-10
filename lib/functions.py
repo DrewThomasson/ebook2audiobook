@@ -3645,40 +3645,42 @@ def web_interface(args, ctx):
                             window.redraw_elements = ()=>{
                                 try{
                                     const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                                    const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
-                                    const radios = document.querySelectorAll(\"input[type='radio']\");
-                                    const url = new URL(window.location);
-                                    const theme = url.searchParams.get('__theme');
-                                    let osTheme;
-                                    let audioFilter = '';
-                                    if(theme){
-                                        if(theme === 'dark'){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            window.elColor = '#fff';
+                                    if(gr_audiobook_player){
+                                        const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
+                                        const radios = document.querySelectorAll(\"input[type='radio']\");
+                                        const url = new URL(window.location);
+                                        const theme = url.searchParams.get('__theme');
+                                        let osTheme;
+                                        let audioFilter = '';
+                                        if(theme){
+                                            if(theme === 'dark'){
+                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                                window.elColor = '#fff';
+                                            }
+                                            checkboxes.forEach(cb=>{
+                                                cb.style.border = '1px solid ' + window.elColor;
+                                            });
+                                            radios.forEach(cb=>{
+                                                cb.style.border = '1px solid ' + window.elColor;
+                                            });
+                                        }else{
+                                            osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                                            if(osTheme){
+                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                                window.elColor = '#fff';
+                                            }
+                                            checkboxes.forEach(cb=>{
+                                                cb.style.border = '1px solid ' + window.elColor;
+                                            });
+                                            radios.forEach(cb=>{
+                                                cb.style.border = '1px solid ' + window.elColor;
+                                            });
                                         }
-                                        checkboxes.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + window.elColor;
-                                        });
-                                        radios.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + window.elColor;
-                                        });
-                                    }else{
-                                        osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-                                        if(osTheme){
-                                            audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            window.elColor = '#fff';
+                                        if(!gr_audiobook_player.style.transition){
+                                            gr_audiobook_player.style.transition = 'filter 1s ease';
                                         }
-                                        checkboxes.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + window.elColor;
-                                        });
-                                        radios.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + window.elColor;
-                                        });
+                                        gr_audiobook_player.style.filter = audioFilter;
                                     }
-                                    if(!gr_audiobook_player.style.transition){
-                                        gr_audiobook_player.style.transition = 'filter 1s ease';
-                                    }
-                                    gr_audiobook_player.style.filter = audioFilter;
                                 }catch(e){
                                     console.log('redraw_elements error:', e);
                                 }
