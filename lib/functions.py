@@ -3687,7 +3687,7 @@ def web_interface(args, ctx):
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
-                                                                    gr_audiobook_sentence.innerHTML = `${this.activeCues[0].text}`;
+                                                                    gr_audiobook_sentence.textContent = `${this.activeCues[0].text}`;
                                                                 }
                                                             }
                                                             return;
