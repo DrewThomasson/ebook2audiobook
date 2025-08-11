@@ -3683,6 +3683,7 @@ def web_interface(args, ctx):
                                                                         textarea.style.width = '100%';
                                                                         textarea.style.height =  'auto';
                                                                         textarea.style.textAlign = 'center';
+                                                                        textarea.style.marginTop = 'auto';
                                                                         textarea.style.padding = '0';
                                                                         textarea.style.opacity = '0';
                                                                         textarea.value = this.activeCues[0].text;
