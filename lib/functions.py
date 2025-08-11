@@ -3736,14 +3736,7 @@ def web_interface(args, ctx):
                                     const gr_audiobook_track = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
 
                                     if (gr_audiobook_player && gr_audiobook_track) {
-                                        // enable so browser fetches it; force reload even if same URL
-                                        try { gr_audiobook_track.track.mode = 'disabled'; } catch (_) {}
-                                        gr_audiobook_track.src = '';
-                                        setTimeout(() => {
-                                            const url = path ? path + (path.includes('?') ? '&' : '?') + '_=' + Date.now() : '';
-                                            gr_audiobook_track.src = url;
-                                            try { gr_audiobook_track.track.mode = 'hidden'; } catch (_) {}
-                                        }, 0);
+                                        gr_audiobook_track.src = path;
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
