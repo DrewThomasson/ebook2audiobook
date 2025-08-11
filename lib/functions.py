@@ -3696,7 +3696,7 @@ def web_interface(args, ctx):
                                                                         textarea.value = this.activeCues[0].text;
                                                                         clearTimeout(track.__fade_timeout);
                                                                         track.__fade_timeout = setTimeout(() => {
-                                                                            textarea.style.transition = 'opacity 0.2s ease-in';
+                                                                            textarea.style.transition = 'opacity 0.1s ease-in';
                                                                             textarea.style.opacity = '1';
                                                                             track.__fade_timeout = null;
                                                                         }, 33);
