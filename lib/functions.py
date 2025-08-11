@@ -2351,6 +2351,13 @@ def web_interface(args, ctx):
         with gr.Tabs():
             gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
             with gr_tab_main:
+                gr_logo_markdown = gr.HTML(value=f'''
+                    <div style="right:0;margin:0;padding:0;text-align:right">
+                        <b style="display:inline;line-height:0.6">{title}</b>&nbsp;
+                        <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:13px" target="_blank">{prog_version}</a>
+                    </div>
+                    '''
+                )
                 with gr.Row(elem_id='gr_row_tab_main'):
                     with gr.Column(elem_id='gr_col_1', scale=3):
                         with gr.Group(elem_id='gr1'):
@@ -2496,13 +2503,6 @@ def web_interface(args, ctx):
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
-        gr_logo_markdown = gr.HTML(value=f'''
-            <div style="right:0;top:60px;margin:0;padding:0;text-align:right">
-                <b style="display:inline;line-height:0.6">{title}</b>&nbsp;
-                <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:13px" target="_blank">{prog_version}</a>
-            </div>
-            '''
-        )
         gr_state = gr.State(value={"hash": None})
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
