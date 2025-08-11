@@ -3692,10 +3692,9 @@ def web_interface(args, ctx):
                                                                         textarea.style.fontSize = '14px';
                                                                         textarea.style.fontWeight = 'bold';
                                                                         textarea.style.width = '100%';
-                                                                        textarea.style.height =  '100px';
+                                                                        textarea.style.height =  '100%';
                                                                         textarea.style.textAlign = 'center';
                                                                         textarea.style.verticalAlign = 'middle';
-                                                                        textarea.style.background = '#fff000';
                                                                         textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
