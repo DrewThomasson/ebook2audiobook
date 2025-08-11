@@ -664,25 +664,40 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 lambda m: num2words(int(m.group(1)), to="ordinal", lang=(lang_iso1 or "en")),
                                 processed
                             )
+                        else:
+                            processed = re_ordinal.sub(
+                                lambda m: math2words(m.group(), lang, lang_iso1, tts_engine, is_num2words_compat),
+                                processed
+                            )
                         # 3) convert other numbers (skip 4-digit years)
                         def _num_repl(m):
                             s = m.group(0)
                             # leave years alone (already handled above)
                             if re.fullmatch(r"\d{4}", s):
                                 return s
-                            if not is_num2words_compat:
-                                return s
-                            try:
-                                n = float(s) if "." in s else int(s)
+                            n = float(s) if "." in s else int(s)
+                            if is_num2words_compat:
                                 return num2words(n, lang=(lang_iso1 or "en"))
-                            except Exception:
-                                return s
+                            else:
+                                return math2words(m, lang, lang_iso1, tts_engine, is_num2words_compat)
 
                         processed = re_num.sub(_num_repl, processed)
                         result.append(processed)
                         last_pos = end
                     result.append(text[last_pos:])
                     text = ''.join(result)
+                else:
+                    # MINIMAL fallback: only ordinals + 4-digit years, nothing else
+                    if is_num2words_compat:
+                        text = re_ordinal.sub(
+                            lambda m: num2words(int(m.group(1)), to="ordinal", lang=(lang_iso1 or "en")),
+                            text
+                        )
+                    text = re.sub(
+                        r"\b\d{4}\b",
+                        lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
+                        text
+                    )
         text = roman2number(text)
         text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
