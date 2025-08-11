@@ -3766,7 +3766,7 @@ def web_interface(args, ctx):
                                 const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
                                 const prct = val.trim().split(' ')[4];
                                 if(prct && /^\d+(\.\d+)?%$/.test(prct)){
-                                    document.title = '-------- ' + prct + '--------';
+                                    document.title = 'Ebook2Audiobook: ' + prct;
                                 }
                             };
                             // Observe programmatic changes
