@@ -2259,7 +2259,7 @@ def web_interface(args, ctx):
                     height:  '100px';
                     text-align: 'center';
                     vertical-align: 'middle';
-                    background: '#fff000';
+                    background: '#ffff00';
                 }
                 #gr_voice_player {
                     margin: 0 !important;
