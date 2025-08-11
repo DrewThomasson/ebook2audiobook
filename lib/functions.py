@@ -641,7 +641,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             # Check if numbers exists in the text
             if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)): 
                 # Check if there are positive integers so possible date to convert
-                if bool(re.search(r'\b\d+\b', text)):
+                if bool(re.search(r'\b\d{1,2}(?:st|nd|rd|th)?\b', text)):
                     date_spans = get_date_entities(text, stanza_nlp)
                     if date_spans:
                         result = []
@@ -938,7 +938,7 @@ def get_date_entities(text, stanza_nlp):
                 date_spans.append((ent.start_char, ent.end_char, ent.text))
         return date_spans
     except Exception as e:
-        error = f'detect_date_entities() error: {e}'
+        error = f'get_date_entities() error: {e}'
         print(error)
         return False
 
@@ -1096,12 +1096,6 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
 def roman2number(text):
 
-    # ↳ only match *well-formed* Roman numerals up to 3999
-    valid_roman = re.compile(
-        r'^(?=.)M{0,3}(CM|CD|D?C{0,3})'
-        r'(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
-        re.IGNORECASE
-    )
     def is_valid_roman(s):
         return bool(valid_roman.fullmatch(s))
 
@@ -1124,12 +1118,6 @@ def roman2number(text):
             return m.group(0)
         val = to_int(roman)
         return f"{val}{m.group(2)}{m.group(3)}"
-    text = re.sub(
-        r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
-        repl_heading,
-        text,
-        flags=re.MULTILINE
-    )
 
     def repl_standalone(m):
         roman = m.group(1)
@@ -1137,12 +1125,6 @@ def roman2number(text):
             return m.group(0)
         val = to_int(roman)
         return f"{val}{m.group(2)}"
-    text = re.sub(
-        r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
-        repl_standalone,
-        text,
-        flags=re.MULTILINE
-    )
 
     def repl_word(m):
         roman = m.group(1)
@@ -1150,6 +1132,25 @@ def roman2number(text):
             return m.group(0)
         val = to_int(roman)
         return str(val)
+
+    # Only match *well-formed* Roman numerals up to 3999
+    valid_roman = re.compile(
+        r'^(?=.)M{0,3}(CM|CD|D?C{0,3})'
+        r'(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
+        re.IGNORECASE
+    )
+    text = re.sub(
+        r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
+        repl_heading,
+        text,
+        flags=re.MULTILINE
+    )
+    text = re.sub(
+        r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
+        repl_standalone,
+        text,
+        flags=re.MULTILINE
+    )
     text = re.sub(
         r'(?<![0-9A-Za-z])([IVXLCDM]+)(?![0-9A-Za-z])',
         repl_word,
