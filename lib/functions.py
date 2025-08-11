@@ -3664,20 +3664,25 @@ def web_interface(args, ctx):
                                     if(gr_audiobook_player){
                                         const gr_audiobook_sentence = document.querySelector('#gr_audiobook_sentence');
                                         const gr_audiobook_track = document.querySelector('#gr_audiobook_track') || document.createElement('track');
-                                        console.log('from reset_elemetns: ', gr_audiobook_track);
                                         gr_audiobook_track.id = 'gr_audiobook_track';
                                         gr_audiobook_track.default = true;
                                         gr_audiobook_track.src = '';
                                         gr_audiobook_track.kind = 'captions';
                                         gr_audiobook_track.label = 'captions';
                                         gr_audiobook_track.addEventListener('load', ()=>{
+                                            console.log('gr_audiobook_track load event');
                                             const track = gr_audiobook_player.textTracks[0];
                                             if(track){
+                                                console.log('track loaded');
                                                 track.mode = 'showing';
                                                 if(!track.__cueBound){
+                                                    console.log('track __cueBound');
                                                     track.addEventListener('cuechange', function(){
+                                                        console.log('track cuechange event');
                                                         if(this.activeCues){
+                                                            console.log('activeCues');
                                                             if(this.activeCues[0]){
+                                                                console.log('activeCues[0]');
                                                                 if(gr_audiobook_sentence){
                                                                     gr_audiobook_sentence.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
                                                                 }
