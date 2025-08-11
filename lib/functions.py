@@ -3603,6 +3603,10 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
+            fn=None,
+            inputs=[gr_audiobook_vtt],
+            outputs=[gr_audiobook_vtt]
+        ).then(
             fn=lambda: update_gr_glass_mask(attr='class="hide"'),
             outputs=[gr_glass_mask]
         )
