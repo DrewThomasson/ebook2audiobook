@@ -647,19 +647,40 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             text = unicodedata.normalize('NFKC', text).replace('\u00A0', ' ')
             if re_num.search(text) and re_ordinal.search(text):
                 date_spans = get_date_entities(text, stanza_nlp)
-                print(date_spans)
                 if date_spans:
                     result = []
                     last_pos = 0
                     for start, end, date_text in date_spans:
-                        # Append text before this date
                         result.append(text[last_pos:start])
-                        processed = re.sub(r"\b\d{4}\b", lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat), date_text)
-                        if not processed:
-                            break
+                        # 1) convert 4-digit years (your original behavior)
+                        processed = re.sub(
+                            r"\b\d{4}\b",
+                            lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat),
+                            date_text
+                        )
+                        # 2) convert ordinal days like "16th"/"16 th" -> "sixteenth"
+                        if is_num2words_compat:
+                            processed = re_ordinal.sub(
+                                lambda m: num2words(int(m.group(1)), to="ordinal", lang=(lang_iso1 or "en")),
+                                processed
+                            )
+                        # 3) convert other numbers (skip 4-digit years)
+                        def _num_repl(m):
+                            s = m.group(0)
+                            # leave years alone (already handled above)
+                            if re.fullmatch(r"\d{4}", s):
+                                return s
+                            if not is_num2words_compat:
+                                return s
+                            try:
+                                n = float(s) if "." in s else int(s)
+                                return num2words(n, lang=(lang_iso1 or "en"))
+                            except Exception:
+                                return s
+
+                        processed = re_num.sub(_num_repl, processed)
                         result.append(processed)
                         last_pos = end
-                    # Append remaining text
                     result.append(text[last_pos:])
                     text = ''.join(result)
         text = roman2number(text)
