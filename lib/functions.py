@@ -3693,6 +3693,7 @@ def web_interface(args, ctx):
                                                                         textarea.style.transition = 'none';
                                                                         textarea.style.opacity = '0';
                                                                         textarea.value = this.activeCues[0].text;
+                                                                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
                                                                     }
                                                                 }
                                                             }
