@@ -2270,14 +2270,6 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
-                #gr_audiobook_sentence {
-                    width: 100%;
-                    background: #fff000;
-                    text-align: center;
-                    font-size: 14px;
-                    font-weight: bold;
-                    text-wrap: balance;
-                }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
                 }
@@ -2299,6 +2291,14 @@ def web_interface(args, ctx):
                     border-radius: 0px !important;
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
+                }
+                .gr_audiobook_sentence {
+                    width: 100%;
+                    background: #fff000;
+                    text-align: center;
+                    font-size: 14px;
+                    font-weight: bold;
+                    text-wrap: balance;
                 }
                 ////////////
                 .fade-in {
@@ -3687,6 +3687,7 @@ def web_interface(args, ctx):
                                                                 if (gr_audiobook_sentence) {
                                                                     const field = gr_audiobook_sentence.querySelector('textarea, input');
                                                                     if (field) {
+                                                                        field.classList.add('gr_audiobook_sentence', 'fade-in');
                                                                         field.value = this.activeCues[0].text;
                                                                         field.dispatchEvent(new Event('input', { bubbles: true }));
                                                                     }
@@ -3697,6 +3698,7 @@ def web_interface(args, ctx):
                                                         if (gr_audiobook_sentence) {
                                                             const field = gr_audiobook_sentence.querySelector('textarea, input');
                                                             if (field) {
+                                                                field.classList.add('gr_audiobook_sentence', 'fade-in');
                                                                 field.value = '...';
                                                                 field.dispatchEvent(new Event('input', { bubbles: true }));
                                                             }
@@ -3714,6 +3716,7 @@ def web_interface(args, ctx):
                                             if(gr_audiobook_sentence){
                                                 const field = gr_audiobook_sentence.querySelector('textarea, input');
                                                 if (field) {
+                                                    field.classList.add('gr_audiobook_sentence', 'fade-in');
                                                     field.value = '...';
                                                     field.dispatchEvent(new Event('input', { bubbles: true }));
                                                 }
