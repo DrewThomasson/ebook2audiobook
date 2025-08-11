@@ -1134,29 +1134,19 @@ def roman2number(text):
         val = to_int(roman)
         return str(val)
 
-    # Only match *well-formed* Roman numerals up to 3999
+    # Well-formed Romans up to 3999
     valid_roman = re.compile(
-        r'^(?=.)M{0,3}(CM|CD|D?C{0,3})'
-        r'(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
+        r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
         re.IGNORECASE
     )
-    text = re.sub(
-        r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)',
-        repl_heading,
-        text,
-        flags=re.MULTILINE
-    )
-    text = re.sub(
-        r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$',
-        repl_standalone,
-        text,
-        flags=re.MULTILINE
-    )
-    text = re.sub(
-        r'(?<![0-9A-Za-z])([IVXLCDM]+)(?![0-9A-Za-z])',
-        repl_word,
-        text
-    )
+
+    # Your heading/standalone rules stay
+    text = re.sub(r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)', repl_heading, text, flags=re.MULTILINE)
+    text = re.sub(r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$', repl_standalone, text, flags=re.MULTILINE)
+
+    # NEW: only convert whitespace-delimited tokens of length >= 2
+    # This avoids: 19C, 19°C, °C, AC/DC, CD-ROM, single-letter "I"
+    text = re.sub(r'(?<!\S)([IVXLCDM]{2,})(?!\S)', repl_word, text)
 
     return text
 
