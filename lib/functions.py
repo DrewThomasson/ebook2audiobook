@@ -2270,7 +2270,7 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
-                #gr_audiobook_vtt {
+                #gr_audiobook_sentence {
                     display: block;
                     text-align: center;
                     font-family: monospace;
@@ -2472,7 +2472,7 @@ def web_interface(args, ctx):
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', interactive=False, visible=True)
+            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', interactive=True, visible=True)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
@@ -3662,7 +3662,7 @@ def web_interface(args, ctx):
                                         });
                                     }
                                     if(gr_audiobook_player){
-                                        const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
+                                        const gr_audiobook_sentence = document.querySelector('#gr_audiobook_sentence');
                                         const gr_audiobook_track = document.querySelector('#gr_audiobook_track') || document.createElement('track');
                                         console.log('from reset_elemetns: ', gr_audiobook_track);
                                         gr_audiobook_track.id = 'gr_audiobook_track';
@@ -3679,14 +3679,14 @@ def web_interface(args, ctx):
                                                     track.addEventListener('cuechange', function(){
                                                         if(this.activeCues){
                                                             if(this.activeCues[0]){
-                                                                if(gr_audiobook_vtt){
-                                                                    gr_audiobook_vtt.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                                                if(gr_audiobook_sentence){
+                                                                    gr_audiobook_sentence.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
                                                                 }
                                                             }
                                                             return
                                                         }
-                                                        if(gr_audiobook_vtt){
-                                                            gr_audiobook_vtt.innerHTML = '...';
+                                                        if(gr_audiobook_sentence){
+                                                            gr_audiobook_sentence.innerHTML = '...';
                                                         }
                                                     });
                                                     track.__cueBound = true;
@@ -3694,7 +3694,7 @@ def web_interface(args, ctx):
                                             }
                                         });
                                         gr_audiobook_player.addEventListener('ended', ()=>{
-                                            gr_audiobook_vtt.innerHTML = '...';
+                                            gr_audiobook_sentence.innerHTML = '...';
                                         });
                                         if(!gr_audiobook_player.style.transition){
                                             gr_audiobook_player.style.transition = 'filter 1s ease';
@@ -3711,7 +3711,6 @@ def web_interface(args, ctx):
                                 try{
                                     if(!window.load_vtt_timeout){window.load_vtt_timeout = null;}
                                     const gr_audiobook_track = document.querySelector('#gr_audiobook_track');
-                                    console.log('from load_vtt :',gr_audiobook_track);
                                     if(gr_audiobook_track){
                                         gr_audiobook_track.src = path;
                                     }else{
