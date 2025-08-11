@@ -3673,18 +3673,20 @@ def web_interface(args, ctx):
                                             if (track) {
                                                 track.mode = 'showing';
                                                 if (!track.__cueBound) {
-                                                    track.__fade_timeout = null
+                                                    track.__fade_timeout = null;
+                                                    if(textarea){
+                                                    textarea.style.fontSize = '15px';
+                                                    textarea.style.fontWeight = 'bold';
+                                                    textarea.style.width = '100%';
+                                                    textarea.style.height = '100%';
+                                                    textarea.style.textAlign = 'center';
+                                                    textarea.style.marginTop = 'auto';
+                                                    }
                                                     track.addEventListener('cuechange', function () {
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        textarea.style.fontSize = '15px';
-                                                                        textarea.style.fontWeight = 'bold';
-                                                                        textarea.style.width = '100%';
-                                                                        textarea.style.height = '100%';
-                                                                        textarea.style.textAlign = 'center';
-                                                                        textarea.style.marginTop = 'auto';
                                                                         textarea.style.transition = 'none';
                                                                         textarea.style.opacity = '0';
                                                                         textarea.value = this.activeCues[0].text;
