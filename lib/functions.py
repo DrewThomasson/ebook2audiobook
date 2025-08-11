@@ -3694,7 +3694,7 @@ def web_interface(args, ctx):
                                                                         track.__fade_timeout = setTimeout(() => {
                                                                             textarea.style.transition = 'opacity 0.2s ease-in';
                                                                             textarea.style.opacity = '1';
-                                                                        }, 9);
+                                                                        }, 400);
                                                                     }
                                                                 }
                                                             }
