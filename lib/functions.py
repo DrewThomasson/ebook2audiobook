@@ -3686,7 +3686,7 @@ def web_interface(args, ctx):
                                                                         textarea.style.marginTop = 'auto';
                                                                         textarea.style.opacity = '1';
                                                                         textarea.value = this.activeCues[0].text;
-                                                                        textarea.style.transition = 'opacity 1s ease-in';
+                                                                        textarea.style.transition = 'opacity 0.4s ease-in';
                                                                         textarea.dataset.faded = 'false';
                                                                         // Force browser reflow before changing opacity
                                                                         requestAnimationFrame(() => {
