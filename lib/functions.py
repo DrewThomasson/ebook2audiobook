@@ -2313,7 +2313,7 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             ///////////////
-            #gr_tab_progress {
+            #gr_tab_progress textarea{
                 margin: 0;
                 padding: 0;
             }
