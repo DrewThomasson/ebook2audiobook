@@ -2270,14 +2270,6 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
-                .gr_audiobook_sentence_field {
-                    width: 100% !important;
-                    height: auto !important;
-                    text-align: center !important;
-                    vertical-align: middle !important;
-                    font-size: 14px !important;
-                    font-weight: bold !important;
-                }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
                 }
@@ -3687,8 +3679,12 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        textarea.classList.toggle('gr_audiobook_sentence_field', true);
-                                                                        textarea.style.fontSize = '24px';
+                                                                        textarea.style.fontSize = '16px';
+                                                                        textarea.style.fontWeight = 'bold';
+                                                                        textarea.style.width = '100%';
+                                                                        textarea.style.height =  'auto';
+                                                                        textarea.style.textAlign = 'center'
+                                                                        textarea.style.verticalAlign = 'middle';
                                                                         textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
