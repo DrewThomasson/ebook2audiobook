@@ -2272,6 +2272,7 @@ def web_interface(args, ctx):
                 ///////////
                 #gr_audiobook_sentence {
                     width: 100% !important;
+                    height: auto !important;
                     text-align: center !important;
                     font-size: 14px !important;
                     font-weight: bold !important;
@@ -3685,7 +3686,7 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        textarea.classList.add('gr_audiobook_sentence');
+                                                                        textarea.classList.toggle('gr_audiobook_sentence', true);
                                                                         textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
