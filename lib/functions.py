@@ -3688,7 +3688,7 @@ def web_interface(args, ctx):
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
                                                                         textarea.classList.toggle('gr_audiobook_sentence_field', true);
-                                                                        textarea.fontSize = '24px';
+                                                                        textarea.style.fontSize = '24px';
                                                                         textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
