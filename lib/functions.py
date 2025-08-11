@@ -2251,7 +2251,7 @@ def web_interface(args, ctx):
                     display: none !important;
                 }
                 ///////////////
-                textarea:disabled{
+                select{
                     font-size: 14px !important;
                     font-weight: bold !important;
                     width: 100% !important;
