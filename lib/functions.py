@@ -3663,6 +3663,7 @@ def web_interface(args, ctx):
 
                                     if (gr_audiobook_player) {
                                         const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
+                                        const gr_audiobook_sentence_field = gr_audiobook_sentence_container?.querySelector('textarea, input');
                                         // ensure a single <track> and append to the **media element**
                                         const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
                                         const gr_audiobook_track = existing || document.createElement('track');
@@ -3685,20 +3686,18 @@ def web_interface(args, ctx):
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
-                                                                    const field = gr_audiobook_sentence.querySelector('textarea, input');
-                                                                    if (field) {
-                                                                        field.classList.add('gr_audiobook_sentence');
-                                                                        field.value = this.activeCues[0].text;
+                                                                    if (gr_audiobook_sentence_field) {
+                                                                        gr_audiobook_sentence_field.classList.add('gr_audiobook_sentence');
+                                                                        gr_audiobook_sentence_field.value = this.activeCues[0].text;
                                                                     }
                                                                 }
                                                             }
                                                             return;
                                                         }
                                                         if (gr_audiobook_sentence) {
-                                                            const field = gr_audiobook_sentence.querySelector('textarea, input');
-                                                            if (field) {
-                                                                field.classList.add('gr_audiobook_sentence');
-                                                                field.value = '...';
+                                                            if (gr_audiobook_sentence_field) {
+                                                                gr_audiobook_sentence_field.classList.add('gr_audiobook_sentence');
+                                                                gr_audiobook_sentence_field.value = '...';
                                                             }
                                                         }
                                                     });
@@ -3711,10 +3710,9 @@ def web_interface(args, ctx):
                                         });
                                         gr_audiobook_player.addEventListener('ended', () => {
                                             if(gr_audiobook_sentence){
-                                                const field = gr_audiobook_sentence.querySelector('textarea, input');
-                                                if (field) {
-                                                    field.classList.add('gr_audiobook_sentence');
-                                                    field.value = '...';
+                                                if (gr_audiobook_sentence_field) {
+                                                    gr_audiobook_sentence_field.classList.add('gr_audiobook_sentence');
+                                                    gr_audiobook_sentence_field.value = '...';
                                                 }
                                             }
                                         });
