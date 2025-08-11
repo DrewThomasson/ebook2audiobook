@@ -3671,6 +3671,7 @@ def web_interface(args, ctx):
                                         gr_audiobook_track.label = 'captions';
                                         if (!gr_audiobook_track.parentNode) gr_audiobook_player.appendChild(gr_audiobook_track);
                                         gr_audiobook_track.addEventListener('load', ()=>{
+                                            console.log('gr_audiobook_track load...');
                                             const track = gr_audiobook_player.textTracks[0];
                                             if(track){
                                                 track.mode = 'showing';
