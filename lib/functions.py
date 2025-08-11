@@ -2313,6 +2313,9 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             ///////////////
+            #gr_audiobook_sentence {
+                height: auto !important;
+            }
             #gr_voice_player {
                 margin: 0 !important;
                 padding: 0 !important;
@@ -3744,7 +3747,7 @@ def web_interface(args, ctx):
                                                         textarea.style.fontSize = '14px';
                                                         textarea.style.fontWeight = 'bold';
                                                         textarea.style.width = '100%';
-                                                        textarea.style.height = '100%';
+                                                        textarea.style.height = 'auto';
                                                         textarea.style.textAlign = 'center';
                                                         textarea.style.margin = '0';
                                                         textarea.style.paddingLeft = '0';
