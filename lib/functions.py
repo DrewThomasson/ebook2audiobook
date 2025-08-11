@@ -3699,7 +3699,7 @@ def web_interface(args, ctx):
                                                                             textarea.style.transition = 'opacity 0.2s ease-in';
                                                                             textarea.style.opacity = '1';
                                                                             track.__fade_timeout = null;
-                                                                        }, 20);
+                                                                        }, 33);
                                                                     }
                                                                 }
                                                             }
