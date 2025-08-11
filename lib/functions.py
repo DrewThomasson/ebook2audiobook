@@ -2270,6 +2270,7 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
+                // gr_audiobook_sentence field
                 .svelte-173056l {
                     width: 100% !important;
                     text-align: center !important;
