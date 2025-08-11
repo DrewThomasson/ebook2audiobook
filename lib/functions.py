@@ -3687,11 +3687,10 @@ def web_interface(args, ctx):
                                                                         textarea.style.opacity = '0';
                                                                         textarea.style.transition = 'opacity 1s ease-in';
                                                                         textarea.dataset.faded = 'true';
-                                                                        textarea.value = this.activeCues[0].text;
-                                                                        // Force browser reflow before changing opacity
                                                                         requestAnimationFrame(() => {
                                                                             textarea.style.opacity = '1';
                                                                         });
+                                                                        textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
                                                             }
