@@ -3686,6 +3686,7 @@ def web_interface(args, ctx):
                                                                         textarea.style.textAlign = 'center'
                                                                         textarea.style.verticalAlign = 'middle';
                                                                         textarea.value = this.activeCues[0].text;
+                                                                        textarea.classList.toggle('fade-in', true);
                                                                     }
                                                                 }
                                                             }
@@ -3693,7 +3694,6 @@ def web_interface(args, ctx):
                                                         }
                                                         if (gr_audiobook_sentence) {
                                                             if (textarea) {
-                                                                textarea.classList.toggle('gr_audiobook_sentence_field', true);
                                                                 textarea.value = '...';
                                                             }
                                                         }
@@ -3708,7 +3708,6 @@ def web_interface(args, ctx):
                                         gr_audiobook_player.addEventListener('ended', () => {
                                             if(gr_audiobook_sentence){
                                                 if (textarea) {
-                                                    textarea.classList.toggle('gr_audiobook_sentence_field', true);
                                                     textarea.value = '...';
                                                 }
                                             }
