@@ -2270,7 +2270,7 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
-                #gr_audiobook_sentence {
+                .gr_audiobook_sentence {
                     width: 100% !important;
                     height: auto !important;
                     text-align: center !important;
@@ -3696,6 +3696,7 @@ def web_interface(args, ctx):
                                                         }
                                                         if (gr_audiobook_sentence) {
                                                             if (textarea) {
+                                                                textarea.classList.toggle('gr_audiobook_sentence', true);
                                                                 textarea.value = '...';
                                                             }
                                                         }
@@ -3710,6 +3711,7 @@ def web_interface(args, ctx):
                                         gr_audiobook_player.addEventListener('ended', () => {
                                             if(gr_audiobook_sentence){
                                                 if (textarea) {
+                                                    textarea.classList.toggle('gr_audiobook_sentence', true);
                                                     textarea.value = '...';
                                                 }
                                             }
