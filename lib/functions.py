@@ -2368,15 +2368,14 @@ def web_interface(args, ctx):
                                 gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             gr_optional_markdown = gr.Markdown(elem_id='gr_markdown_optional', value='<p>&nbsp;&nbsp;* Optional</p>')
                         with gr.Group(elem_id='gr_group_device'):
-                            with gr.Row(elem_id='gr_row_device'):
-                                gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
-                                gr_logo = gr.HTML(value=f'''
-                                    <div style="width:100%;height:100%;margin:auto;padding:0;text-align:center">
-                                        <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
-                                        <b style="display:inline;line-height:0.6">{title}&nbsp;{prog_version}</b></a>
-                                    </div>
-                                    '''
-                                )
+                            gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
+                            gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
+                                <div style="right:0;margin:auto;padding:0;text-align:right">
+                                    <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
+                                    <b style="display:inline;line-height:0.6">{title}&nbsp;{prog_version}</b></a>
+                                </div>
+                                '''
+                            )
                     with gr.Column(elem_id='gr_col_2', scale=3):
                         with gr.Group(elem_id='gr_group_engine'):
                             gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
