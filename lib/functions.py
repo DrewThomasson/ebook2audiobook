@@ -3687,13 +3687,13 @@ def web_interface(args, ctx):
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
-                                                                    gr_audiobook_sentence.textContent = `${this.activeCues[0].text}`;
+                                                                    gr_audiobook_sentence.value = `${this.activeCues[0].text}`;
                                                                 }
                                                             }
                                                             return;
                                                         }
                                                         if (gr_audiobook_sentence) {
-                                                            gr_audiobook_sentence.innerHTML = '...';
+                                                            gr_audiobook_sentence.value = '...';
                                                         }
                                                     });
                                                     track.__cueBound = true;
@@ -3706,7 +3706,7 @@ def web_interface(args, ctx):
                                         });
 
                                         gr_audiobook_player.addEventListener('ended', () => {
-                                            if (gr_audiobook_sentence) gr_audiobook_sentence.innerHTML = '...';
+                                            if (gr_audiobook_sentence) gr_audiobook_sentence.value = '...';
                                         });
 
                                         if (!gr_audiobook_player.style.transition) {
