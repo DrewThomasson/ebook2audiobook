@@ -2272,6 +2272,7 @@ def web_interface(args, ctx):
                 ///////////
                 #gr_audiobook_sentence_span {
                     display: block;
+                    width: 100%;
                     text-align: center;
                     font-size: 14px;
                     font-weight: bold;
