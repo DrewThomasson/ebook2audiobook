@@ -3681,7 +3681,7 @@ def web_interface(args, ctx):
                                                                         textarea.style.fontSize = '15px';
                                                                         textarea.style.fontWeight = 'bold';
                                                                         textarea.style.width = '100%';
-                                                                        textarea.style.height =  auto;
+                                                                        textarea.style.height =  'auto';
                                                                         textarea.style.textAlign = 'center';
                                                                         textarea.style.padding = '0';
                                                                         textarea.style.opacity = '0';
