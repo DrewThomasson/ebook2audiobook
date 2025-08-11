@@ -3680,7 +3680,7 @@ def web_interface(args, ctx):
                                                         textarea.style.height = '100%';
                                                         textarea.style.textAlign = 'center';
                                                         textarea.style.marginTop = 'auto';
-                                                        textarea.addEventListener('change', function(){
+                                                        textarea.addEventListener('input', function(){
                                                             this.style.transition = 'opacity 0.2s ease-in';
                                                             this.style.opacity = '1';
                                                         });
