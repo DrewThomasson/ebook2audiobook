@@ -2252,13 +2252,13 @@ def web_interface(args, ctx):
                 }
                 ///////////////
                 #gr_audiobook_sentence div{
-                    font-size: '14px';
-                    font-weight: 'bold';
-                    width: '100%';
-                    height:  '100px';
-                    text-align: 'center';
-                    vertical-align: 'middle';
-                    background: '#ffff00';
+                    font-size: 14px !important;
+                    font-weight: bold !important;
+                    width: 100% !important;
+                    height:  100% !important;
+                    text-align: center !important;
+                    vertical-align: middle !important;
+                    background: #ffff00 !important;
                 }
                 #gr_voice_player {
                     margin: 0 !important;
