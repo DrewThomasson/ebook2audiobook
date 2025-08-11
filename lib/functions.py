@@ -2496,6 +2496,11 @@ def web_interface(args, ctx):
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
+        gr_state = gr.State(value={"hash": None})
+        gr_state_alert = gr.State(value={"type": None,"msg": None})
+        gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
+        gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
+        gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False)
         gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
             <div style="right:0;margin:0;padding:0;text-align:right">
                 <b style="display:inline;line-height:0.6">{title}</b>&nbsp;&nbsp;&nbsp;
@@ -2503,11 +2508,6 @@ def web_interface(args, ctx):
             </div>
             '''
         )
-        gr_state = gr.State(value={"hash": None})
-        gr_state_alert = gr.State(value={"type": None,"msg": None})
-        gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
-        gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
-        gr_progress_box = gr.Textbox(elem_id='gr_progress_box', label='Progress', interactive=False)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
@@ -3501,9 +3501,9 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_vtt],
             js='(data)=>{window.load_vtt?.(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'  
         )
-        gr_progress_box.change(
+        gr_tab_progress.change(
             fn=None,
-            inputs=[gr_progress_box],
+            inputs=[gr_tab_progress],
             outputs=[],
             js=f'() => {{ document.title = "{title}"; }}'
         )
@@ -3601,7 +3601,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
-            outputs=[gr_progress_box]
+            outputs=[gr_tab_progress]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
@@ -3809,20 +3809,20 @@ def web_interface(args, ctx):
                             };
                         }
                         if(typeof window.tab_progress !== 'function'){
-                            const gr_progress_box = document.querySelector('#gr_progress_box');
-                            if (!gr_progress_box || window.__titleSync) return;
+                            const gr_tab_progress = document.querySelector('#gr_tab_progress');
+                            if (!gr_tab_progress || window.__titleSync) return;
                             window.__titleSync = true;
                             window.tab_progress = () => {
-                                const val = gr_progress_box?.value || gr_progress_box?.textContent || '';
+                                const val = gr_tab_progress?.value || gr_tab_progress?.textContent || '';
                                 const prct = val.trim().split(' ')[4];
                                 if(prct && /^\d+(\.\d+)?%$/.test(prct)){
                                     document.title = 'Ebook2Audiobook: ' + prct;
                                 }
                             };
                             // Observe programmatic changes
-                            new MutationObserver(tab_progress).observe(gr_progress_box, { attributes: true, childList: true, subtree: true, characterData: true });
+                            new MutationObserver(tab_progress).observe(gr_tab_progress, { attributes: true, childList: true, subtree: true, characterData: true });
                             // Also catch user edits
-                            gr_progress_box.addEventListener('input', tab_progress);
+                            gr_tab_progress.addEventListener('input', tab_progress);
                         }
 
                         function tryRun(){
