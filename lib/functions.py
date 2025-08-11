@@ -3685,7 +3685,7 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        textarea.classList.toggle('gr_audiobook_sentence', true);
+                                                                        textarea.classList.add('gr_audiobook_sentence');
                                                                         textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
