@@ -645,7 +645,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             )
             re_num = re.compile(r'(?<!\w)[-+]?\d+(?:\.\d+)?(?!\w)')
             text = unicodedata.normalize('NFKC', text).replace('\u00A0', ' ')
-            if re_num.search(text) or re_ordinal.search(text):
+            if re_num.search(text) and re_ordinal.search(text):
                 date_spans = get_date_entities(text, stanza_nlp)
                 print(date_spans)
                 if date_spans:
@@ -663,6 +663,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     result.append(text[last_pos:])
                     text = ''.join(result)
         text = roman2number(text)
+        text = clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
@@ -1003,68 +1004,80 @@ def year2words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-def clock2words(time, lang, is_num2words_compat):
-    parts = [int(p) for p in str(time).replace('.', ':').split(':')]
-    hour = parts[0]
-    minute = parts[1] if len(parts) > 1 else 0
-    second = parts[2] if len(parts) > 2 else None
-    lang = lang.lower()
-    lc = language_clock.get(lang)
-    if not lc:
-        parts = []
-        hour_word = num2words(hour, lang=lang)
-        minute_word = num2words(minute, lang=lang)
-        parts.append(hour_word)
-        if minute != 0:
-            parts.append(minute_word)
-        if second is not None and second > 0:
-            second_word = num2words(second, lang=lang)
-            parts.append(second_word)
-        return " ".join(parts)
-    h = hour
-    m = minute
-    next_hour = (h + 1) % 24
-    special_hours = lc.get("special_hours", {})
-    if m == 0 and (second is None or second == 0):
-        if h in special_hours:
-            phrase = special_hours[h]
+import re
+
+def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+    time_rx = re.compile(r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?')
+    lang_lc = (lang or "").lower()
+    lc = language_clock.get(lang_lc) if 'language_clock' in globals() else None
+    _n2w_cache = {}
+
+    def n2w(n: int) -> str:
+        key = (n, lang_lc, is_num2words_compat)
+        if key in _n2w_cache:
+            return _n2w_cache[key]
+        if is_num2words_compat:
+            word = num2words(n, lang=lang_lc)
         else:
-            hour_word = num2words(h, lang=lang)
-            phrase = lc["oclock"].format(hour=hour_word)
-    elif m == 15:
-        hour_word = num2words(h, lang=lang)
-        phrase = lc["quarter_past"].format(hour=hour_word)
-    elif m == 30:
-        if lang == "deu":
-            next_hour_word = num2words(next_hour, lang=lang)
-            phrase = lc["half_past"].format(next_hour=next_hour_word)
+            word = math2words(n, lang, lang_iso1, tts_engine, is_num2words_compat)
+        _n2w_cache[key] = word
+        return word
+
+    def repl_num(m: re.Match) -> str:
+        # Parse hh[:mm[:ss]]
+        try:
+            h = int(m.group(1))
+            mnt = int(m.group(2))
+            sec = m.group(3)
+            sec = int(sec) if sec is not None else None
+        except Exception:
+            return m.group(0)
+        # basic validation; if out of range, keep original
+        if not (0 <= h <= 23 and 0 <= mnt <= 59 and (sec is None or 0 <= sec <= 59)):
+            return m.group(0)
+        # If no language clock rules, just say numbers plainly
+        if not lc:
+            parts = [n2w(h)]
+            if mnt != 0:
+                parts.append(n2w(mnt))
+            if sec is not None and sec > 0:
+                parts.append(n2w(sec))
+            return " ".join(parts)
+
+        next_hour = (h + 1) % 24
+        special_hours = lc.get("special_hours", {})
+        # Build main phrase
+        if mnt == 0 and (sec is None or sec == 0):
+            if h in special_hours:
+                phrase = special_hours[h]
+            else:
+                phrase = lc["oclock"].format(hour=n2w(h))
+        elif mnt == 15:
+            phrase = lc["quarter_past"].format(hour=n2w(h))
+        elif mnt == 30:
+            # German "halb drei" (= 2:30) uses next hour
+            if lang_lc == "deu":
+                phrase = lc["half_past"].format(next_hour=n2w(next_hour))
+            else:
+                phrase = lc["half_past"].format(hour=n2w(h))
+        elif mnt == 45:
+            phrase = lc["quarter_to"].format(next_hour=n2w(next_hour))
+        elif mnt < 30:
+            phrase = lc["past"].format(hour=n2w(h), minute=n2w(mnt)) if mnt != 0 else lc["oclock"].format(hour=n2w(h))
         else:
-            hour_word = num2words(h, lang=lang)
-            phrase = lc["half_past"].format(hour=hour_word)
-    elif m == 45:
-        next_hour_word = num2words(next_hour, lang=lang)
-        phrase = lc["quarter_to"].format(next_hour=next_hour_word)
-    elif m < 30:
-        hour_word = num2words(h, lang=lang)
-        if m == 0:
-            phrase = lc["oclock"].format(hour=hour_word)
-        else:
-            minute_word = num2words(m, lang=lang)
-            phrase = lc["past"].format(hour=hour_word, minute=minute_word)
-    else:
-        next_hour_word = num2words(next_hour, lang=lang)
-        minute_to_hour = 60 - m
-        minute_word = num2words(minute_to_hour, lang=lang)
-        phrase = lc["to"].format(next_hour=next_hour_word, minute=minute_word)
-    if second is not None and second > 0:
-        second_word = num2words(second, lang=lang)
-        second_phrase = lc["second"].format(second=second_word)
-        phrase = lc["full"].format(phrase=phrase, second_phrase=second_phrase)
-    return phrase
+            minute_to_hour = 60 - mnt
+            phrase = lc["to"].format(next_hour=n2w(next_hour), minute=n2w(minute_to_hour))
+        # Append seconds if present
+        if sec is not None and sec > 0:
+            second_phrase = lc["second"].format(second=n2w(sec))
+            phrase = lc["full"].format(phrase=phrase, second_phrase=second_phrase)
+        return phrase
+
+    return time_rx.sub(repl_num, text)
 
 def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     
-    def replace_ambiguous(match):
+    def repl_ambiguous(match):
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
             return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
@@ -1072,13 +1085,10 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
-    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-    # Regex to match all times (hh:mm, hh:mm:ss, h:m, h:m:s)
-    time_pattern = r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?'
-    text = re.sub(time_pattern, lambda m: clock2words(m.group(0), lang, is_num2words_compat), text)
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
+    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
     normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
@@ -1095,7 +1105,7 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'|'                    # or
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
-        text = re.sub(ambiguous_pattern, replace_ambiguous, text)
+        text = re.sub(ambiguous_pattern, repl_ambiguous, text)
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
@@ -1165,7 +1175,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
     if lang in abbreviations_mapping:
-        def _replace_abbreviations(match: re.Match) -> str:
+        def repl_abbreviations(match: re.Match) -> str:
             token = match.group(1)
             for k, expansion in mapping.items():
                 if token.lower() == k.lower():
@@ -1179,7 +1189,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
             r'(?<!\w)(' + '|'.join(re.escape(k) for k in keys) + r')(?!\w)',
             flags=re.IGNORECASE
         )
-        text = pattern.sub(_replace_abbreviations, text)
+        text = pattern.sub(repl_abbreviations, text)
     # This regex matches sequences like a., c.i.a., f.d.a., m.c., etc...
     pattern = re.compile(r'\b(?:[a-zA-Z]\.){1,}[a-zA-Z]?\b\.?')
     # uppercase acronyms
