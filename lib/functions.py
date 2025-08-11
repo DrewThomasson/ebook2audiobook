@@ -2251,14 +2251,14 @@ def web_interface(args, ctx):
                     display: none !important;
                 }
                 ///////////////
-                #gr_audiobook_sentence textarea:disabled{
+                textarea:disabled{
                     font-size: 14px !important;
                     font-weight: bold !important;
                     width: 100% !important;
                     height:  100% !important;
                     text-align: center !important;
                     padding: 0 !important;
-                    background: #ffff00 !important;
+                    background: #ff0000 !important;
                 }
                 #gr_voice_player {
                     margin: 0 !important;
