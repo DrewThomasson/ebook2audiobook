@@ -2371,9 +2371,9 @@ def web_interface(args, ctx):
                             with gr.Row(elem_id='gr_row_device'):
                                 gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
                                 gr_logo = gr.HTML(value=f'''
-                                    <div style="right:0;margin:0;padding:0;text-align:right">
-                                        <b style="display:inline;line-height:0.6">{title}</b>&nbsp;
-                                        <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:13px" target="_blank">{prog_version}</a>
+                                    <div style="width:100%;height:100%;margin:auto;padding:0;text-align:center">
+                                        <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
+                                        <b style="display:inline;line-height:0.6">{title}&nbsp;{prog_version}</b></a>
                                     </div>
                                     '''
                                 )
