@@ -3670,9 +3670,7 @@ def web_interface(args, ctx):
                                         gr_audiobook_track.kind = 'captions';
                                         gr_audiobook_track.label = 'captions';
                                         if(!gr_audiobook_track.parentNode) gr_audiobook_player.appendChild(gr_audiobook_track);
-                                        console.log('gr_audiobook_track', gr_audiobook_track);
                                         gr_audiobook_track.addEventListener('load', ()=>{
-                                            console.log('gr_audiobook_track load...');
                                             const track = gr_audiobook_player.textTracks[0];
                                             if(track){
                                                 track.mode = 'showing';
@@ -3710,9 +3708,9 @@ def web_interface(args, ctx):
                         if(typeof(window.load_vtt) !== 'function'){
                             window.load_vtt = (path)=>{
                                 try{
-                                    const gr_audiobook_player = document.querySelector('#gr_audiobook_player');
-                                    if(gr_audiobook_player){
-                                        const gr_audiobook_track = document.querySelector('#gr_audiobook_track');
+                                    const gr_audiobook_track = document.querySelector('#gr_audiobook_track');
+                                    console.log(gr_audiobook_track, path);
+                                    if(gr_audiobook_track){
                                         gr_audiobook_track.src = path;
                                     }
                                 }catch(e){
