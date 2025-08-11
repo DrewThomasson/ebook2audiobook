@@ -3709,10 +3709,14 @@ def web_interface(args, ctx):
                         if(typeof(window.load_vtt) !== 'function'){
                             window.load_vtt = (path)=>{
                                 try{
+                                    if(!window.load_vtt_timeout){window.load_vtt_timeout = null;}
                                     const gr_audiobook_track = document.querySelector('#gr_audiobook_track');
                                     console.log('from load_vtt :',gr_audiobook_track);
                                     if(gr_audiobook_track){
                                         gr_audiobook_track.src = path;
+                                    }else{
+                                        clearTimeout(window.load_vtt_timeout);
+                                        window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
                                     }
                                 }catch(e){
                                     console.log('load_vtt error:', e);
