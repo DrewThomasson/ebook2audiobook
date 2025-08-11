@@ -2247,12 +2247,11 @@ def web_interface(args, ctx):
                     height: 60px !important;
                 }
                 #gr_voice_list span[data-testid="block-info"],
-                #gr_audiobook_list span[data-testid="block-info"],
-                #gr_audiobook_sentence span[data-testid="block-info"]{
+                #gr_audiobook_list span[data-testid="block-info"]{
                     display: none !important;
                 }
                 ///////////////
-                #gr_audiobook_sentence textarea{
+                #gr_audiobook_sentence div{
                     font-size: '14px';
                     font-weight: 'bold';
                     width: '100%';
