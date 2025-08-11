@@ -2272,7 +2272,7 @@ def web_interface(args, ctx):
                 ///////////
                 #gr_audiobook_sentence {
                     width: 100% !important;
-                    height: auto !important;
+                    height: 32px !important;
                     text-align: center !important;
                     font-size: 24px !important;
                     font-weight: bold !important;
