@@ -2270,7 +2270,7 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
-                .gr_audiobook_sentence {
+                .gr_audiobook_sentence :is(textarea, input) {
                     width: 100% !important;
                     height: auto !important;
                     text-align: center !important;
