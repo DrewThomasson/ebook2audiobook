@@ -3679,15 +3679,14 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        textarea.classList.toggle('fade-in', false);
                                                                         textarea.style.fontSize = '14px';
                                                                         textarea.style.fontWeight = 'bold';
                                                                         textarea.style.width = '100%';
-                                                                        textarea.style.height =  'auto';
-                                                                        textarea.style.textAlign = 'center'
+                                                                        textarea.style.height =  '100px';
+                                                                        textarea.style.textAlign = 'center';
                                                                         textarea.style.verticalAlign = 'middle';
+                                                                        textarea.style.background = '#fff000';
                                                                         textarea.value = this.activeCues[0].text;
-                                                                        textarea.classList.toggle('fade-in', true);
                                                                     }
                                                                 }
                                                             }
