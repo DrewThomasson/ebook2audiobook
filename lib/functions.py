@@ -2496,7 +2496,7 @@ def web_interface(args, ctx):
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
-        gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
+        gr_logo_markdown = gr.HTML(value=f'''
             <div style="right:0;top:60px;margin:0;padding:0;text-align:right">
                 <b style="display:inline;line-height:0.6">{title}</b>&nbsp;
                 <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:13px" target="_blank">{prog_version}</a>
