@@ -638,25 +638,25 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             print(error)
             return None
         if stanza_nlp:
-            # Check if numbers exists in the text
-            if bool(re.search(r'[-+]?\b\d+(\.\d+)?\b', text)): 
-                # Check if there are positive integers so possible date to convert
-                if bool(re.search(r'\b\d{1,2}(?:st|nd|rd|th)?\b', text)):
-                    date_spans = get_date_entities(text, stanza_nlp)
-                    if date_spans:
-                        result = []
-                        last_pos = 0
-                        for start, end, date_text in date_spans:
-                            # Append text before this date
-                            result.append(text[last_pos:start])
-                            processed = re.sub(r"\b\d{4}\b", lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat), date_text)
-                            if not processed:
-                                break
-                            result.append(processed)
-                            last_pos = end
-                        # Append remaining text
-                        result.append(text[last_pos:])
-                        text = ''.join(result)
+            # Check if there are positive integers so possible date to convert
+            re_ordinal = re.compile(r'\b(0?[1-9]|[12][0-9]|3[01])\s*(?:st|nd|rd|th)(?=\b|[^A-Za-z])', re.IGNORECASE)
+            re_num = re.compile(r'\b[-+]?\d+(?:\.\d+)?\b')
+            if re_num.search(text) or re_ordinal.search(text):
+                date_spans = get_date_entities(text, stanza_nlp)
+                if date_spans:
+                    result = []
+                    last_pos = 0
+                    for start, end, date_text in date_spans:
+                        # Append text before this date
+                        result.append(text[last_pos:start])
+                        processed = re.sub(r"\b\d{4}\b", lambda m: year2words(m.group(), lang, lang_iso1, is_num2words_compat), date_text)
+                        if not processed:
+                            break
+                        result.append(processed)
+                        last_pos = end
+                    # Append remaining text
+                    result.append(text[last_pos:])
+                    text = ''.join(result)
         text = roman2number(text)
         text = math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat)
         # build a translation table mapping each bad char to a space
