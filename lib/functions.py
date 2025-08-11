@@ -3673,6 +3673,7 @@ def web_interface(args, ctx):
                                             if (track) {
                                                 track.mode = 'showing';
                                                 if (!track.__cueBound) {
+                                                    track.__fade_timeout = null
                                                     track.addEventListener('cuechange', function () {
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
@@ -3687,8 +3688,11 @@ def web_interface(args, ctx):
                                                                         textarea.style.transition = 'none';
                                                                         textarea.style.opacity = '0';
                                                                         textarea.value = this.activeCues[0].text;
-                                                                        textarea.style.transition = 'opacity 0.2s ease-in';
-                                                                        textarea.style.opacity = '1';
+                                                                        clearTimeout(track.__fade_timeout);
+                                                                        track.__fade_timeout = setTimeout(() => {
+                                                                            textarea.style.transition = 'opacity 0.2s ease-in';
+                                                                            textarea.style.opacity = '1';
+                                                                        }, 9);
                                                                     }
                                                                 }
                                                             }
