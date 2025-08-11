@@ -687,10 +687,14 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     result.append(text[last_pos:])
                     text = ''.join(result)
                 else:
-                    # MINIMAL fallback: only ordinals + 4-digit years, nothing else
                     if is_num2words_compat:
                         text = re_ordinal.sub(
                             lambda m: num2words(int(m.group(1)), to="ordinal", lang=(lang_iso1 or "en")),
+                            text
+                        )
+                    else:
+                        text = re_ordinal.sub(
+                            lambda m: math2words(int(m.group(1)), lang, lang_iso1, tts_engine, is_num2words_compat),
                             text
                         )
                     text = re.sub(
@@ -2344,13 +2348,6 @@ def web_interface(args, ctx):
     '''
 
     with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
-        gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
-            <div style="right:0;margin:0;padding:0;text-align:right">
-                <h5 style="display:inline;line-height:0.6">{title}</h5>&nbsp;&nbsp;&nbsp;
-                <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:13px" target="_blank">{prog_version}</a>
-            </div>
-            '''
-        )
         with gr.Tabs():
             gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
             with gr_tab_main:
@@ -2499,6 +2496,13 @@ def web_interface(args, ctx):
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
+        gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
+            <div style="right:0;margin:0;padding:0;text-align:right">
+                <b style="display:inline;line-height:0.6">{title}</b>&nbsp;&nbsp;&nbsp;
+                <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:13px" target="_blank">{prog_version}</a>
+            </div>
+            '''
+        )
         gr_state = gr.State(value={"hash": None})
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
@@ -3760,7 +3764,7 @@ def web_interface(args, ctx):
                                             }
                                         });
                                         gr_audiobook_track.addEventListener('error', (e) => {
-                                            console.log('gr_audiobook_track load error:', e);
+                                            //console.log('gr_audiobook_track load error:', e);
                                         });
                                         gr_audiobook_player.addEventListener('ended', () => {
                                             if(gr_audiobook_sentence){
