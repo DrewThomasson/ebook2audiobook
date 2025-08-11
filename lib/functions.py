@@ -3685,10 +3685,12 @@ def web_interface(args, ctx):
                                                                         textarea.style.textAlign = 'center';
                                                                         textarea.style.marginTop = 'auto';
                                                                         textarea.style.transition = 'opacity 0.4s ease-in';
-                                                                        textarea.style.opacity = '0'; // start hidden
+                                                                        textarea.style.opacity = '0';
                                                                         void textarea.offsetWidth;
-                                                                        textarea.value = this.activeCues[0].text;
-                                                                        textarea.style.opacity = '1';
+                                                                        requestAnimationFrame(() => {
+                                                                            textarea.value = this.activeCues[0].text;
+                                                                            textarea.style.opacity = '1';
+                                                                        });
                                                                     }
                                                                 }
                                                             }
