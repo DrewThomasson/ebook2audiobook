@@ -2314,10 +2314,10 @@ def web_interface(args, ctx):
             }
             ///////////////
             #gr_tab_progress textarea{
-                margin: 0;
-                padding: 0;
+                margin: 0 !important;
+                padding: 0 !important;
             }
-            #gr_audiobook_sentence {
+            .gr_audiobook_sentence {
                 height: auto !important;
             }
             #gr_voice_player {
@@ -2536,7 +2536,7 @@ def web_interface(args, ctx):
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=2, max_lines=0)
+            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', elem_classes=['gr_audiobook_sentence'], label='Audiobook', value='...', interactive=False, visible=True, lines=2, max_lines=0)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
