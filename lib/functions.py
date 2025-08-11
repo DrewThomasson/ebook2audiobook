@@ -2249,15 +2249,6 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             ///////////////
-            .svelte-173056l{
-                font-size: 14px !important;
-                font-weight: bold !important;
-                width: 100% !important;
-                height:  100% !important;
-                text-align: center !important;
-                padding: 0 !important;
-                background: #ff0000 !important;
-            }
             #gr_voice_player {
                 margin: 0 !important;
                 padding: 0 !important;
@@ -3687,16 +3678,20 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        textarea.classList.add('svelte-173056l');
-                                                                        /*
-                                                                        textarea.style.fontSize = '14px';
+                                                                        textarea.style.fontSize = '15px';
                                                                         textarea.style.fontWeight = 'bold';
                                                                         textarea.style.width = '100%';
                                                                         textarea.style.height =  '100%';
                                                                         textarea.style.textAlign = 'center';
-                                                                        textarea.style.verticalAlign = 'middle';
-                                                                        */
+                                                                        textarea.style.padding: '0';
+                                                                        textarea.style.opacity = '0';
+                                                                        textarea.style.transition = 'opacity 1s ease-in';
+                                                                        textarea.dataset.faded = 'true';
                                                                         textarea.value = this.activeCues[0].text;
+                                                                        // Force browser reflow before changing opacity
+                                                                        requestAnimationFrame(() => {
+                                                                            textarea.style.opacity = '1';
+                                                                        });
                                                                     }
                                                                 }
                                                             }
