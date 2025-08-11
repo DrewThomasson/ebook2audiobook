@@ -3687,7 +3687,7 @@ def web_interface(args, ctx):
                                                                         textarea.style.opacity = '0';
                                                                         textarea.value = this.activeCues[0].text;
                                                                         textarea.style.transition = 'opacity 1s ease-in';
-                                                                        textarea.dataset.faded = 'true';
+                                                                        textarea.dataset.faded = 'false';
                                                                     }
                                                                 }
                                                             }
