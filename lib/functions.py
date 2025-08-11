@@ -639,9 +639,12 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             return None
         if stanza_nlp:
             # Check if there are positive integers so possible date to convert
-            re_ordinal = re.compile(r'\b(0?[1-9]|[12][0-9]|3[01])\s*(?:st|nd|rd|th)(?=\b|[^A-Za-z])', re.IGNORECASE)
-            re_num = re.compile(r'\b[-+]?\d+(?:\.\d+)?\b')
-            print(text)
+            re_ordinal = re.compile(
+                r'(?<!\w)(0?[1-9]|[12][0-9]|3[01])(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)',
+                re.IGNORECASE
+            )
+            re_num = re.compile(r'(?<!\w)[-+]?\d+(?:\.\d+)?(?!\w)')
+            text = unicodedata.normalize('NFKC', text).replace('\u00A0', ' ')
             if re_num.search(text) or re_ordinal.search(text):
                 date_spans = get_date_entities(text, stanza_nlp)
                 if date_spans:
