@@ -1025,8 +1025,6 @@ def year2words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-import re
-
 def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     time_rx = re.compile(r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?')
     lang_lc = (lang or "").lower()
