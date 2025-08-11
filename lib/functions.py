@@ -3687,13 +3687,18 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
+                                                                        if (track.__fade_timeout) {
+                                                                            textarea.style.opacity = '1';
+                                                                        }else{
+                                                                            textarea.style.opacity = '0';
+                                                                        }
                                                                         textarea.style.transition = 'none';
-                                                                        textarea.style.opacity = '0';
                                                                         textarea.value = this.activeCues[0].text;
                                                                         clearTimeout(track.__fade_timeout);
                                                                         track.__fade_timeout = setTimeout(() => {
                                                                             textarea.style.transition = 'opacity 0.2s ease-in';
                                                                             textarea.style.opacity = '1';
+                                                                            track.__fade_timeout = null;
                                                                         }, 20);
                                                                     }
                                                                 }
