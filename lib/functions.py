@@ -1113,39 +1113,58 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
     return time_rx.sub(repl_num, text)
 
-def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
-    
-    def repl_ambiguous(match):
-        # handles "num SYMBOL num" and "SYMBOL num"
-        if match.group(2) and match.group(2) in ambiguous_replacements:
-            return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
-        if match.group(3) and match.group(3) in ambiguous_replacements:
-            return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
-        return match.group(0)
+    def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
-    text = re.sub(r'(\d)\)', r'\1 : ', text)
-    # Symbol phonemes
-    ambiguous_symbols = {"-", "/", "*", "x"}
-    phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
-    replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
-    normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
-    ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
-    # Replace unambiguous symbols everywhere
-    if normal_replacements:
-        sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
-        text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
-    # Replace ambiguous symbols only in valid equation contexts
-    if ambiguous_replacements:
-        ambiguous_pattern = (
-            r'(?<!\S)'               # no non-space before
-            r'(\d+)\s*([-/*x])\s*(\d+)'  # num SYMBOL num
-            r'(?!\S)'               # no non-space after
-            r'|'                    # or
-            r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
-        )
-        text = re.sub(ambiguous_pattern, repl_ambiguous, text)
-    text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
-    return text
+        def repl_ambiguous(match):
+            # handles "num SYMBOL num" and "SYMBOL num"
+            if match.group(2) and match.group(2) in ambiguous_replacements:
+                return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
+            if match.group(3) and match.group(3) in ambiguous_replacements:
+                return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
+            return match.group(0)
+
+        def _ordinal_to_words(m):
+            n = int(m.group(1))
+            if is_num2words_compat:
+                try:
+                    from num2words import num2words
+                    return num2words(n, to="ordinal", lang=(lang_iso1 or "en"))
+                except Exception:
+                    pass
+            # If num2words isn't available/compatible, keep original token as-is.
+            return m.group(0)
+
+        # Matches any digits + optional space/NBSP + st/nd/rd/th, not glued into words.
+        re_ordinal = re.compile(r'(?<!\w)(\d+)(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)')
+        text = re.sub(r'(\d)\)', r'\1 : ', text)
+        text = re_ordinal.sub(_ordinal_to_words, text)
+
+        # Symbol phonemes
+        ambiguous_symbols = {"-", "/", "*", "x"}
+        phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
+        replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
+        normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
+        ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
+
+        # Replace unambiguous symbols everywhere
+        if normal_replacements:
+            sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
+            text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
+
+        # Replace ambiguous symbols only in valid equation contexts
+        if ambiguous_replacements:
+            ambiguous_pattern = (
+                r'(?<!\S)'                   # no non-space before
+                r'(\d+)\s*([-/*x])\s*(\d+)'  # num SYMBOL num
+                r'(?!\S)'                    # no non-space after
+                r'|'                         # or
+                r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
+            )
+            text = re.sub(ambiguous_pattern, repl_ambiguous, text)
+
+        # Finally, convert formatted numbers (decimals, thousands) using your existing logic
+        text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
+        return text
 
 def roman2number(text):
 
