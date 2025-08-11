@@ -2313,6 +2313,10 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             ///////////////
+            #gr_tab_progress {
+                margin: 0;
+                padding: 0;
+            }
             #gr_audiobook_sentence {
                 height: auto !important;
             }
