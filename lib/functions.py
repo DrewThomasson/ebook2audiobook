@@ -2246,11 +2246,21 @@ def web_interface(args, ctx):
                 #gr_voice_list {
                     height: 60px !important;
                 }
-                #gr_voice_list span[data-testid="block-info"], 
-                #gr_audiobook_list span[data-testid="block-info"] {
+                #gr_voice_list span[data-testid="block-info"],
+                #gr_audiobook_list span[data-testid="block-info"],
+                #gr_audiobook_sentence span[data-testid="block-info"]{
                     display: none !important;
                 }
                 ///////////////
+                #gr_audiobook_sentence textarea{
+                    font-size: '14px';
+                    font-weight: 'bold';
+                    width: '100%';
+                    height:  '100px';
+                    text-align: 'center';
+                    vertical-align: 'middle';
+                    background: '#fff000';
+                }
                 #gr_voice_player {
                     margin: 0 !important;
                     padding: 0 !important;
