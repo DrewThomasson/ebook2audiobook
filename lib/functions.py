@@ -2120,199 +2120,6 @@ def web_interface(args, ctx):
     )
 
     with gr.Blocks(theme=theme, title='Ebook2Audiobook', delete_cache=(86400, 86400)) as app:
-        main_html = gr.HTML(
-            '''
-            <style>
-                /* Global Scrollbar Customization */
-                /* The entire scrollbar */
-                ::-webkit-scrollbar {
-                    width: 6px !important;
-                    height: 6px !important;
-                    cursor: pointer !important;;
-                }
-                /* The scrollbar track (background) */
-                ::-webkit-scrollbar-track {
-                    background: none transparent !important;
-                    border-radius: 6px !important;
-                }
-                /* The scrollbar thumb (scroll handle) */
-                ::-webkit-scrollbar-thumb {
-                    background: #c09340 !important;
-                    border-radius: 6px !important;
-                }
-                /* The scrollbar thumb on hover */
-                ::-webkit-scrollbar-thumb:hover {
-                    background: #ff8c00 !important;
-                }
-                /* Firefox scrollbar styling */
-                html {
-                    scrollbar-width: thin !important;
-                    scrollbar-color: #c09340 none !important;
-                }
-                .svelte-1xyfx7i.center.boundedheight.flex{
-                    height: 120px !important;
-                }
-                .wrap-inner {
-                    border: 1px solid #666666;
-                }
-                .block.svelte-5y6bt2 {
-                    padding: 10px !important;
-                    margin: 0 !important;
-                    height: auto !important;
-                    font-size: 16px !important;
-                }
-                .wrap.svelte-12ioyct {
-                    padding: 0 !important;
-                    margin: 0 !important;
-                    font-size: 12px !important;
-                }
-                .block.svelte-5y6bt2.padded {
-                    height: auto !important;
-                    padding: 10px !important;
-                }
-                .block.svelte-5y6bt2.padded.hide-container {
-                    height: auto !important;
-                    padding: 0 !important;
-                }
-                .waveform-container.svelte-19usgod {
-                    height: 58px !important;
-                    overflow: hidden !important;
-                    padding: 0 !important;
-                    margin: 0 !important;
-                }
-                .component-wrapper.svelte-19usgod {
-                    height: 110px !important;
-                }
-                .timestamps.svelte-19usgod {
-                    display: none !important;
-                }
-                .controls.svelte-ije4bl {
-                    padding: 0 !important;
-                    margin: 0 !important;
-                }
-                .icon-btn {
-                    font-size: 30px !important;
-                }
-                .small-btn {
-                    font-size: 22px !important;
-                    width: 60px !important;
-                    height: 60px !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }
-                .file-preview-holder {
-                    height: 116px !important;
-                    overflow: auto !important;
-                }
-                .selected {
-                    color: orange !important;
-                }
-                .progress-bar.svelte-ls20lj {
-                    background: orange !important;
-                }
-                #glass-mask {
-                    position: fixed !important;
-                    top: 0 !important;
-                    left: 0 !important;
-                    width: 100vw !important; 
-                    height: 100vh !important;
-                    background: rgba(0,0,0,0.6) !important;
-                    display: flex !important;
-                    align-items: center !important;
-                    justify-content: center !important;
-                    font-size: 1.2rem !important;
-                    color: #fff !important;
-                    z-index: 9999 !important;
-                    transition: opacity 2s ease-out 2s !important;
-                    pointer-events: all !important;
-                }
-                #glass-mask.hide {
-                    opacity: 0 !important;
-                    pointer-events: none !important;
-                }
-                #gr_markdown_logo {
-                    position: absolute !important; 
-                    text-align: right !important;
-                }
-                #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
-                    height: 140px !important;
-                }
-                #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
-                    display: none !important;
-                }               
-                #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
-                    height: 95px !important;
-                }
-                #gr_voice_list {
-                    height: 60px !important;
-                }
-                #gr_voice_list span[data-testid="block-info"],
-                #gr_audiobook_list span[data-testid="block-info"]{
-                    display: none !important;
-                }
-                ///////////////
-                .gr_audiobook_sentence textarea{
-                    font-size: 14px !important;
-                    font-weight: bold !important;
-                    width: 100% !important;
-                    height:  100% !important;
-                    text-align: center !important;
-                    vertical-align: middle !important;
-                    background: #ffff00 !important;
-                }
-                #gr_voice_player {
-                    margin: 0 !important;
-                    padding: 0 !important;
-                    width: 60px !important;
-                    height: 60px !important;
-                }
-                #gr_row_voice_player {
-                    height: 60px !important;
-                }
-                #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
-                    display: none !important;
-                }
-                #gr_voice_player .controls {
-                    display: block !important;
-                    position: absolute !important;
-                    left: 15px !important;
-                    top: 0 !important;
-                }
-                ///////////
-                #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
-                    display: none !important;
-                }
-                #gr_audiobook_player label{
-                    display: none !important;
-                }
-                #gr_audiobook_player audio {
-                    width: 100% !important;
-                    padding-top: 10px !important;
-                    padding-bottom: 10px !important;
-                    border-radius: 0px !important;
-                    background-color: #ebedf0 !important;
-                    color: #ffffff !important;
-                }
-                #gr_audiobook_player audio::-webkit-media-controls-panel {
-                    width: 100% !important;
-                    padding-top: 10px !important;
-                    padding-bottom: 10px !important;
-                    border-radius: 0px !important;
-                    background-color: #ebedf0 !important;
-                    color: #ffffff !important;
-                }
-                ////////////
-                .fade-in {
-                    animation: fadeIn 1s ease-in;
-                    display: inline-block;
-                }
-                @keyframes fadeIn {
-                    from { opacity: 0; }
-                    to { opacity: 1; }
-                }
-            </style>
-            '''
-        )
         gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
             <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
             '''
@@ -2473,7 +2280,7 @@ def web_interface(args, ctx):
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', elem_classes=['gr_audiobook_sentence textarea'], label='Audiobook', interactive=False, visible=True, lines=2, max_lines=2)
+            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', interactive=False, visible=True, lines=2, max_lines=2)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
@@ -2486,6 +2293,200 @@ def web_interface(args, ctx):
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
+
+        gr_style = gr.HTML(
+            '''
+            <style>
+                /* Global Scrollbar Customization */
+                /* The entire scrollbar */
+                ::-webkit-scrollbar {
+                    width: 6px !important;
+                    height: 6px !important;
+                    cursor: pointer !important;;
+                }
+                /* The scrollbar track (background) */
+                ::-webkit-scrollbar-track {
+                    background: none transparent !important;
+                    border-radius: 6px !important;
+                }
+                /* The scrollbar thumb (scroll handle) */
+                ::-webkit-scrollbar-thumb {
+                    background: #c09340 !important;
+                    border-radius: 6px !important;
+                }
+                /* The scrollbar thumb on hover */
+                ::-webkit-scrollbar-thumb:hover {
+                    background: #ff8c00 !important;
+                }
+                /* Firefox scrollbar styling */
+                html {
+                    scrollbar-width: thin !important;
+                    scrollbar-color: #c09340 none !important;
+                }
+                .svelte-1xyfx7i.center.boundedheight.flex{
+                    height: 120px !important;
+                }
+                .wrap-inner {
+                    border: 1px solid #666666;
+                }
+                .block.svelte-5y6bt2 {
+                    padding: 10px !important;
+                    margin: 0 !important;
+                    height: auto !important;
+                    font-size: 16px !important;
+                }
+                .wrap.svelte-12ioyct {
+                    padding: 0 !important;
+                    margin: 0 !important;
+                    font-size: 12px !important;
+                }
+                .block.svelte-5y6bt2.padded {
+                    height: auto !important;
+                    padding: 10px !important;
+                }
+                .block.svelte-5y6bt2.padded.hide-container {
+                    height: auto !important;
+                    padding: 0 !important;
+                }
+                .waveform-container.svelte-19usgod {
+                    height: 58px !important;
+                    overflow: hidden !important;
+                    padding: 0 !important;
+                    margin: 0 !important;
+                }
+                .component-wrapper.svelte-19usgod {
+                    height: 110px !important;
+                }
+                .timestamps.svelte-19usgod {
+                    display: none !important;
+                }
+                .controls.svelte-ije4bl {
+                    padding: 0 !important;
+                    margin: 0 !important;
+                }
+                .icon-btn {
+                    font-size: 30px !important;
+                }
+                .small-btn {
+                    font-size: 22px !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                .file-preview-holder {
+                    height: 116px !important;
+                    overflow: auto !important;
+                }
+                .selected {
+                    color: orange !important;
+                }
+                .progress-bar.svelte-ls20lj {
+                    background: orange !important;
+                }
+                #glass-mask {
+                    position: fixed !important;
+                    top: 0 !important;
+                    left: 0 !important;
+                    width: 100vw !important; 
+                    height: 100vh !important;
+                    background: rgba(0,0,0,0.6) !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    justify-content: center !important;
+                    font-size: 1.2rem !important;
+                    color: #fff !important;
+                    z-index: 9999 !important;
+                    transition: opacity 2s ease-out 2s !important;
+                    pointer-events: all !important;
+                }
+                #glass-mask.hide {
+                    opacity: 0 !important;
+                    pointer-events: none !important;
+                }
+                #gr_markdown_logo {
+                    position: absolute !important; 
+                    text-align: right !important;
+                }
+                #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
+                    height: 140px !important;
+                }
+                #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
+                    display: none !important;
+                }               
+                #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
+                    height: 95px !important;
+                }
+                #gr_voice_list {
+                    height: 60px !important;
+                }
+                #gr_voice_list span[data-testid="block-info"],
+                #gr_audiobook_list span[data-testid="block-info"]{
+                    display: none !important;
+                }
+                ///////////////
+                #gr_audiobook_sentence textarea{
+                    font-size: 14px !important;
+                    font-weight: bold !important;
+                    width: 100% !important;
+                    height:  100% !important;
+                    text-align: center !important;
+                    padding: 0 !important;
+                    background: #ffff00 !important;
+                }
+                #gr_voice_player {
+                    margin: 0 !important;
+                    padding: 0 !important;
+                    width: 60px !important;
+                    height: 60px !important;
+                }
+                #gr_row_voice_player {
+                    height: 60px !important;
+                }
+                #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
+                    display: none !important;
+                }
+                #gr_voice_player .controls {
+                    display: block !important;
+                    position: absolute !important;
+                    left: 15px !important;
+                    top: 0 !important;
+                }
+                ///////////
+                #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
+                    display: none !important;
+                }
+                #gr_audiobook_player label{
+                    display: none !important;
+                }
+                #gr_audiobook_player audio {
+                    width: 100% !important;
+                    padding-top: 10px !important;
+                    padding-bottom: 10px !important;
+                    border-radius: 0px !important;
+                    background-color: #ebedf0 !important;
+                    color: #ffffff !important;
+                }
+                #gr_audiobook_player audio::-webkit-media-controls-panel {
+                    width: 100% !important;
+                    padding-top: 10px !important;
+                    padding-bottom: 10px !important;
+                    border-radius: 0px !important;
+                    background-color: #ebedf0 !important;
+                    color: #ffffff !important;
+                }
+                ////////////
+                .fade-in {
+                    animation: fadeIn 1s ease-in;
+                    display: inline-block;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+            </style>
+            '''
+        )
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
