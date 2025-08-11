@@ -2345,7 +2345,10 @@ def web_interface(args, ctx):
 
     with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
         gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
-            <div style="right:0;margin:0;padding:0;text-align:right"><h5 style="display:inline;line-height:0.6">{title}</h5>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:12px" target="_blank">v{prog_version}</a></div>
+            <div style="right:0;margin:0;padding:0;text-align:right">
+                <h5 style="display:inline;line-height:0.6">{title}</h5>&nbsp;&nbsp;&nbsp;
+                <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:13px" target="_blank">{prog_version}</a>
+            </div>
             '''
         )
         with gr.Tabs():
