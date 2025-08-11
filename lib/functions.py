@@ -2372,7 +2372,7 @@ def web_interface(args, ctx):
                             gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
                                 <div style="right:0;margin:auto;padding:10px;text-align:right">
                                     <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
-                                    <b style="display:inline;line-height:0.6;color:orange">{title}&nbsp;{prog_version}</b></a>
+                                    <b>{title}</b>&nbsp;<b style="color:orange">{prog_version}</b></a>
                                 </div>
                                 '''
                             )
