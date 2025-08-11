@@ -2302,7 +2302,7 @@ def web_interface(args, ctx):
                 }
                 ////////////
                 .fade-in {
-                    animation: fadeIn 0.3s ease-in;
+                    animation: fadeIn 1s ease-in;
                     display: inline-block;
                 }
                 @keyframes fadeIn {
