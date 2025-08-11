@@ -3663,7 +3663,7 @@ def web_interface(args, ctx):
 
                                     if (gr_audiobook_player) {
                                         const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
-                                        const gr_audiobook_sentence_field = gr_audiobook_sentence_container?.querySelector('textarea, input');
+                                        const gr_audiobook_sentence_field = gr_audiobook_sentence?.querySelector('textarea, input');
                                         // ensure a single <track> and append to the **media element**
                                         const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
                                         const gr_audiobook_track = existing || document.createElement('track');
