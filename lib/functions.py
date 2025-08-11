@@ -3673,6 +3673,7 @@ def web_interface(args, ctx):
                                             if (track) {
                                                 track.mode = 'showing';
                                                 if (!track.__cueBound) {
+                                                    track.__fade_timeout = null;
                                                     if(textarea){
                                                         textarea.style.fontSize = '15px';
                                                         textarea.style.fontWeight = 'bold';
@@ -3680,12 +3681,8 @@ def web_interface(args, ctx):
                                                         textarea.style.height = '100%';
                                                         textarea.style.textAlign = 'center';
                                                         textarea.style.marginTop = 'auto';
-                                                        textarea.addEventListener('input', function(){
-                                                            this.style.transition = 'opacity 0.2s ease-in';
-                                                            this.style.opacity = '1';
-                                                        });
                                                     }
-                                                    track.addEventListener('cuechange', function(){
+                                                    track.addEventListener('cuechange', function () {
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
@@ -3693,7 +3690,11 @@ def web_interface(args, ctx):
                                                                         textarea.style.transition = 'none';
                                                                         textarea.style.opacity = '0';
                                                                         textarea.value = this.activeCues[0].text;
-                                                                        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                                                                        clearTimeout(track.__fade_timeout);
+                                                                        track.__fade_timeout = setTimeout(() => {
+                                                                            textarea.style.transition = 'opacity 0.2s ease-in';
+                                                                            textarea.style.opacity = '1';
+                                                                        }, 20);
                                                                     }
                                                                 }
                                                             }
