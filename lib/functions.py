@@ -2251,7 +2251,7 @@ def web_interface(args, ctx):
                     display: none !important;
                 }
                 ///////////////
-                select{
+                textarea.gr_audiobook_sentence{
                     font-size: 14px !important;
                     font-weight: bold !important;
                     width: 100% !important;
@@ -3664,7 +3664,7 @@ def web_interface(args, ctx):
 
                                     if (gr_audiobook_player) {
                                         const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
-                                        const textarea = gr_audiobook_sentence?.querySelector('textarea, input');
+                                        const textarea = gr_audiobook_sentence?.querySelector('textarea');
                                         // ensure a single <track> and append to the **media element**
                                         const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
                                         const gr_audiobook_track = existing || document.createElement('track');
@@ -3688,13 +3688,7 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        textarea.style.fontSize = '14px';
-                                                                        textarea.style.fontWeight = 'bold';
-                                                                        textarea.style.width = '100%';
-                                                                        textarea.style.height =  '100%';
-                                                                        textarea.style.textAlign = 'center';
-                                                                        textarea.style.verticalAlign = 'middle';
-                                                                        textarea.value = this.activeCues[0].text;
+                                                                        textarea.classList.add('gr_audiobook_sentence');
                                                                     }
                                                                 }
                                                             }
