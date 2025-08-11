@@ -3685,6 +3685,7 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
+                                                                        textarea.className = 'gr_audiobook_sentence';
                                                                         textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
