@@ -2275,7 +2275,7 @@ def web_interface(args, ctx):
                     height: auto !important;
                     text-align: center !important;
                     vertical-align: middle !important;
-                    font-size: 34px !important;
+                    font-size: 14px !important;
                     font-weight: bold !important;
                 }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
