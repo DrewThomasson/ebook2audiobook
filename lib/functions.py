@@ -3664,6 +3664,7 @@ def web_interface(args, ctx):
                                     if(gr_audiobook_player){
                                         const gr_audiobook_vtt = document.querySelector('#gr_audiobook_vtt');
                                         const gr_audiobook_track = document.querySelector('#gr_audiobook_track') || document.createElement('track');
+                                        console.log('from reset_elemetns: ', gr_audiobook_track);
                                         gr_audiobook_track.id = 'gr_audiobook_track';
                                         gr_audiobook_track.default = true;
                                         gr_audiobook_track.src = '';
@@ -3709,7 +3710,7 @@ def web_interface(args, ctx):
                             window.load_vtt = (path)=>{
                                 try{
                                     const gr_audiobook_track = document.querySelector('#gr_audiobook_track');
-                                    console.log(gr_audiobook_track, path);
+                                    console.log('from load_vtt :',gr_audiobook_track);
                                     if(gr_audiobook_track){
                                         gr_audiobook_track.src = path;
                                     }
