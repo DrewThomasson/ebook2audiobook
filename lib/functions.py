@@ -3663,7 +3663,6 @@ def web_interface(args, ctx):
 
                                     if (gr_audiobook_player) {
                                         const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
-
                                         // ensure a single <track> and append to the **media element**
                                         const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
                                         const gr_audiobook_track = existing || document.createElement('track');
@@ -3677,7 +3676,6 @@ def web_interface(args, ctx):
                                         if (!gr_audiobook_track.parentNode || gr_audiobook_track.parentNode !== gr_audiobook_player) {
                                             gr_audiobook_player.appendChild(gr_audiobook_track);
                                         }
-
                                         gr_audiobook_track.addEventListener('load', () => {
                                             const track = gr_audiobook_player.textTracks && gr_audiobook_player.textTracks[0];
                                             if (track) {
@@ -3687,26 +3685,39 @@ def web_interface(args, ctx):
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
-                                                                    gr_audiobook_sentence.value = `${this.activeCues[0].text}`;
+                                                                    const field = gr_audiobook_sentence.querySelector('textarea, input');
+                                                                    if (field) {
+                                                                        field.value = this.activeCues[0].text;
+                                                                        field.dispatchEvent(new Event('input', { bubbles: true }));
+                                                                    }
                                                                 }
                                                             }
                                                             return;
                                                         }
                                                         if (gr_audiobook_sentence) {
-                                                            gr_audiobook_sentence.value = '...';
+                                                            const field = gr_audiobook_sentence.querySelector('textarea, input');
+                                                            if (field) {
+                                                                field.value = '...';
+                                                                field.dispatchEvent(new Event('input', { bubbles: true }));
+                                                            }
                                                         }
                                                     });
                                                     track.__cueBound = true;
                                                 }
                                             }
                                         });
-
                                         gr_audiobook_track.addEventListener('error', () => {
                                             console.log('gr_audiobook_track load error:', gr_audiobook_track.src);
                                         });
 
                                         gr_audiobook_player.addEventListener('ended', () => {
-                                            if (gr_audiobook_sentence) gr_audiobook_sentence.value = '...';
+                                            if(gr_audiobook_sentence){
+                                                const field = gr_audiobook_sentence.querySelector('textarea, input');
+                                                if (field) {
+                                                    field.value = '...';
+                                                    field.dispatchEvent(new Event('input', { bubbles: true }));
+                                                }
+                                            }
                                         });
 
                                         if (!gr_audiobook_player.style.transition) {
