@@ -2296,7 +2296,7 @@ def web_interface(args, ctx):
                     width: 100%;
                     background: #fff000;
                     text-align: center;
-                    font-size: 14px;
+                    font-size: 24px;
                     font-weight: bold;
                     text-wrap: balance;
                 }
@@ -3689,6 +3689,7 @@ def web_interface(args, ctx):
                                                                     if (field) {
                                                                         field.classList.add('gr_audiobook_sentence', 'fade-in');
                                                                         field.value = this.activeCues[0].text;
+                                                                        field.addEventListener('animationend', () => field.classList.remove('fade-in'));
                                                                         field.dispatchEvent(new Event('input', { bubbles: true }));
                                                                     }
                                                                 }
@@ -3700,6 +3701,7 @@ def web_interface(args, ctx):
                                                             if (field) {
                                                                 field.classList.add('gr_audiobook_sentence', 'fade-in');
                                                                 field.value = '...';
+                                                                field.addEventListener('animationend', () => field.classList.remove('fade-in'));
                                                                 field.dispatchEvent(new Event('input', { bubbles: true }));
                                                             }
                                                         }
@@ -3718,6 +3720,7 @@ def web_interface(args, ctx):
                                                 if (field) {
                                                     field.classList.add('gr_audiobook_sentence', 'fade-in');
                                                     field.value = '...';
+                                                    field.addEventListener('animationend', () => field.classList.remove('fade-in'));
                                                     field.dispatchEvent(new Event('input', { bubbles: true }));
                                                 }
                                             }
