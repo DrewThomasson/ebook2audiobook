@@ -2270,6 +2270,14 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
+                #gr_audiobook_sentence :is(input, textarea) {
+                    width: 100%;
+                    box-sizing: border-box;
+                    background: #fff000;
+                    text-align: center;
+                    font-size: 24px;
+                    font-weight: bold;
+                }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
                 }
@@ -2291,14 +2299,6 @@ def web_interface(args, ctx):
                     border-radius: 0px !important;
                     background-color: #ebedf0 !important;
                     color: #ffffff !important;
-                }
-                .gr_audiobook_sentence {
-                    width: 100%;
-                    background: #fff000;
-                    text-align: center;
-                    font-size: 24px;
-                    font-weight: bold;
-                    text-wrap: balance;
                 }
                 ////////////
                 .fade-in {
@@ -3663,7 +3663,7 @@ def web_interface(args, ctx):
 
                                     if (gr_audiobook_player) {
                                         const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
-                                        const gr_audiobook_sentence_field = gr_audiobook_sentence?.querySelector('textarea, input');
+                                        const textarea = gr_audiobook_sentence?.querySelector('textarea, input');
                                         // ensure a single <track> and append to the **media element**
                                         const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
                                         const gr_audiobook_track = existing || document.createElement('track');
@@ -3686,16 +3686,16 @@ def web_interface(args, ctx):
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
-                                                                    if (gr_audiobook_sentence_field) {
-                                                                        gr_audiobook_sentence_field.value = this.activeCues[0].text;
+                                                                    if (textarea) {
+                                                                        textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
                                                             }
                                                             return;
                                                         }
                                                         if (gr_audiobook_sentence) {
-                                                            if (gr_audiobook_sentence_field) {
-                                                                gr_audiobook_sentence_field.value = '...';
+                                                            if (textarea) {
+                                                                textarea.value = '...';
                                                             }
                                                         }
                                                     });
@@ -3708,8 +3708,8 @@ def web_interface(args, ctx):
                                         });
                                         gr_audiobook_player.addEventListener('ended', () => {
                                             if(gr_audiobook_sentence){
-                                                if (gr_audiobook_sentence_field) {
-                                                    gr_audiobook_sentence_field.value = '...';
+                                                if (textarea) {
+                                                    textarea.value = '...';
                                                 }
                                             }
                                         });
