@@ -2270,10 +2270,10 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
-                #gr_audiobook_sentence :is(input, textarea) {
+                #gr_audiobook_sentence :is(textarea, input) {
                     width: 100% !important;
                     text-align: center !important;
-                    font-size: 24px !important;
+                    font-size: 14px !important;
                     font-weight: bold !important;
                 }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
