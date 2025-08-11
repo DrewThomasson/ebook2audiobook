@@ -2249,7 +2249,7 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             ///////////////
-            #gr_audiobook_sentence, #gr_audiobook_sentence:disabled{
+            .svelte-173056l{
                 font-size: 14px !important;
                 font-weight: bold !important;
                 width: 100% !important;
@@ -3687,6 +3687,7 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
+                                                                        textarea.classList.add('svelte-173056l');
                                                                         /*
                                                                         textarea.style.fontSize = '14px';
                                                                         textarea.style.fontWeight = 'bold';
