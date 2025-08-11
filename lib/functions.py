@@ -2472,7 +2472,7 @@ def web_interface(args, ctx):
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', elem_classes=['fade-in'], label='Audiobook', interactive=False, visible=True, lines=1, max_lines=2)
+            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', elem_classes=['gr_audiobook_sentence', 'fade-in'], label='Audiobook', interactive=False, visible=True, lines=1, max_lines=2)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row():
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
@@ -3706,10 +3706,9 @@ def web_interface(args, ctx):
                                                 }
                                             }
                                         });
-                                        gr_audiobook_track.addEventListener('error', () => {
-                                            console.log('gr_audiobook_track load error:', gr_audiobook_track.src);
+                                        gr_audiobook_track.addEventListener('error', (e) => {
+                                            console.log('gr_audiobook_track load error:', e);
                                         });
-
                                         gr_audiobook_player.addEventListener('ended', () => {
                                             if(gr_audiobook_sentence){
                                                 const field = gr_audiobook_sentence.querySelector('textarea, input');
@@ -3719,7 +3718,6 @@ def web_interface(args, ctx):
                                                 }
                                             }
                                         });
-
                                         if (!gr_audiobook_player.style.transition) {
                                             gr_audiobook_player.style.transition = 'filter 1s ease';
                                         }
