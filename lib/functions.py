@@ -3681,15 +3681,15 @@ def web_interface(args, ctx):
                                                                         textarea.style.fontSize = '15px';
                                                                         textarea.style.fontWeight = 'bold';
                                                                         textarea.style.width = '100%';
-                                                                        textarea.style.height =  '100%';
+                                                                        textarea.style.height = '100%';
                                                                         textarea.style.textAlign = 'center';
                                                                         textarea.style.marginTop = 'auto';
-                                                                        textarea.style.transition = 'opacity 0.4s ease-in';
-                                                                        textarea.style.opacity = '0';
+                                                                        textarea.style.transition = 'opacity 0.4s ease-out';
+                                                                        textarea.style.opacity = '1';
                                                                         void textarea.offsetWidth;
                                                                         requestAnimationFrame(() => {
                                                                             textarea.value = this.activeCues[0].text;
-                                                                            textarea.style.opacity = '1';
+                                                                            textarea.style.opacity = '0';
                                                                         });
                                                                     }
                                                                 }
