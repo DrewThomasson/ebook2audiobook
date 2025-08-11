@@ -2249,7 +2249,7 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             ///////////////
-            textarea.gr_audiobook_sentence::disabled{
+            #gr_audiobook_sentence, #gr_audiobook_sentence:disabled{
                 font-size: 14px !important;
                 font-weight: bold !important;
                 width: 100% !important;
@@ -3687,7 +3687,6 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        textarea.classList.add('gr_audiobook_sentence');
                                                                         /*
                                                                         textarea.style.fontSize = '14px';
                                                                         textarea.style.fontWeight = 'bold';
@@ -3695,8 +3694,8 @@ def web_interface(args, ctx):
                                                                         textarea.style.height =  '100%';
                                                                         textarea.style.textAlign = 'center';
                                                                         textarea.style.verticalAlign = 'middle';
-                                                                        textarea.value = this.activeCues[0].text;
                                                                         */
+                                                                        textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
                                                             }
