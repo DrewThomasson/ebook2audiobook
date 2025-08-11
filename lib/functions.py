@@ -2273,8 +2273,7 @@ def web_interface(args, ctx):
                 #gr_audiobook_sentence {
                     display: block;
                     text-align: center;
-                    font-family: monospace;
-                    font-size: 14px;
+                    font-size: 24px;
                     font-weight: bold;
                     text-wrap: balance;
                 }
@@ -3724,17 +3723,15 @@ def web_interface(args, ctx):
                             window.load_vtt = (path) => {
                                 try {
                                     if (!window.load_vtt_timeout) { window.load_vtt_timeout = null; }
+                                    
                                     const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
                                     let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
-
                                     // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
                                     if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
                                         const _m = gr_audiobook_player.querySelector('audio,video');
                                         if (_m) gr_audiobook_player = _m;
                                     }
-
                                     const gr_audiobook_track = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
-
                                     if (gr_audiobook_player && gr_audiobook_track) {
                                         gr_audiobook_track.src = path;
                                     } else {
