@@ -3684,14 +3684,11 @@ def web_interface(args, ctx):
                                                                         textarea.style.height =  '100%';
                                                                         textarea.style.textAlign = 'center';
                                                                         textarea.style.marginTop = 'auto';
-                                                                        textarea.style.opacity = '0';
-                                                                        textarea.value = this.activeCues[0].text;
                                                                         textarea.style.transition = 'opacity 0.4s ease-in';
-                                                                        textarea.dataset.faded = 'true';
-                                                                        // Force browser reflow before changing opacity
-                                                                        requestAnimationFrame(() => {
-                                                                            textarea.style.opacity = '0';
-                                                                        });
+                                                                        textarea.style.opacity = '0'; // start hidden
+                                                                        void textarea.offsetWidth;
+                                                                        textarea.value = this.activeCues[0].text;
+                                                                        textarea.style.opacity = '1';
                                                                     }
                                                                 }
                                                             }
