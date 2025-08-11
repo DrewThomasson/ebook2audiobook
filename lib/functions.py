@@ -2103,6 +2103,7 @@ def web_interface(args, ctx):
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
+    title = 'Ebook2Audiobook'
     glass_mask_msg = 'Initialization, please wait...'
     ebook_src = None
     language_options = [
@@ -2327,9 +2328,9 @@ def web_interface(args, ctx):
         </style>
     '''
 
-    with gr.Blocks(theme=theme, title='Ebook2Audiobook', css=header_css, delete_cache=(86400, 86400)) as app:
+    with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
         gr_logo_markdown = gr.Markdown(elem_id='gr_markdown_logo', value=f'''
-            <div style="right:0;margin:0;padding:0;text-align:right"><h3 style="display:inline;line-height:0.6">Ebook2Audiobook</h3>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">v{prog_version}</a></div>
+            <div style="right:0;margin:0;padding:0;text-align:right"><h4 style="display:inline;line-height:0.6">{title}</h4>&nbsp;&nbsp;&nbsp;<a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:12px" target="_blank">v{prog_version}</a></div>
             '''
         )
         with gr.Tabs():
@@ -3482,7 +3483,7 @@ def web_interface(args, ctx):
             fn=None,
             inputs=[gr_progress_box],
             outputs=[],
-            js='() => { document.title = "Ebook2Audiobook"; }'
+            js=f'() => {{ document.title = "{title}"; }}'
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
