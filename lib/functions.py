@@ -2270,6 +2270,13 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
+                #gr_audiobook_sentence_span {
+                    display: block;
+                    text-align: center;
+                    font-size: 14px;
+                    font-weight: bold;
+                    text-wrap: balance;
+                }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
                 }
@@ -2294,11 +2301,6 @@ def web_interface(args, ctx):
                 }
                 ////////////
                 .fade-in {
-                    display: block;
-                    text-align: center;
-                    font-size: 14px;
-                    font-weight: bold;
-                    text-wrap: balance;
                     animation: fadeIn 0.3s ease-in;
                     display: inline-block;
                 }
@@ -3684,7 +3686,7 @@ def web_interface(args, ctx):
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
-                                                                    gr_audiobook_sentence.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
+                                                                    gr_audiobook_sentence.innerHTML = `<span id="gr_audiobook_sentence_span" class="fade-in">${this.activeCues[0].text}</span>`;
                                                                 }
                                                             }
                                                             return;
