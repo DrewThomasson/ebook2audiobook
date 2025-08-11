@@ -2271,12 +2271,10 @@ def web_interface(args, ctx):
                 }
                 ///////////
                 #gr_audiobook_sentence :is(input, textarea) {
-                    width: 100%;
-                    box-sizing: border-box;
-                    background: #fff000;
-                    text-align: center;
-                    font-size: 24px;
-                    font-weight: bold;
+                    width: 100% !important;
+                    text-align: center !important;
+                    font-size: 24px !important;
+                    font-weight: bold !important;
                 }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
                     display: none !important;
