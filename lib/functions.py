@@ -3687,10 +3687,8 @@ def web_interface(args, ctx):
                                                                         textarea.style.transition = 'none';
                                                                         textarea.style.opacity = '0';
                                                                         textarea.value = this.activeCues[0].text;
-                                                                        setTimeout(() => {
-                                                                            textarea.style.transition = 'opacity 0.4s ease-in';
-                                                                            textarea.style.opacity = '1';
-                                                                        }, 50);
+                                                                        textarea.style.transition = 'opacity 0.2s ease-in';
+                                                                        textarea.style.opacity = '1';
                                                                     }
                                                                 }
                                                             }
