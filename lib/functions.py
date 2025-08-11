@@ -2270,7 +2270,7 @@ def web_interface(args, ctx):
                     top: 0 !important;
                 }
                 ///////////
-                .gr_audiobook_sentence {
+                .gr_audiobook_sentence_field {
                     width: 100% !important;
                     height: auto !important;
                     text-align: center !important;
@@ -3687,7 +3687,7 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        textarea.classList.toggle('gr_audiobook_sentence', true);
+                                                                        textarea.classList.toggle('gr_audiobook_sentence_field', true);
                                                                         textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
@@ -3696,7 +3696,7 @@ def web_interface(args, ctx):
                                                         }
                                                         if (gr_audiobook_sentence) {
                                                             if (textarea) {
-                                                                textarea.classList.toggle('gr_audiobook_sentence', true);
+                                                                textarea.classList.toggle('gr_audiobook_sentence_field', true);
                                                                 textarea.value = '...';
                                                             }
                                                         }
@@ -3711,7 +3711,7 @@ def web_interface(args, ctx):
                                         gr_audiobook_player.addEventListener('ended', () => {
                                             if(gr_audiobook_sentence){
                                                 if (textarea) {
-                                                    textarea.classList.toggle('gr_audiobook_sentence', true);
+                                                    textarea.classList.toggle('gr_audiobook_sentence_field', true);
                                                     textarea.value = '...';
                                                 }
                                             }
