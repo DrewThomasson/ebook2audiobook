@@ -2271,7 +2271,7 @@ def web_interface(args, ctx):
                 }
                 ///////////
                 // gr_audiobook_sentence field
-                .svelte-173056l {
+                textarea {
                     width: 100% !important;
                     text-align: center !important;
                     font-size: 14px !important;
