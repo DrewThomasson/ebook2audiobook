@@ -2370,9 +2370,9 @@ def web_interface(args, ctx):
                         with gr.Group(elem_id='gr_group_device'):
                             gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
                             gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
-                                <div style="right:0;margin:auto;padding:0;text-align:right">
+                                <div style="right:0;margin:auto;padding:10px;text-align:right">
                                     <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
-                                    <b style="display:inline;line-height:0.6">{title}&nbsp;{prog_version}</b></a>
+                                    <b style="display:inline;line-height:0.6;color:orange">{title}&nbsp;{prog_version}</b></a>
                                 </div>
                                 '''
                             )
