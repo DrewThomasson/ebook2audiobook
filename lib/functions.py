@@ -647,6 +647,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             text = unicodedata.normalize('NFKC', text).replace('\u00A0', ' ')
             if re_num.search(text) or re_ordinal.search(text):
                 date_spans = get_date_entities(text, stanza_nlp)
+                print(date_spans)
                 if date_spans:
                     result = []
                     last_pos = 0
