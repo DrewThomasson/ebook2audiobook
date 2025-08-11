@@ -2667,7 +2667,7 @@ def web_interface(args, ctx):
             session = context.get_session(id)
             session['audiobook'] = selected
             visible = True if len(audiobook_options) else False
-            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(visible=visible)
+            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(value=''), gr.update(visible=visible)
         
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
@@ -3469,7 +3469,7 @@ def web_interface(args, ctx):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_group_audiobook_list]
+            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_audiobook_sentence, gr_group_audiobook_list]
         ).then(
             fn=None,
             js='()=>{window.reset_elements?.();}'
