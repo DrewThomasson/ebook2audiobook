@@ -3687,7 +3687,6 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (gr_audiobook_sentence_field) {
-                                                                        gr_audiobook_sentence_field.classList.add('gr_audiobook_sentence');
                                                                         gr_audiobook_sentence_field.value = this.activeCues[0].text;
                                                                     }
                                                                 }
@@ -3696,7 +3695,6 @@ def web_interface(args, ctx):
                                                         }
                                                         if (gr_audiobook_sentence) {
                                                             if (gr_audiobook_sentence_field) {
-                                                                gr_audiobook_sentence_field.classList.add('gr_audiobook_sentence');
                                                                 gr_audiobook_sentence_field.value = '...';
                                                             }
                                                         }
@@ -3711,7 +3709,6 @@ def web_interface(args, ctx):
                                         gr_audiobook_player.addEventListener('ended', () => {
                                             if(gr_audiobook_sentence){
                                                 if (gr_audiobook_sentence_field) {
-                                                    gr_audiobook_sentence_field.classList.add('gr_audiobook_sentence');
                                                     gr_audiobook_sentence_field.value = '...';
                                                 }
                                             }
