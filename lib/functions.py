@@ -2251,7 +2251,7 @@ def web_interface(args, ctx):
                     display: none !important;
                 }
                 ///////////////
-                #gr_audiobook_sentence div{
+                #gr_audiobook_sentence textarea[data-testid="textbox"]{
                     font-size: 14px !important;
                     font-weight: bold !important;
                     width: 100% !important;
