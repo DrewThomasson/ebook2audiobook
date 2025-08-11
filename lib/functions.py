@@ -3621,75 +3621,78 @@ def web_interface(args, ctx):
             js="""
                 ()=>{
                     try{
-                        // Define the global function ONCE
-                        if(typeof window.reset_elements !== 'function'){
-                            window.reset_elements = ()=>{
-                                try{
-                                    const gr_audiobook_player = document.getElementById('gr_audiobook_player');
-                                    const checkboxes = document.querySelectorAll(\"input[type='checkbox']\");
-                                    const radios = document.querySelectorAll(\"input[type='radio']\");
+                        if (typeof window.reset_elements !== 'function') {
+                            window.reset_elements = () => {
+                                try {
+                                    const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
+                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
+                                    const checkboxes = gr_audiobook_player_root.querySelectorAll("input[type='checkbox']");
+                                    const radios = gr_audiobook_player_root.querySelectorAll("input[type='radio']");
                                     const url = new URL(window.location);
                                     const theme = url.searchParams.get('__theme');
                                     let osTheme;
                                     let audioFilter = '';
                                     let elColor = '#666666';
-                                    if(theme){
-                                        if(theme === 'dark'){
-                                            if(gr_audiobook_player){
-                                                audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            }
-                                            elColor = '#fff';
-                                        }
-                                        checkboxes.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
-                                        });
-                                        radios.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
-                                        });
-                                    }else{
-                                        osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-                                        if(osTheme){
-                                            if(gr_audiobook_player){
-                                                audioFilter = 'invert(1) hue-rotate(180deg)';
-                                            }
-                                            elColor = '#fff';
-                                        }
-                                        checkboxes.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
-                                        });
-                                        radios.forEach(cb=>{
-                                            cb.style.border = '1px solid ' + elColor;
-                                        });
+
+                                    // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
+                                    if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
+                                        const _m = gr_audiobook_player.querySelector('audio,video');
+                                        if (_m) gr_audiobook_player = _m;
                                     }
-                                    if(gr_audiobook_player){
-                                        const gr_audiobook_sentence = document.querySelector('#gr_audiobook_sentence');
-                                        const gr_audiobook_track = document.querySelector('#gr_audiobook_track') || document.createElement('track');
+
+                                    if (theme) {
+                                        if (theme === 'dark') {
+                                            if (gr_audiobook_player) {
+                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            }
+                                            elColor = '#fff';
+                                        }
+                                        checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                        radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                    } else {
+                                        osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                                        if (osTheme) {
+                                            if (gr_audiobook_player) {
+                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            }
+                                            elColor = '#fff';
+                                        }
+                                        checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                        radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                    }
+
+                                    if (gr_audiobook_player) {
+                                        const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
+
+                                        // ensure a single <track> and append to the **media element**
+                                        const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
+                                        const gr_audiobook_track = existing || document.createElement('track');
                                         gr_audiobook_track.id = 'gr_audiobook_track';
                                         gr_audiobook_track.default = true;
                                         gr_audiobook_track.src = '';
                                         gr_audiobook_track.kind = 'captions';
                                         gr_audiobook_track.label = 'captions';
-                                        gr_audiobook_track.addEventListener('load', ()=>{
-                                            console.log('gr_audiobook_track load event');
-                                            const track = gr_audiobook_player.textTracks[0];
-                                            if(track){
-                                                console.log('track loaded');
+
+                                        // make sure it’s attached to the actual media element
+                                        if (!gr_audiobook_track.parentNode || gr_audiobook_track.parentNode !== gr_audiobook_player) {
+                                            gr_audiobook_player.appendChild(gr_audiobook_track);
+                                        }
+
+                                        gr_audiobook_track.addEventListener('load', () => {
+                                            const track = gr_audiobook_player.textTracks && gr_audiobook_player.textTracks[0];
+                                            if (track) {
                                                 track.mode = 'showing';
-                                                if(!track.__cueBound){
-                                                    console.log('track __cueBound');
-                                                    track.addEventListener('cuechange', function(){
-                                                        console.log('track cuechange event');
-                                                        if(this.activeCues){
-                                                            console.log('activeCues');
-                                                            if(this.activeCues[0]){
-                                                                console.log('activeCues[0]');
-                                                                if(gr_audiobook_sentence){
+                                                if (!track.__cueBound) {
+                                                    track.addEventListener('cuechange', function () {
+                                                        if (this.activeCues) {
+                                                            if (this.activeCues[0]) {
+                                                                if (gr_audiobook_sentence) {
                                                                     gr_audiobook_sentence.innerHTML = `<span class="fade-in">${this.activeCues[0].text}</span>`;
                                                                 }
                                                             }
-                                                            return
+                                                            return;
                                                         }
-                                                        if(gr_audiobook_sentence){
+                                                        if (gr_audiobook_sentence) {
                                                             gr_audiobook_sentence.innerHTML = '...';
                                                         }
                                                     });
@@ -3697,32 +3700,55 @@ def web_interface(args, ctx):
                                                 }
                                             }
                                         });
-                                        if(!gr_audiobook_track.parentNode) gr_audiobook_player.appendChild(gr_audiobook_track);
-                                        gr_audiobook_player.addEventListener('ended', ()=>{
-                                            gr_audiobook_sentence.innerHTML = '...';
+
+                                        gr_audiobook_track.addEventListener('error', () => {
+                                            console.log('gr_audiobook_track load error:', gr_audiobook_track.src);
                                         });
-                                        if(!gr_audiobook_player.style.transition){
+
+                                        gr_audiobook_player.addEventListener('ended', () => {
+                                            if (gr_audiobook_sentence) gr_audiobook_sentence.innerHTML = '...';
+                                        });
+
+                                        if (!gr_audiobook_player.style.transition) {
                                             gr_audiobook_player.style.transition = 'filter 1s ease';
                                         }
                                         gr_audiobook_player.style.filter = audioFilter;
                                     }
-                                }catch(e){
+                                } catch (e) {
                                     console.log('reset_elements error:', e);
                                 }
                             };
                         }
-                        if(typeof(window.load_vtt) !== 'function'){
-                            window.load_vtt = (path)=>{
-                                try{
-                                    if(!window.load_vtt_timeout){window.load_vtt_timeout = null;}
-                                    const gr_audiobook_track = document.querySelector('#gr_audiobook_track');
-                                    if(gr_audiobook_track){
-                                        gr_audiobook_track.src = path;
-                                    }else{
+
+                        if (typeof window.load_vtt !== 'function') {
+                            window.load_vtt = (path) => {
+                                try {
+                                    if (!window.load_vtt_timeout) { window.load_vtt_timeout = null; }
+                                    const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
+                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
+
+                                    // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
+                                    if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
+                                        const _m = gr_audiobook_player.querySelector('audio,video');
+                                        if (_m) gr_audiobook_player = _m;
+                                    }
+
+                                    const gr_audiobook_track = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
+
+                                    if (gr_audiobook_player && gr_audiobook_track) {
+                                        // enable so browser fetches it; force reload even if same URL
+                                        try { gr_audiobook_track.track.mode = 'disabled'; } catch (_) {}
+                                        gr_audiobook_track.src = '';
+                                        setTimeout(() => {
+                                            const url = path ? path + (path.includes('?') ? '&' : '?') + '_=' + Date.now() : '';
+                                            gr_audiobook_track.src = url;
+                                            try { gr_audiobook_track.track.mode = 'hidden'; } catch (_) {}
+                                        }, 0);
+                                    } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
                                     }
-                                }catch(e){
+                                } catch (e) {
                                     console.log('load_vtt error:', e);
                                 }
                             };
