@@ -3684,15 +3684,13 @@ def web_interface(args, ctx):
                                                                         textarea.style.height = '100%';
                                                                         textarea.style.textAlign = 'center';
                                                                         textarea.style.marginTop = 'auto';
-                                                                        textarea.style.transition = 'opacity 0.4s ease-in';
+                                                                        textarea.style.transition = 'none';
                                                                         textarea.style.opacity = '0';
-                                                                        void textarea.offsetWidth;
-                                                                        requestAnimationFrame(() => {
-                                                                            textarea.value = this.activeCues[0].text;
-                                                                            requestAnimationFrame(() => {
-                                                                                textarea.style.opacity = '1';
-                                                                            });
-                                                                        });
+                                                                        textarea.value = this.activeCues[0].text;
+                                                                        setTimeout(() => {
+                                                                            textarea.style.transition = 'opacity 0.4s ease-in';
+                                                                            textarea.style.opacity = '1';
+                                                                        }, 50);
                                                                     }
                                                                 }
                                                             }
