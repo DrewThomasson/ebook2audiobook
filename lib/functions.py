@@ -3690,7 +3690,6 @@ def web_interface(args, ctx):
                                                                         field.classList.add('gr_audiobook_sentence', 'fade-in');
                                                                         field.value = this.activeCues[0].text;
                                                                         field.addEventListener('animationend', () => field.classList.remove('fade-in'));
-                                                                        field.dispatchEvent(new Event('input', { bubbles: true }));
                                                                     }
                                                                 }
                                                             }
