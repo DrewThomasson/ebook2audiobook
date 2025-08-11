@@ -3685,11 +3685,6 @@ def web_interface(args, ctx):
                                                                         textarea.style.textAlign = 'center';
                                                                         textarea.style.padding = '0';
                                                                         textarea.style.opacity = '0';
-                                                                        textarea.style.transition = 'opacity 1s ease-in';
-                                                                        textarea.dataset.faded = 'true';
-                                                                        requestAnimationFrame(() => {
-                                                                            textarea.style.opacity = '1';
-                                                                        });
                                                                         textarea.value = this.activeCues[0].text;
                                                                     }
                                                                 }
