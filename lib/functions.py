@@ -3679,6 +3679,7 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
+                                                                        textarea.classList.toggle('fade-in', false);
                                                                         textarea.style.fontSize = '14px';
                                                                         textarea.style.fontWeight = 'bold';
                                                                         textarea.style.width = '100%';
