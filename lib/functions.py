@@ -3680,12 +3680,12 @@ def web_interface(args, ctx):
                                                         textarea.style.height = '100%';
                                                         textarea.style.textAlign = 'center';
                                                         textarea.style.marginTop = 'auto';
-                                                        textarea.onchange = function(){
+                                                        textarea.addEventListener('change', function(){
                                                             this.style.transition = 'opacity 0.2s ease-in';
                                                             this.style.opacity = '1';
-                                                        }
+                                                        });
                                                     }
-                                                    track.addEventListener('cuechange', function () {
+                                                    track.addEventListener('cuechange', function(){
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
