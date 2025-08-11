@@ -2650,11 +2650,11 @@ def web_interface(args, ctx):
                     color = "#F44336"  # Red = high
                 return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
             return f"""
-            <div style='margin:0; padding:0; font-size:12px; line-height:0; height:auto; display:inline; border: none; gap:0px; align-items:center'>
-                <span style='padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
-                <span style='padding:0 10px'><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
-                <span style='padding:0 10px'><b>RAM:</b> {color_box(rating["RAM"])}</span>
-                <span style='padding:0 10px'><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
+            <div style='margin:0; padding:0; font-size:12px; line-height:1.2; height:auto; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px;'>
+              <span style='display:inline-flex; white-space:nowrap; padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
+              <span style='display:inline-flex; white-space:nowrap; padding:0 10px'><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
+              <span style='display:inline-flex; white-space:nowrap; padding:0 10px'><b>RAM:</b> {color_box(rating["RAM"])}</span>
+              <span style='display:inline-flex; white-space:nowrap; padding:0 10px'><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
             </div>
             """
 
