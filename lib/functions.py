@@ -2272,9 +2272,9 @@ def web_interface(args, ctx):
                 ///////////
                 #gr_audiobook_sentence {
                     width: 100% !important;
-                    height: 32px !important;
+                    height: 100px !important;
                     text-align: center !important;
-                    font-size: 14px !important;
+                    font-size: 34px !important;
                     font-weight: bold !important;
                 }
                 #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
