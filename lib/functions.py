@@ -530,7 +530,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
 
-    def repl_walk(node):
+    def tuple_row(node):
         try:
             for child in node.children:
                 if isinstance(child, NavigableString):
@@ -589,39 +589,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
-        tuples_list = list(repl_walk(body))
+        tuples_list = list(tuple_row(body))
         if not tuples_list:
             error = 'No tuples_list from body created!'
             print(error)
             return None
-        clean_list = []
-        i = 0
-        while i < len(sentences):
-            current = sentences[i]
-            if current == "‡break‡":
-                if clean_list:
-                    prev = clean_list[-1]
-                    if prev in ("‡break‡", "‡pause‡"):
-                        i += 1
-                        continue
-                    if prev and (prev[-1].isalnum() or prev[-1] == ' '):
-                        if i + 1 < len(sentences):
-                            next_sentence = sentences[i + 1]
-                            merged_length = len(prev.rstrip()) + 1 + len(next_sentence.lstrip())
-                            if merged_length <= max_chars:
-                                # Merge with space handling
-                                if not prev.endswith(" ") and not next_sentence.startswith(" "):
-                                    clean_list[-1] = prev + " " + next_sentence
-                                else:
-                                    clean_list[-1] = prev + next_sentence
-                                i += 2
-                                continue
-                            else:
-                                clean_list.append(current)
-                                i += 1
-                                continue
-            clean_list.append(current)
-            i += 1
         text_list = []
         handled_tables = set()
         prev_typ = None
@@ -660,7 +632,35 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 if text:
                     text_list.append(text)
             prev_typ = typ
-        text = ' '.join(text_list)
+        clean_list = []
+        i = 0
+        while i < len(text_list):
+            current = text_list[i]
+            if current == "‡break‡":
+                if clean_list:
+                    prev = clean_list[-1]
+                    if prev in ("‡break‡", "‡pause‡"):
+                        i += 1
+                        continue
+                    if prev and (prev[-1].isalnum() or prev[-1] == ' '):
+                        if i + 1 < len(text_list):
+                            next_sentence = text_list[i + 1]
+                            merged_length = len(prev.rstrip()) + 1 + len(next_sentence.lstrip())
+                            if merged_length <= max_chars:
+                                # Merge with space handling
+                                if not prev.endswith(" ") and not next_sentence.startswith(" "):
+                                    clean_list[-1] = prev + " " + next_sentence
+                                else:
+                                    clean_list[-1] = prev + next_sentence
+                                i += 2
+                                continue
+                            else:
+                                clean_list.append(current)
+                                i += 1
+                                continue
+            clean_list.append(current)
+            i += 1
+        text = ' '.join(clean_list)
         if not re.search(r"[^\W_]", text):
             error = 'No valid text found!'
             print(error)
@@ -861,9 +861,10 @@ def get_sentences(text, lang, tts_engine):
                         if not buffer:
                             buffer = part
                             continue
-                        if len(buffer) < min_tokens:
+                        buffer_length = len(buffer)
+                        if buffer_length < min_tokens or buffer_length < max_chars:
                             buffer = buffer + ' ' + part
-                        else:
+                        else :
                             buffer = buffer.strip()
                             if buffer:
                                 soft_list.append(buffer)
