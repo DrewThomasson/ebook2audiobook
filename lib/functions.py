@@ -2644,22 +2644,12 @@ def web_interface(args, ctx):
             '''
 
         def show_rating(tts_engine):
-            if tts_engine == TTS_ENGINES['XTTSv2']:
-                rating = default_engine_settings[TTS_ENGINES['XTTSv2']]['rating']
-            elif tts_engine == TTS_ENGINES['BARK']:
-                rating = default_engine_settings[TTS_ENGINES['BARK']]['rating']
-            elif tts_engine == TTS_ENGINES['VITS']:
-                rating = default_engine_settings[TTS_ENGINES['VITS']]['rating']
-            elif tts_engine == TTS_ENGINES['FAIRSEQ']:
-                rating = default_engine_settings[TTS_ENGINES['FAIRSEQ']]['rating']
-            elif tts_engine == TTS_ENGINES['TACOTRON2']:
-                rating = default_engine_settings[TTS_ENGINES['TACOTRON2']]['rating']
-            elif tts_engine == TTS_ENGINES['YOURTTS']:
-                rating = default_engine_settings[TTS_ENGINES['YOURTTS']]['rating']
+
             def yellow_stars(n):
                 return "".join(
                     "<span style='color:#f0bc00; font-size:12px'>★</span>" for _ in range(n)
                 )
+
             def color_box(value):
                 if value <= 4:
                     color = "#4CAF50"  # Green = low
@@ -2668,6 +2658,9 @@ def web_interface(args, ctx):
                 else:
                     color = "#F44336"  # Red = high
                 return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
+            
+            rating = default_engine_settings[tts_engine]['rating']
+
             return f"""
             <div style='margin:0; padding:0; font-size:12px; line-height:1.2; height:auto; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px;'>
               <span style='display:inline-flex; white-space:nowrap; padding:0 10px'><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
@@ -2737,7 +2730,7 @@ def web_interface(args, ctx):
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
         
-        def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
+        def state_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
@@ -2749,8 +2742,34 @@ def web_interface(args, ctx):
                     else:
                         return gr.update(variant='primary', interactive=False)
             except Exception as e:
-                error = f'update_convert_btn(): {e}'
+                error = f'state_convert_btn(): {e}'
                 alert_exception(error)
+        
+        def disable_components():
+            return (
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+            )
+        
+        def enable_components():
+            return (
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+            )
 
         def change_gr_ebook_file(data, id):
             try:
@@ -3416,7 +3435,7 @@ def web_interface(args, ctx):
                 session['event'] = None
 
         gr_ebook_file.change(
-            fn=update_convert_btn,
+            fn=state_convert_btn,
             inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
             outputs=[gr_convert_btn]
         ).then(
@@ -3614,9 +3633,13 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_convert_btn.click(
-            fn=update_convert_btn,
+            fn=state_convert_btn,
             inputs=None,
             outputs=[gr_convert_btn]
+        ).then(
+            fn=disable_components,
+            inputs=[],
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
             fn=submit_convert_btn,
             inputs=[
@@ -3626,6 +3649,10 @@ def web_interface(args, ctx):
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
             outputs=[gr_tab_progress]
+        ).then(
+            fn=enable_components,
+            inputs=[],
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
@@ -3681,7 +3708,7 @@ def web_interface(args, ctx):
         )
         app.load(
             fn=None,
-            js="""
+            js=r"""
                 ()=>{
                     try{
                         if (typeof window.reset_elements !== 'function') {
