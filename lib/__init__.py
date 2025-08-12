@@ -15,15 +15,15 @@ from .conf import (
     max_python_version, min_python_version, models_dir, os,
     output_formats, platform, prog_version, python_env_dir,
     requirements_file, tmp_dir, tmp_expire, tts_dir, voice_formats,
-    voices_dir, output_split_hours
+    voices_dir, default_output_split, default_output_split_hours
 )
 
 from .lang import (
     abbreviations_mapping, chapter_word_mapping, default_language_code,
-    emojis_array, install_info, language_mapping, language_math_phonemes,
-    language_clock, language_tts, os, punctuation_list, punctuation_list_set,
-    punctuation_split_hard, punctuation_split_hard_set, punctuation_split_soft,
-    punctuation_split_soft_set, punctuation_switch,
+    roman_numbers_tuples, emojis_list, install_info, language_mapping,
+    language_math_phonemes, language_clock, language_tts, os, punctuation_list, 
+    punctuation_list_set, punctuation_split_hard, punctuation_split_hard_set,
+    punctuation_split_soft, punctuation_split_soft_set, punctuation_switch,
     specialchars_mapping, specialchars_remove, year_to_decades_languages
 )
 
@@ -45,13 +45,13 @@ __all__ = [
     "max_python_version", "min_python_version", "models_dir", "os",
     "output_formats", "platform", "prog_version", "python_env_dir",
     "requirements_file", "tmp_dir", "tmp_expire", "tts_dir",
-    "voice_formats", "voices_dir", "output_split_hours",
+    "voice_formats", "voices_dir", "default_output_split", "default_output_split_hours",
 
     # from lang
     "abbreviations_mapping", "chapter_word_mapping", "default_language_code",
-    "emojis_array", "install_info", "language_mapping",
-    "language_math_phonemes", "language_clock", "language_tts", "os",
-    "punctuation_list", "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
+    "roman_numbers_tuples", "emojis_list", "install_info", "language_mapping",
+    "language_math_phonemes", "language_clock", "language_tts", "os", "punctuation_list", 
+    "punctuation_list_set", "punctuation_split_hard", "punctuation_split_hard_set",
     "punctuation_split_soft", "punctuation_split_soft_set", "punctuation_switch",
     "specialchars_mapping", "specialchars_remove", "year_to_decades_languages"
 ]

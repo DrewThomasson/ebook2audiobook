@@ -21,7 +21,8 @@ TTS_VOICE_CONVERSION = {
 
 TTS_SML = {
     "break": "‡break‡",
-    "pause": "‡pause‡"
+    "pause": "‡pause‡",
+    "###": "‡pause‡"
 }
 
 default_tts_engine = TTS_ENGINES['XTTSv2']
