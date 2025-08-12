@@ -2730,7 +2730,7 @@ def web_interface(args, ctx):
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
         
-        def update_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
+        def state_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
@@ -2742,8 +2742,34 @@ def web_interface(args, ctx):
                     else:
                         return gr.update(variant='primary', interactive=False)
             except Exception as e:
-                error = f'update_convert_btn(): {e}'
+                error = f'state_convert_btn(): {e}'
                 alert_exception(error)
+        
+        def disable_components():
+            return (
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+                gr.update(interactive=False),
+            )
+        
+        def enable_components():
+            return (
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+                gr.update(interactive=True),
+            )
 
         def change_gr_ebook_file(data, id):
             try:
@@ -3409,7 +3435,7 @@ def web_interface(args, ctx):
                 session['event'] = None
 
         gr_ebook_file.change(
-            fn=update_convert_btn,
+            fn=state_convert_btn,
             inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
             outputs=[gr_convert_btn]
         ).then(
@@ -3607,9 +3633,13 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_convert_btn.click(
-            fn=update_convert_btn,
+            fn=state_convert_btn,
             inputs=None,
             outputs=[gr_convert_btn]
+        ).then(
+            fn=disable_components,
+            inputs=[],
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
             fn=submit_convert_btn,
             inputs=[
@@ -3619,6 +3649,10 @@ def web_interface(args, ctx):
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
             outputs=[gr_tab_progress]
+        ).then(
+            fn=enable_components,
+            inputs=[],
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
@@ -3674,7 +3708,7 @@ def web_interface(args, ctx):
         )
         app.load(
             fn=None,
-            js="""
+            js=r"""
                 ()=>{
                     try{
                         if (typeof window.reset_elements !== 'function') {
