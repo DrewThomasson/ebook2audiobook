@@ -156,7 +156,13 @@ punctuation_split_soft = [
 ]
 punctuation_split_soft_set = set(punctuation_split_soft)
 
-emojis_array = [
+roman_numbers_tuples = [
+    ('M',  1000), ('CM', 900), ('D',  500), ('CD', 400),
+    ('C',  100),  ('XC', 90),  ('L',  50),  ('XL', 40),
+    ('X',  10),   ('IX', 9),   ('V',  5),   ('IV', 4), ('I', 1)
+]
+
+emojis_list = [
 	r"\U0001F600-\U0001F64F",  # Emoticons
 	r"\U0001F300-\U0001F5FF",  # Symbols & pictographs
 	r"\U0001F680-\U0001F6FF",  # Transport & map symbols

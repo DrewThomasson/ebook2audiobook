@@ -1,17 +1,5 @@
-import hashlib
-import math
-import os
-import shutil
-import subprocess
-import tempfile
-import threading
-import uuid
-
-import numpy as np
-import regex as re
-import soundfile as sf
-import torch
-import torchaudio
+import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
+import numpy as np, regex as re, soundfile as sf, torch, torchaudio
 
 from huggingface_hub import hf_hub_download
 from pathlib import Path
@@ -43,7 +31,7 @@ class Coqui:
             self.sentence_idx = 1
             self.params = {TTS_ENGINES['XTTSv2']: {"latent_embedding":{}}, TTS_ENGINES['BARK']: {},TTS_ENGINES['VITS']: {"semitones": {}}, TTS_ENGINES['FAIRSEQ']: {"semitones": {}}, TTS_ENGINES['TACOTRON2']: {"semitones": {}}, TTS_ENGINES['YOURTTS']: {}}  
             self.params[self.session['tts_engine']]['samplerate'] = models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
-            self.vtt_path = os.path.join(self.session['process_dir'], os.path.splitext(self.session['final_name'])[0] + '.vtt')    
+            self.vtt_path = os.path.join(self.session['process_dir'], Path(self.session['final_name']).stem + '.vtt')    
             self.resampler_cache = {}
             self.audio_segments = []
             self._build()
@@ -452,14 +440,14 @@ class Coqui:
             if tts:
                 if sentence[-1].isalnum():
                     sentence = f'{sentence} —'
-                if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2']]:
-                    sentence = sentence.replace('.', ' — ')
                 if sentence == TTS_SML['break']:
-                    break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100))) # 0.4 to 0.7 seconds
+                    silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                    break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
                     self.audio_segments.append(break_tensor.clone())
                     return True
                 elif sentence == TTS_SML['pause']:
-                    pause_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(1.0, 1.8) * 100) / 100))) # 1.0 to 1.8 seconds
+                    silence_time = int(np.random.uniform(1.0, 1.8) * 100) / 100
+                    pause_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time)) # 1.0 to 1.8 seconds
                     self.audio_segments.append(pause_tensor.clone())
                     return True
                 else:
@@ -491,7 +479,7 @@ class Coqui:
                         }
                         with torch.no_grad():
                             result = tts.inference(
-                                text=sentence,
+                                text=sentence.replace('.', ' — '),
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=settings['gpt_cond_latent'],
                                 speaker_embedding=settings['speaker_embedding'],
@@ -627,13 +615,14 @@ class Coqui:
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                         speaker_argument = {}
+                        not_supported_punc_pattern = re.compile(r"[.:—]")
                         if settings['voice_path'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
-                                text=sentence,
+                                text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
@@ -690,18 +679,19 @@ class Coqui:
                                 os.remove(source_wav)
                         else:
                             audio_sentence = tts.tts(
-                                text=sentence,
+                                text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
                         speaker_argument = {}
+                        not_supported_punc_pattern = re.compile(r'["—]')
                         if settings['voice_path'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tts.tts_to_file(
-                                text=sentence,
+                                text=re.sub(not_supported_punc_pattern, '', sentence),
                                 file_path=tmp_in_wav,
                                 **speaker_argument
                             )
@@ -760,7 +750,7 @@ class Coqui:
                                 os.remove(source_wav)
                         else:
                             audio_sentence = tts.tts(
-                                text=sentence,
+                                text=re.sub(not_supported_punc_pattern, '', sentence),
                                 **speaker_argument
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
@@ -774,7 +764,7 @@ class Coqui:
                             speaker_argument = {"speaker": voice_key}
                         with torch.no_grad():
                             audio_sentence = tts.tts(
-                                text=sentence,
+                                text=sentence.replace('—', '').strip(),
                                 language=language,
                                 **speaker_argument
                             )
@@ -785,12 +775,13 @@ class Coqui:
                             audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.003, trim_audio_buffer).unsqueeze(0)
                         self.audio_segments.append(audio_tensor)
                         if not re.search(r'\w$', sentence, flags=re.UNICODE):
-                            break_tensor = torch.zeros(1, int(settings['samplerate'] * (int(np.random.uniform(0.3, 0.6) * 100) / 100)))
+                            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                            break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time))
                             self.audio_segments.append(break_tensor.clone())
                         if self.audio_segments:
                             audio_tensor = torch.cat(self.audio_segments, dim=-1)
                             start_time = self.sentences_total_time
-                            duration = audio_tensor.shape[-1] / settings['samplerate']
+                            duration = round((audio_tensor.shape[-1] / settings['samplerate']), 2)
                             end_time = start_time + duration
                             self.sentences_total_time = end_time
                             sentence_obj = {
