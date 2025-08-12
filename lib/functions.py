@@ -1028,9 +1028,18 @@ def get_num2words_compat(lang_iso1):
 
 def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
     # match up to 12 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
-    number_re = re.compile(r'\b\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?\b', re.UNICODE)
-    def clean_num(match):
-        tok = unicodedata.normalize('NFKC', match.group())
+    # handle optional range with dash/en dash/em dash between numbers
+    number_re = re.compile(
+        r'(?<!\w)'
+        r'(\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?)'  # first number
+        r'(?:\s*[-–—]\s*'                               # dash separator (any type)
+        r'(\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?))?' # optional second number
+        r'(?!\w)',
+        re.UNICODE
+    )
+
+    def clean_single_num(num_str):
+        tok = unicodedata.normalize('NFKC', num_str)
         # pass through infinities/nans
         if tok.lower() in ('inf', 'infinity', 'nan'):
             return tok
@@ -1047,9 +1056,23 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
             new_lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
             return num2words(num, lang=new_lang_iso1)
         else:
-            phoneme_map = language_math_phonemes.get(lang, language_math_phonemes.get(default_language_code, language_math_phonemes['eng']))
+            phoneme_map = language_math_phonemes.get(
+                lang,
+                language_math_phonemes.get(default_language_code, language_math_phonemes['eng'])
+            )
             return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
-    return number_re.sub(clean_num, text)
+
+    def clean_match(match):
+        first_num = clean_single_num(match.group(1))
+        if match.group(2):
+            second_num = clean_single_num(match.group(2))
+            # preserve the dash type from the original match
+            dash_part = re.search(r'[-–—]', match.group(0)).group(0)
+            return f"{first_num}{dash_part}{second_num}"
+        else:
+            return first_num
+
+    return number_re.sub(clean_match, text)
 
 def year2words(year_str, lang, lang_iso1, is_num2words_compat):
     try:
