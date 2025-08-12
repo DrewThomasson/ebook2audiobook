@@ -930,7 +930,10 @@ def get_sentences(text, lang, tts_engine):
                     text_part = words[0]
                     for w in words[1:]:
                         if len(text_part) + 1 + len(w) <= max_chars:
-                            text_part += ' ' + w
+                            text_part = text_part.strip()
+                            w = w.strip()
+                            if w:
+                                text_part += ' ' + w
                         else:
                             text_part = text_part.strip()
                             if text_part:
