@@ -858,39 +858,41 @@ def get_sentences(text, lang, tts_engine):
                 parts = [p for p in split_inclusive(s, pattern) if p]
                 if parts:
                     buffer = ''
-                    for part in parts:
-                        if not buffer:
-                            buffer = part
-                            continue
-                        buffer_length = len(buffer)
-                        if buffer_length < min_tokens or buffer_length < max_chars:
-                            buffer = buffer + ' ' + part
-                        else :
-                            buffer = buffer.strip()
-                            if buffer:
-                                soft_list.append(buffer)
-                            buffer = part
+                    for idx, part in enumerate(parts):
+                        # Predict length if we glue this part
+                        predicted_length = len(buffer) + (1 if buffer else 0) + len(part)
+                        # Peek ahead to see if gluing will exceed max_chars
+                        if predicted_length <= max_chars:
+                            buffer = (buffer + ' ' + part).strip() if buffer else part
+                        else:
+                            # If we overshoot, check if buffer ends with punctuation
+                            if buffer and not any(buffer.rstrip().endswith(p) for p in punctuation_split_soft_set):
+                                # Try to backtrack to last punctuation inside buffer
+                                last_punct_idx = max((buffer.rfind(p) for p in punctuation_split_soft_set if p in buffer), default=-1)
+                                if last_punct_idx != -1:
+                                    soft_list.append(buffer[:last_punct_idx+1].strip())
+                                    leftover = buffer[last_punct_idx+1:].strip()
+                                    buffer = leftover + ' ' + part if leftover else part
+                                else:
+                                    # No punctuation, just split as-is
+                                    soft_list.append(buffer.strip())
+                                    buffer = part
+                            else:
+                                soft_list.append(buffer.strip())
+                                buffer = part
                     if buffer:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
-                        if not any(ch.isalnum() for ch in cleaned):
-                            continue
-                        buffer = buffer.strip()
-                        if buffer:
-                            soft_list.append(buffer)
+                        if any(ch.isalnum() for ch in cleaned):
+                            soft_list.append(buffer.strip())
                 else:
                     cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
-                    if not any(ch.isalnum() for ch in cleaned):
-                        continue
-                    s = s.strip()
-                    if s:
-                        soft_list.append(s)
+                    if any(ch.isalnum() for ch in cleaned):
+                        soft_list.append(s.strip())
             else:
                 cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
-                if not any(ch.isalnum() for ch in cleaned):
-                    continue
-                s = s.strip()
-                if s:
-                    soft_list.append(s)
+                if any(ch.isalnum() for ch in cleaned):
+                    soft_list.append(s.strip())
+
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
