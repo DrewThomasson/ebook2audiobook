@@ -3779,11 +3779,7 @@ def web_interface(args, ctx):
                                         checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
                                         radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
                                     }
-
                                     if (gr_audiobook_player) {
-                                        gr_audiobook_track.addEventListener('error', (e) => {
-                                            console.log('gr_audiobook_track load error:', e);
-                                        });
                                         if (!gr_audiobook_player.style.transition) {
                                             gr_audiobook_player.style.transition = 'filter 1s ease';
                                         }
