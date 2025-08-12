@@ -286,6 +286,8 @@ class Coqui:
                                     **fine_tuned_params
                                 )
                             audio_data = result.get('wav')
+                            gc.collect()
+                            torch.cuda.empty_cache()
                             if audio_data is not None:
                                 audio_data = audio_data.tolist()
                                 sourceTensor = self._tensor_type(audio_data)
@@ -486,6 +488,8 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         audio_sentence = result.get('wav')
+                        gc.collect()
+                        torch.cuda.empty_cache()
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['BARK']:
@@ -534,7 +538,9 @@ class Coqui:
                                 history_prompt=history_prompt,
                                 silent=True,
                                 **fine_tuned_params
-                            )                                
+                            )
+                        gc.collect()
+                        torch.cuda.empty_cache()
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
@@ -768,6 +774,8 @@ class Coqui:
                                 language=language,
                                 **speaker_argument
                             )
+                        gc.collect()
+                        torch.cuda.empty_cache()
                     if is_audio_data_valid(audio_sentence):
                         sourceTensor = self._tensor_type(audio_sentence)
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
