@@ -417,8 +417,6 @@ class Coqui:
     def convert(self, s_n, s):
         global xtts_builtin_speakers_list
         try:
-            if not s:
-                return True
             sentence_number = s_n
             sentence = s
             speaker = None
