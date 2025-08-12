@@ -2557,7 +2557,7 @@ def web_interface(args, ctx):
         gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
-            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
+            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=True)
             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row(elem_id='gr_row_audiobook_list'):
@@ -3818,21 +3818,19 @@ def web_interface(args, ctx):
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
                                                                     if (textarea) {
-                                                                        //if (track.__fade_timeout) {
+                                                                        if (track.__fade_timeout) {
                                                                             textarea.style.opacity = '1';
-                                                                        //}else{
-                                                                            //textarea.style.opacity = '0';
-                                                                        //}
+                                                                        }else{
+                                                                            textarea.style.opacity = '0';
+                                                                        }
                                                                         textarea.style.transition = 'none';
                                                                         textarea.value = this.activeCues[0].text;
-                                                                        /*
                                                                         clearTimeout(track.__fade_timeout);
                                                                         track.__fade_timeout = setTimeout(() => {
                                                                             textarea.style.transition = 'opacity 0.1s ease-in';
                                                                             textarea.style.opacity = '1';
                                                                             track.__fade_timeout = null;
                                                                         }, 33);
-                                                                        */
                                                                     }
                                                                 }
                                                             }
