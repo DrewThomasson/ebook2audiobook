@@ -3742,7 +3742,7 @@ def web_interface(args, ctx):
                                                     track.__fade_timeout = null;
                                                     if(textarea){
                                                         textarea.style.fontSize = '14px';
-                                                        textarea.style.fontWeight = 'bold';
+                                                        textarea.style.fontWeight = 'normal';
                                                         textarea.style.width = '100%';
                                                         textarea.style.height = 'auto';
                                                         textarea.style.textAlign = 'center';
