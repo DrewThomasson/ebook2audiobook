@@ -3741,22 +3741,22 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.appendChild(gr_audiobook_track);
                                         }
                                         gr_audiobook_track.addEventListener('load', (val) => {
-                                            console.log('val: ',val);
                                             const track = gr_audiobook_player.textTracks && gr_audiobook_player.textTracks[0];
                                             if (track) {
                                                 track.mode = 'showing';
+                                                if(textarea){
+                                                    textarea.style.fontSize = '14px';
+                                                    textarea.style.fontWeight = 'bold';
+                                                    textarea.style.width = '100%';
+                                                    textarea.style.height = 'auto';
+                                                    textarea.style.textAlign = 'center';
+                                                    textarea.style.margin = '0';
+                                                    textarea.style.padding = '7px 0 7px 0';
+                                                    textarea.style.lineHeight = '14px';
+                                                    textarea.value = '...';
+                                                }
                                                 if (!track.__cueBound) {
                                                     track.__fade_timeout = null;
-                                                    if(textarea){
-                                                        textarea.style.fontSize = '14px';
-                                                        textarea.style.fontWeight = 'bold';
-                                                        textarea.style.width = '100%';
-                                                        textarea.style.height = 'auto';
-                                                        textarea.style.textAlign = 'center';
-                                                        textarea.style.margin = '0';
-                                                        textarea.style.padding = '7px 0 7px 0';
-                                                        textarea.style.lineHeight = '14px';
-                                                    }
                                                     track.addEventListener('cuechange', function(val) {
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
