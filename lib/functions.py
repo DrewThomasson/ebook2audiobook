@@ -1027,15 +1027,15 @@ def get_num2words_compat(lang_iso1):
         return False
 
 def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
-    # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
-    number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
+    # match up to 12 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
+    number_re = re.compile(r'\b\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?\b', re.UNICODE)
     def clean_num(match):
         tok = unicodedata.normalize('NFKC', match.group())
         # pass through infinities/nans
         if tok.lower() in ('inf', 'infinity', 'nan'):
             return tok
-        # strip commas for numeric parsing
-        clean = tok.replace(',', '')
+        # strip commas (and spaces after commas) for numeric parsing
+        clean = tok.replace(',', '').replace('\u00A0', '').replace(' ', '')
         try:
             num = float(clean) if '.' in clean else int(clean)
         except (ValueError, OverflowError):
@@ -3810,7 +3810,6 @@ def web_interface(args, ctx):
                                         const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
                                         if (existing) existing.remove();
 
-                                        // Keep your original textarea styling
                                         textarea.style.fontSize = '14px';
                                         textarea.style.fontWeight = 'bold';
                                         textarea.style.width = '100%';
@@ -3821,7 +3820,6 @@ def web_interface(args, ctx):
                                         textarea.style.lineHeight = '14px';
                                         textarea.value = '...';
 
-                                        // Load the VTT from blob URL and parse it
                                         fetch(path)
                                             .then(res => res.text())
                                             .then(vttText => {
@@ -3865,8 +3863,6 @@ def web_interface(args, ctx):
                                     console.log('load_vtt error:', e);
                                 }
                             };
-
-                            // --- Optimized parser ---
                             function parseVTTFast(vtt) {
                                 const lines = vtt.split(/\r?\n/);
                                 const cues = [];
@@ -3897,7 +3893,6 @@ def web_interface(args, ctx):
                                 pushCue();
                                 return cues;
                             }
-
                             function toSeconds(ts) {
                                 const parts = ts.split(":");
                                 if (parts.length === 3) {
@@ -3907,7 +3902,6 @@ def web_interface(args, ctx):
                                 }
                                 return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
                             }
-
                             function findCue(cues, time) {
                                 let lo = 0, hi = cues.length - 1;
                                 while (lo <= hi) {
