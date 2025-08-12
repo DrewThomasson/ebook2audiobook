@@ -530,7 +530,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
 
-    def walk(node):
+    def repl_walk(node):
         try:
             for child in node.children:
                 if isinstance(child, NavigableString):
@@ -589,23 +589,51 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
-        tuples_list = list(walk(body))
+        tuples_list = list(repl_walk(body))
         if not tuples_list:
             error = 'No tuples_list from body created!'
             print(error)
             return None
-        text_array = []
+        clean_list = []
+        i = 0
+        while i < len(sentences):
+            current = sentences[i]
+            if current == "‡break‡":
+                if clean_list:
+                    prev = clean_list[-1]
+                    if prev in ("‡break‡", "‡pause‡"):
+                        i += 1
+                        continue
+                    if prev and (prev[-1].isalnum() or prev[-1] == ' '):
+                        if i + 1 < len(sentences):
+                            next_sentence = sentences[i + 1]
+                            merged_length = len(prev.rstrip()) + 1 + len(next_sentence.lstrip())
+                            if merged_length <= max_chars:
+                                # Merge with space handling
+                                if not prev.endswith(" ") and not next_sentence.startswith(" "):
+                                    clean_list[-1] = prev + " " + next_sentence
+                                else:
+                                    clean_list[-1] = prev + next_sentence
+                                i += 2
+                                continue
+                            else:
+                                clean_list.append(current)
+                                i += 1
+                                continue
+            clean_list.append(current)
+            i += 1
+        text_list = []
         handled_tables = set()
         prev_typ = None
         for typ, payload in tuples_list:
             if typ == "heading":
-                text_array.append(payload.strip())
+                text_list.append(payload.strip())
             elif typ == "break":
                 if prev_typ != 'break':
-                    text_array.append(TTS_SML['break'])
+                    text_list.append(TTS_SML['break'])
             elif typ == 'pause':
                 if prev_typ != 'pause':
-                    text_array.append(TTS_SML['pause'])
+                    text_list.append(TTS_SML['pause'])
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -626,13 +654,13 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     else:
                         line = " — ".join(cells)
                     if line:
-                        text_array.append(line.strip())
+                        text_list.append(line.strip())
             else:
                 text = payload.strip()
                 if text:
-                    text_array.append(text)
+                    text_list.append(text)
             prev_typ = typ
-        text = ' '.join(text_array)
+        text = ' '.join(text_list)
         if not re.search(r"[^\W_]", text):
             error = 'No valid text found!'
             print(error)
@@ -2755,7 +2783,7 @@ def web_interface(args, ctx):
                 gr.update(interactive=False),
                 gr.update(interactive=False),
                 gr.update(interactive=False),
-                gr.update(interactive=False),
+                gr.update(interactive=False)
             )
         
         def enable_components():
@@ -2768,7 +2796,7 @@ def web_interface(args, ctx):
                 gr.update(interactive=True),
                 gr.update(interactive=True),
                 gr.update(interactive=True),
-                gr.update(interactive=True),
+                gr.update(interactive=True)
             )
 
         def change_gr_ebook_file(data, id):
