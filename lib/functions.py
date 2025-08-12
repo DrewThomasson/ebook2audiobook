@@ -566,6 +566,15 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                     if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
                                         yield ("break", TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
+                                    yield ("pause", TTS_SML['pause'])
+
+                        else:
+                            yield from tuple_row(child, last_text_char)
+
+        except Exception as e:
+            error = f'filter_chapter() tuple_row() error: {e}'
+            DependencyError(error)
+            return None
 
     try:
         heading_tags = [f'h{i}' for i in range(1, 5)]
