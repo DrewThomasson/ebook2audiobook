@@ -1026,33 +1026,48 @@ def get_num2words_compat(lang_iso1):
     except Exception as e:
         return False
 
-def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
-    # match up to 12 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
-    # handle optional range with dash/en dash/em dash between numbers
-    # allow trailing punctuation after the number(s)
+def set_formatted_number(
+    text: str, lang, lang_iso1: str, is_num2words_compat: bool,
+    max_single_value: int = 999_999_999_999_999_999
+):
+    # match up to 18 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
+    # handle optional range with dash/en dash/em dash between numbers, and allow trailing punctuation
     number_re = re.compile(
         r'(?<!\w)'
-        r'(\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?)'      # first number
+        r'(\d{1,18}(?:,\s*\d{1,18})*(?:\.\d{1,12})?)'      # first number
         r'(?:\s*([-–—])\s*'                                # dash type
-        r'(\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?))?'    # optional second number
-        r'([^\w\s]*)',                                     # optional trailing punctuation (em dash, comma, etc.)
+        r'(\d{1,18}(?:,\s*\d{1,18})*(?:\.\d{1,12})?))?'    # optional second number
+        r'([^\w\s]*)',                                     # optional trailing punctuation
         re.UNICODE
     )
 
+    def normalize_commas(num_str: str) -> str:
+        """Normalize number string to standard comma format: 1,234,567"""
+        tok = num_str.replace('\u00A0', '').replace(' ', '')
+        if '.' in tok:
+            integer_part, decimal_part = tok.split('.', 1)
+            integer_part = integer_part.replace(',', '')
+            integer_part = "{:,}".format(int(integer_part))
+            return f"{integer_part}.{decimal_part}"
+        else:
+            integer_part = tok.replace(',', '')
+            return "{:,}".format(int(integer_part))
+
     def clean_single_num(num_str):
         tok = unicodedata.normalize('NFKC', num_str)
-        # pass through infinities/nans
         if tok.lower() in ('inf', 'infinity', 'nan'):
             return tok
-        # strip commas (and spaces after commas) for numeric parsing
         clean = tok.replace(',', '').replace('\u00A0', '').replace(' ', '')
         try:
             num = float(clean) if '.' in clean else int(clean)
         except (ValueError, OverflowError):
             return tok
-        # skip out of range or non finite
         if not math.isfinite(num) or abs(num) > max_single_value:
             return tok
+
+        # Normalize commas before final output
+        tok = normalize_commas(tok)
+
         if is_num2words_compat:
             new_lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
             return num2words(num, lang=new_lang_iso1)
