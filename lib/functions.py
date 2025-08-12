@@ -3747,9 +3747,8 @@ def web_interface(args, ctx):
                                                         textarea.style.height = 'auto';
                                                         textarea.style.textAlign = 'center';
                                                         textarea.style.margin = '0';
-                                                        textarea.style.paddingLeft = '0';
-                                                        textarea.style.paddingRight = '0';
-                                                        textarea.style.lineHeight = '15px';
+                                                        textarea.style.padding = '5px 0 5px 0';
+                                                        textarea.style.lineHeight = '0';
                                                     }
                                                     track.addEventListener('cuechange', function () {
                                                         if (this.activeCues) {
