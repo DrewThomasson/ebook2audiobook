@@ -3515,7 +3515,7 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_audiobook_vtt.change(
-            fn=lambda: gr.update(value=""),
+            fn=lambda: gr.update(value=''),
             inputs=[],
             outputs=[gr_audiobook_sentence]
         ).then(
@@ -3755,6 +3755,7 @@ def web_interface(args, ctx):
                                                         textarea.style.margin = '0';
                                                         textarea.style.padding = '7px 0 7px 0';
                                                         textarea.style.lineHeight = '14px';
+                                                        textarea.value = '';
                                                     }
                                                     track.addEventListener('cuechange', function () {
                                                         if (this.activeCues) {
