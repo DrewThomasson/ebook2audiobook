@@ -1,5 +1,5 @@
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
-import numpy as np, regex as re, soundfile as sf, torch, torchaudio
+import gc, numpy as np, regex as re, soundfile as sf, torch, torchaudio
 
 from huggingface_hub import hf_hub_download
 from pathlib import Path
