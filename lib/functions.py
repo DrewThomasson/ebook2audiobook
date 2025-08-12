@@ -2529,7 +2529,7 @@ def web_interface(args, ctx):
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=2, max_lines=2)
+            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row(elem_id='gr_row_audiobook_list'):
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
@@ -3742,7 +3742,7 @@ def web_interface(args, ctx):
                                                     track.__fade_timeout = null;
                                                     if(textarea){
                                                         textarea.style.fontSize = '14px';
-                                                        textarea.style.fontWeight = 'normal';
+                                                        textarea.style.fontWeight = 'bold';
                                                         textarea.style.width = '100%';
                                                         textarea.style.height = 'auto';
                                                         textarea.style.textAlign = 'center';
