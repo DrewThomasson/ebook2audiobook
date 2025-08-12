@@ -3755,9 +3755,9 @@ def web_interface(args, ctx):
                                                         textarea.style.margin = '0';
                                                         textarea.style.padding = '7px 0 7px 0';
                                                         textarea.style.lineHeight = '14px';
-                                                        textarea.value = '';
                                                     }
-                                                    track.addEventListener('cuechange', function () {
+                                                    track.addEventListener('cuechange', function(val) {
+                                                        console.log('val: ',val);
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
