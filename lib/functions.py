@@ -548,7 +548,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     else:
                         return_data = False
                         if name in proc_tags:
-                            for inner in walk(child):
+                            for inner in tuple_row(child):
                                 return_data = True
                                 yield inner
                             if return_data:
@@ -557,9 +557,9 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 elif name in heading_tags or name in pause_tags:
                                     yield ("pause", TTS_SML['pause'])                                 
                         else:
-                            yield from walk(child)
+                            yield from tuple_row(child)
         except Exception as e:
-            error = f'filter_chapter() walk() error: {e}'
+            error = f'filter_chapter() tuple_row() error: {e}'
             DependencyError(error)
             return None
 
