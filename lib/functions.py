@@ -2529,7 +2529,7 @@ def web_interface(args, ctx):
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
+            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3i)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row(elem_id='gr_row_audiobook_list'):
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
@@ -2732,7 +2732,7 @@ def web_interface(args, ctx):
             session = context.get_session(id)
             session['audiobook'] = selected
             visible = True if len(audiobook_options) else False
-            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(value=''), gr.update(visible=visible)
+            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(visible=visible)
         
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
@@ -2902,14 +2902,14 @@ def web_interface(args, ctx):
                         msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
+                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_custom_model_del':
                         selected_name = os.path.basename(custom_model)
                         shutil.rmtree(custom_model, ignore_errors=True)                           
                         msg = f'Custom model {selected_name} deleted!'
                         session['custom_model'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return update_gr_custom_model_list(id), gr.update(), gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_audiobook_del':
                         selected_name = Path(audiobook).stem
                         if os.path.isdir(audiobook):
@@ -2922,12 +2922,12 @@ def web_interface(args, ctx):
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(value=''), gr.update(value=''), update_gr_audiobook_list(id), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
-            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+            return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                 
         def prepare_audiobook_download(selected):
             if os.path.exists(selected):
@@ -3534,10 +3534,16 @@ def web_interface(args, ctx):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_audiobook_sentence, gr_group_audiobook_list]
+            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_group_audiobook_list]
+        ).then(
+            fn=lambda: gr.update(value=""),   # clear the textbox/textarea
+            inputs=[],
+            outputs=[gr_audiobook_sentence]
         ).then(
             fn=None,
-            js='()=>{window.reset_elements?.();}'
+            inputs=[],
+            outputs=[],
+            js="()=>{window.reset_elements?.();}"
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -3666,12 +3672,12 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
-            outputs=[gr_custom_model_list, gr_audiobook_vtt, gr_audiobook_sentence, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         gr_confirm_no_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-            outputs=[gr_custom_model_list, gr_audiobook_vtt, gr_audiobook_sentence, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         app.load(
             fn=None,
