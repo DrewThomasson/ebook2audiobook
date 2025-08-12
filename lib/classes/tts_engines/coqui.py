@@ -419,6 +419,7 @@ class Coqui:
         try:
             sentence_number = s_n
             sentence = s
+            print(f'--------------{sentence}------------')
             speaker = None
             audio_data = False
             trim_audio_buffer = 0.004
