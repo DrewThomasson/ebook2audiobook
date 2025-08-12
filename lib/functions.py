@@ -3515,9 +3515,13 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_audiobook_vtt.change(
+            fn=lambda: gr.update(value=""),
+            inputs=[],
+            outputs=[gr_audiobook_sentence]
+        ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
-            js='(data)=>{window.load_vtt?.(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'  
+            js='(data)=>{window.load_vtt?.(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'         
         )
         gr_tab_progress.change(
             fn=None,
@@ -3535,10 +3539,6 @@ def web_interface(args, ctx):
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_group_audiobook_list]
-        ).then(
-            fn=lambda: gr.update(value=""),   # clear the textbox/textarea
-            inputs=[],
-            outputs=[gr_audiobook_sentence]
         ).then(
             fn=None,
             inputs=[],
