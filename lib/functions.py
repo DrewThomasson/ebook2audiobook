@@ -3740,7 +3740,8 @@ def web_interface(args, ctx):
                                         if (!gr_audiobook_track.parentNode || gr_audiobook_track.parentNode !== gr_audiobook_player) {
                                             gr_audiobook_player.appendChild(gr_audiobook_track);
                                         }
-                                        gr_audiobook_track.addEventListener('load', () => {
+                                        gr_audiobook_track.addEventListener('load', (val) => {
+                                            console.log('val: ',val);
                                             const track = gr_audiobook_player.textTracks && gr_audiobook_player.textTracks[0];
                                             if (track) {
                                                 track.mode = 'showing';
@@ -3757,7 +3758,6 @@ def web_interface(args, ctx):
                                                         textarea.style.lineHeight = '14px';
                                                     }
                                                     track.addEventListener('cuechange', function(val) {
-                                                        console.log('val: ',val);
                                                         if (this.activeCues) {
                                                             if (this.activeCues[0]) {
                                                                 if (gr_audiobook_sentence) {
