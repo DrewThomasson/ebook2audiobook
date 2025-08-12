@@ -1029,12 +1029,13 @@ def get_num2words_compat(lang_iso1):
 def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
     # match up to 12 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
     # handle optional range with dash/en dash/em dash between numbers
+    # allow trailing punctuation after the number(s)
     number_re = re.compile(
         r'(?<!\w)'
-        r'(\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?)'  # first number
-        r'(?:\s*[-–—]\s*'                               # dash separator (any type)
-        r'(\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?))?' # optional second number
-        r'(?!\w)',
+        r'(\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?)'      # first number
+        r'(?:\s*([-–—])\s*'                                # dash type
+        r'(\d{1,12}(?:,\s*\d{1,12})*(?:\.\d{1,12})?))?'    # optional second number
+        r'([^\w\s]*)',                                     # optional trailing punctuation (em dash, comma, etc.)
         re.UNICODE
     )
 
@@ -1064,13 +1065,13 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
 
     def clean_match(match):
         first_num = clean_single_num(match.group(1))
-        if match.group(2):
-            second_num = clean_single_num(match.group(2))
-            # preserve the dash type from the original match
-            dash_part = re.search(r'[-–—]', match.group(0)).group(0)
-            return f"{first_num}{dash_part}{second_num}"
+        dash_char = match.group(2) or ''
+        second_num = clean_single_num(match.group(3)) if match.group(3) else ''
+        trailing = match.group(4) or ''
+        if second_num:
+            return f"{first_num}{dash_char}{second_num}{trailing}"
         else:
-            return first_num
+            return f"{first_num}{trailing}"
 
     return number_re.sub(clean_match, text)
 
@@ -1190,19 +1191,16 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     re_ordinal = re.compile(r'(?<!\w)(\d+)(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)')
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     text = re_ordinal.sub(_ordinal_to_words, text)
-
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
     normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
-
     # Replace unambiguous symbols everywhere
     if normal_replacements:
         sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
         text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
-
     # Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
         ambiguous_pattern = (
@@ -1213,8 +1211,6 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
         text = re.sub(ambiguous_pattern, repl_ambiguous, text)
-
-    # Finally, convert formatted numbers (decimals, thousands) using your existing logic
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
