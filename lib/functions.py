@@ -3866,22 +3866,74 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
-
                         if (typeof window.load_vtt !== 'function') {
                             window.load_vtt = (path) => {
                                 try {
                                     if (!window.load_vtt_timeout) { window.load_vtt_timeout = null; }
-                                    
-                                    const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
-                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
-                                    // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
-                                    if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
-                                        const _m = gr_audiobook_player.querySelector('audio,video');
-                                        if (_m) gr_audiobook_player = _m;
+
+                                    const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                    let player = gr_root.querySelector('#gr_audiobook_player');
+                                    if (player && !player.matches('audio,video')) {
+                                        const _m = player.querySelector('audio,video');
+                                        if (_m) player = _m;
                                     }
-                                    const gr_audiobook_track = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
-                                    if (gr_audiobook_player && gr_audiobook_track) {
-                                        gr_audiobook_track.src = path;
+
+                                    const gr_audiobook_sentence = gr_root.querySelector('#gr_audiobook_sentence');
+                                    const textarea = gr_audiobook_sentence?.querySelector('textarea');
+
+                                    if (player && textarea) {
+                                        // Remove existing <track> to avoid browser cue cache
+                                        const existingTrack = player.querySelector('#gr_audiobook_track');
+                                        if (existingTrack) existingTrack.remove();
+
+                                        // Style the textarea
+                                        Object.assign(textarea.style, {
+                                            fontSize: '14px',
+                                            fontWeight: 'bold',
+                                            width: '100%',
+                                            height: 'auto',
+                                            textAlign: 'center',
+                                            margin: '0',
+                                            padding: '7px 0',
+                                            lineHeight: '14px'
+                                        });
+                                        textarea.value = '...';
+
+                                        fetch(path)
+                                            .then(res => res.text())
+                                            .then(vttText => {
+                                                const cues = parseVTTFast(vttText);
+                                                let lastCue = null;
+                                                let fadeTimeout = null;
+
+                                                player.addEventListener('timeupdate', () => {
+                                                    const cue = findCue(cues, player.currentTime);
+                                                    if (cue && cue !== lastCue) {
+                                                        if (fadeTimeout) {
+                                                            textarea.style.opacity = '1';
+                                                        } else {
+                                                            textarea.style.opacity = '0';
+                                                        }
+                                                        textarea.style.transition = 'none';
+                                                        textarea.value = cue.text;
+                                                        clearTimeout(fadeTimeout);
+                                                        fadeTimeout = setTimeout(() => {
+                                                            textarea.style.transition = 'opacity 0.1s ease-in';
+                                                            textarea.style.opacity = '1';
+                                                            fadeTimeout = null;
+                                                        }, 33);
+                                                        lastCue = cue;
+                                                    } else if (!cue && lastCue !== null) {
+                                                        textarea.value = '...';
+                                                        lastCue = null;
+                                                    }
+                                                });
+
+                                                player.addEventListener('ended', () => {
+                                                    textarea.value = '...';
+                                                    lastCue = null;
+                                                });
+                                            });
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
@@ -3890,6 +3942,63 @@ def web_interface(args, ctx):
                                     console.log('load_vtt error:', e);
                                 }
                             };
+
+                            // --- Ultra-fast parser ---
+                            function parseVTTFast(vtt) {
+                                const lines = vtt.split(/\r?\n/);
+                                const cues = [];
+                                const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
+                                let start = null, end = null, textBuffer = [];
+
+                                function pushCue() {
+                                    if (start !== null && end !== null && textBuffer.length) {
+                                        cues.push({ start, end, text: textBuffer.join("\n") });
+                                    }
+                                    start = end = null;
+                                    textBuffer.length = 0;
+                                }
+
+                                for (let i = 0, len = lines.length; i < len; i++) {
+                                    const line = lines[i];
+                                    if (!line.trim()) { // blank line
+                                        pushCue();
+                                        continue;
+                                    }
+                                    if (line.includes("-->")) {
+                                        const [s, e] = line.split("-->").map(l => l.trim().split(" ")[0]);
+                                        if (timePattern.test(s) && timePattern.test(e)) {
+                                            start = toSeconds(s);
+                                            end = toSeconds(e);
+                                        }
+                                    } else if (!timePattern.test(line)) {
+                                        textBuffer.push(line);
+                                    }
+                                }
+                                pushCue();
+                                return cues;
+                            }
+
+                            function toSeconds(ts) {
+                                const parts = ts.split(":");
+                                if (parts.length === 3) {
+                                    return parseInt(parts[0], 10) * 3600 +
+                                           parseInt(parts[1], 10) * 60 +
+                                           parseFloat(parts[2]);
+                                }
+                                return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
+                            }
+
+                            function findCue(cues, time) {
+                                let lo = 0, hi = cues.length - 1;
+                                while (lo <= hi) {
+                                    const mid = (lo + hi) >> 1;
+                                    const cue = cues[mid];
+                                    if (time < cue.start) hi = mid - 1;
+                                    else if (time >= cue.end) lo = mid + 1;
+                                    else return cue;
+                                }
+                                return null;
+                            }
                         }
                         if(typeof window.tab_progress !== 'function'){
                             const gr_tab_progress = document.querySelector('#gr_tab_progress');
