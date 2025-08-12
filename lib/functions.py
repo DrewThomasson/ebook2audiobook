@@ -1026,10 +1026,7 @@ def get_num2words_compat(lang_iso1):
     except Exception as e:
         return False
 
-def set_formatted_number(
-    text: str, lang, lang_iso1: str, is_num2words_compat: bool,
-    max_single_value: int = 999_999_999_999_999_999
-):
+def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999_999):
     # match up to 18 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
     # handle optional range with dash/en dash/em dash between numbers, and allow trailing punctuation
     number_re = re.compile(
