@@ -414,9 +414,11 @@ class Coqui:
         sf.write(tmp_path, wav_numpy, expected_sr, subtype="PCM_16")
         return tmp_path
 
-    def convert(self, sentence_number, sentence):
+    def convert(self, s_n, s):
         global xtts_builtin_speakers_list
         try:
+            sentence_number = s_n
+            sentence = s
             speaker = None
             audio_data = False
             trim_audio_buffer = 0.004
@@ -800,10 +802,6 @@ class Coqui:
                         else:
                             error = f"Cannot create {final_sentence_file}"
                             print(error)
-                    if torch.cuda.is_available():
-                        torch.cuda.synchronize()
-                    # Force PyTorch to complete any pending ops, even on CPU
-                    torch._C._sleep(0)
             else:
                 error = f"convert() error: {self.session['tts_engine']} is None"
                 print(error)
