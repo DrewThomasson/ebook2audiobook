@@ -2659,7 +2659,7 @@ def web_interface(args, ctx):
                     color = "#F44336"  # Red = high
                 return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
             
-            rating = default_engine_settings[TTS_ENGINES[tts_engine]]['rating']
+            rating = default_engine_settings[tts_engine]['rating']
 
             return f"""
             <div style='margin:0; padding:0; font-size:12px; line-height:1.2; height:auto; display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px;'>
