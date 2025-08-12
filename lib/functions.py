@@ -3871,56 +3871,55 @@ def web_interface(args, ctx):
                                 try {
                                     if (!window.load_vtt_timeout) { window.load_vtt_timeout = null; }
 
-                                    const gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    let player = gr_root.querySelector('#gr_audiobook_player');
-                                    if (player && !player.matches('audio,video')) {
-                                        const _m = player.querySelector('audio,video');
-                                        if (_m) player = _m;
+                                    const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
+                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
+                                    if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
+                                        const _m = gr_audiobook_player.querySelector('audio,video');
+                                        if (_m) gr_audiobook_player = _m;
                                     }
 
-                                    const gr_audiobook_sentence = gr_root.querySelector('#gr_audiobook_sentence');
+                                    const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
                                     const textarea = gr_audiobook_sentence?.querySelector('textarea');
 
-                                    if (player && textarea) {
-                                        // Remove existing <track> to avoid browser cue cache
-                                        const existingTrack = player.querySelector('#gr_audiobook_track');
-                                        if (existingTrack) existingTrack.remove();
+                                    if (gr_audiobook_player && textarea) {
+                                        // Remove any <track> to bypass browser subtitle engine
+                                        const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
+                                        if (existing) existing.remove();
 
-                                        // Style the textarea
-                                        Object.assign(textarea.style, {
-                                            fontSize: '14px',
-                                            fontWeight: 'bold',
-                                            width: '100%',
-                                            height: 'auto',
-                                            textAlign: 'center',
-                                            margin: '0',
-                                            padding: '7px 0',
-                                            lineHeight: '14px'
-                                        });
+                                        // Keep your original textarea styling
+                                        textarea.style.fontSize = '14px';
+                                        textarea.style.fontWeight = 'bold';
+                                        textarea.style.width = '100%';
+                                        textarea.style.height = 'auto';
+                                        textarea.style.textAlign = 'center';
+                                        textarea.style.margin = '0';
+                                        textarea.style.padding = '7px 0 7px 0';
+                                        textarea.style.lineHeight = '14px';
                                         textarea.value = '...';
 
+                                        // Load the VTT from blob URL and parse it
                                         fetch(path)
                                             .then(res => res.text())
                                             .then(vttText => {
                                                 const cues = parseVTTFast(vttText);
                                                 let lastCue = null;
-                                                let fadeTimeout = null;
+                                                let fade_timeout = null;
 
-                                                player.addEventListener('timeupdate', () => {
-                                                    const cue = findCue(cues, player.currentTime);
+                                                gr_audiobook_player.addEventListener('timeupdate', () => {
+                                                    const cue = findCue(cues, gr_audiobook_player.currentTime);
                                                     if (cue && cue !== lastCue) {
-                                                        if (fadeTimeout) {
+                                                        if (fade_timeout) {
                                                             textarea.style.opacity = '1';
                                                         } else {
                                                             textarea.style.opacity = '0';
                                                         }
                                                         textarea.style.transition = 'none';
                                                         textarea.value = cue.text;
-                                                        clearTimeout(fadeTimeout);
-                                                        fadeTimeout = setTimeout(() => {
+                                                        clearTimeout(fade_timeout);
+                                                        fade_timeout = setTimeout(() => {
                                                             textarea.style.transition = 'opacity 0.1s ease-in';
                                                             textarea.style.opacity = '1';
-                                                            fadeTimeout = null;
+                                                            fade_timeout = null;
                                                         }, 33);
                                                         lastCue = cue;
                                                     } else if (!cue && lastCue !== null) {
@@ -3929,7 +3928,7 @@ def web_interface(args, ctx):
                                                     }
                                                 });
 
-                                                player.addEventListener('ended', () => {
+                                                gr_audiobook_player.addEventListener('ended', () => {
                                                     textarea.value = '...';
                                                     lastCue = null;
                                                 });
@@ -3943,7 +3942,7 @@ def web_interface(args, ctx):
                                 }
                             };
 
-                            // --- Ultra-fast parser ---
+                            // --- Optimized parser ---
                             function parseVTTFast(vtt) {
                                 const lines = vtt.split(/\r?\n/);
                                 const cues = [];
@@ -3960,10 +3959,7 @@ def web_interface(args, ctx):
 
                                 for (let i = 0, len = lines.length; i < len; i++) {
                                     const line = lines[i];
-                                    if (!line.trim()) { // blank line
-                                        pushCue();
-                                        continue;
-                                    }
+                                    if (!line.trim()) { pushCue(); continue; }
                                     if (line.includes("-->")) {
                                         const [s, e] = line.split("-->").map(l => l.trim().split(" ")[0]);
                                         if (timePattern.test(s) && timePattern.test(e)) {
