@@ -1,5 +1,5 @@
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
-import gc, numpy as np, regex as re, soundfile as sf, torch, torchaudio
+import numpy as np, regex as re, soundfile as sf, torch, torchaudio
 
 from huggingface_hub import hf_hub_download
 from pathlib import Path
@@ -801,7 +801,6 @@ class Coqui:
                             error = f"Cannot create {final_sentence_file}"
                             print(error)
                     torch.cuda.synchronize()
-                    gc.collect()
                     torch.cuda.empty_cache()
             else:
                 error = f"convert() error: {self.session['tts_engine']} is None"
