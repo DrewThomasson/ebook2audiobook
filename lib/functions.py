@@ -530,38 +530,42 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
 
-    def tuple_row(node):
+    def tuple_row(node, last_text_char=None):
         try:
             for child in node.children:
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
                         yield ("text", text)
+                        last_text_char = text[-1] if text else last_text_char
+
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
                         title = child.get_text(strip=True)
                         if title:
                             yield ("heading", title)
+                            last_text_char = title[-1] if title else last_text_char
+
                     elif name == "table":
                         yield ("table", child)
+
                     else:
                         return_data = False
                         if name in proc_tags:
-                            for inner in tuple_row(child):
+                            for inner in tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
+                                # Track last char if this is text or heading
+                                if inner[0] in ("text", "heading") and inner[1]:
+                                    last_text_char = inner[1][-1]
+
                             if return_data:
                                 if name in break_tags:
-                                    yield ("break", TTS_SML['break'])
+                                    # Only yield break if last char is NOT alnum or space
+                                    if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
+                                        yield ("break", TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
-                                    yield ("pause", TTS_SML['pause'])                                 
-                        else:
-                            yield from tuple_row(child)
-        except Exception as e:
-            error = f'filter_chapter() tuple_row() error: {e}'
-            DependencyError(error)
-            return None
 
     try:
         heading_tags = [f'h{i}' for i in range(1, 5)]
