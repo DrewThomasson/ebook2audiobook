@@ -800,8 +800,10 @@ class Coqui:
                         else:
                             error = f"Cannot create {final_sentence_file}"
                             print(error)
-                    torch.cuda.synchronize()
-                    torch.cuda.empty_cache()
+                    if torch.cuda.is_available():
+                        torch.cuda.synchronize()
+                    # Force PyTorch to complete any pending ops, even on CPU
+                    torch._C._sleep(0)
             else:
                 error = f"convert() error: {self.session['tts_engine']} is None"
                 print(error)
