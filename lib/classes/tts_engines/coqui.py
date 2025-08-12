@@ -419,7 +419,6 @@ class Coqui:
         try:
             sentence_number = s_n
             sentence = s
-            print(f'--------------{sentence}------------')
             speaker = None
             audio_data = False
             trim_audio_buffer = 0.004
@@ -440,8 +439,6 @@ class Coqui:
                         return False
             tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if tts:
-                if sentence[-1].isalnum():
-                    sentence = f'{sentence} —'
                 if sentence == TTS_SML['break']:
                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                     break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
@@ -453,6 +450,8 @@ class Coqui:
                     self.audio_segments.append(pause_tensor.clone())
                     return True
                 else:
+                    if sentence[-1].isalnum():
+                        sentence = f'{sentence} —'
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.008
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
@@ -481,7 +480,7 @@ class Coqui:
                         }
                         with torch.no_grad():
                             result = tts.inference(
-                                text=sentence.replace('.', ' — '),
+                                text=sentence.replace('.', ' —'),
                                 language=self.session['language_iso1'],
                                 gpt_cond_latent=settings['gpt_cond_latent'],
                                 speaker_embedding=settings['speaker_embedding'],
