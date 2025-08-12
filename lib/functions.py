@@ -632,6 +632,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                 if text:
                     text_list.append(text)
             prev_typ = typ
+        max_chars = language_mapping[lang]['max_chars'] - 4
         clean_list = []
         i = 0
         while i < len(text_list):
