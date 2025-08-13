@@ -2245,7 +2245,7 @@ def show_alert(state):
 def web_interface(args, ctx):
     global context
     context = ctx
-    session_id = gr.Request.session_hash
+    session_id = dict(gr.Request.query_params).get('session_hash')
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
