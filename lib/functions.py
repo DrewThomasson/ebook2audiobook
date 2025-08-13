@@ -3730,9 +3730,13 @@ def web_interface(args, ctx):
         ############ Timer to save session to localStorage
         gr_timer = gr.Timer(10, active=False)
         gr_timer.tick(
+            fn=heartbeat,
+            inputs=[gr_session],
+            outputs=None
+        ).then(
             fn=save_session,
             inputs=[gr_session, gr_state_update],
-            outputs=[gr_write_data, gr_state_update, gr_audiobook_list],
+            outputs=[gr_write_data, gr_state_update, gr_audiobook_list]
         ).then(
             fn=clear_event,
             inputs=[gr_session],
