@@ -64,6 +64,7 @@ class DependencyError(Exception):
             sys.exit(1)
 
 class SessionTracker:
+
     def __init__(self, timeout_seconds=30):
         self.timeout = timeout_seconds
         self.last_seen = {}
@@ -74,14 +75,16 @@ class SessionTracker:
         with self.lock:
             now = time.time()
             if id in self.last_seen and (now - self.last_seen[id]) < self.timeout:
-                error = 'Another tab or window is already active for this session. Close it first or if it quits or crashed unexpectly it will be avaiable in 30 seconds.'
+                msg = f'Duplicate session attempt blocked: {id}'
+                logging.warning(msg)
+                error = 'Another tab or window is already active for this session. Close it first, or wait 30 seconds after it quits/crashes.'
                 raise gr.Error(error)
+            logging.info(f"Session started: {id}")
             self.last_seen[id] = now
 
-    def heartbeat(self, id):
+    def ping(self, id):
         with self.lock:
             self.last_seen[id] = time.time()
-        return "pong"
 
     def _cleanup_loop(self):
         while True:
@@ -89,6 +92,7 @@ class SessionTracker:
             with self.lock:
                 stale = [id for id, ts in self.last_seen.items() if now - ts > self.timeout]
                 for id in stale:
+                    logging.info(f"Session expired: {id}")
                     self.last_seen.pop(id, None)
             time.sleep(5)
 
@@ -2644,8 +2648,9 @@ def web_interface(args, ctx):
 
         def heartbeat(id):
             if not id:
-                return
-            return ctx_tracker.heartbeat(id)
+                return None
+            ctx_tracker.heartbeat(id)
+            return None
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -3728,7 +3733,7 @@ def web_interface(args, ctx):
             outputs=None
         )
         ############ Timer to save session to localStorage
-        gr_timer = gr.Timer(10, active=False)
+        gr_timer = gr.Timer(9, active=False)
         gr_timer.tick(
             fn=heartbeat,
             inputs=[gr_session],
