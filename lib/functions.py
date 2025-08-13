@@ -92,7 +92,10 @@ class SessionTracker:
             with self.lock:
                 stale = [id for id, ts in self.last_seen.items() if now - ts > self.timeout]
                 for id in stale:
-                    logging.info(f"Session expired: {id}")
+                    session = context.get_session(id)
+                    session['cancellation_requested'] = True
+                    error = f'Session expired: {id}'
+                    logging.info(error)
                     self.last_seen.pop(id, None)
             time.sleep(5)
 
@@ -1973,10 +1976,11 @@ def convert_ebook(args, ctx=None):
 
             if ctx is not None:
                 context = ctx
+
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
-            session = context.get_session(id)
 
+            session = context.get_session(id)
             session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE   
             session['ebook'] = args['ebook']
             session['ebook_list'] = args['ebook_list']
