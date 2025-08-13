@@ -170,7 +170,7 @@ class SessionContext:
 
 context = None
 is_gui_process = False
-ctx_track = SessionTracker(timeout_seconds=30)
+ctx_tracker = SessionTracker(timeout_seconds=30)
 
 def recursive_proxy(data, manager=None):
     if manager is None:
@@ -2645,7 +2645,7 @@ def web_interface(args, ctx):
         def heartbeat(id):
             if not id:
                 return
-            return tracker.heartbeat(id)
+            return ctx_tracker.heartbeat(id)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -3449,7 +3449,7 @@ def web_interface(args, ctx):
                     try:
                         if 'id' not in data:
                             data['id'] = session_id
-                        tracker.start_session(session_id)
+                        ctx_tracker.start_session(session_id)
                         session = context.get_session(data['id'])
                         session['status'] = 'running'
                         restore_session_from_data(data, session)
