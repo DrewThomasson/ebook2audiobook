@@ -4042,13 +4042,6 @@ def web_interface(args, ctx):
             """,
             outputs=[gr_read_data],
         )
-        app.load(
-            fn=heartbeat,
-            inputs=[gr_session],
-            outputs=None,
-            every=7,
-            queue=False
-        )
     try:
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
