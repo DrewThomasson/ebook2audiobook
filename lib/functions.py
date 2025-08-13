@@ -47,10 +47,6 @@ from lib.classes.tts_manager import TTSManager
 #logging.getLogger("gradio").setLevel(logging.DEBUG)
 #logging.getLogger("httpx").setLevel(logging.DEBUG)
 
-context = None
-lock = threading.Lock()
-is_gui_process = False
-
 class DependencyError(Exception):
     def __init__(self, message=None):
         super().__init__(message)
@@ -67,31 +63,40 @@ class DependencyError(Exception):
         if not is_gui_process:
             sys.exit(1)
 
-def recursive_proxy(data, manager=None):
-    if manager is None:
-        manager = Manager()
-    if isinstance(data, dict):
-        proxy_dict = manager.dict()
-        for key, value in data.items():
-            proxy_dict[key] = recursive_proxy(value, manager)
-        return proxy_dict
-    elif isinstance(data, list):
-        proxy_list = manager.list()
-        for item in data:
-            proxy_list.append(recursive_proxy(item, manager))
-        return proxy_list
-    elif isinstance(data, (str, int, float, bool, type(None))):
-        return data
-    else:
-        error = f"Unsupported data type: {type(data)}"
-        print(error)
-        return
+class SessionTracker:
+    def __init__(self, timeout_seconds=30):
+        self.timeout = timeout_seconds
+        self.last_seen = {}
+        self.lock = threading.Lock()
+        threading.Thread(target=self._cleanup_loop, daemon=True).start()
+
+    def start_session(self, id):
+        with self.lock:
+            now = time.time()
+            if id in self.last_seen and (now - self.last_seen[id]) < self.timeout:
+                error = 'Another tab or window is already active for this session. Close it first or if it quits or crashed unexpectly it will be avaiable in 30 seconds.'
+                raise gr.Error(error)
+            self.last_seen[id] = now
+
+    def heartbeat(self, id):
+        with self.lock:
+            self.last_seen[id] = time.time()
+        return "pong"
+
+    def _cleanup_loop(self):
+        while True:
+            now = time.time()
+            with self.lock:
+                stale = [id for id, ts in self.last_seen.items() if now - ts > self.timeout]
+                for id in stale:
+                    self.last_seen.pop(id, None)
+            time.sleep(5)
 
 class SessionContext:
     def __init__(self):
         self.manager = Manager()
-        self.sessions = self.manager.dict()  # Store all session-specific contexts
-        self.cancellation_events = {}  # Store multiprocessing.Event for each session
+        self.sessions = self.manager.dict()
+        self.cancellation_events = {}
 
     def get_session(self, id):
         if id not in self.sessions:
@@ -162,6 +167,30 @@ class SessionContext:
                 }
             }, manager=self.manager)
         return self.sessions[id]
+
+context = None
+is_gui_process = False
+ctx_track = SessionTracker(timeout_seconds=30)
+
+def recursive_proxy(data, manager=None):
+    if manager is None:
+        manager = Manager()
+    if isinstance(data, dict):
+        proxy_dict = manager.dict()
+        for key, value in data.items():
+            proxy_dict[key] = recursive_proxy(value, manager)
+        return proxy_dict
+    elif isinstance(data, list):
+        proxy_list = manager.list()
+        for item in data:
+            proxy_list.append(recursive_proxy(item, manager))
+        return proxy_list
+    elif isinstance(data, (str, int, float, bool, type(None))):
+        return data
+    else:
+        error = f"Unsupported data type: {type(data)}"
+        print(error)
+        return
 
 def prepare_dirs(src, session):
     try:
@@ -2215,6 +2244,8 @@ def show_alert(state):
 
 def web_interface(args, ctx):
     global context
+    context = ctx
+    session_id = request.session_hash
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
@@ -2242,15 +2273,6 @@ def web_interface(args, ctx):
     visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
     visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
     visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
-    
-    # Buffer for real-time log streaming
-    log_buffer = Queue()
-    
-    # Event to signal when the process should stop
-    thread = None
-    stop_event = threading.Event()
-    
-    context = ctx
 
     theme = gr.themes.Origin(
         primary_hue='green',
@@ -2598,7 +2620,7 @@ def web_interface(args, ctx):
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
-        gr_state = gr.State(value={"hash": None})
+        gr_state_update = gr.State(value={"hash": None})
         gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
         gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
@@ -2619,6 +2641,11 @@ def web_interface(args, ctx):
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
+
+        def heartbeat(id):
+            if not id:
+                return
+            return tracker.heartbeat(id)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -3417,12 +3444,14 @@ def web_interface(args, ctx):
             msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
             try:
                 if data is None:
-                    session = context.get_session(str(uuid.uuid4()))
+                    session = context.get_session(session_id)
                 else:
                     try:
                         if 'id' not in data:
-                            data['id'] = str(uuid.uuid4())
+                            data['id'] = session_id
+                        tracker.start_session(session_id)
                         session = context.get_session(data['id'])
+                        session['status'] = 'running'
                         restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
                         if isinstance(session['ebook'], str):
@@ -3702,8 +3731,8 @@ def web_interface(args, ctx):
         gr_timer = gr.Timer(10, active=False)
         gr_timer.tick(
             fn=save_session,
-            inputs=[gr_session, gr_state],
-            outputs=[gr_write_data, gr_state, gr_audiobook_list],
+            inputs=[gr_session, gr_state_update],
+            outputs=[gr_write_data, gr_state_update, gr_audiobook_list],
         ).then(
             fn=clear_event,
             inputs=[gr_session],
@@ -3756,8 +3785,8 @@ def web_interface(args, ctx):
         )       
         gr_read_data.change(
             fn=change_gr_read_data,
-            inputs=[gr_read_data, gr_state],
-            outputs=[gr_write_data, gr_state, gr_session]
+            inputs=[gr_read_data, gr_state_update],
+            outputs=[gr_write_data, gr_state_update, gr_session]
         ).then(
             fn=restore_interface,
             inputs=[gr_session],
@@ -4008,6 +4037,13 @@ def web_interface(args, ctx):
                 }
             """,
             outputs=[gr_read_data],
+        )
+        app.load(
+            fn=heartbeat,
+            inputs=[gr_session],
+            outputs=None,
+            every=7,
+            queue=False
         )
     try:
         all_ips = get_all_ip_addresses()
