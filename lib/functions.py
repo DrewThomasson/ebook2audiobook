@@ -2649,7 +2649,7 @@ def web_interface(args, ctx):
         def heartbeat(id):
             if not id:
                 return None
-            ctx_tracker.heartbeat(id)
+            ctx_tracker.ping(id)
             return None
 
         def load_vtt_data(path):
