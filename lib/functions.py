@@ -3821,7 +3821,7 @@ def web_interface(args, ctx):
             ]
         ).then(
             fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
-            inputs=[gr_session]
+            inputs=[gr_session],
             outputs=[gr_glass_mask]
         )
         gr_confirm_yes_btn.click(
