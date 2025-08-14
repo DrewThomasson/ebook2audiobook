@@ -2660,10 +2660,10 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
-        def cleanup_session(id):
-            print(f'cleanup_session {id}')
-            if id is not None:
-                ctx_tracker.end_session(id)
+        def cleanup_session():
+            print(f'cleanup_session {session_id}')
+            if session_id is not None:
+                ctx_tracker.end_session(session_id)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -4067,7 +4067,7 @@ def web_interface(args, ctx):
             """,
             outputs=[gr_read_data],
         )
-        app.unload(lambda: cleanup_session(session_id))
+        app.unload(cleanup_session)
     try:
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
