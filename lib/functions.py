@@ -73,7 +73,7 @@ class SessionTracker:
         with self.lock:
             if id:
                 session = context.get_session(id)
-                print(f'session status: {session["status"]}')
+                print(f'session {id} status: {session["status"]}')
                 if session['status'] is None:
                     session['status'] = 'ready'
                     return True
