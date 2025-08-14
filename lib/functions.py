@@ -2822,8 +2822,7 @@ def web_interface(args, ctx):
                     gr.update(value=session['output_split']), gr.update(value=session['output_split_hours']), gr.update(active=True)
                 )
             except gr.Error as e:
-                outputs = outputs = tuple([gr.update() for _ in range(24)])
-                return outputs               
+                pass
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
