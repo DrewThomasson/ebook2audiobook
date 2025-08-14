@@ -3450,8 +3450,8 @@ def web_interface(args, ctx):
                             data['id'] = session_id
                         session = context.get_session(data['id'])
                         session_id = session['id']
+                        print(f'not ctx_tracker.start_session({session_id})')
                         if not ctx_tracker.start_session(session_id):
-                            print(f'not ctx_tracker.start_session({session_id})')
                             error = 'Another tab or window is already active for this session. Close all other tabs/windows or Retry later after if it crashed.'
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                         session['status'] = 'running'
