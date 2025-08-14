@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
-import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn, logging
+import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -42,10 +42,11 @@ from lib.classes.tts_manager import TTSManager
 context = None
 is_gui_process = False
 
-logging.basicConfig(
-    level=logging.INFO, # DEBUG for more verbosity
-    format="%(asctime)s [%(levelname)s] %(message)s"
-)
+#import logging
+#logging.basicConfig(
+#    level=logging.INFO, # DEBUG for more verbosity
+#    format="%(asctime)s [%(levelname)s] %(message)s"
+#)
 
 class DependencyError(Exception):
     def __init__(self, message=None):
