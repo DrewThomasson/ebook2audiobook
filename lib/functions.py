@@ -2200,7 +2200,7 @@ def restore_session_from_data(data, id):
                 else:
                     session[key] = value
     except Exception as e:
-        alert_exception(e)
+        DependencyError(e)
 
 def reset_ebook_session(id):
     session = context.get_session(id)
