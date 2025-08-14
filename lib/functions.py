@@ -2651,9 +2651,9 @@ def web_interface(args, ctx):
         def heartbeat(id):
             print(f'heartbeat: {id}')
             if not id:
-                return None
+                return gr.update(value='')
             ctx_tracker.ping(id)
-            return None
+            return gr.update(value=id)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -3554,9 +3554,10 @@ def web_interface(args, ctx):
                 return gr.update(), gr.update(value=e), gr.update()
         
         def clear_event(id):
-            session = context.get_session(id)
-            if session['event'] is not None:
-                session['event'] = None
+            if id:
+                session = context.get_session(id)
+                if session['event'] is not None:
+                    session['event'] = None
 
         gr_ebook_file.change(
             fn=state_convert_btn,
@@ -3750,7 +3751,7 @@ def web_interface(args, ctx):
         gr_timer.tick(
             fn=heartbeat,
             inputs=[gr_session],
-            outputs=None
+            outputs=[gr_session]
         ).then(
             fn=save_session,
             inputs=[gr_session, gr_state_update],
