@@ -69,14 +69,12 @@ class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
 
-    def start_session(self, id):
+    def start_session(self, session):
         with self.lock:
-            if id:
-                session = context.get_session(id)
-                print(session)
-                if session['status'] is None:
-                    session['status'] = 'ready'
-                    return True
+            print(session)
+            if session['status'] is None:
+                session['status'] = 'ready'
+                return True
         print('A session is not ready or already running')
         return False
 
@@ -3455,7 +3453,7 @@ def web_interface(args, ctx):
                             data['id'] = session_id
                         session = context.get_session(data['id'])
                         session_id = session['id']
-                        if not ctx_tracker.start_session(session_id):
+                        if not ctx_tracker.start_session(session):
                             error = 'Another tab or window is already active for this session. Close all other tabs/windows or Retry later after if it crashed.'
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                         restore_session_from_data(data, session)
@@ -3736,7 +3734,7 @@ def web_interface(args, ctx):
             outputs=None
         )
         ############ Timer to save session to localStorage
-        gr_timer = gr.Timer(9, active=False)
+        gr_timer = gr.Timer(6, active=False)
         gr_timer.tick(
             fn=save_session,
             inputs=[gr_session, gr_state_update],
