@@ -3820,7 +3820,7 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
-            fn=lambda session: update_gr_glass_mask(attr='class="hide"' if session),
+            fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
             inputs=[gr_session]
             outputs=[gr_glass_mask]
         )
