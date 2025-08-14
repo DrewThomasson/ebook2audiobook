@@ -2636,10 +2636,7 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def cleanup_session(id):
-            print(f'cleanup_session {id}')
             if id:
-                msg = f'[Cleanup] Ending session {id}'
-                print(msg)
                 ctx_tracker.end_session(id)
 
         def load_vtt_data(path):
@@ -3453,11 +3450,11 @@ def web_interface(args, ctx):
                     try:
                         if 'id' not in data:
                             data['id'] = session_id
+                        session = context.get_session(data['id'])
+                        session_id = session['id']
                         if not ctx_tracker.start_session(session_id):
                             error = 'Another tab or window is already active for this session. Close all other tabs/windows or Retry later after if it crashed.'
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
-                        session = context.get_session(data['id'])
-                        session_id = session['id']
                         session['status'] = 'running'
                         restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
