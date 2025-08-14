@@ -65,38 +65,24 @@ class DependencyError(Exception):
             sys.exit(1)
 
 class SessionTracker:
-
-    def __init__(self, timeout_seconds=30):
-        self.timeout = timeout_seconds
-        self.last_seen = {}
+    def __init__(self):
+        self.active_sessions = set()
         self.lock = threading.Lock()
-        threading.Thread(target=self._cleanup_loop, daemon=True).start()
 
     def start_session(self, id):
         with self.lock:
-            now = time.time()
-            if id in self.last_seen and (now - self.last_seen[id]) < self.timeout:
+            if id in self.active_sessions:
                 return False
-            self.last_seen[id] = now
+            self.active_sessions.add(id)
             return True
 
-    def ping(self, id):
+    def end_session(self, id):
         with self.lock:
-            print('ping')
-            self.last_seen[id] = time.time()
+            self.active_sessions.discard(id)
 
-    def _cleanup_loop(self):
-        while True:
-            now = time.time()
-            with self.lock:
-                stale = [id for id, ts in self.last_seen.items() if now - ts > self.timeout]
-                for id in stale:
-                    session = context.get_session(id)
-                    session['cancellation_requested'] = True
-                    error = f'Session expired: {id}'
-                    logging.info(error)
-                    self.last_seen.pop(id, None)
-            time.sleep(9)
+    def is_active(self, id):
+        with self.lock:
+            return id in self.active_sessions
 
 class SessionContext:
     def __init__(self):
@@ -2648,12 +2634,10 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
-        def heartbeat(id):
-            print(f'heartbeat: {id}')
-            if not id:
-                return gr.update(value='')
-            ctx_tracker.ping(id)
-            return gr.update(value=id)
+        def cleanup(id):
+            msg = f'[Cleanup] Ending session {id}'
+            print(msg)
+            ctx_tracker.end_session(id)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -4066,6 +4050,7 @@ def web_interface(args, ctx):
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
         app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, favicon_path='./favicon.ico', server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
+        app.unload(lambda: cleanup(gr_session))
     except OSError as e:
         error = f'Connection error: {e}'
         alert_exception(error)
