@@ -2661,7 +2661,7 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def cleanup_session():
-            if session_id is not None:
+            if session_id:
                 ctx_tracker.end_session(session_id)
 
         def load_vtt_data(path):
