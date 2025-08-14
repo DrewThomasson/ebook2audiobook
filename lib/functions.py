@@ -4051,28 +4051,32 @@ def web_interface(args, ctx):
                         }
                         tryRun();
 
-                        try{
+                        try {
                             if (!window.tab_id) {
-                                window.tab_id = crypto.randomUUID();
+                                window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
                             }
-                            window.addEventListener("beforeunload", ()=>{
+
+                            window.addEventListener("beforeunload", () => {
                                 try {
-                                    const saved = JSON.parse(window.localStorage.getItem('data') || '{}');
-                                    if(saved.tab_id === window.tab_id){
-                                        saved.status = null;
+                                    const saved = JSON.parse(localStorage.getItem('data') || '{}');
+                                    if (saved.tab_id === window.tab_id) {
+                                        saved.status = 'closed';
                                         saved.last_disconnect = Date.now();
-                                        window.localStorage.setItem('data', JSON.stringify(saved));
+                                        localStorage.setItem('data', JSON.stringify(saved));
                                     }
-                                }catch(e){
+                                } catch (e) {
                                     console.log('Error updating status on unload:', e);
                                 }
                             });
-                            const data = window.localStorage.getItem('data');
-                            if(data){
-                                data.tab_id = window.tab_id
-                                return JSON.parse(data);
+
+                            const stored = window.localStorage.getItem('data');
+                            if (stored) {
+                                const parsed = JSON.parse(stored);
+                                parsed.tab_id = window.tab_id; // claim ownership
+                                window.localStorage.setItem('data', JSON.stringify(parsed)); // save updated
+                                return parsed;
                             }
-                        }catch(e){
+                        } catch (e) {
                             console.log('JSON parse error:', e);
                         }
                     }catch (e){
