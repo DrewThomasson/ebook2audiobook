@@ -4052,8 +4052,25 @@ def web_interface(args, ctx):
                         tryRun();
 
                         try{
+                            if (!window.tab_id) {
+                                window.tab_id = crypto.randomUUID();
+                            }
+                            window.addEventListener("beforeunload", ()=>{
+                                try {
+                                    const saved = JSON.parse(window.localStorage.getItem('data') || '{}');
+                                    if(saved.owner === window.tab_id){
+                                        saved.status = null;
+                                        window.localStorage.setItem('data', JSON.stringify(saved));
+                                    }
+                                }catch(e){
+                                    console.log('Error updating status on unload:', e);
+                                }
+                            });
                             const data = window.localStorage.getItem('data');
-                            if (data) return JSON.parse(data);
+                            if(data){
+                                data.owner = window.tab_id
+                                return JSON.parse(data);
+                            }
                         }catch(e){
                             console.log('JSON parse error:', e);
                         }
