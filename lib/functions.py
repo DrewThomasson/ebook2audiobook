@@ -73,7 +73,6 @@ class SessionTracker:
         with self.lock:
             if id:
                 session = context.get_session(id)
-                print(f'session {id} status: {session["status"]}')
                 if session['status'] is None:
                     session['status'] = 'ready'
                     return True
@@ -2774,10 +2773,10 @@ def web_interface(args, ctx):
 
         def restore_interface(id):
             try:
-                if not id:
+                session = context.get_session(id)
+                if session['status'] is None:
                     error = 'Exit from interface...'
                     raise gr.Error(error)
-                session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
