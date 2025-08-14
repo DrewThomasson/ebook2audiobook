@@ -2649,6 +2649,7 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def heartbeat(id):
+            print(f'heartbeat: {id}')
             if not id:
                 return None
             ctx_tracker.ping(id)
