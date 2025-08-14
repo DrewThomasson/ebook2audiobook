@@ -3513,7 +3513,6 @@ def web_interface(args, ctx):
 
         def save_session(id, state):
             try:
-                print('save_session called')
                 if id:
                     if id in context.sessions:
                         session = context.get_session(id)
