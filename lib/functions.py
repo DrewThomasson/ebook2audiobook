@@ -76,7 +76,7 @@ class SessionTracker:
                 if session['status'] is None:
                     session['status'] = 'ready'
                     return True
-        print('already running or id not ready')
+        print('A session is not ready or already running')
         return False
 
     def end_session(self, id):
@@ -3392,11 +3392,10 @@ def web_interface(args, ctx):
                         progress_status, passed = convert_ebook(args)
                         if passed is False:
                             if session['status'] == 'converting':
-                                session['status'] = 'ready'
                                 error = 'Conversion cancelled.'
                             else:
-                                session['status'] = 'ready'
                                 error = 'Conversion failed.'
+                            session['status'] = 'ready'
                         else:
                             show_alert({"type": "success", "msg": progress_status})
                             reset_ebook_session(args['session'])
@@ -3450,11 +3449,9 @@ def web_interface(args, ctx):
                             data['id'] = session_id
                         session = context.get_session(data['id'])
                         session_id = session['id']
-                        print(f'not ctx_tracker.start_session({session_id})')
                         if not ctx_tracker.start_session(session_id):
                             error = 'Another tab or window is already active for this session. Close all other tabs/windows or Retry later after if it crashed.'
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
-                        session['status'] = 'running'
                         restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
                         if isinstance(session['ebook'], str):
