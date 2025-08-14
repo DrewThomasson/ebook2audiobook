@@ -2636,6 +2636,7 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def cleanup_session(id):
+            print(f'cleanup_session {id}')
             if id:
                 msg = f'[Cleanup] Ending session {id}'
                 print(msg)
