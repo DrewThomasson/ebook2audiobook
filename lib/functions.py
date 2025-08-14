@@ -2824,7 +2824,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
-                outputs = outputs = tuple([gr.update() for _ in range(23)]) # 21 is the total count of the return[] above
+                outputs = outputs = tuple([gr.update() for _ in range(24)]) # 24 is the total count of the return[] above
                 return outputs
 
         def refresh_interface(id):
