@@ -2821,10 +2821,13 @@ def web_interface(args, ctx):
                     gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id),
                     gr.update(value=session['output_split']), gr.update(value=session['output_split_hours']), gr.update(active=True)
                 )
+            except gr.Error as e:
+                outputs = outputs = tuple([gr.update() for _ in range(24)])
+                return outputs               
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
-                outputs = outputs = tuple([gr.update() for _ in range(24)]) # 24 is the total count of the return[] above
+                outputs = outputs = tuple([gr.update() for _ in range(24)])
                 return outputs
 
         def refresh_interface(id):
