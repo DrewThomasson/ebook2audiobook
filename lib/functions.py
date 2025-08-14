@@ -3443,6 +3443,7 @@ def web_interface(args, ctx):
                 return gr.update()
 
         def change_gr_read_data(data, state):
+            nonlocal session_id
             msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
             try:
                 if data is None:
@@ -3455,6 +3456,7 @@ def web_interface(args, ctx):
                             error = 'Another tab or window is already active for this session. Close all other tabs/windows or Retry later after if it crashed.'
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                         session = context.get_session(data['id'])
+                        session_id = session['id']
                         session['status'] = 'running'
                         restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
@@ -4045,10 +4047,7 @@ def web_interface(args, ctx):
             """,
             outputs=[gr_read_data],
         )
-        app.unload(
-            fn=cleanup_session,
-            inputs=[gr_session]
-        )
+        app.unload(lambda: cleanup_session(session_id))
     try:
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
