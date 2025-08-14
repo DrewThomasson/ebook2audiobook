@@ -2382,6 +2382,7 @@ def web_interface(args, ctx):
                 height: 100vh !important;
                 background: rgba(0,0,0,0.6) !important;
                 display: flex !important;
+                text-align: center;
                 align-items: center !important;
                 justify-content: center !important;
                 font-size: 1.2rem !important;
