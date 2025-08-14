@@ -79,7 +79,6 @@ class SessionTracker:
             return True
 
     def end_session(self, id):
-        print('end_session called')
         with self.lock:
             if id:
                 session = context.get_session(id)
@@ -4046,7 +4045,10 @@ def web_interface(args, ctx):
             """,
             outputs=[gr_read_data],
         )
-        app.unload(lambda: cleanup_session(gr_session))
+        app.unload(
+            fn=cleanup_session,
+            inputs=[gr_session]
+        )
     try:
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
