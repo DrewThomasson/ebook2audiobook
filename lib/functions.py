@@ -2790,8 +2790,6 @@ def web_interface(args, ctx):
                 if not id:
                     error = 'Exit from interface...'
                     raise gr.Error(error)
-                    outputs = outputs = tuple([gr.update() for _ in range(24)])
-                    return outputs
                 session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
@@ -2824,7 +2822,8 @@ def web_interface(args, ctx):
                     gr.update(value=session['output_split']), gr.update(value=session['output_split_hours']), gr.update(active=True)
                 )
             except gr.Error as e:
-                pass
+                outputs = outputs = tuple([gr.update() for _ in range(24)])
+                return outputs
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
@@ -3821,7 +3820,8 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
-            fn=lambda: update_gr_glass_mask(attr='class="hide"'),
+            fn=lambda session: update_gr_glass_mask(attr='class="hide"' if session),
+            inputs=[gr_session]
             outputs=[gr_glass_mask]
         )
         gr_confirm_yes_btn.click(
