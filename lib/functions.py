@@ -77,6 +77,7 @@ class SessionTracker:
             now = time.time()
             if id in self.last_seen and (now - self.last_seen[id]) < self.timeout:
                 return False
+            self.last_seen[id] = now
             return True
 
     def ping(self, id):
