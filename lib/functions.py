@@ -84,8 +84,28 @@ class SessionTracker:
                 session = context.get_session(id)
                 session['cancellation_requested'] = True
                 session['status'] = None
+                session['metadata'] = {
+                    "title": None, 
+                    "creator": None,
+                    "contributor": None,
+                    "language": None,
+                    "identifier": None,
+                    "publisher": None,
+                    "date": None,
+                    "description": None,
+                    "subject": None,
+                    "rights": None,
+                    "format": None,
+                    "type": None,
+                    "coverage": None,
+                    "relation": None,
+                    "Source": None,
+                    "Modified": None,
+                }
                 session['toc'] = None
                 session['chapters'] = None
+                session['cover'] = None
+                session['time'] = None
 
 class SessionContext:
     def __init__(self):
@@ -2641,7 +2661,8 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def cleanup_session(id):
-            if id:
+            print(f'cleanup_session {id}')
+            if id is not None:
                 ctx_tracker.end_session(id)
 
         def load_vtt_data(path):
@@ -3454,6 +3475,7 @@ def web_interface(args, ctx):
                         session = context.get_session(data['id'])
                         session_id = session['id']
                         if not ctx_tracker.start_session(session):
+                            session_id = None
                             error = 'Another tab or window is already active for this session. Close all other tabs/windows or Retry later after if it crashed.'
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                         restore_session_from_data(data, session)
