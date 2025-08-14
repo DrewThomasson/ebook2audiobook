@@ -2799,6 +2799,9 @@ def web_interface(args, ctx):
         def restore_interface(id):
             try:
                 session = context.get_session(id)
+                if session['status'] is None:
+                    error = 'Exit from interface...'
+                    raise gr.Error(error)
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
@@ -3471,11 +3474,11 @@ def web_interface(args, ctx):
                             data['id'] = session_id
                         session = context.get_session(data['id'])
                         session_id = session['id']
+                        restore_session_from_data(data, session)
                         if not ctx_tracker.start_session(session):
                             session_id = None
                             error = 'Another tab or window is already active for this session. Close all other tabs/windows or Retry later after if it crashed.'
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
-                        restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
                         if isinstance(session['ebook'], str):
                             if not os.path.exists(session['ebook']):
