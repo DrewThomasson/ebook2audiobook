@@ -96,7 +96,7 @@ class SessionTracker:
                     error = f'Session expired: {id}'
                     logging.info(error)
                     self.last_seen.pop(id, None)
-            time.sleep(5)
+            time.sleep(9)
 
 class SessionContext:
     def __init__(self):
