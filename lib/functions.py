@@ -2633,7 +2633,7 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
-        def cleanup(id):
+        def cleanup_session(id):
             if id:
                 msg = f'[Cleanup] Ending session {id}'
                 print(msg)
@@ -4049,7 +4049,7 @@ def web_interface(args, ctx):
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
         app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, favicon_path='./favicon.ico', server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
-        app.unload(lambda: cleanup(gr_session))
+        app.unload(lambda: cleanup_session(gr_session))
     except OSError as e:
         error = f'Connection error: {e}'
         alert_exception(error)
