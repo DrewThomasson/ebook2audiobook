@@ -2236,7 +2236,7 @@ def reset_ebook_session(id):
             "Modified": None
         }
     }
-    restore_session_from_data(data, session)
+    restore_session_from_data(data, id)
 
 def get_all_ip_addresses():
     ip_addresses = []
