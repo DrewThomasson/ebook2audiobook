@@ -3157,19 +3157,16 @@ def web_interface(args, ctx):
                 nonlocal custom_model_options
                 session = context.get_session(id)
                 custom_model_tts_dir = check_custom_model_tts(session['custom_model_dir'], session['tts_engine'])
-                if custom_model_tts_dir is not None:
-                    custom_model_options = [('None', None)] + [
-                        (
-                            str(dir),
-                            os.path.join(custom_model_tts_dir, dir)
-                        )
-                        for dir in os.listdir(custom_model_tts_dir)
-                        if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
-                    ]
-                    session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
-                    return gr.update(choices=custom_model_options, value=session['custom_model'])
-                else:
-                    return gr.update()
+                custom_model_options = [('None', None)] + [
+                    (
+                        str(dir),
+                        os.path.join(custom_model_tts_dir, dir)
+                    )
+                    for dir in os.listdir(custom_model_tts_dir)
+                    if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
+                ]
+                session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
+                return gr.update(choices=custom_model_options, value=session['custom_model'])
             except Exception as e:
                 error = f'update_gr_custom_model_list(): {e}!'
                 alert_exception(error)
