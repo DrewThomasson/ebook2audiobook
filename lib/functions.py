@@ -74,7 +74,7 @@ class SessionTracker:
             if id:
                 session = context.get_session(id)
                 print(f'session status: {session["status"]}')
-                if session['status'] is  None:
+                if session['status'] is None:
                     session['status'] = 'ready'
                     return True
         print('already running or id not ready')
@@ -2819,7 +2819,6 @@ def web_interface(args, ctx):
 
         def refresh_interface(id):
             session = context.get_session(id)
-            session['status'] = None
             return (
                     gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id)
@@ -3374,11 +3373,9 @@ def web_interface(args, ctx):
                                 if passed is False:
                                     if session['status'] == 'converting':
                                         error = 'Conversion cancelled.'
-                                        session['status'] = None
                                         break
                                     else:
                                         error = 'Conversion failed.'
-                                        session['status'] = None
                                         break
                                 else:
                                     show_alert({"type": "success", "msg": progress_status})
@@ -3390,16 +3387,16 @@ def web_interface(args, ctx):
                                     else: 
                                         msg = 'Conversion successful!'
                                     yield gr.update(value=msg)
-                        session['status'] = None
+                        session['status'] = 'ready'
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
                         if passed is False:
                             if session['status'] == 'converting':
-                                session['status'] = None
+                                session['status'] = 'ready'
                                 error = 'Conversion cancelled.'
                             else:
-                                session['status'] = None
+                                session['status'] = 'ready'
                                 error = 'Conversion failed.'
                         else:
                             show_alert({"type": "success", "msg": progress_status})
@@ -3482,7 +3479,7 @@ def web_interface(args, ctx):
                             if not os.path.exists(session['audiobook']):
                                 session['audiobook'] = None
                         if session['status'] == 'converting':
-                            session['status'] = None
+                            session['status'] = 'ready'
                     except Exception as e:
                         error = f'change_gr_read_data(): {e}'
                         alert_exception(error)
