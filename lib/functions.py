@@ -72,12 +72,10 @@ class SessionTracker:
         with self.lock:
             now = time.time()
             if id in self.last_seen and (now - self.last_seen[id]) < self.timeout:
-                msg = f'Duplicate session attempt blocked: {id}'
-                logging.warning(msg)
-                error = 'Another tab or window is already active for this session. Close it first, or wait 30 seconds after it quits/crashes.'
-                raise gr.Error(error)
+                return False
             logging.info(f"Session started: {id}")
             self.last_seen[id] = now
+            return True
 
     def ping(self, id):
         with self.lock:
@@ -3455,7 +3453,9 @@ def web_interface(args, ctx):
                     try:
                         if 'id' not in data:
                             data['id'] = session_id
-                        ctx_tracker.start_session(session_id)
+                        if not ctx_tracker.start_session(session_id):
+                            error = 'Another tab or window is already active for this session. Close it first, or wait 30 seconds after it quits/crashes.'
+                            return gr.update(), gr.update(), gr.update(), update_gr_glass_mask(str=error)
                         session = context.get_session(data['id'])
                         session['status'] = 'running'
                         restore_session_from_data(data, session)
@@ -3485,7 +3485,7 @@ def web_interface(args, ctx):
                     except Exception as e:
                         error = f'change_gr_read_data(): {e}'
                         alert_exception(error)
-                        return gr.update(), gr.update(), gr.update()
+                        return gr.update(), gr.update(), gr.update(), gr.update()
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -3508,11 +3508,11 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id'])
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
-                return gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update()
 
         def save_session(id, state):
             try:
@@ -3796,7 +3796,7 @@ def web_interface(args, ctx):
         gr_read_data.change(
             fn=change_gr_read_data,
             inputs=[gr_read_data, gr_state_update],
-            outputs=[gr_write_data, gr_state_update, gr_session]
+            outputs=[gr_write_data, gr_state_update, gr_session, gr_glass_mask]
         ).then(
             fn=restore_interface,
             inputs=[gr_session],
