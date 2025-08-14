@@ -2785,6 +2785,9 @@ def web_interface(args, ctx):
 
         def restore_interface(id):
             try:
+                if not id:
+                    error = 'Exit from interface...'
+                    raise gr.Error(error)
                 session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
@@ -3461,7 +3464,7 @@ def web_interface(args, ctx):
                             data['id'] = session_id
                         if not ctx_tracker.start_session(session_id):
                             error = 'Another tab or window is already active for this session. Close it first, or wait 30 seconds after it quits/crashes.'
-                            return gr.update(), gr.update(), gr.update(), update_gr_glass_mask(str=error)
+                            return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                         session = context.get_session(data['id'])
                         session['status'] = 'running'
                         restore_session_from_data(data, session)
