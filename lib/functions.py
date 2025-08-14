@@ -99,6 +99,10 @@ class SessionContext:
                 "script_mode": NATIVE,
                 "id": id,
                 "process_id": None,
+                "status": None,
+                "event": None,
+                "progress": 0,
+                "cancellation_requested": False,
                 "device": default_device,
                 "system": None,
                 "client": None,
@@ -120,13 +124,6 @@ class SessionContext:
                 "voice_dir": None,
                 "custom_model": None,
                 "custom_model_dir": None,
-                "toc": None,
-                "chapters": None,
-                "cover": None,
-                "status": None,
-                "progress": 0,
-                "time": None,
-                "cancellation_requested": False,
                 "temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
                 "length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
                 "num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
@@ -137,7 +134,6 @@ class SessionContext:
                 "enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
                 "text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
                 "waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
-                "event": None,
                 "final_name": None,
                 "output_format": default_output_format,
                 "output_split": default_output_split,
@@ -160,6 +156,10 @@ class SessionContext:
                     "Source": None,
                     "Modified": None,
                 }
+                "toc": None,
+                "chapters": None,
+                "cover": None,
+                "time": None,
             }, manager=self.manager)
         return self.sessions[id]
 
