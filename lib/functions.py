@@ -155,11 +155,11 @@ class SessionContext:
                     "relation": None,
                     "Source": None,
                     "Modified": None,
-                }
+                },
                 "toc": None,
                 "chapters": None,
                 "cover": None,
-                "time": None,
+                "time": None
             }, manager=self.manager)
         return self.sessions[id]
 
