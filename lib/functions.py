@@ -86,6 +86,8 @@ class SessionTracker:
                 session = context.get_session(id)
                 session['cancellation_requested'] = True
                 session['status'] = None
+                session['toc'] = None
+                session['chapters'] = None
 
 class SessionContext:
     def __init__(self):
