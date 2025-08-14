@@ -4068,14 +4068,24 @@ def web_interface(args, ctx):
                                     console.log('Error updating status on unload:', e);
                                 }
                             });
-
-                            const stored = window.localStorage.getItem('data');
-                            if (stored) {
-                                const parsed = JSON.parse(stored);
-                                parsed.tab_id = window.tab_id; // claim ownership
-                                window.localStorage.setItem('data', JSON.stringify(parsed)); // save updated
-                                return parsed;
-                            }
+                            return new Promise((resolve)=>{
+                                setTimeout(()=>{
+                                    try{
+                                        const stored = localStorage.getItem('data');
+                                        if(stored){
+                                            const parsed = JSON.parse(stored);
+                                            parsed.tab_id = window.tab_id;
+                                            localStorage.setItem('data', JSON.stringify(parsed));
+                                            resolve(parsed); // send this to Python
+                                        }else{
+                                            resolve({});
+                                        }
+                                    }catch(e){
+                                        console.log('JSON parse error:', e);
+                                        resolve({});
+                                    }
+                                }, 2000);
+                            });
                         } catch (e) {
                             console.log('JSON parse error:', e);
                         }
