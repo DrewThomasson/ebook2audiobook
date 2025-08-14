@@ -4060,6 +4060,7 @@ def web_interface(args, ctx):
                                     const saved = JSON.parse(window.localStorage.getItem('data') || '{}');
                                     if(saved.owner === window.tab_id){
                                         saved.status = null;
+                                        saved.last_disconnect = Date.now();
                                         window.localStorage.setItem('data', JSON.stringify(saved));
                                     }
                                 }catch(e){
