@@ -2248,7 +2248,7 @@ def show_alert(state):
                 gr.Success(state['msg'])
 
 def web_interface(args, ctx):
-    global context
+    global context, is_gui_process
     context = ctx
     session_id = str(uuid.uuid4())
     script_mode = args['script_mode']
