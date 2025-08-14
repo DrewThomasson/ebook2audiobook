@@ -78,6 +78,7 @@ class SessionTracker:
             return True
 
     def end_session(self, id):
+        print('end_session called')
         with self.lock:
             if id:
                 session = context.get_session(id)
