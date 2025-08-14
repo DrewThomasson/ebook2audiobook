@@ -83,6 +83,7 @@ class SessionTracker:
         with self.lock:
             if id:
                 session = context.get_session(id)
+                session['cancellation_requested'] = True
                 session['status'] = None
 
 class SessionContext:
