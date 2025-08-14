@@ -160,7 +160,7 @@ class SessionContext:
             }, manager=self.manager)
         return self.sessions[id]
 
-ctx_tracker = SessionTracker(timeout_seconds=30)
+ctx_tracker = SessionTracker()
 
 def recursive_proxy(data, manager=None):
     if manager is None:
