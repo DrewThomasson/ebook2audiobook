@@ -66,23 +66,22 @@ class DependencyError(Exception):
 
 class SessionTracker:
     def __init__(self):
-        self.active_sessions = set()
         self.lock = threading.Lock()
 
     def start_session(self, id):
         with self.lock:
-            if id in self.active_sessions:
-                return False
-            self.active_sessions.add(id)
+            if id:
+                session = context.get_session(id)
+                if session['status'] is not None:
+                    return False
+                session['status'] = 'ready'
             return True
 
     def end_session(self, id):
-        with self.lock:
-            self.active_sessions.discard(id)
-
-    def is_active(self, id):
-        with self.lock:
-            return id in self.active_sessions
+        with self.lock
+            if id:
+                session = context.get_session(id)
+                session['status'] = None
 
 class SessionContext:
     def __init__(self):
@@ -2635,9 +2634,10 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def cleanup(id):
-            msg = f'[Cleanup] Ending session {id}'
-            print(msg)
-            ctx_tracker.end_session(id)
+            if id:
+                msg = f'[Cleanup] Ending session {id}'
+                print(msg)
+                ctx_tracker.end_session(id)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
