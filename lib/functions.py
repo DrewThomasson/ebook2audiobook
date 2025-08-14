@@ -4055,12 +4055,11 @@ def web_interface(args, ctx):
                             if (!window.tab_id) {
                                 window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
                             }
-
                             window.addEventListener("beforeunload", () => {
                                 try {
                                     const saved = JSON.parse(localStorage.getItem('data') || '{}');
                                     if (saved.tab_id === window.tab_id) {
-                                        saved.status = 'closed';
+                                        saved.status = null;
                                         saved.last_disconnect = Date.now();
                                         localStorage.setItem('data', JSON.stringify(saved));
                                     }
