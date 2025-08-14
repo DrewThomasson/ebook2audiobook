@@ -2799,9 +2799,6 @@ def web_interface(args, ctx):
         def restore_interface(id):
             try:
                 session = context.get_session(id)
-                if session['status'] is None:
-                    error = 'Exit from interface...'
-                    raise gr.Error(error)
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
