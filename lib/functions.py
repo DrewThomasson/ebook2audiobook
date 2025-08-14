@@ -2192,7 +2192,7 @@ def convert_ebook(args, ctx=None):
 
 def restore_session_from_data(data, id):
     try:
-        session = context.get_session(data['id'])
+        session = context.get_session(id)
         for key, value in data.items():
             if key in session:  # Check if the key exists in session
                 if isinstance(value, dict) and isinstance(session[key], dict):
