@@ -361,7 +361,8 @@ def proxy2dict(proxy_obj):
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
 
-def convert2epub(session):
+def convert2epub(id):
+    session = context.get_session(id)
     if session['cancellation_requested']:
         print('Cancel requested')
         return False
@@ -1384,7 +1385,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = ' '.join(text.split())
     return text
 
-def convert_chapters2audio(session):
+def convert_chapters2audio(id):
+    session = context.get_session(id)
     try:
         if session['cancellation_requested']:
             print('Cancel requested')
@@ -1583,7 +1585,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         DependencyError(e)
         return False
 
-def combine_audio_chapters(session):
+def combine_audio_chapters(id):
 
     def get_audio_duration(filepath):
         try:
@@ -1747,6 +1749,7 @@ def combine_audio_chapters(session):
             return False
 
     try:
+        session = context.get_session(id)
         chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
         chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
         chapter_titles = [c[0] for c in session['chapters']]
@@ -2081,7 +2084,7 @@ def convert_ebook(args, ctx=None):
                             show_alert({"type": "warning", "msg": msg})
                         print(msg)
                         session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
-                        if convert2epub(session):
+                        if convert2epub(id):
                             epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
                             metadata = dict(session['metadata'])
                             for key, value in metadata.items():
@@ -2108,10 +2111,10 @@ def convert_ebook(args, ctx=None):
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
-                                    if convert_chapters2audio(session):
+                                    if convert_chapters2audio(id):
                                         msg = 'Conversion successful. Combining sentences and chapters...'
                                         show_alert({"type": "info", "msg": msg})
-                                        exported_files = combine_audio_chapters(session)               
+                                        exported_files = combine_audio_chapters(id)               
                                         if exported_files is not None:
                                             chapters_dirs = [
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
