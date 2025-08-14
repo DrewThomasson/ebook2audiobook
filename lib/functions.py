@@ -69,13 +69,12 @@ class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
 
-    def start_session(self, session):
+    def start_session(self, id):
         with self.lock:
-            print(session)
+            session = context.get_session(id)
             if session['status'] is None:
                 session['status'] = 'ready'
                 return True
-        print('A session is not ready or already running')
         return False
 
     def end_session(self, id):
@@ -3475,9 +3474,9 @@ def web_interface(args, ctx):
                         session = context.get_session(data['id'])
                         session_id = session['id']
                         restore_session_from_data(data, session)
-                        if not ctx_tracker.start_session(session):
+                        if not ctx_tracker.start_session(session_id):
                             session_id = None
-                            error = 'Another tab or window is already active for this session. Close all other tabs/windows or Retry later after if it crashed.'
+                            error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                         session['cancellation_requested'] = False
                         if isinstance(session['ebook'], str):
