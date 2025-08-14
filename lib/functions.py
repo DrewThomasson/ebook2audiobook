@@ -39,6 +39,9 @@ from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 
+context = None
+is_gui_process = False
+
 logging.basicConfig(
     level=logging.INFO, # DEBUG for more verbosity
     format="%(asctime)s [%(levelname)s] %(message)s"
@@ -55,7 +58,8 @@ class DependencyError(Exception):
         # Print the full traceback of the exception
         traceback.print_exc()      
         # Print the exception message
-        print(f'Caught DependencyError: {self}')    
+        error = f'Caught DependencyError: {self}'
+        print(error)    
         # Exit the script if it's not a web process
         if not is_gui_process:
             sys.exit(1)
@@ -170,8 +174,6 @@ class SessionContext:
             }, manager=self.manager)
         return self.sessions[id]
 
-context = None
-is_gui_process = False
 ctx_tracker = SessionTracker(timeout_seconds=30)
 
 def recursive_proxy(data, manager=None):
