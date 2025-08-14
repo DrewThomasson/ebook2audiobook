@@ -3486,6 +3486,7 @@ def web_interface(args, ctx):
                                 if session['tts_engine'] in models.keys():
                                     if session['fine_tuned'] not in models[session['tts_engine']].keys():
                                         session['fine_tuned'] = default_fine_tuned
+                                        
                                 else:
                                     session['tts_engine'] = default_tts_engine
                                     session['fine_tuned'] = default_fine_tuned
@@ -3528,6 +3529,7 @@ def web_interface(args, ctx):
 
         def save_session(id, state):
             try:
+                print('save_session called')
                 if id:
                     if id in context.sessions:
                         session = context.get_session(id)
@@ -3749,10 +3751,6 @@ def web_interface(args, ctx):
         ############ Timer to save session to localStorage
         gr_timer = gr.Timer(9, active=False)
         gr_timer.tick(
-            fn=heartbeat,
-            inputs=[gr_session],
-            outputs=[gr_session]
-        ).then(
             fn=save_session,
             inputs=[gr_session, gr_state_update],
             outputs=[gr_write_data, gr_state_update, gr_audiobook_list]
