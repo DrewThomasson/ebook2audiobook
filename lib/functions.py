@@ -73,10 +73,12 @@ class SessionTracker:
         with self.lock:
             if id:
                 session = context.get_session(id)
-                if session['status'] is not None:
-                    return False
-                session['status'] = 'ready'
-            return True
+                print(f'session status: {session["status"]}')
+                if session['status'] is  None:
+                    session['status'] = 'ready'
+                    return True
+        print('already running or id not ready')
+        return False
 
     def end_session(self, id):
         with self.lock:
