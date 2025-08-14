@@ -2190,9 +2190,8 @@ def convert_ebook(args, ctx=None):
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def restore_session_from_data(data, id):
+def restore_session_from_data(data, session):
     try:
-        session = context.get_session(id)
         for key, value in data.items():
             if key in session:  # Check if the key exists in session
                 if isinstance(value, dict) and isinstance(session[key], dict):
@@ -2236,7 +2235,7 @@ def reset_ebook_session(id):
             "Modified": None
         }
     }
-    restore_session_from_data(data, id)
+    restore_session_from_data(data, session)
 
 def get_all_ip_addresses():
     ip_addresses = []
@@ -3479,7 +3478,7 @@ def web_interface(args, ctx):
                             session_id = None
                             error = 'Another tab or window is already active for this session. Close all other tabs/windows or Retry later after if it crashed.'
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
-                        restore_session_from_data(data, session_id)
+                        restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
                         if isinstance(session['ebook'], str):
                             if not os.path.exists(session['ebook']):
