@@ -4056,8 +4056,12 @@ def web_interface(args, ctx):
                         tryRun();
 
                         try {
-                            if (!window.tab_id) {
+                            const existing_tab_id = localStorage.getItem('tab_id');
+                            if (existing_tab_id) {
+                                window.tab_id = existing_tab_id;
+                            } else {
                                 window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
+                                localStorage.setItem('tab_id', window.tab_id);
                             }
                             window.addEventListener("beforeunload", () => {
                                 try {
@@ -4071,7 +4075,6 @@ def web_interface(args, ctx):
                                     console.log('Error updating status on unload:', e);
                                 }
                             });
-
                             const stored = window.localStorage.getItem('data');
                             if(stored){
                                 const parsed = JSON.parse(stored);
