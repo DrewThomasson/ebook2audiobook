@@ -3475,8 +3475,8 @@ def web_interface(args, ctx):
                         session = context.get_session(data['id'])
                         session_id = session['id']
                         if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
-                            session['status'] = None 
-                            session['cancellation_requested'] = False
+                            data['status'] = None 
+                            data['cancellation_requested'] = False
                         if not ctx_tracker.start_session(session_id):
                             session_id = ''
                             error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
