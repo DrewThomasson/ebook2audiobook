@@ -4084,7 +4084,7 @@ def web_interface(args, ctx):
                                         console.log('JSON parse error:', e);
                                         resolve({});
                                     }
-                                }, 2000);
+                                }, 5000);
                             });
                         } catch (e) {
                             console.log('JSON parse error:', e);
