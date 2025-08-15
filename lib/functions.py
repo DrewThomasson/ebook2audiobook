@@ -3758,7 +3758,7 @@ def web_interface(args, ctx):
             outputs=None
         )
         ############ Timer to save session to localStorage
-        gr_timer = gr.Timer(6, active=False)
+        gr_timer = gr.Timer(9, active=False)
         gr_timer.tick(
             fn=save_session,
             inputs=[gr_session, gr_state_update],
@@ -4056,29 +4056,26 @@ def web_interface(args, ctx):
                         tryRun();
 
                         try {
-                            const existing_tab_id = localStorage.getItem('tab_id');
-                            if (existing_tab_id) {
-                                window.tab_id = existing_tab_id;
-                            } else {
+                            if(!window.tab_id){
                                 window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
-                                localStorage.setItem('tab_id', window.tab_id);
                             }
-                            window.addEventListener("beforeunload", () => {
-                                try {
+                            window.addEventListener("beforeunload", ()=>{
+                                try{
+                                    const tab_id = window.tab_id
                                     const saved = JSON.parse(localStorage.getItem('data') || '{}');
-                                    if (saved.tab_id === window.tab_id) {
+                                    if (saved.tab_id === tab_id || !saved.tab_id) {
                                         saved.tab_id = null
                                         saved.status = null;
                                         localStorage.setItem('data', JSON.stringify(saved));
                                     }
-                                } catch (e) {
+                                }catch(e){
                                     console.log('Error updating status on unload:', e);
                                 }
                             });
                             const stored = window.localStorage.getItem('data');
                             if(stored){
                                 const parsed = JSON.parse(stored);
-                                parsed.tab_id = window.tab_id;
+                                parsed.tab_id = (!parsed.tab_id) ? window.tab_id parsed.tab_id;
                                 window.localStorage.setItem('data', JSON.stringify(parsed));
                                 return parsed;
                             }
