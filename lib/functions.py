@@ -4075,7 +4075,7 @@ def web_interface(args, ctx):
                             const stored = window.localStorage.getItem('data');
                             if(stored){
                                 const parsed = JSON.parse(stored);
-                                parsed.tab_id = (!parsed.tab_id) ? window.tab_id;
+                                parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
                                 window.localStorage.setItem('data', JSON.stringify(parsed));
                                 return parsed;
                             }
