@@ -4068,24 +4068,12 @@ def web_interface(args, ctx):
                                     console.log('Error updating status on unload:', e);
                                 }
                             });
-                            return new Promise((resolve)=>{
-                                setTimeout(()=>{
-                                    try{
-                                        const stored = localStorage.getItem('data');
-                                        if(stored){
-                                            const parsed = JSON.parse(stored);
-                                            parsed.tab_id = window.tab_id;
-                                            localStorage.setItem('data', JSON.stringify(parsed));
-                                            resolve(parsed); // send this to Python
-                                        }else{
-                                            resolve({});
-                                        }
-                                    }catch(e){
-                                        console.log('JSON parse error:', e);
-                                        resolve({});
-                                    }
-                                }, 5000);
-                            });
+                            const saved = JSON.parse(localStorage.getItem('data') || '{}');
+                            if (saved.tab_id === window.tab_id) {
+                                saved.status = null; // force reset if same tab as before
+                                saved.last_disconnect = Date.now();
+                                localStorage.setItem('data', JSON.stringify(saved));
+                            }
                         } catch (e) {
                             console.log('JSON parse error:', e);
                         }
