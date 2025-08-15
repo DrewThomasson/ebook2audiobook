@@ -4061,7 +4061,7 @@ def web_interface(args, ctx):
                             }
                             const stored = localStorage.getItem('data');
                             let parsed = stored ? JSON.parse(stored) : {};
-                            if (parsed.tab_id === window.tab_id or parsed.tab_id == null) {
+                            if (parsed.tab_id === window.tab_id || parsed.tab_id == null) {
                                 parsed.status = null;
                                 parsed.last_disconnect = Date.now();
                             }
