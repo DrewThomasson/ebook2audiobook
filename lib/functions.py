@@ -78,35 +78,33 @@ class SessionTracker:
         return False
 
     def end_session(self, id):
-        print(f'end_session: {id}')
         with self.lock:
-            if id:
-                session = context.get_session(id)
-                session['cancellation_requested'] = True
-                session['tab_id'] = None
-                session['status'] = None
-                session['metadata'] = {
-                    "title": None, 
-                    "creator": None,
-                    "contributor": None,
-                    "language": None,
-                    "identifier": None,
-                    "publisher": None,
-                    "date": None,
-                    "description": None,
-                    "subject": None,
-                    "rights": None,
-                    "format": None,
-                    "type": None,
-                    "coverage": None,
-                    "relation": None,
-                    "Source": None,
-                    "Modified": None,
-                }
-                session['toc'] = None
-                session['chapters'] = None
-                session['cover'] = None
-                session['time'] = None
+            session = context.get_session(id)
+            session['cancellation_requested'] = True
+            session['tab_id'] = None
+            session['status'] = None
+            session['metadata'] = {
+                "title": None, 
+                "creator": None,
+                "contributor": None,
+                "language": None,
+                "identifier": None,
+                "publisher": None,
+                "date": None,
+                "description": None,
+                "subject": None,
+                "rights": None,
+                "format": None,
+                "type": None,
+                "coverage": None,
+                "relation": None,
+                "Source": None,
+                "Modified": None,
+            }
+            session['toc'] = None
+            session['chapters'] = None
+            session['cover'] = None
+            session['time'] = None
 
 class SessionContext:
     def __init__(self):
@@ -2662,6 +2660,7 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         def cleanup_session():
+            print(f'session_id: {session_id}')
             if session_id:
                 ctx_tracker.end_session(session_id)
 
