@@ -118,7 +118,6 @@ class SessionContext:
             self.sessions[id] = recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
-                "tab_id": None,
                 "process_id": None,
                 "status": None,
                 "event": None,
@@ -3474,9 +3473,8 @@ def web_interface(args, ctx):
                             data['id'] = session_id
                         session = context.get_session(data['id'])
                         session_id = session['id']
-                        print(f"-----------{data.get('tab_id')} = {session.get('tab_id')}-----------")
-                        if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
-                            session['status'] = None
+                        if data.get('tab_id') == session.get('tab_id'):
+                            session['status'] = None 
                         restore_session_from_data(data, session)
                         if not ctx_tracker.start_session(session_id):
                             session_id = ''
@@ -4056,23 +4054,32 @@ def web_interface(args, ctx):
                         }
                         tryRun();
 
-                        try{
+                        try {
                             if (!window.tab_id) {
                                 window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
                             }
-                            const stored = localStorage.getItem('data');
-                            const parsed = stored ? JSON.parse(stored) : {};
-                            console.log(parsed.tab_id)
-                            if (parsed.tab_id === window.tab_id || parsed.tab_id == null) {
-                                parsed.status = null;
-                                parsed.last_disconnect = Date.now();
+                            window.addEventListener("beforeunload", () => {
+                                try {
+                                    const saved = JSON.parse(localStorage.getItem('data') || '{}');
+                                    if (saved.tab_id === window.tab_id) {
+                                        saved.tab_id = null
+                                        saved.status = null;
+                                        localStorage.setItem('data', JSON.stringify(saved));
+                                    }
+                                } catch (e) {
+                                    console.log('Error updating status on unload:', e);
+                                }
+                            });
+
+                            const stored = window.localStorage.getItem('data');
+                            if(stored){
+                                const parsed = JSON.parse(stored);
+                                parsed.tab_id = window.tab_id;
+                                window.localStorage.setItem('data', JSON.stringify(parsed));
+                                return parsed;
                             }
-                            parsed.tab_id = window.tab_id;
-                            localStorage.setItem('data', JSON.stringify(parsed));
-                            return parsed;
-                        }catch(e){
-                            console.log('JS init error:', e);
-                            return {};
+                        } catch (e) {
+                            console.log('JSON parse error:', e);
                         }
                     }catch (e){
                         console.log('custom js init error:', e);
