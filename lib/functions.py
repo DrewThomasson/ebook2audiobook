@@ -2263,6 +2263,7 @@ def show_alert(state):
 def web_interface(args, ctx):
     global context, is_gui_process
     context = ctx
+    session_id = ''
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
@@ -2484,7 +2485,6 @@ def web_interface(args, ctx):
     '''
     
     with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
-        session_id = str(uuid.uuid4())
         with gr.Tabs(elem_id='gr_tabs'):
             gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
             with gr_tab_main:
@@ -3471,7 +3471,7 @@ def web_interface(args, ctx):
                 else:
                     try:
                         if 'id' not in data:
-                            data['id'] = session_id
+                            data['id'] = str(uuid.uuid4())
                         session = context.get_session(data['id'])
                         session_id = session['id']
                         if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
