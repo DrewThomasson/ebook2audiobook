@@ -118,6 +118,7 @@ class SessionContext:
             self.sessions[id] = recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
+                "tab_id": None,
                 "process_id": None,
                 "status": None,
                 "event": None,
@@ -4052,31 +4053,15 @@ def web_interface(args, ctx):
                         }
                         tryRun();
 
-                        try{
-                            if(!window.tab_id){
-                                window.tab_id='tab-'+performance.now().toString(36)+'-'+Math.random().toString(36).substring(2,10);
-                            }
-                            return new Promise((resolve)=>{
-                                setTimeout(()=>{
-                                    try{
-                                        const stored=localStorage.getItem('data');
-                                        let parsed=stored?JSON.parse(stored):{};
-                                        if(parsed.tab_id===window.tab_id){
-                                            parsed.status=null;
-                                            parsed.last_disconnect=Date.now();
-                                        }
-                                        parsed.tab_id=window.tab_id;
-                                        localStorage.setItem('data',JSON.stringify(parsed));
-                                        resolve(parsed);
-                                    }catch(e){
-                                        console.log('JSON parse error:',e);
-                                        resolve({});
-                                    }
-                                },200);
-                            });
-                        }catch(e){
-                            console.log('JS init error:',e);
+                        const stored = localStorage.getItem('data');
+                        let parsed = stored ? JSON.parse(stored) : {};
+                        if(parsed.tab_id === window.tab_id){
+                            parsed.status = null;
+                            parsed.last_disconnect = Date.now();
                         }
+                        parsed.tab_id = window.tab_id;
+                        localStorage.setItem('data', JSON.stringify(parsed));
+                        return parsed;
                     }catch (e){
                         console.log('custom js init error:', e);
                     }
