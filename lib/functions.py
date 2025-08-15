@@ -83,6 +83,7 @@ class SessionTracker:
             if id:
                 session = context.get_session(id)
                 session['cancellation_requested'] = True
+                session['tab_id'] = None
                 session['status'] = None
                 session['metadata'] = {
                     "title": None, 
