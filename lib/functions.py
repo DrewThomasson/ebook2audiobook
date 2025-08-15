@@ -4052,30 +4052,30 @@ def web_interface(args, ctx):
                         }
                         tryRun();
 
-                        try {
-                            if (!window.tab_id) {
-                                window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
+                        try{
+                            if(!window.tab_id){
+                                window.tab_id='tab-'+performance.now().toString(36)+'-'+Math.random().toString(36).substring(2,10);
                             }
-                            window.addEventListener("beforeunload", () => {
-                                try {
-                                    const saved = JSON.parse(localStorage.getItem('data') || '{}');
-                                    if (saved.tab_id === window.tab_id) {
-                                        saved.status = null;
-                                        saved.last_disconnect = Date.now();
-                                        localStorage.setItem('data', JSON.stringify(saved));
+                            return new Promise((resolve)=>{
+                                setTimeout(()=>{
+                                    try{
+                                        const stored=localStorage.getItem('data');
+                                        let parsed=stored?JSON.parse(stored):{};
+                                        if(parsed.tab_id===window.tab_id){
+                                            parsed.status=null;
+                                            parsed.last_disconnect=Date.now();
+                                        }
+                                        parsed.tab_id=window.tab_id;
+                                        localStorage.setItem('data',JSON.stringify(parsed));
+                                        resolve(parsed);
+                                    }catch(e){
+                                        console.log('JSON parse error:',e);
+                                        resolve({});
                                     }
-                                } catch (e) {
-                                    console.log('Error updating status on unload:', e);
-                                }
+                                },200);
                             });
-                            const saved = JSON.parse(localStorage.getItem('data') || '{}');
-                            if (saved.tab_id === window.tab_id) {
-                                saved.status = null; // force reset if same tab as before
-                                saved.last_disconnect = Date.now();
-                                localStorage.setItem('data', JSON.stringify(saved));
-                            }
-                        } catch (e) {
-                            console.log('JSON parse error:', e);
+                        }catch(e){
+                            console.log('JS init error:',e);
                         }
                     }catch (e){
                         console.log('custom js init error:', e);
