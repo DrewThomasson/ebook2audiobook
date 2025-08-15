@@ -3474,6 +3474,7 @@ def web_interface(args, ctx):
                             data['id'] = session_id
                         session = context.get_session(data['id'])
                         session_id = session['id']
+                        print(f"-----------{data.get('tab_id')} = {session.get('tab_id')}-----------")
                         if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
                             session['status'] = None
                         restore_session_from_data(data, session)
@@ -4060,7 +4061,8 @@ def web_interface(args, ctx):
                                 window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
                             }
                             const stored = localStorage.getItem('data');
-                            let parsed = stored ? JSON.parse(stored) : {};
+                            const parsed = stored ? JSON.parse(stored) : {};
+                            console.log(parsed.tab_id)
                             if (parsed.tab_id === window.tab_id || parsed.tab_id == null) {
                                 parsed.status = null;
                                 parsed.last_disconnect = Date.now();
