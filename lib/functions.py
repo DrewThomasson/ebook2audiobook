@@ -3474,6 +3474,8 @@ def web_interface(args, ctx):
                             data['id'] = session_id
                         session = context.get_session(data['id'])
                         session_id = session['id']
+                        if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
+                            session['status'] = None
                         restore_session_from_data(data, session)
                         if not ctx_tracker.start_session(session_id):
                             session_id = ''
@@ -4053,15 +4055,23 @@ def web_interface(args, ctx):
                         }
                         tryRun();
 
-                        const stored = localStorage.getItem('data');
-                        let parsed = stored ? JSON.parse(stored) : {};
-                        if(parsed.tab_id === window.tab_id){
-                            parsed.status = null;
-                            parsed.last_disconnect = Date.now();
+                        try{
+                            if (!window.tab_id) {
+                                window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
+                            }
+                            const stored = localStorage.getItem('data');
+                            let parsed = stored ? JSON.parse(stored) : {};
+                            if (parsed.tab_id === window.tab_id or parsed.tab_id == null) {
+                                parsed.status = null;
+                                parsed.last_disconnect = Date.now();
+                            }
+                            parsed.tab_id = window.tab_id;
+                            localStorage.setItem('data', JSON.stringify(parsed));
+                            return parsed;
+                        }catch(e){
+                            console.log('JS init error:', e);
+                            return {};
                         }
-                        parsed.tab_id = window.tab_id;
-                        localStorage.setItem('data', JSON.stringify(parsed));
-                        return parsed;
                     }catch (e){
                         console.log('custom js init error:', e);
                     }
