@@ -3474,7 +3474,7 @@ def web_interface(args, ctx):
                             data['id'] = session_id
                         session = context.get_session(data['id'])
                         session_id = session['id']
-                        if data.get('tab_id') == session.get('tab_id'):
+                        if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
                             session['status'] = None 
                         restore_session_from_data(data, session)
                         if not ctx_tracker.start_session(session_id):
