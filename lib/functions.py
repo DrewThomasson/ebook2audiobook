@@ -72,7 +72,6 @@ class SessionTracker:
     def start_session(self, status):
         with self.lock:
             if status is None:
-                session['status'] = 'ready'
                 return True
         return False
 
@@ -3479,6 +3478,7 @@ def web_interface(args, ctx):
                             session_id = ''
                             error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
+                        session['status'] = 'ready'
                         restore_session_from_data(data, session)
                         session['cancellation_requested'] = False
                         if isinstance(session['ebook'], str):
