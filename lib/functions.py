@@ -69,10 +69,10 @@ class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
 
-    def start_session(self, id):
+    def start_session(self, status, id):
         with self.lock:
-            session = context.get_session(id)
-            if session['status'] is None:
+            if status is None:
+                session = context.get_session(id)
                 session['status'] = 'ready'
                 return True
         return False
@@ -3477,7 +3477,7 @@ def web_interface(args, ctx):
                         if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
                             data['status'] = None 
                             data['cancellation_requested'] = False
-                        if not ctx_tracker.start_session(session_id):
+                        if not ctx_tracker.start_session(data['status'], session_id):
                             session_id = ''
                             error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                             return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
