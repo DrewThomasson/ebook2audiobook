@@ -2807,9 +2807,6 @@ def web_interface(args, ctx):
             try:
                 session = context.get_session(id)
                 socket_hash = req.session_hash
-                if not session.get(socket_hash):
-                    error = 'Exit from interface...'
-                    raise gr.Error(error)
                 session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
@@ -3471,16 +3468,16 @@ def web_interface(args, ctx):
                 alert_exception(error)              
                 return gr.update()
 
-        def change_gr_read_data(data, state):
+        def change_gr_read_data(data, state, req: gr.Request):
             try:
                 msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                 if data is None:
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
                 if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
-                    #socket_hash = req.session_hash
+                    socket_hash = req.session_hash
                     restore_session_from_data(data, session)
-                    #session[socket_hash] = socket_hash
+                    session[socket_hash] = socket_hash
                     session['status'] = None
                     session['cancellation_requested'] = False
                 if not ctx_tracker.start_session(session['id']):
