@@ -2803,11 +2803,13 @@ def web_interface(args, ctx):
             gr.Error(error)
             DependencyError(error)
 
-        def restore_interface(id):
+        def restore_interface(id, req: gr.Request):
             try:
                 session = context.get_session(id)
-                if session['status'] is None:
-                    raise gr.Error()
+                socket_hash = req.session_hash
+                if not session.get(socket_hash):
+                    outputs = outputs = tuple([gr.update() for _ in range(24)])
+                    return outputs
                 session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
@@ -3481,7 +3483,6 @@ def web_interface(args, ctx):
                     session['cancellation_requested'] = False
                 if not ctx_tracker.start_session(session['id']):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
-                    raise gr.Error(error)
                     return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                 if isinstance(session['ebook'], str):
                     if not os.path.exists(session['ebook']):
