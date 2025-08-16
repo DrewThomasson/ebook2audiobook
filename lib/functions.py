@@ -3475,14 +3475,13 @@ def web_interface(args, ctx):
                 if data is None:
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
-                if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None or session.get('tab_id') is None:
+                if data.get('tab_id') == session.get('tab_id') or session.get('tab_id') is None:
                     restore_session_from_data(data, session)
                     session[req.session_hash] = req.session_hash
                     session['status'] = None
                     session['cancellation_requested'] = False
                 if not ctx_tracker.start_session(session['id']):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
-                    raise gr.Error(error)
                     return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                 if isinstance(session['ebook'], str):
                     if not os.path.exists(session['ebook']):
