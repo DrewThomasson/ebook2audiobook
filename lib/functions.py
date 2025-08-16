@@ -3461,6 +3461,7 @@ def web_interface(args, ctx):
                 if data is None:
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
+                print(f'active_sessions: {leng(active_sessions)}')
                 if data.get('tab_id') == session.get('tab_id') or session.get('tab_id') is None or leng(active_sessions) == 0:
                     restore_session_from_data(data, session)
                 active_sessions.add(req.session_hash)
