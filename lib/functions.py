@@ -77,12 +77,13 @@ class SessionTracker:
                 return True
         return False
 
-    def end_session(self, id):
+    def end_session(self, id, socket_hash):
         with self.lock:
             session = context.get_session(id)
             session['cancellation_requested'] = True
             session['tab_id'] = None
             session['status'] = None
+            session[socket_hash] = None
             session['metadata'] = {
                 "title": None, 
                 "creator": None,
@@ -117,6 +118,7 @@ class SessionContext:
             self.sessions[id] = recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
+                "tab_id": None,
                 "process_id": None,
                 "status": None,
                 "event": None,
@@ -181,6 +183,12 @@ class SessionContext:
                 "time": None
             }, manager=self.manager)
         return self.sessions[id]
+
+    def find_id_by_hash(self, socket_hash):
+        for id, session in self.sessions.items():
+            if socket_hash in session:
+                return session.get('id')
+        return None
 
 ctx_tracker = SessionTracker()
 
@@ -2261,7 +2269,6 @@ def show_alert(state):
 def web_interface(args, ctx):
     global context, is_gui_process
     context = ctx
-    session_id = ''
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
@@ -2638,7 +2645,6 @@ def web_interface(args, ctx):
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
         gr_state_update = gr.State(value={"hash": None})
-        gr_state_alert = gr.State(value={"type": None,"msg": None})
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
         gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
         gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False)
@@ -2659,10 +2665,11 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
-        def cleanup_session():
-            print(f'session_id: {session_id}')
-            if session_id:
-                ctx_tracker.end_session(session_id)
+        def cleanup_session(req: gr.Request):
+            socket_hash = req.session_hash
+            if any(socket_hash in session for session in self.sessions.values())
+                session_id = context.find_id_by_hash(socket_hash)
+                ctx_tracker.end_session(session_id, socket_hash)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -2798,9 +2805,6 @@ def web_interface(args, ctx):
         def restore_interface(id):
             try:
                 session = context.get_session(id)
-                if session['status'] is None:
-                    error = 'Exit from interface...'
-                    raise gr.Error(error)
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
@@ -3461,52 +3465,42 @@ def web_interface(args, ctx):
                 alert_exception(error)              
                 return gr.update()
 
-        def change_gr_read_data(data, state):
-            nonlocal session_id
-            msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
+        def change_gr_read_data(data, state, req: gr.Request):
             try:
+                msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                 if data is None:
-                    session = context.get_session(session_id)
-                else:
-                    try:
-                        if 'id' not in data:
-                            data['id'] = str(uuid.uuid4())
-                        session = context.get_session(data['id'])
-                        session_id = session['id']
-                        if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
-                            session['status'] = None
-                            session['cancellation_requested'] = False
-                        restore_session_from_data(data, session)
-                        if not ctx_tracker.start_session(session_id):
-                            session_id = ''
-                            error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
-                            return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
-                        if isinstance(session['ebook'], str):
-                            if not os.path.exists(session['ebook']):
-                                session['ebook'] = None
-                        if session['voice'] is not None:
-                            if not os.path.exists(session['voice']):
-                                session['voice'] = None
-                        if session['custom_model'] is not None:
-                            if not os.path.exists(session['custom_model_dir']):
-                                session['custom_model'] = None 
-                        if session['fine_tuned'] is not None:
-                            if session['tts_engine'] is not None:
-                                if session['tts_engine'] in models.keys():
-                                    if session['fine_tuned'] not in models[session['tts_engine']].keys():
-                                        session['fine_tuned'] = default_fine_tuned
-                                else:
-                                    session['tts_engine'] = default_tts_engine
-                                    session['fine_tuned'] = default_fine_tuned
-                        if session['audiobook'] is not None:
-                            if not os.path.exists(session['audiobook']):
-                                session['audiobook'] = None
-                        if session['status'] == 'converting':
-                            session['status'] = 'ready'
-                    except Exception as e:
-                        error = f'change_gr_read_data(): {e}'
-                        alert_exception(error)
-                        return gr.update(), gr.update(), gr.update(), gr.update()
+                    data = context.get_session(str(uuid.uuid4()))
+                session = context.get_session(data['id'])
+                if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
+                    session[req.session_hash] = session['id']
+                    session['status'] = None
+                    session['cancellation_requested'] = False
+                restore_session_from_data(data, session)
+                if not ctx_tracker.start_session(session['id']):
+                    error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
+                    return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
+                if isinstance(session['ebook'], str):
+                    if not os.path.exists(session['ebook']):
+                        session['ebook'] = None
+                if session['voice'] is not None:
+                    if not os.path.exists(session['voice']):
+                        session['voice'] = None
+                if session['custom_model'] is not None:
+                    if not os.path.exists(session['custom_model_dir']):
+                        session['custom_model'] = None 
+                if session['fine_tuned'] is not None:
+                    if session['tts_engine'] is not None:
+                        if session['tts_engine'] in models.keys():
+                            if session['fine_tuned'] not in models[session['tts_engine']].keys():
+                                session['fine_tuned'] = default_fine_tuned
+                        else:
+                            session['tts_engine'] = default_tts_engine
+                            session['fine_tuned'] = default_fine_tuned
+                if session['audiobook'] is not None:
+                    if not os.path.exists(session['audiobook']):
+                        session['audiobook'] = None
+                if session['status'] == 'converting':
+                    session['status'] = 'ready'
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
