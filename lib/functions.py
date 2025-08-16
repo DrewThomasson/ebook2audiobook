@@ -4060,7 +4060,7 @@ def web_interface(args, ctx):
                                 try{
                                     const tab_id = window.tab_id
                                     const saved = JSON.parse(localStorage.getItem('data') || '{}');
-                                    if (saved.tab_id === tab_id || !saved.tab_id) {
+                                    if (saved.tab_id == tab_id || !saved.tab_id) {
                                         saved.tab_id = undefined
                                         saved.status = undefined
                                         localStorage.setItem('data', JSON.stringify(saved));
