@@ -80,6 +80,7 @@ class SessionTracker:
         return False
 
     def end_session(self, id, socket_hash):
+        global active_sessions
         active_sessions.discard(socket_hash)
         with self.lock:
             session = context.get_session(id)
@@ -3461,7 +3462,6 @@ def web_interface(args, ctx):
                 if data is None:
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
-                print(f'active_sessions: {len(active_sessions)}')
                 if data.get('tab_id') == session.get('tab_id') or len(active_sessions) == 0:
                     data['status'] = None
                     restore_session_from_data(data, session)
