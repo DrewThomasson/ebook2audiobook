@@ -3481,6 +3481,7 @@ def web_interface(args, ctx):
                     restore_session_from_data(data, session)
                     session[req.session_hash] = req.session_hash
                     session['cancellation_requested'] = False
+                    print(session)
                 if not ctx_tracker.start_session(session['id']):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                     return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
