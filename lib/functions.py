@@ -2669,7 +2669,6 @@ def web_interface(args, ctx):
             socket_hash = req.session_hash
             if any(socket_hash in session for session in context.sessions.values()):
                 session_id = context.find_id_by_hash(socket_hash)
-                print(f'session ended: {session_id}')
                 ctx_tracker.end_session(session_id, socket_hash)
 
         def load_vtt_data(path):
