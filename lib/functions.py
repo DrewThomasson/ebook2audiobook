@@ -2803,10 +2803,14 @@ def web_interface(args, ctx):
             gr.Error(error)
             DependencyError(error)
 
-        def restore_interface(id, req: gr.Request):
+        def restore_interface(id):
             try:
                 session = context.get_session(id)
-                socket_hash = req.session_hash
+                if session['status'] is None:
+                    error = 'Exit from interface...'
+                    raise gr.Error(error)
+                    outputs = outputs = tuple([gr.update() for _ in range(24)])
+                    return outputs
                 session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
