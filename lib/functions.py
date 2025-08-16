@@ -3463,7 +3463,7 @@ def web_interface(args, ctx):
                 session = context.get_session(data['id'])
                 print(f'active_sessions: {len(active_sessions)}')
                 if data.get('tab_id') == session.get('tab_id') or session.get('tab_id') is None or len(active_sessions) == 0:
-                    session['status'] = None
+                    data['status'] = None
                     restore_session_from_data(data, session)
                 if not ctx_tracker.start_session(session['id']):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
