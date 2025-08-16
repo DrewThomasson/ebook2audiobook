@@ -80,7 +80,6 @@ class SessionTracker:
         return False
 
     def end_session(self, id, socket_hash):
-        global active_sessions
         active_sessions.discard(socket_hash)
         with self.lock:
             session = context.get_session(id)
@@ -3469,7 +3468,7 @@ def web_interface(args, ctx):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                     return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                 else:
-                    active_sessions.add(req.session_hash)
+                    #active_sessions.add(req.session_hash)
                     session[req.session_hash] = req.session_hash
                     session['cancellation_requested'] = False
                 if isinstance(session['ebook'], str):
