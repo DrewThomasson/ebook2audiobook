@@ -3462,8 +3462,8 @@ def web_interface(args, ctx):
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
                 if data.get('tab_id') == session.get('tab_id') or len(active_sessions) == 0:
-                    #data['status'] = None
                     restore_session_from_data(data, session)
+                    session['status'] = None
                 if not ctx_tracker.start_session(session['id']):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                     return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
