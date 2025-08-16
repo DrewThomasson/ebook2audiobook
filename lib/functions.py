@@ -2807,8 +2807,7 @@ def web_interface(args, ctx):
             try:
                 session = context.get_session(id)
                 if session['status'] is None:
-                    error = 'Exit from interface...'
-                    raise gr.Error(error)
+                    raise
                 session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
