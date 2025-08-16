@@ -3475,7 +3475,7 @@ def web_interface(args, ctx):
                 if data is None:
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
-                if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
+                if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None or session.get('tab_id') is None:
                     socket_hash = req.session_hash
                     restore_session_from_data(data, session)
                     session[socket_hash] = socket_hash
