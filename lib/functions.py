@@ -28,6 +28,7 @@ from multiprocessing.managers import DictProxy, ListProxy
 from num2words import num2words
 from pathlib import Path
 from pydub import AudioSegment
+from pydub.utils import mediainfo
 from queue import Queue, Empty
 from types import MappingProxyType
 from urllib.parse import urlparse
@@ -84,28 +85,6 @@ class SessionTracker:
             session['tab_id'] = None
             session['status'] = None
             session[socket_hash] = None
-            session['metadata'] = {
-                "title": None, 
-                "creator": None,
-                "contributor": None,
-                "language": None,
-                "identifier": None,
-                "publisher": None,
-                "date": None,
-                "description": None,
-                "subject": None,
-                "rights": None,
-                "format": None,
-                "type": None,
-                "coverage": None,
-                "relation": None,
-                "Source": None,
-                "Modified": None,
-            }
-            session['toc'] = None
-            session['chapters'] = None
-            session['cover'] = None
-            session['time'] = None
 
 class SessionContext:
     def __init__(self):
@@ -180,7 +159,8 @@ class SessionContext:
                 "toc": None,
                 "chapters": None,
                 "cover": None,
-                "time": None
+                "duration": 0,
+                "playback_time": 0
             }, manager=self.manager)
         return self.sessions[id]
 
@@ -2220,7 +2200,8 @@ def reset_ebook_session(id):
         "cover": None,
         "status": None,
         "progress": 0,
-        "time": None,
+        "duration": 0,
+        "playback_time": 0,
         "cancellation_requested": False,
         "event": None,
         "metadata": {
@@ -2859,6 +2840,8 @@ def web_interface(args, ctx):
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
             session['audiobook'] = selected
+            audio_info = mediainfo(selected)
+            session['duration'] = float(audio_info['duration'])
             visible = True if len(audiobook_options) else False
             return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(visible=visible)
         
@@ -3849,7 +3832,7 @@ def web_interface(args, ctx):
                             window.reset_elements = () => {
                                 try {
                                     const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
-                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
+                                    const gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
                                     const checkboxes = gr_audiobook_player_root.querySelectorAll("input[type='checkbox']");
                                     const radios = gr_audiobook_player_root.querySelectorAll("input[type='radio']");
                                     const url = new URL(window.location);
@@ -3901,7 +3884,7 @@ def web_interface(args, ctx):
                                     if (!window.load_vtt_timeout) { window.load_vtt_timeout = null; }
 
                                     const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
-                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
+                                    const gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
                                     if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
                                         const _m = gr_audiobook_player.querySelector('audio,video');
                                         if (_m) gr_audiobook_player = _m;
@@ -3932,8 +3915,18 @@ def web_interface(args, ctx):
                                                 let lastCue = null;
                                                 let fade_timeout = null;
 
+                                                gr_audiobook_player.addEventListener('loadedmetadata", () => {
+                                                    const stored = window.localStorage.getItem('data');
+                                                    if(stored){
+                                                        const parsed = JSON.parse(stored);
+                                                        const playback_time = parseFloat(parsed.playback_time || 0);
+                                                        gr_audiobook_player.currentTime = playback_time;
+                                                    }
+                                                },{once: true});
+
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
-                                                    const cue = findCue(cues, gr_audiobook_player.currentTime);
+                                                    const playback_time = gr_audiobook_player.currentTime || 0;
+                                                    const cue = findCue(cues, playback_time);
                                                     if (cue && cue !== lastCue) {
                                                         if (fade_timeout) {
                                                             textarea.style.opacity = '1';
@@ -4058,11 +4051,14 @@ def web_interface(args, ctx):
                             }
                             window.addEventListener("beforeunload", ()=>{
                                 try{
+                                    const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
+                                    const gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
                                     const tab_id = window.tab_id
                                     const saved = JSON.parse(localStorage.getItem('data') || '{}');
                                     if (saved.tab_id == tab_id || !saved.tab_id){
                                         saved.tab_id = undefined
                                         saved.status = undefined
+                                        saved.playback_time = gr_audiobook_player.currentTime || 0;
                                         localStorage.setItem('data', JSON.stringify(saved));
                                     }
                                 }catch(e){
