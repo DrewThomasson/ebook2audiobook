@@ -3471,7 +3471,6 @@ def web_interface(args, ctx):
                     active_sessions.add(req.session_hash)
                     session[req.session_hash] = req.session_hash
                     session['cancellation_requested'] = False
-                    return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str='test')
                 if isinstance(session['ebook'], str):
                     if not os.path.exists(session['ebook']):
                         session['ebook'] = None
@@ -3511,6 +3510,7 @@ def web_interface(args, ctx):
                     delete_unused_tmp_dirs(audiobooks_host_dir, tmp_expire, session)
                 if not os.path.exists(session['audiobooks_dir']):
                     os.makedirs(session['audiobooks_dir'], exist_ok=True)
+                return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str='test')
                 previous_hash = state['hash']
                 new_hash = hash_proxy_dict(MappingProxyType(session))
                 state['hash'] = new_hash
