@@ -77,12 +77,13 @@ class SessionTracker:
                 return True
         return False
 
-    def end_session(self, id):
+    def end_session(self, id, socket_hash):
         with self.lock:
             session = context.get_session(id)
             session['cancellation_requested'] = True
             session['tab_id'] = None
             session['status'] = None
+            session[socket_hash] = None
             session['metadata'] = {
                 "title": None, 
                 "creator": None,
@@ -117,6 +118,7 @@ class SessionContext:
             self.sessions[id] = recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
+                "tab_id": None,
                 "process_id": None,
                 "status": None,
                 "event": None,
@@ -181,6 +183,12 @@ class SessionContext:
                 "time": None
             }, manager=self.manager)
         return self.sessions[id]
+
+    def find_id_by_hash(self, socket_hash):
+        for id, session in self.sessions.items():
+            if socket_hash in session:
+                return session.get('id')
+        return None
 
 ctx_tracker = SessionTracker()
 
@@ -2657,10 +2665,12 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
-        def cleanup_session():
-            print(f'session_id: {session_id}')
-            if session_id:
-                ctx_tracker.end_session(session_id)
+        def cleanup_session(req: gr.Request):
+            socket_hash = req.session_hash
+            if any(socket_hash in session for session in context.sessions.values()):
+                session_id = context.find_id_by_hash(socket_hash)
+                print(f'session ended: {session_id}')
+                ctx_tracker.end_session(session_id, socket_hash)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -2793,12 +2803,14 @@ def web_interface(args, ctx):
             gr.Error(error)
             DependencyError(error)
 
-        def restore_interface(id):
+        def restore_interface(id, req: gr.Request):
             try:
                 session = context.get_session(id)
-                if session['status'] is None:
+                socket_hash = req.session_hash
+                if not session.get(socket_hash):
                     error = 'Exit from interface...'
                     raise gr.Error(error)
+                session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
@@ -3466,9 +3478,11 @@ def web_interface(args, ctx):
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
                 if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
+                    #socket_hash = req.session_hash
+                    restore_session_from_data(data, session)
+                    #session[socket_hash] = socket_hash
                     session['status'] = None
                     session['cancellation_requested'] = False
-                restore_session_from_data(data, session)
                 if not ctx_tracker.start_session(session['id']):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                     return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
