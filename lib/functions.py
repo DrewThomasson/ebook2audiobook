@@ -3479,6 +3479,7 @@ def web_interface(args, ctx):
                 session = context.get_session(data['id'])
                 if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
                     socket_hash = req.session_hash
+                    print(socket_hash)
                     session[socket_hash] = socket_hash
                     session['status'] = None
                     session['cancellation_requested'] = False
