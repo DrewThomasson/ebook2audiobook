@@ -117,7 +117,6 @@ class SessionContext:
             self.sessions[id] = recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
-                "tab_id": None,
                 "process_id": None,
                 "status": None,
                 "event": None,
@@ -182,12 +181,6 @@ class SessionContext:
                 "time": None
             }, manager=self.manager)
         return self.sessions[id]
-
-    def find_id_by_hash(self, socket_hash):
-        for id, session in self.sessions.items():
-            if socket_hash in session:
-                return session.get('id')
-        return None
 
 ctx_tracker = SessionTracker()
 
@@ -2664,11 +2657,10 @@ def web_interface(args, ctx):
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
-        def cleanup_session(req: gr.Request):
-            socket_hash = req.session_hash
-            if any(socket_hash in session for session in self.sessions.values())
-                session_id = context.find_id_by_hash(socket_hash)
-                ctx_tracker.end_session(session_id, socket_hash)
+        def cleanup_session():
+            print(f'session_id: {session_id}')
+            if session_id:
+                ctx_tracker.end_session(session_id)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -2804,6 +2796,9 @@ def web_interface(args, ctx):
         def restore_interface(id):
             try:
                 session = context.get_session(id)
+                if session['status'] is None:
+                    error = 'Exit from interface...'
+                    raise gr.Error(error)
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
@@ -3464,14 +3459,13 @@ def web_interface(args, ctx):
                 alert_exception(error)              
                 return gr.update()
 
-        def change_gr_read_data(data, state, req: gr.Request):
+        def change_gr_read_data(data, state):
             try:
                 msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                 if data is None:
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
                 if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
-                    session[req.session_hash] = session['id']
                     session['status'] = None
                     session['cancellation_requested'] = False
                 restore_session_from_data(data, session)
