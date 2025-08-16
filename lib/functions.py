@@ -3515,7 +3515,6 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str='test')
                 return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
