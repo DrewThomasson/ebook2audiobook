@@ -3915,7 +3915,7 @@ def web_interface(args, ctx):
                                                 let lastCue = null;
                                                 let fade_timeout = null;
 
-                                                gr_audiobook_player.addEventListener('loadedmetadata", () => {
+                                                gr_audiobook_player.addEventListener('loadedmetadata', () => {
                                                     const stored = window.localStorage.getItem('data');
                                                     if(stored){
                                                         const parsed = JSON.parse(stored);
