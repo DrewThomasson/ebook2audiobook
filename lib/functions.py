@@ -81,7 +81,6 @@ class SessionTracker:
         with self.lock:
             session = context.get_session(id)
             session['cancellation_requested'] = True
-            session['tab_id'] = None
             session['status'] = None
             session[socket_hash] = None
             session['metadata'] = {
@@ -3477,7 +3476,7 @@ def web_interface(args, ctx):
                 if data is None:
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
-                if data.get('tab_id') == session.get('tab_id') or session.get('tab_id') is None:
+                if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
                     restore_session_from_data(data, session)
                     session[req.session_hash] = req.session_hash
                     session['cancellation_requested'] = False
@@ -4060,7 +4059,7 @@ def web_interface(args, ctx):
                                 try{
                                     const tab_id = window.tab_id
                                     const saved = JSON.parse(localStorage.getItem('data') || '{}');
-                                    if (saved.tab_id == tab_id || !saved.tab_id) {
+                                    if (saved.tab_id == tab_id || !saved.tab_id){
                                         saved.tab_id = undefined
                                         saved.status = undefined
                                         localStorage.setItem('data', JSON.stringify(saved));
