@@ -2667,7 +2667,7 @@ def web_interface(args, ctx):
 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
-            if any(socket_hash in session for session in self.sessions.values())
+            if any(socket_hash in session for session in self.sessions.values()):
                 session_id = context.find_id_by_hash(socket_hash)
                 print(f'session ended: {session_id}')
                 ctx_tracker.end_session(session_id, socket_hash)
