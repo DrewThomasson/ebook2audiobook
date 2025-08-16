@@ -3481,6 +3481,7 @@ def web_interface(args, ctx):
                     session['cancellation_requested'] = False
                 if not ctx_tracker.start_session(session['id']):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
+                    raise gr.Error(error)
                     return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                 if isinstance(session['ebook'], str):
                     if not os.path.exists(session['ebook']):
