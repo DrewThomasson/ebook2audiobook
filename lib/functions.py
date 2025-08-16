@@ -79,6 +79,7 @@ class SessionTracker:
         return False
 
     def end_session(self, id, socket_hash):
+        active_sessions.discard(socket_hash)
         with self.lock:
             session = context.get_session(id)
             session['cancellation_requested'] = True
@@ -2249,6 +2250,7 @@ def show_alert(state):
 
 def web_interface(args, ctx):
     global context, is_gui_process
+    active_sessions = set()
     context = ctx
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
@@ -3459,8 +3461,9 @@ def web_interface(args, ctx):
                 if data is None:
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
-                if data.get('tab_id') == session.get('tab_id') or session.get('tab_id') is None:
+                if data.get('tab_id') == session.get('tab_id') or session.get('tab_id') is None or leng(active_sessions) === 0:
                     restore_session_from_data(data, session)
+                active_sessions.add(req.session_hash)
                 if not ctx_tracker.start_session(session['id']):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                     return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
