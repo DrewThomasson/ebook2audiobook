@@ -3478,7 +3478,8 @@ def web_interface(args, ctx):
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
                 if data.get('tab_id') == session.get('tab_id') or data.get('tab_id') is None:
-                    session[req.session_hash] = session['id']
+                    socket_hash = req.session_hash
+                    session[socket_hash] = socket_hash
                     session['status'] = None
                     session['cancellation_requested'] = False
                 restore_session_from_data(data, session)
