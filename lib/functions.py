@@ -39,17 +39,14 @@ from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 
+context = None
+is_gui_process = False
+
 #import logging
 #logging.basicConfig(
-#    format="%(asctime)s %(name)s %(levelname)s %(message)s",
-#    level=logging.DEBUG
+#    level=logging.INFO, # DEBUG for more verbosity
+#    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
-#logging.getLogger("gradio").setLevel(logging.DEBUG)
-#logging.getLogger("httpx").setLevel(logging.DEBUG)
-
-context = None
-lock = threading.Lock()
-is_gui_process = False
 
 class DependencyError(Exception):
     def __init__(self, message=None):
@@ -62,43 +59,71 @@ class DependencyError(Exception):
         # Print the full traceback of the exception
         traceback.print_exc()      
         # Print the exception message
-        print(f'Caught DependencyError: {self}')    
+        error = f'Caught DependencyError: {self}'
+        print(error)    
         # Exit the script if it's not a web process
         if not is_gui_process:
             sys.exit(1)
 
-def recursive_proxy(data, manager=None):
-    if manager is None:
-        manager = Manager()
-    if isinstance(data, dict):
-        proxy_dict = manager.dict()
-        for key, value in data.items():
-            proxy_dict[key] = recursive_proxy(value, manager)
-        return proxy_dict
-    elif isinstance(data, list):
-        proxy_list = manager.list()
-        for item in data:
-            proxy_list.append(recursive_proxy(item, manager))
-        return proxy_list
-    elif isinstance(data, (str, int, float, bool, type(None))):
-        return data
-    else:
-        error = f"Unsupported data type: {type(data)}"
-        print(error)
-        return
+class SessionTracker:
+    def __init__(self):
+        self.lock = threading.Lock()
+
+    def start_session(self, id):
+        with self.lock:
+            session = context.get_session(id)
+            if session['status'] is None:
+                session['status'] = 'ready'
+                return True
+        return False
+
+    def end_session(self, id, socket_hash):
+        with self.lock:
+            session = context.get_session(id)
+            session['cancellation_requested'] = True
+            session['tab_id'] = None
+            session['status'] = None
+            session[socket_hash] = None
+            session['metadata'] = {
+                "title": None, 
+                "creator": None,
+                "contributor": None,
+                "language": None,
+                "identifier": None,
+                "publisher": None,
+                "date": None,
+                "description": None,
+                "subject": None,
+                "rights": None,
+                "format": None,
+                "type": None,
+                "coverage": None,
+                "relation": None,
+                "Source": None,
+                "Modified": None,
+            }
+            session['toc'] = None
+            session['chapters'] = None
+            session['cover'] = None
+            session['time'] = None
 
 class SessionContext:
     def __init__(self):
         self.manager = Manager()
-        self.sessions = self.manager.dict()  # Store all session-specific contexts
-        self.cancellation_events = {}  # Store multiprocessing.Event for each session
+        self.sessions = self.manager.dict()
+        self.cancellation_events = {}
 
     def get_session(self, id):
         if id not in self.sessions:
             self.sessions[id] = recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
+                "tab_id": None,
                 "process_id": None,
+                "status": None,
+                "event": None,
+                "progress": 0,
+                "cancellation_requested": False,
                 "device": default_device,
                 "system": None,
                 "client": None,
@@ -120,13 +145,6 @@ class SessionContext:
                 "voice_dir": None,
                 "custom_model": None,
                 "custom_model_dir": None,
-                "toc": None,
-                "chapters": None,
-                "cover": None,
-                "status": None,
-                "progress": 0,
-                "time": None,
-                "cancellation_requested": False,
                 "temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
                 "length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
                 "num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
@@ -137,7 +155,6 @@ class SessionContext:
                 "enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
                 "text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
                 "waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
-                "event": None,
                 "final_name": None,
                 "output_format": default_output_format,
                 "output_split": default_output_split,
@@ -159,9 +176,41 @@ class SessionContext:
                     "relation": None,
                     "Source": None,
                     "Modified": None,
-                }
+                },
+                "toc": None,
+                "chapters": None,
+                "cover": None,
+                "time": None
             }, manager=self.manager)
         return self.sessions[id]
+
+    def find_id_by_hash(self, socket_hash):
+        for id, session in self.sessions.items():
+            if socket_hash in session:
+                return session.get('id')
+        return None
+
+ctx_tracker = SessionTracker()
+
+def recursive_proxy(data, manager=None):
+    if manager is None:
+        manager = Manager()
+    if isinstance(data, dict):
+        proxy_dict = manager.dict()
+        for key, value in data.items():
+            proxy_dict[key] = recursive_proxy(value, manager)
+        return proxy_dict
+    elif isinstance(data, list):
+        proxy_list = manager.list()
+        for item in data:
+            proxy_list.append(recursive_proxy(item, manager))
+        return proxy_list
+    elif isinstance(data, (str, int, float, bool, type(None))):
+        return data
+    else:
+        error = f"Unsupported data type: {type(data)}"
+        print(error)
+        return
 
 def prepare_dirs(src, session):
     try:
@@ -339,7 +388,8 @@ def proxy2dict(proxy_obj):
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
 
-def convert2epub(session):
+def convert2epub(id):
+    session = context.get_session(id)
     if session['cancellation_requested']:
         print('Cancel requested')
         return False
@@ -530,36 +580,49 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
 
-    def walk(node):
+    def tuple_row(node, last_text_char=None):
         try:
             for child in node.children:
                 if isinstance(child, NavigableString):
                     text = child.strip()
                     if text:
                         yield ("text", text)
+                        last_text_char = text[-1] if text else last_text_char
+
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
                         title = child.get_text(strip=True)
                         if title:
                             yield ("heading", title)
+                            last_text_char = title[-1] if title else last_text_char
+
                     elif name == "table":
                         yield ("table", child)
+
                     else:
                         return_data = False
                         if name in proc_tags:
-                            for inner in walk(child):
+                            for inner in tuple_row(child, last_text_char):
                                 return_data = True
                                 yield inner
+                                # Track last char if this is text or heading
+                                if inner[0] in ("text", "heading") and inner[1]:
+                                    last_text_char = inner[1][-1]
+
                             if return_data:
                                 if name in break_tags:
-                                    yield ("break", TTS_SML['break'])
+                                    # Only yield break if last char is NOT alnum or space
+                                    if not (last_text_char and (last_text_char.isalnum() or last_text_char.isspace())):
+                                        yield ("break", TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
-                                    yield ("pause", TTS_SML['pause'])                                 
+                                    yield ("pause", TTS_SML['pause'])
+
                         else:
-                            yield from walk(child)
+                            yield from tuple_row(child, last_text_char)
+
         except Exception as e:
-            error = f'filter_chapter() walk() error: {e}'
+            error = f'filter_chapter() tuple_row() error: {e}'
             DependencyError(error)
             return None
 
@@ -589,23 +652,23 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
-        tuples_list = list(walk(body))
+        tuples_list = list(tuple_row(body))
         if not tuples_list:
             error = 'No tuples_list from body created!'
             print(error)
             return None
-        text_array = []
+        text_list = []
         handled_tables = set()
         prev_typ = None
         for typ, payload in tuples_list:
             if typ == "heading":
-                text_array.append(payload.strip())
+                text_list.append(payload.strip())
             elif typ == "break":
                 if prev_typ != 'break':
-                    text_array.append(TTS_SML['break'])
+                    text_list.append(TTS_SML['break'])
             elif typ == 'pause':
                 if prev_typ != 'pause':
-                    text_array.append(TTS_SML['pause'])
+                    text_list.append(TTS_SML['pause'])
             elif typ == "table":
                 table = payload
                 if table in handled_tables:
@@ -626,13 +689,42 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     else:
                         line = " — ".join(cells)
                     if line:
-                        text_array.append(line.strip())
+                        text_list.append(line.strip())
             else:
                 text = payload.strip()
                 if text:
-                    text_array.append(text)
+                    text_list.append(text)
             prev_typ = typ
-        text = ' '.join(text_array)
+        max_chars = language_mapping[lang]['max_chars'] - 4
+        clean_list = []
+        i = 0
+        while i < len(text_list):
+            current = text_list[i]
+            if current == "‡break‡":
+                if clean_list:
+                    prev = clean_list[-1]
+                    if prev in ("‡break‡", "‡pause‡"):
+                        i += 1
+                        continue
+                    if prev and (prev[-1].isalnum() or prev[-1] == ' '):
+                        if i + 1 < len(text_list):
+                            next_sentence = text_list[i + 1]
+                            merged_length = len(prev.rstrip()) + 1 + len(next_sentence.lstrip())
+                            if merged_length <= max_chars:
+                                # Merge with space handling
+                                if not prev.endswith(" ") and not next_sentence.startswith(" "):
+                                    clean_list[-1] = prev + " " + next_sentence
+                                else:
+                                    clean_list[-1] = prev + next_sentence
+                                i += 2
+                                continue
+                            else:
+                                clean_list.append(current)
+                                i += 1
+                                continue
+            clean_list.append(current)
+            i += 1
+        text = ' '.join(clean_list)
         if not re.search(r"[^\W_]", text):
             error = 'No valid text found!'
             print(error)
@@ -829,38 +921,41 @@ def get_sentences(text, lang, tts_engine):
                 parts = [p for p in split_inclusive(s, pattern) if p]
                 if parts:
                     buffer = ''
-                    for part in parts:
-                        if not buffer:
-                            buffer = part
-                            continue
-                        if len(buffer) < min_tokens:
-                            buffer = buffer + ' ' + part
+                    for idx, part in enumerate(parts):
+                        # Predict length if we glue this part
+                        predicted_length = len(buffer) + (1 if buffer else 0) + len(part)
+                        # Peek ahead to see if gluing will exceed max_chars
+                        if predicted_length <= max_chars:
+                            buffer = (buffer + ' ' + part).strip() if buffer else part
                         else:
-                            buffer = buffer.strip()
-                            if buffer:
-                                soft_list.append(buffer)
-                            buffer = part
+                            # If we overshoot, check if buffer ends with punctuation
+                            if buffer and not any(buffer.rstrip().endswith(p) for p in punctuation_split_soft_set):
+                                # Try to backtrack to last punctuation inside buffer
+                                last_punct_idx = max((buffer.rfind(p) for p in punctuation_split_soft_set if p in buffer), default=-1)
+                                if last_punct_idx != -1:
+                                    soft_list.append(buffer[:last_punct_idx+1].strip())
+                                    leftover = buffer[last_punct_idx+1:].strip()
+                                    buffer = leftover + ' ' + part if leftover else part
+                                else:
+                                    # No punctuation, just split as-is
+                                    soft_list.append(buffer.strip())
+                                    buffer = part
+                            else:
+                                soft_list.append(buffer.strip())
+                                buffer = part
                     if buffer:
                         cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', buffer)
-                        if not any(ch.isalnum() for ch in cleaned):
-                            continue
-                        buffer = buffer.strip()
-                        if buffer:
-                            soft_list.append(buffer)
+                        if any(ch.isalnum() for ch in cleaned):
+                            soft_list.append(buffer.strip())
                 else:
                     cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
-                    if not any(ch.isalnum() for ch in cleaned):
-                        continue
-                    s = s.strip()
-                    if s:
-                        soft_list.append(s)
+                    if any(ch.isalnum() for ch in cleaned):
+                        soft_list.append(s.strip())
             else:
                 cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
-                if not any(ch.isalnum() for ch in cleaned):
-                    continue
-                s = s.strip()
-                if s:
-                    soft_list.append(s)
+                if any(ch.isalnum() for ch in cleaned):
+                    soft_list.append(s.strip())
+
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
@@ -997,30 +1092,66 @@ def get_num2words_compat(lang_iso1):
     except Exception as e:
         return False
 
-def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999):
-    # match up to 12 digits, optional “,…” groups, optional decimal of up to 12 digits
-    number_re = re.compile(r'\b\d{1,12}(?:,\d{1,12})*(?:\.\d{1,12})?\b')
-    def clean_num(match):
-        tok = unicodedata.normalize('NFKC', match.group())
-        # pass through infinities/nans
+def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999_999):
+    # match up to 18 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
+    # handle optional range with dash/en dash/em dash between numbers, and allow trailing punctuation
+    number_re = re.compile(
+        r'(?<!\w)'
+        r'(\d{1,18}(?:,\s*\d{1,18})*(?:\.\d{1,12})?)'      # first number
+        r'(?:\s*([-–—])\s*'                                # dash type
+        r'(\d{1,18}(?:,\s*\d{1,18})*(?:\.\d{1,12})?))?'    # optional second number
+        r'([^\w\s]*)',                                     # optional trailing punctuation
+        re.UNICODE
+    )
+
+    def normalize_commas(num_str: str) -> str:
+        """Normalize number string to standard comma format: 1,234,567"""
+        tok = num_str.replace('\u00A0', '').replace(' ', '')
+        if '.' in tok:
+            integer_part, decimal_part = tok.split('.', 1)
+            integer_part = integer_part.replace(',', '')
+            integer_part = "{:,}".format(int(integer_part))
+            return f"{integer_part}.{decimal_part}"
+        else:
+            integer_part = tok.replace(',', '')
+            return "{:,}".format(int(integer_part))
+
+    def clean_single_num(num_str):
+        tok = unicodedata.normalize('NFKC', num_str)
         if tok.lower() in ('inf', 'infinity', 'nan'):
             return tok
-        # strip commas for numeric parsing
-        clean = tok.replace(',', '')
+        clean = tok.replace(',', '').replace('\u00A0', '').replace(' ', '')
         try:
             num = float(clean) if '.' in clean else int(clean)
         except (ValueError, OverflowError):
             return tok
-        # skip out of range or non finite
         if not math.isfinite(num) or abs(num) > max_single_value:
             return tok
+
+        # Normalize commas before final output
+        tok = normalize_commas(tok)
+
         if is_num2words_compat:
             new_lang_iso1 = lang_iso1.replace('zh', 'zh_CN')
             return num2words(num, lang=new_lang_iso1)
         else:
-            phoneme_map = language_math_phonemes.get(lang, language_math_phonemes.get(default_language_code, language_math_phonemes['eng']))
+            phoneme_map = language_math_phonemes.get(
+                lang,
+                language_math_phonemes.get(default_language_code, language_math_phonemes['eng'])
+            )
             return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
-    return number_re.sub(clean_num, text)
+
+    def clean_match(match):
+        first_num = clean_single_num(match.group(1))
+        dash_char = match.group(2) or ''
+        second_num = clean_single_num(match.group(3)) if match.group(3) else ''
+        trailing = match.group(4) or ''
+        if second_num:
+            return f"{first_num}{dash_char}{second_num}{trailing}"
+        else:
+            return f"{first_num}{trailing}"
+
+    return number_re.sub(clean_match, text)
 
 def year2words(year_str, lang, lang_iso1, is_num2words_compat):
     try:
@@ -1138,19 +1269,16 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     re_ordinal = re.compile(r'(?<!\w)(\d+)(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)')
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     text = re_ordinal.sub(_ordinal_to_words, text)
-
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
     normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
-
     # Replace unambiguous symbols everywhere
     if normal_replacements:
         sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
         text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
-
     # Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
         ambiguous_pattern = (
@@ -1161,8 +1289,6 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
         text = re.sub(ambiguous_pattern, repl_ambiguous, text)
-
-    # Finally, convert formatted numbers (decimals, thousands) using your existing logic
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
@@ -1286,7 +1412,8 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = ' '.join(text.split())
     return text
 
-def convert_chapters2audio(session):
+def convert_chapters2audio(id):
+    session = context.get_session(id)
     try:
         if session['cancellation_requested']:
             print('Cancel requested')
@@ -1361,7 +1488,8 @@ def convert_chapters2audio(session):
                         if sentence_number <= resume_sentence and sentence_number > 0:
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
-                        success = tts_manager.convert_sentence2audio(sentence_number, sentence)
+                        sentence = sentence.strip()
+                        success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
                         if success:
                             total_progress = (t.n + 1) / total_iterations
                             progress_bar(total_progress)
@@ -1484,7 +1612,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         DependencyError(e)
         return False
 
-def combine_audio_chapters(session):
+def combine_audio_chapters(id):
 
     def get_audio_duration(filepath):
         try:
@@ -1648,6 +1776,7 @@ def combine_audio_chapters(session):
             return False
 
     try:
+        session = context.get_session(id)
         chapter_files = [f for f in os.listdir(session['chapters_dir']) if f.endswith(f'.{default_audio_proc_format}')]
         chapter_files = sorted(chapter_files, key=lambda x: int(re.search(r'\d+', x).group()))
         chapter_titles = [c[0] for c in session['chapters']]
@@ -1863,10 +1992,11 @@ def convert_ebook(args, ctx=None):
 
             if ctx is not None:
                 context = ctx
+
             is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
-            session = context.get_session(id)
 
+            session = context.get_session(id)
             session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE   
             session['ebook'] = args['ebook']
             session['ebook_list'] = args['ebook_list']
@@ -1981,7 +2111,7 @@ def convert_ebook(args, ctx=None):
                             show_alert({"type": "warning", "msg": msg})
                         print(msg)
                         session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
-                        if convert2epub(session):
+                        if convert2epub(id):
                             epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
                             metadata = dict(session['metadata'])
                             for key, value in metadata.items():
@@ -2008,10 +2138,10 @@ def convert_ebook(args, ctx=None):
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
-                                    if convert_chapters2audio(session):
+                                    if convert_chapters2audio(id):
                                         msg = 'Conversion successful. Combining sentences and chapters...'
                                         show_alert({"type": "info", "msg": msg})
-                                        exported_files = combine_audio_chapters(session)               
+                                        exported_files = combine_audio_chapters(id)               
                                         if exported_files is not None:
                                             chapters_dirs = [
                                                 dir_name for dir_name in os.listdir(session['process_dir'])
@@ -2076,7 +2206,7 @@ def restore_session_from_data(data, session):
                 else:
                     session[key] = value
     except Exception as e:
-        alert_exception(e)
+        DependencyError(e)
 
 def reset_ebook_session(id):
     session = context.get_session(id)
@@ -2137,7 +2267,8 @@ def show_alert(state):
                 gr.Success(state['msg'])
 
 def web_interface(args, ctx):
-    global context
+    global context, is_gui_process
+    context = ctx
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
@@ -2165,15 +2296,6 @@ def web_interface(args, ctx):
     visible_gr_tab_bark_params = interface_component_options['gr_tab_bark_params']
     visible_gr_group_custom_model = interface_component_options['gr_group_custom_model']
     visible_gr_group_voice_file = interface_component_options['gr_group_voice_file']
-    
-    # Buffer for real-time log streaming
-    log_buffer = Queue()
-    
-    # Event to signal when the process should stop
-    thread = None
-    stop_event = threading.Event()
-    
-    context = ctx
 
     theme = gr.themes.Origin(
         primary_hue='green',
@@ -2280,6 +2402,7 @@ def web_interface(args, ctx):
                 height: 100vh !important;
                 background: rgba(0,0,0,0.6) !important;
                 display: flex !important;
+                text-align: center;
                 align-items: center !important;
                 justify-content: center !important;
                 font-size: 1.2rem !important;
@@ -2365,7 +2488,7 @@ def web_interface(args, ctx):
             }
         </style>
     '''
-
+    
     with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
         with gr.Tabs(elem_id='gr_tabs'):
             gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
@@ -2521,8 +2644,7 @@ def web_interface(args, ctx):
                     elem_id='gr_bark_waveform_temp',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
-        gr_state = gr.State(value={"hash": None})
-        gr_state_alert = gr.State(value={"type": None,"msg": None})
+        gr_state_update = gr.State(value={"hash": None})
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
         gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
         gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False)
@@ -2542,6 +2664,12 @@ def web_interface(args, ctx):
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
+
+        def cleanup_session(req: gr.Request):
+            socket_hash = req.session_hash
+            if any(socket_hash in session for session in context.sessions.values()):
+                session_id = context.find_id_by_hash(socket_hash)
+                ctx_tracker.end_session(session_id, socket_hash)
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -2674,8 +2802,13 @@ def web_interface(args, ctx):
             gr.Error(error)
             DependencyError(error)
 
-        def restore_interface(id):
+        def restore_interface(id, req: gr.Request):
             try:
+                session = context.get_session(id)
+                socket_hash = req.session_hash
+                if not session.get(socket_hash):
+                    outputs = outputs = tuple([gr.update() for _ in range(24)])
+                    return outputs
                 session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
@@ -2707,15 +2840,17 @@ def web_interface(args, ctx):
                     gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id),
                     gr.update(value=session['output_split']), gr.update(value=session['output_split_hours']), gr.update(active=True)
                 )
+            except gr.Error as e:
+                outputs = outputs = tuple([gr.update() for _ in range(24)])
+                return outputs
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
-                outputs = outputs = tuple([gr.update() for _ in range(23)]) # 21 is the total count of the return[] above
+                outputs = outputs = tuple([gr.update() for _ in range(24)])
                 return outputs
 
         def refresh_interface(id):
             session = context.get_session(id)
-            session['status'] = None
             return (
                     gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id)
@@ -2755,7 +2890,7 @@ def web_interface(args, ctx):
                 gr.update(interactive=False),
                 gr.update(interactive=False),
                 gr.update(interactive=False),
-                gr.update(interactive=False),
+                gr.update(interactive=False)
             )
         
         def enable_components():
@@ -2768,7 +2903,7 @@ def web_interface(args, ctx):
                 gr.update(interactive=True),
                 gr.update(interactive=True),
                 gr.update(interactive=True),
-                gr.update(interactive=True),
+                gr.update(interactive=True)
             )
 
         def change_gr_ebook_file(data, id):
@@ -3093,9 +3228,11 @@ def web_interface(args, ctx):
             return (gr.update(), gr.update(), gr.update(), gr.update())
 
         def check_custom_model_tts(custom_model_dir, tts_engine):
-            dir_path = os.path.join(custom_model_dir, tts_engine)
-            if not os.path.isdir(dir_path):
-                os.makedirs(dir_path, exist_ok=True)
+            dir_path = None
+            if custom_model_dir is not None and tts_engine is not None:
+                dir_path = os.path.join(custom_model_dir, tts_engine)
+                if not os.path.isdir(dir_path):
+                    os.makedirs(dir_path, exist_ok=True)
             return dir_path
 
         def change_gr_custom_model_file(f, t, id):
@@ -3268,11 +3405,9 @@ def web_interface(args, ctx):
                                 if passed is False:
                                     if session['status'] == 'converting':
                                         error = 'Conversion cancelled.'
-                                        session['status'] = None
                                         break
                                     else:
                                         error = 'Conversion failed.'
-                                        session['status'] = None
                                         break
                                 else:
                                     show_alert({"type": "success", "msg": progress_status})
@@ -3284,17 +3419,16 @@ def web_interface(args, ctx):
                                     else: 
                                         msg = 'Conversion successful!'
                                     yield gr.update(value=msg)
-                        session['status'] = None
+                        session['status'] = 'ready'
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
                         if passed is False:
                             if session['status'] == 'converting':
-                                session['status'] = None
                                 error = 'Conversion cancelled.'
                             else:
-                                session['status'] = None
                                 error = 'Conversion failed.'
+                            session['status'] = 'ready'
                         else:
                             show_alert({"type": "success", "msg": progress_status})
                             reset_ebook_session(args['session'])
@@ -3336,44 +3470,42 @@ def web_interface(args, ctx):
                 alert_exception(error)              
                 return gr.update()
 
-        def change_gr_read_data(data, state):
-            msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
+        def change_gr_read_data(data, state, req: gr.Request):
             try:
+                msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                 if data is None:
-                    session = context.get_session(str(uuid.uuid4()))
+                    data = context.get_session(str(uuid.uuid4()))
+                session = context.get_session(data['id'])
+                if data.get('tab_id') == session.get('tab_id') or session.get('tab_id') is None:
+                    restore_session_from_data(data, session)
+                if not ctx_tracker.start_session(session['id']):
+                    error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
+                    return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                 else:
-                    try:
-                        if 'id' not in data:
-                            data['id'] = str(uuid.uuid4())
-                        session = context.get_session(data['id'])
-                        restore_session_from_data(data, session)
-                        session['cancellation_requested'] = False
-                        if isinstance(session['ebook'], str):
-                            if not os.path.exists(session['ebook']):
-                                session['ebook'] = None
-                        if session['voice'] is not None:
-                            if not os.path.exists(session['voice']):
-                                session['voice'] = None
-                        if session['custom_model'] is not None:
-                            if not os.path.exists(session['custom_model_dir']):
-                                session['custom_model'] = None 
-                        if session['fine_tuned'] is not None:
-                            if session['tts_engine'] is not None:
-                                if session['tts_engine'] in models.keys():
-                                    if session['fine_tuned'] not in models[session['tts_engine']].keys():
-                                        session['fine_tuned'] = default_fine_tuned
-                                else:
-                                    session['tts_engine'] = default_tts_engine
-                                    session['fine_tuned'] = default_fine_tuned
-                        if session['audiobook'] is not None:
-                            if not os.path.exists(session['audiobook']):
-                                session['audiobook'] = None
-                        if session['status'] == 'converting':
-                            session['status'] = None
-                    except Exception as e:
-                        error = f'change_gr_read_data(): {e}'
-                        alert_exception(error)
-                        return gr.update(), gr.update(), gr.update()
+                    session[req.session_hash] = req.session_hash
+                    session['cancellation_requested'] = False
+                if isinstance(session['ebook'], str):
+                    if not os.path.exists(session['ebook']):
+                        session['ebook'] = None
+                if session['voice'] is not None:
+                    if not os.path.exists(session['voice']):
+                        session['voice'] = None
+                if session['custom_model'] is not None:
+                    if not os.path.exists(session['custom_model_dir']):
+                        session['custom_model'] = None 
+                if session['fine_tuned'] is not None:
+                    if session['tts_engine'] is not None:
+                        if session['tts_engine'] in models.keys():
+                            if session['fine_tuned'] not in models[session['tts_engine']].keys():
+                                session['fine_tuned'] = default_fine_tuned
+                        else:
+                            session['tts_engine'] = default_tts_engine
+                            session['fine_tuned'] = default_fine_tuned
+                if session['audiobook'] is not None:
+                    if not os.path.exists(session['audiobook']):
+                        session['audiobook'] = None
+                if session['status'] == 'converting':
+                    session['status'] = 'ready'
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -3396,11 +3528,11 @@ def web_interface(args, ctx):
                 state['hash'] = new_hash
                 session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id'])
+                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
-                return gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update()
 
         def save_session(id, state):
             try:
@@ -3430,9 +3562,10 @@ def web_interface(args, ctx):
                 return gr.update(), gr.update(value=e), gr.update()
         
         def clear_event(id):
-            session = context.get_session(id)
-            if session['event'] is not None:
-                session['event'] = None
+            if id:
+                session = context.get_session(id)
+                if session['event'] is not None:
+                    session['event'] = None
 
         gr_ebook_file.change(
             fn=state_convert_btn,
@@ -3622,11 +3755,11 @@ def web_interface(args, ctx):
             outputs=None
         )
         ############ Timer to save session to localStorage
-        gr_timer = gr.Timer(10, active=False)
+        gr_timer = gr.Timer(9, active=False)
         gr_timer.tick(
             fn=save_session,
-            inputs=[gr_session, gr_state],
-            outputs=[gr_write_data, gr_state, gr_audiobook_list],
+            inputs=[gr_session, gr_state_update],
+            outputs=[gr_write_data, gr_state_update, gr_audiobook_list]
         ).then(
             fn=clear_event,
             inputs=[gr_session],
@@ -3679,8 +3812,8 @@ def web_interface(args, ctx):
         )       
         gr_read_data.change(
             fn=change_gr_read_data,
-            inputs=[gr_read_data, gr_state],
-            outputs=[gr_write_data, gr_state, gr_session]
+            inputs=[gr_read_data, gr_state_update],
+            outputs=[gr_write_data, gr_state_update, gr_session, gr_glass_mask]
         ).then(
             fn=restore_interface,
             inputs=[gr_session],
@@ -3693,7 +3826,8 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
-            fn=lambda: update_gr_glass_mask(attr='class="hide"'),
+            fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
+            inputs=[gr_session],
             outputs=[gr_glass_mask]
         )
         gr_confirm_yes_btn.click(
@@ -3750,83 +3884,7 @@ def web_interface(args, ctx):
                                         checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
                                         radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
                                     }
-
                                     if (gr_audiobook_player) {
-                                        const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
-                                        const textarea = gr_audiobook_sentence?.querySelector('textarea');
-                                        // ensure a single <track> and append to the **media element**
-                                        const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
-                                        const gr_audiobook_track = existing || document.createElement('track');
-                                        gr_audiobook_track.id = 'gr_audiobook_track';
-                                        gr_audiobook_track.default = true;
-                                        gr_audiobook_track.src = '';
-                                        gr_audiobook_track.kind = 'captions';
-                                        gr_audiobook_track.label = 'captions';
-
-                                        // make sure it’s attached to the actual media element
-                                        if (!gr_audiobook_track.parentNode || gr_audiobook_track.parentNode !== gr_audiobook_player) {
-                                            gr_audiobook_player.appendChild(gr_audiobook_track);
-                                        }
-                                        gr_audiobook_track.addEventListener('load', (val) => {
-                                            const track = gr_audiobook_player.textTracks && gr_audiobook_player.textTracks[0];
-                                            if (track) {
-                                                track.mode = 'showing';
-                                                if(textarea){
-                                                    textarea.style.fontSize = '14px';
-                                                    textarea.style.fontWeight = 'bold';
-                                                    textarea.style.width = '100%';
-                                                    textarea.style.height = 'auto';
-                                                    textarea.style.textAlign = 'center';
-                                                    textarea.style.margin = '0';
-                                                    textarea.style.padding = '7px 0 7px 0';
-                                                    textarea.style.lineHeight = '14px';
-                                                    textarea.value = '...';
-                                                }
-                                                if (!track.__cueBound) {
-                                                    track.__fade_timeout = null;
-                                                    track.addEventListener('cuechange', function(val) {
-                                                        if (this.activeCues) {
-                                                            if (this.activeCues[0]) {
-                                                                if (gr_audiobook_sentence) {
-                                                                    if (textarea) {
-                                                                        if (track.__fade_timeout) {
-                                                                            textarea.style.opacity = '1';
-                                                                        }else{
-                                                                            textarea.style.opacity = '0';
-                                                                        }
-                                                                        textarea.style.transition = 'none';
-                                                                        textarea.value = this.activeCues[0].text;
-                                                                        clearTimeout(track.__fade_timeout);
-                                                                        track.__fade_timeout = setTimeout(() => {
-                                                                            textarea.style.transition = 'opacity 0.1s ease-in';
-                                                                            textarea.style.opacity = '1';
-                                                                            track.__fade_timeout = null;
-                                                                        }, 33);
-                                                                    }
-                                                                }
-                                                            }
-                                                            return;
-                                                        }
-                                                        if (gr_audiobook_sentence) {
-                                                            if (textarea) {
-                                                                textarea.value = '...';
-                                                            }
-                                                        }
-                                                    });
-                                                    track.__cueBound = true;
-                                                }
-                                            }
-                                        });
-                                        gr_audiobook_track.addEventListener('error', (e) => {
-                                            //console.log('gr_audiobook_track load error:', e);
-                                        });
-                                        gr_audiobook_player.addEventListener('ended', () => {
-                                            if(gr_audiobook_sentence){
-                                                if (textarea) {
-                                                    textarea.value = '...';
-                                                }
-                                            }
-                                        });
                                         if (!gr_audiobook_player.style.transition) {
                                             gr_audiobook_player.style.transition = 'filter 1s ease';
                                         }
@@ -3837,22 +3895,71 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
-
                         if (typeof window.load_vtt !== 'function') {
                             window.load_vtt = (path) => {
                                 try {
                                     if (!window.load_vtt_timeout) { window.load_vtt_timeout = null; }
-                                    
+
                                     const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
                                     let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
-                                    // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
                                     if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
                                         const _m = gr_audiobook_player.querySelector('audio,video');
                                         if (_m) gr_audiobook_player = _m;
                                     }
-                                    const gr_audiobook_track = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
-                                    if (gr_audiobook_player && gr_audiobook_track) {
-                                        gr_audiobook_track.src = path;
+
+                                    const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
+                                    const textarea = gr_audiobook_sentence?.querySelector('textarea');
+
+                                    if (gr_audiobook_player && textarea) {
+                                        // Remove any <track> to bypass browser subtitle engine
+                                        const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
+                                        if (existing) existing.remove();
+
+                                        textarea.style.fontSize = '14px';
+                                        textarea.style.fontWeight = 'bold';
+                                        textarea.style.width = '100%';
+                                        textarea.style.height = 'auto';
+                                        textarea.style.textAlign = 'center';
+                                        textarea.style.margin = '0';
+                                        textarea.style.padding = '7px 0 7px 0';
+                                        textarea.style.lineHeight = '14px';
+                                        textarea.value = '...';
+
+                                        fetch(path)
+                                            .then(res => res.text())
+                                            .then(vttText => {
+                                                const cues = parseVTTFast(vttText);
+                                                let lastCue = null;
+                                                let fade_timeout = null;
+
+                                                gr_audiobook_player.addEventListener('timeupdate', () => {
+                                                    const cue = findCue(cues, gr_audiobook_player.currentTime);
+                                                    if (cue && cue !== lastCue) {
+                                                        if (fade_timeout) {
+                                                            textarea.style.opacity = '1';
+                                                        } else {
+                                                            textarea.style.opacity = '0';
+                                                        }
+                                                        textarea.style.transition = 'none';
+                                                        textarea.value = cue.text;
+                                                        clearTimeout(fade_timeout);
+                                                        fade_timeout = setTimeout(() => {
+                                                            textarea.style.transition = 'opacity 0.1s ease-in';
+                                                            textarea.style.opacity = '1';
+                                                            fade_timeout = null;
+                                                        }, 33);
+                                                        lastCue = cue;
+                                                    } else if (!cue && lastCue !== null) {
+                                                        textarea.value = '...';
+                                                        lastCue = null;
+                                                    }
+                                                });
+
+                                                gr_audiobook_player.addEventListener('ended', () => {
+                                                    textarea.value = '...';
+                                                    lastCue = null;
+                                                });
+                                            });
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
@@ -3861,6 +3968,56 @@ def web_interface(args, ctx):
                                     console.log('load_vtt error:', e);
                                 }
                             };
+                            function parseVTTFast(vtt) {
+                                const lines = vtt.split(/\r?\n/);
+                                const cues = [];
+                                const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
+                                let start = null, end = null, textBuffer = [];
+
+                                function pushCue() {
+                                    if (start !== null && end !== null && textBuffer.length) {
+                                        cues.push({ start, end, text: textBuffer.join("\n") });
+                                    }
+                                    start = end = null;
+                                    textBuffer.length = 0;
+                                }
+
+                                for (let i = 0, len = lines.length; i < len; i++) {
+                                    const line = lines[i];
+                                    if (!line.trim()) { pushCue(); continue; }
+                                    if (line.includes("-->")) {
+                                        const [s, e] = line.split("-->").map(l => l.trim().split(" ")[0]);
+                                        if (timePattern.test(s) && timePattern.test(e)) {
+                                            start = toSeconds(s);
+                                            end = toSeconds(e);
+                                        }
+                                    } else if (!timePattern.test(line)) {
+                                        textBuffer.push(line);
+                                    }
+                                }
+                                pushCue();
+                                return cues;
+                            }
+                            function toSeconds(ts) {
+                                const parts = ts.split(":");
+                                if (parts.length === 3) {
+                                    return parseInt(parts[0], 10) * 3600 +
+                                           parseInt(parts[1], 10) * 60 +
+                                           parseFloat(parts[2]);
+                                }
+                                return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
+                            }
+                            function findCue(cues, time) {
+                                let lo = 0, hi = cues.length - 1;
+                                while (lo <= hi) {
+                                    const mid = (lo + hi) >> 1;
+                                    const cue = cues[mid];
+                                    if (time < cue.start) hi = mid - 1;
+                                    else if (time >= cue.end) lo = mid + 1;
+                                    else return cue;
+                                }
+                                return null;
+                            }
                         }
                         if(typeof window.tab_progress !== 'function'){
                             const gr_tab_progress = document.querySelector('#gr_tab_progress');
@@ -3895,10 +4052,31 @@ def web_interface(args, ctx):
                         }
                         tryRun();
 
-                        try{
-                            const data = window.localStorage.getItem('data');
-                            if (data) return JSON.parse(data);
-                        }catch(e){
+                        try {
+                            if(!window.tab_id){
+                                window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
+                            }
+                            window.addEventListener("beforeunload", ()=>{
+                                try{
+                                    const tab_id = window.tab_id
+                                    const saved = JSON.parse(localStorage.getItem('data') || '{}');
+                                    if (saved.tab_id == tab_id || !saved.tab_id){
+                                        saved.tab_id = undefined
+                                        saved.status = undefined
+                                        localStorage.setItem('data', JSON.stringify(saved));
+                                    }
+                                }catch(e){
+                                    console.log('Error updating status on unload:', e);
+                                }
+                            });
+                            const stored = window.localStorage.getItem('data');
+                            if(stored){
+                                const parsed = JSON.parse(stored);
+                                parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
+                                window.localStorage.setItem('data', JSON.stringify(parsed));
+                                return parsed;
+                            }
+                        } catch (e) {
                             console.log('JSON parse error:', e);
                         }
                     }catch (e){
@@ -3909,6 +4087,7 @@ def web_interface(args, ctx):
             """,
             outputs=[gr_read_data],
         )
+        app.unload(cleanup_session)
     try:
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect.'
