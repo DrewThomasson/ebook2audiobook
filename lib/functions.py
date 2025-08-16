@@ -42,6 +42,7 @@ from lib.classes.tts_manager import TTSManager
 
 context = None
 is_gui_process = False
+active_sessions = set()
 
 #import logging
 #logging.basicConfig(
@@ -2250,7 +2251,6 @@ def show_alert(state):
 
 def web_interface(args, ctx):
     global context, is_gui_process
-    active_sessions = set()
     context = ctx
     script_mode = args['script_mode']
     is_gui_process = args['is_gui_process']
