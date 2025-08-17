@@ -2632,7 +2632,7 @@ def web_interface(args, ctx):
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
-            gr_audiobook_player_playback_time = gr.Number(label='', interactive=False, visible=True, elem_id="gr_audiobook_player_playback_time")
+            gr_audiobook_player_playback_time = gr.Number(label='', interactive=True, visible=False, elem_id="gr_audiobook_player_playback_time")
             with gr.Row(elem_id='gr_row_audiobook_list'):
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
@@ -3916,6 +3916,7 @@ def web_interface(args, ctx):
                                                         const playback_time = parseFloat(parsed.playback_time || 0);
                                                         console.log('playback_time:', playback_time);
                                                         gr_audiobook_player.currentTime = playback_time;
+                                                        gr_audiobook_player.dispatchEvent(new Event('seeked'));
                                                     }
                                                 },{once: true});
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
