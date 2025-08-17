@@ -3294,6 +3294,7 @@ def web_interface(args, ctx):
             return
 
         def playback_update(playback_time: float):
+            print(f'playback_time: {playback_time}')
             session = context.get_session(id)
             session['playback_time'] = playback_time
             return
@@ -3942,6 +3943,7 @@ def web_interface(args, ctx):
                                                     }
                                                     const now = performance.now();
                                                     if (now - last > 3000) {
+                                                        console.log('playback_time', playback_time)
                                                         gr_audiobook_player_playback_time.value = String(playback_time);
                                                         gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
                                                         last = now;
