@@ -3654,7 +3654,7 @@ def web_interface(args, ctx):
         gr_audiobook_player_playback_time.change(
             fn=playback_update, 
             inputs=[gr_audiobook_player_playback_time],
-            outputs=None
+            outputs=[]
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
@@ -3942,6 +3942,7 @@ def web_interface(args, ctx):
                                                         lastCue = null;
                                                     }
                                                     const now = performance.now();
+                                                    let last;
                                                     if (now - last > 3000) {
                                                         console.log('playback_time', playback_time)
                                                         gr_audiobook_player_playback_time.value = String(playback_time);
