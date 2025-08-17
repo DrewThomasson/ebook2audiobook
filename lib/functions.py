@@ -4042,29 +4042,7 @@ def web_interface(args, ctx):
                             gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
                             gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                             gr_tab_progress = document.querySelector("#gr_tab_progress");
-                            if(!gr_root || !gr_audiobook_player || !gr_audiobook_player_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
-                                console.log("Some elements are not ready... retrying");
-                                setTimeout(init, 400);
-                                return;
-                            }
-                            gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
-                            gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                            // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
-                            if (!gr_audiobook_player.matches("audio,video") {
-                                const real_gr_audiobook_player = gr_audiobook_player.querySelector("audio,video");
-                                if (real_gr_audiobook_player) {
-                                    gr_audiobook_player = real_gr_audiobook_player;
-                                }
-                            }
-                            window.init_elements();
-                            const stored = window.localStorage.getItem("data");
-                            if(stored){
-                                const parsed = JSON.parse(stored);
-                                parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
-                                window.playback_time = parsed.playback_time;
-                                console.log("load: ", window.playback_time);
-                                return parsed;
-                            }
+
                         }
                         return init();
                     }catch (e){
