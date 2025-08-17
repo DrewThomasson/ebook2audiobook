@@ -4066,7 +4066,7 @@ def web_interface(args, ctx):
                                 const parsed = JSON.parse(stored);
                                 parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
                                 window.playback_time = parsed.playback_time;
-                                console.log(
+                                console.log('load: ', window.playback_time);
                                 return parsed;
                             }
                         } catch (e) {
