@@ -4039,32 +4039,28 @@ def web_interface(args, ctx):
                         function init() {
                             try {
                                 const gr_root = (window.gradioApp && window.gradioApp()) || document;
-
                                 if (!gr_root) {
                                     clearTimeout(load_timeout);
                                     load_timeout = setTimeout(init, 500);
                                     return;
                                 }
-
                                 gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
                                 gr_audiobook_player_time_input = gr_root.querySelector("#gr_audiobook_player_playback_time input");
                                 gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                 gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                 gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                 gr_radios = gr_root.querySelectorAll("input[type='radio']");
-
-                                // if container, get inner <audio>/<video>
-                                if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
-                                    const real = gr_audiobook_player.querySelector?.("audio,video");
-                                    if (real) gr_audiobook_player = real;
-                                }
-
                                 // If key elements aren’t mounted yet, retry
                                 if (!gr_audiobook_player || !gr_audiobook_player_time_input) {
                                     clearTimeout(load_timeout);
                                     console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 300);
                                     return;
+                                }
+                                // if container, get inner <audio>/<video>
+                                if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
+                                    const real = gr_audiobook_player.querySelector?.("audio,video");
+                                    if (real) gr_audiobook_player = real;
                                 }
                                 console.log("Componenents ready!");
                                 window.init_elements();
