@@ -3293,10 +3293,10 @@ def web_interface(args, ctx):
             session['output_split_hours'] = selected
             return
 
-        def playback_update(playback_time: float, id):
-            print(f'playback_time: {playback_time}')
+        def gr_audiobook_player_playback_time(str, id):
+            print(f'playback_time: {str}')
             session = context.get_session(id)
-            session['playback_time'] = playback_time
+            session['playback_time'] = float(str)
             return
 
         def change_param(key, val, id, val2=None):
@@ -3652,7 +3652,7 @@ def web_interface(args, ctx):
             js=f'() => {{ document.title = "{title}"; }}'
         )
         gr_audiobook_player_playback_time.change(
-            fn=playback_update,
+            fn=change_gr_audiobook_player_playback_time,
             inputs=[gr_audiobook_player_playback_time, gr_session],
             outputs=[]
         )
