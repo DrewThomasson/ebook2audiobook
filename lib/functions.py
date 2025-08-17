@@ -4049,8 +4049,7 @@ def web_interface(args, ctx):
                             }
                             gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                             gr_radios = gr_root.querySelectorAll("input[type='radio']");
- return parsed;
-                            }
+
                         }
                         return init();
                     }catch (e){
