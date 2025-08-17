@@ -2790,7 +2790,7 @@ def web_interface(args, ctx):
                 session = context.get_session(id)
                 socket_hash = req.session_hash
                 if not session.get(socket_hash):
-                    outputs = outputs = tuple([gr.update() for _ in range(24)])
+                    outputs = tuple([gr.update() for _ in range(24)])
                     return outputs
                 session = context.get_session(id)
                 ebook_data = None
@@ -2826,7 +2826,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
-                outputs = outputs = tuple([gr.update() for _ in range(24)])
+                outputs = tuple([gr.update() for _ in range(24)])
                 return outputs
 
         def refresh_interface(id):
@@ -2864,30 +2864,12 @@ def web_interface(args, ctx):
                 alert_exception(error)
         
         def disable_components():
-            return (
-                gr.update(interactive=False),
-                gr.update(interactive=False),
-                gr.update(interactive=False),
-                gr.update(interactive=False),
-                gr.update(interactive=False),
-                gr.update(interactive=False),
-                gr.update(interactive=False),
-                gr.update(interactive=False),
-                gr.update(interactive=False)
-            )
+            outputs = tuple([gr.update(interactive=False) for _ in range(9)])
+            return outputs
         
         def enable_components():
-            return (
-                gr.update(interactive=True),
-                gr.update(interactive=True),
-                gr.update(interactive=True),
-                gr.update(interactive=True),
-                gr.update(interactive=True),
-                gr.update(interactive=True),
-                gr.update(interactive=True),
-                gr.update(interactive=True),
-                gr.update(interactive=True)
-            )
+            outputs = tuple([gr.update(interactive=True) for _ in range(9)])
+            return outputs
 
         def change_gr_ebook_file(data, id):
             try:
@@ -3883,23 +3865,25 @@ def web_interface(args, ctx):
                         if (typeof window.load_vtt !== 'function') {
                             window.load_vtt = (path) => {
                                 try {
-                                    if (!window.load_vtt_timeout) { window.load_vtt_timeout = null; }
-
+                                    if (!window.load_vtt_timeout) {
+                                        window.load_vtt_timeout = null;
+                                    }
                                     const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
                                     const gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
                                     if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
                                         const _m = gr_audiobook_player.querySelector('audio,video');
-                                        if (_m) gr_audiobook_player = _m;
+                                        if (_m) {
+                                            gr_audiobook_player = _m;
+                                        }
                                     }
-
                                     const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
                                     const textarea = gr_audiobook_sentence?.querySelector('textarea');
-
                                     if (gr_audiobook_player && textarea) {
                                         // Remove any <track> to bypass browser subtitle engine
-                                        const existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
-                                        if (existing) existing.remove();
-
+                                        let existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
+                                        if (existing) {
+                                            existing.remove();
+                                        }
                                         textarea.style.fontSize = '14px';
                                         textarea.style.fontWeight = 'bold';
                                         textarea.style.width = '100%';
@@ -3909,7 +3893,6 @@ def web_interface(args, ctx):
                                         textarea.style.padding = '7px 0 7px 0';
                                         textarea.style.lineHeight = '14px';
                                         textarea.value = '...';
-
                                         fetch(path)
                                             .then(res => res.text())
                                             .then(vttText => {
