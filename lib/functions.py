@@ -3907,7 +3907,6 @@ def web_interface(args, ctx):
                                                 },{once: true});
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
                                                     const playback_time = gr_audiobook_player.currentTime || 0;
-                                                    console.log('playback_time:', playback_time);
                                                     const cue = findCue(cues, playback_time);
                                                     if (cue && cue !== lastCue) {
                                                         if (fade_timeout) {
@@ -4045,6 +4044,7 @@ def web_interface(args, ctx):
                                         saved.tab_id = undefined
                                         saved.status = undefined
                                         saved.playback_time = gr_audiobook_player.currentTime || 0;
+                                        console.log('playback_time:', saved.playback_time);
                                         localStorage.setItem('data', JSON.stringify(saved));
                                     }
                                 }catch(e){
