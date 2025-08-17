@@ -3293,9 +3293,10 @@ def web_interface(args, ctx):
             session['output_split_hours'] = selected
             return
 
-        def on_timeupdate(playback_time: float):
+        def change_gr_audiobook_player_playback_time(str, id):
+            print(f'playback_time: {str}')
             session = context.get_session(id)
-            session['playback_time'] = playback_time
+            session['playback_time'] = float(str)
             return
 
         def change_param(key, val, id, val2=None):
@@ -3651,9 +3652,9 @@ def web_interface(args, ctx):
             js=f'() => {{ document.title = "{title}"; }}'
         )
         gr_audiobook_player_playback_time.change(
-            fn=playback_update, 
-            inputs=[gr_audiobook_player_playback_time],
-            outpus=None
+            fn=change_gr_audiobook_player_playback_time,
+            inputs=[gr_audiobook_player_playback_time, gr_session],
+            outputs=[]
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
@@ -3909,6 +3910,7 @@ def web_interface(args, ctx):
                                                 const cues = parseVTTFast(vttText);
                                                 let lastCue = null;
                                                 let fade_timeout = null;
+                                                let last_time = 0;
                                                 gr_audiobook_player.addEventListener('loadedmetadata', () => {
                                                     const stored = window.localStorage.getItem('data');
                                                     if(stored){
@@ -3939,6 +3941,13 @@ def web_interface(args, ctx):
                                                     } else if (!cue && lastCue !== null) {
                                                         textarea.value = '...';
                                                         lastCue = null;
+                                                    }
+                                                    const now = performance.now();
+                                                    if (now - last_time > 3000) {
+                                                        console.log('playback_time', playback_time)
+                                                        gr_audiobook_player_playback_time.value = String(playback_time);
+                                                        gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                        last_time = now;
                                                     }
                                                 });
 
