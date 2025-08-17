@@ -4035,8 +4035,8 @@ def web_interface(args, ctx):
                         let gr_audiobook_player;
                         let gr_tab_progress;
                         
-                        document.addEventListener("DOMContentLoaded", () => {
-                            console.log("DOM is fully loaded and parsed!");
+                        window.addEventListener("load", () => {
+                            console.log("Page fully loaded (DOM + images + stylesheets)");
                             gr_root = (window.gradioApp && window.gradioApp()) || document;
                             gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
                             gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
