@@ -1779,7 +1779,7 @@ def combine_audio_chapters(id):
             cur_indices = []
             cur_duration = 0
             max_part_duration = session['output_split_hours'] * 3600
-            needs_split = total_duration > (session['output_split_hours'] * 2) * 3600
+            needs_split = total_duration > (int(session['output_split_hours']) * 2) * 3600
             for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
                 if cur_part and (cur_duration + dur > max_part_duration):
                     part_files.append(cur_part)
