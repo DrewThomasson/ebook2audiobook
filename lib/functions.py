@@ -3818,96 +3818,89 @@ def web_interface(args, ctx):
             js=r"""
                 ()=>{
                     try{
-                        let gr_root;
-                        let gr_checkboxes;
-                        let gr_radios;
-                        let gr_audiobook_player_playback_time;
-                        let gr_audiobook_sentence;
-                        let gr_audiobook_player;
-                        let gr_tab_progress;
                         if (typeof(window.init_elements) !== 'function') {
+                            window.playback_time = null;
                             window.init_elements = () => {
                                 try {
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
-                                    window.playback_time = null
-                                    gr_audiobook_player.addEventListener('canplay', () => {
-                                        console.log('canplay:', window.playback_time);
-                                        if (window.playback_time) {
-                                            gr_audiobook_player.currentTime = window.playback_time;
-                                        }
-                                    },{once: true});
-                                    gr_audiobook_player.addEventListener('timeupdate', () => {
-                                        window.playback_time = gr_audiobook_player.currentTime;
-                                        const cue = findCue(cues, window.playback_time);
-                                        if (cue && cue !== lastCue) {
-                                            if (fade_timeout) {
-                                                gr_audiobook_sentence.style.opacity = '1';
-                                            } else {
-                                                gr_audiobook_sentence.style.opacity = '0';
+                                    if(gr_root && gr_checkboxes && gr_radios && gr_audiobook_player_playback_time && gr_audiobook_sentence && gr_tab_progress){
+                                        gr_audiobook_player.addEventListener('canplay', () => {
+                                            console.log('canplay:', window.playback_time);
+                                            if (window.playback_time) {
+                                                gr_audiobook_player.currentTime = window.playback_time;
                                             }
-                                            gr_audiobook_sentence.style.transition = 'none';
-                                            gr_audiobook_sentence.value = cue.text;
-                                            clearTimeout(fade_timeout);
-                                            fade_timeout = setTimeout(() => {
-                                                gr_audiobook_sentence.style.transition = 'opacity 0.1s ease-in';
-                                                gr_audiobook_sentence.style.opacity = '1';
-                                                fade_timeout = null;
-                                            }, 33);
-                                            lastCue = cue;
-                                        } else if (!cue && lastCue !== null) {
+                                        },{once: true});
+                                        gr_audiobook_player.addEventListener('timeupdate', () => {
+                                            window.playback_time = gr_audiobook_player.currentTime;
+                                            const cue = findCue(cues, window.playback_time);
+                                            if (cue && cue !== lastCue) {
+                                                if (fade_timeout) {
+                                                    gr_audiobook_sentence.style.opacity = '1';
+                                                } else {
+                                                    gr_audiobook_sentence.style.opacity = '0';
+                                                }
+                                                gr_audiobook_sentence.style.transition = 'none';
+                                                gr_audiobook_sentence.value = cue.text;
+                                                clearTimeout(fade_timeout);
+                                                fade_timeout = setTimeout(() => {
+                                                    gr_audiobook_sentence.style.transition = 'opacity 0.1s ease-in';
+                                                    gr_audiobook_sentence.style.opacity = '1';
+                                                    fade_timeout = null;
+                                                }, 33);
+                                                lastCue = cue;
+                                            } else if (!cue && lastCue !== null) {
+                                                gr_audiobook_sentence.value = '...';
+                                                lastCue = null;
+                                            }
+                                            const now = performance.now();
+                                            if (now - last_time > 1000) {
+                                                console.log('timeupdate', window.playback_time)
+                                                gr_audiobook_player_playback_time.value = String(window.playback_time);
+                                                gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                last_time = now;
+                                            }
+                                        });
+                                        gr_audiobook_player.addEventListener('ended', () => {
                                             gr_audiobook_sentence.value = '...';
                                             lastCue = null;
-                                        }
-                                        const now = performance.now();
-                                        if (now - last_time > 1000) {
-                                            console.log('timeupdate', window.playback_time)
-                                            gr_audiobook_player_playback_time.value = String(window.playback_time);
-                                            gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
-                                            last_time = now;
-                                        }
-                                    });
-                                    gr_audiobook_player.addEventListener('ended', () => {
-                                        gr_audiobook_sentence.value = '...';
-                                        lastCue = null;
-                                    });
-                                    
-                                    ///////////////
-                                    
-                                    // Observe programmatic changes
-                                    new MutationObserver(tab_progress).observe(gr_tab_progress, { attributes: true, childList: true, subtree: true, characterData: true });
-                                    // Also catch user edits
-                                    gr_tab_progress.addEventListener('input', tab_progress);
-                                    
-                                    ///////////////
-                                    
-                                    const url = new URL(window.location);
-                                    const theme = url.searchParams.get('__theme');
-                                    let osTheme;
-                                    let audioFilter = '';
-                                    let elColor = '#666666';
-                                    if (theme) {
-                                        if (theme === 'dark') {
-                                            if (gr_audiobook_player) {
-                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                        });
+                                        
+                                        ///////////////
+                                        
+                                        // Observe programmatic changes
+                                        new MutationObserver(tab_progress).observe(gr_tab_progress, { attributes: true, childList: true, subtree: true, characterData: true });
+                                        // Also catch user edits
+                                        gr_tab_progress.addEventListener('input', tab_progress);
+                                        
+                                        ///////////////
+                                        
+                                        const url = new URL(window.location);
+                                        const theme = url.searchParams.get('__theme');
+                                        let osTheme;
+                                        let audioFilter = '';
+                                        let elColor = '#666666';
+                                        if (theme) {
+                                            if (theme === 'dark') {
+                                                if (gr_audiobook_player) {
+                                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                                }
+                                                elColor = '#fff';
                                             }
-                                            elColor = '#fff';
-                                        }
-                                        gr_checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
-                                        gr_radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
-                                    } else {
-                                        osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-                                        if (osTheme) {
-                                            if (gr_audiobook_player) {
-                                                audioFilter = 'invert(1) hue-rotate(180deg)';
+                                            gr_checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                            gr_radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                        } else {
+                                            osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+                                            if (osTheme) {
+                                                if (gr_audiobook_player) {
+                                                    audioFilter = 'invert(1) hue-rotate(180deg)';
+                                                }
+                                                elColor = '#fff';
                                             }
-                                            elColor = '#fff';
+                                            gr_checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                            gr_radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
                                         }
-                                        gr_checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
-                                        gr_radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
-                                    }
-                                    if (gr_audiobook_player) {
                                         if (!gr_audiobook_player.style.transition) {
                                             gr_audiobook_player.style.transition = 'filter 1s ease';
                                         }
@@ -4032,6 +4025,17 @@ def web_interface(args, ctx):
                                 console.log('Error updating status on unload:', e);
                             }
                         });
+                        
+                        //////////////////////
+                        
+                        let gr_root;
+                        let gr_checkboxes;
+                        let gr_radios;
+                        let gr_audiobook_player_playback_time;
+                        let gr_audiobook_sentence;
+                        let gr_audiobook_player;
+                        let gr_tab_progress;
+                        
                         function init(){
                             gr_root = (window.gradioApp && window.gradioApp()) || document;
                             gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
@@ -4060,6 +4064,9 @@ def web_interface(args, ctx):
                             }
                         }
                         init();
+                        
+                        ///////////////////
+                        
                         const stored = window.localStorage.getItem('data');
                         if(stored){
                             const parsed = JSON.parse(stored);
