@@ -3901,11 +3901,13 @@ def web_interface(args, ctx):
                                                     if(stored){
                                                         const parsed = JSON.parse(stored);
                                                         const playback_time = parseFloat(parsed.playback_time || 0);
+                                                        console.log('playback_time:', playback_time);
                                                         gr_audiobook_player.currentTime = playback_time;
                                                     }
                                                 },{once: true});
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
                                                     const playback_time = gr_audiobook_player.currentTime || 0;
+                                                    console.log('playback_time:', playback_time);
                                                     const cue = findCue(cues, playback_time);
                                                     if (cue && cue !== lastCue) {
                                                         if (fade_timeout) {
