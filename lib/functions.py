@@ -3828,7 +3828,9 @@ def web_interface(args, ctx):
                                     // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
                                     if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
                                         const _m = gr_audiobook_player.querySelector('audio,video');
-                                        if (_m) gr_audiobook_player = _m;
+                                        if (_m) {
+                                            gr_audiobook_player = _m;
+                                        }
                                     }
 
                                     if (theme) {
@@ -3899,7 +3901,6 @@ def web_interface(args, ctx):
                                                 const cues = parseVTTFast(vttText);
                                                 let lastCue = null;
                                                 let fade_timeout = null;
-
                                                 gr_audiobook_player.addEventListener('loadedmetadata', () => {
                                                     const stored = window.localStorage.getItem('data');
                                                     if(stored){
@@ -3908,7 +3909,6 @@ def web_interface(args, ctx):
                                                         gr_audiobook_player.currentTime = playback_time;
                                                     }
                                                 },{once: true});
-
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
                                                     const playback_time = gr_audiobook_player.currentTime || 0;
                                                     const cue = findCue(cues, playback_time);
@@ -3990,9 +3990,13 @@ def web_interface(args, ctx):
                                 while (lo <= hi) {
                                     const mid = (lo + hi) >> 1;
                                     const cue = cues[mid];
-                                    if (time < cue.start) hi = mid - 1;
-                                    else if (time >= cue.end) lo = mid + 1;
-                                    else return cue;
+                                    if (time < cue.start) {
+                                        hi = mid - 1;
+                                    } else if (time >= cue.end) {
+                                        lo = mid + 1;
+                                    } else {
+                                        return cue;
+                                    }
                                 }
                                 return null;
                             }
@@ -4015,7 +4019,7 @@ def web_interface(args, ctx):
                         }
 
                         function tryRun(){
-                            let gr_audiobook_player = document.querySelector('#gr_audiobook_player'); 
+                            const gr_audiobook_player = document.querySelector('#gr_audiobook_player'); 
                             if(!gr_audiobook_player){
                                 setTimeout(tryRun, 400);
                                 return;
