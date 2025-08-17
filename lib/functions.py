@@ -4047,7 +4047,7 @@ def web_interface(args, ctx):
                                 setTimeout(init, 400);
                                 return;
                             }
-                            gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox;]");
+                            gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                             gr_radios = gr_root.querySelectorAll("input[type='radio']");
                             // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
                             if (!gr_audiobook_player.matches("audio,video") {
