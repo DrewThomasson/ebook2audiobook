@@ -4063,19 +4063,16 @@ def web_interface(args, ctx):
                                     console.log("init_elements error:", e); 
                                 }
                             }
+                            const stored = window.localStorage.getItem("data");
+                            if(stored){
+                                const parsed = JSON.parse(stored);
+                                parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
+                                window.playback_time = parsed.playback_time;
+                                console.log("load: ", window.playback_time);
+                                return parsed;
+                            }
                         }
-                        init();
-                        
-                        ///////////////////
-                        
-                        const stored = window.localStorage.getItem("data");
-                        if(stored){
-                            const parsed = JSON.parse(stored);
-                            parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
-                            window.playback_time = parsed.playback_time;
-                            console.log("load: ", window.playback_time);
-                            return parsed;
-                        }
+                        return init();
                     }catch (e){
                         console.log("custom js init error:", e);
                     }
