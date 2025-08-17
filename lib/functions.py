@@ -2839,8 +2839,9 @@ def web_interface(args, ctx):
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
             session['audiobook'] = selected
-            audio_info = mediainfo(selected)
-            session['duration'] = float(audio_info['duration'])
+            if selected is not None:
+                audio_info = mediainfo(selected)
+                session['duration'] = float(audio_info['duration'])
             visible = True if len(audiobook_options) else False
             return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(visible=visible)
         
