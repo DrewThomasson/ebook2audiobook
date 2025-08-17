@@ -3823,12 +3823,12 @@ def web_interface(args, ctx):
                         if (typeof(window.reset_elements) !== 'function') {
                             window.reset_elements = () => {
                                 try {
-                                    const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
-                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
-                                    const checkboxes = gr_audiobook_player_root.querySelectorAll("input[type='checkbox']");
-                                    const radios = gr_audiobook_player_root.querySelectorAll("input[type='radio']");
+                                    const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                    const gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
+                                    const gr_radios = gr_root.querySelectorAll("input[type='radio']");
                                     const url = new URL(window.location);
                                     const theme = url.searchParams.get('__theme');
+                                    let gr_audiobook_player = gr_root.querySelector('#gr_audiobook_player');
                                     let osTheme;
                                     let audioFilter = '';
                                     let elColor = '#666666';
@@ -3848,8 +3848,8 @@ def web_interface(args, ctx):
                                             }
                                             elColor = '#fff';
                                         }
-                                        checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
-                                        radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                        gr_checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                        gr_radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
                                     } else {
                                         osTheme = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
                                         if (osTheme) {
@@ -3858,8 +3858,8 @@ def web_interface(args, ctx):
                                             }
                                             elColor = '#fff';
                                         }
-                                        checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
-                                        radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                        gr_checkboxes.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
+                                        gr_radios.forEach(cb => { cb.style.border = '1px solid ' + elColor; });
                                     }
                                     if (gr_audiobook_player) {
                                         if (!gr_audiobook_player.style.transition) {
@@ -3878,20 +3878,20 @@ def web_interface(args, ctx):
                                     if (!window.load_vtt_timeout) {
                                         window.load_vtt_timeout = null;
                                     }
-                                    const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
-                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
+                                    const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                    let gr_audiobook_player = gr_root.querySelector('#gr_audiobook_player');
                                     if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
                                         const _m = gr_audiobook_player.querySelector('audio,video');
                                         if (_m) {
                                             gr_audiobook_player = _m;
                                         }
                                     }
-                                    const gr_audiobook_player_playback_time = document.querySelector("#gr_audiobook_player_playback_time input, #gr_audiobook_player_playback_time textarea");
-                                    const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
+                                    const gr_audiobook_player_playback_time = document.querySelector("#gr_audiobook_player_playback_time number");
+                                    const gr_audiobook_sentence = gr_root.querySelector('#gr_audiobook_sentence');
                                     const textarea = gr_audiobook_sentence?.querySelector('textarea');
-                                    if (gr_audiobook_player && textarea) {
+                                    if (gr_audiobook_player && gr_audiobook_player_playback_time && textarea) {
                                         // Remove any <track> to bypass browser subtitle engine
-                                        let existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
+                                        let existing = gr_root.querySelector('#gr_audiobook_track');
                                         if (existing) {
                                             existing.remove();
                                         }
@@ -4058,8 +4058,8 @@ def web_interface(args, ctx):
                             }
                             window.addEventListener("beforeunload", ()=>{
                                 try{
-                                    const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
-                                    const gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
+                                    const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                    const gr_audiobook_player = gr_root.querySelector('#gr_audiobook_player');
                                     const tab_id = window.tab_id
                                     const saved = JSON.parse(localStorage.getItem('data') || '{}');
                                     if (saved.tab_id == tab_id || !saved.tab_id){
