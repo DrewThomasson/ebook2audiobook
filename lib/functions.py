@@ -3918,7 +3918,7 @@ def web_interface(args, ctx):
                                                         gr_audiobook_player_playback_time.value = playback_time;
                                                         gr_audiobook_player.currentTime = playback_time;
                                                     }
-                                                });
+                                                },{once: true});
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
                                                     const playback_time = gr_audiobook_player.currentTime || 0;
                                                     const cue = findCue(cues, playback_time);
