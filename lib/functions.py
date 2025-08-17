@@ -4056,12 +4056,11 @@ def web_interface(args, ctx):
                                 }
                             }
                             window.init_elements()
-                        }
                         });
                         window.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                         function init() {
                             const stored = window.localStorage.getItem("data");
-                            if(stored){
+                            if (stored) {
                                 const parsed = JSON.parse(stored);
                                 parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
                                 window.playback_time = parsed.playback_time;
