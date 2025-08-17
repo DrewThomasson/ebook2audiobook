@@ -3916,8 +3916,9 @@ def web_interface(args, ctx):
                                                         const parsed = JSON.parse(stored);
                                                         const playback_time = parseFloat(parsed.playback_time || 0);
                                                         console.log('playback_time:', playback_time);
-                                                        gr_audiobook_player_playback_time.value = playback_time;
                                                         gr_audiobook_player.currentTime = playback_time;
+                                                        gr_audiobook_player_playback_time.value = playback_time;
+                                                        gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
                                                     }
                                                 },{once: true});
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
@@ -3950,7 +3951,6 @@ def web_interface(args, ctx):
                                                         last_time = now;
                                                     }
                                                 });
-
                                                 gr_audiobook_player.addEventListener('ended', () => {
                                                     textarea.value = '...';
                                                     lastCue = null;
