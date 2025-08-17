@@ -3292,8 +3292,9 @@ def web_interface(args, ctx):
             return gr.update(visible=bool)
 
         def change_gr_output_split_hours(selected, id):
+            print(f'change_gr_output_split_hours: {selected}')
             session = context.get_session(id)
-            session['output_split_hours'] = selected if selected is not None else 0
+            session['output_split_hours'] = selected
             return
 
         def change_param(key, val, id, val2=None):
