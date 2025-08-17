@@ -4057,15 +4057,14 @@ def web_interface(args, ctx):
                                     console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 1000);
                                     return;
-                                } else {
-                                    // if container, get inner <audio>/<video>
-                                    if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
-                                        const real = gr_audiobook_player.querySelector?.("audio,video");
-                                        if (real) gr_audiobook_player = real;
-                                    }
-                                    console.log("Componenents ready!");
-                                    window.init_elements();
                                 }
+                                // if container, get inner <audio>/<video>
+                                if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
+                                    const real = gr_audiobook_player.querySelector?.("audio,video");
+                                    if (real) gr_audiobook_player = real;
+                                }
+                                console.log("Componenents ready!");
+                                //window.init_elements();
                             } catch (e) {
                                 console.log("init error:", e);
                                 clearTimeout(load_timeout);
