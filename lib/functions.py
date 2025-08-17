@@ -3821,6 +3821,7 @@ def web_interface(args, ctx):
                         if (typeof(window.init_elements) !== "function") {
                             window.playback_time = null;
                             window.init_elements = () => {
+                                console.log('window.init_elements called');
                                 try {
                                     let lastCue = null;
                                     let fade_timeout = null;
