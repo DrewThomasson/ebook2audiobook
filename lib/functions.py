@@ -4038,8 +4038,8 @@ def web_interface(args, ctx):
                         
                         function init(){
                             gr_root = (window.gradioApp && window.gradioApp()) || document;
-                            gr_checkboxes = gr_root.querySelectorAll('input[type='checkbox']');
-                            gr_radios = gr_root.querySelectorAll('input[type='radio']');
+                            gr_checkboxes = gr_root.querySelectorAll('input[type=\'checkbox\']');
+                            gr_radios = gr_root.querySelectorAll('input[type=\'radio\']');
                             gr_audiobook_player = gr_root.querySelector('#gr_audiobook_player');
                             gr_audiobook_player_playback_time = gr_root.querySelector('#gr_audiobook_player_playback_time input');
                             gr_audiobook_sentence = gr_root.querySelector('#gr_audiobook_sentence textarea');
