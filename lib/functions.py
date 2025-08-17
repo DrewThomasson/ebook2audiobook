@@ -3873,6 +3873,7 @@ def web_interface(args, ctx):
                         }
                         if (typeof(window.load_vtt) !== 'function') {
                             window.load_vtt = (path) => {
+                                console.log('window.load_vtt called')
                                 try {
                                     if (!window.load_vtt_timeout) {
                                         window.load_vtt_timeout = null;
