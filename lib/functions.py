@@ -4042,6 +4042,11 @@ def web_interface(args, ctx):
                             gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
                             gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                             gr_tab_progress = document.querySelector("#gr_tab_progress");
+                            if (!gr_root || !gr_audiobook_player || !gr_audiobook_player_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
+                                console.log("Some elements are not ready... retrying");
+                                setTimeout(init, 400);
+                                return;
+                            }
 
                         }
                         return init();
