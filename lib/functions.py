@@ -3915,7 +3915,7 @@ def web_interface(args, ctx):
                                                     if(stored){
                                                         const parsed = JSON.parse(stored);
                                                         const playback_time = (parsed.playback_time) ? parseFloat(parsed.playback_time) : undefined;
-                                                        console.log('playback_time:', playback_time);
+                                                        console.log('canplay:', playback_time);
                                                         if (playback_time) {
                                                             gr_audiobook_player_playback_time.value = playback_time;
                                                             gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
@@ -3946,7 +3946,7 @@ def web_interface(args, ctx):
                                                     }
                                                     const now = performance.now();
                                                     if (now - last_time > 1000) {
-                                                        console.log('playback_time', playback_time)
+                                                        console.log('timeupdate', playback_time)
                                                         gr_audiobook_player_playback_time.value = String(playback_time);
                                                         gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
                                                         last_time = now;
