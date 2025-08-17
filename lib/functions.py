@@ -2178,10 +2178,11 @@ def restore_session_from_data(data, session):
     try:
         for key, value in data.items():
             if key in session:  # Check if the key exists in session
-                if isinstance(value, dict) and isinstance(session[key], dict):
-                    restore_session_from_data(value, session[key])
-                else:
-                    session[key] = value
+                if key != 'playback_time':
+                    if isinstance(value, dict) and isinstance(session[key], dict):
+                        restore_session_from_data(value, session[key])
+                    else:
+                        session[key] = value
     except Exception as e:
         DependencyError(e)
 
@@ -4044,7 +4045,6 @@ def web_interface(args, ctx):
                                         saved.tab_id = undefined
                                         saved.status = undefined
                                         saved.playback_time = gr_audiobook_player.currentTime || 0;
-                                        console.log('playback_time:', saved.playback_time);
                                         localStorage.setItem('data', JSON.stringify(saved));
                                     }
                                 }catch(e){
