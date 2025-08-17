@@ -4041,7 +4041,7 @@ def web_interface(args, ctx):
                                 const gr_root = (window.gradioApp && window.gradioApp()) || document;
                                 if (!gr_root) {
                                     clearTimeout(load_timeout);
-                                    load_timeout = setTimeout(init, 500);
+                                    load_timeout = setTimeout(init, 1000);
                                     return;
                                 }
                                 gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
@@ -4054,7 +4054,7 @@ def web_interface(args, ctx):
                                 if (!gr_audiobook_player || !gr_audiobook_player_time_input) {
                                     clearTimeout(load_timeout);
                                     console.log("Componenents not ready... retrying");
-                                    load_timeout = setTimeout(init, 300);
+                                    load_timeout = setTimeout(init, 1000);
                                     return;
                                 }
                                 // if container, get inner <audio>/<video>
@@ -4067,7 +4067,7 @@ def web_interface(args, ctx):
                             } catch (e) {
                                 console.log("init error:", e);
                                 clearTimeout(load_timeout);
-                                load_timeout = setTimeout(init, 500);
+                                load_timeout = setTimeout(init, 1000);
                             }
                         }
                         
