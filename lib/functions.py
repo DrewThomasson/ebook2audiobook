@@ -3886,7 +3886,7 @@ def web_interface(args, ctx):
                                             gr_audiobook_player = _m;
                                         }
                                     }
-                                    const gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time number");
+                                    const gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
                                     const gr_audiobook_sentence = gr_root.querySelector('#gr_audiobook_sentence');
                                     const textarea = gr_audiobook_sentence?.querySelector('textarea');
                                     if (gr_audiobook_player && gr_audiobook_player_playback_time && textarea) {
