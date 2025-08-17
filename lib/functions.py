@@ -4058,20 +4058,14 @@ def web_interface(args, ctx):
                             window.init_elements()
                         });
                         window.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
-                        function init() {
-                            const stored = window.localStorage.getItem("data");
-                            if (stored) {
-                                const parsed = JSON.parse(stored);
-                                parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
-                                window.playback_time = parsed.playback_time;
-                                console.log("load: ", window.playback_time);
-                                return parsed;
-                            }
-                            console.log("Some elements are not ready... retrying");
-                            setTimeout(init, 400);
-                            return;
+                        const stored = window.localStorage.getItem("data");
+                        if (stored) {
+                            const parsed = JSON.parse(stored);
+                            parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
+                            window.playback_time = parsed.playback_time;
+                            console.log("load: ", window.playback_time);
+                            return parsed;
                         }
-                        init();
                     }catch (e){
                         console.log("custom js init error:", e);
                     }
