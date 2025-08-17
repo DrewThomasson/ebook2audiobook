@@ -3293,7 +3293,7 @@ def web_interface(args, ctx):
             session['output_split_hours'] = selected
             return
 
-        def on_timeupdate(playback_time: float):
+        def playback_update(playback_time: float):
             session = context.get_session(id)
             session['playback_time'] = playback_time
             return
