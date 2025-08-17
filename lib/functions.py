@@ -3922,7 +3922,6 @@ def web_interface(args, ctx):
                                                 },{once: true});
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
                                                     const playback_time = gr_audiobook_player.currentTime || 0;
-                                                    const now = performance.now();
                                                     const cue = findCue(cues, playback_time);
                                                     if (cue && cue !== lastCue) {
                                                         if (fade_timeout) {
