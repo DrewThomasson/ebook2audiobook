@@ -4060,7 +4060,7 @@ def web_interface(args, ctx):
                         }
                         });
 
-                        function init(){;
+                        function init() {
                             const stored = window.localStorage.getItem("data");
                             if(stored){
                                 const parsed = JSON.parse(stored);
