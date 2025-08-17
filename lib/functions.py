@@ -3902,60 +3902,59 @@ def web_interface(args, ctx):
                                         textarea.style.padding = '7px 0 7px 0';
                                         textarea.style.lineHeight = '14px';
                                         textarea.value = '...';
-                                        fetch(path)
-                                            .then(res => res.text())
-                                            .then(vttText => {
-                                                const cues = parseVTTFast(vttText);
-                                                let lastCue = null;
-                                                let fade_timeout = null;
-                                                let last_time = 0;
-                                                gr_audiobook_player.addEventListener('canplay', () => {
-                                                    const stored = window.localStorage.getItem('data');
-                                                    if(stored){
-                                                        const parsed = JSON.parse(stored);
-                                                        const playback_time = (parsed.playback_time) ? parseFloat(parsed.playback_time) : undefined;
-                                                        console.log('canplay:', playback_time);
-                                                        if (playback_time) {
-                                                            gr_audiobook_player_playback_time.value = playback_time;
-                                                            gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
-                                                        }
-                                                    }
-                                                });
-                                                gr_audiobook_player.addEventListener('timeupdate', () => {
-                                                    const playback_time = gr_audiobook_player.currentTime || 0;
-                                                    const cue = findCue(cues, playback_time);
-                                                    if (cue && cue !== lastCue) {
-                                                        if (fade_timeout) {
-                                                            textarea.style.opacity = '1';
-                                                        } else {
-                                                            textarea.style.opacity = '0';
-                                                        }
-                                                        textarea.style.transition = 'none';
-                                                        textarea.value = cue.text;
-                                                        clearTimeout(fade_timeout);
-                                                        fade_timeout = setTimeout(() => {
-                                                            textarea.style.transition = 'opacity 0.1s ease-in';
-                                                            textarea.style.opacity = '1';
-                                                            fade_timeout = null;
-                                                        }, 33);
-                                                        lastCue = cue;
-                                                    } else if (!cue && lastCue !== null) {
-                                                        textarea.value = '...';
-                                                        lastCue = null;
-                                                    }
-                                                    const now = performance.now();
-                                                    if (now - last_time > 1000) {
-                                                        console.log('timeupdate', playback_time)
-                                                        gr_audiobook_player_playback_time.value = String(playback_time);
-                                                        gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
-                                                        last_time = now;
-                                                    }
-                                                });
-                                                gr_audiobook_player.addEventListener('ended', () => {
-                                                    textarea.value = '...';
-                                                    lastCue = null;
-                                                });
-                                            });
+                                        let cues = []
+                                        fetch(path).then(res => res.text()).then(vttText => {
+                                            cues = parseVTTFast(vttText);
+                                        });
+                                        let lastCue = null;
+                                        let fade_timeout = null;
+                                        let last_time = 0;
+                                        gr_audiobook_player.addEventListener('canplay', () => {
+                                            const stored = window.localStorage.getItem('data');
+                                            if(stored){
+                                                const parsed = JSON.parse(stored);
+                                                const playback_time = (parsed.playback_time) ? parseFloat(parsed.playback_time) : undefined;
+                                                console.log('canplay:', playback_time);
+                                                if (playback_time) {
+                                                    gr_audiobook_player_playback_time.value = playback_time;
+                                                    gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                }
+                                            }
+                                        });
+                                        gr_audiobook_player.addEventListener('timeupdate', () => {
+                                            const playback_time = gr_audiobook_player.currentTime || 0;
+                                            const cue = findCue(cues, playback_time);
+                                            if (cue && cue !== lastCue) {
+                                                if (fade_timeout) {
+                                                    textarea.style.opacity = '1';
+                                                } else {
+                                                    textarea.style.opacity = '0';
+                                                }
+                                                textarea.style.transition = 'none';
+                                                textarea.value = cue.text;
+                                                clearTimeout(fade_timeout);
+                                                fade_timeout = setTimeout(() => {
+                                                    textarea.style.transition = 'opacity 0.1s ease-in';
+                                                    textarea.style.opacity = '1';
+                                                    fade_timeout = null;
+                                                }, 33);
+                                                lastCue = cue;
+                                            } else if (!cue && lastCue !== null) {
+                                                textarea.value = '...';
+                                                lastCue = null;
+                                            }
+                                            const now = performance.now();
+                                            if (now - last_time > 1000) {
+                                                console.log('timeupdate', playback_time)
+                                                gr_audiobook_player_playback_time.value = String(playback_time);
+                                                gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                last_time = now;
+                                            }
+                                        });
+                                        gr_audiobook_player.addEventListener('ended', () => {
+                                            textarea.value = '...';
+                                            lastCue = null;
+                                        });
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
