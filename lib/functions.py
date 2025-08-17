@@ -3842,7 +3842,9 @@ def web_interface(args, ctx):
                                         }
                                     }
                                     let gr_tab_progress = document.querySelector('#gr_tab_progress');
+                                    
                                     ///////////////////
+                                    
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
@@ -3887,6 +3889,16 @@ def web_interface(args, ctx):
                                         textarea.value = '...';
                                         lastCue = null;
                                     });
+                                    
+                                    ///////////////
+                                    
+                                    // Observe programmatic changes
+                                    new MutationObserver(tab_progress).observe(gr_tab_progress, { attributes: true, childList: true, subtree: true, characterData: true });
+                                    // Also catch user edits
+                                    gr_tab_progress.addEventListener('input', tab_progress);
+                                    
+                                    ///////////////
+                                    
                                     const url = new URL(window.location);
                                     const theme = url.searchParams.get('__theme');
                                     let osTheme;
@@ -3966,10 +3978,6 @@ def web_interface(args, ctx):
                                     document.title = 'Ebook2Audiobook: ' + prct;
                                 }
                             };
-                            // Observe programmatic changes
-                            new MutationObserver(tab_progress).observe(gr_tab_progress, { attributes: true, childList: true, subtree: true, characterData: true });
-                            // Also catch user edits
-                            gr_tab_progress.addEventListener('input', tab_progress);
                         }
                         function parseVTTFast(vtt) {
                             const lines = vtt.split(/\r?\n/);
