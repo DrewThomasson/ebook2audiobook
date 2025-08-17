@@ -3898,7 +3898,7 @@ def web_interface(args, ctx):
                                         fetch(path)
                                             .then(res => res.text())
                                             .then(vttText => {
-                                                const cues = parseVTTFast(vttText);
+                                                let cues = parseVTTFast(vttText);
                                                 let lastCue = null;
                                                 let fade_timeout = null;
                                                 gr_audiobook_player.addEventListener('loadedmetadata', () => {
