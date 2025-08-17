@@ -3293,7 +3293,7 @@ def web_interface(args, ctx):
             session['output_split_hours'] = selected
             return
 
-        def gr_audiobook_player_playback_time(str, id):
+        def change_gr_audiobook_player_playback_time(str, id):
             print(f'playback_time: {str}')
             session = context.get_session(id)
             session['playback_time'] = float(str)
