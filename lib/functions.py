@@ -3950,6 +3950,7 @@ def web_interface(args, ctx):
                                             textarea.value = '...';
                                             lastCue = null;
                                         });
+                                        gr_audiobook_player.load();
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
