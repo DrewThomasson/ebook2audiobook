@@ -4036,7 +4036,8 @@ def web_interface(args, ctx):
                         let gr_audiobook_player;
                         let gr_tab_progress;
                         
-                        function init(){
+                        document.addEventListener("DOMContentLoaded", () => {
+                            console.log("DOM is fully loaded and parsed!");
                             gr_root = (window.gradioApp && window.gradioApp()) || document;
                             gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
                             gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
@@ -4044,7 +4045,6 @@ def web_interface(args, ctx):
                             gr_tab_progress = document.querySelector("#gr_tab_progress");
                             if (!gr_root || !gr_audiobook_player || !gr_audiobook_player_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
                                 console.log("Some elements are not ready... retrying");
-                                setTimeout(init, 400);
                                 return;
                             }
                             gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
@@ -4056,7 +4056,11 @@ def web_interface(args, ctx):
                                     gr_audiobook_player = real_gr_audiobook_player;
                                 }
                             }
-                            window.init_elements();
+                            window.init_elements()
+                        }
+                        });
+
+                        function init(){;
                             const stored = window.localStorage.getItem("data");
                             if(stored){
                                 const parsed = JSON.parse(stored);
@@ -4065,8 +4069,11 @@ def web_interface(args, ctx):
                                 console.log("load: ", window.playback_time);
                                 return parsed;
                             }
+                            console.log("Some elements are not ready... retrying");
+                            setTimeout(init, 400);
+                            return;
                         }
-                        return init();
+                        init();
                     }catch (e){
                         console.log("custom js init error:", e);
                     }
