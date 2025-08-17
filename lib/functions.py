@@ -1773,7 +1773,6 @@ def combine_audio_chapters(id):
         total_duration = sum(durations)
         exported_files = []
         if session.get('output_split'):
-            # --- Split into parts by duration ---
             part_files = []
             part_chapter_indices = []
             cur_part = []
@@ -1797,7 +1796,6 @@ def combine_audio_chapters(id):
 
             for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
                 with tempfile.TemporaryDirectory() as tmpdir:
-                    # --- Batch merging logic ---
                     batch_size = 1024
                     chunk_list = []
                     for i in range(0, len(part_file_list), batch_size):
@@ -1827,12 +1825,10 @@ def combine_audio_chapters(id):
                         print(f"assemble_segments() Final merge failed for part {part_idx+1}.")
                         return None
 
-                    # --- Generate metadata for this part ---
                     metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, session, metadata_file, default_audio_proc_format)
 
-                    # --- Export audio for this part ---
                     final_file = os.path.join(
                         session['audiobooks_dir'],
                         f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']
@@ -1840,7 +1836,6 @@ def combine_audio_chapters(id):
                     if export_audio(combined_chapters_file, metadata_file, final_file):
                         exported_files.append(final_file)
         else:
-            # --- No splitting requested: merge all chapters at once ---
             with tempfile.TemporaryDirectory() as tmpdir:
                 # 1) build a single ffmpeg file list
                 txt = os.path.join(tmpdir, 'all_chapters.txt')
@@ -2270,7 +2265,7 @@ def web_interface(args, ctx):
     custom_model_options = []
     fine_tuned_options = []
     audiobook_options = []
-    options_output_split_hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     
     src_label_file = 'Select a File'
     src_label_dir = 'Select a Directory'
@@ -3292,7 +3287,6 @@ def web_interface(args, ctx):
             return gr.update(visible=bool)
 
         def change_gr_output_split_hours(selected, id):
-            print(f'change_gr_output_split_hours: {selected}')
             session = context.get_session(id)
             session['output_split_hours'] = selected
             return
