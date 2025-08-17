@@ -3293,10 +3293,9 @@ def web_interface(args, ctx):
             session['output_split_hours'] = selected
             return
 
-        def change_gr_audiobook_player_playback_time(str, id):
-            print(f'playback_time: {str}')
+        def on_timeupdate(playback_time: float):
             session = context.get_session(id)
-            session['playback_time'] = float(str)
+            session['playback_time'] = playback_time
             return
 
         def change_param(key, val, id, val2=None):
@@ -3652,9 +3651,9 @@ def web_interface(args, ctx):
             js=f'() => {{ document.title = "{title}"; }}'
         )
         gr_audiobook_player_playback_time.change(
-            fn=change_gr_audiobook_player_playback_time,
-            inputs=[gr_audiobook_player_playback_time, gr_session],
-            outputs=[]
+            fn=playback_update, 
+            inputs=[gr_audiobook_player_playback_time],
+            outpus=None
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
@@ -3889,7 +3888,7 @@ def web_interface(args, ctx):
                                     const gr_audiobook_player_playback_time = document.querySelector("#gr_audiobook_player_playback_time input, #gr_audiobook_player_playback_time textarea");
                                     const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
                                     const textarea = gr_audiobook_sentence?.querySelector('textarea');
-                                    if (gr_audiobook_player && gr_audiobook_player_playback_time && textarea) {
+                                    if (gr_audiobook_player && textarea) {
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
                                         if (existing) {
@@ -3910,7 +3909,6 @@ def web_interface(args, ctx):
                                                 const cues = parseVTTFast(vttText);
                                                 let lastCue = null;
                                                 let fade_timeout = null;
-                                                let last_time = 0;
                                                 gr_audiobook_player.addEventListener('loadedmetadata', () => {
                                                     const stored = window.localStorage.getItem('data');
                                                     if(stored){
