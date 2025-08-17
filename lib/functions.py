@@ -4064,7 +4064,6 @@ def web_interface(args, ctx):
                                     if (real) gr_audiobook_player = real;
                                 }
                                 console.log("Componenents ready!");
-                                //window.init_elements();
                             } catch (e) {
                                 console.log("init error:", e);
                                 clearTimeout(load_timeout);
