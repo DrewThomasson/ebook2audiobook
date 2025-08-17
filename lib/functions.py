@@ -3910,6 +3910,7 @@ def web_interface(args, ctx):
                                                 const cues = parseVTTFast(vttText);
                                                 let lastCue = null;
                                                 let fade_timeout = null;
+                                                let last_time = 0;
                                                 gr_audiobook_player.addEventListener('loadedmetadata', () => {
                                                     const stored = window.localStorage.getItem('data');
                                                     if(stored){
@@ -3942,12 +3943,11 @@ def web_interface(args, ctx):
                                                         lastCue = null;
                                                     }
                                                     const now = performance.now();
-                                                    let last;
-                                                    if (now - last > 3000) {
+                                                    if (now - last_time > 3000) {
                                                         console.log('playback_time', playback_time)
                                                         gr_audiobook_player_playback_time.value = String(playback_time);
                                                         gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
-                                                        last = now;
+                                                        last_time = now;
                                                     }
                                                 });
 
