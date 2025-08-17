@@ -3293,7 +3293,7 @@ def web_interface(args, ctx):
 
         def change_gr_output_split_hours(selected, id):
             session = context.get_session(id)
-            session['output_split_hours'] = selected || 0
+            session['output_split_hours'] = selected if selected is not None else 0
             return
 
         def change_param(key, val, id, val2=None):
