@@ -3293,6 +3293,11 @@ def web_interface(args, ctx):
             session['output_split_hours'] = selected
             return
 
+        def on_timeupdate(playback_time: float):
+            session = context.get_session(id)
+            session['playback_time'] = playback_time
+            return
+
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
             session[key] = val
@@ -3645,6 +3650,11 @@ def web_interface(args, ctx):
             outputs=[],
             js=f'() => {{ document.title = "{title}"; }}'
         )
+        gr_audiobook_player_playback_time.change(
+            fn=playback_update, 
+            inputs=[gr_audiobook_player_playback_time],
+            outpus=None
+        )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
             inputs=[gr_audiobook_list],
@@ -3875,9 +3885,10 @@ def web_interface(args, ctx):
                                             gr_audiobook_player = _m;
                                         }
                                     }
+                                    const gr_audiobook_player_playback_time = document.querySelector("#gr_audiobook_player_playback_time input, #gr_audiobook_player_playback_time textarea");
                                     const gr_audiobook_sentence = gr_audiobook_player_root.querySelector('#gr_audiobook_sentence');
                                     const textarea = gr_audiobook_sentence?.querySelector('textarea');
-                                    if (gr_audiobook_player && textarea) {
+                                    if (gr_audiobook_player && gr_audiobook_player_playback_time && textarea) {
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_audiobook_player_root.querySelector('#gr_audiobook_track');
                                         if (existing) {
@@ -3928,6 +3939,12 @@ def web_interface(args, ctx):
                                                     } else if (!cue && lastCue !== null) {
                                                         textarea.value = '...';
                                                         lastCue = null;
+                                                    }
+                                                    const now = performance.now();
+                                                    if (now - last > 1000) {
+                                                        gr_audiobook_player_playback_time.value = String(playback_time);
+                                                        gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                        last = now;
                                                     }
                                                 });
 
