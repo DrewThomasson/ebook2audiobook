@@ -4042,7 +4042,6 @@ def web_interface(args, ctx):
 
                                 if (!gr_root) {
                                     clearTimeout(load_timeout);
-                                    console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 500);
                                     return;
                                 }
@@ -4063,14 +4062,12 @@ def web_interface(args, ctx):
                                 // If key elements aren’t mounted yet, retry
                                 if (!gr_audiobook_player || !gr_audiobook_player_time_input) {
                                     clearTimeout(load_timeout);
+                                    console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 300);
                                     return;
                                 }
-
-                                // Ready to proceed
-                                if (typeof window.init_elements === "function") {
-                                    window.init_elements();
-                                }
+                                console.log("Componenents ready!");
+                                window.init_elements();
                             } catch (e) {
                                 console.log("init error:", e);
                                 clearTimeout(load_timeout);
