@@ -3910,8 +3910,8 @@ def web_interface(args, ctx):
                                                     }
                                                 },{once: true});
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
-                                                    const playback_time = gr_audiobook_player.currentTime || 0;
-                                                    const cue = findCue(cues, playback_time);
+                                                    let playback_time = gr_audiobook_player.currentTime || 0;
+                                                    let cue = findCue(cues, playback_time);
                                                     if (cue && cue !== lastCue) {
                                                         if (fade_timeout) {
                                                             textarea.style.opacity = '1';
