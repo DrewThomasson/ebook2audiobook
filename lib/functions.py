@@ -3858,7 +3858,7 @@ def web_interface(args, ctx):
                                             if (now - last_time > 1000) {
                                                 console.log('timeupdate', window.playback_time)
                                                 gr_audiobook_player_playback_time.value = String(window.playback_time);
-                                                gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                gr_audiobook_player_playback_time.dispatchEvent(new Event('input', { bubbles: true }));
                                                 last_time = now;
                                             }
                                         });
@@ -3963,7 +3963,7 @@ def web_interface(args, ctx):
 
                             function pushCue() {
                                 if (start !== null && end !== null && textBuffer.length) {
-                                    cues.push({ start, end, text: textBuffer.join("\n") });
+                                    cues.push({ start, end, text: textBuffer.join('\n') });
                                 }
                                 start = end = null;
                                 textBuffer.length = 0;
@@ -3972,8 +3972,8 @@ def web_interface(args, ctx):
                             for (let i = 0, len = lines.length; i < len; i++) {
                                 const line = lines[i];
                                 if (!line.trim()) { pushCue(); continue; }
-                                if (line.includes("-->")) {
-                                    const [s, e] = line.split("-->").map(l => l.trim().split(" ")[0]);
+                                if (line.includes('-->')) {
+                                    const [s, e] = line.split('-->').map(l => l.trim().split(' ')[0]);
                                     if (timePattern.test(s) && timePattern.test(e)) {
                                         start = toSeconds(s);
                                         end = toSeconds(e);
@@ -3987,7 +3987,7 @@ def web_interface(args, ctx):
                         }
                         
                         function toSeconds(ts) {
-                            const parts = ts.split(":");
+                            const parts = ts.split(':');
                             if (parts.length === 3) {
                                 return parseInt(parts[0], 10) * 3600 +
                                        parseInt(parts[1], 10) * 60 +
@@ -4012,13 +4012,13 @@ def web_interface(args, ctx):
                             return null;
                         }
                         window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
-                        window.addEventListener("beforeunload", ()=>{
+                        window.addEventListener('beforeunload', ()=>{
                             try{
                                 const tab_id = window.tab_id
                                 const saved = JSON.parse(localStorage.getItem('data') || '{}');
                                 if (saved.tab_id == tab_id || !saved.tab_id){
-                                    saved.tab_id = undefined
-                                    saved.status = undefined
+                                    saved.tab_id = window.tab_id;
+                                    saved.status = undefined;
                                     localStorage.setItem('data', JSON.stringify(saved));
                                 }
                             }catch(e){
@@ -4038,10 +4038,10 @@ def web_interface(args, ctx):
                         
                         function init(){
                             gr_root = (window.gradioApp && window.gradioApp()) || document;
-                            gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
-                            gr_radios = gr_root.querySelectorAll("input[type='radio']");
+                            gr_checkboxes = gr_root.querySelectorAll('input[type='checkbox']');
+                            gr_radios = gr_root.querySelectorAll('input[type='radio']');
                             gr_audiobook_player = gr_root.querySelector('#gr_audiobook_player');
-                            gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
+                            gr_audiobook_player_playback_time = gr_root.querySelector('#gr_audiobook_player_playback_time input');
                             gr_audiobook_sentence = gr_root.querySelector('#gr_audiobook_sentence textarea');
                             gr_tab_progress = document.querySelector('#gr_tab_progress');
                             // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
@@ -4052,6 +4052,7 @@ def web_interface(args, ctx):
                                 }
                             }
                             if(!gr_root || !gr_checkboxes || !gr_radios || !gr_audiobook_player_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
+                                console.log('Some elements not ready... retrying')
                                 setTimeout(init, 400);
                                 return;
                             }
