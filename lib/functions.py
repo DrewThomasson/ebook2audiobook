@@ -3909,21 +3909,16 @@ def web_interface(args, ctx):
                                         let lastCue = null;
                                         let fade_timeout = null;
                                         let last_time = 0;
+                                        window.playback_time = null
                                         gr_audiobook_player.addEventListener('canplay', () => {
-                                            const stored = window.localStorage.getItem('data');
-                                            if(stored){
-                                                const parsed = JSON.parse(stored);
-                                                const playback_time = (parsed.playback_time) ? parseFloat(parsed.playback_time) : undefined;
-                                                console.log('canplay:', playback_time);
-                                                if (playback_time) {
-                                                    gr_audiobook_player_playback_time.value = playback_time;
-                                                    gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
-                                                }
+                                            console.log('canplay:', window.playback_time);
+                                            if (window.playback_time) {
+                                                gr_audiobook_player_playback.currentTime = window.playback_time;
                                             }
-                                        });
+                                        },{once: true});
                                         gr_audiobook_player.addEventListener('timeupdate', () => {
-                                            const playback_time = gr_audiobook_player.currentTime || 0;
-                                            const cue = findCue(cues, playback_time);
+                                            window.playback_time = gr_audiobook_player.currentTime;
+                                            const cue = findCue(cues, window.playback_time);
                                             if (cue && cue !== lastCue) {
                                                 if (fade_timeout) {
                                                     textarea.style.opacity = '1';
@@ -3945,8 +3940,8 @@ def web_interface(args, ctx):
                                             }
                                             const now = performance.now();
                                             if (now - last_time > 1000) {
-                                                console.log('timeupdate', playback_time)
-                                                gr_audiobook_player_playback_time.value = String(playback_time);
+                                                console.log('timeupdate', window.playback_time)
+                                                gr_audiobook_player_playback_time.value = String(window.playback_time);
                                                 gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
                                                 last_time = now;
                                             }
@@ -4072,6 +4067,7 @@ def web_interface(args, ctx):
                             if(stored){
                                 const parsed = JSON.parse(stored);
                                 parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
+                                window.playback_time = parsed.playback_time;
                                 return parsed;
                             }
                         } catch (e) {
