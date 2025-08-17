@@ -3945,7 +3945,7 @@ def web_interface(args, ctx):
                                                     const now = performance.now();
                                                     if (now - last_time > 3000) {
                                                         console.log('playback_time', playback_time)
-                                                        gr_audiobook_player_playback_time.value = String(playback_time);
+                                                        gr_audiobook_player_playback_time.value = playback_time;
                                                         gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
                                                         last_time = now;
                                                     }
