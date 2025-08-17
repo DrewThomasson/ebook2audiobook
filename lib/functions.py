@@ -131,7 +131,7 @@ class SessionContext:
                 "num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
                 "repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
                 "top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
-                "top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
+                "top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'],
                 "speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
                 "enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
                 "text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
