@@ -4036,26 +4036,26 @@ def web_interface(args, ctx):
                         let gr_tab_progress;
                         
                         window.addEventListener("load", () => {
-                            console.log("Page fully loaded (DOM + images + stylesheets)");
-                            gr_root = (window.gradioApp && window.gradioApp()) || document;
-                            gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
-                            gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
-                            gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                            gr_tab_progress = document.querySelector("#gr_tab_progress");
-                            if (!gr_root || !gr_audiobook_player || !gr_audiobook_player_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
-                                console.log("Some elements are not ready... retrying");
-                                return;
-                            }
-                            gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
-                            gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                            // if gr_audiobook_player is a container, switch to its inner <audio>/<video>
-                            if (!gr_audiobook_player.matches("audio,video")) {
-                                const real_gr_audiobook_player = gr_audiobook_player.querySelector("audio,video");
-                                if (real_gr_audiobook_player) {
-                                    gr_audiobook_player = real_gr_audiobook_player;
+                            try {
+                                console.log("Page fully loaded (DOM + images + stylesheets)");
+                                gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
+                                gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
+                                gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                gr_tab_progress = document.querySelector("#gr_tab_progress");
+                                gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
+                                gr_radios = gr_root.querySelectorAll("input[type='radio']");
+                                // if gr_audiobook_player is a container, switch to its inner <audio>/<video>
+                                if (!gr_audiobook_player.matches("audio,video")) {
+                                    const real_gr_audiobook_player = gr_audiobook_player.querySelector("audio,video");
+                                    if (real_gr_audiobook_player) {
+                                        gr_audiobook_player = real_gr_audiobook_player;
+                                    }
                                 }
+                                window.init_elements()
+                            } catch (e) {
+                                console.log("window load() error:", e);
                             }
-                            window.init_elements()
                         });
                         window.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                         const stored = window.localStorage.getItem("data");
@@ -4067,7 +4067,7 @@ def web_interface(args, ctx):
                             return parsed;
                         }
                     }catch (e){
-                        console.log("custom js init error:", e);
+                        console.log("gr_raed_data js error:", e);
                     }
                     return null;
                 }
