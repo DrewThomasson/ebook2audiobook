@@ -3653,7 +3653,7 @@ def web_interface(args, ctx):
         gr_audiobook_player_playback_time.change(
             fn=playback_update, 
             inputs=[gr_audiobook_player_playback_time],
-            outpus=None
+            outputs=None
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
