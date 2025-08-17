@@ -3913,7 +3913,7 @@ def web_interface(args, ctx):
                                         gr_audiobook_player.addEventListener('canplay', () => {
                                             console.log('canplay:', window.playback_time);
                                             if (window.playback_time) {
-                                                gr_audiobook_player_playback.currentTime = window.playback_time;
+                                                gr_audiobook_player.currentTime = window.playback_time;
                                             }
                                         },{once: true});
                                         gr_audiobook_player.addEventListener('timeupdate', () => {
