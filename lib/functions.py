@@ -3916,6 +3916,7 @@ def web_interface(args, ctx):
                                                         const playback_time = parseFloat(parsed.playback_time || 0);
                                                         console.log('playback_time:', playback_time);
                                                         gr_audiobook_player.currentTime = playback_time;
+                                                        gr_audiobook_player.dispatchEvent(new Event("seeked"));
                                                     }
                                                 },{once: true});
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
