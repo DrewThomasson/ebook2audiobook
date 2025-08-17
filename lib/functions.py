@@ -3822,29 +3822,12 @@ def web_interface(args, ctx):
                         let gr_checkboxes;
                         let gr_radios;
                         let gr_audiobook_player_playback_time;
-                        let textarea;
+                        let gr_audiobook_sentence;
                         let gr_audiobook_player;
                         let gr_tab_progress;
                         if (typeof(window.init_elements) !== 'function') {
                             window.init_elements = () => {
                                 try {
-                                    gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
-                                    gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                    gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
-                                    textarea = gr_root.querySelector('#gr_audiobook_sentence textarea');
-                                    let gr_audiobook_player = gr_root.querySelector('#gr_audiobook_player');
-                                    // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
-                                    if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
-                                        const real_gr_audiobook_player = gr_audiobook_player.querySelector('audio,video');
-                                        if (real_gr_audiobook_player) {
-                                            gr_audiobook_player = real_gr_audiobook_player;
-                                        }
-                                    }
-                                    let gr_tab_progress = document.querySelector('#gr_tab_progress');
-                                    
-                                    ///////////////////
-                                    
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
@@ -3860,21 +3843,21 @@ def web_interface(args, ctx):
                                         const cue = findCue(cues, window.playback_time);
                                         if (cue && cue !== lastCue) {
                                             if (fade_timeout) {
-                                                textarea.style.opacity = '1';
+                                                gr_audiobook_sentence.style.opacity = '1';
                                             } else {
-                                                textarea.style.opacity = '0';
+                                                gr_audiobook_sentence.style.opacity = '0';
                                             }
-                                            textarea.style.transition = 'none';
-                                            textarea.value = cue.text;
+                                            gr_audiobook_sentence.style.transition = 'none';
+                                            gr_audiobook_sentence.value = cue.text;
                                             clearTimeout(fade_timeout);
                                             fade_timeout = setTimeout(() => {
-                                                textarea.style.transition = 'opacity 0.1s ease-in';
-                                                textarea.style.opacity = '1';
+                                                gr_audiobook_sentence.style.transition = 'opacity 0.1s ease-in';
+                                                gr_audiobook_sentence.style.opacity = '1';
                                                 fade_timeout = null;
                                             }, 33);
                                             lastCue = cue;
                                         } else if (!cue && lastCue !== null) {
-                                            textarea.value = '...';
+                                            gr_audiobook_sentence.value = '...';
                                             lastCue = null;
                                         }
                                         const now = performance.now();
@@ -3886,7 +3869,7 @@ def web_interface(args, ctx):
                                         }
                                     });
                                     gr_audiobook_player.addEventListener('ended', () => {
-                                        textarea.value = '...';
+                                        gr_audiobook_sentence.value = '...';
                                         lastCue = null;
                                     });
                                     
@@ -3939,21 +3922,21 @@ def web_interface(args, ctx):
                             window.load_vtt_timeout = null;
                             window.load_vtt = (path) => {
                                 try {
-                                    if (gr_audiobook_player && gr_audiobook_player_playback_time && textarea) {
+                                    if (gr_audiobook_player && gr_audiobook_player_playback_time && gr_audiobook_sentence) {
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector('#gr_audiobook_track');
                                         if (existing) {
                                             existing.remove();
                                         }
-                                        textarea.style.fontSize = '14px';
-                                        textarea.style.fontWeight = 'bold';
-                                        textarea.style.width = '100%';
-                                        textarea.style.height = 'auto';
-                                        textarea.style.textAlign = 'center';
-                                        textarea.style.margin = '0';
-                                        textarea.style.padding = '7px 0 7px 0';
-                                        textarea.style.lineHeight = '14px';
-                                        textarea.value = '...';
+                                        gr_audiobook_sentence.style.fontSize = '14px';
+                                        gr_audiobook_sentence.style.fontWeight = 'bold';
+                                        gr_audiobook_sentence.style.width = '100%';
+                                        gr_audiobook_sentence.style.height = 'auto';
+                                        gr_audiobook_sentence.style.textAlign = 'center';
+                                        gr_audiobook_sentence.style.margin = '0';
+                                        gr_audiobook_sentence.style.padding = '7px 0 7px 0';
+                                        gr_audiobook_sentence.style.lineHeight = '14px';
+                                        gr_audiobook_sentence.value = '...';
                                         let cues = []
                                         if (path) {
                                             fetch(path).then(res => res.text()).then(vttText => {
@@ -4035,10 +4018,36 @@ def web_interface(args, ctx):
                             }
                             return null;
                         }
-
+                        window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
+                        window.addEventListener("beforeunload", ()=>{
+                            try{
+                                const tab_id = window.tab_id
+                                const saved = JSON.parse(localStorage.getItem('data') || '{}');
+                                if (saved.tab_id == tab_id || !saved.tab_id){
+                                    saved.tab_id = undefined
+                                    saved.status = undefined
+                                    localStorage.setItem('data', JSON.stringify(saved));
+                                }
+                            }catch(e){
+                                console.log('Error updating status on unload:', e);
+                            }
+                        });
                         function init(){
-                            const gr_audiobook_player = document.querySelector('#gr_audiobook_player'); 
-                            if(!gr_audiobook_player){
+                            gr_root = (window.gradioApp && window.gradioApp()) || document;
+                            gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
+                            gr_radios = gr_root.querySelectorAll("input[type='radio']");
+                            gr_audiobook_player = gr_root.querySelector('#gr_audiobook_player');
+                            gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
+                            gr_audiobook_sentence = gr_root.querySelector('#gr_audiobook_sentence textarea');
+                            gr_tab_progress = document.querySelector('#gr_tab_progress');
+                            // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
+                            if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
+                                const real_gr_audiobook_player = gr_audiobook_player.querySelector('audio,video');
+                                if (real_gr_audiobook_player) {
+                                    gr_audiobook_player = real_gr_audiobook_player;
+                                }
+                            }
+                            if(!gr_root || !gr_checkboxes || !gr_radios || !gr_audiobook_player_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
                                 setTimeout(init, 400);
                                 return;
                             }
@@ -4051,34 +4060,13 @@ def web_interface(args, ctx):
                             }
                         }
                         init();
-
-                        try {
-                            if(!window.tab_id){
-                                window.tab_id = 'tab-' + performance.now().toString(36) + '-' + Math.random().toString(36).substring(2, 10);
-                            }
-                            window.addEventListener("beforeunload", ()=>{
-                                try{
-                                    const tab_id = window.tab_id
-                                    const saved = JSON.parse(localStorage.getItem('data') || '{}');
-                                    if (saved.tab_id == tab_id || !saved.tab_id){
-                                        saved.tab_id = undefined
-                                        saved.status = undefined
-                                        localStorage.setItem('data', JSON.stringify(saved));
-                                    }
-                                }catch(e){
-                                    console.log('Error updating status on unload:', e);
-                                }
-                            });
-                            const stored = window.localStorage.getItem('data');
-                            if(stored){
-                                const parsed = JSON.parse(stored);
-                                parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
-                                window.playback_time = parsed.playback_time;
-                                console.log('load: ', window.playback_time);
-                                return parsed;
-                            }
-                        } catch (e) {
-                            console.log('JSON parse error:', e);
+                        const stored = window.localStorage.getItem('data');
+                        if(stored){
+                            const parsed = JSON.parse(stored);
+                            parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
+                            window.playback_time = parsed.playback_time;
+                            console.log('load: ', window.playback_time);
+                            return parsed;
                         }
                     }catch (e){
                         console.log('custom js init error:', e);
