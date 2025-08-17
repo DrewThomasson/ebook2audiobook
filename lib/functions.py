@@ -3816,7 +3816,7 @@ def web_interface(args, ctx):
                             window.reset_elements = () => {
                                 try {
                                     const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
-                                    const gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
+                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
                                     const checkboxes = gr_audiobook_player_root.querySelectorAll("input[type='checkbox']");
                                     const radios = gr_audiobook_player_root.querySelectorAll("input[type='radio']");
                                     const url = new URL(window.location);
@@ -3871,7 +3871,7 @@ def web_interface(args, ctx):
                                         window.load_vtt_timeout = null;
                                     }
                                     const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
-                                    const gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
+                                    let gr_audiobook_player = gr_audiobook_player_root.querySelector('#gr_audiobook_player');
                                     if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
                                         const _m = gr_audiobook_player.querySelector('audio,video');
                                         if (_m) {
@@ -3898,7 +3898,7 @@ def web_interface(args, ctx):
                                         fetch(path)
                                             .then(res => res.text())
                                             .then(vttText => {
-                                                let cues = parseVTTFast(vttText);
+                                                const cues = parseVTTFast(vttText);
                                                 let lastCue = null;
                                                 let fade_timeout = null;
                                                 gr_audiobook_player.addEventListener('loadedmetadata', () => {
@@ -3910,8 +3910,8 @@ def web_interface(args, ctx):
                                                     }
                                                 },{once: true});
                                                 gr_audiobook_player.addEventListener('timeupdate', () => {
-                                                    let playback_time = gr_audiobook_player.currentTime || 0;
-                                                    let cue = findCue(cues, playback_time);
+                                                    const playback_time = gr_audiobook_player.currentTime || 0;
+                                                    const cue = findCue(cues, playback_time);
                                                     if (cue && cue !== lastCue) {
                                                         if (fade_timeout) {
                                                             textarea.style.opacity = '1';
