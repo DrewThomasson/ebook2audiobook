@@ -4038,26 +4038,26 @@ def web_interface(args, ctx):
                         
                         function init(){
                             gr_root = (window.gradioApp && window.gradioApp()) || document;
-                            gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox;]");
-                            gr_radios = gr_root.querySelectorAll("input[type='radio']");
                             gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
                             gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
                             gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                             gr_tab_progress = document.querySelector("#gr_tab_progress");
-                            // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
-                            if (gr_audiobook_player && !gr_audiobook_player.matches("audio,video")) {
-                                const real_gr_audiobook_player = gr_audiobook_player.querySelector("audio,video");
-                                if (real_gr_audiobook_player) {
-                                    gr_audiobook_player = real_gr_audiobook_player;
-                                }
-                            }
-                            if(!gr_root || !gr_checkboxes || !gr_radios || !gr_audiobook_player_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
-                                console.log("Some elements not ready... retrying");
+                            if(!gr_root || !gr_audiobook_player || !gr_audiobook_player_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
+                                console.log("Some elements are not ready... retrying");
                                 setTimeout(init, 400);
                                 return;
                             }
                             if(typeof(window.init_elements) === "function"){
                                 try{
+                                    gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox;]");
+                                    gr_radios = gr_root.querySelectorAll("input[type='radio']");
+                                    // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
+                                    if (!gr_audiobook_player.matches("audio,video") {
+                                        const real_gr_audiobook_player = gr_audiobook_player.querySelector("audio,video");
+                                        if (real_gr_audiobook_player) {
+                                            gr_audiobook_player = real_gr_audiobook_player;
+                                        }
+                                    }
                                     window.init_elements(); 
                                 }catch(e){ 
                                     console.log("init_elements error:", e); 
