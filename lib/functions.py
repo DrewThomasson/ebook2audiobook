@@ -3664,11 +3664,6 @@ def web_interface(args, ctx):
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt, gr_group_audiobook_list]
-        ).then(
-            fn=None,
-            inputs=[],
-            outputs=[],
-            js="()=>{window.init_elements?.();}"
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -4064,6 +4059,7 @@ def web_interface(args, ctx):
                                     if (real) gr_audiobook_player = real;
                                 }
                                 console.log("Componenents ready!");
+                                window.init_elements();
                             } catch (e) {
                                 console.log("init error:", e);
                                 clearTimeout(load_timeout);
