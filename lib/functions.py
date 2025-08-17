@@ -3812,7 +3812,7 @@ def web_interface(args, ctx):
             js=r"""
                 ()=>{
                     try{
-                        if (typeof window.reset_elements !== 'function') {
+                        if (typeof(window.reset_elements) !== 'function') {
                             window.reset_elements = () => {
                                 try {
                                     const gr_audiobook_player_root = (window.gradioApp && window.gradioApp()) || document;
@@ -3862,7 +3862,7 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
-                        if (typeof window.load_vtt !== 'function') {
+                        if (typeof(window.load_vtt) !== 'function') {
                             window.load_vtt = (path) => {
                                 try {
                                     if (!window.load_vtt_timeout) {
@@ -3997,7 +3997,7 @@ def web_interface(args, ctx):
                                 return null;
                             }
                         }
-                        if(typeof window.tab_progress !== 'function'){
+                        if(typeof(window.tab_progress) !== 'function'){
                             const gr_tab_progress = document.querySelector('#gr_tab_progress');
                             if (!gr_tab_progress || window.__titleSync) return;
                             window.__titleSync = true;
@@ -4015,12 +4015,12 @@ def web_interface(args, ctx):
                         }
 
                         function tryRun(){
-                            const gr_audiobook_player = document.querySelector('#gr_audiobook_player'); 
+                            let gr_audiobook_player = document.querySelector('#gr_audiobook_player'); 
                             if(!gr_audiobook_player){
-                                setTimeout(tryRun, 250);
+                                setTimeout(tryRun, 400);
                                 return;
                             }
-                            if(typeof window.reset_elements === 'function'){
+                            if(typeof(window.reset_elements) === 'function'){
                                 try{
                                     window.reset_elements(); 
                                 }catch(e){ 
