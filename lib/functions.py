@@ -2178,11 +2178,10 @@ def restore_session_from_data(data, session):
     try:
         for key, value in data.items():
             if key in session:  # Check if the key exists in session
-                if key != 'playback_time':
-                    if isinstance(value, dict) and isinstance(session[key], dict):
-                        restore_session_from_data(value, session[key])
-                    else:
-                        session[key] = value
+                if isinstance(value, dict) and isinstance(session[key], dict):
+                    restore_session_from_data(value, session[key])
+                else:
+                    session[key] = value
     except Exception as e:
         DependencyError(e)
 
@@ -4069,6 +4068,7 @@ def web_interface(args, ctx):
                                 const parsed = JSON.parse(stored);
                                 parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
                                 window.playback_time = parsed.playback_time;
+                                console.log(
                                 return parsed;
                             }
                         } catch (e) {
