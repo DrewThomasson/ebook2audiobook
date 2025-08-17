@@ -3836,9 +3836,9 @@ def web_interface(args, ctx):
                                     let gr_audiobook_player = gr_root.querySelector('#gr_audiobook_player');
                                     // if #gr_audiobook_player is a container, switch to its inner <audio>/<video>
                                     if (gr_audiobook_player && !gr_audiobook_player.matches('audio,video')) {
-                                        const _m = gr_audiobook_player.querySelector('audio,video');
-                                        if (_m) {
-                                            gr_audiobook_player = _m;
+                                        const real_gr_audiobook_player = gr_audiobook_player.querySelector('audio,video');
+                                        if (real_gr_audiobook_player) {
+                                            gr_audiobook_player = real_gr_audiobook_player;
                                         }
                                     }
                                     let gr_tab_progress = document.querySelector('#gr_tab_progress');
