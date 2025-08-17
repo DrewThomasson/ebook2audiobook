@@ -2525,9 +2525,9 @@ def web_interface(args, ctx):
                 )
                 gr_xtts_temperature = gr.Slider(
                     label='Temperature',
-                    minimum=0.1,
+                    minimum=0.05,
                     maximum=10.0,
-                    step=0.1,
+                    step=0.05,
                     value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
                     elem_id='gr_xtts_temperature',
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
