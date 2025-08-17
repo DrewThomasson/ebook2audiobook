@@ -4034,31 +4034,51 @@ def web_interface(args, ctx):
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
                         let gr_tab_progress;
-                        
-                        function load_complete() {
+                        let load_timeout;
+
+                        function init() {
                             try {
-                                console.log("Page fully loaded (DOM + images + stylesheets)");
-                                gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                const gr_root = (window.gradioApp && window.gradioApp()) || document;
+
+                                if (!gr_root) {
+                                    clearTimeout(load_timeout);
+                                    load_timeout = setTimeout(init, 500);
+                                    return;
+                                }
+
                                 gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
-                                gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
+                                gr_audiobook_player_time_input = gr_root.querySelector("#gr_audiobook_player_playback_time input");
                                 gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                gr_tab_progress = document.querySelector("#gr_tab_progress");
+                                gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                 gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                 gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                // if gr_audiobook_player is a container, switch to its inner <audio>/<video>
-                                if (!gr_audiobook_player.matches("audio,video")) {
-                                    const real_gr_audiobook_player = gr_audiobook_player.querySelector("audio,video");
-                                    if (real_gr_audiobook_player) {
-                                        gr_audiobook_player = real_gr_audiobook_player;
-                                    }
+
+                                // if container, get inner <audio>/<video>
+                                if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
+                                    const real = gr_audiobook_player.querySelector?.("audio,video");
+                                    if (real) gr_audiobook_player = real;
                                 }
-                                window.init_elements()
+
+                                // If key elements aren’t mounted yet, retry
+                                if (!gr_audiobook_player || !gr_audiobook_player_time_input) {
+                                    clearTimeout(load_timeout);
+                                    load_timeout = setTimeout(init, 300);
+                                    return;
+                                }
+
+                                // Ready to proceed
+                                if (typeof window.init_elements === "function") {
+                                    window.init_elements();
+                                }
                             } catch (e) {
-                                console.log("window load() error:", e);
+                                console.log("init error:", e);
+                                clearTimeout(load_timeout);
+                                load_timeout = setTimeout(init, 500);
                             }
                         }
-                        const app = document.getElementsByTagName("gradio-app")[0];
-                        app.addEventListener("onloadcomplete", load_complete);
+                        
+                        init();
+
                         window.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                         const stored = window.localStorage.getItem("data");
                         if (stored) {
