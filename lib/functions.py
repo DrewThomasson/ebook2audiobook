@@ -4057,14 +4057,11 @@ def web_interface(args, ctx):
                             }
                             window.addEventListener("beforeunload", ()=>{
                                 try{
-                                    const gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    const gr_audiobook_player = gr_root.querySelector('#gr_audiobook_player');
                                     const tab_id = window.tab_id
                                     const saved = JSON.parse(localStorage.getItem('data') || '{}');
                                     if (saved.tab_id == tab_id || !saved.tab_id){
                                         saved.tab_id = undefined
                                         saved.status = undefined
-                                        saved.playback_time = gr_audiobook_player.currentTime || 0;
                                         localStorage.setItem('data', JSON.stringify(saved));
                                     }
                                 }catch(e){
