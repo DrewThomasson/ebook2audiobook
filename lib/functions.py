@@ -4042,6 +4042,7 @@ def web_interface(args, ctx):
 
                                 if (!gr_root) {
                                     clearTimeout(load_timeout);
+                                    console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 500);
                                     return;
                                 }
