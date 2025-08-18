@@ -2114,8 +2114,7 @@ def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if is_gui_process == True:
-                                    selected_blocks = show_chapters(session['chapters'])
-                                    session['chapters'] = [c for c in session['chapters'] if c['title'] in selected_blocks]
+                                    print('should code showing modal with all blocks to be selected')
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(id):
