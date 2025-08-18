@@ -2152,7 +2152,7 @@ def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if is_gui_process == True:
-                                    selected_blocks = asyncio.run(show_modal(session['chapters']))
+                                    selected_blocks = asyncio.run(show_blocks(session['chapters']))
                                     session['chapters'] = [c for i, c in enumerate(session['chapters']) if i in selected_blocks]
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
