@@ -2230,6 +2230,7 @@ def web_interface(args, ctx):
     global context
     context = ctx
     script_mode = args['script_mode']
+    is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
     title = 'Ebook2Audiobook'
     glass_mask_msg = 'Initialization, please wait...'
@@ -3485,7 +3486,7 @@ def web_interface(args, ctx):
                         session['audiobook'] = None
                 if session['status'] == 'converting':
                     session['status'] = 'ready'
-                session['is_gui_process'] = True
+                session['is_gui_process'] = is_gui_process
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
