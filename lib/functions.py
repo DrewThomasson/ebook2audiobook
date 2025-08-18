@@ -3817,15 +3817,7 @@ def web_interface(args, ctx):
             fn=None,
             js=r'''
                 ()=>{
-                    try{
-                        let gr_root;
-                        let gr_checkboxes;
-                        let gr_radios;
-                        let gr_audiobook_player_playback_time;
-                        let gr_audiobook_sentence;
-                        let gr_audiobook_player;
-                        let gr_tab_progress;
-                        let load_timeout;
+                    try {
                         if (typeof(window.init_elements) !== "function") {
                             window.playback_time = null;
                             window.init_elements = () => {
@@ -3834,14 +3826,14 @@ def web_interface(args, ctx):
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
-                                    if(gr_root && gr_checkboxes && gr_radios && gr_audiobook_player_playback_time && gr_audiobook_sentence && gr_tab_progress){
+                                    if (gr_root && gr_checkboxes && gr_radios && gr_audiobook_player_playback_time && gr_audiobook_sentence && gr_tab_progress) {
                                         console.log('components exist!');
                                         gr_audiobook_player.addEventListener("canplay", () => {
                                             console.log("canplay:", window.playback_time);
-                                            if (window.playback_time) {
+                                            if (Number.isFinite(window.playback_time) && window.playback_time > 0) {
                                                 gr_audiobook_player.currentTime = window.playback_time;
                                             }
-                                        },{once: true});
+                                        }, { once: true });
                                         gr_audiobook_player.addEventListener("timeupdate", () => {
                                             window.playback_time = gr_audiobook_player.currentTime;
                                             const cue = findCue(cues, window.playback_time);
@@ -3940,13 +3932,12 @@ def web_interface(args, ctx):
                                         gr_audiobook_sentence.style.padding = "7px 0 7px 0";
                                         gr_audiobook_sentence.style.lineHeight = "14px";
                                         gr_audiobook_sentence.value = "...";
-                                        let cues = []
                                         if (path) {
                                             fetch(path).then(res => res.text()).then(vttText => {
                                                 cues = parseVTTFast(vttText);
                                             });
                                         }
-                                        gr_audiobook_player.load();                                     
+                                        gr_audiobook_player.load();
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
@@ -3960,7 +3951,7 @@ def web_interface(args, ctx):
                             window.tab_progress = () => {
                                 const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                 const prct = val.trim().split(" ")[4];
-                                if(prct && /^\d+(\.\d+)?%$/.test(prct)){
+                                if (prct && /^\d+(\.\d+)?%$/.test(prct)) {
                                     document.title = "Ebook2Audiobook: " + prct;
                                 }
                             };
@@ -4021,38 +4012,48 @@ def web_interface(args, ctx):
                             }
                             return null;
                         }
-                        window.addEventListener("beforeunload", ()=>{
-                            try{
-                                const tab_id = window.tab_id
+                        window.addEventListener("beforeunload", () => {
+                            try {
+                                const tab_id = window.tab_id;
                                 const saved = JSON.parse(localStorage.getItem("data") || "{}");
-                                if (saved.tab_id == tab_id || !saved.tab_id){
+                                if (saved.tab_id == tab_id || !saved.tab_id) {
                                     saved.tab_id = undefined;
                                     saved.status = undefined;
                                     localStorage.setItem("data", JSON.stringify(saved));
                                 }
-                            }catch(e){
+                            } catch (e) {
                                 console.log("Error updating status on unload:", e);
                             }
                         });
                         
                         //////////////////////
+                        
+                        let gr_root;
+                        let gr_checkboxes;
+                        let gr_radios;
+                        let gr_audiobook_player_playback_time;
+                        let gr_audiobook_sentence;
+                        let gr_audiobook_player;
+                        let gr_tab_progress;
+                        let load_timeout;
+                        let cues = [];
 
                         function init() {
                             try {
-                                const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                gr_root = (window.gradioApp && window.gradioApp()) || document;
                                 if (!gr_root) {
                                     clearTimeout(load_timeout);
                                     load_timeout = setTimeout(init, 1000);
                                     return;
                                 }
                                 gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
-                                gr_audiobook_player_time_input = gr_root.querySelector("#gr_audiobook_player_playback_time input");
+                                gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
                                 gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                 gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                 gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                 gr_radios = gr_root.querySelectorAll("input[type='radio']");
                                 // If key elements aren’t mounted yet, retry
-                                if (!gr_audiobook_player || !gr_audiobook_player_time_input) {
+                                if (!gr_audiobook_player || !gr_audiobook_player_playback_time) {
                                     clearTimeout(load_timeout);
                                     console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 1000);
@@ -4083,7 +4084,7 @@ def web_interface(args, ctx):
                             console.log("load: ", window.playback_time);
                             return parsed;
                         }
-                    }catch (e){
+                    } catch (e) {
                         console.log("gr_raed_data js error:", e);
                     }
                     return null;
