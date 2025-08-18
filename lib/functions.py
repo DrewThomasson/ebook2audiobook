@@ -3818,6 +3818,14 @@ def web_interface(args, ctx):
             js=r'''
                 ()=>{
                     try{
+                        let gr_root;
+                        let gr_checkboxes;
+                        let gr_radios;
+                        let gr_audiobook_player_playback_time;
+                        let gr_audiobook_sentence;
+                        let gr_audiobook_player;
+                        let gr_tab_progress;
+                        let load_timeout;
                         if (typeof(window.init_elements) !== "function") {
                             window.playback_time = null;
                             window.init_elements = () => {
@@ -4028,15 +4036,6 @@ def web_interface(args, ctx):
                         });
                         
                         //////////////////////
-                        
-                        let gr_root;
-                        let gr_checkboxes;
-                        let gr_radios;
-                        let gr_audiobook_player_playback_time;
-                        let gr_audiobook_sentence;
-                        let gr_audiobook_player;
-                        let gr_tab_progress;
-                        let load_timeout;
 
                         function init() {
                             try {
