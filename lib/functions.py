@@ -3343,7 +3343,7 @@ def web_interface(args, ctx):
                     "is_gui_process": session['is_gui_process'],
                     "session": id,
                     "script_mode": script_mode,
-                    "chapters_control" = chapters_control,
+                    "chapters_control": chapters_control,
                     "device": device.lower(),
                     "tts_engine": tts_engine,
                     "ebook": ebook_file if isinstance(ebook_file, str) else None,
