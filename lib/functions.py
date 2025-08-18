@@ -3836,7 +3836,7 @@ def web_interface(args, ctx):
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
-                                    if (gr_root && gr_checkboxes && gr_radios && gr_playback_time && gr_audiobook_sentence && gr_tab_progress) {
+                                    if (gr_root && gr_audiobook_player && gr_audiobook_list && gr_checkboxes && gr_radios && gr_playback_time && gr_audiobook_sentence && gr_tab_progress) {
                                         let set_playback_time = false;
                                         gr_audiobook_player.addEventListener("loadedmetadata", () => {
                                             console.log("loadedmetadata:", window.playback_time);
@@ -4054,7 +4054,7 @@ def web_interface(args, ctx):
                                 gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                 gr_radios = gr_root.querySelectorAll("input[type='radio']");
                                 // If key elements aren’t mounted yet, retry
-                                if (!gr_tab_progress || !gr_audiobook_sentence || !gr_audiobook_list || !gr_playback_time || !gr_checkboxes || !gr_radios) {
+                                if (!gr_tab_progress || !gr_audiobook_sentence || !gr_audiobook_list || !gr_playback_time) {
                                     clearTimeout(load_timeout);
                                     console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 1000);
