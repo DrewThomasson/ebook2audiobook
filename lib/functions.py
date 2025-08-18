@@ -41,7 +41,6 @@ from lib.classes.tts_manager import TTSManager
 #from lib.classes.argos_translator import ArgosTranslator
 
 context = None
-is_gui_process = False
 active_sessions = set()
 
 #import logging
@@ -62,10 +61,7 @@ class DependencyError(Exception):
         traceback.print_exc()      
         # Print the exception message
         error = f'Caught DependencyError: {self}'
-        print(error)    
-        # Exit the script if it's not a web process
-        if not is_gui_process:
-            sys.exit(1)
+        print(error)
 
 class SessionTracker:
     def __init__(self):
@@ -100,6 +96,7 @@ class SessionContext:
                 "script_mode": NATIVE,
                 "id": id,
                 "tab_id": None,
+                "is_gui_process": False,
                 "process_id": None,
                 "status": None,
                 "event": None,
@@ -295,7 +292,7 @@ def extract_custom_model(file_src, session, required_files=None):
                         with zip_ref.open(f) as src, open(out_path, 'wb') as dst:
                             shutil.copyfileobj(src, dst)
                     t.update(1)
-        if is_gui_process:
+        if session['is_gui_process']:
             os.remove(file_src)
         if model_path is not None:
             msg = f'Extracted files to {model_path}'
@@ -306,12 +303,12 @@ def extract_custom_model(file_src, session, required_files=None):
             return None
     except asyncio.exceptions.CancelledError as e:
         DependencyError(e)
-        if is_gui_process:
+        if session['is_gui_process']:
             os.remove(file_src)
         return None       
     except Exception as e:
         DependencyError(e)
-        if is_gui_process:
+        if session['is_gui_process']:
             os.remove(file_src)
         return None
         
@@ -1933,7 +1930,7 @@ def convert_ebook_batch(args, ctx=None):
 
 def convert_ebook(args, ctx=None):
     try:
-        global is_gui_process, context        
+        global context        
         error = None
         id = None
         info_session = None
@@ -1970,18 +1967,18 @@ def convert_ebook(args, ctx=None):
             if ctx is not None:
                 context = ctx
 
-            is_gui_process = args['is_gui_process']
             id = args['session'] if args['session'] is not None else str(uuid.uuid4())
 
             session = context.get_session(id)
-            session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE   
+            session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE
+            session['is_gui_process'] = args['is_gui_process']
             session['ebook'] = args['ebook']
             session['ebook_list'] = args['ebook_list']
             session['device'] = args['device']
             session['language'] = args['language']
             session['language_iso1'] = args['language_iso1']
             session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
-            session['custom_model'] = args['custom_model'] if not is_gui_process or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
+            session['custom_model'] = args['custom_model'] if not session['is_gui_process'] or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
             session['fine_tuned'] = args['fine_tuned']
             session['voice'] = args['voice']
             session['temperature'] =  args['temperature']
@@ -2003,7 +2000,7 @@ def convert_ebook(args, ctx=None):
 
             info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
 
-            if not is_gui_process:
+            if not session['is_gui_process']:
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
@@ -2086,7 +2083,7 @@ def convert_ebook(args, ctx=None):
                         if msg == '':
                             msg = f"Using {session['device'].upper()} - "
                         msg += msg_extra
-                        if is_gui_process:
+                        if session['is_gui_process']:
                             show_alert({"type": "warning", "msg": msg})
                         print(msg)
                         session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
@@ -2118,7 +2115,7 @@ def convert_ebook(args, ctx=None):
                                 if not bypass_chapters_control:
                                     print('should code showing modal with all blocks to be selected')
                                 else:
-                                    return process_ebook(id)
+                                    return process_audiobook(id)
                             else:
                                 error = 'get_cover() failed!'
                         else:
@@ -2130,7 +2127,7 @@ def convert_ebook(args, ctx=None):
         if session['cancellation_requested']:
             error = 'Cancelled'
         else:
-            if not is_gui_process and id is not None:
+            if not session['is_gui_process'] and id is not None:
                 error += info_session
         print(error)
         return error, False
@@ -2138,7 +2135,7 @@ def convert_ebook(args, ctx=None):
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def process_ebook(id):
+def process_audiobook(id):
     session = context.get_session(id)
     session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
     if session['chapters'] is not None:
@@ -2147,31 +2144,6 @@ def process_ebook(id):
             show_alert({"type": "info", "msg": msg})
             exported_files = combine_audio_chapters(session['id'])               
             if exported_files is not None:
-                chapters_dirs = [
-                    dir_name for dir_name in os.listdir(session['process_dir'])
-                    if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
-                ]
-                shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
-                if is_gui_process:
-                    if len(chapters_dirs) > 1:
-                        if os.path.exists(session['chapters_dir']):
-                            shutil.rmtree(session['chapters_dir'], ignore_errors=True)
-                        if os.path.exists(session['epub_path']):
-                            os.remove(session['epub_path'])
-                        if os.path.exists(session['cover']):
-                            os.remove(session['cover'])
-                    else:
-                        if os.path.exists(session['process_dir']):
-                            shutil.rmtree(session['process_dir'], ignore_errors=True)
-                else:
-                    if os.path.exists(session['voice_dir']):
-                        if not any(os.scandir(session['voice_dir'])):
-                            shutil.rmtree(session['voice_dir'], ignore_errors=True)
-                    if os.path.exists(session['custom_model_dir']):
-                        if not any(os.scandir(session['custom_model_dir'])):
-                            shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
-                    if os.path.exists(session['session_dir']):
-                        shutil.rmtree(session['session_dir'], ignore_errors=True)
                 progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
                 session['audiobook'] = exported_files[-1]
                 print(info_session)
@@ -2255,10 +2227,9 @@ def show_alert(state):
                 gr.Success(state['msg'])
 
 def web_interface(args, ctx):
-    global context, is_gui_process
+    global context
     context = ctx
     script_mode = args['script_mode']
-    is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
     title = 'Ebook2Audiobook'
     glass_mask_msg = 'Initialization, please wait...'
@@ -3049,6 +3020,31 @@ def web_interface(args, ctx):
                         vtt_path = Path(audiobook).with_suffix('.vtt')
                         if os.path.exists(vtt_path):
                             os.remove(vtt_path)
+                        chapters_dirs = [
+                            dir_name for dir_name in os.listdir(session['process_dir'])
+                            if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
+                        ]
+                        shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
+                        if session['is_gui_process']:
+                            if len(chapters_dirs) > 1:
+                                if os.path.exists(session['chapters_dir']):
+                                    shutil.rmtree(session['chapters_dir'], ignore_errors=True)
+                                if os.path.exists(session['epub_path']):
+                                    os.remove(session['epub_path'])
+                                if os.path.exists(session['cover']):
+                                    os.remove(session['cover'])
+                            else:
+                                if os.path.exists(session['process_dir']):
+                                    shutil.rmtree(session['process_dir'], ignore_errors=True)
+                        else:
+                            if os.path.exists(session['voice_dir']):
+                                if not any(os.scandir(session['voice_dir'])):
+                                    shutil.rmtree(session['voice_dir'], ignore_errors=True)
+                            if os.path.exists(session['custom_model_dir']):
+                                if not any(os.scandir(session['custom_model_dir'])):
+                                    shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
+                            if os.path.exists(session['session_dir']):
+                                shutil.rmtree(session['session_dir'], ignore_errors=True)
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
@@ -3340,7 +3336,7 @@ def web_interface(args, ctx):
             try:
                 session = context.get_session(id)
                 args = {
-                    "is_gui_process": is_gui_process,
+                    "is_gui_process": session['is_gui_process'],
                     "session": id,
                     "script_mode": script_mode,
                     "device": device.lower(),
@@ -3489,6 +3485,7 @@ def web_interface(args, ctx):
                         session['audiobook'] = None
                 if session['status'] == 'converting':
                     session['status'] = 'ready'
+                session['is_gui_process'] = True
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
