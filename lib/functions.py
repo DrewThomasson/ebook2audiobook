@@ -3773,7 +3773,7 @@ def web_interface(args, ctx):
                         if(data){
                             localStorage.clear();
                             if(data['event'] != 'clear'){
-                                //console.log('save: ', data);
+                                console.log('save: ', data);
                                 window.localStorage.setItem('data', JSON.stringify(data));
                             }
                         }
@@ -3827,7 +3827,7 @@ def web_interface(args, ctx):
                                     if (gr_root && gr_checkboxes && gr_radios && gr_audiobook_player_playback_time && gr_audiobook_sentence && gr_tab_progress) {
                                         let set_playback_time = false;
                                         gr_audiobook_player.addEventListener("loadedmetadata", () => {
-                                            //console.log("loadedmetadata:", window.playback_time);
+                                            console.log("loadedmetadata:", window.playback_time);
                                             if (window.playback_time > 0) {
                                                 gr_audiobook_player.currentTime = window.playback_time;
                                             }
@@ -3858,7 +3858,7 @@ def web_interface(args, ctx):
                                                 }
                                                 const now = performance.now();
                                                 if (now - last_time > 1000) {
-                                                    //console.log("timeupdate", window.playback_time);
+                                                    console.log("timeupdate", window.playback_time);
                                                     gr_audiobook_player_playback_time.value = String(window.playback_time);
                                                     gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
                                                     last_time = now;
@@ -4042,7 +4042,7 @@ def web_interface(args, ctx):
                                 // If key elements aren’t mounted yet, retry
                                 if (!gr_audiobook_player || !gr_audiobook_player_playback_time) {
                                     clearTimeout(load_timeout);
-                                    //console.log("Componenents not ready... retrying");
+                                    console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 1000);
                                     return;
                                 }
@@ -4051,7 +4051,7 @@ def web_interface(args, ctx):
                                     const real = gr_audiobook_player.querySelector?.("audio,video");
                                     if (real) gr_audiobook_player = real;
                                 }
-                                //console.log("Componenents ready!");
+                                console.log("Componenents ready!");
                                 window.init_elements();
                             } catch (e) {
                                 console.log("init error:", e);
@@ -4081,7 +4081,7 @@ def web_interface(args, ctx):
                             const parsed = JSON.parse(stored);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
-                            //console.log("window.playback_time", window.playback_time);
+                            console.log("window.playback_time", window.playback_time);
                             return parsed;
                         }
                     } catch (e) {
