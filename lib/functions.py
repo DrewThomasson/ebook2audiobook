@@ -2162,6 +2162,7 @@ async def convert_ebook(args, ctx=None):
                                     session['chapters'] = [
                                         c for i, c in enumerate(session['chapters'])
                                         if f"Block {i+1} ({len(c)} sentences)" in selected_blocks
+                                    ]
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(id):
