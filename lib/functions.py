@@ -2693,11 +2693,11 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         block_selector = gr.CheckboxGroup(label="Available blocks", visible=False)
+        confirm_btn = gr.Button("✅ Confirm", visible=False)
+        cancel_btn = gr.Button("❌ Cancel", visible=False)
+
         confirm_btn.click(fn=confirm_blocks, inputs=[block_selector, gr_session], outputs=[block_selector, confirm_btn, cancel_btn])
         cancel_btn.click(fn=cancel_blocks, inputs=[gr_session], outputs=[block_selector, confirm_btn, cancel_btn])
-
-        confirm_btn.click(fn=confirm_blocks, inputs=block_selector, outputs=[block_selector, confirm_btn, cancel_btn])
-        cancel_btn.click(fn=cancel_blocks, outputs=[block_selector, confirm_btn, cancel_btn])
 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
