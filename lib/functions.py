@@ -3377,7 +3377,7 @@ def web_interface(args, ctx):
                         show_alert(state)
             return
 
-        def submit_convert_btn(
+        async def submit_convert_btn(
                 id, device, ebook_file, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
                 length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp,
                 output_split, output_split_hours
@@ -3459,13 +3459,13 @@ def web_interface(args, ctx):
                             show_alert({"type": "success", "msg": progress_status})
                             reset_ebook_session(args['session'])
                             msg = 'Conversion successful!'
-                            return gr.update(value=msg)
+                            yield gr.update(value=msg)
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(value='')
+            yield gr.update(value='')
 
         def update_gr_audiobook_list(id):
             try:
