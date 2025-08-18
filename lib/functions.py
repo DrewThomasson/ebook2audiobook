@@ -3819,7 +3819,6 @@ def web_interface(args, ctx):
                 ()=>{
                     try {
                         if (typeof(window.init_elements) !== "function") {
-                            window.playback_time = null;
                             window.init_elements = () => {
                                 console.log('window.init_elements called');
                                 try {
@@ -4011,19 +4010,6 @@ def web_interface(args, ctx):
                             }
                             return null;
                         }
-                        window.addEventListener("beforeunload", () => {
-                            try {
-                                const tab_id = window.tab_id;
-                                const saved = JSON.parse(localStorage.getItem("data") || "{}");
-                                if (saved.tab_id == tab_id || !saved.tab_id) {
-                                    saved.tab_id = undefined;
-                                    saved.status = undefined;
-                                    localStorage.setItem("data", JSON.stringify(saved));
-                                }
-                            } catch (e) {
-                                console.log("Error updating status on unload:", e);
-                            }
-                        });
                         
                         //////////////////////
                         
@@ -4074,13 +4060,26 @@ def web_interface(args, ctx):
                         
                         init();
 
-                        window.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
+                        window.addEventListener("beforeunload", () => {
+                            try {
+                                const saved = JSON.parse(localStorage.getItem("data") || "{}");
+                                if (saved.tab_id == window.tab_id || !saved.tab_id) {
+                                    saved.tab_id = undefined;
+                                    saved.status = undefined;
+                                    localStorage.setItem("data", JSON.stringify(saved));
+                                }
+                            } catch (e) {
+                                console.log("Error updating status on unload:", e);
+                            }
+                        });
+
+                        window.playback_time = 0;
                         const stored = window.localStorage.getItem("data");
                         if (stored) {
                             const parsed = JSON.parse(stored);
-                            parsed.tab_id = (parsed.tab_id) ? parsed.tab_id : window.tab_id;
+                            parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
-                            console.log("load: ", window.playback_time);
+                            console.log("window.playback_time = null;: ", window.playback_time);
                             return parsed;
                         }
                     } catch (e) {
