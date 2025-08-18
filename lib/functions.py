@@ -1913,52 +1913,14 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-def show_blocks(chapters, id):
-    """
-    Triggered before conversion: show blocks modal in the GUI.
-    Stores an asyncio.Future inside the session for sync.
-    """
-    session = context.get_session(id)
-    loop = asyncio.get_event_loop()
-    session['selection_future'] = loop.create_future()
-
-    block_labels = [f"Block {i+1} ({len(block)} sentences)" for i, block in enumerate(chapters)]
-    return (
-        gr.update(choices=block_labels, value=block_labels, visible=True),
-        gr.update(visible=True),   # show Confirm
-        gr.update(visible=True),   # show Cancel
-    )
-
-def confirm_blocks(selected, id):
-    session = context.get_session(id)
-    future = session.get('selection_future')
-    if future and not future.done():
-        future.set_result(selected)
-    return (
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
-    )
-
-def cancel_blocks(id):
-    session = context.get_session(id)
-    future = session.get('selection_future')
-    if future and not future.done():
-        future.set_result("CANCELLED")
-    return (
-        gr.update(visible=False),
-        gr.update(visible=False),
-        gr.update(visible=False),
-    )
-
-async def convert_ebook_batch(args, ctx=None):
+def convert_ebook_batch(args, ctx=None):
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, passed = await convert_ebook(args, ctx)
+                progress_status, passed = convert_ebook(args, ctx)
                 if passed is False:
                     print(f'Conversion failed: {progress_status}')
                     sys.exit(1)
@@ -1969,7 +1931,7 @@ async def convert_ebook_batch(args, ctx=None):
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
 
-async def convert_ebook(args, ctx=None):
+def convert_ebook(args, ctx=None):
     try:
         global is_gui_process, context        
         error = None
@@ -2152,15 +2114,8 @@ async def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if is_gui_process == True:
-                                    show_blocks(session['chapters'], id)
-                                    selected_blocks = await session['selection_future']
-                                    if selected_blocks == "CANCELLED":
-                                        session['cancellation_requested'] = True
-                                        return "Cancelled by user", False
-                                    session['chapters'] = [
-                                        c for i, c in enumerate(session['chapters'])
-                                        if f"Block {i+1} ({len(c)} sentences)" in selected_blocks
-                                    ]
+                                    selected_blocks = show_chapters(session['chapters'])
+                                    session['chapters'] = [c for c in session['chapters'] if c['title'] in selected_blocks]
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(id):
@@ -2691,13 +2646,6 @@ def web_interface(args, ctx):
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
-
-        block_selector = gr.CheckboxGroup(label="Available blocks", visible=False)
-        confirm_btn = gr.Button("✅ Confirm", visible=False)
-        cancel_btn = gr.Button("❌ Cancel", visible=False)
-
-        confirm_btn.click(fn=confirm_blocks, inputs=[block_selector, gr_session], outputs=[block_selector, confirm_btn, cancel_btn])
-        cancel_btn.click(fn=cancel_blocks, inputs=[gr_session], outputs=[block_selector, confirm_btn, cancel_btn])
 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
@@ -3372,7 +3320,7 @@ def web_interface(args, ctx):
                         show_alert(state)
             return
 
-        async def submit_convert_btn(
+        def submit_convert_btn(
                 id, device, ebook_file, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
                 length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp,
                 output_split, output_split_hours
@@ -3422,7 +3370,7 @@ def web_interface(args, ctx):
                             if any(file.endswith(ext) for ext in ebook_formats):
                                 print(f'Processing eBook file: {os.path.basename(file)}')
                                 args['ebook'] = file
-                                progress_status, passed = await convert_ebook(args)
+                                progress_status, passed = convert_ebook(args)
                                 if passed is False:
                                     if session['status'] == 'converting':
                                         error = 'Conversion cancelled.'
@@ -3443,7 +3391,7 @@ def web_interface(args, ctx):
                         session['status'] = 'ready'
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
-                        progress_status, passed = await convert_ebook(args)
+                        progress_status, passed = convert_ebook(args)
                         if passed is False:
                             if session['status'] == 'converting':
                                 error = 'Conversion cancelled.'
@@ -3454,13 +3402,13 @@ def web_interface(args, ctx):
                             show_alert({"type": "success", "msg": progress_status})
                             reset_ebook_session(args['session'])
                             msg = 'Conversion successful!'
-                            yield gr.update(value=msg)
+                            return gr.update(value=msg)
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            yield gr.update(value='')
+            return gr.update(value='')
 
         def update_gr_audiobook_list(id):
             try:
