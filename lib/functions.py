@@ -3836,7 +3836,7 @@ def web_interface(args, ctx):
                                         }, { once: true });
                                         gr_audiobook_player.addEventListener("timeupdate", () => {
                                             window.playback_time = gr_audiobook_player.currentTime;
-                                            const cue = findCue(cues, window.playback_time);
+                                            const cue = findCue(window.playback_time);
                                             if (cue && cue !== lastCue) {
                                                 if (fade_timeout) {
                                                     gr_audiobook_sentence.style.opacity = "1";
@@ -3934,7 +3934,7 @@ def web_interface(args, ctx):
                                         gr_audiobook_sentence.value = "...";
                                         if (path) {
                                             fetch(path).then(res => res.text()).then(vttText => {
-                                                cues = parseVTTFast(vttText);
+                                                parseVTTFast(vttText);
                                             });
                                         }
                                         gr_audiobook_player.load();
@@ -3958,9 +3958,9 @@ def web_interface(args, ctx):
                         }
                         function parseVTTFast(vtt) {
                             const lines = vtt.split(/\r?\n/);
-                            const cues = [];
                             const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
                             let start = null, end = null, textBuffer = [];
+                            cues = [];
 
                             function pushCue() {
                                 if (start !== null && end !== null && textBuffer.length) {
@@ -3984,7 +3984,6 @@ def web_interface(args, ctx):
                                 }
                             }
                             pushCue();
-                            return cues;
                         }
                         
                         function toSeconds(ts) {
@@ -3997,7 +3996,7 @@ def web_interface(args, ctx):
                             return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
                         }
 
-                        function findCue(cues, time) {
+                        function findCue(time) {
                             let lo = 0, hi = cues.length - 1;
                             while (lo <= hi) {
                                 const mid = (lo + hi) >> 1;
