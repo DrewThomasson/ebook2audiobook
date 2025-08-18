@@ -3827,6 +3827,7 @@ def web_interface(args, ctx):
                                     let fade_timeout = null;
                                     let last_time = 0;
                                     if(gr_root && gr_checkboxes && gr_radios && gr_audiobook_player_playback_time && gr_audiobook_sentence && gr_tab_progress){
+                                        console.log('components exist!');
                                         gr_audiobook_player.addEventListener("canplay", () => {
                                             console.log("canplay:", window.playback_time);
                                             if (window.playback_time) {
