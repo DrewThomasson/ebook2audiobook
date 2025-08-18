@@ -2634,11 +2634,11 @@ def web_interface(args, ctx):
                     info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                 )
         gr_state_update = gr.State(value={"hash": None})
-        gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
-        gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
-        gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-        gr_playback_time = gr.Textbox(elem_id="gr_playback_time", label='', interactive=False, visible=False, value='0.0')
+        gr_read_data = gr.JSON(elem_id='gr_read_data')
+        gr_write_data = gr.JSON(elem_id='gr_write_data')
+        gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
         gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False)
+        gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
