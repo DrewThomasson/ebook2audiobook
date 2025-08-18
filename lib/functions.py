@@ -1999,6 +1999,8 @@ def convert_ebook(args, ctx=None):
             session['output_split'] = args['output_split']    
             session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
 
+            bypass_chapters_control = args['bypass_chapters_control'] if args['bypass_chapters_control'] else True
+
             info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
 
             if not is_gui_process:
@@ -2113,10 +2115,10 @@ def convert_ebook(args, ctx=None):
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                #if is_gui_process == True:
-                                #    print('should code showing modal with all blocks to be selected')
-                                #else:
-                                return process_ebook(id)
+                                if not bypass_chapters_control:
+                                    print('should code showing modal with all blocks to be selected')
+                                else:
+                                    return process_ebook(id)
                             else:
                                 error = 'get_cover() failed!'
                         else:
@@ -2417,6 +2419,7 @@ def web_interface(args, ctx):
             #gr_voice_list {
                 height: 60px !important;
             }
+            #gr_ebook_mode span[data-testid="block-info"],
             #gr_voice_list span[data-testid="block-info"],
             #gr_audiobook_list span[data-testid="block-info"]{
                 display: none !important;
