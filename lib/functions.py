@@ -3826,42 +3826,44 @@ def web_interface(args, ctx):
                                     let fade_timeout = null;
                                     let last_time = 0;
                                     if (gr_root && gr_checkboxes && gr_radios && gr_audiobook_player_playback_time && gr_audiobook_sentence && gr_tab_progress) {
-                                        console.log('components exist!');
-                                        gr_audiobook_player.addEventListener("loadedmetadata", () => {
+                                        let set_playback_time = false;
+                                        gr_audiobook_player.addEventListener("canplay", () => {
                                             console.log("canplay:", window.playback_time);
                                             if (window.playback_time > 0) {
                                                 gr_audiobook_player.currentTime = window.playback_time;
                                             }
-                                        }, { once: true });
+                                            set_playback_time = true;
+                                        },{once: true});
                                         gr_audiobook_player.addEventListener("timeupdate", () => {
-                                            const cue = findCue(window.playback_time);
-                                            if (cue && cue !== lastCue) {
-                                                if (fade_timeout) {
-                                                    gr_audiobook_sentence.style.opacity = "1";
-                                                } else {
-                                                    gr_audiobook_sentence.style.opacity = "0";
-                                                }
-                                                gr_audiobook_sentence.style.transition = "none";
-                                                gr_audiobook_sentence.value = cue.text;
-                                                clearTimeout(fade_timeout);
-                                                fade_timeout = setTimeout(() => {
-                                                    gr_audiobook_sentence.style.transition = "opacity 0.1s ease-in";
-                                                    gr_audiobook_sentence.style.opacity = "1";
-                                                    fade_timeout = null;
-                                                }, 33);
-                                                lastCue = cue;
-                                            } else if (!cue && lastCue !== null) {
-                                                gr_audiobook_sentence.value = "...";
-                                                lastCue = null;
-                                            }
-                                            const now = performance.now();
-                                            if (now - last_time > 1000) {
+                                            if (set_playback_time == true) {
                                                 window.playback_time = gr_audiobook_player.currentTime;
-                                                console.log("timeupdate", window.playback_time);
-                                                gr_audiobook_player_playback_time.value = String(window.playback_time);
-                                                gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
-                                                last_time = now;
-                                            }
+                                                const cue = findCue(window.playback_time);
+                                                if (cue && cue !== lastCue) {
+                                                    if (fade_timeout) {
+                                                        gr_audiobook_sentence.style.opacity = "1";
+                                                    } else {
+                                                        gr_audiobook_sentence.style.opacity = "0";
+                                                    }
+                                                    gr_audiobook_sentence.style.transition = "none";
+                                                    gr_audiobook_sentence.value = cue.text;
+                                                    clearTimeout(fade_timeout);
+                                                    fade_timeout = setTimeout(() => {
+                                                        gr_audiobook_sentence.style.transition = "opacity 0.1s ease-in";
+                                                        gr_audiobook_sentence.style.opacity = "1";
+                                                        fade_timeout = null;
+                                                    }, 33);
+                                                    lastCue = cue;
+                                                } else if (!cue && lastCue !== null) {
+                                                    gr_audiobook_sentence.value = "...";
+                                                    lastCue = null;
+                                                }
+                                                const now = performance.now();
+                                                if (now - last_time > 1000) {
+                                                    console.log("timeupdate", window.playback_time);
+                                                    gr_audiobook_player_playback_time.value = String(window.playback_time);
+                                                    gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                    last_time = now;
+                                                }
                                         });
                                         gr_audiobook_player.addEventListener("ended", () => {
                                             gr_audiobook_sentence.value = "...";
