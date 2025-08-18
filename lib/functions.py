@@ -3864,6 +3864,7 @@ def web_interface(args, ctx):
                                                     gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
                                                     last_time = now;
                                                 }
+                                            }
                                         });
                                         gr_audiobook_player.addEventListener("ended", () => {
                                             gr_audiobook_sentence.value = "...";
