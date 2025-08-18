@@ -1913,16 +1913,15 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-def show_blocks(chapters):
+def show_blocks(chapters, id):
     """
     Triggered before conversion: show blocks modal in the GUI.
-    Returns immediately, but convert_ebook() will await the user's decision.
+    Stores an asyncio.Future inside the session for sync.
     """
-    global selection_future
+    session = context.get_session(id)
     loop = asyncio.get_event_loop()
-    selection_future = loop.create_future()
+    session['selection_future'] = loop.create_future()
 
-    # return labels for frontend to populate the modal
     block_labels = [f"Block {i+1} ({len(block)} sentences)" for i, block in enumerate(chapters)]
     return (
         gr.update(choices=block_labels, value=block_labels, visible=True),
@@ -1930,20 +1929,22 @@ def show_blocks(chapters):
         gr.update(visible=True),   # show Cancel
     )
 
-def confirm_blocks(selected):
-    global selection_future
-    if selection_future and not selection_future.done():
-        selection_future.set_result(selected)   # unblock convert_ebook
+def confirm_blocks(selected, id):
+    session = context.get_session(id)
+    future = session.get('selection_future')
+    if future and not future.done():
+        future.set_result(selected)
     return (
-        gr.update(visible=False),  # hide selector
-        gr.update(visible=False),  # hide Confirm
-        gr.update(visible=False),  # hide Cancel
+        gr.update(visible=False),
+        gr.update(visible=False),
+        gr.update(visible=False),
     )
 
-def cancel_blocks():
-    global selection_future
-    if selection_future and not selection_future.done():
-        selection_future.set_result("CANCELLED")  # unblock convert_ebook
+def cancel_blocks(id):
+    session = context.get_session(id)
+    future = session.get('selection_future')
+    if future and not future.done():
+        future.set_result("CANCELLED")
     return (
         gr.update(visible=False),
         gr.update(visible=False),
@@ -2151,21 +2152,16 @@ async def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if is_gui_process == True:
-                                    # --- GUI process: open modal to select which blocks/chapters to convert ---
-                                    show_blocks(session['chapters'])
-
-                                    # wait for user action
-                                    selected_blocks = await selection_future  
-
+                                    # show modal bound to session
+                                    show_blocks(session['chapters'], id)
+                                    # wait for user
+                                    selected_blocks = await session['selection_future']
                                     if selected_blocks == "CANCELLED":
                                         session['cancellation_requested'] = True
                                         return "Cancelled by user", False
-
-                                    # filter chapters by selection
                                     session['chapters'] = [
                                         c for i, c in enumerate(session['chapters'])
                                         if f"Block {i+1} ({len(c)} sentences)" in selected_blocks
-                                    ]
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(id):
@@ -2698,8 +2694,8 @@ def web_interface(args, ctx):
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
 
         block_selector = gr.CheckboxGroup(label="Available blocks", visible=False)
-        confirm_btn = gr.Button("✅ Confirm", visible=False)
-        cancel_btn = gr.Button("❌ Cancel", visible=False)
+        confirm_btn.click(fn=confirm_blocks, inputs=[block_selector, gr_session], outputs=[block_selector, confirm_btn, cancel_btn])
+        cancel_btn.click(fn=cancel_blocks, inputs=[gr_session], outputs=[block_selector, confirm_btn, cancel_btn])
 
         confirm_btn.click(fn=confirm_blocks, inputs=block_selector, outputs=[block_selector, confirm_btn, cancel_btn])
         cancel_btn.click(fn=cancel_blocks, outputs=[block_selector, confirm_btn, cancel_btn])
