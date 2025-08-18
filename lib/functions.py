@@ -157,6 +157,7 @@ class SessionContext:
                 },
                 "toc": None,
                 "chapters": None,
+                "chapters_control": False,
                 "cover": None,
                 "duration": 0,
                 "playback_time": 0
@@ -1974,6 +1975,7 @@ def convert_ebook(args, ctx=None):
             session['is_gui_process'] = args['is_gui_process']
             session['ebook'] = args['ebook']
             session['ebook_list'] = args['ebook_list']
+            session['chapters_control'] = args['chapters_control']
             session['device'] = args['device']
             session['language'] = args['language']
             session['language_iso1'] = args['language_iso1']
@@ -1995,8 +1997,6 @@ def convert_ebook(args, ctx=None):
             session['output_format'] = args['output_format']
             session['output_split'] = args['output_split']    
             session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
-
-            bypass_chapters_control = args['bypass_chapters_control'] if args['bypass_chapters_control'] else True
 
             info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
 
@@ -2112,7 +2112,7 @@ def convert_ebook(args, ctx=None):
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                if not bypass_chapters_control:
+                                if session['chapters_control']:
                                     print('should code showing modal with all blocks to be selected')
                                 else:
                                     return process_audiobook(id)
@@ -2462,7 +2462,10 @@ def web_interface(args, ctx):
                     with gr.Column(elem_id='gr_col_1', scale=3):
                         with gr.Group(elem_id='gr1'):
                             gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
-                            gr_ebook_mode = gr.Radio(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], value='single', interactive=True)
+                            gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
+                            with gr_row_voice_player:
+                                gr_ebook_mode = gr.Radio(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], value='single', interactive=True, scale=2)
+                                gr_chapters_control = gr.Checkbox(label='Bypass Chapters Control', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
                         with gr.Group(elem_id='gr_group_language'):
                             gr_language = gr.Dropdown(label='Language', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
                         gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
@@ -3330,7 +3333,7 @@ def web_interface(args, ctx):
             return
 
         def submit_convert_btn(
-                id, device, ebook_file, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
+                id, device, ebook_file, chapters_control, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
                 length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp,
                 output_split, output_split_hours
             ):
@@ -3340,6 +3343,7 @@ def web_interface(args, ctx):
                     "is_gui_process": session['is_gui_process'],
                     "session": id,
                     "script_mode": script_mode,
+                    "chapters_control" = chapters_control,
                     "device": device.lower(),
                     "tts_engine": tts_engine,
                     "ebook": ebook_file if isinstance(ebook_file, str) else None,
@@ -3757,7 +3761,7 @@ def web_interface(args, ctx):
         ).then(
             fn=submit_convert_btn,
             inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, gr_voice_list,
+                gr_session, gr_device, gr_ebook_file, gr_chapters_control, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
