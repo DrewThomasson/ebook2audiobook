@@ -2113,50 +2113,10 @@ def convert_ebook(args, ctx=None):
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                if is_gui_process == True:
-                                    print('should code showing modal with all blocks to be selected')
-                                session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
-                                if session['chapters'] is not None:
-                                    if convert_chapters2audio(id):
-                                        msg = 'Conversion successful. Combining sentences and chapters...'
-                                        show_alert({"type": "info", "msg": msg})
-                                        exported_files = combine_audio_chapters(id)               
-                                        if exported_files is not None:
-                                            chapters_dirs = [
-                                                dir_name for dir_name in os.listdir(session['process_dir'])
-                                                if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
-                                            ]
-                                            shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
-                                            if is_gui_process:
-                                                if len(chapters_dirs) > 1:
-                                                    if os.path.exists(session['chapters_dir']):
-                                                        shutil.rmtree(session['chapters_dir'], ignore_errors=True)
-                                                    if os.path.exists(session['epub_path']):
-                                                        os.remove(session['epub_path'])
-                                                    if os.path.exists(session['cover']):
-                                                        os.remove(session['cover'])
-                                                else:
-                                                    if os.path.exists(session['process_dir']):
-                                                        shutil.rmtree(session['process_dir'], ignore_errors=True)
-                                            else:
-                                                if os.path.exists(session['voice_dir']):
-                                                    if not any(os.scandir(session['voice_dir'])):
-                                                        shutil.rmtree(session['voice_dir'], ignore_errors=True)
-                                                if os.path.exists(session['custom_model_dir']):
-                                                    if not any(os.scandir(session['custom_model_dir'])):
-                                                        shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
-                                                if os.path.exists(session['session_dir']):
-                                                    shutil.rmtree(session['session_dir'], ignore_errors=True)
-                                            progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
-                                            session['audiobook'] = exported_files[-1]
-                                            print(info_session)
-                                            return progress_status, True
-                                        else:
-                                            error = 'combine_audio_chapters() error: exported_files not created!'
-                                    else:
-                                        error = 'convert_chapters2audio() failed!'
-                                else:
-                                    error = 'get_chapters() failed!'
+                                #if is_gui_process == True:
+                                #    print('should code showing modal with all blocks to be selected')
+                                #else:
+                                return process_ebook(id)
                             else:
                                 error = 'get_cover() failed!'
                         else:
@@ -2175,6 +2135,52 @@ def convert_ebook(args, ctx=None):
     except Exception as e:
         print(f'convert_ebook() Exception: {e}')
         return e, False
+
+def process_ebook(id):
+    session = context.get_session(id)
+    session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
+    if session['chapters'] is not None:
+        if convert_chapters2audio(session['id']):
+            msg = 'Conversion successful. Combining sentences and chapters...'
+            show_alert({"type": "info", "msg": msg})
+            exported_files = combine_audio_chapters(session['id'])               
+            if exported_files is not None:
+                chapters_dirs = [
+                    dir_name for dir_name in os.listdir(session['process_dir'])
+                    if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
+                ]
+                shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
+                if is_gui_process:
+                    if len(chapters_dirs) > 1:
+                        if os.path.exists(session['chapters_dir']):
+                            shutil.rmtree(session['chapters_dir'], ignore_errors=True)
+                        if os.path.exists(session['epub_path']):
+                            os.remove(session['epub_path'])
+                        if os.path.exists(session['cover']):
+                            os.remove(session['cover'])
+                    else:
+                        if os.path.exists(session['process_dir']):
+                            shutil.rmtree(session['process_dir'], ignore_errors=True)
+                else:
+                    if os.path.exists(session['voice_dir']):
+                        if not any(os.scandir(session['voice_dir'])):
+                            shutil.rmtree(session['voice_dir'], ignore_errors=True)
+                    if os.path.exists(session['custom_model_dir']):
+                        if not any(os.scandir(session['custom_model_dir'])):
+                            shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
+                    if os.path.exists(session['session_dir']):
+                        shutil.rmtree(session['session_dir'], ignore_errors=True)
+                progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
+                session['audiobook'] = exported_files[-1]
+                print(info_session)
+                return progress_status, True
+            else:
+                error = 'combine_audio_chapters() error: exported_files not created!'
+        else:
+            error = 'convert_chapters2audio() failed!'
+    else:
+        error = 'get_chapters() failed!'
+    return error, False
 
 def restore_session_from_data(data, session):
     try:
@@ -3401,13 +3407,13 @@ def web_interface(args, ctx):
                             show_alert({"type": "success", "msg": progress_status})
                             reset_ebook_session(args['session'])
                             msg = 'Conversion successful!'
-                            return gr.update(value=msg)
+                            yield gr.update(value=msg)
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(value='')
+            yield gr.update(value='')
 
         def update_gr_audiobook_list(id):
             try:
