@@ -2637,7 +2637,7 @@ def web_interface(args, ctx):
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
         gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
         gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-        gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=False, value=0.0)
+        gr_playback_time = gr.Textbox(elem_id="gr_playback_time", label='', interactive=False, visible=False, value='0.0')
         gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
@@ -3303,9 +3303,9 @@ def web_interface(args, ctx):
             session['output_split_hours'] = selected
             return
 
-        def change_gr_playback_time(str, id):
+        def change_gr_playback_time(time, id):
             session = context.get_session(id)
-            session['playback_time'] = float(str)
+            session['playback_time'] = time
             return
 
         def change_param(key, val, id, val2=None):
@@ -3835,7 +3835,7 @@ def web_interface(args, ctx):
                                         gr_audiobook_player.addEventListener("loadedmetadata", () => {
                                             console.log("loadedmetadata:", window.playback_time);
                                             if (window.playback_time > 0) {
-                                                gr_audiobook_player.currentTime = window.playback_time;
+                                                gr_audiobook_player.currentTime = Number(window.playback_time);
                                             }
                                             set_playback_time = true;
                                         },{once: true});
