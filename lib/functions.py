@@ -2113,6 +2113,9 @@ def convert_ebook(args, ctx=None):
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                if is_gui_process == True:
+                                    selected_blocks = show_chapters(session['chapters'])
+                                    session['chapters'] = [c for c in session['chapters'] if c['title'] in selected_blocks]
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(id):
@@ -2741,6 +2744,38 @@ def web_interface(args, ctx):
                 </div>
             </div>
             '''
+
+        def show_chapters(chapters):
+            """
+            Show a modal (glassmask style) with all blocks/chapters selectable.
+            Returns list of selected chapter titles.
+            """
+            selected = []
+
+            def save_selection(sel):
+                nonlocal selected
+                selected = sel
+                return "Selection saved! Close this window."
+
+            chapter_titles = [c['title'] for c in chapters]
+
+            with gr.Blocks() as demo:
+                gr.Markdown("### 📖 Select chapters/blocks to convert")
+                chapter_selector = gr.CheckboxGroup(
+                    choices=chapter_titles,
+                    value=chapter_titles,  # preselect all
+                    label="Available blocks"
+                )
+                confirm_btn = gr.Button("✅ Confirm Selection")
+                confirm_btn.click(fn=save_selection, inputs=chapter_selector, outputs=None)
+
+            demo.launch(share=False, inbrowser=True, prevent_thread_lock=True)
+
+            # wait until user confirms selection
+            while not selected:
+                pass
+
+            return selected
 
         def show_confirm():
             return '''
