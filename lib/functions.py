@@ -1912,19 +1912,20 @@ def get_compatible_tts_engines(language):
         if language in language_tts.get(tts, {})
     ]
     return compatible_engines
-    
-def show_blocks(chapters):
+
+async def show_blocks(chapters):
     """
     Show a modal (glassmask style) with all blocks/chapters selectable.
     Each block = list of sentences. Displayed as 'Block #'.
     Returns list of selected block indices.
     """
-    selected = []
+    loop = asyncio.get_event_loop()
+    future = loop.create_future()
 
     def save_selection(sel):
-        nonlocal selected
-        selected = sel
-        return "Selection saved! ✅"
+        if not future.done():
+            future.set_result(sel)
+        return f"{len(sel)} block(s) selected ✅"
 
     block_labels = [f"Block {i+1} ({len(block)} sentences)" for i, block in enumerate(chapters)]
 
@@ -1936,16 +1937,16 @@ def show_blocks(chapters):
             label="Available blocks"
         )
         confirm_btn = gr.Button("✅ Confirm Selection")
-        status_box = gr.Textbox(label="Status")
+        status_box = gr.Textbox(label="Status", interactive=False)
 
-        # must give an output component
         confirm_btn.click(fn=save_selection, inputs=block_selector, outputs=status_box)
 
     demo.launch(share=False, inbrowser=True, prevent_thread_lock=True)
 
-    while not selected:  # busy-wait until user confirms
-        pass
+    # await until user confirms selection
+    selected = await future
 
+    # map labels back → indices
     selected_indices = [block_labels.index(s) for s in selected]
     return selected_indices
 
@@ -2151,7 +2152,7 @@ def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if is_gui_process == True:
-                                    selected_blocks = show_blocks(session['chapters'])
+                                    selected_blocks = asyncio.run(show_modal(session['chapters']))
                                     session['chapters'] = [c for i, c in enumerate(session['chapters']) if i in selected_blocks]
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
