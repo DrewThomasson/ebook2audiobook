@@ -3377,7 +3377,7 @@ def web_interface(args, ctx):
                         show_alert(state)
             return
 
-        async def submit_convert_btn(
+        def submit_convert_btn(
                 id, device, ebook_file, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
                 length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp,
                 output_split, output_split_hours
@@ -3802,7 +3802,7 @@ def web_interface(args, ctx):
             inputs=[],
             outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
-            fn=await submit_convert_btn,
+            fn=submit_convert_btn,
             inputs=[
                 gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
