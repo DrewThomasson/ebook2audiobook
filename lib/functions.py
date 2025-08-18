@@ -1912,6 +1912,38 @@ def get_compatible_tts_engines(language):
         if language in language_tts.get(tts, {})
     ]
     return compatible_engines
+    
+def show_chapters(chapters):
+    """
+    Show a modal (glassmask style) with all blocks/chapters selectable.
+    Returns list of selected chapter titles.
+    """
+    selected = []
+
+    def save_selection(sel):
+        nonlocal selected
+        selected = sel
+        return "Selection saved! Close this window."
+
+    chapter_titles = [c['title'] for c in chapters]
+
+    with gr.Blocks() as demo:
+        gr.Markdown("### 📖 Select chapters/blocks to convert")
+        chapter_selector = gr.CheckboxGroup(
+            choices=chapter_titles,
+            value=chapter_titles,  # preselect all
+            label="Available blocks"
+        )
+        confirm_btn = gr.Button("✅ Confirm Selection")
+        confirm_btn.click(fn=save_selection, inputs=chapter_selector, outputs=None)
+
+    demo.launch(share=False, inbrowser=True, prevent_thread_lock=True)
+
+    # wait until user confirms selection
+    while not selected:
+        pass
+
+    return selected
 
 def convert_ebook_batch(args, ctx=None):
     if isinstance(args['ebook_list'], list):
@@ -2744,38 +2776,6 @@ def web_interface(args, ctx):
                 </div>
             </div>
             '''
-
-        def show_chapters(chapters):
-            """
-            Show a modal (glassmask style) with all blocks/chapters selectable.
-            Returns list of selected chapter titles.
-            """
-            selected = []
-
-            def save_selection(sel):
-                nonlocal selected
-                selected = sel
-                return "Selection saved! Close this window."
-
-            chapter_titles = [c['title'] for c in chapters]
-
-            with gr.Blocks() as demo:
-                gr.Markdown("### 📖 Select chapters/blocks to convert")
-                chapter_selector = gr.CheckboxGroup(
-                    choices=chapter_titles,
-                    value=chapter_titles,  # preselect all
-                    label="Available blocks"
-                )
-                confirm_btn = gr.Button("✅ Confirm Selection")
-                confirm_btn.click(fn=save_selection, inputs=chapter_selector, outputs=None)
-
-            demo.launch(share=False, inbrowser=True, prevent_thread_lock=True)
-
-            # wait until user confirms selection
-            while not selected:
-                pass
-
-            return selected
 
         def show_confirm():
             return '''
