@@ -264,6 +264,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False
+            args['chapters_control'] = False
             args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
             args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
