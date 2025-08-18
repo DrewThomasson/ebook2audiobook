@@ -1913,10 +1913,11 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
     
-def show_chapters(chapters):
+def show_blocks(blocks):
     """
-    Show a modal (glassmask style) with all blocks/chapters selectable.
-    Returns list of selected chapter titles.
+    Show a modal (glassmask style) with all blocks/blocks selectable.
+    Each block = list of sentences. Displayed as 'Block #'.
+    Returns list of selected block indices.
     """
     selected = []
 
@@ -1925,25 +1926,27 @@ def show_chapters(chapters):
         selected = sel
         return "Selection saved! Close this window."
 
-    chapter_titles = [c['title'] for c in chapters]
+    # create block labels
+    block_labels = [f"Block {i+1} ({len(block)} sentences)" for i, block in enumerate(blocks)]
 
     with gr.Blocks() as demo:
-        gr.Markdown("### 📖 Select chapters/blocks to convert")
-        chapter_selector = gr.CheckboxGroup(
-            choices=chapter_titles,
-            value=chapter_titles,  # preselect all
+        gr.Markdown("### 📖 Select blocks to convert")
+        block_selector = gr.CheckboxGroup(
+            choices=block_labels,
+            value=block_labels,  # preselect all
             label="Available blocks"
         )
         confirm_btn = gr.Button("✅ Confirm Selection")
-        confirm_btn.click(fn=save_selection, inputs=chapter_selector, outputs=None)
+        confirm_btn.click(fn=save_selection, inputs=block_selector, outputs=None)
 
     demo.launch(share=False, inbrowser=True, prevent_thread_lock=True)
 
-    # wait until user confirms selection
-    while not selected:
+    while not selected:  # block until user confirms
         pass
 
-    return selected
+    # map labels back to indices
+    selected_indices = [block_labels.index(s) for s in selected]
+    return selected_indices
 
 def convert_ebook_batch(args, ctx=None):
     if isinstance(args['ebook_list'], list):
@@ -2146,8 +2149,8 @@ def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if is_gui_process == True:
-                                    selected_blocks = show_chapters(session['chapters'])
-                                    session['chapters'] = [c for c in session['chapters'] if c['title'] in selected_blocks]
+                                    selected_blocks = show_blocks(session['chapters'])
+                                    session['chapters'] = [c for i, c in enumerate(session['chapters']) if i in selected_blocks]
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(id):
