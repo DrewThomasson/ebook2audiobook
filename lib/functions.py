@@ -2637,7 +2637,7 @@ def web_interface(args, ctx):
         gr_read_data = gr.JSON(visible=False, elem_id='gr_read_data')
         gr_write_data = gr.JSON(visible=False, elem_id='gr_write_data')
         gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible=False)
-        gr_audiobook_player_playback_time = gr.Number(elem_id="gr_audiobook_player_playback_time", label='', interactive=False, visible=False)
+        gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible=False, value=0.0)
         gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
@@ -3303,7 +3303,7 @@ def web_interface(args, ctx):
             session['output_split_hours'] = selected
             return
 
-        def change_gr_audiobook_player_playback_time(str, id):
+        def change_gr_playback_time(str, id):
             session = context.get_session(id)
             session['playback_time'] = float(str)
             return
@@ -3660,9 +3660,9 @@ def web_interface(args, ctx):
             outputs=[],
             js=f'() => {{ document.title = "{title}"; }}'
         )
-        gr_audiobook_player_playback_time.change(
-            fn=change_gr_audiobook_player_playback_time,
-            inputs=[gr_audiobook_player_playback_time, gr_session],
+        gr_playback_time.change(
+            fn=change_gr_playback_time,
+            inputs=[gr_playback_time, gr_session],
             outputs=[]
         )
         gr_audiobook_download_btn.click(
@@ -3830,7 +3830,7 @@ def web_interface(args, ctx):
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
-                                    if (gr_root && gr_checkboxes && gr_radios && gr_audiobook_player_playback_time && gr_audiobook_sentence && gr_tab_progress) {
+                                    if (gr_root && gr_checkboxes && gr_radios && gr_playback_time && gr_audiobook_sentence && gr_tab_progress) {
                                         let set_playback_time = false;
                                         gr_audiobook_player.addEventListener("loadedmetadata", () => {
                                             //console.log("loadedmetadata:", window.playback_time);
@@ -3865,8 +3865,8 @@ def web_interface(args, ctx):
                                                 const now = performance.now();
                                                 if (now - last_time > 1000) {
                                                     //console.log("timeupdate", window.playback_time);
-                                                    gr_audiobook_player_playback_time.value = String(window.playback_time);
-                                                    gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                    gr_playback_time.value = String(window.playback_time);
+                                                    gr_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
                                                     last_time = now;
                                                 }
                                             }
@@ -3924,7 +3924,7 @@ def web_interface(args, ctx):
                             window.load_vtt_timeout = null;
                             window.load_vtt = (path) => {
                                 try {
-                                    if (gr_audiobook_player && gr_audiobook_player_playback_time && gr_audiobook_sentence) {
+                                    if (gr_audiobook_player && gr_playback_time && gr_audiobook_sentence) {
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
                                         if (existing) {
@@ -4024,7 +4024,7 @@ def web_interface(args, ctx):
                         let gr_root;
                         let gr_checkboxes;
                         let gr_radios;
-                        let gr_audiobook_player_playback_time;
+                        let gr_playback_time;
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
                         let gr_tab_progress;
@@ -4040,13 +4040,13 @@ def web_interface(args, ctx):
                                     return;
                                 }
                                 gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
-                                gr_audiobook_player_playback_time = gr_root.querySelector("#gr_audiobook_player_playback_time input");
+                                gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                 gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                 gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                 gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                 gr_radios = gr_root.querySelectorAll("input[type='radio']");
                                 // If key elements aren’t mounted yet, retry
-                                if (!gr_audiobook_player || !gr_audiobook_player_playback_time) {
+                                if (!gr_audiobook_player || !gr_playback_time) {
                                     clearTimeout(load_timeout);
                                     //console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 1000);
