@@ -3802,7 +3802,7 @@ def web_interface(args, ctx):
             inputs=[],
             outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
-            fn=submit_convert_btn,
+            fn=await submit_convert_btn,
             inputs=[
                 gr_session, gr_device, gr_ebook_file, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
