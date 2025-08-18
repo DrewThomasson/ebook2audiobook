@@ -2152,9 +2152,7 @@ async def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if is_gui_process == True:
-                                    # show modal bound to session
                                     show_blocks(session['chapters'], id)
-                                    # wait for user
                                     selected_blocks = await session['selection_future']
                                     if selected_blocks == "CANCELLED":
                                         session['cancellation_requested'] = True
