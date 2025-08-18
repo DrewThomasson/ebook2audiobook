@@ -3647,7 +3647,7 @@ def web_interface(args, ctx):
         )
         gr_audiobook_vtt.change(
             fn=lambda: gr.update(value=''),
-            inputs=[],
+            inputs=None,
             outputs=[gr_audiobook_sentence]
         ).then(
             fn=None,
@@ -3657,13 +3657,13 @@ def web_interface(args, ctx):
         gr_tab_progress.change(
             fn=None,
             inputs=[gr_tab_progress],
-            outputs=[],
+            outputs=None,
             js=f'() => {{ document.title = "{title}"; }}'
         )
         gr_playback_time.change(
             fn=change_gr_playback_time,
             inputs=[gr_playback_time, gr_session],
-            outputs=[]
+            outputs=None
         )
         gr_audiobook_download_btn.click(
             fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
@@ -3750,7 +3750,7 @@ def web_interface(args, ctx):
             outputs=[gr_convert_btn]
         ).then(
             fn=disable_components,
-            inputs=[],
+            inputs=None,
             outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
             fn=submit_convert_btn,
@@ -3763,7 +3763,7 @@ def web_interface(args, ctx):
             outputs=[gr_tab_progress]
         ).then(
             fn=enable_components,
-            inputs=[],
+            inputs=None,
             outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
             fn=refresh_interface,
