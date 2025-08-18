@@ -1913,52 +1913,51 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-async def show_blocks(chapters):
+def show_blocks(chapters):
     """
-    Show a modal (glassmask style) with all blocks/chapters selectable.
-    Each block = list of sentences. Displayed as 'Block #'.
-    Returns list of selected block indices.
+    Triggered before conversion: show blocks modal in the GUI.
+    Returns immediately, but convert_ebook() will await the user's decision.
     """
+    global selection_future
     loop = asyncio.get_event_loop()
-    future = loop.create_future()
+    selection_future = loop.create_future()
 
-    def save_selection(sel):
-        if not future.done():
-            future.set_result(sel)
-        return f"{len(sel)} block(s) selected ✅"
-
+    # return labels for frontend to populate the modal
     block_labels = [f"Block {i+1} ({len(block)} sentences)" for i, block in enumerate(chapters)]
+    return (
+        gr.update(choices=block_labels, value=block_labels, visible=True),
+        gr.update(visible=True),   # show Confirm
+        gr.update(visible=True),   # show Cancel
+    )
 
-    with gr.Blocks() as demo:
-        gr.Markdown("### 📖 Select blocks to convert")
-        block_selector = gr.CheckboxGroup(
-            choices=block_labels,
-            value=block_labels,
-            label="Available blocks"
-        )
-        confirm_btn = gr.Button("✅ Confirm Selection")
-        status_box = gr.Textbox(label="Status", interactive=False)
+def confirm_blocks(selected):
+    global selection_future
+    if selection_future and not selection_future.done():
+        selection_future.set_result(selected)   # unblock convert_ebook
+    return (
+        gr.update(visible=False),  # hide selector
+        gr.update(visible=False),  # hide Confirm
+        gr.update(visible=False),  # hide Cancel
+    )
 
-        confirm_btn.click(fn=save_selection, inputs=block_selector, outputs=status_box)
+def cancel_blocks():
+    global selection_future
+    if selection_future and not selection_future.done():
+        selection_future.set_result("CANCELLED")  # unblock convert_ebook
+    return (
+        gr.update(visible=False),
+        gr.update(visible=False),
+        gr.update(visible=False),
+    )
 
-    demo.launch(share=False, inbrowser=True, prevent_thread_lock=True)
-
-    # await until user confirms selection
-    selected = await future
-
-    # map labels back → indices
-    selected_indices = [block_labels.index(s) for s in selected]
-    return selected_indices
-
-
-def convert_ebook_batch(args, ctx=None):
+async def convert_ebook_batch(args, ctx=None):
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, passed = convert_ebook(args, ctx)
+                progress_status, passed = await convert_ebook(args, ctx)
                 if passed is False:
                     print(f'Conversion failed: {progress_status}')
                     sys.exit(1)
@@ -1969,7 +1968,7 @@ def convert_ebook_batch(args, ctx=None):
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
 
-def convert_ebook(args, ctx=None):
+async def convert_ebook(args, ctx=None):
     try:
         global is_gui_process, context        
         error = None
@@ -2152,8 +2151,21 @@ def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if is_gui_process == True:
-                                    selected_blocks = asyncio.run(show_blocks(session['chapters']))
-                                    session['chapters'] = [c for i, c in enumerate(session['chapters']) if i in selected_blocks]
+                                    # --- GUI process: open modal to select which blocks/chapters to convert ---
+                                    show_blocks(session['chapters'])
+
+                                    # wait for user action
+                                    selected_blocks = await selection_future  
+
+                                    if selected_blocks == "CANCELLED":
+                                        session['cancellation_requested'] = True
+                                        return "Cancelled by user", False
+
+                                    # filter chapters by selection
+                                    session['chapters'] = [
+                                        c for i, c in enumerate(session['chapters'])
+                                        if f"Block {i+1} ({len(c)} sentences)" in selected_blocks
+                                    ]
                                 session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
                                 if session['chapters'] is not None:
                                     if convert_chapters2audio(id):
@@ -2684,6 +2696,13 @@ def web_interface(args, ctx):
         gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
         gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
+
+        block_selector = gr.CheckboxGroup(label="Available blocks", visible=False)
+        confirm_btn = gr.Button("✅ Confirm", visible=False)
+        cancel_btn = gr.Button("❌ Cancel", visible=False)
+
+        confirm_btn.click(fn=confirm_blocks, inputs=block_selector, outputs=[block_selector, confirm_btn, cancel_btn])
+        cancel_btn.click(fn=cancel_blocks, outputs=[block_selector, confirm_btn, cancel_btn])
 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
@@ -3358,7 +3377,7 @@ def web_interface(args, ctx):
                         show_alert(state)
             return
 
-        def submit_convert_btn(
+        async def submit_convert_btn(
                 id, device, ebook_file, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
                 length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp,
                 output_split, output_split_hours
@@ -3408,7 +3427,7 @@ def web_interface(args, ctx):
                             if any(file.endswith(ext) for ext in ebook_formats):
                                 print(f'Processing eBook file: {os.path.basename(file)}')
                                 args['ebook'] = file
-                                progress_status, passed = convert_ebook(args)
+                                progress_status, passed = await convert_ebook(args)
                                 if passed is False:
                                     if session['status'] == 'converting':
                                         error = 'Conversion cancelled.'
@@ -3429,7 +3448,7 @@ def web_interface(args, ctx):
                         session['status'] = 'ready'
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
-                        progress_status, passed = convert_ebook(args)
+                        progress_status, passed = await convert_ebook(args)
                         if passed is False:
                             if session['status'] == 'converting':
                                 error = 'Conversion cancelled.'
