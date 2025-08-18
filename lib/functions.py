@@ -3829,12 +3829,11 @@ def web_interface(args, ctx):
                                         console.log('components exist!');
                                         gr_audiobook_player.addEventListener("canplay", () => {
                                             console.log("canplay:", window.playback_time);
-                                            if (Number.isFinite(window.playback_time) && window.playback_time > 0) {
+                                            if (window.playback_time > 0) {
                                                 gr_audiobook_player.currentTime = window.playback_time;
                                             }
                                         }, { once: true });
                                         gr_audiobook_player.addEventListener("timeupdate", () => {
-                                            window.playback_time = gr_audiobook_player.currentTime;
                                             const cue = findCue(window.playback_time);
                                             if (cue && cue !== lastCue) {
                                                 if (fade_timeout) {
@@ -3857,6 +3856,7 @@ def web_interface(args, ctx):
                                             }
                                             const now = performance.now();
                                             if (now - last_time > 1000) {
+                                                window.playback_time = gr_audiobook_player.currentTime;
                                                 console.log("timeupdate", window.playback_time);
                                                 gr_audiobook_player_playback_time.value = String(window.playback_time);
                                                 gr_audiobook_player_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
@@ -4079,7 +4079,7 @@ def web_interface(args, ctx):
                             const parsed = JSON.parse(stored);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
-                            console.log("window.playback_time = null;: ", window.playback_time);
+                            console.log("window.playback_time", window.playback_time);
                             return parsed;
                         }
                     } catch (e) {
