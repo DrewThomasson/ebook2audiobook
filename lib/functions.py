@@ -3827,8 +3827,8 @@ def web_interface(args, ctx):
                                     let last_time = 0;
                                     if (gr_root && gr_checkboxes && gr_radios && gr_audiobook_player_playback_time && gr_audiobook_sentence && gr_tab_progress) {
                                         let set_playback_time = false;
-                                        gr_audiobook_player.addEventListener("canplay", () => {
-                                            console.log("canplay:", window.playback_time);
+                                        gr_audiobook_player.addEventListener("loadedmetadata", () => {
+                                            console.log("loadedmetadata:", window.playback_time);
                                             if (window.playback_time > 0) {
                                                 gr_audiobook_player.currentTime = window.playback_time;
                                             }
