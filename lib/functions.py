@@ -2466,6 +2466,10 @@ def web_interface(args, ctx):
                 background-color: #ebedf0 !important;
                 color: #ffffff !important;
             }
+            #gr_state_update, #gr_read_data, #gr_write_data,
+            #gr_audiobook_vtt, #gr_tab_progress, #gr_playback_time {
+                display: none !important;
+            }
             ////////////
             .fade-in {
                 animation: fadeIn 1s ease-in;
