@@ -1913,9 +1913,9 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
     
-def show_blocks(blocks):
+def show_blocks(chapters):
     """
-    Show a modal (glassmask style) with all blocks/blocks selectable.
+    Show a modal (glassmask style) with all blocks/chapters selectable.
     Each block = list of sentences. Displayed as 'Block #'.
     Returns list of selected block indices.
     """
@@ -1924,29 +1924,31 @@ def show_blocks(blocks):
     def save_selection(sel):
         nonlocal selected
         selected = sel
-        return "Selection saved! Close this window."
+        return "Selection saved! ✅"
 
-    # create block labels
-    block_labels = [f"Block {i+1} ({len(block)} sentences)" for i, block in enumerate(blocks)]
+    block_labels = [f"Block {i+1} ({len(block)} sentences)" for i, block in enumerate(chapters)]
 
     with gr.Blocks() as demo:
         gr.Markdown("### 📖 Select blocks to convert")
         block_selector = gr.CheckboxGroup(
             choices=block_labels,
-            value=block_labels,  # preselect all
+            value=block_labels,
             label="Available blocks"
         )
         confirm_btn = gr.Button("✅ Confirm Selection")
-        confirm_btn.click(fn=save_selection, inputs=block_selector, outputs=None)
+        status_box = gr.Textbox(label="Status")
+
+        # must give an output component
+        confirm_btn.click(fn=save_selection, inputs=block_selector, outputs=status_box)
 
     demo.launch(share=False, inbrowser=True, prevent_thread_lock=True)
 
-    while not selected:  # block until user confirms
+    while not selected:  # busy-wait until user confirms
         pass
 
-    # map labels back to indices
     selected_indices = [block_labels.index(s) for s in selected]
     return selected_indices
+
 
 def convert_ebook_batch(args, ctx=None):
     if isinstance(args['ebook_list'], list):
