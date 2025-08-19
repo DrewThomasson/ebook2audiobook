@@ -3815,8 +3815,8 @@ def web_interface(args, ctx):
             outputs=[gr_glass_mask]
         ).then(
             fn=None,
-            inputs=[gr_audiobook_vtt],
-            js='(data)=>{const delay = setTimeout(window.init_elements, 2000);}'
+            inputs=None,
+            js='()=>{const delay = setTimeout(window.init_elements, 2000);}'
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
