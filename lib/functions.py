@@ -3948,7 +3948,6 @@ def web_interface(args, ctx):
                             window.load_vtt_timeout = null;
                             window.load_vtt = (path) =>{
                                 try{
-                                    console.log('window.load_vtt', path);
                                     if(path){
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
@@ -3969,9 +3968,11 @@ def web_interface(args, ctx):
                                         .then(vttText =>{
                                             parseVTTFast(vttText);
                                             if(gr_audiobook_player){
+                                                console.log('gr_audiobook_player exists');
                                                 gr_group_audiobook_list.style.display = 'block';
                                                 gr_audiobook_player.load();
                                             }else{
+                                                console.log('gr_audiobook_player not ready');
                                                 window.init_audiobook_player();
                                             }
                                         });
