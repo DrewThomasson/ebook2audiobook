@@ -3994,7 +3994,11 @@ def web_interface(args, ctx):
                                                 parseVTTFast(vttText);
                                             });
                                         }
-                                        gr_audiobook_player.load();
+                                        if (gr_audiobook_list) {
+                                            if (gr_audiobook_list.options.length > 0) {
+                                                gr_audiobook_player.load();
+                                            }
+                                        }
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
