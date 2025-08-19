@@ -3984,7 +3984,7 @@ def web_interface(args, ctx):
                                                 
                                                 // if container, get inner <audio>/<video>
                                                 if (gr_audiobook_player) {
-                                                    if (!gr_audiobook_player.matches.("audio,video")) {
+                                                    if (!gr_audiobook_player.matches("audio,video")) {
                                                         const real_element = gr_audiobook_player.querySelector?.("audio, video");
                                                         if (real_element) {
                                                             gr_audiobook_player = real_element;
