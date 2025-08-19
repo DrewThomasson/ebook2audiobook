@@ -3843,7 +3843,7 @@ def web_interface(args, ctx):
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress textarea");
-                                    gr_group_audiobook_list = gr_root.querySelector("#gr_group_audiobook_list select");
+                                    gr_group_audiobook_list = gr_root.querySelector("#gr_group_audiobook_list");
                                     gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
@@ -3972,7 +3972,6 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText => {
                                                 parseVTTFast(vttText);
-                                                console.log(gr_audiobook_player);
                                                 gr_audiobook_player.load();
                                                 gr_group_audiobook_list.style.display = 'block';
                                             });
