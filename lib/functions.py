@@ -3847,7 +3847,7 @@ def web_interface(args, ctx):
                         if (typeof(window.init_elements) !== "function") {
                             window.init_elements = () => {
                                 try {
-                                    consoleo.log('init_elements called');
+                                    console.log('init_elements called');
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     if (!gr_root) {
                                         clearTimeout(load_timeout);
