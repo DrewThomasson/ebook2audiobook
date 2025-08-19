@@ -3811,6 +3811,10 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
+            fn=None,
+            inputs=None,
+            js='()=>{window.init_elements();}'
+        ).then(
             fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
             inputs=[gr_session],
             outputs=[gr_glass_mask]
@@ -3830,13 +3834,54 @@ def web_interface(args, ctx):
             js=r'''
                 ()=>{
                     try {
+                        let gr_root;
+                        let gr_checkboxes;
+                        let gr_radios;
+                        let gr_playback_time;
+                        let gr_audiobook_sentence;
+                        let gr_audiobook_player;
+                        let gr_audiobook_list;
+                        let gr_tab_progress;
+                        let load_timeout;
+                        let cues = [];
+
                         if (typeof(window.init_elements) !== "function") {
                             window.init_elements = () => {
                                 try {
+                                    gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                    if (!gr_root) {
+                                        clearTimeout(load_timeout);
+                                        load_timeout = setTimeout(init, 1000);
+                                        return;
+                                    }
+                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
+                                    gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                    gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
+                                    gr_playback_time = gr_root.querySelector("#gr_playback_time input");
+                                    gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list select");
+                                    gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
+                                    gr_radios = gr_root.querySelectorAll("input[type='radio']");
+                                    // If key elements aren’t mounted yet, retry
+                                    if (!gr_tab_progress || !gr_playback_time) {
+                                        clearTimeout(load_timeout);
+                                        console.log("Componenents not ready... retrying");
+                                        load_timeout = setTimeout(init, 1000);
+                                        return;
+                                    }
+                                    if (gr_audiobook_list) {
+                                        if (gr_audiobook_list.options.length > 0) {
+                                            // if container, get inner <audio>/<video>
+                                            if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
+                                                const real = gr_audiobook_player.querySelector?.("audio,video");
+                                                if (real) gr_audiobook_player = real;
+                                            }
+                                        }
+                                    }
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
                                     if (gr_root && gr_audiobook_player && gr_audiobook_list && gr_checkboxes && gr_radios && gr_playback_time && gr_audiobook_sentence && gr_tab_progress) {
+                                        console.log("Componenents ready!");
                                         let set_playback_time = false;
                                         gr_audiobook_player.addEventListener("loadedmetadata", () => {
                                             console.log("loadedmetadata:", window.playback_time);
@@ -4026,61 +4071,7 @@ def web_interface(args, ctx):
                         }
                         
                         //////////////////////
-                        
-                        let gr_root;
-                        let gr_checkboxes;
-                        let gr_radios;
-                        let gr_playback_time;
-                        let gr_audiobook_sentence;
-                        let gr_audiobook_player;
-                        let gr_audiobook_list;
-                        let gr_tab_progress;
-                        let load_timeout;
-                        let cues = [];
-
-                        function init() {
-                            try {
-                                gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                if (!gr_root) {
-                                    clearTimeout(load_timeout);
-                                    load_timeout = setTimeout(init, 1000);
-                                    return;
-                                }
-                                gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
-                                gr_playback_time = gr_root.querySelector("#gr_playback_time input");
-                                gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list select");
-                                gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
-                                gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                // If key elements aren’t mounted yet, retry
-                                //console.log('gr_tab_progress: '+gr_tab_progress+', gr_audiobook_sentence:'+gr_audiobook_sentence+', gr_audiobook_list: '+gr_audiobook_list+', gr_playback_time: '+gr_playback_time);
-                                if (!gr_tab_progress || !gr_playback_time) {
-                                    clearTimeout(load_timeout);
-                                    console.log("Componenents not ready... retrying");
-                                    load_timeout = setTimeout(init, 1000);
-                                    return;
-                                }
-                                if (gr_audiobook_list) {
-                                    if (gr_audiobook_list.options.length > 0) {
-                                        // if container, get inner <audio>/<video>
-                                        if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
-                                            const real = gr_audiobook_player.querySelector?.("audio,video");
-                                            if (real) gr_audiobook_player = real;
-                                        }
-                                    }
-                                }
-                                console.log("Componenents ready!");
-                                window.init_elements();
-                            } catch (e) {
-                                console.log("init error:", e);
-                                clearTimeout(load_timeout);
-                                load_timeout = setTimeout(init, 1000);
-                            }
-                        }
-                        
-                        init();
-
+                                
                         window.addEventListener("beforeunload", () => {
                             try {
                                 const saved = JSON.parse(localStorage.getItem("data") || "{}");
