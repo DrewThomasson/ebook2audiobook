@@ -3810,13 +3810,13 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
-            fn=None,
-            inputs=None,
-            js='()=>{window.init_elements();}'
-        ).then(
             fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
             inputs=[gr_session],
             outputs=[gr_glass_mask]
+        ).then(
+            fn=None,
+            inputs=None,
+            js='()=>{window.init_elements();}'
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
@@ -3847,7 +3847,6 @@ def web_interface(args, ctx):
                         if (typeof(window.init_elements) !== "function") {
                             window.init_elements = () => {
                                 try {
-                                    console.log('init_elements called');
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     if (!gr_root) {
                                         clearTimeout(load_timeout);
