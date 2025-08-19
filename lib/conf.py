@@ -48,6 +48,7 @@ debug_mode = True
 device_list = ['cpu', 'gpu', 'mps']
 default_device = 'cpu'
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">howto wiki</a>'
+default_chapters_control = False
 
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
