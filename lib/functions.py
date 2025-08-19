@@ -2618,7 +2618,7 @@ def web_interface(args, ctx):
         gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
         gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False, visible=True)
         gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
-        gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=True)
+        gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
@@ -3815,8 +3815,8 @@ def web_interface(args, ctx):
             outputs=[gr_glass_mask]
         ).then(
             fn=None,
-            inputs=None,
-            js='()=>{window.init_elements();}'
+            inputs=[gr_audiobook_vtt],
+            js='(data)=>{window.init_elements(); window.load_vtt?.(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
@@ -3994,11 +3994,7 @@ def web_interface(args, ctx):
                                                 parseVTTFast(vttText);
                                             });
                                         }
-                                        if (gr_audiobook_list) {
-                                            if (gr_audiobook_list.options.length > 0) {
-                                                gr_audiobook_player.load();
-                                            }
-                                        }
+                                        gr_audiobook_player.load();
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
