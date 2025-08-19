@@ -79,7 +79,7 @@ class SessionTracker:
         active_sessions.discard(socket_hash)
         with self.lock:
             session = context.get_session(id)
-            session['cancellation_requested'] = False
+            session['cancellation_requested'] = True
             session['tab_id'] = None
             session['status'] = None
             session[socket_hash] = None
@@ -2099,7 +2099,7 @@ def convert_ebook(args, ctx=None):
                                 if session['chapters_control']:
                                     print('should code showing modal with all blocks to be selected')
                                 else:
-                                    return process_audiobook(id)
+                                    return finalize_audiobook(id)
                             else:
                                 error = 'get_cover() failed!'
                         else:
@@ -2116,7 +2116,7 @@ def convert_ebook(args, ctx=None):
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def process_audiobook(id):
+def finalize_audiobook(id):
     session = context.get_session(id)
     session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
     if session['chapters'] is not None:
@@ -2424,7 +2424,7 @@ def web_interface(args, ctx):
                 color: #ffffff !important;
             }
             #gr_state_update, #gr_read_data, #gr_write_data,
-            #gr_audiobook_vtt, #gr_playback_time, #gr_group_audiobook_list {
+            #gr_audiobook_vtt, #gr_playback_time {
                 display: none !important;
             }
             ////////////
