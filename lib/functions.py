@@ -2155,10 +2155,12 @@ def process_audiobook(id):
 def restore_session_from_data(data, session):
     try:
         for key, value in data.items():
-            if key in session:  # Check if the key exists in session
+            if key in session:
                 if isinstance(value, dict) and isinstance(session[key], dict):
                     restore_session_from_data(value, session[key])
                 else:
+                    if value is None and session[key] is not None
+                        continue
                     session[key] = value
     except Exception as e:
         DependencyError(e)
