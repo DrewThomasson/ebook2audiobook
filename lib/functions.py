@@ -3967,7 +3967,7 @@ def web_interface(args, ctx):
                                         .then(res => res.text())
                                         .then(vttText =>{
                                             parseVTTFast(vttText);
-                                            if(!gr_audiobook_player){
+                                            if(gr_audiobook_player){
                                                 gr_group_audiobook_list.style.display = 'block';
                                                 gr_audiobook_player.load();
                                             }else{
