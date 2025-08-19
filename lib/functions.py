@@ -3816,7 +3816,7 @@ def web_interface(args, ctx):
         ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
-            js='(data)=>{window.init_elements(); window.load_vtt?.(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'
+            js='(data)=>{const delay = setTimeout(window.init_elements, 2000);}'
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
