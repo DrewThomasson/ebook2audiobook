@@ -3992,8 +3992,8 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText => {
                                                 parseVTTFast(vttText);
+                                                gr_audiobook_player.load();
                                             });
-                                            gr_audiobook_player.load();
                                         }
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
