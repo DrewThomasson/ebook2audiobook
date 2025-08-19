@@ -3851,13 +3851,17 @@ def web_interface(args, ctx):
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
                                     // if container, get inner <audio>/<video>
                                     if (gr_audiobook_player) {
+                                        console.log('gr_audiobook_player ok');
                                         if (!gr_audiobook_player.matches?.("audio,video")) {
+                                            console.log('gr_audiobook_player has audio');
                                             const real_element = gr_audiobook_player.querySelector?.("audio, video");
                                             if (real_element) {
+                                                console.log('gr_audiobook_player is real audio now');
                                                 gr_audiobook_player = real_element;
                                             }
                                         }
                                     }
+                                    gr_audiobook_player.load();
                                     // If key elements aren’t mounted yet, retry
                                     if (!gr_root || !gr_group_audiobook_list || !gr_audiobook_player || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress) {
                                         clearTimeout(load_timeout);
@@ -3981,18 +3985,7 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText => {
                                                 parseVTTFast(vttText);
-                                                
-                                                // if container, get inner <audio>/<video>
-                                                if (gr_audiobook_player) {
-                                                    if (!gr_audiobook_player.matches?.("audio,video")) {
-                                                        const real_element = gr_audiobook_player.querySelector?.("audio, video");
-                                                        if (real_element) {
-                                                            gr_audiobook_player = real_element;
-                                                        }
-                                                    }
-                                                }
                                                 console.log(gr_audiobook_player);
-                                                
                                                 gr_audiobook_player.load();
                                                 gr_group_audiobook_list.style.display = 'block';
                                             });
