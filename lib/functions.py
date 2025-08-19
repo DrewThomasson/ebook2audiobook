@@ -3498,7 +3498,7 @@ def web_interface(args, ctx):
                                     session['progress'] = len(audiobook_options)
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
                                     state['hash'] = new_hash
-                                    session_dict = json.loads(json.dumps(MappingProxyType(session), default=str))
+                                    session_dict = json.loads(json.dumps(dict(session), default=str))
                                     return gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
                             else:
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
@@ -3507,9 +3507,9 @@ def web_interface(args, ctx):
                                 else:
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
                                     state['hash'] = new_hash
-                                    session_dict = json.loads(json.dumps(MappingProxyType(session), default=str))
-                                print(session_dict)
-                                return gr.update(value=session_dict), gr.update(value=state), gr.update()
+                                    session_dict = json.loads(json.dumps(dict(session), default=str))
+                                    print(session_dict)
+                                    return gr.update(value=session_dict), gr.update(value=state), gr.update()
                 return gr.update(), gr.update(), gr.update()
             except Exception as e:
                 error = f'save_session(): {e}!'
