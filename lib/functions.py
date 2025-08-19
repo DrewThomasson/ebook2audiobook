@@ -538,7 +538,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         if len(chapters) == 0:
             error = 'No chapters found!'
             return None, None
-        return toc, chapters
+        return toc_list, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
