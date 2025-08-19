@@ -3854,15 +3854,6 @@ def web_interface(args, ctx):
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                    
-                                    console.log("gr_root:", gr_root);
-                                    console.log("gr_group_audiobook_list:", gr_group_audiobook_list);
-                                    console.log("gr_audiobook_player:", gr_audiobook_player);
-                                    console.log("gr_checkboxes:", gr_checkboxes);
-                                    console.log("gr_radios:", gr_radios);
-                                    console.log("gr_playback_time:", gr_playback_time);
-                                    console.log("gr_audiobook_sentence:", gr_audiobook_sentence);
-                                    console.log("gr_tab_progress:", gr_tab_progress);
 
                                     // if container, get inner <audio>/<video>
                                     if (gr_audiobook_player) {
@@ -3996,6 +3987,7 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText => {
                                                 parseVTTFast(vttText);
+                                                print(gr_audiobook_player);
                                                 //gr_audiobook_player.load();
                                                 gr_group_audiobook_list.style.display = 'block';
                                             });
