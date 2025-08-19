@@ -192,17 +192,20 @@ def recursive_proxy(data, manager=None):
         print(error)
         return
 
-def proxy2dict(obj):
-    if isinstance(obj, dict) or isinstance(obj, type(getattr(obj, "_getvalue", lambda: None)())):
-        return {k: proxy2dict(v) for k, v in obj.items()}
-    elif isinstance(obj, list):
-        return [proxy2dict(v) for v in obj]
-    elif isinstance(obj, set):
-        return [proxy2dict(v) for v in obj]  # sets not JSON serializable, convert to list
-    elif isinstance(obj, (str, int, float, bool)) or obj is None:
-        return obj
-    else:
-        return str(obj)  # fallback for non-serializable (like classes)
+def proxy2dict(proxy_obj):
+    def recursive_copy(source, visited):
+        if id(source) in visited:
+            return None  # avoid circular refs
+        visited.add(id(source))
+        if isinstance(source, (DictProxy, dict)):
+            return {k: recursive_copy(v, visited) for k, v in source.items()}
+        elif isinstance(source, (ListProxy, list, set, tuple)):
+            return [recursive_copy(v, visited) for v in source]
+        elif isinstance(source, (int, float, bool, str)) or source is None:
+            return source  # primitives are safe
+        else:
+            return str(source)  # last resort
+    return recursive_copy(proxy_obj, set())
 
 def prepare_dirs(src, session):
     try:
