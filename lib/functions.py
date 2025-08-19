@@ -3754,8 +3754,9 @@ def web_interface(args, ctx):
                         if(data){
                             localStorage.clear();
                             if(data['event'] != 'clear'){
+                                data = JSON.stringify(data)
                                 console.log('save: ', data);
-                                window.localStorage.setItem('data', JSON.stringify(data));
+                                window.localStorage.setItem('data', data);
                             }
                         }
                     }catch(e){
