@@ -3486,7 +3486,7 @@ def web_interface(args, ctx):
                 new_hash = hash_proxy_dict(MappingProxyType(session))
                 state['hash'] = new_hash
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session), gr.update(value=state), gr.update(value=session['id']), gr.update()
+                return gr.update(value=json.dumps(session, cls=JSONEncoderWithDictProxy)), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
