@@ -348,7 +348,7 @@ def proxy2dict(proxy_obj):
     def recursive_copy(source, visited):
         # Handle circular references by tracking visited objects
         if id(source) in visited:
-            return None  # Stop processing circular references
+            return
         visited.add(id(source))  # Mark as visited
         if isinstance(source, dict):
             result = {}
