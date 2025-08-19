@@ -3436,7 +3436,7 @@ def web_interface(args, ctx):
                 if data is None or isinstance(data, str) or not data.get('id'):
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
-                if data.get('tab_id') == session.get('tab_id') or len(active_sessions) == 0:
+                if len(active_sessions) == 0 or session['status'] is None:
                     restore_session_from_data(data, session)
                     session['status'] = None
                 if not ctx_tracker.start_session(session['id']):
