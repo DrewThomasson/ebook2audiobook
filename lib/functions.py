@@ -2750,7 +2750,7 @@ def web_interface(args, ctx):
                 session = context.get_session(id)
                 socket_hash = req.session_hash
                 if not session.get(socket_hash):
-                    outputs = tuple([gr.update() for _ in range(24)])
+                    outputs = tuple([gr.update() for _ in range(25)])
                     return outputs
                 session = context.get_session(id)
                 ebook_data = None
@@ -2775,7 +2775,7 @@ def web_interface(args, ctx):
                 session['text_temp'] = session['text_temp'] if session['text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
                 session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
                 return (
-                    gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['device']),
+                    gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['chapters_control']), gr.update(value=session['device']),
                     gr.update(value=session['language']), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
                     update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id), gr.update(value=load_vtt_data(session['audiobook'])),
                     gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
@@ -2786,7 +2786,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
-                outputs = tuple([gr.update() for _ in range(24)])
+                outputs = tuple([gr.update() for _ in range(25)])
                 return outputs
 
         def refresh_interface(id):
@@ -3773,7 +3773,7 @@ def web_interface(args, ctx):
             fn=restore_interface,
             inputs=[gr_session],
             outputs=[
-                gr_ebook_file, gr_ebook_mode, gr_device, gr_language,
+                gr_ebook_file, gr_ebook_mode, gr_chapters_control, gr_device, gr_language,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
                 gr_output_format_list, gr_audiobook_list, gr_audiobook_vtt,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
