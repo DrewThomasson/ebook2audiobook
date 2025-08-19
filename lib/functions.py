@@ -3948,6 +3948,7 @@ def web_interface(args, ctx):
                             window.load_vtt_timeout = null;
                             window.load_vtt = (path) =>{
                                 try{
+                                    console.log('window.load_vtt', path);
                                     if(path){
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
