@@ -3531,6 +3531,7 @@ def web_interface(args, ctx):
                                 if session['progress'] != len(audiobook_options):
                                     session['progress'] = len(audiobook_options)
                                     return gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
+                            print(session_dict)
                             return gr.update(value=session_dict), gr.update(value=state), gr.update()
                 return gr.update(), gr.update(), gr.update()
             except Exception as e:
