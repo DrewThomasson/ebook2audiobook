@@ -115,6 +115,7 @@ class SessionContext:
                 "ebook": None,
                 "ebook_list": None,
                 "ebook_mode": "single",
+                "chapters_control": default_chapters_control,
                 "chapters_dir": None,
                 "chapters_dir_sentences": None,
                 "epub_path": None,
@@ -157,7 +158,6 @@ class SessionContext:
                 },
                 "toc": None,
                 "chapters": None,
-                "chapters_control": False,
                 "cover": None,
                 "duration": 0,
                 "playback_time": 0
