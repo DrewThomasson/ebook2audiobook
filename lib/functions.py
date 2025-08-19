@@ -3294,10 +3294,10 @@ def web_interface(args, ctx):
             session['output_format'] = val
             return
             
-        def change_gr_output_split(bool, id):
+        def change_gr_output_split(val, id):
             session = context.get_session(id)
-            session['output_split'] = bool
-            return gr.update(visible=bool)
+            session['output_split'] = val
+            return gr.update(visible=val)
 
         def change_gr_playback_time(time, id):
             session = context.get_session(id)
@@ -3571,7 +3571,7 @@ def web_interface(args, ctx):
             outputs=[gr_ebook_file]
         )
         gr_chapters_control.change(
-            fn=lambda val, id: change_param('chapters_control', val, id),
+            fn=lambda val, id: change_param('chapters_control', bool(val), id),
             inputs=[gr_chapters_control, gr_session],
             outputs=None
         )
@@ -3656,7 +3656,7 @@ def web_interface(args, ctx):
             outputs=gr_output_split_hours
         )
         gr_output_split_hours.change(
-            fn=lambda val, id: change_param('output_split_hours', val, id),
+            fn=lambda val, id: change_param('output_split_hours', int(val), id),
             inputs=[gr_output_split_hours, gr_session],
             outputs=None
         )
@@ -3697,53 +3697,53 @@ def web_interface(args, ctx):
         )
         ########### XTTSv2 Params
         gr_xtts_temperature.change(
-            fn=lambda val, id: change_param('temperature', val, id),
+            fn=lambda val, id: change_param('temperature', float(val), id),
             inputs=[gr_xtts_temperature, gr_session],
             outputs=None
         )
         gr_xtts_length_penalty.change(
-            fn=lambda val, id, val2: change_param('length_penalty', val, id, val2),
+            fn=lambda val, id, val2: change_param('length_penalty', int(val), id, int(val2)),
             inputs=[gr_xtts_length_penalty, gr_session, gr_xtts_num_beams],
             outputs=None,
         )
         gr_xtts_num_beams.change(
-            fn=lambda val, id, val2: change_param('num_beams', val, id, val2),
+            fn=lambda val, id, val2: change_param('num_beams', int(val), id, int(val2)),
             inputs=[gr_xtts_num_beams, gr_session, gr_xtts_length_penalty],
             outputs=None,
         )
         gr_xtts_repetition_penalty.change(
-            fn=lambda val, id: change_param('repetition_penalty', val, id),
+            fn=lambda val, id: change_param('repetition_penalty', float(val), id),
             inputs=[gr_xtts_repetition_penalty, gr_session],
             outputs=None
         )
         gr_xtts_top_k.change(
-            fn=lambda val, id: change_param('top_k', val, id),
+            fn=lambda val, id: change_param('top_k', int(val), id),
             inputs=[gr_xtts_top_k, gr_session],
             outputs=None
         )
         gr_xtts_top_p.change(
-            fn=lambda val, id: change_param('top_p', val, id),
+            fn=lambda val, id: change_param('top_p', float(val), id),
             inputs=[gr_xtts_top_p, gr_session],
             outputs=None
         )
         gr_xtts_speed.change(
-            fn=lambda val, id: change_param('speed', val, id),
+            fn=lambda val, id: change_param('speed', float(val), id),
             inputs=[gr_xtts_speed, gr_session],
             outputs=None
         )
         gr_xtts_enable_text_splitting.change(
-            fn=lambda val, id: change_param('enable_text_splitting', val, id),
+            fn=lambda val, id: change_param('enable_text_splitting', bool(val), id),
             inputs=[gr_xtts_enable_text_splitting, gr_session],
             outputs=None
         )
         ########### BARK Params
         gr_bark_text_temp.change(
-            fn=lambda val, id: change_param('text_temp', val, id),
+            fn=lambda val, id: change_param('text_temp', float(val), id),
             inputs=[gr_bark_text_temp, gr_session],
             outputs=None
         )
         gr_bark_waveform_temp.change(
-            fn=lambda val, id: change_param('waveform_temp', val, id),
+            fn=lambda val, id: change_param('waveform_temp', float(val), id),
             inputs=[gr_bark_waveform_temp, gr_session],
             outputs=None
         )
