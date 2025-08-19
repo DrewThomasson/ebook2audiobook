@@ -3304,6 +3304,7 @@ def web_interface(args, ctx):
 
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
+            print(session)
             if key in session and session[key] is not None:
                 current_type = type(session[key])
                 try:
