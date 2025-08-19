@@ -92,7 +92,7 @@ class SessionContext:
 
     def get_session(self, id):
         if id not in self.sessions:
-            self.sessions[id] = recursive_proxy({
+            self.sessions[id] = recursive_dict({
                 "script_mode": NATIVE,
                 "id": id,
                 "tab_id": None,
@@ -172,18 +172,18 @@ class SessionContext:
 
 ctx_tracker = SessionTracker()
 
-def recursive_proxy(data, manager=None):
+def recursive_dict(data, manager=None):
     if manager is None:
         manager = Manager()
     if isinstance(data, dict):
         proxy_dict = manager.dict()
         for key, value in data.items():
-            proxy_dict[key] = recursive_proxy(value, manager)
+            proxy_dict[key] = recursive_dict(value, manager)
         return proxy_dict
     elif isinstance(data, list):
         proxy_list = manager.list()
         for item in data:
-            proxy_list.append(recursive_proxy(item, manager))
+            proxy_list.append(recursive_dict(item, manager))
         return proxy_list
     elif isinstance(data, (str, int, float, bool, type(None))):
         return data
@@ -3492,19 +3492,22 @@ def web_interface(args, ctx):
                     if id in context.sessions:
                         session = context.get_session(id)
                         if session:
-                            if session['event'] != 'clear':
-                                previous_hash = state['hash']
+                            previous_hash = state['hash']
+                            if session['status'] == 'converting':
+                                if session['progress'] != len(audiobook_options):
+                                    session['progress'] = len(audiobook_options)
+                                    state['hash'] = new_hash
+                                    session_dict = json.loads(json.dumps(dict(session), default=str))
+                                    return gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
+                            else:
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
                                 if previous_hash == new_hash:
                                     return gr.update(), gr.update(), gr.update()
                                 else:
                                     state['hash'] = new_hash
-                            if session['status'] == 'converting':
-                                if session['progress'] != len(audiobook_options):
-                                    session['progress'] = len(audiobook_options)
-                                    return gr.update(value=session), gr.update(value=state), update_gr_audiobook_list(id)
-                            print(session)
-                            return gr.update(value=session), gr.update(value=state), gr.update()
+                                    session_dict = json.loads(json.dumps(dict(session), default=str))
+                                print(session_dict)
+                                return gr.update(value=session_dict), gr.update(value=state), gr.update()
                 return gr.update(), gr.update(), gr.update()
             except Exception as e:
                 error = f'save_session(): {e}!'
@@ -3753,10 +3756,8 @@ def web_interface(args, ctx):
                     try{
                         if(data){
                             localStorage.clear();
-                            if(data['event'] != 'clear'){
-                                console.log('save: ', data);
-                                window.localStorage.setItem('data', JSON.stringify(data));
-                            }
+                            console.log('save: ', data);
+                            window.localStorage.setItem('data', JSON.stringify(data));
                         }
                     }catch(e){
                         console.log('gr_write_data.change error: '+e)
