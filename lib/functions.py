@@ -3771,7 +3771,7 @@ def web_interface(args, ctx):
                         if(data){
                             localStorage.clear();
                             console.log('save: ', data);
-                            window.localStorage.setItem('data', JSON.stringify(data));
+                            //window.localStorage.setItem('data', JSON.stringify(data));
                         }
                     }catch(e){
                         console.log('gr_write_data.change error: '+e)
