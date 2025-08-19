@@ -4050,7 +4050,7 @@ def web_interface(args, ctx):
                                 gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                 gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
                                 gr_playback_time = gr_root.querySelector("#gr_playback_time input");
-                                gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list select");
+                                gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list");
                                 gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                 gr_radios = gr_root.querySelectorAll("input[type='radio']");
                                 // If key elements aren’t mounted yet, retry
