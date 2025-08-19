@@ -3514,7 +3514,6 @@ def web_interface(args, ctx):
                 if id:
                     if id in context.sessions:
                         session = context.get_session(id)
-                        print(f'------------{session["chapters_control"]}--------{session["output_split"]}-----------')
                         if session:
                             if session['event'] == 'clear':
                                 session_dict = session
@@ -4074,6 +4073,7 @@ def web_interface(args, ctx):
                             const parsed = JSON.parse(stored);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
+                            console.log("parsed:", parsed);
                             console.log("window.playback_time", window.playback_time);
                             return parsed;
                         }
