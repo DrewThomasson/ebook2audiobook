@@ -1752,7 +1752,7 @@ def combine_audio_chapters(id):
             cur_part = []
             cur_indices = []
             cur_duration = 0
-            max_part_duration = session['output_split_hours'] * 3600
+            max_part_duration = int(session['output_split_hours']) * 3600
             needs_split = total_duration > (int(session['output_split_hours']) * 2) * 3600
             for idx, (file, dur) in enumerate(zip(chapter_files, durations)):
                 if cur_part and (cur_duration + dur > max_part_duration):
@@ -3620,7 +3620,7 @@ def web_interface(args, ctx):
             outputs=gr_output_split_hours
         )
         gr_output_split_hours.change(
-            fn=lambda val, id: change_param('output_split_hours', int(val), id),
+            fn=lambda val, id: change_param('output_split_hours', str(val), id),
             inputs=[gr_output_split_hours, gr_session],
             outputs=None
         )
