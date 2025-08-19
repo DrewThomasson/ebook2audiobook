@@ -3860,6 +3860,16 @@ def web_interface(args, ctx):
                                     gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list select");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
+                                    
+                                    console.log("gr_root:", gr_root);
+                                    console.log("gr_audiobook_player:", gr_audiobook_player);
+                                    console.log("gr_audiobook_list:", gr_audiobook_list);
+                                    console.log("gr_checkboxes:", gr_checkboxes);
+                                    console.log("gr_radios:", gr_radios);
+                                    console.log("gr_playback_time:", gr_playback_time);
+                                    console.log("gr_audiobook_sentence:", gr_audiobook_sentence);
+                                    console.log("gr_tab_progress:", gr_tab_progress);
+
                                     // if container, get inner <audio>/<video>
                                     if (gr_audiobook_player) {
                                         if (!gr_audiobook_player.matches?.("audio,video")) {
