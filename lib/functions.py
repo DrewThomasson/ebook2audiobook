@@ -3513,7 +3513,7 @@ def web_interface(args, ctx):
                                     session['progress'] = len(audiobook_options)
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
                                     state['hash'] = new_hash
-                                    session_dict = json.dumps(session.copy())
+                                    session_dict = json.dumps(dict(session))
                                     return gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
                             else:
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
@@ -3521,7 +3521,7 @@ def web_interface(args, ctx):
                                     return gr.update(), gr.update(), gr.update()
                                 else:
                                     state['hash'] = new_hash
-                                    session_dict = json.dumps(session.copy())
+                                    session_dict = json.dumps(dict(session))
                                     print(session_dict)
                                     return gr.update(value=session_dict), gr.update(value=state), gr.update()
                 return gr.update(), gr.update(), gr.update()
