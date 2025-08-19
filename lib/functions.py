@@ -3306,18 +3306,6 @@ def web_interface(args, ctx):
 
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
-            if key in session and session[key] is not None:
-                current_type = type(session[key])
-                try:
-                    if current_type is bool:
-                        if isinstance(val, str):
-                            val = val.strip().lower() in ("true", "1", "yes", "on")
-                        else:
-                            val = bool(val)
-                    else:
-                        val = current_type(val)
-                except Exception:
-                    pass
             session[key] = val
             state = {}
             if key == 'length_penalty':
