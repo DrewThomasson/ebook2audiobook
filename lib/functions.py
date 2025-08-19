@@ -2439,7 +2439,7 @@ def web_interface(args, ctx):
                 color: #ffffff !important;
             }
             #gr_state_update, #gr_read_data, #gr_write_data,
-            #gr_audiobook_vtt, #gr_tab_progress, #gr_playback_time {
+            #gr_audiobook_vtt, #gr_playback_time {
                 display: none !important;
             }
             ////////////
@@ -2616,7 +2616,7 @@ def web_interface(args, ctx):
         gr_read_data = gr.JSON(elem_id='gr_read_data')
         gr_write_data = gr.JSON(elem_id='gr_write_data')
         gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
-        gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False)
+        gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False, visible=True)
         gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
         gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
