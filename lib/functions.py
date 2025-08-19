@@ -3297,11 +3297,6 @@ def web_interface(args, ctx):
             session['output_split'] = bool
             return gr.update(visible=bool)
 
-        def change_gr_output_split_hours(selected, id):
-            session = context.get_session(id)
-            session['output_split_hours'] = selected
-            return
-
         def change_gr_playback_time(time, id):
             session = context.get_session(id)
             session['playback_time'] = time
@@ -3561,6 +3556,11 @@ def web_interface(args, ctx):
             inputs=[gr_ebook_mode, gr_session],
             outputs=[gr_ebook_file]
         )
+        gr_chapters_control.change(
+            fn=lambda val, id: change_param('chapters_control', val, id),
+            inputs=[gr_chapters_control, gr_session],
+            outputs=None
+        )
         gr_voice_file.upload(
             fn=change_gr_voice_file,
             inputs=[gr_voice_file, gr_session],
@@ -3642,7 +3642,7 @@ def web_interface(args, ctx):
             outputs=gr_output_split_hours
         )
         gr_output_split_hours.change(
-            fn=change_gr_output_split_hours,
+            fn=lambda val, id: change_param('output_split_hours', val, id),
             inputs=[gr_output_split_hours, gr_session],
             outputs=None
         )
