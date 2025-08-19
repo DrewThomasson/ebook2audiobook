@@ -3304,7 +3304,6 @@ def web_interface(args, ctx):
 
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
-            print(session)
             if key in session and session[key] is not None:
                 current_type = type(session[key])
                 try:
@@ -3316,8 +3315,9 @@ def web_interface(args, ctx):
                     else:
                         val = current_type(val)
                 except Exception:
-                    pass  # keep original if casting fails
+                    pass
             session[key] = val
+            print(session)
             state = {}
             if key == 'length_penalty':
                 if val2 is not None:
