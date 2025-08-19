@@ -1998,8 +1998,6 @@ def convert_ebook(args, ctx=None):
             session['output_split'] = args['output_split']    
             session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
 
-            info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
-
             if not session['is_gui_process']:
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 os.makedirs(session['voice_dir'], exist_ok=True)
@@ -2126,9 +2124,6 @@ def convert_ebook(args, ctx=None):
             error = f"Language {args['language']} is not supported."
         if session['cancellation_requested']:
             error = 'Cancelled'
-        else:
-            if not session['is_gui_process'] and id is not None:
-                error += info_session
         print(error)
         return error, False
     except Exception as e:
@@ -2146,6 +2141,7 @@ def process_audiobook(id):
             if exported_files is not None:
                 progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
                 session['audiobook'] = exported_files[-1]
+                info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
                 print(info_session)
                 return progress_status, True
             else:
