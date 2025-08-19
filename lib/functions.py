@@ -192,30 +192,17 @@ def recursive_proxy(data, manager=None):
         print(error)
         return
 
-def proxy2dict(proxy_obj):
-    def recursive_copy(source, visited):
-        # Handle circular references by tracking visited objects
-        if id(source) in visited:
-            return
-        visited.add(id(source))  # Mark as visited
-        if isinstance(source, dict):
-            result = {}
-            for key, value in source.items():
-                result[key] = recursive_copy(value, visited)
-            return result
-        elif isinstance(source, list):
-            return [recursive_copy(item, visited) for item in source]
-        elif isinstance(source, set):
-            return list(source)
-        elif isinstance(source, DictProxy):
-            return recursive_copy(dict(source), visited)
-        elif isinstance(source, (int, float, bool)):
-            return source
-        elif source is None:
-            return None
-        else:
-            return str(source)  # Convert non-serializable types to strings
-    return recursive_copy(proxy_obj, set())
+def proxy2dict(obj):
+    if isinstance(obj, dict) or isinstance(obj, type(getattr(obj, "_getvalue", lambda: None)())):
+        return {k: proxy2dict(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [proxy2dict(v) for v in obj]
+    elif isinstance(obj, set):
+        return [proxy2dict(v) for v in obj]  # sets not JSON serializable, convert to list
+    elif isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+    else:
+        return str(obj)  # fallback for non-serializable (like classes)
 
 def prepare_dirs(src, session):
     try:
@@ -3523,7 +3510,7 @@ def web_interface(args, ctx):
                                     session['progress'] = len(audiobook_options)
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
                                     state['hash'] = new_hash
-                                    session_dict = json.loads(json.dumps(dict(session), default=str))
+                                    session_dict = json.loads(json.dumps(proxy2dict(session), default=str))
                                     return gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
                             else:
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
@@ -3532,7 +3519,7 @@ def web_interface(args, ctx):
                                 else:
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
                                     state['hash'] = new_hash
-                                    session_dict = json.loads(json.dumps(dict(session), default=str))
+                                    session_dict = json.loads(json.dumps(proxy2dict(session), default=str))
                                     print(session_dict)
                                     return gr.update(value=session_dict), gr.update(value=state), gr.update()
                 return gr.update(), gr.update(), gr.update()
