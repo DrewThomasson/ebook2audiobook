@@ -92,7 +92,7 @@ class SessionContext:
 
     def get_session(self, id):
         if id not in self.sessions:
-            self.sessions[id] = recursive_dict({
+            self.sessions[id] = recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
                 "tab_id": None,
@@ -172,18 +172,18 @@ class SessionContext:
 
 ctx_tracker = SessionTracker()
 
-def recursive_dict(data, manager=None):
+def recursive_proxy(data, manager=None):
     if manager is None:
         manager = Manager()
     if isinstance(data, dict):
         proxy_dict = manager.dict()
         for key, value in data.items():
-            proxy_dict[key] = recursive_dict(value, manager)
+            proxy_dict[key] = recursive_proxy(value, manager)
         return proxy_dict
     elif isinstance(data, list):
         proxy_list = manager.list()
         for item in data:
-            proxy_list.append(recursive_dict(item, manager))
+            proxy_list.append(recursive_proxy(item, manager))
         return proxy_list
     elif isinstance(data, (str, int, float, bool, type(None))):
         return data
@@ -191,6 +191,31 @@ def recursive_dict(data, manager=None):
         error = f"Unsupported data type: {type(data)}"
         print(error)
         return
+
+def proxy2dict(proxy_obj):
+    def recursive_copy(source, visited):
+        # Handle circular references by tracking visited objects
+        if id(source) in visited:
+            return
+        visited.add(id(source))  # Mark as visited
+        if isinstance(source, dict):
+            result = {}
+            for key, value in source.items():
+                result[key] = recursive_copy(value, visited)
+            return result
+        elif isinstance(source, list):
+            return [recursive_copy(item, visited) for item in source]
+        elif isinstance(source, set):
+            return list(source)
+        elif isinstance(source, DictProxy):
+            return recursive_copy(dict(source), visited)
+        elif isinstance(source, (int, float, bool)):
+            return source
+        elif source is None:
+            return None
+        else:
+            return str(source)  # Convert non-serializable types to strings
+    return recursive_copy(proxy_obj, set())
 
 def prepare_dirs(src, session):
     try:
