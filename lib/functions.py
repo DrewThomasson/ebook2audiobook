@@ -3987,7 +3987,7 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText => {
                                                 parseVTTFast(vttText);
-                                                print(gr_audiobook_player);
+                                                console.log(gr_audiobook_player);
                                                 //gr_audiobook_player.load();
                                                 gr_group_audiobook_list.style.display = 'block';
                                             });
