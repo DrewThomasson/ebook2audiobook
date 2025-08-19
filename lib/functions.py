@@ -3860,14 +3860,6 @@ def web_interface(args, ctx):
                                     gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list select");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                    
-                                    // If key elements aren’t mounted yet, retry
-                                    if (!gr_root || !gr_audiobook_player || !gr_audiobook_list || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress) {
-                                        clearTimeout(load_timeout);
-                                        console.log("Componenents not ready... retrying");
-                                        load_timeout = setTimeout(init_elements, 250);
-                                        return;
-                                    }
                                     // if container, get inner <audio>/<video>
                                     if (gr_audiobook_player) {
                                         if (!gr_audiobook_player.matches?.("audio,video")) {
@@ -3876,6 +3868,13 @@ def web_interface(args, ctx):
                                                 gr_audiobook_player = real_element;
                                             }
                                         }
+                                    }
+                                    // If key elements aren’t mounted yet, retry
+                                    if (!gr_root || !gr_audiobook_player || !gr_audiobook_list || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress) {
+                                        clearTimeout(load_timeout);
+                                        console.log("Componenents not ready... retrying");
+                                        load_timeout = setTimeout(init_elements, 250);
+                                        return;
                                     }
                                     let lastCue = null;
                                     let fade_timeout = null;
