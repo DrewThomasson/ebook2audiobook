@@ -3423,7 +3423,7 @@ def web_interface(args, ctx):
         def change_gr_read_data(data, state, req: gr.Request):
             try:
                 msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
-                if data is None:
+                if data is None or not data.get('id'):
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
                 if data.get('tab_id') == session.get('tab_id') or len(active_sessions) == 0:
@@ -3754,9 +3754,8 @@ def web_interface(args, ctx):
                         if(data){
                             localStorage.clear();
                             if(data['event'] != 'clear'){
-                                data = JSON.stringify(data)
                                 console.log('save: ', data);
-                                window.localStorage.setItem('data', data);
+                                window.localStorage.setItem('data', JSON.stringify(data));
                             }
                         }
                     }catch(e){
