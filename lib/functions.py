@@ -3429,8 +3429,8 @@ def web_interface(args, ctx):
         def change_gr_read_data(data, state, req: gr.Request):
             try:
                 msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
-                if data is None or isinstance(data, str) or not data.get('id'):
-                    data = context.get_session(str(uuid.uuid4()))
+                #if data is None or isinstance(data, str) or not data.get('id'):
+                data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
                 if data.get('tab_id') == session.get('tab_id') or len(active_sessions) == 0:
                     restore_session_from_data(data, session)
