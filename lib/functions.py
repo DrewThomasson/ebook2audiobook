@@ -3867,13 +3867,11 @@ def web_interface(args, ctx):
                                         load_timeout = setTimeout(init, 1000);
                                         return;
                                     }
-                                    if (gr_audiobook_list) {
-                                        if (gr_audiobook_list.options.length > 0) {
-                                            // if container, get inner <audio>/<video>
-                                            if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
-                                                const real = gr_audiobook_player.querySelector?.("audio,video");
-                                                if (real) gr_audiobook_player = real;
-                                            }
+                                    // if container, get inner <audio>/<video>
+                                    if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
+                                        const real_element = gr_audiobook_player.querySelector?.("audio,video");
+                                        if (real_element) {
+                                            gr_audiobook_player = real_element;
                                         }
                                     }
                                     let lastCue = null;
