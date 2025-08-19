@@ -2465,7 +2465,7 @@ def web_interface(args, ctx):
                             gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                             with gr_row_ebook_mode:
                                 gr_ebook_mode = gr.Radio(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], value='single', interactive=True, scale=2)
-                                gr_chapters_control = gr.Checkbox(label='Bypass Chapters Control', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
+                                gr_chapters_control = gr.Checkbox(label='Chapters Control', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
                         with gr.Group(elem_id='gr_group_language'):
                             gr_language = gr.Dropdown(label='Language', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
                         gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
