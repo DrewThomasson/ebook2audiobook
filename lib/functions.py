@@ -3865,7 +3865,7 @@ def web_interface(args, ctx):
                                     if (!gr_root && !gr_audiobook_player && !gr_audiobook_list && !gr_checkboxes && !gr_radios && !gr_playback_time && !gr_audiobook_sentence && !gr_tab_progress) {
                                         clearTimeout(load_timeout);
                                         console.log("Componenents not ready... retrying");
-                                        load_timeout = setTimeout(init_elements, 1000);
+                                        load_timeout = setTimeout(init_elements, 250);
                                         return;
                                     }
                                     // if container, get inner <audio>/<video>
