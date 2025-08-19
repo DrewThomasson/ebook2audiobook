@@ -4050,22 +4050,24 @@ def web_interface(args, ctx):
                                 gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                 gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
                                 gr_playback_time = gr_root.querySelector("#gr_playback_time input");
-                                gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list");
+                                gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list select");
                                 gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                 gr_radios = gr_root.querySelectorAll("input[type='radio']");
                                 // If key elements aren’t mounted yet, retry
-                                console.log('gr_tab_progress: '+gr_tab_progress+', gr_audiobook_sentence:'+gr_audiobook_sentence+', gr_audiobook_list: '+gr_audiobook_list+', gr_playback_time: '+gr_playback_time);
-                                if (!gr_tab_progress || !gr_audiobook_sentence || !gr_audiobook_list || !gr_playback_time) {
+                                //console.log('gr_tab_progress: '+gr_tab_progress+', gr_audiobook_sentence:'+gr_audiobook_sentence+', gr_audiobook_list: '+gr_audiobook_list+', gr_playback_time: '+gr_playback_time);
+                                if (!gr_tab_progress || !gr_playback_time) {
                                     clearTimeout(load_timeout);
                                     console.log("Componenents not ready... retrying");
                                     load_timeout = setTimeout(init, 1000);
                                     return;
                                 }
-                                if (gr_audiobook_list.options.length > 0) {
-                                    // if container, get inner <audio>/<video>
-                                    if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
-                                        const real = gr_audiobook_player.querySelector?.("audio,video");
-                                        if (real) gr_audiobook_player = real;
+                                if (gr_audiobook_list) {
+                                    if (gr_audiobook_list.options.length > 0) {
+                                        // if container, get inner <audio>/<video>
+                                        if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
+                                            const real = gr_audiobook_player.querySelector?.("audio,video");
+                                            if (real) gr_audiobook_player = real;
+                                        }
                                     }
                                 }
                                 console.log("Componenents ready!");
