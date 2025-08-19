@@ -359,11 +359,12 @@ def proxy2dict(proxy_obj):
             return [recursive_copy(item, visited) for item in source]
         elif isinstance(source, set):
             return list(source)
-        elif isinstance(source, (int, float, str, bool, type(None))):
-            return source
         elif isinstance(source, DictProxy):
-            # Explicitly handle DictProxy objects
-            return recursive_copy(dict(source), visited)  # Convert DictProxy to dict
+            return recursive_copy(dict(source), visited)
+        elif isinstance(source, (int, float, bool)):
+            return source
+        elif source is None:
+            return None
         else:
             return str(source)  # Convert non-serializable types to strings
     return recursive_copy(proxy_obj, set())
@@ -3516,7 +3517,6 @@ def web_interface(args, ctx):
                 if id:
                     if id in context.sessions:
                         session = context.get_session(id)
-                        print(session)
                         if session:
                             if session['event'] == 'clear':
                                 session_dict = session
