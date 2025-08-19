@@ -3514,6 +3514,7 @@ def web_interface(args, ctx):
                 if id:
                     if id in context.sessions:
                         session = context.get_session(id)
+                        print(f'------------{session["chapters_control"]}--------{session["output_split"]}-----------')
                         if session:
                             if session['event'] == 'clear':
                                 session_dict = session
