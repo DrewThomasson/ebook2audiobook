@@ -79,7 +79,7 @@ class SessionTracker:
         active_sessions.discard(socket_hash)
         with self.lock:
             session = context.get_session(id)
-            session['cancellation_requested'] = True
+            session['cancellation_requested'] = False
             session['tab_id'] = None
             session['status'] = None
             session[socket_hash] = None
