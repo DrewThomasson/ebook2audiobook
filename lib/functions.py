@@ -344,31 +344,6 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def proxy2dict(proxy_obj):
-    def recursive_copy(source, visited):
-        # Handle circular references by tracking visited objects
-        if id(source) in visited:
-            return
-        visited.add(id(source))  # Mark as visited
-        if isinstance(source, dict):
-            result = {}
-            for key, value in source.items():
-                result[key] = recursive_copy(value, visited)
-            return result
-        elif isinstance(source, list):
-            return [recursive_copy(item, visited) for item in source]
-        elif isinstance(source, set):
-            return list(source)
-        elif isinstance(source, DictProxy):
-            return recursive_copy(dict(source), visited)
-        elif isinstance(source, (int, float, bool)):
-            return source
-        elif source is None:
-            return None
-        else:
-            return str(source)  # Convert non-serializable types to strings
-    return recursive_copy(proxy_obj, set())
-
 def convert2epub(id):
     session = context.get_session(id)
     if session['cancellation_requested']:
@@ -3504,9 +3479,8 @@ def web_interface(args, ctx):
                 previous_hash = state['hash']
                 new_hash = hash_proxy_dict(MappingProxyType(session))
                 state['hash'] = new_hash
-                session_dict = proxy2dict(session)
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=session_dict), gr.update(value=state), gr.update(value=session['id']), gr.update()
+                return gr.update(value=session), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
                 error = f'change_gr_read_data(): {e}'
                 alert_exception(error)
@@ -3518,22 +3492,19 @@ def web_interface(args, ctx):
                     if id in context.sessions:
                         session = context.get_session(id)
                         if session:
-                            if session['event'] == 'clear':
-                                session_dict = session
-                            else:
+                            if session['event'] != 'clear':
                                 previous_hash = state['hash']
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
                                 if previous_hash == new_hash:
                                     return gr.update(), gr.update(), gr.update()
                                 else:
                                     state['hash'] = new_hash
-                                    session_dict = proxy2dict(session)
                             if session['status'] == 'converting':
                                 if session['progress'] != len(audiobook_options):
                                     session['progress'] = len(audiobook_options)
-                                    return gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
-                            print(session_dict)
-                            return gr.update(value=session_dict), gr.update(value=state), gr.update()
+                                    return gr.update(value=session), gr.update(value=state), update_gr_audiobook_list(id)
+                            print(session)
+                            return gr.update(value=session), gr.update(value=state), gr.update()
                 return gr.update(), gr.update(), gr.update()
             except Exception as e:
                 error = f'save_session(): {e}!'
