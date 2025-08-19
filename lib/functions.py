@@ -3517,7 +3517,6 @@ def web_interface(args, ctx):
                                 if previous_hash == new_hash:
                                     return gr.update(), gr.update(), gr.update()
                                 else:
-                                    new_hash = hash_proxy_dict(MappingProxyType(session))
                                     state['hash'] = new_hash
                                     session_dict = proxy2dict(session)
                                     print(session_dict)
