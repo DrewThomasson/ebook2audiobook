@@ -103,6 +103,8 @@ class SessionContext:
                 "progress": 0,
                 "cancellation_requested": False,
                 "device": default_device,
+                "tts_engine": default_tts_engine,
+                "fine_tuned": default_fine_tuned,
                 "system": None,
                 "client": None,
                 "language": default_language_code,
@@ -117,8 +119,6 @@ class SessionContext:
                 "chapters_dir_sentences": None,
                 "epub_path": None,
                 "filename_noext": None,
-                "tts_engine": default_tts_engine,
-                "fine_tuned": default_fine_tuned,
                 "voice": None,
                 "voice_dir": None,
                 "custom_model": None,
@@ -3540,7 +3540,7 @@ def web_interface(args, ctx):
                             if session['status'] == 'converting':
                                 if session['progress'] != len(audiobook_options):
                                     session['progress'] = len(audiobook_options)
-                                    return gr.update(value=json.dumps(session_dict, indent=4)), gr.update(value=state), update_gr_audiobook_list(id)
+                                    return gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
                             return gr.update(value=session_dict), gr.update(value=state), gr.update()
                 return gr.update(), gr.update(), gr.update()
             except Exception as e:
