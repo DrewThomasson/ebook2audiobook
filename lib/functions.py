@@ -3836,6 +3836,16 @@ def web_interface(args, ctx):
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
                                     // If key elements aren’t mounted yet, retry
+                                    console.log(
+                                      "gr_root:", gr_root,
+                                      "gr_group_audiobook_list:", gr_group_audiobook_list,
+                                      "gr_audiobook_player:", gr_audiobook_player,
+                                      "gr_checkboxes:", gr_checkboxes,
+                                      "gr_radios:", gr_radios,
+                                      "gr_playback_time:", gr_playback_time,
+                                      "gr_audiobook_sentence:", gr_audiobook_sentence,
+                                      "gr_tab_progress:", gr_tab_progress
+                                    );
                                     if (!gr_root || !gr_group_audiobook_list || !gr_audiobook_player || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress) {
                                         clearTimeout(load_timeout);
                                         console.log("Componenents not ready... retrying");
