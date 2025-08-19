@@ -3842,11 +3842,6 @@ def web_interface(args, ctx):
                             window.init_elements = () => {
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    if (!gr_root) {
-                                        clearTimeout(load_timeout);
-                                        load_timeout = setTimeout(init, 1000);
-                                        return;
-                                    }
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                     gr_group_audiobook_list = gr_root.querySelector("#gr_group_audiobook_list");
                                     gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
@@ -3854,11 +3849,10 @@ def web_interface(args, ctx):
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
-
                                     // if container, get inner <audio>/<video>
                                     if (gr_audiobook_player) {
-                                        if (!gr_audiobook_player.matches?.("audio,video")) {
-                                            const real_element = gr_audiobook_player.querySelector?.("audio,video");
+                                        if (!gr_audiobook_player.matches.("audio,video")) {
+                                            const real_element = gr_audiobook_player.querySelector?.("audio, video");
                                             if (real_element) {
                                                 gr_audiobook_player = real_element;
                                             }
@@ -3987,8 +3981,19 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText => {
                                                 parseVTTFast(vttText);
+                                                
+                                                // if container, get inner <audio>/<video>
+                                                if (gr_audiobook_player) {
+                                                    if (!gr_audiobook_player.matches.("audio,video")) {
+                                                        const real_element = gr_audiobook_player.querySelector?.("audio, video");
+                                                        if (real_element) {
+                                                            gr_audiobook_player = real_element;
+                                                        }
+                                                    }
+                                                }
                                                 console.log(gr_audiobook_player);
-                                                //gr_audiobook_player.load();
+                                                
+                                                gr_audiobook_player.load();
                                                 gr_group_audiobook_list.style.display = 'block';
                                             });
                                         }else{
