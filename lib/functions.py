@@ -3852,6 +3852,7 @@ def web_interface(args, ctx):
                                         return;
                                     }
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
+                                    gr_group_audiobook_list = gr_root.querySelector("#gr_group_audiobook_list");
                                     gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player");
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
@@ -3859,6 +3860,7 @@ def web_interface(args, ctx):
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
                                     
                                     console.log("gr_root:", gr_root);
+                                    console.log("gr_group_audiobook_list:", gr_group_audiobook_list);
                                     console.log("gr_audiobook_player:", gr_audiobook_player);
                                     console.log("gr_checkboxes:", gr_checkboxes);
                                     console.log("gr_radios:", gr_radios);
@@ -3876,7 +3878,7 @@ def web_interface(args, ctx):
                                         }
                                     }
                                     // If key elements aren’t mounted yet, retry
-                                    if (!gr_root || !gr_audiobook_player || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress) {
+                                    if (!gr_root || !gr_group_audiobook_list || !gr_audiobook_player || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress) {
                                         clearTimeout(load_timeout);
                                         console.log("Componenents not ready... retrying");
                                         load_timeout = setTimeout(init_elements, 250);
