@@ -3816,7 +3816,7 @@ def web_interface(args, ctx):
         ).then(
             fn=None,
             inputs=None,
-            js='()=>{const delay = setTimeout(window.init_elements, 2000);}'
+            js='()=>{window.init_elements();}'
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
@@ -3863,13 +3863,14 @@ def web_interface(args, ctx):
                                     
                                     // If key elements aren’t mounted yet, retry
                                     if (!gr_tab_progress || !gr_playback_time) {
+                                    if (!gr_root && !gr_audiobook_player && !gr_audiobook_list && !gr_checkboxes && !gr_radios && !gr_playback_time && !gr_audiobook_sentence && !gr_tab_progress) {
                                         clearTimeout(load_timeout);
                                         console.log("Componenents not ready... retrying");
-                                        load_timeout = setTimeout(init, 1000);
+                                        load_timeout = setTimeout(init_elements, 1000);
                                         return;
                                     }
                                     // if container, get inner <audio>/<video>
-                                    if (gr_audiobook_player && !gr_audiobook_player.matches?.("audio,video")) {
+                                    if (!gr_audiobook_player.matches?.("audio,video")) {
                                         const real_element = gr_audiobook_player.querySelector?.("audio,video");
                                         if (real_element) {
                                             gr_audiobook_player = real_element;
