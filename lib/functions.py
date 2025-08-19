@@ -3304,6 +3304,18 @@ def web_interface(args, ctx):
 
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
+            if key in session and session[key] is not None:
+                current_type = type(session[key])
+                try:
+                    if current_type is bool:
+                        if isinstance(val, str):
+                            val = val.strip().lower() in ("true", "1", "yes", "on")
+                        else:
+                            val = bool(val)
+                    else:
+                        val = current_type(val)
+                except Exception:
+                    pass  # keep original if casting fails
             session[key] = val
             state = {}
             if key == 'length_penalty':
@@ -4073,7 +4085,6 @@ def web_interface(args, ctx):
                             const parsed = JSON.parse(stored);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
-                            console.log("parsed:", parsed);
                             console.log("window.playback_time", window.playback_time);
                             return parsed;
                         }
