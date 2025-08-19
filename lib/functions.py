@@ -175,6 +175,14 @@ class JSONEncoderWithDictProxy(json.JSONEncoder):
         if isinstance(o, DictProxy):
             return dict(o)
         return json.JSONEncoder.default(self, o)
+        
+class JSONEncoderWithDictProxy(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, DictProxy):
+            return dict(o)
+        elif isinstance(o, ListProxy):
+            return list(o)
+        return super().default(o)
 
 ###############
 
@@ -3515,7 +3523,6 @@ def web_interface(args, ctx):
                                 else:
                                     state['hash'] = new_hash
                                     session_dict = json.dumps(session, cls=JSONEncoderWithDictProxy)
-                                    print(session_dict)
                                     return gr.update(value=session_dict), gr.update(value=state), gr.update()
                 return gr.update(), gr.update(), gr.update()
             except Exception as e:
