@@ -3828,14 +3828,13 @@ def web_interface(args, ctx):
                             window.init_elements = () => {
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress textarea");
+                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                     gr_group_audiobook_list = gr_root.querySelector("#gr_group_audiobook_list");
                                     gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                    // If key elements aren’t mounted yet, retry
                                     console.log(
                                       "gr_root:", gr_root,
                                       "gr_group_audiobook_list:", gr_group_audiobook_list,
@@ -3849,7 +3848,7 @@ def web_interface(args, ctx):
                                     if (!gr_root || !gr_group_audiobook_list || !gr_audiobook_player || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress) {
                                         clearTimeout(load_timeout);
                                         console.log("Componenents not ready... retrying");
-                                        load_timeout = setTimeout(init_elements, 250);
+                                        load_timeout = setTimeout(init_elements, 400);
                                         return;
                                     }
                                     let lastCue = null;
