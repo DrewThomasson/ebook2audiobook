@@ -3317,7 +3317,6 @@ def web_interface(args, ctx):
                 except Exception:
                     pass
             session[key] = val
-            print(session)
             state = {}
             if key == 'length_penalty':
                 if val2 is not None:
