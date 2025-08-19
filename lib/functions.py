@@ -3516,7 +3516,7 @@ def web_interface(args, ctx):
                 if id:
                     if id in context.sessions:
                         session = context.get_session(id)
-                        print(session_dict)
+                        print(session)
                         if session:
                             if session['event'] == 'clear':
                                 session_dict = session
