@@ -172,6 +172,12 @@ class SessionContext:
 
 ctx_tracker = SessionTracker()
 
+class JSONEncoderWithDictProxy(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, multiprocessing.managers.DictProxy):
+            return dict(o)
+        return json.JSONEncoder.default(self, o)
+
 def recursive_proxy(data, manager=None):
     if manager is None:
         manager = Manager()
@@ -191,21 +197,6 @@ def recursive_proxy(data, manager=None):
         error = f"Unsupported data type: {type(data)}"
         print(error)
         return
-
-def proxy2dict(proxy_obj):
-    def recursive_copy(source, visited):
-        if id(source) in visited:
-            return None  # avoid circular refs
-        visited.add(id(source))
-        if isinstance(source, (DictProxy, dict)):
-            return {k: recursive_copy(v, visited) for k, v in source.items()}
-        elif isinstance(source, (ListProxy, list, set, tuple)):
-            return [recursive_copy(v, visited) for v in source]
-        elif isinstance(source, (int, float, bool, str)) or source is None:
-            return source  # primitives are safe
-        else:
-            return str(source)  # last resort
-    return recursive_copy(proxy_obj, set())
 
 def prepare_dirs(src, session):
     try:
@@ -3513,7 +3504,7 @@ def web_interface(args, ctx):
                                     session['progress'] = len(audiobook_options)
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
                                     state['hash'] = new_hash
-                                    session_dict = json.dumps(dict(session))
+                                    session_dict = json.dumps(session, cls=JSONEncoderWithDictProxy)
                                     return gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
                             else:
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
@@ -3521,7 +3512,7 @@ def web_interface(args, ctx):
                                     return gr.update(), gr.update(), gr.update()
                                 else:
                                     state['hash'] = new_hash
-                                    session_dict = json.dumps(dict(session))
+                                    session_dict = json.dumps(session, cls=JSONEncoderWithDictProxy)
                                     print(session_dict)
                                     return gr.update(value=session_dict), gr.update(value=state), gr.update()
                 return gr.update(), gr.update(), gr.update()
