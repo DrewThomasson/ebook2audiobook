@@ -170,13 +170,15 @@ class SessionContext:
                 return session.get('id')
         return None
 
-ctx_tracker = SessionTracker()
-
 class JSONEncoderWithDictProxy(json.JSONEncoder):
     def default(self, o):
-        if isinstance(o, multiprocessing.managers.DictProxy):
+        if isinstance(o, DictProxy):
             return dict(o)
         return json.JSONEncoder.default(self, o)
+
+###############
+
+ctx_tracker = SessionTracker()
 
 def recursive_proxy(data, manager=None):
     if manager is None:
