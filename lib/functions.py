@@ -2439,7 +2439,7 @@ def web_interface(args, ctx):
                 color: #ffffff !important;
             }
             #gr_state_update, #gr_read_data, #gr_write_data,
-            #gr_audiobook_vtt, #gr_playback_time, #gr_group_audiobook_list {
+            #gr_audiobook_vtt, #gr_playback_time {
                 display: none !important;
             }
             ////////////
