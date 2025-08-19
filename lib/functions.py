@@ -2439,7 +2439,7 @@ def web_interface(args, ctx):
                 color: #ffffff !important;
             }
             #gr_state_update, #gr_read_data, #gr_write_data,
-            #gr_audiobook_vtt, #gr_playback_time {
+            #gr_audiobook_vtt, #gr_playback_time, #gr_group_audiobook_list {
                 display: none !important;
             }
             ////////////
@@ -3973,26 +3973,28 @@ def web_interface(args, ctx):
                             window.load_vtt = (path) => {
                                 try {
                                     if (gr_audiobook_player && gr_playback_time && gr_audiobook_sentence) {
-                                        // Remove any <track> to bypass browser subtitle engine
-                                        let existing = gr_root.querySelector("#gr_audiobook_track");
-                                        if (existing) {
-                                            existing.remove();
-                                        }
-                                        gr_audiobook_sentence.style.fontSize = "14px";
-                                        gr_audiobook_sentence.style.fontWeight = "bold";
-                                        gr_audiobook_sentence.style.width = "100%";
-                                        gr_audiobook_sentence.style.height = "auto";
-                                        gr_audiobook_sentence.style.textAlign = "center";
-                                        gr_audiobook_sentence.style.margin = "0";
-                                        gr_audiobook_sentence.style.padding = "7px 0 7px 0";
-                                        gr_audiobook_sentence.style.lineHeight = "14px";
-                                        gr_audiobook_sentence.value = "...";
                                         if (path) {
-                                            fetch(path).then(res => res.text()).then(vttText => {
+                                            // Remove any <track> to bypass browser subtitle engine
+                                            let existing = gr_root.querySelector("#gr_audiobook_track");
+                                            if (existing) {
+                                                existing.remove();
+                                            }
+                                            gr_audiobook_sentence.style.fontSize = "14px";
+                                            gr_audiobook_sentence.style.fontWeight = "bold";
+                                            gr_audiobook_sentence.style.width = "100%";
+                                            gr_audiobook_sentence.style.height = "auto";
+                                            gr_audiobook_sentence.style.textAlign = "center";
+                                            gr_audiobook_sentence.style.margin = "0";
+                                            gr_audiobook_sentence.style.padding = "7px 0 7px 0";
+                                            gr_audiobook_sentence.style.lineHeight = "14px";
+                                            gr_audiobook_sentence.value = "...";
+                                            fetch(path)
+                                            .then(res => res.text())
+                                            .then(vttText => {
                                                 parseVTTFast(vttText);
                                             });
+                                            gr_audiobook_player.load();
                                         }
-                                        gr_audiobook_player.load();
                                     } else {
                                         clearTimeout(window.load_vtt_timeout);
                                         window.load_vtt_timeout = setTimeout(window.load_vtt, 500, path);
