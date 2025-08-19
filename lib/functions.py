@@ -3828,7 +3828,7 @@ def web_interface(args, ctx):
                             window.init_elements = () => {
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
+                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress textarea");
                                     gr_group_audiobook_list = gr_root.querySelector("#gr_group_audiobook_list");
                                     gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
@@ -3848,7 +3848,7 @@ def web_interface(args, ctx):
                                     if (!gr_root || !gr_group_audiobook_list || !gr_audiobook_player || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress) {
                                         clearTimeout(load_timeout);
                                         console.log("Componenents not ready... retrying");
-                                        load_timeout = setTimeout(init_elements, 400);
+                                        load_timeout = setTimeout(init_elements, 30000);
                                         return;
                                     }
                                     let lastCue = null;
