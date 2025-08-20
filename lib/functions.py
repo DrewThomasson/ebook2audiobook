@@ -4006,10 +4006,14 @@ def web_interface(args, ctx):
                         }
                         if(typeof(window.tab_progress) !== "function"){
                             window.tab_progress = () =>{
-                                const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
-                                const prct = val.trim().split(" ")[4];
-                                if(prct && /^\d+(\.\d+)?%$/.test(prct)){
-                                    document.title = "Ebook2Audiobook: " + prct;
+                                try{
+                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
+                                    const prct = val.trim().split(" ")[4];
+                                    if(prct && /^\d+(\.\d+)?%$/.test(prct)){
+                                        document.title = "Ebook2Audiobook: " + prct;
+                                    }
+                                }catch(e){
+                                    console.log("tab_progress error:", e);
                                 }
                             };
                         }
