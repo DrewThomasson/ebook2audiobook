@@ -3899,7 +3899,8 @@ def web_interface(args, ctx):
                                     gr_tab_progress.addEventListener("input", tab_progress);
                                     console.log("Components ready!");
                                     if(gr_audiobook_player){
-                                        window.init_audiobook_player();
+                                        clearTimeout(init_elements_timeout);
+                                        init_elements_timeout = setTimeout(init_audiobook_player, 1000);
                                     }
                                 }catch(e){
                                     console.log("init_elements error:", e);
