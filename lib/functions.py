@@ -3850,7 +3850,7 @@ def web_interface(args, ctx):
                             window.init_elements = () =>{
                                 try{
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
+                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress textarea");
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
@@ -3878,6 +3878,10 @@ def web_interface(args, ctx):
                                         gr_checkboxes.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
                                         gr_radios.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
                                     }
+                                    // Observe programmatic changes
+                                    new MutationObserver(tab_progress).observe(gr_tab_progress,{ attributes: true, childList: true, subtree: true, characterData: true });
+                                    // Also catch user edits
+                                    gr_tab_progress.addEventListener("input", tab_progress);
                                     console.log("Components ready!");
                                 }catch(e){
                                     console.log("init_elements error:", e);
@@ -3937,15 +3941,7 @@ def web_interface(args, ctx):
                                             gr_audiobook_sentence.value = "...";
                                             lastCue = null;
                                         });
-                                        ///////////////
-                                        
-                                        // Observe programmatic changes
-                                        new MutationObserver(tab_progress).observe(gr_tab_progress,{ attributes: true, childList: true, subtree: true, characterData: true });
-                                        // Also catch user edits
-                                        gr_tab_progress.addEventListener("input", tab_progress);
-                                        
-                                        ///////////////
-                                        
+
                                         const url = new URL(window.location);
                                         const theme = url.searchParams.get("__theme");
                                         let osTheme;
