@@ -3698,7 +3698,7 @@ def web_interface(args, ctx):
             outputs=[gr_audiobook_player]
         ).then(
             fn=lambda audiobook: load_vtt_data(audiobook),
-            inputs=gr_audiobook_player
+            inputs=[gr_audiobook_list],
             outputs=None
         ).then(
             fn=None,
