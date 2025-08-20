@@ -2612,7 +2612,7 @@ def web_interface(args, ctx):
                 gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
                 gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
-            gr_audiobook_files = gr.Files(label="Downloads", visible=False)
+            gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
             gr_audiobook_files_toggled = gr.State(False)
         gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
         
