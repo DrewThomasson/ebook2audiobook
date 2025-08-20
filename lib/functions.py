@@ -4055,10 +4055,11 @@ def web_interface(args, ctx):
                             window.tab_progress = () =>{
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
+                                    const txt = val.trim().split(" ")[2];
+                                    const title = txt.length > 20 ? txt.slice(0, 20).trimEnd() + '…' : txt;
                                     const prct = val.trim().split(" ")[4];
-                                    console.log('tab_progress.value: ', val.trim().split(" ")[2]);
                                     if(prct && /^\d+(\.\d+)?%$/.test(prct)){
-                                        document.title = "Ebook2Audiobook: " + prct;
+                                        document.title = title + ": " + prct;
                                     }
                                 }catch(e){
                                     console.log("tab_progress error:", e);
