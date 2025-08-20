@@ -2994,14 +2994,14 @@ def web_interface(args, ctx):
                         msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False), gr.update()
+                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_custom_model_del':
                         selected_name = os.path.basename(custom_model)
                         shutil.rmtree(custom_model, ignore_errors=True)                           
                         msg = f'Custom model {selected_name} deleted!'
                         session['custom_model'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update()
+                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_audiobook_del':
                         selected_name = Path(audiobook).stem
                         if os.path.isdir(audiobook):
@@ -3044,13 +3044,12 @@ def web_interface(args, ctx):
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        visible = bool(audiobook_options)
-                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=visible)
-                return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update()
+                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
-            return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update()
+            return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                 
         def prepare_audiobook_download(selected):
             if os.path.exists(selected):
@@ -3820,6 +3819,10 @@ def web_interface(args, ctx):
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
             outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn, gr_group_audiobook_list]
+        ).then(
+            fn=lambda: gr.update(visible=bool(audiobook_options)),
+            inputs=None,
+            outputs=[gr_group_audiobook_list],
         )
         gr_confirm_no_btn.click(
             fn=confirm_deletion,
