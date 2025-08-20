@@ -2804,7 +2804,7 @@ def web_interface(args, ctx):
             session = context.get_session(id)
             return (
                     gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
-                    gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id)
+                    gr.update(value=session['audiobook']), update_gr_voice_list(id)
             )
 
         def change_gr_audiobook_list(selected, id):
@@ -3762,7 +3762,7 @@ def web_interface(args, ctx):
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
-            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
+            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_voice_list]
         )
         gr_write_data.change(
             fn=None,
