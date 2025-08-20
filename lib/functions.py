@@ -3430,7 +3430,7 @@ def web_interface(args, ctx):
                         return gr.update(choices=audiobook_options, value=session['audiobook'])
                     else:
                         return gr.update(choices=audiobook_options, value=audiobook_options[0][1])
-                return r.update(choices=audiobook_options)
+                return gr.update(choices=audiobook_options)
             except Exception as e:
                 error = f'update_gr_audiobook_list(): {e}!'
                 alert_exception(error)              
