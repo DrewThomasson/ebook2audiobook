@@ -3450,7 +3450,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(value='')
+            return gr.update(value=' ')
 
         def update_gr_audiobook_list(id):
             try:
