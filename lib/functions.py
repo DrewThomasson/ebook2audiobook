@@ -3956,9 +3956,7 @@ def web_interface(args, ctx):
                                                 audioFilter = "invert(1) hue-rotate(180deg)";
                                             }
                                         }
-                                        if(!gr_audiobook_player.style.transition){
-                                            gr_audiobook_player.style.transition = "filter 1s ease";
-                                        }
+                                        gr_audiobook_player.style.transition = "filter 1s ease";
                                         gr_audiobook_player.style.filter = audioFilter;      
                                         gr_audiobook_player.load();
                                     }
@@ -3993,7 +3991,6 @@ def web_interface(args, ctx):
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
                                                 if(gr_audiobook_player){
-                                                    gr_audiobook_player.style.filter = audioFilter;      
                                                     gr_audiobook_player.load();
                                                 }else{
                                                     window.init_audiobook_player();
