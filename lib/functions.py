@@ -3849,6 +3849,7 @@ def web_interface(args, ctx):
                             window.init_elements = () =>{
                                 try{
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                    gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
@@ -3882,6 +3883,9 @@ def web_interface(args, ctx):
                                     // Also catch user edits
                                     gr_tab_progress.addEventListener("input", tab_progress);
                                     console.log("Components ready!");
+                                    if(gr_audiobook_player){
+                                        window.init_audiobook_player();
+                                    }
                                 }catch(e){
                                     console.log("init_elements error:", e);
                                 }
