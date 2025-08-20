@@ -3697,13 +3697,20 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_audiobook_player]
         ).then(
+            # if gr_audiobook_player's value is a filepath string:
             fn=lambda audiobook: load_vtt_data(audiobook),
-            inputs=[gr_audiobook_list],
-            outputs=None
+            inputs=[gr_audiobook_list],    # was missing brackets + comma
+            outputs=[gr_audiobook_vtt],      # send VTT text to the next step
         ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
-            js='(data)=>{window.load_vtt?.(URL.createObjectURL(new Blob([data],{type: "text/vtt"})));}'         
+            outputs=None,
+            js=(
+                '(data)=>{'
+                '  const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));'
+                '  window.load_vtt?.(url);'
+                '}'
+            ),
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
