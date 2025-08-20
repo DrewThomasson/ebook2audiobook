@@ -2097,7 +2097,7 @@ def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if session['chapters_control']:
-                                    msg = 'This option is under development and will be available soon!...'
+                                    msg = 'The option "Chapters Control" is under development and will be available soon!...'
                                     show_alert({"type": "warning", "msg": msg})
                                 else:
                                     return finalize_audiobook(id)
