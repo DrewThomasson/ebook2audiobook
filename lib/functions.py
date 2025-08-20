@@ -2436,7 +2436,7 @@ def web_interface(args, ctx):
             ////////////
             #gr_audiobook_files {
                 animation: fadeSlideIn ease-out both !important;
-                will-change: opacity, transform !important;
+                display: inline-block !important;
             }
             ///////////
             .fade-in {
