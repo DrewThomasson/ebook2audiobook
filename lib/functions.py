@@ -2813,8 +2813,7 @@ def web_interface(args, ctx):
             if selected is not None:
                 audio_info = mediainfo(selected)
                 session['duration'] = float(audio_info['duration'])
-            visible = True if len(audiobook_options) > 0 else False
-            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(visible=visible)
+            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected))
         
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
