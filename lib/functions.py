@@ -2843,6 +2843,20 @@ def web_interface(args, ctx):
             outputs = tuple([gr.update(interactive=True) for _ in range(9)])
             return outputs
 
+        def bundle_audio_and_vtt_bytes(audiobook: str):
+            p = Path(audiobook)
+            if not p.exists():
+                error = f'Audio not found: {p}'
+                raise gr.Error(error)
+            vtt = p.with_suffix(".vtt")
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                zf.write(str(p), arcname=p.name)
+                if vtt.exists():
+                    zf.write(str(vtt), arcname=vtt.name)
+            buf.seek(0)
+            return gr.update(value=buf.getvalue(), file_name=f'{p.stem}.zip'
+
         def change_gr_ebook_file(data, id):
             try:
                 session = context.get_session(id)
@@ -3657,10 +3671,10 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_audiobook_download_btn.click(
-            fn=lambda audiobook: show_alert({"type": "info", "msg": f'Downloading {os.path.basename(audiobook)}'}),
+            fn=bundle_audio_and_vtt_bytes,
             inputs=[gr_audiobook_list],
-            outputs=None,
-            show_progress='minimal'
+            outputs=[gr_audiobook_download_btn],
+            show_progress="minimal",
         )
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
