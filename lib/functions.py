@@ -3899,10 +3899,6 @@ def web_interface(args, ctx):
                                     // Also catch user edits
                                     gr_tab_progress.addEventListener("input", tab_progress);
                                     console.log("Components ready!");
-                                    if(gr_audiobook_player){
-                                        clearTimeout(init_elements_timeout);
-                                        init_elements_timeout = setTimeout(init_audiobook_player, 1000);
-                                    }
                                 }catch(e){
                                     console.log("init_elements error:", e);
                                 }
@@ -4014,7 +4010,8 @@ def web_interface(args, ctx):
                                                 if(gr_audiobook_player){
                                                     gr_audiobook_player.load();
                                                 }else{
-                                                    window.init_audiobook_player();
+                                                    clearTimeout(init_audiobook_player_timeout);
+                                                    init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
                                                 }
                                             });
                                         }
