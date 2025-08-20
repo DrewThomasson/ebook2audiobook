@@ -3399,7 +3399,7 @@ def web_interface(args, ctx):
                             show_alert({"type": "success", "msg": progress_status})
                             reset_ebook_session(args['session'])
                             msg = 'Conversion successful!'
-                            yield gr.update(value=msg)
+                            return gr.update(value=msg)
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
