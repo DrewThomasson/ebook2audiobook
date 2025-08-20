@@ -2806,7 +2806,7 @@ def web_interface(args, ctx):
             
             return (
                     gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
-                    gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id)
+                    gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
                     gr.update(visible=visible)
             )
 
