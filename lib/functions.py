@@ -2603,7 +2603,7 @@ def web_interface(args, ctx):
         gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
         gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False, visible=True)
         gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
-        gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=True)
+        gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
         with gr_group_audiobook_list:
             gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
@@ -2813,7 +2813,8 @@ def web_interface(args, ctx):
             if selected is not None:
                 audio_info = mediainfo(selected)
                 session['duration'] = float(audio_info['duration'])
-            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected))
+            visible = True if len(audiobook_options) > 0 else False
+            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected)), gr.update(visible=visible)
         
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
