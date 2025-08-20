@@ -2056,10 +2056,11 @@ def convert_ebook(args, ctx=None):
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     if os.path.isdir(old_session_dir):
                         os.rename(old_session_dir, session['session_dir'])
-                    session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['ebook'].encode()).hexdigest()}")
+                    session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
+                    session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
                     session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
                     session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
-                    if prepare_dirs(args['ebook'], session):
+                    if prepare_dirs(session['ebook'], session):
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
                         msg_extra = ''
@@ -2146,7 +2147,6 @@ def convert_ebook(args, ctx=None):
 
 def finalize_audiobook(id):
     session = context.get_session(id)
-    session['final_name'] = get_sanitized(session['metadata']['title'] + '.' + session['output_format'])
     if session['chapters'] is not None:
         if convert_chapters2audio(session['id']):
             msg = 'Conversion successful. Combining sentences and chapters...'
@@ -3066,28 +3066,8 @@ def web_interface(args, ctx):
                                 ]
                             else:
                                 chapters_dirs = []
-                        shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
-                        if session['is_gui_process']:
-                            if len(chapters_dirs) > 1:
-                                if os.path.exists(session['chapters_dir']):
-                                    shutil.rmtree(session['chapters_dir'], ignore_errors=True)
-                                if os.path.exists(session['epub_path']):
-                                    os.remove(session['epub_path'])
-                                if os.path.exists(session['cover']):
-                                    os.remove(session['cover'])
-                            else:
-                                if session['process_dir'] != '':
-                                    if os.path.exists(session['process_dir']):
-                                        shutil.rmtree(session['process_dir'], ignore_errors=True)
-                        else:
-                            if os.path.exists(session['voice_dir']):
-                                if not any(os.scandir(session['voice_dir'])):
-                                    shutil.rmtree(session['voice_dir'], ignore_errors=True)
-                            if os.path.exists(session['custom_model_dir']):
-                                if not any(os.scandir(session['custom_model_dir'])):
-                                    shutil.rmtree(session['custom_model_dir'], ignore_errors=True)
-                            if os.path.exists(session['session_dir']):
-                                shutil.rmtree(session['session_dir'], ignore_errors=True)
+                        process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], audiobook).encode()).hexdigest()}")
+                        shutil.rmtree(process_dir, ignore_errors=True)
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
