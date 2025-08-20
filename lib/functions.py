@@ -4056,7 +4056,7 @@ def web_interface(args, ctx):
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const prct = val.trim().split(" ")[4];
-                                    console.log('tab_progress.value: ', val.trim().split(" ")[3]);
+                                    console.log('tab_progress.value: ', val.trim().split(" ")[2]);
                                     if(prct && /^\d+(\.\d+)?%$/.test(prct)){
                                         document.title = "Ebook2Audiobook: " + prct;
                                     }
