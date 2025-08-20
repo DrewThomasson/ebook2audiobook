@@ -3697,7 +3697,6 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_audiobook_player]
         ).then(
-            # if gr_audiobook_player's value is a filepath string:
             fn=lambda audiobook: load_vtt_data(audiobook),
             inputs=[gr_audiobook_list],
             outputs=[gr_audiobook_vtt]
@@ -3706,8 +3705,8 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_vtt],
             js='''
                 (data)=>{
-                const empty = data == null || (typeof data === "string" && data.trim() === "");
-                   if(empty){
+                   const empty = data == null || (typeof data === "string" && data.trim() === "");
+                   if(!empty){
                        const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));
                        window.load_vtt?.(url);
                 
