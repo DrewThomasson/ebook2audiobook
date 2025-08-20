@@ -3839,17 +3839,16 @@ def web_interface(args, ctx):
                                 try{
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress textarea");
-                                    gr_group_audiobook_list = gr_root.querySelector("#gr_group_audiobook_list");
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                    if(!gr_root || !gr_group_audiobook_list || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_tab_progress){
+                                    if(!gr_root || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_tab_progress){
                                         clearTimeout(init_elements_timeout);
-                                        console.log("Componenents not ready... retrying");
+                                        console.log("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_elements, 1000);
                                         return;
                                     }
-                                    console.log("Componenents ready!");
+                                    console.log("Components ready!");
                                 }catch(e){
                                     console.log("init_elements error:", e);
                                 }
