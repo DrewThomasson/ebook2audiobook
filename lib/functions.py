@@ -1459,17 +1459,17 @@ def convert_chapters2audio(id):
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
                         if success:
                             total_progress = (t.n + 1) / total_iterations
-                            progress_bar(total_progress)
+                            progress_bar(f'{ebook_name}: {total_progress}')
                             is_sentence = sentence.strip() not in TTS_SML.values()
                             percentage = total_progress * 100
-                            t.set_description(f"{ebook_name}: {percentage:.2f}%")
+                            t.set_description(f"{percentage:.2f}%")
                             msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
                         else:
                             return False
                     if sentence.strip() not in TTS_SML.values():
                         sentence_number += 1
-                    t.update(1)  # advance for every iteration, including SML
+                    t.update(1)
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
                 msg = f"End of Block {chapter_num}"
                 print(msg)
