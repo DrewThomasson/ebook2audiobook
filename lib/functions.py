@@ -3857,6 +3857,7 @@ def web_interface(args, ctx):
                                     let last_time = 0;
                                     let set_playback_time = false;
                                     if(gr_audiobook_player){
+                                        console.log('gr_audiobook_player ready!');
                                         gr_audiobook_player.addEventListener("loadedmetadata", () =>{
                                             console.log("loadedmetadata:", window.playback_time);
                                             if(window.playback_time > 0){
@@ -3937,7 +3938,7 @@ def web_interface(args, ctx):
                                         gr_audiobook_player.load();
                                     }else{
                                         clearTimeout(init_audiobook_player_timeout);
-                                        console.log("Componenents not ready... retrying");
+                                        console.log('gr_audiobook_player not ready');
                                         init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
                                     }
                                 }catch(e){
@@ -3969,10 +3970,8 @@ def web_interface(args, ctx):
                                         .then(vttText =>{
                                             parseVTTFast(vttText);
                                             if(gr_audiobook_player){
-                                                console.log('gr_audiobook_player exists');
                                                 gr_audiobook_player.load();
                                             }else{
-                                                console.log('gr_audiobook_player not ready');
                                                 window.init_audiobook_player();
                                             }
                                         });
