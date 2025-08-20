@@ -2012,6 +2012,7 @@ def convert_ebook(args, ctx=None):
             session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
 
             if not session['is_gui_process']:
+                session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
@@ -2053,7 +2054,6 @@ def convert_ebook(args, ctx=None):
                         error = f'check_programs() FFMPEG failed: {e}'
                 if error is None:
                     old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
-                    session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     if os.path.isdir(old_session_dir):
                         os.rename(old_session_dir, session['session_dir'])
                     session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
@@ -3513,6 +3513,7 @@ def web_interface(args, ctx):
                     session['status'] = 'ready'
                 session['is_gui_process'] = is_gui_process
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
+                session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 os.makedirs(session['custom_model_dir'], exist_ok=True)
