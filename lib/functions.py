@@ -2097,7 +2097,8 @@ def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if session['chapters_control']:
-                                    print('should code showing modal with all blocks to be selected')
+                                    msg = 'This option is under development and will be available soon!...'
+                                    show_alert({"type": "warning", "msg": msg})
                                 else:
                                     return finalize_audiobook(id)
                             else:
@@ -3932,7 +3933,7 @@ def web_interface(args, ctx):
                                                 }
                                                 const now = performance.now();
                                                 if(now - last_time > 1000){
-                                                    console.log("timeupdate", window.playback_time);
+                                                  //console.log("timeupdate", window.playback_time);
                                                     gr_playback_time.value = String(window.playback_time);
                                                     gr_playback_time.dispatchEvent(new Event("input",{ bubbles: true }));
                                                     last_time = now;
