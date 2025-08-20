@@ -3056,15 +3056,16 @@ def web_interface(args, ctx):
                         vtt_path = Path(audiobook).with_suffix('.vtt')
                         if os.path.exists(vtt_path):
                             os.remove(vtt_path)
-                        process_dir = session.get('process_dir') or ''  # coerce None -> ''
-                        if isinstance(process_dir, (str, bytes, os.PathLike)) and os.path.isdir(process_dir):
-                            chapters_dirs = [
-                                d for d in os.listdir(process_dir)
-                                if fnmatch.fnmatch(d, "chapters_*")
-                                and os.path.isdir(os.path.join(process_dir, d))
-                            ]
-                        else:
-                            chapters_dirs = []
+                        process_dir = session.get('process_dir') or ''
+                        if process_dir != '':
+                            if isinstance(process_dir, (str, bytes, os.PathLike)) and os.path.isdir(process_dir):
+                                chapters_dirs = [
+                                    d for d in os.listdir(process_dir)
+                                    if fnmatch.fnmatch(d, "chapters_*")
+                                    and os.path.isdir(os.path.join(process_dir, d))
+                                ]
+                            else:
+                                chapters_dirs = []
                         shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
                         if session['is_gui_process']:
                             if len(chapters_dirs) > 1:
@@ -3075,7 +3076,7 @@ def web_interface(args, ctx):
                                 if os.path.exists(session['cover']):
                                     os.remove(session['cover'])
                             else:
-                                if session['process_dir'] is not None:
+                                if session['process_dir'] != '':
                                     if os.path.exists(session['process_dir']):
                                         shutil.rmtree(session['process_dir'], ignore_errors=True)
                         else:
@@ -4048,6 +4049,7 @@ def web_interface(args, ctx):
                             window.load_vtt = (path) =>{
                                 try{
                                     cues = [];
+                                    console.log('window.load_vtt: ', path);
                                     if(path){
                                         gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         // Remove any <track> to bypass browser subtitle engine
