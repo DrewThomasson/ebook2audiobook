@@ -4005,44 +4005,6 @@ def web_interface(args, ctx):
                                     console.log("init_audiobook_player error:", e);
                                 }
                             };
-                            
-                            function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
-                                const seen = new WeakSet();
-                                const fireFor = (ctx) => {
-                                    ctx.querySelectorAll(selector).forEach((el) => {
-                                        if(seen.has(el)){
-                                            return;
-                                        }
-                                        seen.add(el);
-                                        callback(el);
-                                    });
-                                };
-                                fireFor(root);
-                                const observer = new MutationObserver((mutations) => {
-                                    for (const m of mutations) {
-                                        for (const n of m.addedNodes) {
-                                            if (n.nodeType !== 1) continue;
-                                            if (n.matches?.(selector)) {
-                                                if (!seen.has(n)) {
-                                                    seen.add(n);
-                                                    callback(n);
-                                                    if (once) {
-                                                        observer.disconnect();
-                                                        return;
-                                                    }
-                                                }
-                                            } else {
-                                                fireFor(n);
-                                            }
-                                        }
-                                    }
-                                });
-                                observer.observe(root, { childList: true, subtree: true });
-                                return () => observer.disconnect();
-                            }
-                            const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
-                                window.init_audiobook_player?.();
-                            }, { once: false });
                         }              
                         if(typeof(window.load_vtt) !== "function"){
                             window.load_vtt_timeout = null;
@@ -4146,6 +4108,47 @@ def web_interface(args, ctx):
                             }
                             return null;
                         }
+                        
+                        //////////////////////
+                        
+                        function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
+                            const seen = new WeakSet();
+                            const fireFor = (ctx) => {
+                                ctx.querySelectorAll(selector).forEach((el) => {
+                                    if(seen.has(el)){
+                                        return;
+                                    }
+                                    seen.add(el);
+                                    callback(el);
+                                });
+                            };
+                            fireFor(root);
+                            const observer = new MutationObserver((mutations) => {
+                                for (const m of mutations) {
+                                    for (const n of m.addedNodes) {
+                                        if (n.nodeType !== 1) continue;
+                                        if (n.matches?.(selector)) {
+                                            if (!seen.has(n)) {
+                                                seen.add(n);
+                                                callback(n);
+                                                if (once) {
+                                                    observer.disconnect();
+                                                    return;
+                                                }
+                                            }
+                                        } else {
+                                            fireFor(n);
+                                        }
+                                    }
+                                }
+                            });
+                            observer.observe(root, { childList: true, subtree: true });
+                            return () => observer.disconnect();
+                        }
+                        const stop = onElementAvailable('#gr_audiobook_player', (el) => {
+                            clearTimeout(init_audiobook_player_timeout);
+                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
+                        }, { once: false });
                         
                         //////////////////////
 
