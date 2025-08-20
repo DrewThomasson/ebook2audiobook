@@ -3008,10 +3008,15 @@ def web_interface(args, ctx):
                         vtt_path = Path(audiobook).with_suffix('.vtt')
                         if os.path.exists(vtt_path):
                             os.remove(vtt_path)
-                        chapters_dirs = [
-                            dir_name for dir_name in os.listdir(session['process_dir'])
-                            if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
-                        ] if os.path.isdir(session.get('process_dir', '')) else []
+                        process_dir = session.get('process_dir') or ''  # coerce None -> ''
+                        if isinstance(process_dir, (str, bytes, os.PathLike)) and os.path.isdir(process_dir):
+                            chapters_dirs = [
+                                d for d in os.listdir(process_dir)
+                                if fnmatch.fnmatch(d, "chapters_*")
+                                and os.path.isdir(os.path.join(process_dir, d))
+                            ]
+                        else:
+                            chapters_dirs = []
                         shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
                         if session['is_gui_process']:
                             if len(chapters_dirs) > 1:
