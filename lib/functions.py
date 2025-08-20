@@ -2814,6 +2814,7 @@ def web_interface(args, ctx):
             if selected is not None:
                 audio_info = mediainfo(selected)
                 session['duration'] = float(audio_info['duration'])
+                session['playback_time'] = 0
             return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected))
         
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
@@ -3933,7 +3934,7 @@ def web_interface(args, ctx):
                                                 }
                                                 const now = performance.now();
                                                 if(now - last_time > 1000){
-                                                  //console.log("timeupdate", window.playback_time);
+                                                    //console.log("timeupdate", window.playback_time);
                                                     gr_playback_time.value = String(window.playback_time);
                                                     gr_playback_time.dispatchEvent(new Event("input",{ bubbles: true }));
                                                     last_time = now;
@@ -3994,6 +3995,7 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
+                                                window.playback_time = 0;
                                                 if(gr_audiobook_player){
                                                     gr_audiobook_player.load();
                                                 }else{
