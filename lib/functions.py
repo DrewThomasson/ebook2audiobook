@@ -3802,10 +3802,6 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
-            fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
-            inputs=[gr_session],
-            outputs=[gr_glass_mask]
-        ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
             inputs=None,
             outputs=[gr_group_audiobook_list],
@@ -3814,11 +3810,15 @@ def web_interface(args, ctx):
             inputs=None,
             js='()=>{window.init_elements();}',
             outputs=None
+        ).then(
+            fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
+            inputs=[gr_session],
+            outputs=[gr_glass_mask]
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn, gr_group_audiobook_list]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
         ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
             inputs=None,
@@ -3827,7 +3827,7 @@ def web_interface(args, ctx):
         gr_confirm_no_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn, gr_group_audiobook_list]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
         )
         app.load(
             fn=None,
