@@ -3435,13 +3435,13 @@ def web_interface(args, ctx):
                             reset_ebook_session(args['session'])
                             msg = 'Conversion successful!'
                             session['status'] = 'ready'
-                            yield gr.update(value=msg)
+                            return gr.update(value=msg)
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            yield gr.update(value='')
+            return gr.update(value='')
 
         def update_gr_audiobook_list(id):
             try:
