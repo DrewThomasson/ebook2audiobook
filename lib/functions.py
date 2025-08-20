@@ -2610,6 +2610,7 @@ def web_interface(args, ctx):
             gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
             with gr.Row(elem_id='gr_row_audiobook_list'):
                 gr_audiobook_download_btn = gr.DownloadButton(elem_id='gr_audiobook_download_btn', label='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
+                gr_audiobook_files = gr.Files(label="Downloads", visible=False)
                 gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
                 gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
         gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
@@ -3294,19 +3295,19 @@ def web_interface(args, ctx):
             session['playback_time'] = time
             return
 
-        def bundle_audio_and_vtt_bytes(audiobook: str):
+        def collect_audio_and_vtt(audiobook):
+            if not audiobook:
+                error = 'No audiobook selected.'
+                raise gr.Error(error)
             p = Path(audiobook)
             if not p.exists():
                 error = f'Audio not found: {p}'
                 raise gr.Error(error)
-            vtt = p.with_suffix(".vtt")
-            buf = io.BytesIO()
-            with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-                zf.write(str(p), arcname=p.name)
-                if vtt.exists():
-                    zf.write(str(vtt), arcname=vtt.name)
-            buf.seek(0)
-            return gr.update(value=buf.getvalue(), file_name=f'{p.stem}.zip')
+            files = [str(p)]
+            vtt = p.with_suffix('.vtt')
+            if vtt.exists():
+                files.append(str(vtt))
+            return gr.update(value=files, visible=True)
 
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
@@ -3671,9 +3672,9 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_audiobook_download_btn.click(
-            fn=bundle_audio_and_vtt_bytes,
+            fn=collect_audio_and_vtt,
             inputs=[gr_audiobook_list],
-            outputs=[gr_audiobook_download_btn],
+            outputs=[gr_audiobook_files],
             show_progress="minimal",
         )
         gr_audiobook_list.change(
