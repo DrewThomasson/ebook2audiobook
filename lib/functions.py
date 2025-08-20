@@ -3310,19 +3310,19 @@ def web_interface(args, ctx):
             if not audiobook:
                 error = 'No audiobook selected.'
                 alert_exception(error)
-                return gr.update(), gr.update()
+                return gr.update(), False
             if is_visible:
-                return gr.update(visible=False, value=None), gr.update(value=False)
+                return gr.update(visible=False, value=None), False
             p = Path(audiobook)
             if not p.exists():
                 error = f'Audio not found: {p}'
                 alert_exception(error)
-                return gr.update(), gr.update()
+                return gr.update(), False
             files = [str(p)]
             vtt = p.with_suffix(".vtt")
             if vtt.exists():
                 files.append(str(vtt))
-            return gr.update(visible=True, value=files), gr.update(value=True)
+            return gr.update(visible=True, value=files), True
 
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
