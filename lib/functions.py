@@ -3806,13 +3806,13 @@ def web_interface(args, ctx):
             inputs=[gr_session],
             outputs=[gr_glass_mask]
         ).then(
-            fn=None,
-            inputs=None,
-            js='()=>{window.init_elements();}'
-         ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
             inputs=None,
             outputs=[gr_group_audiobook_list],
+        ).then(
+            fn=None,
+            inputs=None,
+            js='()=>{window.init_elements();}'
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
