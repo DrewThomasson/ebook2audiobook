@@ -2429,6 +2429,12 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             ////////////
+            #gr_audiobook_files {
+                height: auto;
+                animation: fadeSlideIn .22s ease-out both;
+                will-change: opacity, transform;
+            }
+            ///////////
             .fade-in {
                 animation: fadeIn 1s ease-in;
                 display: inline-block;
@@ -2436,6 +2442,10 @@ def web_interface(args, ctx):
             @keyframes fadeIn {
                 from { opacity: 0; }
                 to { opacity: 1; }
+            }
+            @keyframes fadeSlideIn {
+                from { opacity: 0; transform: translateY(8px); }
+                to   { opacity: 1; transform: translateY(0); }
             }
         </style>
     '''
