@@ -3540,7 +3540,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
-        async def save_session(id, state):
+        def save_session(id, state):
             try:
                 if id:
                     if id in context.sessions:
@@ -3553,20 +3553,20 @@ def web_interface(args, ctx):
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
                                     state['hash'] = new_hash
                                     session_dict = json.dumps(session, cls=JSONEncoderWithDictProxy)
-                                    yield gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
+                                    return gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
                             else:
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
                                 if previous_hash == new_hash:
-                                    yield gr.update(), gr.update(), gr.update()
+                                    return gr.update(), gr.update(), gr.update()
                                 else:
                                     state['hash'] = new_hash
                                     session_dict = json.dumps(session, cls=JSONEncoderWithDictProxy)
-                                    yield gr.update(value=session_dict), gr.update(value=state), gr.update()
-                yield gr.update(), gr.update(), gr.update()
+                                    return gr.update(value=session_dict), gr.update(value=state), gr.update()
+                return gr.update(), gr.update(), gr.update()
             except Exception as e:
                 error = f'save_session(): {e}!'
                 alert_exception(error)              
-                yield gr.update(), gr.update(value=e), gr.update()
+                return gr.update(), gr.update(value=e), gr.update()
         
         def clear_event(id):
             if id:
