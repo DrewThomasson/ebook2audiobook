@@ -3993,6 +3993,7 @@ def web_interface(args, ctx):
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
                                                 if(gr_audiobook_player){
+                                                    gr_audiobook_player.style.filter = audioFilter;      
                                                     gr_audiobook_player.load();
                                                 }else{
                                                     window.init_audiobook_player();
