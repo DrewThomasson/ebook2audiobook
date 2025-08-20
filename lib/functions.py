@@ -2626,6 +2626,14 @@ def web_interface(args, ctx):
                 session_id = context.find_id_by_hash(socket_hash)
                 ctx_tracker.end_session(session_id, socket_hash)
 
+        def disable_components():
+            outputs = tuple([gr.update(interactive=False) for _ in range(9)])
+            return outputs
+        
+        def enable_components():
+            outputs = tuple([gr.update(interactive=True) for _ in range(9)])
+            return outputs
+
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
                 return None
@@ -2820,7 +2828,7 @@ def web_interface(args, ctx):
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
         
-        def state_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
+        def change_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
@@ -2832,30 +2840,8 @@ def web_interface(args, ctx):
                     else:
                         return gr.update(variant='primary', interactive=False)
             except Exception as e:
-                error = f'state_convert_btn(): {e}'
+                error = f'change_convert_btn(): {e}'
                 alert_exception(error)
-        
-        def disable_components():
-            outputs = tuple([gr.update(interactive=False) for _ in range(9)])
-            return outputs
-        
-        def enable_components():
-            outputs = tuple([gr.update(interactive=True) for _ in range(9)])
-            return outputs
-
-        def bundle_audio_and_vtt_bytes(audiobook: str):
-            p = Path(audiobook)
-            if not p.exists():
-                error = f'Audio not found: {p}'
-                raise gr.Error(error)
-            vtt = p.with_suffix(".vtt")
-            buf = io.BytesIO()
-            with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-                zf.write(str(p), arcname=p.name)
-                if vtt.exists():
-                    zf.write(str(vtt), arcname=vtt.name)
-            buf.seek(0)
-            return gr.update(value=buf.getvalue(), file_name=f'{p.stem}.zip')
 
         def change_gr_ebook_file(data, id):
             try:
@@ -3308,6 +3294,20 @@ def web_interface(args, ctx):
             session['playback_time'] = time
             return
 
+        def bundle_audio_and_vtt_bytes(audiobook: str):
+            p = Path(audiobook)
+            if not p.exists():
+                error = f'Audio not found: {p}'
+                raise gr.Error(error)
+            vtt = p.with_suffix(".vtt")
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                zf.write(str(p), arcname=p.name)
+                if vtt.exists():
+                    zf.write(str(vtt), arcname=vtt.name)
+            buf.seek(0)
+            return gr.update(value=buf.getvalue(), file_name=f'{p.stem}.zip')
+
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
             session[key] = val
@@ -3552,7 +3552,7 @@ def web_interface(args, ctx):
                     session['event'] = None
 
         gr_ebook_file.change(
-            fn=state_convert_btn,
+            fn=change_convert_btn,
             inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
             outputs=[gr_convert_btn]
         ).then(
@@ -3754,7 +3754,7 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_convert_btn.click(
-            fn=state_convert_btn,
+            fn=change_convert_btn,
             inputs=None,
             outputs=[gr_convert_btn]
         ).then(
