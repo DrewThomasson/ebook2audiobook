@@ -1461,7 +1461,7 @@ def convert_chapters2audio(id):
                             progress_bar(total_progress)
                             is_sentence = sentence.strip() not in TTS_SML.values()
                             percentage = total_progress * 100
-                            t.set_description(f"{sesino['ebook']}: {percentage:.2f}%")
+                            t.set_description(f"{session['ebook']}: {percentage:.2f}%")
                             msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
                         else:
