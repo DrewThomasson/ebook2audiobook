@@ -3029,6 +3029,7 @@ def web_interface(args, ctx):
             try:
                 if method is not None:
                     session = context.get_session(id)
+                    print(session)
                     if method == 'confirm_voice_del':
                         selected_name = Path(voice_path).stem
                         pattern = re.sub(r'\.wav$', '*.wav', voice_path)
