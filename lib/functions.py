@@ -3296,7 +3296,7 @@ def web_interface(args, ctx):
             session['playback_time'] = time
             return
 
-        def toggle_audiobook_files(audiobook: str, is_visible: bool):
+        def toggle_audiobook_files(audiobook, is_visible):
             if not audiobook:
                 raise gr.Error("No audiobook selected.")
             if is_visible:
@@ -3674,8 +3674,8 @@ def web_interface(args, ctx):
         )
         gr_audiobook_download_btn.click(
             fn=toggle_audiobook_files,
-            inputs=[gr_audiobook_list, gr_audiobook_files_visible],
-            outputs=[gr_audiobook_files, gr_audiobook_files_visible],
+            inputs=[gr_audiobook_list, gr_audiobook_files_toggled],
+            outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
             show_progress="minimal",
         )
         gr_audiobook_list.change(
