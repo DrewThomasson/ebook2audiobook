@@ -2825,7 +2825,7 @@ def web_interface(args, ctx):
                 audio_info = mediainfo(selected)
                 session['duration'] = float(audio_info['duration'])
                 session['playback_time'] = 0
-            return gr.update(value=selected), gr.update(value=selected), gr.update(value=load_vtt_data(selected))
+            return gr.update(gr.update(value=selected), gr.update(value=load_vtt_data(selected))
         
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
             return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
@@ -3681,7 +3681,7 @@ def web_interface(args, ctx):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_download_btn, gr_audiobook_player, gr_audiobook_vtt]
+            outputs=[gr_audiobook_player, gr_audiobook_vtt]
         ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
