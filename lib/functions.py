@@ -4008,7 +4008,6 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
-                                                window.playback_time = 0;
                                                 if(gr_audiobook_player){
                                                     gr_audiobook_player.load();
                                                 }else{
