@@ -3850,7 +3850,7 @@ def web_interface(args, ctx):
                             window.init_elements = () =>{
                                 try{
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress textarea");
+                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
