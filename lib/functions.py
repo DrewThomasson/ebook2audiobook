@@ -3378,7 +3378,7 @@ def web_interface(args, ctx):
                                 else:
                                     show_alert({"type": "success", "msg": progress_status})
                                     args['ebook_list'].remove(file)
-                                    #reset_ebook_session(args['session'])
+                                    reset_ebook_session(args['session'])
                                     count_file = len(args['ebook_list'])
                                     if count_file > 0:
                                         msg = f"{len(args['ebook_list'])} remaining..."
@@ -3755,14 +3755,6 @@ def web_interface(args, ctx):
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
             outputs=[gr_tab_progress]
-        ).then(
-            fn=enable_components,
-            inputs=None,
-            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
-        ).then(
-            fn=refresh_interface,
-            inputs=[gr_session],
-            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
         )
         gr_write_data.change(
             fn=None,
