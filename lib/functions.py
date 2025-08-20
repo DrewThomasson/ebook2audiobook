@@ -2613,6 +2613,7 @@ def web_interface(args, ctx):
                 gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
                 gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
             gr_audiobook_files = gr.Files(label="Downloads", visible=False)
+            gr_audiobook_files_toggled = gr.State(False)
         gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
         
         gr_modal = gr.HTML(visible=False)
@@ -3295,19 +3296,19 @@ def web_interface(args, ctx):
             session['playback_time'] = time
             return
 
-        def collect_audio_and_vtt(audiobook):
+        def toggle_audiobook_files(audiobook: str, is_visible: bool):
             if not audiobook:
-                error = 'No audiobook selected.'
-                raise gr.Error(error)
+                raise gr.Error("No audiobook selected.")
+            if is_visible:
+                return gr.update(visible=False, value=None), False
             p = Path(audiobook)
             if not p.exists():
-                error = f'Audio not found: {p}'
-                raise gr.Error(error)
+                raise gr.Error(f"Audio not found: {p}")
             files = [str(p)]
-            vtt = p.with_suffix('.vtt')
+            vtt = p.with_suffix(".vtt")
             if vtt.exists():
                 files.append(str(vtt))
-            return gr.update(value=files, visible=True)
+            return gr.update(visible=True, value=files), True
 
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
@@ -3672,9 +3673,9 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_audiobook_download_btn.click(
-            fn=collect_audio_and_vtt,
-            inputs=[gr_audiobook_list],
-            outputs=[gr_audiobook_files],
+            fn=toggle_audiobook_files,
+            inputs=[gr_audiobook_list, gr_audiobook_files_visible],
+            outputs=[gr_audiobook_files, gr_audiobook_files_visible],
             show_progress="minimal",
         )
         gr_audiobook_list.change(
