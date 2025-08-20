@@ -2435,14 +2435,13 @@ def web_interface(args, ctx):
             }
             ////////////
             #gr_audiobook_files {
-                height: auto;
-                animation: fadeSlideIn ease-out both;
-                will-change: opacity, transform;
+                animation: fadeSlideIn ease-out both !important;
+                will-change: opacity, transform !important;
             }
             ///////////
             .fade-in {
-                animation: fadeIn 1s ease-in;
-                display: inline-block;
+                animation: fadeIn 1s ease-in !important;
+                display: inline-block !important;
             }
             @keyframes fadeIn {
                 from { opacity: 0; }
