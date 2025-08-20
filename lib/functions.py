@@ -3704,13 +3704,18 @@ def web_interface(args, ctx):
         ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
-            outputs=None,
-            js=(
-                '(data)=>{'
-                '  const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));'
-                '  window.load_vtt?.(url);'
-                '}'
+            js='''
+                (data)=>{
+                const empty = data == null || (typeof data === "string" && data.trim() === "");
+                   if(empty){
+                       const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));
+                       window.load_vtt?.(url);
+                
+                    }
+                }
+            '''
             ),
+            outputs=None
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
