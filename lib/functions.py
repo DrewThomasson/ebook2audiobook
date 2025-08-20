@@ -2855,7 +2855,7 @@ def web_interface(args, ctx):
                 if vtt.exists():
                     zf.write(str(vtt), arcname=vtt.name)
             buf.seek(0)
-            return gr.update(value=buf.getvalue(), file_name=f'{p.stem}.zip'
+            return gr.update(value=buf.getvalue(), file_name=f'{p.stem}.zip')
 
         def change_gr_ebook_file(data, id):
             try:
