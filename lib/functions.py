@@ -3960,7 +3960,7 @@ def web_interface(args, ctx):
                                             existing.remove();
                                         }
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                        if(gr_audiobook_sentence)}
+                                        if(gr_audiobook_sentence){
                                             gr_audiobook_sentence.style.fontSize = "14px";
                                             gr_audiobook_sentence.style.fontWeight = "bold";
                                             gr_audiobook_sentence.style.width = "100%";
