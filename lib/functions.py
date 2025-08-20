@@ -1436,6 +1436,7 @@ def convert_chapters2audio(id):
         msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
         print(msg)
         progress_bar = gr.Progress(track_tqdm=False)
+        ebook_name = Path(session['ebook']).stem
         with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
@@ -1461,7 +1462,7 @@ def convert_chapters2audio(id):
                             progress_bar(total_progress)
                             is_sentence = sentence.strip() not in TTS_SML.values()
                             percentage = total_progress * 100
-                            t.set_description(f"{Path(session['ebook']).stem}: {percentage:.2f}%")
+                            t.set_description(f"{ebook_name}: {percentage:.2f}%")
                             msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
                         else:
@@ -1647,7 +1648,7 @@ def combine_audio_chapters(id):
             for filename, chapter_title in part_chapters:
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
-                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), sanitize_chapter_title(chapter_title))
+                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), sanitize_meta_chapter_title(chapter_title))
                 ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
                 ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
                 ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
@@ -1871,7 +1872,7 @@ def ellipsize_utf8_bytes(s: str, max_bytes: int, ellipsis: str = "...") -> str:
         out.extend(b)
     return out.decode("utf-8") + ellipsis
 
-def sanitize_chapter_title(title: str, max_bytes: int = 140) -> str:
+def sanitize_meta_chapter_title(title: str, max_bytes: int = 140) -> str:
     # avoid None and embedded NULs which some muxers accidentally keep
     title = (title or '').replace('\x00', '')
     title = title.replace(TTS_SML['pause'], '')
