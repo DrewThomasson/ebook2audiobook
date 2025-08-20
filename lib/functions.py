@@ -3946,6 +3946,7 @@ def web_interface(args, ctx):
                                     let fade_timeout = null;
                                     let last_time = 0;
                                     let set_playback_time = false;
+                                    let audioFilter = "";
                                     if(gr_audiobook_player && gr_audiobook_sentence){
                                         console.log('gr_audiobook_player ready!');
                                         gr_audiobook_player.addEventListener("loadedmetadata", () =>{
@@ -3995,7 +3996,6 @@ def web_interface(args, ctx):
                                         const url = new URL(window.location);
                                         const theme = url.searchParams.get("__theme");
                                         let osTheme;
-                                        let audioFilter = "";
                                         if(theme){
                                             if(theme === "dark"){
                                                 audioFilter = "invert(1) hue-rotate(180deg)";
@@ -4020,7 +4020,6 @@ def web_interface(args, ctx):
                             window.load_vtt = (path) =>{
                                 try{
                                     cues = [];
-                                    console.log('window.load_vtt: ', path);
                                     if(path){
                                         gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         // Remove any <track> to bypass browser subtitle engine
@@ -4043,6 +4042,10 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
+                                                if(gr_audiobook_player){
+                                                    gr_audiobook_player.style.filter = audioFilter;      
+                                                    gr_audiobook_player.load();
+                                                }
                                             });
                                         }
                                     }
