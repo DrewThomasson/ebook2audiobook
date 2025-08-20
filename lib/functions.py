@@ -1936,7 +1936,7 @@ def convert_ebook_batch(args, ctx=None):
                     print(f'Conversion failed: {progress_status}')
                     sys.exit(1)
                 args['ebook_list'].remove(file) 
-        reset_ebook_session(args['session'])
+        reset_session(args['session'])
         return progress_status, passed
     else:
         print(f'the ebooks source is not a list!')
@@ -2179,7 +2179,7 @@ def restore_session_from_data(data, session):
     except Exception as e:
         DependencyError(e)
 
-def reset_ebook_session(id):
+def reset_session(id):
     session = context.get_session(id)
     data = {
         "ebook": None,
@@ -3413,7 +3413,7 @@ def web_interface(args, ctx):
                                 else:
                                     show_alert({"type": "success", "msg": progress_status})
                                     args['ebook_list'].remove(file)
-                                    reset_ebook_session(args['session'])
+                                    reset_session(args['session'])
                                     count_file = len(args['ebook_list'])
                                     if count_file > 0:
                                         msg = f"{len(args['ebook_list'])} remaining..."
@@ -3433,7 +3433,7 @@ def web_interface(args, ctx):
                             session['status'] = 'ready'
                         else:
                             show_alert({"type": "success", "msg": progress_status})
-                            reset_ebook_session(args['session'])
+                            reset_session(args['session'])
                             msg = 'Conversion successful!'
                             session['status'] = 'ready'
                             return gr.update(value=msg)
@@ -4056,7 +4056,7 @@ def web_interface(args, ctx):
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const prct = val.trim().split(" ")[4];
-                                    console.log('tab_progress.value: ', val);
+                                    console.log('tab_progress.value: ', prct);
                                     if(prct && /^\d+(\.\d+)?%$/.test(prct)){
                                         document.title = "Ebook2Audiobook: " + prct;
                                     }
