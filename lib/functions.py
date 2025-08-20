@@ -2803,7 +2803,6 @@ def web_interface(args, ctx):
         def refresh_interface(id):
             session = context.get_session(id)
             visible = True if len(audiobook_options) > 0 else False
-            
             return (
                     gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
@@ -3805,11 +3804,15 @@ def web_interface(args, ctx):
         ).then(
             fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
             inputs=[gr_session],
-            outputs=[gr_glass_mask]
+            outputs=[gr_glass_mask, gr_group]
         ).then(
             fn=None,
             inputs=None,
             js='()=>{window.init_elements();}'
+        ).then(
+            fn=lambda gr.update(visible=True) if len(audiobook_options) > 0 else gr.update(viible=False),
+            inputs=None,
+            outputs=[gr_group_audiobook_list]
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
