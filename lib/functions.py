@@ -2504,7 +2504,7 @@ def web_interface(args, ctx):
                                     gr_output_split = gr.Checkbox(label='Split Output File', elem_id='gr_output_split', value=default_output_split, interactive=True)
                                     gr_row_output_split_hours = gr.Row(elem_id='gr_row_output_split_hours', visible=False)
                                     with gr_row_output_split_hours:
-                                        gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown', value='<p style="font-size: 13px; width:100%; height:auto; margin:auto; text-align:center; margin:0; white-space: nowrap">Max Hours<br/>/Part')
+                                        gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown', value='<p style="font-size: 13px; width:100%; height:100%; margin:auto; text-align:center; margin:0; white-space: nowrap">Max Hours<br/>/Part')
                                         gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True, scale=0)
                         gr_session = gr.Textbox(label='Session', elem_id='gr_session', interactive=False)
             gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
