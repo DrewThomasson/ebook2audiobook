@@ -3840,11 +3840,10 @@ def web_interface(args, ctx):
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress textarea");
                                     gr_group_audiobook_list = gr_root.querySelector("#gr_group_audiobook_list");
-                                    gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                    if(!gr_root || !gr_group_audiobook_list || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
+                                    if(!gr_root || !gr_group_audiobook_list || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_tab_progress){
                                         clearTimeout(init_elements_timeout);
                                         console.log("Componenents not ready... retrying");
                                         init_elements_timeout = setTimeout(init_elements, 1000);
@@ -3860,11 +3859,12 @@ def web_interface(args, ctx):
                             window.init_audiobook_player = () =>{
                                 try{
                                     gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
+                                    gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
                                     let set_playback_time = false;
-                                    if(gr_audiobook_player){
+                                    if(gr_audiobook_player && gr_audiobook_sentence){
                                         console.log('gr_audiobook_player ready!');
                                         gr_audiobook_player.addEventListener("loadedmetadata", () =>{
                                             console.log("loadedmetadata:", window.playback_time);
@@ -3944,10 +3944,6 @@ def web_interface(args, ctx):
                                         }
                                         gr_audiobook_player.style.filter = audioFilter;      
                                         gr_audiobook_player.load();
-                                    }else{
-                                        clearTimeout(init_audiobook_player_timeout);
-                                        console.log('gr_audiobook_player not ready');
-                                        init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
                                     }
                                 }catch(e){
                                     console.log("init_audiobook_player error:", e);
