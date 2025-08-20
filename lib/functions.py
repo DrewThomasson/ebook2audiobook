@@ -2386,6 +2386,9 @@ def web_interface(args, ctx):
             #gr_voice_list {
                 height: 60px !important;
             }
+            #gr_output_format_list {
+                height: 200px !important;
+            }
             #gr_ebook_mode span[data-testid="block-info"],
             #gr_voice_list span[data-testid="block-info"],
             #gr_output_split_hours span[data-testid="block-info"],
