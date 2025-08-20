@@ -3027,8 +3027,9 @@ def web_interface(args, ctx):
                                 if os.path.exists(session['cover']):
                                     os.remove(session['cover'])
                             else:
-                                if os.path.exists(session['process_dir']):
-                                    shutil.rmtree(session['process_dir'], ignore_errors=True)
+                                if session['process_dir'] is not None:
+                                    if os.path.exists(session['process_dir']):
+                                        shutil.rmtree(session['process_dir'], ignore_errors=True)
                         else:
                             if os.path.exists(session['voice_dir']):
                                 if not any(os.scandir(session['voice_dir'])):
