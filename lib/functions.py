@@ -3895,6 +3895,7 @@ def web_interface(args, ctx):
                         let gr_tab_progress;
                         let init_elements_timeout;
                         let init_audiobook_player_timeout;
+                        let audioFilter = "";
                         let cues = [];
  
                         if(typeof(window.init_elements) !== "function"){
@@ -3946,7 +3947,6 @@ def web_interface(args, ctx):
                                     let fade_timeout = null;
                                     let last_time = 0;
                                     let set_playback_time = false;
-                                    let audioFilter = "";
                                     if(gr_audiobook_player && gr_audiobook_sentence){
                                         console.log('gr_audiobook_player ready!');
                                         gr_audiobook_player.addEventListener("loadedmetadata", () =>{
