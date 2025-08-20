@@ -3937,9 +3937,7 @@ def web_interface(args, ctx):
                                         gr_checkboxes.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
                                         gr_radios.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
                                     }
-                                    // Observe programmatic changes
                                     new MutationObserver(tab_progress).observe(gr_tab_progress,{ attributes: true, childList: true, subtree: true, characterData: true });
-                                    // Also catch user edits
                                     gr_tab_progress.addEventListener("input", tab_progress);
                                     console.log("Components ready!");
                                 }catch(e){
@@ -3951,6 +3949,7 @@ def web_interface(args, ctx):
                             window.init_audiobook_player = () =>{
                                 try{
                                     gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
+                                    gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
@@ -4030,7 +4029,7 @@ def web_interface(args, ctx):
                                 try{
                                     cues = [];
                                     console.log('window.load_vtt: ', path);
-                                    if(path){
+                                    if(path && path != 'blob:'){
                                         gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
