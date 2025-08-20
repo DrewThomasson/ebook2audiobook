@@ -3848,6 +3848,24 @@ def web_interface(args, ctx):
                                         init_elements_timeout = setTimeout(init_elements, 1000);
                                         return;
                                     }
+                                    const url = new URL(window.location);
+                                    const theme = url.searchParams.get("__theme");
+                                    let osTheme;
+                                    let elColor = "#666666";
+                                    if(theme){
+                                        if(theme === "dark"){
+                                            elColor = "#fff";
+                                        }
+                                        gr_checkboxes.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
+                                        gr_radios.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
+                                    }else{
+                                        osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+                                        if(osTheme){
+                                            elColor = "#fff";
+                                        }
+                                        gr_checkboxes.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
+                                        gr_radios.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
+                                    }
                                     console.log("Components ready!");
                                 }catch(e){
                                     console.log("init_elements error:", e);
@@ -3920,22 +3938,15 @@ def web_interface(args, ctx):
                                         const theme = url.searchParams.get("__theme");
                                         let osTheme;
                                         let audioFilter = "";
-                                        let elColor = "#666666";
                                         if(theme){
                                             if(theme === "dark"){
                                                 audioFilter = "invert(1) hue-rotate(180deg)";
-                                                elColor = "#fff";
                                             }
-                                            gr_checkboxes.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
-                                            gr_radios.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
                                         }else{
                                             osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
                                             if(osTheme){
                                                 audioFilter = "invert(1) hue-rotate(180deg)";
-                                                elColor = "#fff";
                                             }
-                                            gr_checkboxes.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
-                                            gr_radios.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
                                         }
                                         if(!gr_audiobook_player.style.transition){
                                             gr_audiobook_player.style.transition = "filter 1s ease";
