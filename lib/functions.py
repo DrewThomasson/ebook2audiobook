@@ -3011,7 +3011,7 @@ def web_interface(args, ctx):
                         chapters_dirs = [
                             dir_name for dir_name in os.listdir(session['process_dir'])
                             if fnmatch.fnmatch(dir_name, "chapters_*") and os.path.isdir(os.path.join(session['process_dir'], dir_name))
-                        ]
+                        ] if os.path.isdir(session.get('process_dir', '')) else []
                         shutil.rmtree(os.path.join(session['voice_dir'], 'proc'), ignore_errors=True)
                         if session['is_gui_process']:
                             if len(chapters_dirs) > 1:
