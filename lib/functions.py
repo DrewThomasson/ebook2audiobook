@@ -3378,7 +3378,7 @@ def web_interface(args, ctx):
                                 else:
                                     show_alert({"type": "success", "msg": progress_status})
                                     args['ebook_list'].remove(file)
-                                    reset_ebook_session(args['session'])
+                                    #reset_ebook_session(args['session'])
                                     count_file = len(args['ebook_list'])
                                     if count_file > 0:
                                         msg = f"{len(args['ebook_list'])} remaining..."
@@ -3399,7 +3399,7 @@ def web_interface(args, ctx):
                             show_alert({"type": "success", "msg": progress_status})
                             reset_ebook_session(args['session'])
                             msg = 'Conversion successful!'
-                            return gr.update(value=msg)
+                            yield gr.update(value=msg)
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
