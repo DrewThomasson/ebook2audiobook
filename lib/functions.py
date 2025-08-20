@@ -3931,7 +3931,7 @@ def web_interface(args, ctx):
                             return () => observer.disconnect();
                         }
                         const stop = onElementAvailable('#gr_audiobook_player', (el) => {
-                            window.init_audiobook_player();
+                            window.init_audiobook_player?.();
                         }, { once: false });
                         
                         /////////////////////
