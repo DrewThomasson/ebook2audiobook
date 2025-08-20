@@ -3414,7 +3414,7 @@ def web_interface(args, ctx):
                 audiobook_options = [
                     (f, os.path.join(session['audiobooks_dir'], str(f)))
                     for f in os.listdir(session['audiobooks_dir'])
-                    if not f.lower().endswith(".vtt")  # exclude VTT files
+                    if not f.lower().endswith(".vtt")
                 ]
                 audiobook_options.sort(
                     key=lambda x: os.path.getmtime(x[1]),
@@ -3430,7 +3430,7 @@ def web_interface(args, ctx):
                         return gr.update(choices=audiobook_options, value=session['audiobook'])
                     else:
                         return gr.update(choices=audiobook_options, value=audiobook_options[0][1])
-                gr.update(choices=audiobook_options)
+                return r.update(choices=audiobook_options)
             except Exception as e:
                 error = f'update_gr_audiobook_list(): {e}!'
                 alert_exception(error)              
@@ -3759,6 +3759,10 @@ def web_interface(args, ctx):
             fn=enable_components,
             inputs=None,
             outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+        ).then(
+            fn=refresh_interface,
+            inputs=[gr_session],
+            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
         )
         gr_write_data.change(
             fn=None,
