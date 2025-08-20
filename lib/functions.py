@@ -2340,6 +2340,11 @@ def web_interface(args, ctx):
             .progress-bar.svelte-ls20lj {
                 background: orange !important;
             }
+            .file-preview-holder {
+                height: auto !important;
+                min-height: 0 !important;
+                max-height: none !important;
+            }
             #glass-mask {
                 position: fixed !important;
                 top: 0 !important;
