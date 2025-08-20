@@ -3859,7 +3859,6 @@ def web_interface(args, ctx):
                             window.init_audiobook_player = () =>{
                                 try{
                                     gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
-                                    gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     let lastCue = null;
                                     let fade_timeout = null;
                                     let last_time = 0;
@@ -3960,25 +3959,28 @@ def web_interface(args, ctx):
                                         if(existing){
                                             existing.remove();
                                         }
-                                        gr_audiobook_sentence.style.fontSize = "14px";
-                                        gr_audiobook_sentence.style.fontWeight = "bold";
-                                        gr_audiobook_sentence.style.width = "100%";
-                                        gr_audiobook_sentence.style.height = "auto";
-                                        gr_audiobook_sentence.style.textAlign = "center";
-                                        gr_audiobook_sentence.style.margin = "0";
-                                        gr_audiobook_sentence.style.padding = "7px 0 7px 0";
-                                        gr_audiobook_sentence.style.lineHeight = "14px";
-                                        gr_audiobook_sentence.value = "...";
-                                        fetch(path)
-                                        .then(res => res.text())
-                                        .then(vttText =>{
-                                            parseVTTFast(vttText);
-                                            if(gr_audiobook_player){
-                                                gr_audiobook_player.load();
-                                            }else{
-                                                window.init_audiobook_player();
-                                            }
-                                        });
+                                        gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                        if(gr_audiobook_sentence)}
+                                            gr_audiobook_sentence.style.fontSize = "14px";
+                                            gr_audiobook_sentence.style.fontWeight = "bold";
+                                            gr_audiobook_sentence.style.width = "100%";
+                                            gr_audiobook_sentence.style.height = "auto";
+                                            gr_audiobook_sentence.style.textAlign = "center";
+                                            gr_audiobook_sentence.style.margin = "0";
+                                            gr_audiobook_sentence.style.padding = "7px 0 7px 0";
+                                            gr_audiobook_sentence.style.lineHeight = "14px";
+                                            gr_audiobook_sentence.value = "...";
+                                            fetch(path)
+                                            .then(res => res.text())
+                                            .then(vttText =>{
+                                                parseVTTFast(vttText);
+                                                if(gr_audiobook_player){
+                                                    gr_audiobook_player.load();
+                                                }else{
+                                                    window.init_audiobook_player();
+                                                }
+                                            });
+                                        }
                                     }
                                 }catch(e){
                                     console.log("load_vtt error:", e);
