@@ -3695,7 +3695,11 @@ def web_interface(args, ctx):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_player, gr_audiobook_vtt]
+            outputs=[gr_audiobook_player]
+        ).then(
+            fn=lambda audiobook: load_vtt_data(audiobook),
+            inputs=gr_audiobook_player
+            outputs=None
         ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
