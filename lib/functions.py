@@ -3670,7 +3670,7 @@ def web_interface(args, ctx):
         gr_output_split.change(
             fn=change_gr_output_split,
             inputs=[gr_output_split, gr_session],
-            outputs=gr_output_split_hours
+            outputs=[gr_row_output_split_hours]
         )
         gr_output_split_hours.change(
             fn=lambda val, id: change_param('output_split_hours', str(val), id),
