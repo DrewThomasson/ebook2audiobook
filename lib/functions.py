@@ -3822,7 +3822,8 @@ def web_interface(args, ctx):
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
                         let gr_tab_progress;
-                        let load_timeout;
+                        let init_elements_timeout;
+                        let init_audiobook_player_timeout;
                         let cues = [];
 
                         if(typeof(window.init_elements) !== "function"){
@@ -3835,11 +3836,10 @@ def web_interface(args, ctx):
                                     gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
                                     gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                    gr_group_audiobook_list.style.display = 'block';
                                     if(!gr_root || !gr_group_audiobook_list || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_audiobook_sentence || !gr_tab_progress){
-                                        clearTimeout(load_timeout);
+                                        clearTimeout(init_elements_timeout);
                                         console.log("Componenents not ready... retrying");
-                                        load_timeout = setTimeout(init_elements, 1000);
+                                        init_elements_timeout = setTimeout(init_elements, 1000);
                                         return;
                                     }
                                     console.log("Componenents ready!");
@@ -3933,11 +3933,12 @@ def web_interface(args, ctx):
                                         if(!gr_audiobook_player.style.transition){
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                         }
-                                        gr_audiobook_player.style.filter = audioFilter;
-                                        gr_group_audiobook_list.style.display = 'block';      
+                                        gr_audiobook_player.style.filter = audioFilter;      
                                         gr_audiobook_player.load();
                                     }else{
-                                        gr_group_audiobook_list.style.display = 'none';
+                                        clearTimeout(init_audiobook_player_timeout);
+                                        console.log("Componenents not ready... retrying");
+                                        init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
                                     }
                                 }catch(e){
                                     console.log("init_audiobook_player error:", e);
@@ -3969,15 +3970,12 @@ def web_interface(args, ctx):
                                             parseVTTFast(vttText);
                                             if(gr_audiobook_player){
                                                 console.log('gr_audiobook_player exists');
-                                                gr_group_audiobook_list.style.display = 'block';
                                                 gr_audiobook_player.load();
                                             }else{
                                                 console.log('gr_audiobook_player not ready');
                                                 window.init_audiobook_player();
                                             }
                                         });
-                                    }else{
-                                        gr_group_audiobook_list.style.display = 'none';
                                     }
                                 }catch(e){
                                     console.log("load_vtt error:", e);
