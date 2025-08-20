@@ -2431,7 +2431,7 @@ def web_interface(args, ctx):
             ////////////
             #gr_audiobook_files {
                 height: auto;
-                animation: fadeSlideIn .22s ease-out both;
+                animation: fadeSlideIn ease-out both;
                 will-change: opacity, transform;
             }
             ///////////
@@ -3308,17 +3308,21 @@ def web_interface(args, ctx):
 
         def toggle_audiobook_files(audiobook, is_visible):
             if not audiobook:
-                raise gr.Error("No audiobook selected.")
+                error = 'No audiobook selected.'
+                alert_exception(error)
+                return gr.update(), gr.update()
             if is_visible:
-                return gr.update(visible=False, value=None), False
+                return gr.update(visible=False, value=None), gr.update(value=False)
             p = Path(audiobook)
             if not p.exists():
-                raise gr.Error(f"Audio not found: {p}")
+                error = f'Audio not found: {p}'
+                alert_exception(error)
+                return gr.update(), gr.update()
             files = [str(p)]
             vtt = p.with_suffix(".vtt")
             if vtt.exists():
                 files.append(str(vtt))
-            return gr.update(visible=True, value=files), True
+            return gr.update(visible=True, value=files), gr.update(value=True)
 
         def change_param(key, val, id, val2=None):
             session = context.get_session(id)
