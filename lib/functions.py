@@ -3049,12 +3049,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
-            return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
-                
-        def prepare_audiobook_download(selected):
-            if os.path.exists(selected):
-                return selected
-            return None           
+            return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)           
 
         def update_gr_voice_list(id):
             try:
