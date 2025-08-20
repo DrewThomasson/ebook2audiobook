@@ -4010,6 +4010,7 @@ def web_interface(args, ctx):
                             window.load_vtt_timeout = null;
                             window.load_vtt = (path) =>{
                                 try{
+                                    cues = [];
                                     if(path){
                                         gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         // Remove any <track> to bypass browser subtitle engine
