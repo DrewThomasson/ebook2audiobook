@@ -3056,16 +3056,6 @@ def web_interface(args, ctx):
                         vtt_path = Path(audiobook).with_suffix('.vtt')
                         if os.path.exists(vtt_path):
                             os.remove(vtt_path)
-                        process_dir = session.get('process_dir') or ''
-                        if process_dir != '':
-                            if isinstance(process_dir, (str, bytes, os.PathLike)) and os.path.isdir(process_dir):
-                                chapters_dirs = [
-                                    d for d in os.listdir(process_dir)
-                                    if fnmatch.fnmatch(d, "chapters_*")
-                                    and os.path.isdir(os.path.join(process_dir, d))
-                                ]
-                            else:
-                                chapters_dirs = []
                         process_dir = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], audiobook).encode()).hexdigest()}")
                         shutil.rmtree(process_dir, ignore_errors=True)
                         msg = f'Audiobook {selected_name} deleted!'
