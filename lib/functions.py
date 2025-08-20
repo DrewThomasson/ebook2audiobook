@@ -3417,10 +3417,11 @@ def web_interface(args, ctx):
                                     count_file = len(args['ebook_list'])
                                     if count_file > 0:
                                         msg = f"{len(args['ebook_list'])} remaining..."
+                                        yield gr.update(value=msg)
                                     else: 
                                         msg = 'Conversion successful!'
                                         session['status'] = 'ready'
-                                    yield gr.update(value=msg)
+                                        return gr.update(value=msg)
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
@@ -3435,13 +3436,13 @@ def web_interface(args, ctx):
                             reset_ebook_session(args['session'])
                             msg = 'Conversion successful!'
                             session['status'] = 'ready'
-                            yield gr.update(value=msg)
+                            return gr.update(value=msg)
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            yield gr.update(value='')
+            return gr.update(value='')
 
         def update_gr_audiobook_list(id):
             try:
