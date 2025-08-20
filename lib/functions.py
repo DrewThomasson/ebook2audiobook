@@ -3809,10 +3809,10 @@ def web_interface(args, ctx):
             fn=None,
             inputs=None,
             js='()=>{window.init_elements();}'
-        ).then(
-            fn=lambda gr.update(visible=True) if len(audiobook_options) > 0 else gr.update(viible=False),
+         ).then(
+            fn=lambda: gr.update(visible=bool(audiobook_options)),
             inputs=None,
-            outputs=[gr_group_audiobook_list]
+            outputs=[gr_group_audiobook_list],
         )
         gr_confirm_yes_btn.click(
             fn=confirm_deletion,
