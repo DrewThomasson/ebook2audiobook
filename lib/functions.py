@@ -1461,7 +1461,7 @@ def convert_chapters2audio(id):
                             progress_bar(total_progress)
                             is_sentence = sentence.strip() not in TTS_SML.values()
                             percentage = total_progress * 100
-                            t.set_description(f'{percentage:.2f}%')
+                            t.set_description(f"{sesino['ebook']}: {percentage:.2f}%")
                             msg = f" | {sentence}" if is_sentence else f" | {sentence}"
                             print(msg)
                         else:
@@ -1647,7 +1647,7 @@ def combine_audio_chapters(id):
             for filename, chapter_title in part_chapters:
                 filepath = os.path.join(session['chapters_dir'], filename)
                 duration_ms = len(AudioSegment.from_file(filepath, format=default_audio_proc_format))
-                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), chapter_title.replace(TTS_SML['pause'], ''))
+                clean_title = re.sub(r'(^#)|[=\\]|(-$)', lambda m: '\\' + (m.group(1) or m.group(0)), sanitize_chapter_title(chapter_title.replace(TTS_SML['pause']), ''))
                 ffmpeg_metadata += '[CHAPTER]\nTIMEBASE=1/1000\n'
                 ffmpeg_metadata += f'START={start_time}\nEND={start_time + duration_ms}\n'
                 ffmpeg_metadata += f"{tag('title')}={clean_title}\n"
@@ -1850,6 +1850,31 @@ def combine_audio_chapters(id):
     except Exception as e:
         DependencyError(e)
         return False
+
+def ellipsize_utf8_bytes(s: str, max_bytes: int, ellipsis: str = "...") -> str:
+    s = "" if s is None else str(s)
+    if max_bytes <= 0:
+        return ""
+    raw = s.encode("utf-8")
+    e = ellipsis.encode("utf-8")
+    if len(raw) <= max_bytes:
+        return s
+    if len(e) >= max_bytes:
+        # return as many bytes of the ellipsis as fit
+        return e[:max_bytes].decode("utf-8", errors="ignore")
+    budget = max_bytes - len(e)
+    out = bytearray()
+    for ch in s:
+        b = ch.encode("utf-8")
+        if len(out) + len(b) > budget:
+            break
+        out.extend(b)
+    return out.decode("utf-8") + ellipsis
+
+def sanitize_chapter_title(title: str, max_bytes: int = 255) -> str:
+    # avoid None and embedded NULs which some muxers accidentally keep
+    title = (title or "").replace("\x00", "")
+    return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
 
 def delete_unused_tmp_dirs(web_dir, days, session):
     dir_array = [
