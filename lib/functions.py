@@ -3713,8 +3713,7 @@ def web_interface(args, ctx):
                 
                     }
                 }
-            '''
-            ),
+            ''',
             outputs=None
         )
         gr_audiobook_del_btn.click(
