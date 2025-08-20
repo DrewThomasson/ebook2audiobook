@@ -2436,11 +2436,6 @@ def web_interface(args, ctx):
             #gr_audiobook_vtt, #gr_playback_time {
                 display: none !important;
             }
-            ////////////
-            #gr_audiobook_files {
-                animation: fadeSlideIn ease-out both !important;
-                display: inline-block !important;
-            }
             ///////////
             .fade-in {
                 animation: fadeIn 1s ease-in !important;
@@ -2449,10 +2444,6 @@ def web_interface(args, ctx):
             @keyframes fadeIn {
                 from { opacity: 0; }
                 to { opacity: 1; }
-            }
-            @keyframes fadeSlideIn {
-                from { opacity: 0; transform: translateY(8px); }
-                to   { opacity: 1; transform: translateY(0); }
             }
         </style>
     '''
