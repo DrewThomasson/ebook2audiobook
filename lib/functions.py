@@ -3077,6 +3077,11 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)           
 
+        def confirm_blocks(id):
+            session = context.get_session(id)
+            show_alert({"type": "warning", "msg": 'on deveolpment'})
+            return gr.update()
+
         def update_gr_voice_list(id):
             try:
                 nonlocal voice_options
