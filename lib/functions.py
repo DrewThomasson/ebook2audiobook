@@ -2125,8 +2125,7 @@ def convert_ebook(args, ctx=None):
                             if session['cover']:
                                 session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if session['chapters_control']:
-                                    msg = 'The option "Chapters Control" is under development and will be available soon!...'
-                                    show_alert({"type": "warning", "msg": msg})
+                                    return 'confirm_blocks', True
                                 else:
                                     return finalize_audiobook(id)
                             else:
@@ -2662,9 +2661,11 @@ def web_interface(args, ctx):
         
         gr_modal = gr.HTML(visible=False)
         gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
-        gr_confirm_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_yes_btn = gr.Button(elem_id='confirm_yes_btn', value='', visible=False)
-        gr_confirm_no_btn = gr.Button(elem_id='confirm_no_btn', value='', visible=False)
+        gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
+        gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', value='', visible=False)
+        gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', value='', visible=False)
+        gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', value='', visible=False)
+        gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', value='', visible=False)
 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
@@ -2735,18 +2736,18 @@ def web_interface(args, ctx):
                     font-size: 16px;
                     cursor: pointer;
                 }}
-                .confirm-buttons .confirm_yes_btn {{
+                .confirm-buttons .gr_confirm_deletion_yes_btn {{
                     background-color: #28a745;
                     color: white;
                 }}
-                .confirm-buttons .confirm_no_btn {{
+                .confirm-buttons .gr_confirm_deletion_no_btn {{
                     background-color: #dc3545;
                     color: white;
                 }}
-                .confirm-buttons .confirm_yes_btn:hover {{
+                .confirm-buttons .gr_confirm_deletion_yes_btn:hover {{
                     background-color: #34d058;
                 }}
-                .confirm-buttons .confirm_no_btn:hover {{
+                .confirm-buttons .gr_confirm_deletion_no_btn:hover {{
                     background-color: #ff6f71;
                 }}
                 /* Spinner */
@@ -2767,16 +2768,24 @@ def web_interface(args, ctx):
             <div id="custom-modal" class="modal">
                 <div class="modal-content">
                     <p style="color:#ffffff">{msg}</p>            
-                    {show_confirm() if type == 'confirm' else '<div class="spinner"></div>'}
+                    {show_confirm_deletion() if type == 'confirm_deletion' else show_confirm_blocks() if type == 'confirm_blocks' else '<div class="spinner"></div>'}
                 </div>
             </div>
             '''
 
-        def show_confirm():
+        def show_confirm_deletion():
             return '''
             <div class="confirm-buttons">
-                <button class="confirm_yes_btn" onclick="document.querySelector('#confirm_yes_btn').click()">✔</button>
-                <button class="confirm_no_btn" onclick="document.querySelector('#confirm_no_btn').click()">⨉</button>
+                <button class="gr_confirm_deletion_yes_btn" onclick="document.querySelector('#gr_confirm_deletion_yes_btn').click()">✔</button>
+                <button class="gr_confirm_deletion_no_btn" onclick="document.querySelector('#gr_confirm_deletion_no_btn').click()">⨉</button>
+            </div>
+            '''
+
+        def show_confirm_blocks():
+            return '''
+            <div class="confirm-buttons">
+                <button class="gr_confirm_blocks_yes_btn" onclick="document.querySelector('#gr_confirm_blocks_yes_btn').click()">✔</button>
+                <button class="gr_confirm_blocks_no_btn" onclick="document.querySelector('#gr_confirm_blocks_no_btn').click()">⨉</button>
             </div>
             '''
 
@@ -2982,7 +2991,7 @@ def web_interface(args, ctx):
                             msg = f'Are you sure to delete {speaker}...'
                             return (
                                 gr.update(value='confirm_voice_del'),
-                                gr.update(value=show_modal('confirm', msg), visible=True),
+                                gr.update(value=show_modal('confirm_deletion', msg), visible=True),
                                 gr.update(visible=True),
                                 gr.update(visible=True)
                             )
@@ -3007,7 +3016,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = os.path.basename(selected)
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
+                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm_deletion', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
                 error = f'Could not delete the custom model {selected_name}!'
                 alert_exception(error)
@@ -3019,7 +3028,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = Path(selected).stem
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
+                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm_deletion', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
                 error = f'Could not delete the audiobook {selected_name}!'
                 alert_exception(error)
@@ -3409,17 +3418,20 @@ def web_interface(args, ctx):
                                         error = 'Conversion failed.'
                                         break
                                 else:
-                                    show_alert({"type": "success", "msg": progress_status})
-                                    args['ebook_list'].remove(file)
-                                    reset_session(args['session'])
-                                    count_file = len(args['ebook_list'])
-                                    if count_file > 0:
-                                        msg = f"{len(args['ebook_list'])} remaining..."
-                                        yield gr.update(value=msg)
-                                    else: 
-                                        msg = 'Conversion successful!'
-                                        session['status'] = 'ready'
-                                        return gr.update(value=msg)
+                                    if progress_status == 'confirm_blocks':
+                                        return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
+                                    else:
+                                        show_alert({"type": "success", "msg": progress_status})
+                                        args['ebook_list'].remove(file)
+                                        reset_session(args['session'])
+                                        count_file = len(args['ebook_list'])
+                                        if count_file > 0:
+                                            msg = f"{len(args['ebook_list'])} remaining..."
+                                            yield gr.update(value=msg), gr.update()
+                                        else: 
+                                            msg = 'Conversion successful!'
+                                            session['status'] = 'ready'
+                                            return gr.update(value=msg), gr.update()
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
@@ -3430,17 +3442,20 @@ def web_interface(args, ctx):
                                 error = 'Conversion failed.'
                             session['status'] = 'ready'
                         else:
-                            show_alert({"type": "success", "msg": progress_status})
-                            reset_session(args['session'])
-                            msg = 'Conversion successful!'
-                            session['status'] = 'ready'
-                            return gr.update(value=msg)
+                            if progress_status == 'confirm_blocks':
+                                return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
+                            else:
+                                show_alert({"type": "success", "msg": progress_status})
+                                reset_session(args['session'])
+                                msg = 'Conversion successful!'
+                                session['status'] = 'ready'
+                                return gr.update(value=msg), gr.update()
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(value=' ')
+            return gr.update(value=' '), gr.update()
 
         def update_gr_audiobook_list(id):
             try:
@@ -3610,7 +3625,7 @@ def web_interface(args, ctx):
         gr_voice_del_btn.click(
             fn=click_gr_voice_del_btn,
             inputs=[gr_voice_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
+            outputs=[gr_confirm_deletion_field_hidden, gr_modal, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
         )
         gr_device.change(
             fn=change_gr_device,
@@ -3661,7 +3676,7 @@ def web_interface(args, ctx):
         gr_custom_model_del_btn.click(
             fn=click_gr_custom_model_del_btn,
             inputs=[gr_custom_model_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
+            outputs=[gr_confirm_deletion_field_hidden, gr_modal, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
         )
         gr_output_format_list.change(
             fn=change_gr_output_format_list,
@@ -3725,7 +3740,7 @@ def web_interface(args, ctx):
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_confirm_field_hidden, gr_modal, gr_confirm_yes_btn, gr_confirm_no_btn]
+            outputs=[gr_confirm_deletion_field_hidden, gr_modal, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
         )
         ########### XTTSv2 Params
         gr_xtts_temperature.change(
@@ -3806,7 +3821,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
-            outputs=[gr_tab_progress]
+            outputs=[gr_tab_progress, gr_modal]
         ).then(
             fn=enable_components,
             inputs=None,
@@ -3866,19 +3881,29 @@ def web_interface(args, ctx):
             js='()=>{window.init_elements();}',
             outputs=None
         )
-        gr_confirm_yes_btn.click(
+        gr_confirm_deletion_yes_btn.click(
             fn=confirm_deletion,
-            inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_field_hidden],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
+            inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_deletion_field_hidden],
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
         ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
             inputs=None,
             outputs=[gr_group_audiobook_list],
         )
-        gr_confirm_no_btn.click(
+        gr_confirm_deletion_no_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_yes_btn, gr_confirm_no_btn]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
+        )
+        gr_confirm_blocks_yes_btn.click(
+            fn=confirm_blocks,
+            inputs=[gr_session],
+            outputs=[gr_modal, gr_tab_progress]
+        )
+        gr_confirm_blocks_no_btn.click(
+            fn=confirm_blocks,
+            inputs=[gr_session],
+            outputs=[gr_modal, gr_tab_progress]
         )
         app.load(
             fn=None,
@@ -4058,7 +4083,7 @@ def web_interface(args, ctx):
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const txt = val.trim().split(" ")[2];
-                                    const title = txt.length > 20 ? txt.slice(0, 20).trimEnd() + '...' : txt;
+                                    const title = txt.length > 20 ? txt.slice(0, 20).trimEnd() + '…' : txt;
                                     const prct = val.trim().split(" ")[4];
                                     if(prct && /^\d+(\.\d+)?%$/.test(prct)){
                                         document.title = title + ": " + prct;
