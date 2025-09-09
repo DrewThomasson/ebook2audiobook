@@ -1942,7 +1942,7 @@ def convert_ebook_batch(args, ctx=None):
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
 
-def convert_ebook(args, ctx=None):
+async def convert_ebook(args, ctx=None):
     try:
         global context        
         error = None
@@ -2123,7 +2123,7 @@ def convert_ebook(args, ctx=None):
                                 print(error)
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
-                                session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                session['toc'], session['chapters'] = await get_chapters(epubBook, session)
                                 if session['chapters_control']:
                                     return 'confirm_blocks', True
                                 else:
@@ -3079,7 +3079,7 @@ def web_interface(args, ctx):
 
         def confirm_blocks(id):
             session = context.get_session(id)
-            show_alert({"type": "warning", "msg": 'on deveolpment'})
+            show_alert({"type": "warning", "msg": 'on development'})
             return gr.update()
 
         def update_gr_voice_list(id):
