@@ -3448,6 +3448,8 @@ def web_interface(args, ctx):
                             session['status'] = 'ready'
                         else:
                             if progress_status == 'confirm_blocks':
+                                msg = 'Select blocks to convert...'
+                                print(msg)
                                 yield gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
