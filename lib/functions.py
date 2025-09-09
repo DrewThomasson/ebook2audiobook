@@ -3450,19 +3450,19 @@ def web_interface(args, ctx):
                             if progress_status == 'confirm_blocks':
                                 msg = 'Select blocks to convert...'
                                 print(msg)
-                                yield gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
+                                return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
                                 msg = 'Conversion successful!'
                                 session['status'] = 'ready'
-                                yield gr.update(value=msg), gr.update()
+                                return gr.update(value=msg), gr.update()
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            yield gr.update(value=' '), gr.update()
+            return gr.update(value=' '), gr.update()
 
         def update_gr_audiobook_list(id):
             try:
