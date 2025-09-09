@@ -3424,7 +3424,7 @@ def web_interface(args, ctx):
                                         break
                                 else:
                                     if progress_status == 'confirm_blocks':
-                                        return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
+                                        yield gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
                                         args['ebook_list'].remove(file)
@@ -3436,7 +3436,7 @@ def web_interface(args, ctx):
                                         else: 
                                             msg = 'Conversion successful!'
                                             session['status'] = 'ready'
-                                            return gr.update(value=msg), gr.update()
+                                            yield gr.update(value=msg), gr.update()
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = await convert_ebook(args)
@@ -3448,19 +3448,19 @@ def web_interface(args, ctx):
                             session['status'] = 'ready'
                         else:
                             if progress_status == 'confirm_blocks':
-                                return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
+                                yield gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
                                 msg = 'Conversion successful!'
                                 session['status'] = 'ready'
-                                return gr.update(value=msg), gr.update()
+                                yield gr.update(value=msg), gr.update()
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(value=' '), gr.update()
+            yield gr.update(value=' '), gr.update()
 
         def update_gr_audiobook_list(id):
             try:
