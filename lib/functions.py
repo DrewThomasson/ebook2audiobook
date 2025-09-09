@@ -1924,7 +1924,7 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-async def convert_ebook_batch(args, ctx=None):
+def convert_ebook_batch(args, ctx=None):
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
@@ -1942,7 +1942,7 @@ async def convert_ebook_batch(args, ctx=None):
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
 
-def convert_ebook(args, ctx=None):
+convert def convert_ebook(args, ctx=None):
     try:
         global context        
         error = None
