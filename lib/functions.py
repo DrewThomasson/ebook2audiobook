@@ -1942,7 +1942,7 @@ def convert_ebook_batch(args, ctx=None):
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
 
-convert def convert_ebook(args, ctx=None):
+async def convert_ebook(args, ctx=None):
     try:
         global context        
         error = None
