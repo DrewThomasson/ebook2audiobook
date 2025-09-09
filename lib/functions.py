@@ -1924,7 +1924,7 @@ def get_compatible_tts_engines(language):
     ]
     return compatible_engines
 
-def convert_ebook_batch(args, ctx=None):
+async def convert_ebook_batch(args, ctx=None):
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
