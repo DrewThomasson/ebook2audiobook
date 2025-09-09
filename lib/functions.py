@@ -1942,7 +1942,7 @@ def convert_ebook_batch(args, ctx=None):
         print(f'the ebooks source is not a list!')
         sys.exit(1)       
 
-async def convert_ebook(args, ctx=None):
+def convert_ebook(args, ctx=None):
     try:
         global context        
         error = None
@@ -2123,7 +2123,7 @@ async def convert_ebook(args, ctx=None):
                                 print(error)
                             session['cover'] = get_cover(epubBook, session)
                             if session['cover']:
-                                session['toc'], session['chapters'] = await get_chapters(epubBook, session)
+                                session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                 if session['chapters_control']:
                                     return 'confirm_blocks', True
                                 else:
@@ -3363,7 +3363,7 @@ def web_interface(args, ctx):
                         show_alert(state)
             return
 
-        def submit_convert_btn(
+        async def submit_convert_btn(
                 id, device, ebook_file, chapters_control, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
                 length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp,
                 output_split, output_split_hours
@@ -3414,7 +3414,7 @@ def web_interface(args, ctx):
                             if any(file.endswith(ext) for ext in ebook_formats):
                                 print(f'Processing eBook file: {os.path.basename(file)}')
                                 args['ebook'] = file
-                                progress_status, passed = convert_ebook(args)
+                                progress_status, passed = await convert_ebook(args)
                                 if passed is False:
                                     if session['status'] == 'converting':
                                         error = 'Conversion cancelled.'
@@ -3439,7 +3439,7 @@ def web_interface(args, ctx):
                                             return gr.update(value=msg), gr.update()
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
-                        progress_status, passed = convert_ebook(args)
+                        progress_status, passed = await convert_ebook(args)
                         if passed is False:
                             if session['status'] == 'converting':
                                 error = 'Conversion cancelled.'
