@@ -880,7 +880,7 @@ language_mapping = {
     "alt": {"name": "Altai, Southern", "native_name": "Алтай тили", "max_chars": 182},
     "alp": {"name": "Alune", "native_name": "Alune", "max_chars": 182},
     "alz": {"name": "Alur", "native_name": "Alur", "max_chars": 182},
-    "kab": {"name": "Amazigh", "native_name": "Tamaziɣt", "max_chars": 142},
+    "kab": {"name": "Kabyle", "native_name": "Taqbaylit", "max_chars": 142},
     "amk": {"name": "Ambai", "native_name": "Ambai", "max_chars": 182},
     "mmg": {"name": "Ambrym, North", "native_name": "Ambrym", "max_chars": 142},
     "amh": {"name": "Amharic", "native_name": "አማርኛ", "max_chars": 182},
@@ -1993,3 +1993,4 @@ language_mapping = {
     "zos": {"name": "Zoque, Francisco León", "native_name": "Francisco León Zoque", "max_chars": 182},
     "gnd": {"name": "Zulgo-Gemzek", "native_name": "Zulgo-Gemzek", "max_chars": 182}
 }
+
