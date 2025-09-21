@@ -1143,16 +1143,15 @@ def year2words(year_str, lang, lang_iso1, is_num2words_compat):
 
 def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     time_rx = re.compile(r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?')
-    lang_lc = (lang or "").lower()
-    lc = language_clock.get(lang_lc) if 'language_clock' in globals() else None
+    lc = language_clock.get(lang) if 'language_clock' in globals() else None
     _n2w_cache = {}
 
     def n2w(n: int) -> str:
-        key = (n, lang_lc, is_num2words_compat)
+        key = (n, lang, is_num2words_compat)
         if key in _n2w_cache:
             return _n2w_cache[key]
         if is_num2words_compat:
-            word = num2words(n, lang=lang_lc)
+            word = num2words(n, lang=lang_iso1)
         else:
             word = math2words(n, lang, lang_iso1, tts_engine, is_num2words_compat)
         _n2w_cache[key] = word
@@ -1191,7 +1190,7 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             phrase = lc["quarter_past"].format(hour=n2w(h))
         elif mnt == 30:
             # German "halb drei" (= 2:30) uses next hour
-            if lang_lc == "deu":
+            if lang == "deu":
                 phrase = lc["half_past"].format(next_hour=n2w(next_hour))
             else:
                 phrase = lc["half_past"].format(hour=n2w(h))
@@ -3424,7 +3423,9 @@ def web_interface(args, ctx):
                                         break
                                 else:
                                     if progress_status == 'confirm_blocks':
-                                        yield gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
+                                        msg = 'Select the blocks to convert:'
+                                        print(msg)
+                                        return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
                                         args['ebook_list'].remove(file)
@@ -3448,7 +3449,7 @@ def web_interface(args, ctx):
                             session['status'] = 'ready'
                         else:
                             if progress_status == 'confirm_blocks':
-                                msg = 'Select blocks to convert...'
+                                msg = 'Select the blocks to convert:'
                                 print(msg)
                                 return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
                             else:
