@@ -3043,14 +3043,14 @@ def web_interface(args, ctx):
                         msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(), gr.update(visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
+                        return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_custom_model_del':
                         selected_name = os.path.basename(custom_model)
                         shutil.rmtree(custom_model, ignore_errors=True)                           
                         msg = f'Custom model {selected_name} deleted!'
                         session['custom_model'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return update_gr_custom_model_list(id), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                        return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
                     elif method == 'confirm_audiobook_del':
                         selected_name = Path(audiobook).stem
                         if os.path.isdir(audiobook):
@@ -3065,12 +3065,12 @@ def web_interface(args, ctx):
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), update_gr_audiobook_list(id), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
-                return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                        return gr.update(), update_gr_audiobook_list(id), gr.update(value='', visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
-            return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)           
+            return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)           
 
         def confirm_blocks(id):
             session = context.get_session(id)
