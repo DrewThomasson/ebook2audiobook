@@ -2781,6 +2781,7 @@ def web_interface(args, ctx):
             '''
 
         def show_confirm_blocks():
+            print('show_confirm_blocks called')
             return '''
             <div class="confirm-buttons">
                 <button class="gr_confirm_blocks_yes_btn" onclick="document.querySelector('#gr_confirm_blocks_yes_btn').click()">✔</button>
@@ -3075,11 +3076,6 @@ def web_interface(args, ctx):
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
             return gr.update(), gr.update(), gr.update(visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)           
-
-        def confirm_blocks(id):
-            session = context.get_session(id)
-            show_alert({"type": "warning", "msg": 'on development'})
-            return gr.update()
 
         def update_gr_voice_list(id):
             try:
