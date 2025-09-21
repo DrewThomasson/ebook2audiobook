@@ -3365,7 +3365,7 @@ def web_interface(args, ctx):
             ):
             try:
                 session = context.get_session(id)
-                session['event'] = progress_status
+                session['event'] = 'confirm_blocks'
                 msg = 'Select the blocks to convert:'
                 print(msg)
                 return gr.update(value=show_modal(progress_status, msg), visible=True)
