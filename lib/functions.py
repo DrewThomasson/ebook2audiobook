@@ -2477,57 +2477,57 @@ def web_interface(args, ctx):
             }
             //////////
             .modal {
-                position: fixed;
-                top: 0; left: 0;
-                width: 100%; height: 100%;
-                background-color: rgba(0, 0, 0, 0.5);
-                z-index: 9999;
-                display: flex;
-                justify-content: center;
-                align-items: center;
+                position: fixed !important;
+                top: 0 !important; left: 0 !important;
+                width: 100% !important; height: 100% !important;
+                background-color: rgba(0, 0, 0, 0.5) !important;
+                z-index: 9999 !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
             }
             .modal-content {
-                background-color: #333;
-                padding: 20px;
-                border-radius: 8px;
-                text-align: center;
-                max-width: 300px;
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-                border: 2px solid #FFA500;
-                color: white;
-                position: relative;
+                background-color: #333 !important;
+                padding: 20px !important;
+                border-radius: 8px !important;
+                text-align: center !important;
+                max-width: 300px !important;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
+                border: 2px solid #FFA500 !important;
+                color: white !important;
+                position: relative !important;
             }
             .confirm-buttons {
-                display: flex;
-                justify-content: space-evenly;
-                margin-top: 20px;
+                display: flex !important;
+                justify-content: space-evenly !important;
+                margin-top: 20px !important;
             }
             .confirm-buttons button {
-                padding: 10px 20px;
-                border: none;
-                border-radius: 5px;
-                font-size: 16px;
-                cursor: pointer;
+                padding: 10px 20px !important;
+                border: none !important;
+                border-radius: 5px !important;
+                font-size: 16px !important;
+                cursor: pointer !important;
             }
-            .confirm-buttons .gr_confirm_deletion_yes_btn { background-color: #28a745; color: white; }
-            .confirm-buttons .gr_confirm_deletion_no_btn  { background-color: #dc3545; color: white; }
-            .confirm-buttons .gr_confirm_deletion_yes_btn:hover { background-color: #34d058; }
-            .confirm-buttons .gr_confirm_deletion_no_btn:hover  { background-color: #ff6f71; }
-            .confirm-buttons .gr_confirm_blocks_yes_btn   { background-color: #28a745; color: white; }
-            .confirm-buttons .gr_confirm_blocks_no_btn    { background-color: #dc3545; color: white; }
-            .confirm-buttons .gr_confirm_blocks_yes_btn:hover   { background-color: #34d058; }
-            .confirm-buttons .gr_confirm_blocks_no_btn:hover    { background-color: #ff6f71; }
+            .confirm-buttons .gr_confirm_deletion_yes_btn { background-color: #28a745 !important; color: white !important; }
+            .confirm-buttons .gr_confirm_deletion_no_btn  { background-color: #dc3545 !important; color: white !important; }
+            .confirm-buttons .gr_confirm_deletion_yes_btn:hover { background-color: #34d058 !important; }
+            .confirm-buttons .gr_confirm_deletion_no_btn:hover  { background-color: #ff6f71 !important; }
+            .confirm-buttons .gr_confirm_blocks_yes_btn   { background-color: #28a745 !important; color: white !important; }
+            .confirm-buttons .gr_confirm_blocks_no_btn    { background-color: #dc3545 !important; color: white !important; }
+            .confirm-buttons .gr_confirm_blocks_yes_btn:hover   { background-color: #34d058 !important; }
+            .confirm-buttons .gr_confirm_blocks_no_btn:hover    { background-color: #ff6f71 !important; }
             .spinner {
-                margin: 15px auto;
-                border: 4px solid rgba(255, 255, 255, 0.2);
-                border-top: 4px solid #FFA500;
-                border-radius: 50%;
-                width: 30px; height: 30px;
-                animation: spin 1s linear infinite;
+                margin: 15px auto !important;
+                border: 4px solid rgba(255, 255, 255, 0.2) !important;
+                border-top: 4px solid #FFA500 !important;
+                border-radius: 50% !important;
+                width: 30px !important; height: 30px !important;
+                animation: spin 1s linear infinite !important;
             }
             @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
+                0% { transform: rotate(0deg) !important; }
+                100% { transform: rotate(360deg) !important; }
             }
         </style>
     '''
