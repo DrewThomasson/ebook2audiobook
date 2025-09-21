@@ -2870,12 +2870,12 @@ def web_interface(args, ctx):
         def refresh_interface(id):
             session = context.get_session(id)
             if session['event'] == 'confirm_blocks':
-                outputs = tuple([gr.update() for _ in range(6)])
+                outputs = tuple([gr.update() for _ in range(5)])
                 return outputs
             else:
                 return (
                         gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
-                        gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
+                        gr.update(value=session['audiobook']), update_gr_voice_list(id),
                 )
 
         def change_gr_audiobook_list(selected, id):
@@ -2914,7 +2914,7 @@ def web_interface(args, ctx):
                     if session['status'] == 'converting':
                         session['cancellation_requested'] = True
                         msg = 'Cancellation requested, please wait...'
-                        yield gr.update(value=show_modal('wait', msg),visible=True)
+                        yield gr.update(value=show_modal('wait', msg), visible=True)
                         return
                 if isinstance(data, list):
                     session['ebook_list'] = data
@@ -3023,7 +3023,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = os.path.basename(selected)
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm_deletion', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
+                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm_deletion', msg), visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
                 error = f'Could not delete the custom model {selected_name}!'
                 alert_exception(error)
@@ -3035,7 +3035,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = Path(selected).stem
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm_deletion', msg),visible=True), gr.update(visible=True), gr.update(visible=True)
+                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm_deletion', msg), visible=True), gr.update(visible=True), gr.update(visible=True)
             except Exception as e:
                 error = f'Could not delete the audiobook {selected_name}!'
                 alert_exception(error)
@@ -3434,7 +3434,7 @@ def web_interface(args, ctx):
                                         session['event'] = progress_status
                                         msg = 'Select the blocks to convert:'
                                         print(msg)
-                                        return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
+                                        yield gr.update(), gr.update(value=show_modal(progress_status, msg), visible=True)
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
                                         args['ebook_list'].remove(file)
@@ -3461,8 +3461,7 @@ def web_interface(args, ctx):
                                 session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                show_alert({"type": "warning", "msg": progress_status})
-                                return gr.update(msg), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                return gr.update(value=msg), gr.update(value=show_modal(progress_status, msg), visible=True)
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
@@ -3474,7 +3473,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(value=' '), gr.update()
+            return gr.update(), gr.update()
 
         def update_gr_audiobook_list(id):
             try:
