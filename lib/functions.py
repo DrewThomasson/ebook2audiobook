@@ -3365,10 +3365,99 @@ def web_interface(args, ctx):
             ):
             try:
                 session = context.get_session(id)
-                session['event'] = 'confirm_blocks'
-                msg = 'Select the blocks to convert:'
-                print(msg)
-                return gr.update(value=''), gr.update(value=show_modal(session['event'], msg), visible=True)
+                args = {
+                    "is_gui_process": session['is_gui_process'],
+                    "session": id,
+                    "script_mode": script_mode,
+                    "chapters_control": chapters_control,
+                    "device": device.lower(),
+                    "tts_engine": tts_engine,
+                    "ebook": ebook_file if isinstance(ebook_file, str) else None,
+                    "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
+                    "audiobooks_dir": session['audiobooks_dir'],
+                    "voice": voice,
+                    "language": language,
+                    "custom_model": custom_model,
+                    "fine_tuned": fine_tuned,
+                    "output_format": output_format,
+                    "temperature": float(temperature),
+                    "length_penalty": float(length_penalty),
+                    "num_beams": session['num_beams'],
+                    "repetition_penalty": float(repetition_penalty),
+                    "top_k": int(top_k),
+                    "top_p": float(top_p),
+                    "speed": float(speed),
+                    "enable_text_splitting": enable_text_splitting,
+                    "text_temp": float(text_temp),
+                    "waveform_temp": float(waveform_temp),
+                    "output_split": output_split,
+                    "output_split_hours": output_split_hours
+                }
+                error = None
+                if args['ebook'] is None and args['ebook_list'] is None:
+                    error = 'Error: a file or directory is required.'
+                    show_alert({"type": "warning", "msg": error})
+                elif args['num_beams'] < args['length_penalty']:
+                    error = 'Error: num beams must be greater or equal than length penalty.'
+                    show_alert({"type": "warning", "msg": error})                   
+                else:
+                    session['status'] = 'converting'
+                    session['progress'] = len(audiobook_options)
+                    if isinstance(args['ebook_list'], list):
+                        ebook_list = args['ebook_list'][:]
+                        for file in ebook_list:
+                            if any(file.endswith(ext) for ext in ebook_formats):
+                                print(f'Processing eBook file: {os.path.basename(file)}')
+                                args['ebook'] = file
+                                progress_status, passed = convert_ebook(args)
+                                if passed is False:
+                                    if session['status'] == 'converting':
+                                        error = 'Conversion cancelled.'
+                                        break
+                                    else:
+                                        error = 'Conversion failed.'
+                                        break
+                                else:
+                                    if progress_status == 'confirm_blocks':
+                                        session['event'] = progress_status
+                                        msg = 'Select the blocks to convert:'
+                                        print(msg)
+                                        yield gr.update(), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                    else:
+                                        show_alert({"type": "success", "msg": progress_status})
+                                        args['ebook_list'].remove(file)
+                                        reset_session(args['session'])
+                                        count_file = len(args['ebook_list'])
+                                        if count_file > 0:
+                                            msg = f"{len(args['ebook_list'])} remaining..."
+                                            yield gr.update(value=msg), gr.update()
+                                        else: 
+                                            msg = 'Conversion successful!'
+                                            session['status'] = 'ready'
+                                            yield gr.update(value=msg), gr.update()
+                    else:
+                        print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
+                        progress_status, passed = convert_ebook(args)
+                        if passed is False:
+                            if session['status'] == 'converting':
+                                error = 'Conversion cancelled.'
+                            else:
+                                error = 'Conversion failed.'
+                            session['status'] = 'ready'
+                        else:
+                            if progress_status == 'confirm_blocks':
+                                session['event'] = progress_status
+                                msg = 'Select the blocks to convert:'
+                                print(msg)
+                                return gr.update(value=msg), gr.update(value=show_modal(progress_status, msg), visible=True)
+                            else:
+                                show_alert({"type": "success", "msg": progress_status})
+                                reset_session(args['session'])
+                                msg = 'Conversion successful!'
+                                session['status'] = 'ready'
+                                return gr.update(value=msg), gr.update()
+                if error is not None:
+                    show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
