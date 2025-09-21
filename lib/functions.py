@@ -2676,7 +2676,7 @@ def web_interface(args, ctx):
             outputs = tuple([gr.update(interactive=False) for _ in range(9)])
             return outputs
         
-        def enable_components():
+        def enable_components(id):
             session = context.get_session(id)
             if session.get('event') == 'confirm_blocks':
                 outputs = tuple([gr.update() for _ in range(9)])
