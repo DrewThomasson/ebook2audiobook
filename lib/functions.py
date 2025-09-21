@@ -2701,7 +2701,6 @@ def web_interface(args, ctx):
             return f'''
             <style>
                 .modal {{
-                    display: none; /* Hidden by default */
                     position: fixed;
                     top: 0;
                     left: 0;
@@ -3406,10 +3405,6 @@ def web_interface(args, ctx):
                     "output_split_hours": output_split_hours
                 }
                 error = None
-                session['event'] = 'confirm_blocks'
-                msg = 'Select the blocks to convert:'
-                print(msg)
-                return gr.update(value=msg), gr.update(value=show_modal(progress_status, msg), visible=True)
                 if args['ebook'] is None and args['ebook_list'] is None:
                     error = 'Error: a file or directory is required.'
                     show_alert({"type": "warning", "msg": error})
