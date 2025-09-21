@@ -167,7 +167,7 @@ class SessionContext:
     def find_id_by_hash(self, socket_hash):
         for id, session in self.sessions.items():
             if socket_hash in session:
-                return session.get('id')
+                return session['id']
         return None
 
 class JSONEncoderWithDictProxy(json.JSONEncoder):
@@ -1756,7 +1756,7 @@ def combine_audio_chapters(id):
             durations.append(get_audio_duration(filepath))
         total_duration = sum(durations)
         exported_files = []
-        if session.get('output_split'):
+        if session['output_split']:
             part_files = []
             part_chapter_indices = []
             cur_part = []
@@ -2678,7 +2678,7 @@ def web_interface(args, ctx):
         
         def enable_components(id):
             session = context.get_session(id)
-            if session.get('event') == 'confirm_blocks':
+            if session['event'] == 'confirm_blocks':
                 outputs = tuple([gr.update() for _ in range(9)])
             else:
                 outputs = tuple([gr.update(interactive=True) for _ in range(9)])
@@ -2827,7 +2827,7 @@ def web_interface(args, ctx):
             try:
                 session = context.get_session(id)
                 socket_hash = req.session_hash
-                if not session.get(socket_hash):
+                if not session[socket_hash]:
                     outputs = tuple([gr.update() for _ in range(25)])
                     return outputs
                 session = context.get_session(id)
@@ -2869,7 +2869,7 @@ def web_interface(args, ctx):
 
         def refresh_interface(id):
             session = context.get_session(id)
-            if session.get('event') == 'confirm_blocks':
+            if session['event'] == 'confirm_blocks':
                 outputs = tuple([gr.update() for _ in range(6)])
                 return outputs
             else:
@@ -3849,7 +3849,7 @@ def web_interface(args, ctx):
             inputs=[gr_session],
             outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
         ).then(
-            fn=lambda session: gr.update() if session.get('event') == 'confirm_blocks' else gr.update(visible=bool(audiobook_options)),
+            fn=lambda session: gr.update() if session['event'] == 'confirm_blocks' else gr.update(visible=bool(audiobook_options)),
             inputs=[gr_session],
             outputs=[gr_group_audiobook_list],
         )
