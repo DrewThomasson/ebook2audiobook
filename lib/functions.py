@@ -2476,10 +2476,6 @@ def web_interface(args, ctx):
                 to { opacity: 1; }
             }
             //////////
-            #custom-modal-container,
-            #custom-modal-container .modal {
-                position: fixed !important;
-            }
             .modal {
                 position: fixed;
                 top: 0; left: 0;
@@ -2760,7 +2756,6 @@ def web_interface(args, ctx):
             <div id="custom-modal" class="modal">
                 <div class="modal-content">
                     <p style="color:#ffffff">{msg}</p>            
-                    {show_confirm_deletion() if type == 'confirm_deletion' else show_confirm_blocks() if type == 'confirm_blocks' else '<div class="spinner"></div>'}
                 </div>
             </div>
             '''
