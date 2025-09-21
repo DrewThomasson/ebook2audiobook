@@ -3849,8 +3849,8 @@ def web_interface(args, ctx):
             inputs=[gr_session],
             outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
         ).then(
-            fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
+            fn=lambda session: gr.update() if session.get("event") == "confirm_blocks" else gr.update(visible=bool(audiobook_options)),
+            inputs=[gr_session],
             outputs=[gr_group_audiobook_list],
         )
         gr_write_data.change(
