@@ -3394,7 +3394,68 @@ def web_interface(args, ctx):
                     "output_split_hours": output_split_hours
                 }
                 error = None
-                return gr.update(value=msg), gr.update(value=show_modal(progress_status, msg), visible=True)
+                if args['ebook'] is None and args['ebook_list'] is None:
+                    error = 'Error: a file or directory is required.'
+                    show_alert({"type": "warning", "msg": error})
+                elif args['num_beams'] < args['length_penalty']:
+                    error = 'Error: num beams must be greater or equal than length penalty.'
+                    show_alert({"type": "warning", "msg": error})                   
+                else:
+                    session['status'] = 'converting'
+                    session['progress'] = len(audiobook_options)
+                    if isinstance(args['ebook_list'], list):
+                        ebook_list = args['ebook_list'][:]
+                        for file in ebook_list:
+                            if any(file.endswith(ext) for ext in ebook_formats):
+                                print(f'Processing eBook file: {os.path.basename(file)}')
+                                args['ebook'] = file
+                                progress_status, passed = convert_ebook(args)
+                                if passed is False:
+                                    if session['status'] == 'converting':
+                                        error = 'Conversion cancelled.'
+                                        break
+                                    else:
+                                        error = 'Conversion failed.'
+                                        break
+                                else:
+                                    if progress_status == 'confirm_blocks':
+                                        session['event'] = progress_status
+                                        msg = 'Select the blocks to convert:'
+                                        print(msg)
+                                        yield gr.update(), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                    else:
+                                        show_alert({"type": "success", "msg": progress_status})
+                                        args['ebook_list'].remove(file)
+                                        reset_session(args['session'])
+                                        count_file = len(args['ebook_list'])
+                                        if count_file > 0:
+                                            msg = f"{len(args['ebook_list'])} remaining..."
+                                            yield gr.update(value=msg), gr.update()
+                                        else: 
+                                            msg = 'Conversion successful!'
+                                            session['status'] = 'ready'
+                                            yield gr.update(value=msg), gr.update()
+                    else:
+                        print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
+                        progress_status, passed = convert_ebook(args)
+                        if passed is False:
+                            if session['status'] == 'converting':
+                                error = 'Conversion cancelled.'
+                            else:
+                                error = 'Conversion failed.'
+                            session['status'] = 'ready'
+                        else:
+                            if progress_status == 'confirm_blocks':
+                                session['event'] = progress_status
+                                msg = 'Select the blocks to convert:'
+                                print(msg)
+                                return gr.update(value=msg), gr.update(value=show_modal(progress_status, msg), visible=True)
+                            else:
+                                show_alert({"type": "success", "msg": progress_status})
+                                reset_session(args['session'])
+                                msg = 'Conversion successful!'
+                                session['status'] = 'ready'
+                                return gr.update(value=msg), gr.update()
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
@@ -3751,14 +3812,6 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_convert_btn.click(
-            fn=change_convert_btn,
-            inputs=None,
-            outputs=[gr_convert_btn]
-        ).then(
-            fn=disable_components,
-            inputs=None,
-            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
-        ).then(
             fn=submit_convert_btn,
             inputs=[
                 gr_session, gr_device, gr_ebook_file, gr_chapters_control, gr_tts_engine_list, gr_language, gr_voice_list,
@@ -3767,18 +3820,6 @@ def web_interface(args, ctx):
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
             outputs=[gr_tab_progress, gr_modal]
-        ).then(
-            fn=enable_components,
-            inputs=[gr_session],
-            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
-        ).then(
-            fn=refresh_interface,
-            inputs=[gr_session],
-            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
-        ).then(
-            fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
-            outputs=[gr_group_audiobook_list],
         )
         gr_write_data.change(
             fn=None,
