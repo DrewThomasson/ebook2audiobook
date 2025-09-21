@@ -2513,14 +2513,10 @@ def web_interface(args, ctx):
                 font-size: 16px !important;
                 cursor: pointer !important;
             }
-            .confirm-buttons .gr_confirm_deletion_yes_btn { background-color: #28a745 !important; color: white !important; }
-            .confirm-buttons .gr_confirm_deletion_no_btn  { background-color: #dc3545 !important; color: white !important; }
-            .confirm-buttons .gr_confirm_deletion_yes_btn:hover { background-color: #34d058 !important; }
-            .confirm-buttons .gr_confirm_deletion_no_btn:hover  { background-color: #ff6f71 !important; }
-            .confirm-buttons .gr_confirm_blocks_yes_btn   { background-color: #28a745 !important; color: white !important; }
-            .confirm-buttons .gr_confirm_blocks_no_btn    { background-color: #dc3545 !important; color: white !important; }
-            .confirm-buttons .gr_confirm_blocks_yes_btn:hover   { background-color: #34d058 !important; }
-            .confirm-buttons .gr_confirm_blocks_no_btn:hover    { background-color: #ff6f71 !important; }
+            .confirm-buttons .button_green { background-color: #28a745 !important; color: white !important; }
+            .confirm-buttons .button_green:hover { background-color: #34d058 !important; }
+            .confirm-buttons .button_red  { background-color: #dc3545 !important; color: white !important; }
+            .confirm-buttons .button_red:hover  { background-color: #ff6f71 !important; }
             .spinner {
                 margin: 15px auto !important;
                 border: 4px solid rgba(255, 255, 255, 0.2) !important;
@@ -2768,8 +2764,8 @@ def web_interface(args, ctx):
         def show_confirm_deletion():
             return '''
             <div class="confirm-buttons">
-                <button class="gr_confirm_deletion_yes_btn" onclick="document.querySelector('#gr_confirm_deletion_yes_btn').click()">✔</button>
-                <button class="gr_confirm_deletion_no_btn" onclick="document.querySelector('#gr_confirm_deletion_no_btn').click()">⨉</button>
+                <button class="button_green" onclick="document.querySelector('#gr_confirm_deletion_yes_btn').click()">✔</button>
+                <button class="button_red" onclick="document.querySelector('#gr_confirm_deletion_no_btn').click()">⨉</button>
             </div>
             '''
 
