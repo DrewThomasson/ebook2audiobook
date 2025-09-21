@@ -3449,7 +3449,8 @@ def web_interface(args, ctx):
                                 session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                return gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                return
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
@@ -3812,6 +3813,14 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_convert_btn.click(
+            fn=change_convert_btn,
+            inputs=None,
+            outputs=[gr_convert_btn]
+        ).then(
+            fn=disable_components,
+            inputs=None,
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+        ).then(
             fn=submit_convert_btn,
             inputs=[
                 gr_session, gr_device, gr_ebook_file, gr_chapters_control, gr_tts_engine_list, gr_language, gr_voice_list,
@@ -3820,6 +3829,18 @@ def web_interface(args, ctx):
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
             outputs=[gr_tab_progress, gr_modal]
+        ).then(
+            fn=enable_components,
+            inputs=[gr_session],
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+        ).then(
+            fn=refresh_interface,
+            inputs=[gr_session],
+            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
+        ).then(
+            fn=lambda: gr.update(visible=bool(audiobook_options)),
+            inputs=None,
+            outputs=[gr_group_audiobook_list],
         )
         gr_write_data.change(
             fn=None,
