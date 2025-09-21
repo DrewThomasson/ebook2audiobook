@@ -2781,7 +2781,6 @@ def web_interface(args, ctx):
             '''
 
         def show_confirm_blocks():
-            print('show_confirm_blocks called')
             return '''
             <div class="confirm-buttons">
                 <button class="gr_confirm_blocks_yes_btn" onclick="document.querySelector('#gr_confirm_blocks_yes_btn').click()">✔</button>
@@ -3452,7 +3451,7 @@ def web_interface(args, ctx):
                             if progress_status == 'confirm_blocks':
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
+                                return gr.update(), gr.update(value=show_modal('confirm_deletion', msg),visible=True)
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
