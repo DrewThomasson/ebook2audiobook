@@ -2476,19 +2476,17 @@ def web_interface(args, ctx):
                 to { opacity: 1; }
             }
             //////////
-            .modal {{
+            .modal {
                 position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
                 background-color: rgba(0, 0, 0, 0.5);
                 z-index: 9999;
                 display: flex;
                 justify-content: center;
                 align-items: center;
-            }}
-            .modal-content {{
+            }
+            .modal-content {
                 background-color: #333;
                 padding: 20px;
                 border-radius: 8px;
@@ -2498,50 +2496,39 @@ def web_interface(args, ctx):
                 border: 2px solid #FFA500;
                 color: white;
                 position: relative;
-            }}
-            .modal-content p {{
-                margin: 10px 0;
-            }}
-            .confirm-buttons {{
+            }
+            .confirm-buttons {
                 display: flex;
                 justify-content: space-evenly;
                 margin-top: 20px;
-            }}
-            .confirm-buttons button {{
+            }
+            .confirm-buttons button {
                 padding: 10px 20px;
                 border: none;
                 border-radius: 5px;
                 font-size: 16px;
                 cursor: pointer;
-            }}
-            .confirm-buttons .gr_confirm_deletion_yes_btn {{
-                background-color: #28a745;
-                color: white;
-            }}
-            .confirm-buttons .gr_confirm_deletion_no_btn {{
-                background-color: #dc3545;
-                color: white;
-            }}
-            .confirm-buttons .gr_confirm_deletion_yes_btn:hover {{
-                background-color: #34d058;
-            }}
-            .confirm-buttons .gr_confirm_deletion_no_btn:hover {{
-                background-color: #ff6f71;
-            }}
-            /* Spinner */
-            .spinner {{
+            }
+            .confirm-buttons .gr_confirm_deletion_yes_btn { background-color: #28a745; color: white; }
+            .confirm-buttons .gr_confirm_deletion_no_btn  { background-color: #dc3545; color: white; }
+            .confirm-buttons .gr_confirm_deletion_yes_btn:hover { background-color: #34d058; }
+            .confirm-buttons .gr_confirm_deletion_no_btn:hover  { background-color: #ff6f71; }
+            .confirm-buttons .gr_confirm_blocks_yes_btn   { background-color: #28a745; color: white; }
+            .confirm-buttons .gr_confirm_blocks_no_btn    { background-color: #dc3545; color: white; }
+            .confirm-buttons .gr_confirm_blocks_yes_btn:hover   { background-color: #34d058; }
+            .confirm-buttons .gr_confirm_blocks_no_btn:hover    { background-color: #ff6f71; }
+            .spinner {
                 margin: 15px auto;
                 border: 4px solid rgba(255, 255, 255, 0.2);
                 border-top: 4px solid #FFA500;
                 border-radius: 50%;
-                width: 30px;
-                height: 30px;
+                width: 30px; height: 30px;
                 animation: spin 1s linear infinite;
-            }}
-            @keyframes spin {{
-                0% {{ transform: rotate(0deg); }}
-                100% {{ transform: rotate(360deg); }}
-            }}
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
         </style>
     '''
     
