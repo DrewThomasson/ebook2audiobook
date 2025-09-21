@@ -2475,6 +2475,73 @@ def web_interface(args, ctx):
                 from { opacity: 0; }
                 to { opacity: 1; }
             }
+            //////////
+            .modal {{
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 9999;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }}
+            .modal-content {{
+                background-color: #333;
+                padding: 20px;
+                border-radius: 8px;
+                text-align: center;
+                max-width: 300px;
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+                border: 2px solid #FFA500;
+                color: white;
+                position: relative;
+            }}
+            .modal-content p {{
+                margin: 10px 0;
+            }}
+            .confirm-buttons {{
+                display: flex;
+                justify-content: space-evenly;
+                margin-top: 20px;
+            }}
+            .confirm-buttons button {{
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                font-size: 16px;
+                cursor: pointer;
+            }}
+            .confirm-buttons .gr_confirm_deletion_yes_btn {{
+                background-color: #28a745;
+                color: white;
+            }}
+            .confirm-buttons .gr_confirm_deletion_no_btn {{
+                background-color: #dc3545;
+                color: white;
+            }}
+            .confirm-buttons .gr_confirm_deletion_yes_btn:hover {{
+                background-color: #34d058;
+            }}
+            .confirm-buttons .gr_confirm_deletion_no_btn:hover {{
+                background-color: #ff6f71;
+            }}
+            /* Spinner */
+            .spinner {{
+                margin: 15px auto;
+                border: 4px solid rgba(255, 255, 255, 0.2);
+                border-top: 4px solid #FFA500;
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                animation: spin 1s linear infinite;
+            }}
+            @keyframes spin {{
+                0% {{ transform: rotate(0deg); }}
+                100% {{ transform: rotate(360deg); }}
+            }}
         </style>
     '''
     
@@ -2699,74 +2766,6 @@ def web_interface(args, ctx):
 
         def show_modal(type, msg):
             return f'''
-            <style>
-                .modal {{
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    width: 100%;
-                    height: 100%;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    z-index: 9999;
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                }}
-                .modal-content {{
-                    background-color: #333;
-                    padding: 20px;
-                    border-radius: 8px;
-                    text-align: center;
-                    max-width: 300px;
-                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-                    border: 2px solid #FFA500;
-                    color: white;
-                    position: relative;
-                }}
-                .modal-content p {{
-                    margin: 10px 0;
-                }}
-                .confirm-buttons {{
-                    display: flex;
-                    justify-content: space-evenly;
-                    margin-top: 20px;
-                }}
-                .confirm-buttons button {{
-                    padding: 10px 20px;
-                    border: none;
-                    border-radius: 5px;
-                    font-size: 16px;
-                    cursor: pointer;
-                }}
-                .confirm-buttons .gr_confirm_deletion_yes_btn {{
-                    background-color: #28a745;
-                    color: white;
-                }}
-                .confirm-buttons .gr_confirm_deletion_no_btn {{
-                    background-color: #dc3545;
-                    color: white;
-                }}
-                .confirm-buttons .gr_confirm_deletion_yes_btn:hover {{
-                    background-color: #34d058;
-                }}
-                .confirm-buttons .gr_confirm_deletion_no_btn:hover {{
-                    background-color: #ff6f71;
-                }}
-                /* Spinner */
-                .spinner {{
-                    margin: 15px auto;
-                    border: 4px solid rgba(255, 255, 255, 0.2);
-                    border-top: 4px solid #FFA500;
-                    border-radius: 50%;
-                    width: 30px;
-                    height: 30px;
-                    animation: spin 1s linear infinite;
-                }}
-                @keyframes spin {{
-                    0% {{ transform: rotate(0deg); }}
-                    100% {{ transform: rotate(360deg); }}
-                }}
-            </style>
             <div id="custom-modal" class="modal">
                 <div class="modal-content">
                     <p style="color:#ffffff">{msg}</p>            
