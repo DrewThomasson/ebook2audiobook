@@ -2859,8 +2859,7 @@ def web_interface(args, ctx):
         def refresh_interface(id):
             session = context.get_session(id)
             if session['event'] == 'confirm_blocks':
-                outputs = tuple([gr.update() for _ in range(6)])
-                return outputs
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
             else:
                 return (
                         gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
@@ -2913,7 +2912,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'change_gr_ebook_file(): {e}'
                 alert_exception(error)
-            return gr.update(visible=False)
+            return gr.update(value='', visible=False)
             
         def change_gr_ebook_mode(val, id):
             session = context.get_session(id)
@@ -3209,12 +3208,12 @@ def web_interface(args, ctx):
                 session = context.get_session(id)
                 prev = session['language']      
                 session['language'] = selected
-                return[
+                return (
                     gr.update(value=session['language']),
                     update_gr_tts_engine_list(id),
                     update_gr_custom_model_list(id),
                     update_gr_fine_tuned_list(id)
-                ]
+                )
             return (gr.update(), gr.update(), gr.update(), gr.update())
 
         def check_custom_model_tts(custom_model_dir, tts_engine):
