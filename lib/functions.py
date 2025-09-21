@@ -3368,7 +3368,7 @@ def web_interface(args, ctx):
                 session['event'] = 'confirm_blocks'
                 msg = 'Select the blocks to convert:'
                 print(msg)
-                return gr.update(value=show_modal(progress_status, msg), visible=True)
+                return gr.update(value=show_modal(session['event'], msg), visible=True)
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
