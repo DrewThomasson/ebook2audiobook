@@ -3461,8 +3461,7 @@ def web_interface(args, ctx):
                                 session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                yield gr.update(msg), gr.update(show_modal(progress_status, msg),visible=True)
-                                return
+                                return gr.update(msg), gr.update(show_modal(progress_status, msg),visible=True)
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
