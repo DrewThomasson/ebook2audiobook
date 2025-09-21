@@ -2677,7 +2677,11 @@ def web_interface(args, ctx):
             return outputs
         
         def enable_components():
-            outputs = tuple([gr.update(interactive=True) for _ in range(9)])
+            session = context.get_session(id)
+            if session.get('event') == 'confirm_blocks':
+                outputs = tuple([gr.update() for _ in range(9)])
+            else:
+                outputs = tuple([gr.update(interactive=True) for _ in range(9)])
             return outputs
 
         def load_vtt_data(path):
@@ -2865,10 +2869,14 @@ def web_interface(args, ctx):
 
         def refresh_interface(id):
             session = context.get_session(id)
-            return (
-                    gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
-                    gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
-            )
+            if session.get('event') == 'confirm_blocks':
+                outputs = tuple([gr.update() for _ in range(6)]
+                return outputs
+            else:
+                return (
+                        gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
+                        gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
+                )
 
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
@@ -3423,6 +3431,7 @@ def web_interface(args, ctx):
                                         break
                                 else:
                                     if progress_status == 'confirm_blocks':
+                                        session['event'] = progress_status
                                         msg = 'Select the blocks to convert:'
                                         print(msg)
                                         return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
@@ -3449,9 +3458,10 @@ def web_interface(args, ctx):
                             session['status'] = 'ready'
                         else:
                             if progress_status == 'confirm_blocks':
+                                session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                return gr.update(), gr.update()
+                                return gr.update(), gr.update(value=show_modal(progress_status, 'Select Blocks to convert'),visible=True)
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
@@ -3832,7 +3842,7 @@ def web_interface(args, ctx):
             outputs=[gr_tab_progress, gr_modal]
         ).then(
             fn=enable_components,
-            inputs=None,
+            inputs=[gr_session],
             outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
             fn=refresh_interface,
