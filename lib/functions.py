@@ -3368,11 +3368,11 @@ def web_interface(args, ctx):
                 session['event'] = progress_status
                 msg = 'Select the blocks to convert:'
                 print(msg)
-                return gr.update(value=msg), gr.update(value=show_modal(progress_status, msg), visible=True)
+                return gr.update(value=show_modal(progress_status, msg), visible=True)
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(), gr.update()
+            return gr.update()
 
         def update_gr_audiobook_list(id):
             try:
@@ -3730,7 +3730,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
-            outputs=[gr_tab_progress, gr_modal]
+            outputs=[gr_modal]
         )
         gr_write_data.change(
             fn=None,
