@@ -2476,6 +2476,10 @@ def web_interface(args, ctx):
                 to { opacity: 1; }
             }
             //////////
+            #custom-modal-container,
+            #custom-modal-container .modal {
+                position: fixed !important;
+            }
             .modal {
                 position: fixed !important;
                 top: 0 !important; left: 0 !important;
