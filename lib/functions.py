@@ -4100,7 +4100,7 @@ def web_interface(args, ctx):
                             window.tab_progress = () =>{
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
-                                    const txt = val.trim().split(" ")[2];
+                                    const txt = val.trim().split(" ")[2] || "";
                                     const title = txt.length > 20 ? txt.slice(0, 20).trimEnd() + '…' : txt;
                                     const prct = val.trim().split(" ")[4];
                                     if(prct && /^\d+(\.\d+)?%$/.test(prct)){
