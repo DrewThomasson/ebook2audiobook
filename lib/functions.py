@@ -2476,13 +2476,17 @@ def web_interface(args, ctx):
                 to { opacity: 1; }
             }
             //////////
+            #custom-modal-container,
+            #custom-modal-container .modal {
+                position: fixed !important;
+            }
             .modal {
-                position: absolute;
+                position: fixed;
                 top: 0; left: 0;
                 width: 100%; height: 100%;
                 background-color: rgba(0, 0, 0, 0.5);
                 z-index: 9999;
-                display: block;
+                display: flex;
                 justify-content: center;
                 align-items: center;
             }
