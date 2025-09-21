@@ -2870,12 +2870,12 @@ def web_interface(args, ctx):
         def refresh_interface(id):
             session = context.get_session(id)
             if session['event'] == 'confirm_blocks':
-                outputs = tuple([gr.update() for _ in range(5)])
+                outputs = tuple([gr.update() for _ in range(6)])
                 return outputs
             else:
                 return (
                         gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
-                        gr.update(value=session['audiobook']), update_gr_voice_list(id),
+                        gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
                 )
 
         def change_gr_audiobook_list(selected, id):
@@ -3840,18 +3840,6 @@ def web_interface(args, ctx):
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
             outputs=[gr_tab_progress, gr_modal]
-        ).then(
-            fn=enable_components,
-            inputs=[gr_session],
-            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
-        ).then(
-            fn=refresh_interface,
-            inputs=[gr_session],
-            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_voice_list]
-        ).then(
-            fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
-            outputs=[gr_group_audiobook_list],
         )
         gr_write_data.change(
             fn=None,
