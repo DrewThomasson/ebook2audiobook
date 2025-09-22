@@ -1943,198 +1943,201 @@ def convert_ebook_batch(args, ctx=None):
 
 def convert_ebook(args, ctx=None):
     try:
-        global context        
-        error = None
-        id = None
-        info_session = None
-        if args['language'] is not None:
-            if not os.path.splitext(args['ebook'])[1]:
-                error = f"{args['ebook']} needs a format extension."
-                print(error)
-                return error, false
-            if not os.path.exists(args['ebook']):
-                error = 'File does not exist or Directory empty.'
-                print(error)
-                return error, false
-            try:
-                if len(args['language']) == 2:
-                    lang_array = languages.get(part1=args['language'])
-                    if lang_array:
-                        args['language'] = lang_array.part3
-                        args['language_iso1'] = lang_array.part1
-                elif len(args['language']) == 3:
-                    lang_array = languages.get(part3=args['language'])
-                    if lang_array:
-                        args['language'] = lang_array.part3
-                        args['language_iso1'] = lang_array.part1 
-                else:
-                    args['language_iso1'] = None
-            except Exception as e:
-                pass
-
-            if args['language'] not in language_mapping.keys():
-                error = 'The language you provided is not (yet) supported'
-                print(error)
-                return error, false
-
-            if ctx is not None:
-                context = ctx
-
-            id = args['session'] if args['session'] is not None else str(uuid.uuid4())
-
-            session = context.get_session(id)
-            session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE
-            session['is_gui_process'] = args['is_gui_process']
-            session['ebook'] = args['ebook']
-            session['ebook_list'] = args['ebook_list']
-            session['chapters_control'] = args['chapters_control']
-            session['device'] = args['device']
-            session['language'] = args['language']
-            session['language_iso1'] = args['language_iso1']
-            session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
-            session['custom_model'] = args['custom_model'] if not session['is_gui_process'] or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
-            session['fine_tuned'] = args['fine_tuned']
-            session['voice'] = args['voice']
-            session['temperature'] =  args['temperature']
-            session['length_penalty'] = args['length_penalty']
-            session['num_beams'] = args['num_beams']
-            session['repetition_penalty'] = args['repetition_penalty']
-            session['top_k'] =  args['top_k']
-            session['top_p'] = args['top_p']
-            session['speed'] = args['speed']
-            session['enable_text_splitting'] = args['enable_text_splitting']
-            session['text_temp'] =  args['text_temp']
-            session['waveform_temp'] =  args['waveform_temp']
-            session['audiobooks_dir'] = args['audiobooks_dir']
-            session['output_format'] = args['output_format']
-            session['output_split'] = args['output_split']    
-            session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
-
-            if not session['is_gui_process']:
-                session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
-                session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
-                os.makedirs(session['voice_dir'], exist_ok=True)
-                # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
-                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
-                session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
-                if session['custom_model'] is not None:
-                    if not os.path.exists(session['custom_model_dir']):
-                        os.makedirs(session['custom_model_dir'], exist_ok=True)
-                    src_path = Path(session['custom_model'])
-                    src_name = src_path.stem
-                    if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
-                        required_files = models[session['tts_engine']]['internal']['files']
-                        if analyze_uploaded_file(session['custom_model'], required_files):
-                            model = extract_custom_model(session['custom_model'], session)
-                            if model is not None:
-                                session['custom_model'] = model
-                            else:
-                                error = f"{model} could not be extracted or mandatory files are missing"
-                        else:
-                            error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
-                if session['voice'] is not None:                  
-                    voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
-                    final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
-                    if not os.path.exists(final_voice_file):
-                        extractor = VoiceExtractor(session, session['voice'], voice_name)
-                        status, msg = extractor.extract_voice()
-                        if status:
-                            session['voice'] = final_voice_file
-                        else:
-                            error = f'VoiceExtractor.extract_voice() failed! {msg}'
-                            print(error)
-            if error is None:
-                if session['script_mode'] == NATIVE:
-                    bool, e = check_programs('Calibre', 'ebook-convert', '--version')
-                    if not bool:
-                        error = f'check_programs() Calibre failed: {e}'
-                    bool, e = check_programs('FFmpeg', 'ffmpeg', '-version')
-                    if not bool:
-                        error = f'check_programs() FFMPEG failed: {e}'
-                if error is None:
-                    old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
-                    if os.path.isdir(old_session_dir):
-                        os.rename(old_session_dir, session['session_dir'])
-                    session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
-                    session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
-                    session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                    session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
-                    if prepare_dirs(session['ebook'], session):
-                        session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
-                        msg = ''
-                        msg_extra = ''
-                        vram_avail = get_vram()
-                        if vram_avail <= 4:
-                            msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
-                            if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
-                                msg_extra += f"Switching BARK to SMALL models - "
-                        else:
-                            if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
-                        if session['device'] == 'cuda':
-                            session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
-                            if session['device'] == 'cpu':
-                                msg += f"GPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
-                        elif session['device'] == 'mps':
-                            session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
-                            if session['device'] == 'cpu':
-                                msg += f"MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
-                        if session['device'] == 'cpu':
-                            if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                os.environ['SUNO_OFFLOAD_CPU'] = 'True'
-                        if default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] == True:
-                            try:
-                                import deepspeed
-                            except:
-                                default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] = False
-                                msg_extra += 'deepseed not installed or package is broken. set to False - '
-                            else: 
-                                msg_extra += 'deepspeed detected and ready!'
-                        if msg == '':
-                            msg = f"Using {session['device'].upper()} - "
-                        msg += msg_extra
-                        if session['is_gui_process']:
-                            show_alert({"type": "warning", "msg": msg})
-                        print(msg)
-                        session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
-                        if convert2epub(id):
-                            epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
-                            metadata = dict(session['metadata'])
-                            for key, value in metadata.items():
-                                data = epubBook.get_metadata('DC', key)
-                                if data:
-                                    for value, attributes in data:
-                                        metadata[key] = value
-                            metadata['language'] = session['language']
-                            metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
-                            metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
-                            session['metadata'] = metadata                  
-                            try:
-                                if len(session['metadata']['language']) == 2:
-                                    lang_array = languages.get(part1=session['language'])
-                                    if lang_array:
-                                        session['metadata']['language'] = lang_array.part3
-                            except Exception as e:
-                                pass                         
-                            if session['metadata']['language'] != session['language']:
-                                error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                print(error)
-                            session['cover'] = get_cover(epubBook, session)
-                            if session['cover']:
-                                session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                if session['chapters_control']:
-                                    return 'confirm_blocks', True
-                                else:
-                                    return finalize_audiobook(id)
-                            else:
-                                error = 'get_cover() failed!'
-                        else:
-                            error = 'convert2epub() failed!'
-                    else:
-                        error = f"Temporary directory {session['process_dir']} not removed due to failure."
+        if args['event'] == 'blocks_confirmed':
+            return finalize_audiobook(args['id'])
         else:
-            error = f"Language {args['language']} is not supported."
+            global context        
+            error = None
+            id = None
+            info_session = None
+            if args['language'] is not None:
+                if not os.path.splitext(args['ebook'])[1]:
+                    error = f"{args['ebook']} needs a format extension."
+                    print(error)
+                    return error, false
+                if not os.path.exists(args['ebook']):
+                    error = 'File does not exist or Directory empty.'
+                    print(error)
+                    return error, false
+                try:
+                    if len(args['language']) == 2:
+                        lang_array = languages.get(part1=args['language'])
+                        if lang_array:
+                            args['language'] = lang_array.part3
+                            args['language_iso1'] = lang_array.part1
+                    elif len(args['language']) == 3:
+                        lang_array = languages.get(part3=args['language'])
+                        if lang_array:
+                            args['language'] = lang_array.part3
+                            args['language_iso1'] = lang_array.part1 
+                    else:
+                        args['language_iso1'] = None
+                except Exception as e:
+                    pass
+
+                if args['language'] not in language_mapping.keys():
+                    error = 'The language you provided is not (yet) supported'
+                    print(error)
+                    return error, false
+
+                if ctx is not None:
+                    context = ctx
+
+                id = args['session'] if args['session'] is not None else str(uuid.uuid4())
+
+                session = context.get_session(id)
+                session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE
+                session['is_gui_process'] = args['is_gui_process']
+                session['ebook'] = args['ebook']
+                session['ebook_list'] = args['ebook_list']
+                session['chapters_control'] = args['chapters_control']
+                session['device'] = args['device']
+                session['language'] = args['language']
+                session['language_iso1'] = args['language_iso1']
+                session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
+                session['custom_model'] = args['custom_model'] if not session['is_gui_process'] or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
+                session['fine_tuned'] = args['fine_tuned']
+                session['voice'] = args['voice']
+                session['temperature'] =  args['temperature']
+                session['length_penalty'] = args['length_penalty']
+                session['num_beams'] = args['num_beams']
+                session['repetition_penalty'] = args['repetition_penalty']
+                session['top_k'] =  args['top_k']
+                session['top_p'] = args['top_p']
+                session['speed'] = args['speed']
+                session['enable_text_splitting'] = args['enable_text_splitting']
+                session['text_temp'] =  args['text_temp']
+                session['waveform_temp'] =  args['waveform_temp']
+                session['audiobooks_dir'] = args['audiobooks_dir']
+                session['output_format'] = args['output_format']
+                session['output_split'] = args['output_split']    
+                session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
+
+                if not session['is_gui_process']:
+                    session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
+                    session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
+                    os.makedirs(session['voice_dir'], exist_ok=True)
+                    # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
+                    [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
+                    session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
+                    if session['custom_model'] is not None:
+                        if not os.path.exists(session['custom_model_dir']):
+                            os.makedirs(session['custom_model_dir'], exist_ok=True)
+                        src_path = Path(session['custom_model'])
+                        src_name = src_path.stem
+                        if not os.path.exists(os.path.join(session['custom_model_dir'], src_name)):
+                            required_files = models[session['tts_engine']]['internal']['files']
+                            if analyze_uploaded_file(session['custom_model'], required_files):
+                                model = extract_custom_model(session['custom_model'], session)
+                                if model is not None:
+                                    session['custom_model'] = model
+                                else:
+                                    error = f"{model} could not be extracted or mandatory files are missing"
+                            else:
+                                error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
+                    if session['voice'] is not None:                  
+                        voice_name = get_sanitized(os.path.splitext(os.path.basename(session['voice']))[0])
+                        final_voice_file = os.path.join(session['voice_dir'], f'{voice_name}.wav')
+                        if not os.path.exists(final_voice_file):
+                            extractor = VoiceExtractor(session, session['voice'], voice_name)
+                            status, msg = extractor.extract_voice()
+                            if status:
+                                session['voice'] = final_voice_file
+                            else:
+                                error = f'VoiceExtractor.extract_voice() failed! {msg}'
+                                print(error)
+                if error is None:
+                    if session['script_mode'] == NATIVE:
+                        bool, e = check_programs('Calibre', 'ebook-convert', '--version')
+                        if not bool:
+                            error = f'check_programs() Calibre failed: {e}'
+                        bool, e = check_programs('FFmpeg', 'ffmpeg', '-version')
+                        if not bool:
+                            error = f'check_programs() FFMPEG failed: {e}'
+                    if error is None:
+                        old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
+                        if os.path.isdir(old_session_dir):
+                            os.rename(old_session_dir, session['session_dir'])
+                        session['final_name'] = get_sanitized(Path(session['ebook']).stem + '.' + session['output_format'])
+                        session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(os.path.join(session['audiobooks_dir'], session['final_name']).encode()).hexdigest()}")
+                        session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
+                        session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
+                        if prepare_dirs(session['ebook'], session):
+                            session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
+                            msg = ''
+                            msg_extra = ''
+                            vram_avail = get_vram()
+                            if vram_avail <= 4:
+                                msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
+                                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
+                                    msg_extra += f"Switching BARK to SMALL models - "
+                            else:
+                                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
+                            if session['device'] == 'cuda':
+                                session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
+                                if session['device'] == 'cpu':
+                                    msg += f"GPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
+                            elif session['device'] == 'mps':
+                                session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
+                                if session['device'] == 'cpu':
+                                    msg += f"MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU - "
+                            if session['device'] == 'cpu':
+                                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                    os.environ['SUNO_OFFLOAD_CPU'] = 'True'
+                            if default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] == True:
+                                try:
+                                    import deepspeed
+                                except:
+                                    default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] = False
+                                    msg_extra += 'deepseed not installed or package is broken. set to False - '
+                                else: 
+                                    msg_extra += 'deepspeed detected and ready!'
+                            if msg == '':
+                                msg = f"Using {session['device'].upper()} - "
+                            msg += msg_extra
+                            if session['is_gui_process']:
+                                show_alert({"type": "warning", "msg": msg})
+                            print(msg)
+                            session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
+                            if convert2epub(id):
+                                epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
+                                metadata = dict(session['metadata'])
+                                for key, value in metadata.items():
+                                    data = epubBook.get_metadata('DC', key)
+                                    if data:
+                                        for value, attributes in data:
+                                            metadata[key] = value
+                                metadata['language'] = session['language']
+                                metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
+                                metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                session['metadata'] = metadata                  
+                                try:
+                                    if len(session['metadata']['language']) == 2:
+                                        lang_array = languages.get(part1=session['language'])
+                                        if lang_array:
+                                            session['metadata']['language'] = lang_array.part3
+                                except Exception as e:
+                                    pass                         
+                                if session['metadata']['language'] != session['language']:
+                                    error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                    print(error)
+                                session['cover'] = get_cover(epubBook, session)
+                                if session['cover']:
+                                    session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                    if session['chapters_control']:
+                                        return 'confirm_blocks', True
+                                    else:
+                                        return finalize_audiobook(id)
+                                else:
+                                    error = 'get_cover() failed!'
+                            else:
+                                error = 'convert2epub() failed!'
+                        else:
+                            error = f"Temporary directory {session['process_dir']} not removed due to failure."
+            else:
+                error = f"Language {args['language']} is not supported."
         if session['cancellation_requested']:
             error = 'Cancelled'
         print(error)
@@ -3071,7 +3074,7 @@ def web_interface(args, ctx):
         def confirm_blocks(id=None):
             if id is not None:
                 session = context.get_session(id)
-                session['event'] = 'blocks_confirmed']
+                session['event'] = 'blocks_confirmed'
             else:
                 session['status'] = 'ready'
             return gr.update(value='', visible=False)
