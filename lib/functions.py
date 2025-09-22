@@ -2715,10 +2715,10 @@ def web_interface(args, ctx):
         gr_modal = gr.HTML(visible=False)
         gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', value='', visible=False)
-        gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', value='', visible=False)
-        gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', value='', visible=False)
-        gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', value='', visible=False)
+        gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', value='', visible=True)
+        gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', value='', visible=True)
+        gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', value='', visible=True)
+        gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', value='', visible=True)
 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
@@ -3897,12 +3897,12 @@ def web_interface(args, ctx):
         gr_confirm_blocks_yes_btn.click(
             fn=confirm_blocks,
             inputs=[gr_session],
-            outputs=[gr_modal, gr_tab_progress]
+            outputs=[gr_modal]
         )
         gr_confirm_blocks_no_btn.click(
             fn=confirm_blocks,
             inputs=[gr_session],
-            outputs=[gr_modal, gr_tab_progress]
+            outputs=[gr_modal]
         )
         app.load(
             fn=None,
