@@ -2722,11 +2722,16 @@ def web_interface(args, ctx):
         
         gr_modal = gr.HTML(visible=False)
         gr_glass_mask = gr.HTML(f'<div id="glass-mask" style="position: absolute">{glass_mask_msg}</div>')
-        gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
-        gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
-        gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
-        gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
+        with gr.Group(visible=False, elem_id="gr_modal") as gr_modal:
+            gr.Markdown("### Confirm Blocks")
+            with gr.Group() as gr_modal_content:
+                pass
+            with gr.Row():
+                gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
+                gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
+                gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
+                gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
+                gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
