@@ -2373,6 +2373,10 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
+            .global_group {
+                background: none;
+            }
+            ////////////////////
             #gr_col_1, #gr_col_2 {
                 padding: 0;
                 margin: 0;
