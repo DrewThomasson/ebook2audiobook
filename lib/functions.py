@@ -3489,7 +3489,7 @@ def web_interface(args, ctx):
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 session['ebook_list'].remove(file)
-                                reset_session(session['session'])
+                                reset_session(session['id'])
                                 count_file = len(session['ebook_list'])
                                 if count_file > 0:
                                     msg = f"{len(session['ebook_list'])} remaining..."
@@ -3509,7 +3509,7 @@ def web_interface(args, ctx):
                         session['status'] = 'ready'
                     else:
                         show_alert({"type": "success", "msg": progress_status})
-                        reset_session(session['session'])
+                        reset_session(session['id'])
                         msg = 'Conversion successful!'
                         session['status'] = 'ready'
                         return gr.update(value=msg), gr.update()
