@@ -3903,6 +3903,10 @@ def web_interface(args, ctx):
             fn=confirm_blocks,
             inputs=[gr_session],
             outputs=[gr_modal, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn]
+        ).then(
+            fn=enable_components,
+            inputs=[gr_session],
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         )
         app.load(
             fn=None,
