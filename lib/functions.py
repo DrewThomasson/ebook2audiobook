@@ -2513,10 +2513,10 @@ def web_interface(args, ctx):
                 font-size: 16px !important;
                 cursor: pointer !important;
             }
-            .confirm-buttons .button_green { background-color: #28a745 !important; color: white !important; }
-            .confirm-buttons .button_green:hover { background-color: #34d058 !important; }
-            .confirm-buttons .button_red  { background-color: #dc3545 !important; color: white !important; }
-            .confirm-buttons .button_red:hover  { background-color: #ff6f71 !important; }
+            .button_green { background-color: #28a745 !important; color: white !important; }
+            .button_green:hover { background-color: #34d058 !important; }
+            .button_red  { background-color: #dc3545 !important; color: white !important; }
+            .button_red:hover  { background-color: #ff6f71 !important; }
             .spinner {
                 margin: 15px auto !important;
                 border: 4px solid rgba(255, 255, 255, 0.2) !important;
@@ -2756,26 +2756,23 @@ def web_interface(args, ctx):
             <div id="custom-modal" class="modal">
                 <div class="modal-content">
                     <p style="color:#ffffff">{msg}</p>            
-                    {show_confirm_deletion() if type == 'confirm_deletion' else show_confirm_blocks() if type == 'confirm_blocks' else '<div class="spinner"></div>'}
+                    {show_confirm_buttons(type)}
                 </div>
             </div>
             '''
 
-        def show_confirm_deletion():
-            return '''
-            <div class="confirm-buttons">
-                <button class="button_green" onclick="document.querySelector('#gr_confirm_deletion_yes_btn').click()">✔</button>
-                <button class="button_red" onclick="document.querySelector('#gr_confirm_deletion_no_btn').click()">⨉</button>
-            </div>
-            '''
-
-        def show_confirm_blocks():
-            return '''
-            <div class="confirm-buttons">
-                <button class="gr_confirm_blocks_yes_btn" onclick="document.querySelector('#gr_confirm_blocks_yes_btn').click()">✔</button>
-                <button class="gr_confirm_blocks_no_btn" onclick="document.querySelector('#gr_confirm_blocks_no_btn').click()">⨉</button>
-            </div>
-            '''
+        def show_confirm_buttons(mode):
+            if mode in ['confirm_deletion', 'confirm_blocks']:
+                button_yes = '#gr_confirm_deletion_yes_btn' if mode == 'confirm_deletion' else '#gr_confirm_blocks_yes_btn' if mode == 'confirm_blocks'
+                button_no = '#gr_confirm_deletion_no_btn' if mode == 'confirm_deletion' else '#gr_confirm_blocks_no_btn' if mode == 'confirm_blocks'
+                return f'''
+                <div class="confirm-buttons">
+                    <button class="button_green" onclick="document.querySelector({button_yes}).click()">✔</button>
+                    <button class="button_red" onclick="document.querySelector({button_no}).click()">⨉</button>
+                </div>
+                '''
+            else:
+                return '<div class="spinner"></div>'
 
         def show_rating(tts_engine):
 
