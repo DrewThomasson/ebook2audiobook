@@ -3019,7 +3019,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = Path(selected).stem
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm_deletion', msg)
+                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm_deletion', msg), visible=True)
             except Exception as e:
                 error = f'Could not delete the audiobook {selected_name}!'
                 alert_exception(error)
