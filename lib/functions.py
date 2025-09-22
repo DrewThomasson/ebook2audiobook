@@ -2767,8 +2767,8 @@ def web_interface(args, ctx):
                 button_no = f'#gr_{mode}_no_btn'
                 return f'''
                 <div class="confirm-buttons">
-                    <button class="button_green" onclick="document.querySelector({button_yes}).click()">✔</button>
-                    <button class="button_red" onclick="document.querySelector({button_no}).click()">⨉</button>
+                    <button class="button_green" onclick="document.querySelector('{button_yes}').click()">✔</button>
+                    <button class="button_red" onclick="document.querySelector('{button_no}').click()">⨉</button>
                 </div>
                 '''
             else:
