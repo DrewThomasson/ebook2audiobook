@@ -2721,7 +2721,7 @@ def web_interface(args, ctx):
                 gr_audiobook_files_toggled = gr.State(False)
             gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
 
-        with gr.Group(visible=False, elem_id='gr_group_blocks' elem_classes=['global_group']) as gr_group_blocks:
+        with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes=['global_group']) as gr_group_blocks:
             gr.Markdown('### Confirm Blocks')
             with gr.Group() as gr_group_blocks_content:
                 pass
