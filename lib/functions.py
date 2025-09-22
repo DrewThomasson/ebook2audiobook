@@ -3065,10 +3065,10 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)           
 
-        def confirm_blocks(id):
-            session = context.get_session(id)
-            show_alert({"type": "warning", "msg": 'on development'})
-            return gr.update()
+        def confirm_blocks(id=None):
+            if id is not None:
+                clear_event(id)
+            return gr.update(value='', visible=False)
 
         def update_gr_voice_list(id):
             try:
