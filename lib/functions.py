@@ -3427,6 +3427,7 @@ def web_interface(args, ctx):
                                         msg = 'Select the blocks to convert:'
                                         print(msg)
                                         yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True), gr.update(visible=True), gr.update(visible=True)
+                                        return
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
                                         args['ebook_list'].remove(file)
@@ -3438,7 +3439,7 @@ def web_interface(args, ctx):
                                         else: 
                                             msg = 'Conversion successful!'
                                             session['status'] = 'ready'
-                                            yield gr.update(value=msg), gr.update(), gr.update(), gr.update()
+                                            return gr.update(value=msg), gr.update(), gr.update(), gr.update()
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
