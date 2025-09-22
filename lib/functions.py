@@ -2476,10 +2476,16 @@ def web_interface(args, ctx):
                 to { opacity: 1; }
             }
             //////////
-            #gr_confirm_deletion_yes_btn, #gr_confirm_deletion_no_btn,
-            #gr_confirm_blocks_yes_btn, #gr_confirm_blocks_no_btn {
-                width: 1px;
-                height: 1px;
+            #gr_confirm_deletion_yes_btn button,
+            #gr_confirm_deletion_no_btn button,
+            #gr_confirm_blocks_yes_btn button,
+            #gr_confirm_blocks_no_btn button {
+                width: 1px !important;
+                height: 1px !important;
+                min-width: 1px !important;
+                min-height: 1px !important;
+                padding: 0 !important;
+                font-size: 0 !important;
             }
             #custom-modal-container,
             #custom-modal-container .modal {
