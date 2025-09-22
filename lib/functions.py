@@ -3071,7 +3071,7 @@ def web_interface(args, ctx):
         def confirm_blocks(id=None):
             if id is not None:
                 clear_event(id)
-            return gr.update(value='', visible=False), gr.update(visible=False), gr.update(visible=False)
+            return gr.update(value='', visible=False)
 
         def update_gr_voice_list(id):
             try:
