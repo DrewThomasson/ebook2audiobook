@@ -3903,6 +3903,10 @@ def web_interface(args, ctx):
             fn=confirm_blocks,
             inputs=[gr_session],
             outputs=[gr_modal, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn]
+        ).then{
+            fn=change_convert_btn,
+            inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
+            outputs=[gr_convert_btn]
         ).then(
             fn=enable_components,
             inputs=[gr_session],
