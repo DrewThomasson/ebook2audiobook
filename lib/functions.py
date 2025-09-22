@@ -2726,8 +2726,8 @@ def web_interface(args, ctx):
         gr_modal = gr.HTML(visible=False)
         gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', value='', visible=True)
-        gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', value='', visible=True)
+        gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', value='', visible=False)
+        gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', value='', visible=False)
         gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', value='', visible=False)
         gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', value='', visible=False)
 
@@ -3453,7 +3453,8 @@ def web_interface(args, ctx):
                                 session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True), gr.update(visible=True), gr.update(visible=True)
+                                yield gr.update(value=''), gr.update(visible=True), gr.update(visible=True), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                return
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
@@ -3831,7 +3832,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
-            outputs=[gr_tab_progress, gr_modal, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn]
+            outputs=[gr_tab_progress, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn, gr_modal]
         ).then(
             fn=enable_components,
             inputs=[gr_session],
