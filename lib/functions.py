@@ -2480,12 +2480,9 @@ def web_interface(args, ctx):
             #gr_confirm_deletion_no_btn button,
             #gr_confirm_blocks_yes_btn button,
             #gr_confirm_blocks_no_btn button {
-                width: 2px !important;
-                height: 2px !important;
-                min-width: 2px !important;
-                min-height: 2px !important;
-                padding: 0 !important;
-                font-size: 0 !important;
+                position: absolute;
+                top: 0;
+                left: 0;
             }
             #custom-modal-container,
             #custom-modal-container .modal {
