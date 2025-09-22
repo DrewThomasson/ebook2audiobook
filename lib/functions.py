@@ -3070,7 +3070,8 @@ def web_interface(args, ctx):
 
         def confirm_blocks(id=None):
             if id is not None:
-                clear_event(id)
+                session = context.get_session(id)
+                session['event'] = 'blocks_confirmed']
             return gr.update(value='', visible=False)
 
         def update_gr_voice_list(id):
@@ -3903,10 +3904,31 @@ def web_interface(args, ctx):
             fn=confirm_blocks,
             inputs=[gr_session],
             outputs=[gr_modal]
+        ).then(
+            fn=submit_convert_btn,
+            inputs=[
+                gr_session, gr_device, gr_ebook_file, gr_chapters_control, gr_tts_engine_list, gr_language, gr_voice_list,
+                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
+                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
+                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
+            ],
+            outputs=[gr_tab_progress, gr_modal]
+        ).then(
+            fn=enable_components,
+            inputs=[gr_session],
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+        ).then(
+            fn=refresh_interface,
+            inputs=[gr_session],
+            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
+        ).then(
+            fn=lambda: gr.update(visible=bool(audiobook_options)),
+            inputs=None,
+            outputs=[gr_group_audiobook_list],
         )
         gr_confirm_blocks_no_btn.click(
             fn=confirm_blocks,
-            inputs=[gr_session],
+            inputs=None,
             outputs=[gr_modal]
         ).then(
             fn=change_convert_btn,
