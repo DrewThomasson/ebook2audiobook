@@ -2476,6 +2476,11 @@ def web_interface(args, ctx):
                 to { opacity: 1; }
             }
             //////////
+            #gr_confirm_deletion_yes_btn, #gr_confirm_deletion_no_btn,
+            #gr_confirm_blocks_yes_btn, #gr_confirm_blocks_no_btn {
+                width: 1px;
+                height: 1px;
+            }
             #custom-modal-container,
             #custom-modal-container .modal {
                 position: fixed !important;
@@ -2715,7 +2720,7 @@ def web_interface(args, ctx):
         gr_modal = gr.HTML(visible=False)
         gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-        gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', value='', visible=True)
+        gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', value='', visible=False)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', value='', visible=False)
         gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', value='', visible=False)
         gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', value='', visible=False)
@@ -3902,7 +3907,7 @@ def web_interface(args, ctx):
         gr_confirm_blocks_no_btn.click(
             fn=confirm_blocks,
             inputs=[gr_session],
-            outputs=[gr_modal, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn]
+            outputs=[gr_modal, gr_confirm_blocks_no_btn, gr_confirm_blocks_no_btn]
         ).then(
             fn=change_convert_btn,
             inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
