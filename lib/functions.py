@@ -2541,198 +2541,200 @@ def web_interface(args, ctx):
     '''
     
     with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
-        with gr.Tabs(elem_id='gr_tabs'):
-            gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
-            with gr_tab_main:
-                with gr.Row(elem_id='gr_row_tab_main'):
-                    with gr.Column(elem_id='gr_col_1', scale=3):
-                        with gr.Group(elem_id='gr1'):
-                            gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
-                            gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
-                            with gr_row_ebook_mode:
-                                gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
-                                gr_chapters_control = gr.Checkbox(label='Chapters Control', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
-                        with gr.Group(elem_id='gr_group_language'):
-                            gr_language = gr.Dropdown(label='Language', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
-                        gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
-                        with gr_group_voice_file:
-                            gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
-                            gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
-                            with gr_row_voice_player:
-                                gr_voice_player = gr.Audio(elem_id='gr_voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
-                                gr_voice_list = gr.Dropdown(label='', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
-                                gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                            gr_optional_markdown = gr.Markdown(elem_id='gr_markdown_optional', value='<p>&nbsp;&nbsp;* Optional</p>')
-                        with gr.Group(elem_id='gr_group_device'):
-                            gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
-                            gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
-                                <div style="right:0;margin:auto;padding:10px;text-align:right">
-                                    <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
-                                    <b>{title}</b>&nbsp;<b style="color:orange">{prog_version}</b></a>
-                                </div>
-                                '''
-                            )
-                    with gr.Column(elem_id='gr_col_2', scale=3):
-                        with gr.Group(elem_id='gr_group_engine'):
-                            gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
-                            gr_tts_rating = gr.HTML()
-                            gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
-                            gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
-                            with gr_group_custom_model:
-                                gr_custom_model_file = gr.File(label=f"Upload Fine Tuned Model", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=140)
-                                with gr.Row(elem_id='gr_row_custom_model'):
-                                    gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
-                                    gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                                gr_custom_model_markdown = gr.Markdown(elem_id='gr_markdown_custom_model', value='<p>&nbsp;&nbsp;* Optional</p>')
-                        with gr.Group(elem_id='gr_group_output_format'):
-                            with gr.Row(elem_id='gr_row_output_format'):
-                                gr_output_format_list = gr.Dropdown(label='Output Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
-                                with gr.Group(elem_id='gr_group_output_split'):
-                                    gr_output_split = gr.Checkbox(label='Split Output File', elem_id='gr_output_split', value=default_output_split, interactive=True)
-                                    gr_row_output_split_hours = gr.Row(elem_id='gr_row_output_split_hours', visible=False)
-                                    with gr_row_output_split_hours:
-                                        gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown', value='<div style="font-size: 12px; width:100%; text-align:center; vertical-align: middle; padding-top:15px; white-space: nowrap">Max Hours<br/>/Part</div>')
-                                        gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True)
-                        gr_session = gr.Textbox(label='Session', elem_id='gr_session', interactive=False)
-            gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
-            with gr_tab_xtts_params:
-                gr.Markdown(
-                    elem_id='gr_markdown_tab_xtts_params',
-                    value='''
-                    ### Customize XTTSv2 Parameters
-                    Adjust the settings below to influence how the audio is generated. You can control the creativity, speed, repetition, and more.
-                    '''
-                )
-                gr_xtts_temperature = gr.Slider(
-                    label='Temperature',
-                    minimum=0.05,
-                    maximum=10.0,
-                    step=0.05,
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
-                    elem_id='gr_xtts_temperature',
-                    info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
-                )
-                gr_xtts_length_penalty = gr.Slider(
-                    label='Length Penalty',
-                    minimum=0.3,
-                    maximum=5.0,
-                    step=0.1,
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
-                    elem_id='gr_xtts_length_penalty',
-                    info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
-                    visible=False
-                )
-                gr_xtts_num_beams = gr.Slider(
-                    label='Number Beams',
-                    minimum=1,
-                    maximum=10,
-                    step=1,
-                    value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
-                    elem_id='gr_xtts_num_beams',
-                    info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
-                    visible=False
-                )
-                gr_xtts_repetition_penalty = gr.Slider(
-                    label='Repetition Penalty',
-                    minimum=1.0,
-                    maximum=10.0,
-                    step=0.1,
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
-                    elem_id='gr_xtts_repetition_penalty',
-                    info='Penalizes repeated phrases. Higher values reduce repetition.'
-                )
-                gr_xtts_top_k = gr.Slider(
-                    label='Top-k Sampling',
-                    minimum=10,
-                    maximum=100,
-                    step=1,
-                    value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
-                    elem_id='gr_xtts_top_k',
-                    info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
-                )
-                gr_xtts_top_p = gr.Slider(
-                    label='Top-p Sampling',
-                    minimum=0.1,
-                    maximum=1.0, 
-                    step=0.01,
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']),
-                    elem_id='gr_xtts_top_p',
-                    info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
-                )
-                gr_xtts_speed = gr.Slider(
-                    label='Speed', 
-                    minimum=0.5, 
-                    maximum=3.0, 
-                    step=0.1, 
-                    value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']),
-                    elem_id='gr_xtts_speed',
-                    info='Adjusts how fast the narrator will speak.'
-                )
-                gr_xtts_enable_text_splitting = gr.Checkbox(
-                    label='Enable Text Splitting', 
-                    value=default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
-                    elem_id='gr_xtts_enable_text_splitting',
-                    info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
-                    visible=False
-                )
-            gr_tab_bark_params = gr.TabItem('BARK fine Tuned Parameters', elem_id='gr_tab_bark_params', elem_classes='tab_item', visible=visible_gr_tab_bark_params)           
-            with gr_tab_bark_params:
-                gr.Markdown(
-                    elem_id='gr_markdown_tab_bark_params',
-                    value='''
-                    ### Customize BARK Parameters
-                    Adjust the settings below to influence how the audio is generated, emotional and voice behavior random or more conservative
-                    '''
-                )
-                gr_bark_text_temp = gr.Slider(
-                    label='Text Temperature', 
-                    minimum=0.0,
-                    maximum=1.0,
-                    step=0.01,
-                    value=float(default_engine_settings[TTS_ENGINES['BARK']]['text_temp']),
-                    elem_id='gr_bark_text_temp',
-                    info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
-                )
-                gr_bark_waveform_temp = gr.Slider(
-                    label='Waveform Temperature', 
-                    minimum=0.0,
-                    maximum=1.0,
-                    step=0.01,
-                    value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
-                    elem_id='gr_bark_waveform_temp',
-                    info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
-                )
-        gr_state_update = gr.State(value={"hash": None})
-        gr_read_data = gr.JSON(elem_id='gr_read_data')
-        gr_write_data = gr.JSON(elem_id='gr_write_data')
-        gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
-        gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False, visible=True)
-        gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
-        gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
-        with gr_group_audiobook_list:
-            gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
-            gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
-            with gr.Row(elem_id='gr_row_audiobook_list'):
-                gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
-                gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
-                gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
-            gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
-            gr_audiobook_files_toggled = gr.State(False)
-        gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
-        
-        gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(f'<div id="glass-mask" style="position: absolute">{glass_mask_msg}</div>')
-        with gr.Group(visible=False, elem_id="gr_modal") as gr_modal:
+        with gr.Group(visible=True, elem_id="gr_group_main") as gr_group_main:
+            with gr.Tabs(elem_id='gr_tabs'):
+                gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
+                with gr_tab_main:
+                    with gr.Row(elem_id='gr_row_tab_main'):
+                        with gr.Column(elem_id='gr_col_1', scale=3):
+                            with gr.Group(elem_id='gr1'):
+                                gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
+                                gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
+                                with gr_row_ebook_mode:
+                                    gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
+                                    gr_chapters_control = gr.Checkbox(label='Chapters Control', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
+                            with gr.Group(elem_id='gr_group_language'):
+                                gr_language = gr.Dropdown(label='Language', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
+                            gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
+                            with gr_group_voice_file:
+                                gr_voice_file = gr.File(label='*Cloning Voice Audio Fiie', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
+                                gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
+                                with gr_row_voice_player:
+                                    gr_voice_player = gr.Audio(elem_id='gr_voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
+                                    gr_voice_list = gr.Dropdown(label='', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
+                                    gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                gr_optional_markdown = gr.Markdown(elem_id='gr_markdown_optional', value='<p>&nbsp;&nbsp;* Optional</p>')
+                            with gr.Group(elem_id='gr_group_device'):
+                                gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
+                                gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
+                                    <div style="right:0;margin:auto;padding:10px;text-align:right">
+                                        <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
+                                        <b>{title}</b>&nbsp;<b style="color:orange">{prog_version}</b></a>
+                                    </div>
+                                    '''
+                                )
+                        with gr.Column(elem_id='gr_col_2', scale=3):
+                            with gr.Group(elem_id='gr_group_engine'):
+                                gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
+                                gr_tts_rating = gr.HTML()
+                                gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
+                                gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
+                                with gr_group_custom_model:
+                                    gr_custom_model_file = gr.File(label=f"Upload Fine Tuned Model", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=140)
+                                    with gr.Row(elem_id='gr_row_custom_model'):
+                                        gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
+                                        gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                    gr_custom_model_markdown = gr.Markdown(elem_id='gr_markdown_custom_model', value='<p>&nbsp;&nbsp;* Optional</p>')
+                            with gr.Group(elem_id='gr_group_output_format'):
+                                with gr.Row(elem_id='gr_row_output_format'):
+                                    gr_output_format_list = gr.Dropdown(label='Output Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
+                                    with gr.Group(elem_id='gr_group_output_split'):
+                                        gr_output_split = gr.Checkbox(label='Split Output File', elem_id='gr_output_split', value=default_output_split, interactive=True)
+                                        gr_row_output_split_hours = gr.Row(elem_id='gr_row_output_split_hours', visible=False)
+                                        with gr_row_output_split_hours:
+                                            gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown', value='<div style="font-size: 12px; width:100%; text-align:center; vertical-align: middle; padding-top:15px; white-space: nowrap">Max Hours<br/>/Part</div>')
+                                            gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True)
+                            gr_session = gr.Textbox(label='Session', elem_id='gr_session', interactive=False)
+                gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
+                with gr_tab_xtts_params:
+                    gr.Markdown(
+                        elem_id='gr_markdown_tab_xtts_params',
+                        value='''
+                        ### Customize XTTSv2 Parameters
+                        Adjust the settings below to influence how the audio is generated. You can control the creativity, speed, repetition, and more.
+                        '''
+                    )
+                    gr_xtts_temperature = gr.Slider(
+                        label='Temperature',
+                        minimum=0.05,
+                        maximum=10.0,
+                        step=0.05,
+                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
+                        elem_id='gr_xtts_temperature',
+                        info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
+                    )
+                    gr_xtts_length_penalty = gr.Slider(
+                        label='Length Penalty',
+                        minimum=0.3,
+                        maximum=5.0,
+                        step=0.1,
+                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
+                        elem_id='gr_xtts_length_penalty',
+                        info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
+                        visible=False
+                    )
+                    gr_xtts_num_beams = gr.Slider(
+                        label='Number Beams',
+                        minimum=1,
+                        maximum=10,
+                        step=1,
+                        value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
+                        elem_id='gr_xtts_num_beams',
+                        info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
+                        visible=False
+                    )
+                    gr_xtts_repetition_penalty = gr.Slider(
+                        label='Repetition Penalty',
+                        minimum=1.0,
+                        maximum=10.0,
+                        step=0.1,
+                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
+                        elem_id='gr_xtts_repetition_penalty',
+                        info='Penalizes repeated phrases. Higher values reduce repetition.'
+                    )
+                    gr_xtts_top_k = gr.Slider(
+                        label='Top-k Sampling',
+                        minimum=10,
+                        maximum=100,
+                        step=1,
+                        value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
+                        elem_id='gr_xtts_top_k',
+                        info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
+                    )
+                    gr_xtts_top_p = gr.Slider(
+                        label='Top-p Sampling',
+                        minimum=0.1,
+                        maximum=1.0, 
+                        step=0.01,
+                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']),
+                        elem_id='gr_xtts_top_p',
+                        info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
+                    )
+                    gr_xtts_speed = gr.Slider(
+                        label='Speed', 
+                        minimum=0.5, 
+                        maximum=3.0, 
+                        step=0.1, 
+                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']),
+                        elem_id='gr_xtts_speed',
+                        info='Adjusts how fast the narrator will speak.'
+                    )
+                    gr_xtts_enable_text_splitting = gr.Checkbox(
+                        label='Enable Text Splitting', 
+                        value=default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+                        elem_id='gr_xtts_enable_text_splitting',
+                        info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
+                        visible=False
+                    )
+                gr_tab_bark_params = gr.TabItem('BARK fine Tuned Parameters', elem_id='gr_tab_bark_params', elem_classes='tab_item', visible=visible_gr_tab_bark_params)           
+                with gr_tab_bark_params:
+                    gr.Markdown(
+                        elem_id='gr_markdown_tab_bark_params',
+                        value='''
+                        ### Customize BARK Parameters
+                        Adjust the settings below to influence how the audio is generated, emotional and voice behavior random or more conservative
+                        '''
+                    )
+                    gr_bark_text_temp = gr.Slider(
+                        label='Text Temperature', 
+                        minimum=0.0,
+                        maximum=1.0,
+                        step=0.01,
+                        value=float(default_engine_settings[TTS_ENGINES['BARK']]['text_temp']),
+                        elem_id='gr_bark_text_temp',
+                        info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
+                    )
+                    gr_bark_waveform_temp = gr.Slider(
+                        label='Waveform Temperature', 
+                        minimum=0.0,
+                        maximum=1.0,
+                        step=0.01,
+                        value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
+                        elem_id='gr_bark_waveform_temp',
+                        info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
+                    )
+            gr_state_update = gr.State(value={"hash": None})
+            gr_read_data = gr.JSON(elem_id='gr_read_data')
+            gr_write_data = gr.JSON(elem_id='gr_write_data')
+            gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
+            gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False, visible=True)
+            gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
+            with gr_group_audiobook_list:
+                gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
+                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+                with gr.Row(elem_id='gr_row_audiobook_list'):
+                    gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
+                    gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
+                    gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
+                gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
+                gr_audiobook_files_toggled = gr.State(False)
+            gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
+
+        with gr.Group(visible=False, elem_id="gr_group_blocks") as gr_group_blocks:
             gr.Markdown("### Confirm Blocks")
             with gr.Group() as gr_modal_content:
                 pass
             with gr.Row():
-                gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
-                gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
-                gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
                 gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
                 gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
 
+        gr_modal = gr.HTML(visible=False)
+        gr_glass_mask = gr.HTML(f'<div id="glass-mask" style="position: absolute">{glass_mask_msg}</div>')
+        gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
+        gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
+        gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
+            
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
             if any(socket_hash in session for session in context.sessions.values()):
