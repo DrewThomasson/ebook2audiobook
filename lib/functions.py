@@ -3902,12 +3902,12 @@ def web_interface(args, ctx):
         gr_confirm_blocks_yes_btn.click(
             fn=confirm_blocks,
             inputs=[gr_session],
-            outputs=[gr_modal, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn]
+            outputs=[gr_modal]
         )
         gr_confirm_blocks_no_btn.click(
             fn=confirm_blocks,
             inputs=[gr_session],
-            outputs=[gr_modal, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn]
+            outputs=[gr_modal]
         ).then(
             fn=change_convert_btn,
             inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
