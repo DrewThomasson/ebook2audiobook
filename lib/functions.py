@@ -2716,9 +2716,9 @@ def web_interface(args, ctx):
         gr_glass_mask = gr.HTML(f'<div id="glass-mask">{glass_mask_msg}</div>')
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', value='', visible=True)
-        gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', value='', visible=True)
-        gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', value='', visible=True)
-        gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', value='', visible=True)
+        gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', value='', visible=False)
+        gr_confirm_blocks_yes_btn = gr.Button(elem_id='gr_confirm_blocks_yes_btn', value='', visible=False)
+        gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', value='', visible=False)
 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
@@ -3068,7 +3068,7 @@ def web_interface(args, ctx):
         def confirm_blocks(id=None):
             if id is not None:
                 clear_event(id)
-            return gr.update(value='', visible=False)
+            return gr.update(value='', visible=False), gr.update(visible=False), gr.update(visible=False)
 
         def update_gr_voice_list(id):
             try:
@@ -3415,7 +3415,7 @@ def web_interface(args, ctx):
                                         session['event'] = progress_status
                                         msg = 'Select the blocks to convert:'
                                         print(msg)
-                                        yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                        yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True), gr.update(visible=True), gr.update(visible=True)
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
                                         args['ebook_list'].remove(file)
@@ -3423,11 +3423,11 @@ def web_interface(args, ctx):
                                         count_file = len(args['ebook_list'])
                                         if count_file > 0:
                                             msg = f"{len(args['ebook_list'])} remaining..."
-                                            yield gr.update(value=msg), gr.update()
+                                            yield gr.update(value=msg), gr.update(), gr.update(), gr.update()
                                         else: 
                                             msg = 'Conversion successful!'
                                             session['status'] = 'ready'
-                                            yield gr.update(value=msg), gr.update()
+                                            yield gr.update(value=msg), gr.update(), gr.update(), gr.update()
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
@@ -3442,19 +3442,19 @@ def web_interface(args, ctx):
                                 session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True), gr.update(visible=True), gr.update(visible=True)
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
                                 msg = 'Conversion successful!'
                                 session['status'] = 'ready'
-                                return gr.update(value=msg), gr.update()
+                                return gr.update(value=msg), gr.update(), gr.update(), gr.update()
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(), gr.update()
+            return gr.update(), gr.update(), gr.update(), gr.update()
 
         def update_gr_audiobook_list(id):
             try:
@@ -3820,7 +3820,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
-            outputs=[gr_tab_progress, gr_modal]
+            outputs=[gr_tab_progress, gr_modal, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn]
         ).then(
             fn=enable_components,
             inputs=[gr_session],
@@ -3897,12 +3897,12 @@ def web_interface(args, ctx):
         gr_confirm_blocks_yes_btn.click(
             fn=confirm_blocks,
             inputs=[gr_session],
-            outputs=[gr_modal]
+            outputs=[gr_modal, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn]
         )
         gr_confirm_blocks_no_btn.click(
             fn=confirm_blocks,
             inputs=[gr_session],
-            outputs=[gr_modal]
+            outputs=[gr_modal, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn]
         )
         app.load(
             fn=None,
