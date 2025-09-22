@@ -2976,7 +2976,7 @@ def web_interface(args, ctx):
                     if is_builtin and is_in_builtin:
                         error = f'Voice file {speaker} is a builtin voice and cannot be deleted.'
                         show_alert({"type": "warning", "msg": error})
-                        return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                        return gr.update(), gr.update(visible=False)
                     try:
                         selected_path = Path(selected).resolve()
                         parent_path = Path(session['voice_dir']).parent.resolve()
@@ -2984,24 +2984,22 @@ def web_interface(args, ctx):
                             msg = f'Are you sure to delete {speaker}...'
                             return (
                                 gr.update(value='confirm_voice_del'),
-                                gr.update(value=show_modal('confirm_deletion', msg), visible=True),
-                                gr.update(visible=True),
-                                gr.update(visible=True)
+                                gr.update(value=show_modal('confirm_deletion', msg), visible=True)
                             )
                         else:
                             error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
                             show_alert({"type": "warning", "msg": error})
-                            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                            return gr.update(), gr.update(visible=False)
                     except Exception as e:
                         error = f'Could not delete the voice file {selected}!\n{e}'
                         alert_exception(error)
-                        return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                        return gr.update(), gr.update(visible=False)
                 # Fallback/default return if not selected or after errors
-                return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(), gr.update(visible=False)
             except Exception as e:
                 error = f'click_gr_voice_del_btn(): {e}'
                 alert_exception(error)
-                return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+                return gr.update(), gr.update(visible=False)
 
         def click_gr_custom_model_del_btn(selected, id):
             try:
@@ -3009,11 +3007,11 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = os.path.basename(selected)
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm_deletion', msg), visible=True), gr.update(visible=True), gr.update(visible=True)
+                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm_deletion', msg), visible=True)
             except Exception as e:
                 error = f'Could not delete the custom model {selected_name}!'
                 alert_exception(error)
-            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+            return gr.update(), gr.update(visible=False)
 
         def click_gr_audiobook_del_btn(selected, id):
             try:
@@ -3021,11 +3019,11 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = Path(selected).stem
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm_deletion', msg), visible=True), gr.update(visible=True), gr.update(visible=True)
+                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm_deletion', msg)
             except Exception as e:
                 error = f'Could not delete the audiobook {selected_name}!'
                 alert_exception(error)
-            return gr.update(), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
+            return gr.update(), gr.update(visible=False), gr.update(visible=False)
 
         def confirm_deletion(voice_path, custom_model, audiobook, id, method=None):
             try:
@@ -3041,14 +3039,14 @@ def web_interface(args, ctx):
                         msg = f"Voice file {re.sub(r'.wav$', '', selected_name)} deleted!"
                         session['voice'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(id), gr.update(visible=False), gr.update(visible=False)
+                        return gr.update(), gr.update(), gr.update(value='', visible=False), update_gr_voice_list(id)
                     elif method == 'confirm_custom_model_del':
                         selected_name = os.path.basename(custom_model)
                         shutil.rmtree(custom_model, ignore_errors=True)                           
                         msg = f'Custom model {selected_name} deleted!'
                         session['custom_model'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                        return update_gr_custom_model_list(id), gr.update(), gr.update(value='', visible=False), gr.update()
                     elif method == 'confirm_audiobook_del':
                         selected_name = Path(audiobook).stem
                         if os.path.isdir(audiobook):
@@ -3063,12 +3061,12 @@ def web_interface(args, ctx):
                         msg = f'Audiobook {selected_name} deleted!'
                         session['audiobook'] = None
                         show_alert({"type": "warning", "msg": msg})
-                        return gr.update(), update_gr_audiobook_list(id), gr.update(value='', visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
-                return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)
+                        return gr.update(), update_gr_audiobook_list(id), gr.update(value='', visible=False), gr.update()
+                return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
-            return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update(), gr.update(visible=False), gr.update(visible=False)           
+            return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()          
 
         def confirm_blocks(id=None):
             if id is not None:
@@ -3420,7 +3418,7 @@ def web_interface(args, ctx):
                                         session['event'] = progress_status
                                         msg = 'Select the blocks to convert:'
                                         print(msg)
-                                        yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True), gr.update(visible=True), gr.update(visible=True)
+                                        yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True)
                                         return
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
@@ -3429,11 +3427,11 @@ def web_interface(args, ctx):
                                         count_file = len(args['ebook_list'])
                                         if count_file > 0:
                                             msg = f"{len(args['ebook_list'])} remaining..."
-                                            yield gr.update(value=msg), gr.update(), gr.update(), gr.update()
+                                            yield gr.update(value=msg), gr.update()
                                         else: 
                                             msg = 'Conversion successful!'
                                             session['status'] = 'ready'
-                                            return gr.update(value=msg), gr.update(), gr.update(), gr.update()
+                                            return gr.update(value=msg), gr.update()
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
@@ -3448,20 +3446,20 @@ def web_interface(args, ctx):
                                 session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                yield gr.update(value=''), gr.update(visible=True), gr.update(visible=True), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True)
                                 return
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
                                 msg = 'Conversion successful!'
                                 session['status'] = 'ready'
-                                return gr.update(value=msg), gr.update(), gr.update(), gr.update()
+                                return gr.update(value=msg), gr.update()
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
-            return gr.update(), gr.update(), gr.update(), gr.update()
+            return gr.update(), gr.update()
 
         def update_gr_audiobook_list(id):
             try:
@@ -3631,7 +3629,7 @@ def web_interface(args, ctx):
         gr_voice_del_btn.click(
             fn=click_gr_voice_del_btn,
             inputs=[gr_voice_list, gr_session],
-            outputs=[gr_confirm_deletion_field_hidden, gr_modal, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
+            outputs=[gr_confirm_deletion_field_hidden, gr_modal]
         )
         gr_device.change(
             fn=change_gr_device,
@@ -3682,7 +3680,7 @@ def web_interface(args, ctx):
         gr_custom_model_del_btn.click(
             fn=click_gr_custom_model_del_btn,
             inputs=[gr_custom_model_list, gr_session],
-            outputs=[gr_confirm_deletion_field_hidden, gr_modal, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
+            outputs=[gr_confirm_deletion_field_hidden]
         )
         gr_output_format_list.change(
             fn=change_gr_output_format_list,
@@ -3746,7 +3744,7 @@ def web_interface(args, ctx):
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_confirm_deletion_field_hidden, gr_modal, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
+            outputs=[gr_confirm_deletion_field_hidden, gr_modal]
         )
         ########### XTTSv2 Params
         gr_xtts_temperature.change(
@@ -3827,7 +3825,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
-            outputs=[gr_tab_progress, gr_confirm_blocks_yes_btn, gr_confirm_blocks_no_btn, gr_modal]
+            outputs=[gr_tab_progress, gr_modal]
         ).then(
             fn=enable_components,
             inputs=[gr_session],
@@ -3890,7 +3888,7 @@ def web_interface(args, ctx):
         gr_confirm_deletion_yes_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_deletion_field_hidden],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
         ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
             inputs=None,
@@ -3899,7 +3897,7 @@ def web_interface(args, ctx):
         gr_confirm_deletion_no_btn.click(
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session],
-            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list, gr_confirm_deletion_yes_btn, gr_confirm_deletion_no_btn]
+            outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
         )
         gr_confirm_blocks_yes_btn.click(
             fn=confirm_blocks,
