@@ -2480,10 +2480,10 @@ def web_interface(args, ctx):
             #gr_confirm_deletion_no_btn button,
             #gr_confirm_blocks_yes_btn button,
             #gr_confirm_blocks_no_btn button {
-                width: 1px !important;
-                height: 1px !important;
-                min-width: 1px !important;
-                min-height: 1px !important;
+                width: 2px !important;
+                height: 2px !important;
+                min-width: 2px !important;
+                min-height: 2px !important;
                 padding: 0 !important;
                 font-size: 0 !important;
             }
