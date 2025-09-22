@@ -3393,7 +3393,8 @@ def web_interface(args, ctx):
                     "text_temp": float(text_temp),
                     "waveform_temp": float(waveform_temp),
                     "output_split": output_split,
-                    "output_split_hours": output_split_hours
+                    "output_split_hours": output_split_hours,
+                    "event": None
                 }
                 error = None
                 if args['ebook'] is None and args['ebook_list'] is None:
