@@ -2763,8 +2763,8 @@ def web_interface(args, ctx):
 
         def show_confirm_buttons(mode):
             if mode in ['confirm_deletion', 'confirm_blocks']:
-                button_yes = '#gr_confirm_deletion_yes_btn' if mode == 'confirm_deletion' else '#gr_confirm_blocks_yes_btn' if mode == 'confirm_blocks'
-                button_no = '#gr_confirm_deletion_no_btn' if mode == 'confirm_deletion' else '#gr_confirm_blocks_no_btn' if mode == 'confirm_blocks'
+                button_yes = f'#gr_{mode}_yes_btn'
+                button_no = f'#gr_{mode}_no_btn'
                 return f'''
                 <div class="confirm-buttons">
                     <button class="button_green" onclick="document.querySelector({button_yes}).click()">✔</button>
