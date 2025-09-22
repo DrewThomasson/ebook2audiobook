@@ -3071,9 +3071,9 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()          
 
-        def confirm_blocks(id=None):
-            if id is not None:
-                session = context.get_session(id)
+        def confirm_blocks(choice, id):
+            session = context.get_session(id)
+            if choice == 'yes':           
                 session['event'] = 'blocks_confirmed'
             else:
                 session['status'] = 'ready'
@@ -3958,7 +3958,7 @@ def web_interface(args, ctx):
             outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
         )
         gr_confirm_blocks_yes_btn.click(
-            fn=confirm_blocks,
+            fn=lambda session: confirm_blocks("yes", session),
             inputs=[gr_session],
             outputs=[gr_modal]
         ).then(
@@ -3979,8 +3979,8 @@ def web_interface(args, ctx):
             outputs=[gr_group_audiobook_list],
         )
         gr_confirm_blocks_no_btn.click(
-            fn=confirm_blocks,
-            inputs=None,
+            fn=lambda session: confirm_blocks("no", session),
+            inputs=[gr_session],
             outputs=[gr_modal]
         ).then(
             fn=change_convert_btn,
