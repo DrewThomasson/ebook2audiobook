@@ -3467,8 +3467,9 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(), gr.update()
         
-        def submit_confirmed_blocks:
+        def submit_confirmed_blocks(id):
             try:
+                session = context.get_session(id)
                 error = None
                 if isinstance(session['ebook_list'], list):
                     ebook_list = session['ebook_list'][:]
@@ -3961,13 +3962,8 @@ def web_interface(args, ctx):
             inputs=[gr_session],
             outputs=[gr_modal]
         ).then(
-            fn=submit_convert_btn,
-            inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_chapters_control, gr_tts_engine_list, gr_language, gr_voice_list,
-                gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
-                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
-                gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
-            ],
+            fn=submit_confirmed_blocks,
+            inputs=[gr_session],
             outputs=[gr_tab_progress, gr_modal]
         ).then(
             fn=enable_components,
