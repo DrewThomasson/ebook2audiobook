@@ -3072,6 +3072,8 @@ def web_interface(args, ctx):
             if id is not None:
                 session = context.get_session(id)
                 session['event'] = 'blocks_confirmed']
+            else:
+                session['status'] = 'ready'
             return gr.update(value='', visible=False)
 
         def update_gr_voice_list(id):
@@ -3461,6 +3463,57 @@ def web_interface(args, ctx):
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error)
             return gr.update(), gr.update()
+        
+        def submit_confirmed_blocks:
+            try:
+                error = None
+                if isinstance(session['ebook_list'], list):
+                    ebook_list = session['ebook_list'][:]
+                    for file in ebook_list:
+                        if any(file.endswith(ext) for ext in ebook_formats):
+                            print(f'Processing eBook file: {os.path.basename(file)}')
+                            session['ebook'] = file
+                            progress_status, passed = convert_ebook(session)
+                            if passed is False:
+                                if session['status'] == 'converting':
+                                    error = 'Conversion cancelled.'
+                                    break
+                                else:
+                                    error = 'Conversion failed.'
+                                    break
+                            else:
+                                show_alert({"type": "success", "msg": progress_status})
+                                session['ebook_list'].remove(file)
+                                reset_session(session['session'])
+                                count_file = len(session['ebook_list'])
+                                if count_file > 0:
+                                    msg = f"{len(session['ebook_list'])} remaining..."
+                                    yield gr.update(value=msg), gr.update()
+                                else: 
+                                    msg = 'Conversion successful!'
+                                    session['status'] = 'ready'
+                                    return gr.update(value=msg), gr.update()
+                else:
+                    print(f"Processing eBook file: {os.path.basename(session['ebook'])}")
+                    progress_status, passed = convert_ebook(session)
+                    if passed is False:
+                        if session['status'] == 'converting':
+                            error = 'Conversion cancelled.'
+                        else:
+                            error = 'Conversion failed.'
+                        session['status'] = 'ready'
+                    else:
+                        show_alert({"type": "success", "msg": progress_status})
+                        reset_session(session['session'])
+                        msg = 'Conversion successful!'
+                        session['status'] = 'ready'
+                        return gr.update(value=msg), gr.update()
+                if error is not None:
+                    show_alert({"type": "warning", "msg": error})
+            except Exception as e:
+                error = f'submit_confirmed_blocks(): {e}'
+                alert_exception(error)
+            return gr.update(), gr.update()          
 
         def update_gr_audiobook_list(id):
             try:
