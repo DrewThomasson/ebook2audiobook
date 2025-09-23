@@ -2363,7 +2363,7 @@ def web_interface(args, ctx):
                 overflow: auto !important;
             }
             .selected {
-                color: orange !important;
+                color: f75f00 !important;
             }
             .progress-bar.svelte-ls20lj {
                 background: orange !important;
