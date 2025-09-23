@@ -2387,12 +2387,10 @@ def web_interface(args, ctx):
             .gr-group-main, .gr-group-blocks {
                 background: none !important;
             }
-            .block {
-                border-radius: 9px !important;
-            }
             .custom-group {
                 padding: 0 !important;
                 margin: 0 !important;
+                border-radius: 9px !important;
             }
             .custom-group-padded {
                 padding: 0 9px 0 9px !important;
