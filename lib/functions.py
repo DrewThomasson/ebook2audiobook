@@ -2374,16 +2374,16 @@ def web_interface(args, ctx):
                 max-height: none !important;
             }
             .gr-tab-main, .gr-col {
-                padding: 0;
-                margin: 0;
-                border: none;
+                padding: 0 !important;
+                margin: 0 !important;
+                border: none !important;
             }
             .gr-group-main, .gr-group-blocks {
-                background: none;
+                background: none !important;
             }
             .custom-group {
-                padding: 0 9px 0 9px;
-                margin: 0;
+                padding: 0 !important;
+                margin: 0 !important;
                 border-radius: 9px !important;
             }
             ////////////////////
