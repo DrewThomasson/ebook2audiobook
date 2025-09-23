@@ -2373,7 +2373,7 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
-            .global_group {
+            .gr-group-main, .gr-group-blocks {
                 background: none;
             }
             ////////////////////
@@ -2545,7 +2545,7 @@ def web_interface(args, ctx):
     '''
     
     with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
-        with gr.Group(visible=True, elem_id="gr_group_main") as gr_group_main:
+        with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
             with gr.Tabs(elem_id='gr_tabs'):
                 gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
                 with gr_tab_main:
@@ -2567,7 +2567,6 @@ def web_interface(args, ctx):
                                     gr_voice_player = gr.Audio(elem_id='gr_voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                                gr_optional_markdown = gr.Markdown(elem_id='gr_markdown_optional', value='<p>&nbsp;&nbsp;* Optional</p>')
                             with gr.Group(elem_id='gr_group_device'):
                                 gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
                                 gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
@@ -2588,7 +2587,6 @@ def web_interface(args, ctx):
                                     with gr.Row(elem_id='gr_row_custom_model'):
                                         gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                         gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                                    gr_custom_model_markdown = gr.Markdown(elem_id='gr_markdown_custom_model', value='<p>&nbsp;&nbsp;* Optional</p>')
                             with gr.Group(elem_id='gr_group_output_format'):
                                 with gr.Row(elem_id='gr_row_output_format'):
                                     gr_output_format_list = gr.Dropdown(label='Output Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
@@ -2725,7 +2723,7 @@ def web_interface(args, ctx):
                 gr_audiobook_files_toggled = gr.State(False)
             gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
 
-        with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes=['global_group']) as gr_group_blocks:
+        with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes=['gr-group-blocks']) as gr_group_blocks:
             gr.Markdown('### Confirm Blocks')
             with gr.Group() as gr_group_blocks_content:
                 pass
