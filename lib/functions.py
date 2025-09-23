@@ -2412,7 +2412,7 @@ def web_interface(args, ctx):
             #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                 display: none !important;
             }               
-            #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
+            #gr_tts_engine_list, #gr_fine_tuned_list, #gr_output_format_list {
                 height: 95px !important;
             }
             #gr_voice_list {
