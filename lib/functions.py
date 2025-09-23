@@ -2386,7 +2386,7 @@ def web_interface(args, ctx):
                 margin: 0 !important;
             }
             .custom-group-padded {
-                padding: 0 6px 0 6px !important;
+                padding: 0 9px 0 9px !important;
                 margin: 0 !important;                
             }
             ////////////////////
