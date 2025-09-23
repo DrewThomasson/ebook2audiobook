@@ -2389,6 +2389,9 @@ def web_interface(args, ctx):
                 padding: 0 9px 0 9px !important;
                 margin: 0 !important;                
             }
+            .gr_markdown {
+                line-height: 100px;
+            }
             ////////////////////
             #glass-mask {
                 position: fixed !important;
@@ -2574,11 +2577,11 @@ def web_interface(args, ctx):
                                     gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
                                     gr_chapters_control = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
                             with gr.Group(elem_id='gr_group_language', elem_classes=['custom-group']):
-                                gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', value='<br/>Language')
+                                gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr_markdown'], value='Language')
                                 gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
                             gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', elem_classes=['custom-group'], visible=visible_gr_group_voice_file)
                             with gr_group_voice_file:
-                                gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', value='<br/>Voices')
+                                gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr_markdown'], value='Voices')
                                 gr_voice_file = gr.File(label='Upload New Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player', elem_classes=['custom-group'])
                                 with gr_row_voice_player:
@@ -2586,7 +2589,7 @@ def web_interface(args, ctx):
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device', elem_classes=['custom-group']):
-                                gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', value='<br/>Processor Unit')
+                                gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr_markdown'], value='Processor Unit')
                                 gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
                                 gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
                                     <div style="right:0;margin:auto;padding:10px;text-align:right">
@@ -2600,7 +2603,7 @@ def web_interface(args, ctx):
                                 gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', value='TTS Engine')
                                 gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
                             with gr.Group(elem_id='gr_group_models', elem_classes=['custom-group']):
-                                gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', value='<br/>Models')
+                                gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', elem_classes=['gr_markdown'], value='Models')
                                 gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                 gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                                 with gr_group_custom_model:
@@ -2609,7 +2612,7 @@ def web_interface(args, ctx):
                                         gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                         gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_output_format', elem_classes=['custom-group']):
-                                gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', value='<br/>Output')
+                                gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr_markdown'], value='Output')
                                 with gr.Row(elem_id='gr_row_output_format'):
                                     gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
                                     with gr.Group(elem_id='gr_group_output_split'):
@@ -2618,7 +2621,7 @@ def web_interface(args, ctx):
                                         with gr_row_output_split_hours:
                                             gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown', value='<div style="font-size: 12px; width:100%; text-align:center; vertical-align: middle; padding-top:15px; white-space: nowrap">Max Hours<br/>/Part</div>')
                                             gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True)
-                            gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', value='<br/>Session')
+                            gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr_markdown'], value='Session')
                             gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                 gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='gr-tab-main', visible=visible_gr_tab_xtts_params)           
                 with gr_tab_xtts_params:
@@ -2736,7 +2739,7 @@ def web_interface(args, ctx):
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
             gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['custom-group-padded'], visible=False)
             with gr_group_audiobook_list:
-                gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', value='<br/>Audiobook')
+                gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr_markdown'], value='Audiobook')
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
                 gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
                 gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, visible=True, lines=3, max_lines=3)
