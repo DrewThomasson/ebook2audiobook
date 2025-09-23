@@ -2364,7 +2364,7 @@ def web_interface(args, ctx):
             }
             .selected {
                 color: orange !important;
-                text-shadow: 0.6px 0.6px 0.6px black;
+                text-shadow: 0.4px 0.4px 0.4px #303030;
             }
             .progress-bar.svelte-ls20lj {
                 background: orange !important;
