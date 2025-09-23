@@ -2376,6 +2376,9 @@ def web_interface(args, ctx):
             .gr-group-main, .gr-group-blocks {
                 background: none;
             }
+            .custom-group {
+                padding: 6px;
+            }
             ////////////////////
             #gr_col_1, #gr_col_2 {
                 padding: 0;
@@ -2556,26 +2559,26 @@ def web_interface(args, ctx):
                 with gr_tab_main:
                     with gr.Row(elem_id='gr_row_tab_main'):
                         with gr.Column(elem_id='gr_col_1', scale=3):
-                            with gr.Group(elem_id='gr_group_select'):
+                            with gr.Group(elem_id='gr_group_select', elem_classes=['custom-group']):
                                 gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', value='Selection')
                                 gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
                                 gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                                 with gr_row_ebook_mode:
                                     gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
                                     gr_chapters_control = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
-                            with gr.Group(elem_id='gr_group_language'):
+                            with gr.Group(elem_id='gr_group_language', elem_classes=['custom-group']):
                                 gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', value='<br/>Language')
                                 gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
-                            gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
+                            gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', elem_classes=['custom-group'], visible=visible_gr_group_voice_file)
                             with gr_group_voice_file:
                                 gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', value='<br/>Voices')
-                                gr_voice_file = gr.File(label='*Upload New Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
+                                gr_voice_file = gr.File(label='Upload New Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                 with gr_row_voice_player:
                                     gr_voice_player = gr.Audio(elem_id='gr_voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                            with gr.Group(elem_id='gr_group_device'):
+                            with gr.Group(elem_id='gr_group_device', elem_classes=['custom-group']):
                                 gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', value='<br/>Processor Unit')
                                 gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
                                 gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
@@ -2586,10 +2589,10 @@ def web_interface(args, ctx):
                                     '''
                                 )
                         with gr.Column(elem_id='gr_col_2', scale=3):
-                            with gr.Group(elem_id='gr_group_engine'):
+                            with gr.Group(elem_id='gr_group_engine'), elem_classes=['custom-group'],:
                                 gr_tts_rating = gr.HTML('TTS Engine')
                                 gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
-                            with gr.Group(elem_id='gr_group_models'):
+                            with gr.Group(elem_id='gr_group_models', elem_classes=['custom-group'],):
                                 gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', value='<br/>Models')
                                 gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                 gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
@@ -2598,7 +2601,7 @@ def web_interface(args, ctx):
                                     with gr.Row(elem_id='gr_row_custom_model'):
                                         gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                         gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                            with gr.Group(elem_id='gr_group_output_format'):
+                            with gr.Group(elem_id='gr_group_output_format', elem_classes=['custom-group'],):
                                 gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', value='<br/>Output')
                                 with gr.Row(elem_id='gr_row_output_format'):
                                     gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
