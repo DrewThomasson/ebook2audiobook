@@ -4044,14 +4044,12 @@ def web_interface(args, ctx):
                                     let gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     let gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                     let gr_playback_time = gr_root.querySelector("#gr_playback_time input");
-
                                     if (!gr_root || !gr_tab_progress || !gr_playback_time) {
                                         clearTimeout(init_elements_timeout);
                                         console.log("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_elements, 1000);
                                         return;
                                     }
-
                                     // Function to apply theme borders
                                     function applyThemeBorders() {
                                         const url = new URL(window.location);
@@ -4066,20 +4064,16 @@ def web_interface(args, ctx):
                                                 elColor = "#fff";
                                             }
                                         }
-
                                         gr_root.querySelectorAll("input[type='checkbox'], input[type='radio']")
                                             .forEach(cb => cb.style.border = "1px solid " + elColor);
                                     }
-
                                     // Run once on init
                                     applyThemeBorders();
-
                                     // Re-run when DOM changes (tabs, redraws, etc.)
                                     new MutationObserver(applyThemeBorders).observe(gr_root, {
                                         childList: true,
                                         subtree: true
                                     });
-
                                     // Keep your progress observer too
                                     new MutationObserver(tab_progress).observe(gr_tab_progress, {
                                         attributes: true,
@@ -4087,9 +4081,7 @@ def web_interface(args, ctx):
                                         subtree: true,
                                         characterData: true
                                     });
-
                                     gr_tab_progress.addEventListener("input", tab_progress);
-
                                     console.log("Components ready!");
                                 } catch (e) {
                                     console.log("init_elements error:", e);
