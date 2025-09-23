@@ -2589,10 +2589,10 @@ def web_interface(args, ctx):
                                     '''
                                 )
                         with gr.Column(elem_id='gr_col_2', scale=3):
-                            with gr.Group(elem_id='gr_group_engine'), elem_classes=['custom-group'],:
+                            with gr.Group(elem_id='gr_group_engine', elem_classes=['custom-group']):
                                 gr_tts_rating = gr.HTML('TTS Engine')
                                 gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
-                            with gr.Group(elem_id='gr_group_models', elem_classes=['custom-group'],):
+                            with gr.Group(elem_id='gr_group_models', elem_classes=['custom-group']):
                                 gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', value='<br/>Models')
                                 gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                 gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
@@ -2601,7 +2601,7 @@ def web_interface(args, ctx):
                                     with gr.Row(elem_id='gr_row_custom_model'):
                                         gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                         gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                            with gr.Group(elem_id='gr_group_output_format', elem_classes=['custom-group'],):
+                            with gr.Group(elem_id='gr_group_output_format', elem_classes=['custom-group']):
                                 gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', value='<br/>Output')
                                 with gr.Row(elem_id='gr_row_output_format'):
                                     gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
