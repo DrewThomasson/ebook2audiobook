@@ -2375,7 +2375,8 @@ def web_interface(args, ctx):
             }
             .gr-tab-main, .gr-col {
                 padding: 6px !important;
-                margin: 3px !important;
+                margin: 0 !important;
+                border: none !important;
             }
             .gr-group-main, .gr-group-blocks {
                 background: none !important;
@@ -2576,7 +2577,7 @@ def web_interface(args, ctx):
                             with gr_group_voice_file:
                                 gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', value='<br/>Voices')
                                 gr_voice_file = gr.File(label='Upload New Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
-                                gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
+                                gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player', elem_classes=['custom-group'])
                                 with gr_row_voice_player:
                                     gr_voice_player = gr.Audio(elem_id='gr_voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
