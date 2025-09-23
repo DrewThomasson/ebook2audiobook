@@ -2592,7 +2592,7 @@ def web_interface(args, ctx):
                                 )
                         with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col-2'], scale=3):
                             with gr.Group(elem_id='gr_group_engine', elem_classes=['custom-group']):
-                                gr_tts_rating = gr.HTML('TTS Engine')
+                                gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', value='TTS Engine')
                                 gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
                             with gr.Group(elem_id='gr_group_models', elem_classes=['custom-group']):
                                 gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', value='<br/>Models')
@@ -3306,7 +3306,7 @@ def web_interface(args, ctx):
                 if session['fine_tuned'] != 'internal':
                     visible_custom_model = False
                 return (
-                       gr.update(), 
+                       gr.update(value=show_rating(session['tts_engine'])), 
                        gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
                        gr.update(label=f"*Upload {session['tts_engine']} Model (Should be a ZIP file with {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
                        gr.update(label=f"My {session['tts_engine']} custom models")
