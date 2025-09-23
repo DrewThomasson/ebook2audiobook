@@ -2373,12 +2373,8 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
-            .gr-col-1 {
-                padding-left: 0;
-                margin: 0;
-            }
-            .gr-col-2 {
-                padding-right: 0;
+            .gr-col-1, .gr-col-2 {
+                padding: 0;
                 margin: 0;
             }
             .gr-group-main, .gr-group-blocks {
@@ -2729,8 +2725,9 @@ def web_interface(args, ctx):
             gr_state_update = gr.State(value={"hash": None})
             gr_read_data = gr.JSON(elem_id='gr_read_data')
             gr_write_data = gr.JSON(elem_id='gr_write_data')
-            gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', value='<br/>Progress')
-            gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
+            with gr.Group(elem_id='gr_group_progress', elem_classes=['custom-group'])
+                gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', value='<br/>Progress')
+                gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
             gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['custom-group'], visible=False)
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', value='<br/>Audiobook')
