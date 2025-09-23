@@ -2626,13 +2626,6 @@ def web_interface(args, ctx):
                             gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                 gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='gr-tab-main', visible=visible_gr_tab_xtts_params)           
                 with gr_tab_xtts_params:
-                    gr.Markdown(
-                        elem_id='gr_markdown_tab_xtts_params',
-                        value='''
-                        ### Customize XTTSv2 Parameters
-                        Adjust the settings below to influence how the audio is generated. You can control the creativity, speed, repetition, and more.
-                        '''
-                    )
                     gr_xtts_temperature = gr.Slider(
                         label='Temperature',
                         minimum=0.05,
