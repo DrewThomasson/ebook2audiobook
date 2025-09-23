@@ -2373,9 +2373,11 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
-            .gr-col-1, .gr-col-2 {
-                padding: 0;
-                margin: 0;
+            .gr-col-1 {
+                padding-left: 0;
+            }
+             .gr-col-2 {
+                padding:-right 0;
             }
             .gr-group-main, .gr-group-blocks {
                 background: none;
@@ -2588,7 +2590,7 @@ def web_interface(args, ctx):
                                     </div>
                                     '''
                                 )
-                        with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col-1'], scale=3):
+                        with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col-2'], scale=3):
                             with gr.Group(elem_id='gr_group_engine', elem_classes=['custom-group']):
                                 gr_tts_rating = gr.HTML('TTS Engine')
                                 gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
