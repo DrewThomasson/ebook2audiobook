@@ -2365,17 +2365,6 @@ def web_interface(args, ctx):
             .selected {
                 color: orange !important;
             }
-            .gr-checkbox,
-            .gr-radio {
-                border: 1px solid #666666; /* default */
-            }
-
-            @media (prefers-color-scheme: dark) {
-                .gr-checkbox,
-                .gr-radio {
-                    border: 1px solid #ffffff;
-                }
-            }
             .progress-bar.svelte-ls20lj {
                 background: orange !important;
             }
@@ -4049,42 +4038,60 @@ def web_interface(args, ctx):
                         let audioFilter = "";
                         let cues = [];
  
-                        if(typeof(window.init_elements) !== "function"){
-                            window.init_elements = () =>{
-                                try{
-                                    gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                    gr_playback_time = gr_root.querySelector("#gr_playback_time input");
-                                    gr_checkboxes = gr_root.querySelectorAll("input[type='checkbox']");
-                                    gr_radios = gr_root.querySelectorAll("input[type='radio']");
-                                    if(!gr_root || !gr_checkboxes || !gr_radios || !gr_playback_time || !gr_tab_progress){
+                        if (typeof window.init_elements !== "function") {
+                            window.init_elements = () => {
+                                try {
+                                    let gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                    let gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
+                                    let gr_playback_time = gr_root.querySelector("#gr_playback_time input");
+
+                                    if (!gr_root || !gr_tab_progress || !gr_playback_time) {
                                         clearTimeout(init_elements_timeout);
                                         console.log("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_elements, 1000);
                                         return;
                                     }
-                                    const url = new URL(window.location);
-                                    const theme = url.searchParams.get("__theme");
-                                    let osTheme;
-                                    let elColor = "#666666";
-                                    if(theme){
-                                        if(theme === "dark"){
+
+                                    // Function to apply theme borders
+                                    function applyThemeBorders() {
+                                        const url = new URL(window.location);
+                                        const theme = url.searchParams.get("__theme");
+                                        let elColor = "#666666";
+
+                                        if (theme === "dark") {
                                             elColor = "#fff";
+                                        } else if (!theme) {
+                                            const osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+                                            if (osTheme) {
+                                                elColor = "#fff";
+                                            }
                                         }
-                                        gr_checkboxes.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
-                                        gr_radios.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
-                                    }else{
-                                        osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                        if(osTheme){
-                                            elColor = "#fff";
-                                        }
-                                        gr_checkboxes.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
-                                        gr_radios.forEach(cb =>{ cb.style.border = "1px solid " + elColor; });
+
+                                        gr_root.querySelectorAll("input[type='checkbox'], input[type='radio']")
+                                            .forEach(cb => cb.style.border = "1px solid " + elColor);
                                     }
-                                    new MutationObserver(tab_progress).observe(gr_tab_progress,{ attributes: true, childList: true, subtree: true, characterData: true });
+
+                                    // Run once on init
+                                    applyThemeBorders();
+
+                                    // Re-run when DOM changes (tabs, redraws, etc.)
+                                    new MutationObserver(applyThemeBorders).observe(gr_root, {
+                                        childList: true,
+                                        subtree: true
+                                    });
+
+                                    // Keep your progress observer too
+                                    new MutationObserver(tab_progress).observe(gr_tab_progress, {
+                                        attributes: true,
+                                        childList: true,
+                                        subtree: true,
+                                        characterData: true
+                                    });
+
                                     gr_tab_progress.addEventListener("input", tab_progress);
+
                                     console.log("Components ready!");
-                                }catch(e){
+                                } catch (e) {
                                     console.log("init_elements error:", e);
                                 }
                             };
