@@ -2373,9 +2373,10 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
-            .gr-col-1, .gr-col-2 {
+            .gr-col {
                 padding: 0;
                 margin: 0;
+                border: none;
             }
             .gr-group-main, .gr-group-blocks {
                 background: none;
@@ -2560,7 +2561,7 @@ def web_interface(args, ctx):
                 gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
                 with gr_tab_main:
                     with gr.Row(elem_id='gr_row_tab_main'):
-                        with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col-1'], scale=3):
+                        with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_select', elem_classes=['custom-group']):
                                 gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', value='Selection')
                                 gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
@@ -2590,7 +2591,7 @@ def web_interface(args, ctx):
                                     </div>
                                     '''
                                 )
-                        with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col-2'], scale=3):
+                        with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_engine', elem_classes=['custom-group']):
                                 gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', value='TTS Engine')
                                 gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
