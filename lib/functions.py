@@ -2390,7 +2390,7 @@ def web_interface(args, ctx):
                 margin: 0 !important;                
             }
             .gr_markdown p {
-                color: red !important;
+                line-height: 100px !important;
             }
             ////////////////////
             #glass-mask {
