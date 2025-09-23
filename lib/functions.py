@@ -2415,9 +2415,6 @@ def web_interface(args, ctx):
             #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
                 height: 95px !important;
             }
-            #gr_voice_list {
-                height: 60px !important;
-            }
             #gr_output_format_list {
                 height: 103px !important;
             }
