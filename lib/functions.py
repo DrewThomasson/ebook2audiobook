@@ -2839,13 +2839,17 @@ def web_interface(args, ctx):
             
             rating = default_engine_settings[tts_engine]['rating']
 
-            return f'''TTS Engine&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-            <span style="display:inline-flex; margin:0; padding:0; font-size:12px; line-height:1.2; height:auto; flex-wrap: wrap; align-items:center; gap:6px 12px;">
-              <span style="display:inline-flex; white-space:nowrap; padding: 0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
-              <span style="display:inline-flex; white-space:nowrap; padding: 0 5px 0 0"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
-              <span style="display:inline-flex; white-space:nowrap; padding: 0 5px 0 0"><b>RAM:</b> {color_box(rating["RAM"])}</span>
-              <span style="display:inline-flex; white-space:nowrap; padding: 0 5px 0 0"><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
-            </span>'''
+            return f'''
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; line-height:1.2; gap:12px;">
+              <span><b>TTS Engine</b></span>
+              <span style="display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px 12px;">
+                <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
+                <span style="white-space:nowrap; padding:0 5px 0 0"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
+                <span style="white-space:nowrap; padding:0 5px 0 0"><b>RAM:</b> {color_box(rating["RAM"])}</span>
+                <span style="white-space:nowrap; padding:0 5px 0 0"><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
+              </span>
+            </div>
+            '''
 
         def alert_exception(error):
             gr.Error(error)
