@@ -2839,7 +2839,7 @@ def web_interface(args, ctx):
             
             rating = default_engine_settings[tts_engine]['rating']
 
-            return f'''TTS Engine&nbsp;&nbsp;&nbsp;
+            return f'''TTS Engine&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             <span style="display:inline-flex; margin:0; padding:0; font-size:12px; line-height:1.2; height:auto; flex-wrap: wrap; align-items:center; gap:6px 12px;">
               <span style="display:inline-flex; white-space:nowrap; padding: 0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
               <span style="display:inline-flex; white-space:nowrap; padding: 0 5px 0 0"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
