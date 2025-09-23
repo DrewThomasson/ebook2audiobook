@@ -2598,7 +2598,7 @@ def web_interface(args, ctx):
                                         gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                         gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_output_format'):
-                                gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', value='<br/Output')
+                                gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', value='<br/>Output')
                                 with gr.Row(elem_id='gr_row_output_format'):
                                     gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
                                     with gr.Group(elem_id='gr_group_output_split'):
@@ -2607,7 +2607,7 @@ def web_interface(args, ctx):
                                         with gr_row_output_split_hours:
                                             gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown', value='<div style="font-size: 12px; width:100%; text-align:center; vertical-align: middle; padding-top:15px; white-space: nowrap">Max Hours<br/>/Part</div>')
                                             gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True)
-                            gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', value='<br/Session')
+                            gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', value='<br/>Session')
                             gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                 gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='tab_item', visible=visible_gr_tab_xtts_params)           
                 with gr_tab_xtts_params:
