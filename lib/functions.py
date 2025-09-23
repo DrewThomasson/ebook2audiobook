@@ -2412,7 +2412,7 @@ def web_interface(args, ctx):
             #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                 display: none !important;
             }               
-            #gr_tts_engine_list, #gr_fine_tuned_list, #gr_output_format_list {
+            #gr_fine_tuned_list, #gr_output_format_list {
                 height: 95px !important;
             }
             #gr_voice_list {
@@ -2427,7 +2427,8 @@ def web_interface(args, ctx):
             #gr_device span[data-testid="block-info"],
             #gr_output_split_hours span[data-testid="block-info"],
             #gr_session span[data-testid="block-info"],
-            #gr_audiobook_list span[data-testid="block-info"]{
+            #gr_audiobook_list span[data-testid="block-info"],
+            #gr_tab_progress span[data-testid="block-info"]{
                 display: none !important;
             }
             ///////////////
@@ -2585,9 +2586,8 @@ def web_interface(args, ctx):
                                 )
                         with gr.Column(elem_id='gr_col_2', scale=3):
                             with gr.Group(elem_id='gr_group_engine'):
-                                gr_tts_engine_markdown = gr.Markdown(elem_id='gr_tts_engine_markdown', value='TTS Engine')
+                                gr_tts_rating = gr.HTML('TTS Engine')
                                 gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
-                                gr_tts_rating = gr.HTML()
                             with gr.Group(elem_id='gr_group_models'):
                                 gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', value='<br/>Models')
                                 gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
@@ -2720,8 +2720,9 @@ def web_interface(args, ctx):
             gr_state_update = gr.State(value={"hash": None})
             gr_read_data = gr.JSON(elem_id='gr_read_data')
             gr_write_data = gr.JSON(elem_id='gr_write_data')
+            gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', value='<br/>Progress')
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
-            gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='Progress', interactive=False, visible=True)
+            gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
             gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
             gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
             with gr_group_audiobook_list:
