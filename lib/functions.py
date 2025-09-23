@@ -2422,7 +2422,9 @@ def web_interface(args, ctx):
                 height: 103px !important;
             }
             #gr_ebook_mode span[data-testid="block-info"],
+            #gr_language span[data-testid="block-info"],
             #gr_voice_list span[data-testid="block-info"],
+            #gr_device span[data-testid="block-info"],
             #gr_output_split_hours span[data-testid="block-info"],
             #gr_audiobook_list span[data-testid="block-info"]{
                 display: none !important;
