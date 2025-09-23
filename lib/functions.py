@@ -2365,6 +2365,17 @@ def web_interface(args, ctx):
             .selected {
                 color: orange !important;
             }
+            .gr-checkbox,
+            .gr-radio {
+                border: 1px solid #666666; /* default */
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .gr-checkbox,
+                .gr-radio {
+                    border: 1px solid #ffffff;
+                }
+            }
             .progress-bar.svelte-ls20lj {
                 background: orange !important;
             }
