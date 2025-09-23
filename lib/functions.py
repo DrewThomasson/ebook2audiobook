@@ -2375,7 +2375,7 @@ def web_interface(args, ctx):
                 max-height: none !important;
             }
             .gr-tab {
-                padding: 0 !important;
+                padding: 0 3px 0 3px !important;
                 margin: 0 !important;
                 border: none !important;
             }
