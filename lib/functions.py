@@ -2857,7 +2857,7 @@ def web_interface(args, ctx):
             try:
                 session = context.get_session(id)
                 socket_hash = req.session_hash
-                if not session[socket_hash]:
+                if not session.get(socket_hash):
                     outputs = tuple([gr.update() for _ in range(25)])
                     return outputs
                 session = context.get_session(id)
