@@ -2725,9 +2725,6 @@ def web_interface(args, ctx):
                         elem_id='gr_bark_waveform_temp',
                         info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                     )
-            gr_state_update = gr.State(value={"hash": None})
-            gr_read_data = gr.JSON(elem_id='gr_read_data')
-            gr_write_data = gr.JSON(elem_id='gr_write_data')
             with gr.Group(elem_id='gr_group_progress', elem_classes=['custom-group-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', value='Progress')
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
@@ -2759,7 +2756,12 @@ def web_interface(args, ctx):
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
-            
+
+        gr_state_update = gr.State(value={"hash": None})
+        gr_read_data = gr.JSON(elem_id='gr_read_data')
+        gr_write_data = gr.JSON(elem_id='gr_write_data') 
+
+ 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
             if any(socket_hash in session for session in context.sessions.values()):
