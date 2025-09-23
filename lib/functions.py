@@ -2552,7 +2552,7 @@ def web_interface(args, ctx):
                     with gr.Row(elem_id='gr_row_tab_main'):
                         with gr.Column(elem_id='gr_col_1', scale=3):
                             with gr.Group(elem_id='gr_group_select'):
-                                gr_ebook_label = gr.Label(label='Selection')
+                                gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', value='Selection')
                                 gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
                                 gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                                 with gr_row_ebook_mode:
