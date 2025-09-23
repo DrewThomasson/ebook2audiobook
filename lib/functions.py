@@ -2552,11 +2552,12 @@ def web_interface(args, ctx):
                     with gr.Row(elem_id='gr_row_tab_main'):
                         with gr.Column(elem_id='gr_col_1', scale=3):
                             with gr.Group(elem_id='gr_group_select'):
+                                gr_ebook_label = gr.Label(label='Selection')
                                 gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
                                 gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                                 with gr_row_ebook_mode:
                                     gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
-                                    gr_chapters_control = gr.Checkbox(label='Chapters Control', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
+                                    gr_chapters_control = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
                             with gr.Group(elem_id='gr_group_language'):
                                 gr_language = gr.Dropdown(label='Language', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
                             gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
