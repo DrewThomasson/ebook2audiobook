@@ -2375,9 +2375,11 @@ def web_interface(args, ctx):
             }
             .gr-col-1 {
                 padding-left: 0;
+                margin: 0;
             }
-             .gr-col-2 {
-                padding:-right 0;
+            .gr-col-2 {
+                padding-right: 0;
+                margin: 0;
             }
             .gr-group-main, .gr-group-blocks {
                 background: none;
