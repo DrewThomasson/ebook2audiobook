@@ -2384,7 +2384,6 @@ def web_interface(args, ctx):
             .custom-group {
                 padding: 0 !important;
                 margin: 0 !important;
-                border-radius: 9px !important;
             }
             ////////////////////
             #glass-mask {
@@ -2728,10 +2727,10 @@ def web_interface(args, ctx):
             gr_state_update = gr.State(value={"hash": None})
             gr_read_data = gr.JSON(elem_id='gr_read_data')
             gr_write_data = gr.JSON(elem_id='gr_write_data')
-            with gr.Group(elem_id='gr_group_progress', elem_classes=['custom-group']):
+            with gr.Group(elem_id='gr_group_progress'):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', value='<br/>Progress')
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
-            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['custom-group'], visible=False)
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', value='<br/>Audiobook')
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
