@@ -2559,7 +2559,8 @@ def web_interface(args, ctx):
                                     gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
                                     gr_chapters_control = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
                             with gr.Group(elem_id='gr_group_language'):
-                                gr_language = gr.Dropdown(label='Language', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
+                                gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', value='Language')
+                                gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
                             gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
                             with gr_group_voice_file:
                                 gr_voice_file = gr.File(label='*Upload New Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
@@ -2569,7 +2570,8 @@ def web_interface(args, ctx):
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device'):
-                                gr_device = gr.Dropdown(label='Processor Unit', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
+                                gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', value='Processor Unit')
+                                gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
                                 gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
                                     <div style="right:0;margin:auto;padding:10px;text-align:right">
                                         <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
