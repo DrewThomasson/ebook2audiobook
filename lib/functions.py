@@ -2565,6 +2565,7 @@ def web_interface(args, ctx):
                                 gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
                             gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', visible=visible_gr_group_voice_file)
                             with gr_group_voice_file:
+                                gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', value='<br/>Voices')
                                 gr_voice_file = gr.File(label='*Upload New Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                 with gr_row_voice_player:
@@ -2583,8 +2584,11 @@ def web_interface(args, ctx):
                                 )
                         with gr.Column(elem_id='gr_col_2', scale=3):
                             with gr.Group(elem_id='gr_group_engine'):
-                                gr_tts_engine_list = gr.Dropdown(label='TTS Engine', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
+                                gr_tts_engine_markdown = gr.Markdown(elem_id='gr_tts_engine_markdown', value='<br/>TTS Engine')
+                                gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
                                 gr_tts_rating = gr.HTML()
+                            with gr.Group(elem_id='gr_group_models'):
+                                gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', value='<br/>Models')
                                 gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                 gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                                 with gr_group_custom_model:
