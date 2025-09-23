@@ -2374,8 +2374,8 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
-            .gr-col {
-                padding: 6px !important;
+            .gr-tab, .gr-col {
+                padding: 0 !important;
                 margin: 0 !important;
                 border: none !important;
             }
@@ -2566,7 +2566,7 @@ def web_interface(args, ctx):
     with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
         with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
             with gr.Tabs(elem_id='gr_tabs'):
-                gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='gr-tab-main')
+                gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='gr-tab')
                 with gr_tab_main:
                     with gr.Row(elem_id='gr_row_tab_main'):
                         with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
@@ -2624,7 +2624,7 @@ def web_interface(args, ctx):
                                             gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True)
                             gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr_markdown'], value='Session')
                             gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
-                gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='gr-tab-main', visible=visible_gr_tab_xtts_params)           
+                gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=visible_gr_tab_xtts_params)           
                 with gr_tab_xtts_params:
                     gr_xtts_temperature = gr.Slider(
                         label='Temperature',
@@ -2698,7 +2698,7 @@ def web_interface(args, ctx):
                         info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                         visible=False
                     )
-                gr_tab_bark_params = gr.TabItem('BARK fine Tuned Parameters', elem_id='gr_tab_bark_params', elem_classes='gr-tab-main', visible=visible_gr_tab_bark_params)           
+                gr_tab_bark_params = gr.TabItem('BARK fine Tuned Parameters', elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=visible_gr_tab_bark_params)           
                 with gr_tab_bark_params:
                     gr.Markdown(
                         elem_id='gr_markdown_tab_bark_params',
