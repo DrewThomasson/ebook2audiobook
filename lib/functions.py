@@ -2373,12 +2373,15 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
-            .gr-group-main, .gr-group-blocks {
-                background: none;
+            .gr-col-1 {
+                padding: 0;
                 margin: 0;
             }
+            .gr-group-main, .gr-group-blocks {
+                background: none;
+            }
             .custom-group {
-                padding: 6px;
+                padding-right: 6px;
             }
             ////////////////////
             #gr_col_1, #gr_col_2 {
@@ -2559,7 +2562,7 @@ def web_interface(args, ctx):
                 gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='tab_item')
                 with gr_tab_main:
                     with gr.Row(elem_id='gr_row_tab_main'):
-                        with gr.Column(elem_id='gr_col_1', scale=3):
+                        with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col-1'], scale=3):
                             with gr.Group(elem_id='gr_group_select', elem_classes=['custom-group']):
                                 gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', value='Selection')
                                 gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
