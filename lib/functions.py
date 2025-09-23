@@ -2375,6 +2375,7 @@ def web_interface(args, ctx):
             }
             .gr-group-main, .gr-group-blocks {
                 background: none;
+                margin: 0;
             }
             .custom-group {
                 padding: 6px;
