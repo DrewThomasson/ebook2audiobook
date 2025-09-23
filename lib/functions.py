@@ -2421,7 +2421,6 @@ def web_interface(args, ctx):
             #gr_output_format_list {
                 height: 103px !important;
             }
-            #gr_ebook_file span[data-testid="block-info"],
             #gr_ebook_mode span[data-testid="block-info"],
             #gr_language span[data-testid="block-info"],
             #gr_voice_list span[data-testid="block-info"],
@@ -2586,7 +2585,7 @@ def web_interface(args, ctx):
                                 )
                         with gr.Column(elem_id='gr_col_2', scale=3):
                             with gr.Group(elem_id='gr_group_engine'):
-                                gr_tts_engine_markdown = gr.Markdown(elem_id='gr_tts_engine_markdown', value='<br/>TTS Engine')
+                                gr_tts_engine_markdown = gr.Markdown(elem_id='gr_tts_engine_markdown', value='TTS Engine')
                                 gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
                                 gr_tts_rating = gr.HTML()
                             with gr.Group(elem_id='gr_group_models'):
