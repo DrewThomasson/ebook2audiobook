@@ -2281,9 +2281,6 @@ def web_interface(args, ctx):
 
     header_css = '''
         <style>
-            * {
-              font-weight: bold !important;
-            }
             /* Global Scrollbar Customization */
             /* The entire scrollbar */
             ::-webkit-scrollbar {
