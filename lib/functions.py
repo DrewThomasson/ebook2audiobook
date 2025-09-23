@@ -2382,8 +2382,9 @@ def web_interface(args, ctx):
                 background: none;
             }
             .custom-group {
-                padding: 0 6px 0 6px;
+                padding: 0 9px 0 9px;
                 margin: 0;
+                border-radius: 9px !important;
             }
             ////////////////////
             #glass-mask {
