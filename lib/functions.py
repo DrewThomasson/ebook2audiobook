@@ -2435,6 +2435,7 @@ def web_interface(args, ctx):
             #gr_tts_engine_list span[data-testid="block-info"],
             #gr_output_split_hours span[data-testid="block-info"],
             #gr_session span[data-testid="block-info"],
+            #gr_audiobook_sentence span[data-testid="block-info"],
             #gr_audiobook_list span[data-testid="block-info"],
             #gr_tab_progress span[data-testid="block-info"]{
                 display: none !important;
@@ -2732,9 +2733,10 @@ def web_interface(args, ctx):
             gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
             gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
             gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
-            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', visible=False)
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['custom-group'], visible=False)
             with gr_group_audiobook_list:
-                gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='Audiobook', value='...', interactive=False, visible=True, lines=3, max_lines=3)
+                gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', value='<br/>Audiobook')
+                gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, visible=True, lines=3, max_lines=3)
                 gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
                 with gr.Row(elem_id='gr_row_audiobook_list'):
                     gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
