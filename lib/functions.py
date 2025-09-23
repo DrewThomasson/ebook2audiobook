@@ -2389,7 +2389,7 @@ def web_interface(args, ctx):
                 padding: 0 9px 0 9px !important;
                 margin: 0 !important;                
             }
-            .gr_markdown font {
+            .gr_markdown p {
                 color: red !important;
             }
             ////////////////////
