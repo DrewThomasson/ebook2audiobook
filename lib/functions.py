@@ -2415,10 +2415,14 @@ def web_interface(args, ctx):
             #gr_tts_engine_list, #gr_fine_tuned_list, #gr_session, #gr_output_format_list {
                 height: 95px !important;
             }
+            #gr_voice_list {
+                height: 60px !important;
+            }
             #gr_output_format_list {
                 height: 103px !important;
             }
             #gr_ebook_mode span[data-testid="block-info"],
+            #gr_voice_list span[data-testid="block-info"],
             #gr_output_split_hours span[data-testid="block-info"],
             #gr_audiobook_list span[data-testid="block-info"]{
                 display: none !important;
