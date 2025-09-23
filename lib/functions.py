@@ -2387,6 +2387,9 @@ def web_interface(args, ctx):
             .gr-group-main, .gr-group-blocks {
                 background: none !important;
             }
+            .block {
+                border-radius: 9px !important;
+            }
             .custom-group {
                 padding: 0 !important;
                 margin: 0 !important;
@@ -2529,7 +2532,7 @@ def web_interface(args, ctx):
             .modal-content {
                 background-color: #333 !important;
                 padding: 20px !important;
-                border-radius: 8px !important;
+                border-radius: 9px !important;
                 text-align: center !important;
                 max-width: 300px !important;
                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5) !important;
@@ -2545,7 +2548,7 @@ def web_interface(args, ctx):
             .confirm-buttons button {
                 padding: 10px 20px !important;
                 border: none !important;
-                border-radius: 5px !important;
+                border-radius: 6px !important;
                 font-size: 16px !important;
                 cursor: pointer !important;
             }
@@ -2835,7 +2838,7 @@ def web_interface(args, ctx):
                     color = "#FF9800"  # Orange = medium
                 else:
                     color = "#F44336"  # Red = high
-                return f"<span style='background:{color};color:white; padding: 0 5px 0 0; border-radius:3px;font-size:11px'>{value} GB</span>"
+                return f"<span style='background:{color};color:white; padding: 0 5px 0 0; border-radius:3px; font-size:11px'>{value} GB</span>"
             
             rating = default_engine_settings[tts_engine]['rating']
 
