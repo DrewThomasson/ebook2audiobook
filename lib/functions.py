@@ -2826,7 +2826,7 @@ def web_interface(args, ctx):
                     color = "#FF9800"  # Orange = medium
                 else:
                     color = "#F44336"  # Red = high
-                return f"<span style='background:{color};color:white;padding:1px 5px;border-radius:3px;font-size:11px'>{value} GB</span>"
+                return f"<span style='background:{color};color:white;padding-right: 5px; border-radius:3px;font-size:11px'>{value} GB</span>"
             
             rating = default_engine_settings[tts_engine]['rating']
 
