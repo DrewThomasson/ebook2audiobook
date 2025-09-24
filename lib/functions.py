@@ -2410,6 +2410,18 @@ def web_interface(args, ctx):
                 justify-content: center !important;
                 text-align: center !important;
             }
+            .gr-markdown-span 
+                margin-top: 8px !important;
+                width: 90px !important;
+                padding: 2px 6px !important;
+                line-height: 1.2 !important;
+                border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
+                background: var(--block-background-fill) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                text-align: center !important;            
+            }
             ////////////////////
             #glass-mask {
                 position: fixed !important;
@@ -2855,8 +2867,8 @@ def web_interface(args, ctx):
             rating = default_engine_settings[tts_engine]['rating']
 
             return f'''
-            <div class="gr-markdown" style="display:flex; justify-content:space-between; margin-top: 8px; align-items:center; font-size:14px; line-height:1.2; gap:12px;">
-              <span style="width: 80px !important; padding: 6px 0 0 6px"><p>TTS Engine</p></span>
+            <div style="display:flex; justify-content:space-between; margin-top: 8px; align-items:center; font-size:14px; line-height:1.2; gap:12px;">
+              <span style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
               <span style="display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px">
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
