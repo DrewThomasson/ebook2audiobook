@@ -2397,8 +2397,9 @@ def web_interface(args, ctx):
                 margin: 0 !important;                
             }
             .gr-markdown p {
-                width: auto;
+                width: 100px !important;
                 padding: 5px 0 0 5px !important;
+                line-height: 0 !important;
                 background: var(--background-fill-secondary) !important;
             }
             ////////////////////
