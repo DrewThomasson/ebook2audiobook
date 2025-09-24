@@ -2489,11 +2489,8 @@ def web_interface(args, ctx):
               display: flex !important;
               align-items: center !important;
               gap: 6px;
-              margin: 0 !important;
               line-height: 1.2 !important;
             }
-
-            /* Remove default checkbox input margins that can nudge it up */
             #gr_chapters_control input[type="checkbox"] {
               margin: 0 !important;
             }
