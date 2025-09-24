@@ -2880,7 +2880,7 @@ def web_interface(args, ctx):
                         margin: 0;
                         padding: 0;
                         font-size: 12px;
-                        line-height: 1;
+                        line-height: 0;
                         height: 1em;">
                       <tr style="border: none; height: 1em;">
                         <td style="padding: 0 5px 0 2.5px; border: none; vertical-align: bottom;">
