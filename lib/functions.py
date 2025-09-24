@@ -2398,6 +2398,7 @@ def web_interface(args, ctx):
                 border-radius: var(--radius-md) !important;
             }
             .gr-markdown p {
+                margin-top: 20px !important;
                 width: 100px !important;
                 padding: 6px 0 0 6px !important;
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
