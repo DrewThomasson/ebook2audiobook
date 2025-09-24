@@ -2872,9 +2872,7 @@ def web_interface(args, ctx):
             rating = default_engine_settings[tts_engine]['rating']
 
             return f'''
-            <div style="display:flex; justify-content:space-between">
-                <span class="gr-markdown-span" style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
-            </div>
+
             '''
 
         def alert_exception(error):
