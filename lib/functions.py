@@ -2581,7 +2581,7 @@ def web_interface(args, ctx):
                     with gr.Row(elem_id='gr_row_tab_main'):
                         with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_select', elem_classes=['custom-group']):
-                                gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', value='Selection')
+                                gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', elem_classes=['gr-markdown'], value='Selection')
                                 gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
                                 gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                                 with gr_row_ebook_mode:
@@ -2611,7 +2611,7 @@ def web_interface(args, ctx):
                                 )
                         with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_engine', elem_classes=['custom-group']):
-                                gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', value='TTS Engine')
+                                gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value='TTS Engine')
                                 gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
                             with gr.Group(elem_id='gr_group_models', elem_classes=['custom-group']):
                                 gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', elem_classes=['gr-markdown'], value='Models')
@@ -2736,7 +2736,7 @@ def web_interface(args, ctx):
                         info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                     )
             with gr.Group(elem_id='gr_group_progress', elem_classes=['custom-group-padded']):
-                gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', value='Progress')
+                gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Progress')
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
             gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['custom-group-padded'], visible=False)
             with gr_group_audiobook_list:
