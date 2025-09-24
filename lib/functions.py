@@ -2456,9 +2456,6 @@ def web_interface(args, ctx):
             #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                 height: 140px !important;
             }
-            #gr_tts_rating div {
-                overflow: hidden;
-            }
             #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                 display: none !important;
             }               
@@ -2877,14 +2874,6 @@ def web_interface(args, ctx):
             return f'''
             <div style="display:flex; justify-content:space-between">
                 <span class="gr-markdown-span" style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
-                <table style="border-collapse: collapse; margin: 0; padding: 0; border: none; font-size: 12px;">
-                  <tr style="border: none">
-                    <td style="padding: 0 5px 0 2.5px; margin: 0; border: none;"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</td>
-                    <td style="padding: 0 5px 0 2.5px; margin: 0; border: none;"><b>CPU:</b> {yellow_stars(rating["CPU"])}</td>
-                    <td style="padding: 0 5px 0 2.5px; margin: 0; border: none;"><b>RAM:</b> {color_box(rating["RAM"])}</td>
-                    <td style="padding: 0 5px 0 2.5px; margin: 0; border: none;"><b>Realism:</b> {yellow_stars(rating["Realism"])}</td>
-                  </tr>
-                </table>
             </div>
             '''
 
