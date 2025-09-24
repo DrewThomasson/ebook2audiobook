@@ -2395,12 +2395,12 @@ def web_interface(args, ctx):
             .custom-group-padded {
                 padding: 0 9px 0 9px !important;
                 margin: 0 !important;        
-                border-radius: var(--block-radius) !important;
+                border-radius: var(--radius-md) !important;
             }
             .gr-markdown p {
                 width: 100px !important;
-                padding: 5px 0 0 5px !important;
-                border-radius: var(--block-radius) !important;
+                padding: 6px 0 0 6px !important;
+                border-radius: var(--radius-md) !important;
                 background: var(--block-background-fill) !important;
             }
             ////////////////////
@@ -2846,7 +2846,7 @@ def web_interface(args, ctx):
 
             return f'''
             <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; line-height:1.2; gap:12px;">
-              <span><b>TTS Engine</b></span>
+              TTS Engine
               <span style="display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px 12px;">
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
