@@ -2870,7 +2870,6 @@ def web_interface(args, ctx):
                 return f"<span style='background:{color};color:white; padding: 0 3px 0 3px; border-radius:3px; font-size:11px'>{value} GB</span>"
             
             rating = default_engine_settings[tts_engine]['rating']
-
             return f'''
             <span class="gr-markdown-span">TTS Engine</span>
             <table style="display: inline-block; border-collapse: collapse; margin: 0; padding: 0; border: none; font-size: 12px;">
