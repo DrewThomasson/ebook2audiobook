@@ -2873,7 +2873,7 @@ def web_interface(args, ctx):
             return f'''
                 <div style="display:flex; justify-content:space-between; align-items: center;">
                     <span class="gr-markdown-span">TTS Engine</span>
-                    <table style="display: inline-block; border-collapse: collapse; margin: 0; padding: 0; border: none; font-size: 12px;">
+                    <table style="display: inline-block; border-collapse: collapse; margin: 0; padding: 0; border: none; font-size: 12px; margin-top: 2px;">
                       <tr style="border: none">
                         <td style="padding: 0 5px 0 2.5px; margin: 0; border: none;"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</td>
                         <td style="padding: 0 5px 0 2.5px; margin: 0; border: none;"><b>CPU:</b> {yellow_stars(rating["CPU"])}</td>
