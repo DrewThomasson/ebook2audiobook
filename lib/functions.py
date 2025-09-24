@@ -2357,6 +2357,8 @@ def web_interface(args, ctx):
                 height: 60px !important;
                 margin: 0 !important;
                 padding: 0 !important;
+            }
+            .small-btn button {
                 background: none !important;
             }
             .file-preview-holder {
