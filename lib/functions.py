@@ -2400,7 +2400,7 @@ def web_interface(args, ctx):
             .gr-markdown p {
                 width: 100px !important;
                 padding: 6px 0 0 6px !important;
-                border-radius: var(--radius-md) !important;
+                border-radius: var(--block-radius) 0 var(--block-radius) var(--block-radius)!important;
                 background: var(--block-background-fill) !important;
             }
             ////////////////////
