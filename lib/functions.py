@@ -2423,7 +2423,6 @@ def web_interface(args, ctx):
                 text-align: center !important;            
             }
             .gr-rating {
-                width: 300px;
                 white-space: nowrap !important;
                 padding:0 5px 0 0 !important;
                 font-size: 12px !important;
@@ -2873,15 +2872,23 @@ def web_interface(args, ctx):
             rating = default_engine_settings[tts_engine]['rating']
 
             return f'''
-            <div style="display:flex; justify-content:space-between">
-              <span class="gr-markdown-span" style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
-              <span style="padding: 0; margin: 0">
-                <span class="gr-rating"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
-                <span class="gr-rating"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
-                <span class="gr-rating"><b>RAM:</b> {color_box(rating["RAM"])}</span>
-                <span class="gr-rating"><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
-              </span>
-            </div>
+            <table style="border-collapse: collapse; width: 100%; padding: 0; margin: 0">
+              <tr>
+                <td style="width: 80px; padding: 0; margin: 0; text-align: left">
+                  TTS Engine
+                </td>
+                <td style="padding: 0; margin: 0">
+                  <table style="border-collapse: collapse; padding: 0; margin: 0">
+                    <tr>
+                      <td style="padding: 0; margin: 0" class="gr-rating"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</td>
+                      <td style="padding: 0; margin: 0" class="gr-rating"><b>CPU:</b> {yellow_stars(rating["CPU"])}</td>
+                      <td style="padding: 0; margin: 0" class="gr-rating"><b>RAM:</b> {color_box(rating["RAM"])}</td>
+                      <td style="padding: 0; margin: 0" class="gr-rating"><b>Realism:</b> {yellow_stars(rating["Realism"])}</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            </table>
             '''
 
         def alert_exception(error):
