@@ -2398,7 +2398,7 @@ def web_interface(args, ctx):
                 border-radius: var(--radius-md) !important;
             }
             .gr-markdown p {
-                margin-top: 6px !important;
+                margin-top: 8px !important;
                 width: 100px !important;
                 padding: 6px 0 0 6px !important;
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
@@ -2603,13 +2603,6 @@ def web_interface(args, ctx):
                             with gr.Group(elem_id='gr_group_device', elem_classes=['custom-group']):
                                 gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor Unit')
                                 gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
-                                gr_logo_markdown = gr.Markdown(elem_id='gr_logo_markdown', value=f'''
-                                    <div style="right:0;margin:auto;padding:10px;text-align:right">
-                                        <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
-                                        <b>{title}</b>&nbsp;<b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
-                                    </div>
-                                    '''
-                                )
                         with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_engine', elem_classes=['custom-group']):
                                 gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value='TTS Engine')
@@ -2846,7 +2839,7 @@ def web_interface(args, ctx):
             rating = default_engine_settings[tts_engine]['rating']
 
             return f'''
-            <div style="display:flex; justify-content:space-between; margin-top: 6px; align-items:center; font-size:14px; line-height:1.2; gap:12px;">
+            <div style="display:flex; justify-content:space-between; margin-top: 8px; align-items:center; font-size:14px; line-height:1.2; gap:12px;">
               <span style="width: 100px !important; padding: 6px 0 0 6px !important; border-radius: var(--radius-md) !important; background: var(--block-background-fill) !important;">TTS Engine</span>
               <span style="display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px">
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
