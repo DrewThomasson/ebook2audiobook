@@ -2394,12 +2394,10 @@ def web_interface(args, ctx):
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             .gr-group-padded {
-                padding: 0 !important;
-                margin: 0 !important;
+                margin-right: var(--size-8) !important;;
+                padding-left: var(--size-8) !important;;
+                padding-right: var(--size-8) !important;;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
-                margin-right: var(--size-16) !important;;
-                padding-left: var(--size-16) !important;;
-                padding-right: var(--size-16) !important;;
             }
             .gr-markdown p {
                 margin-top: 8px !important;
