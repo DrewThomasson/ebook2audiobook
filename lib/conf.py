@@ -2,7 +2,7 @@ import os
 import platform
 
 tmp_dir = os.path.abspath('tmp')
-tmp_expire = 14 # days
+tmp_expire = 7 # days
 
 models_dir = os.path.abspath('models')
 ebooks_dir = os.path.abspath('ebooks')
