@@ -2399,8 +2399,9 @@ def web_interface(args, ctx):
             .gr-markdown p {
                 width: 100px !important;
                 padding: 5px 0 0 5px !important;
-                line-height: 12px !important;
-                background: var(--block-label-background-fill) !important;
+                line-height: 16px !important;
+                border-radius: var(--block-radius) !important;
+                background: var(--block-background-fill) !important;
             }
             ////////////////////
             #glass-mask {
