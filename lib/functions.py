@@ -2393,9 +2393,9 @@ def web_interface(args, ctx):
                 margin: 0 !important;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
-            .gr-group-padded .block{
-                padding-left: var(--size-2) !important;;
-                padding-right: var(--size-2) !important;;
+            .gr-group-padded{
+                margin-left: var(--size-2) !important;;
+                margin-right: var(--size-2) !important;;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             .gr-markdown p {
