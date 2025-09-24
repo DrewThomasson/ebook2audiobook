@@ -2410,7 +2410,7 @@ def web_interface(args, ctx):
                 justify-content: center !important;
                 text-align: center !important;
             }
-            .gr-markdown-span 
+            .gr-markdown-span {
                 margin-top: 8px !important;
                 width: 90px !important;
                 padding: 2px 6px !important;
