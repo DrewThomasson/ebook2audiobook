@@ -2390,15 +2390,17 @@ def web_interface(args, ctx):
             .custom-group {
                 padding: 0 !important;
                 margin: 0 !important;
-                border-radius: 9px !important;
+                border-radius: var(--block-radius) !important;
             }
             .custom-group-padded {
                 padding: 0 9px 0 9px !important;
-                margin: 0 !important;                
+                margin: 0 !important;        
+                border-radius: var(--block-radius) !important;
             }
             .gr-markdown p {
                 width: 100px !important;
                 padding: 5px 0 0 5px !important;
+                border-radius: var(--block-radius) !important;
                 background: var(--block-background-fill) !important;
             }
             ////////////////////
