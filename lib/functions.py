@@ -2480,6 +2480,9 @@ def web_interface(args, ctx):
             #gr_tab_progress span[data-testid="block-info"]{
                 display: none !important;
             }
+            #gr_tts_rating {
+                overflow: hidden !important;
+            }
             ///////////////
             #gr_voice_player {
                 margin: 0 !important;
