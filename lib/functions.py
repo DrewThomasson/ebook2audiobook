@@ -2422,6 +2422,11 @@ def web_interface(args, ctx):
                 justify-content: center !important;
                 text-align: center !important;            
             }
+            .gr-rating {
+                white-space: nowrap !important;
+                padding:0 5px 0 0 !important;
+                font-size: 12px !important;
+            }
             ////////////////////
             #glass-mask {
                 position: fixed !important;
@@ -2869,11 +2874,11 @@ def web_interface(args, ctx):
             return f'''
             <div style="display:flex; justify-content:space-between">
               <span class="gr-markdown-span" style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
-              <span style="font-size:12px">
-                <span><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
-                <span><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
-                <span><b>RAM:</b> {color_box(rating["RAM"])}</span>
-                <span><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
+              <span style="padding: 0; margin: 0">
+                <span class="gr-rating"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
+                <span class="gr-rating"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
+                <span class="gr-rating"><b>RAM:</b> {color_box(rating["RAM"])}</span>
+                <span class="gr-rating"><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
               </span>
             </div>
             '''
