@@ -2873,25 +2873,15 @@ def web_interface(args, ctx):
 
             return f'''
             <div style="display:flex; justify-content:space-between">
-              <span class="gr-markdown-span" style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
-            <table style="border-collapse: collapse; margin: 0; padding: 0;">
-              <tr>
-                <td style="padding: 0; margin: 0;"><b>GPU VRAM:</b></td>
-                <td style="padding: 0; margin: 0;">{color_box(rating["GPU VRAM"])}</td>
-              </tr>
-              <tr>
-                <td style="padding: 0; margin: 0;"><b>CPU:</b></td>
-                <td style="padding: 0; margin: 0;">{yellow_stars(rating["CPU"])}</td>
-              </tr>
-              <tr>
-                <td style="padding: 0; margin: 0;"><b>RAM:</b></td>
-                <td style="padding: 0; margin: 0;">{color_box(rating["RAM"])}</td>
-              </tr>
-              <tr>
-                <td style="padding: 0; margin: 0;"><b>Realism:</b></td>
-                <td style="padding: 0; margin: 0;">{yellow_stars(rating["Realism"])}</td>
-              </tr>
-            </table>
+                <span class="gr-markdown-span" style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
+                <table style="border-collapse: collapse; margin: 0; padding: 0;">
+                  <tr>
+                    <td style="padding: 0; margin: 0;"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</td>
+                    <td style="padding: 0; margin: 0;"><b>CPU:</b> {yellow_stars(rating["CPU"])}</td>
+                    <td style="padding: 0; margin: 0;"><b>RAM:</b> {color_box(rating["RAM"])}</td>
+                    <td style="padding: 0; margin: 0;"><b>Realism:</b> {yellow_stars(rating["Realism"])}</td>
+                  </tr>
+                </table>
             </div>
             '''
 
