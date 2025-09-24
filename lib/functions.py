@@ -2400,8 +2400,8 @@ def web_interface(args, ctx):
             .gr-markdown p {
                 margin-top: 8px !important;
                 width: 80px !important;
-                height: 40px;
-                padding: 6px !important;
+                padding: 2px 6px !important;   /* smaller vertical padding */
+                line-height: 1.2 !important;   /* tighter line spacing */
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
                 background: var(--block-background-fill) !important;
                 display: flex;
