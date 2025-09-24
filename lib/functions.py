@@ -2867,9 +2867,9 @@ def web_interface(args, ctx):
             rating = default_engine_settings[tts_engine]['rating']
 
             return f'''
-            <div style="display:flex; justify-content:space-between; margin-top: 8px; align-items:center; font-size:14px; line-height:1.2; gap:12px;">
+            <div style="display:flex; justify-content:space-between">
               <span class="gr-markdown-span" style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
-              <span style="display:inline-flex; overflow: hidden; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px">
+              <span style="display:inline-flex; flex-wrap:wrap; align-items: center; gap:6px 12px; font-size:12px">
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>RAM:</b> {color_box(rating["RAM"])}</span>
