@@ -2856,7 +2856,7 @@ def web_interface(args, ctx):
 
             return f'''
             <div style="display:flex; justify-content:space-between; margin-top: 8px; align-items:center; font-size:14px; line-height:1.2; gap:12px;">
-              <span style="width: 80px !important; padding: 6px 0 0 6px !important; border-radius: var(--radius-md) !important; background: var(--block-background-fill) !important;">TTS Engine</span>
+              <span class="gr-markdown" style="width: 80px !important; padding: 6px 0 0 6px"><p>TTS Engine<p></span>
               <span style="display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px">
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
