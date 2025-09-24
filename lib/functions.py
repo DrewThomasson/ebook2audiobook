@@ -2357,6 +2357,7 @@ def web_interface(args, ctx):
                 height: 60px !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                background: none !important;
             }
             .file-preview-holder {
                 height: 116px !important;
@@ -2400,14 +2401,14 @@ def web_interface(args, ctx):
             .gr-markdown p {
                 margin-top: 8px !important;
                 width: 90px !important;
-                padding: 2px 6px !important;   /* smaller vertical padding */
-                line-height: 1.2 !important;   /* tighter line spacing */
+                padding: 2px 6px !important;
+                line-height: 1.2 !important;
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
                 background: var(--block-background-fill) !important;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                text-align: center;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                text-align: center !important;
             }
             ////////////////////
             #glass-mask {
