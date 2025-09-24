@@ -2400,9 +2400,14 @@ def web_interface(args, ctx):
             .gr-markdown p {
                 margin-top: 8px !important;
                 width: 80px !important;
-                padding: 6px 0 0 6px !important;
+                height: 40px;
+                padding: 6px !important;
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
                 background: var(--block-background-fill) !important;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
             }
             ////////////////////
             #glass-mask {
