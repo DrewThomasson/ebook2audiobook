@@ -2480,6 +2480,30 @@ def web_interface(args, ctx):
             #gr_tab_progress span[data-testid="block-info"]{
                 display: none !important;
             }
+            /* Center items in the row (Gradio Row is a grid) */
+            #gr_row_ebook_mode { align-items: center !important; }
+
+            /* Center just the checkbox block within the grid cell */
+            #gr_chapters_control { 
+              align-self: center !important; 
+              overflow: visible !important;          /* avoid odd scroll/offset */
+              padding: 0 !important;                 /* remove extra inner padding */
+              border-width: 0 !important;            /* optional: remove border height */
+            }
+
+            /* Make the label content itself vertically centered */
+            #gr_chapters_control > label {
+              display: flex !important;
+              align-items: center !important;
+              gap: 6px;
+              margin: 0 !important;
+              line-height: 1.2 !important;
+            }
+
+            /* Remove default checkbox input margins that can nudge it up */
+            #gr_chapters_control input[type="checkbox"] {
+              margin: 0 !important;
+            }
             #gr_tts_rating {
                 overflow: hidden !important;
             }
@@ -2614,8 +2638,8 @@ def web_interface(args, ctx):
                                 gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
                                 gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                                 with gr_row_ebook_mode:
-                                    gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2, container=False,)
-                                    gr_chapters_control = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_control', value=False, interactive=True, scale=1, container=False,)
+                                    gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
+                                    gr_chapters_control = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
                             with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                 gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                 gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
