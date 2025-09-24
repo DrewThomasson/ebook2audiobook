@@ -2626,9 +2626,10 @@ def web_interface(args, ctx):
                                         with gr_row_output_split_hours:
                                             gr_output_split_hours_markdown = gr.Markdown(elem_id='gr_output_split_hours_markdown', value='<div style="font-size: 12px; width:100%; text-align:center; vertical-align: middle; padding-top:15px; white-space: nowrap">Max Hours<br/>/Part</div>')
                                             gr_output_split_hours = gr.Dropdown(label='', elem_id='gr_output_split_hours', choices=options_output_split_hours, type='value', value=default_output_split_hours, interactive=True)
-                        with gr.Group(elem_id='gr_group_session', elem_classes=['custom-group']):
-                            gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
-                            gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
+                            with gr.Group(elem_id='gr_group_session', elem_classes=['custom-group']):
+                                gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
+                                gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
+                        
                 gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=visible_gr_tab_xtts_params)           
                 with gr_tab_xtts_params:
                     gr_xtts_temperature = gr.Slider(
@@ -2747,9 +2748,9 @@ def web_interface(args, ctx):
                 gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
                 gr_audiobook_files_toggled = gr.State(False)
             gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
-        
+
         gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
-            <div style="right:0;margin:auto;padding:10px;text-align:right">
+            <div style="right:0;margin:auto;padding:10px;text-align:center">
                 <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
                 <b>{title}</b>&nbsp;<b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
             </div>
