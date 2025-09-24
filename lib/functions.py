@@ -2351,15 +2351,13 @@ def web_interface(args, ctx):
             .icon-btn {
                 font-size: 30px !important;
             }
-            .small-btn {
+            .small-btn button{
+                background: none !important;
                 font-size: 22px !important;
                 width: 60px !important;
                 height: 60px !important;
                 margin: 0 !important;
                 padding: 0 !important;
-            }
-            .small-btn button {
-                background: none !important;
             }
             .file-preview-holder {
                 height: 116px !important;
