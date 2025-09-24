@@ -2845,7 +2845,7 @@ def web_interface(args, ctx):
             rating = default_engine_settings[tts_engine]['rating']
 
             return f'''
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; line-height:1.2; gap:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; font-size:16px; line-height:1.2; gap:12px;">
               TTS Engine
               <span style="display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px 12px;">
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
