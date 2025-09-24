@@ -2870,10 +2870,10 @@ def web_interface(args, ctx):
             <div style="display:flex; justify-content:space-between">
               <span class="gr-markdown-span" style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
               <span style="font-size:12px">
-                <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
-                <span style="white-space:nowrap; padding:0 5px 0 0"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
-                <span style="white-space:nowrap; padding:0 5px 0 0"><b>RAM:</b> {color_box(rating["RAM"])}</span>
-                <span style="white-space:nowrap; padding:0 5px 0 0"><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
+                <span><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
+                <span><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
+                <span><b>RAM:</b> {color_box(rating["RAM"])}</span>
+                <span><b>Realism:</b> {yellow_stars(rating["Realism"])}</span>
               </span>
             </div>
             '''
