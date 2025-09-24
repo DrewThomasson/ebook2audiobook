@@ -2629,7 +2629,7 @@ def web_interface(args, ctx):
                                 gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
                                 gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
                         with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
-                            gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', value='TTS Engine')
+                            gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value='TTS Engine')
                             gr_tts_engine_list = gr.Dropdown(label='', elem_id='gr_tts_engine_list', choices=tts_engine_options, type='value', interactive=True)
                             with gr.Group(elem_id='gr_group_models', elem_classes=['gr-group']):
                                 gr_models_markdown = gr.Markdown(elem_id='gr_models_markdown', elem_classes=['gr-markdown'], value='Models')
