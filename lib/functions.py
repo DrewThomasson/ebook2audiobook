@@ -2480,18 +2480,11 @@ def web_interface(args, ctx):
             #gr_tab_progress span[data-testid="block-info"]{
                 display: none !important;
             }
-            /* Center items in the row (Gradio Row is a grid) */
             #gr_row_ebook_mode { align-items: center !important; }
-
-            /* Center just the checkbox block within the grid cell */
             #gr_chapters_control { 
               align-self: center !important; 
-              overflow: visible !important;          /* avoid odd scroll/offset */
-              padding: 0 !important;                 /* remove extra inner padding */
-              border-width: 0 !important;            /* optional: remove border height */
+              overflow: visible !important;
             }
-
-            /* Make the label content itself vertically centered */
             #gr_chapters_control > label {
               display: flex !important;
               align-items: center !important;
