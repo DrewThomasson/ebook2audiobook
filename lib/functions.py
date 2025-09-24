@@ -2422,10 +2422,8 @@ def web_interface(args, ctx):
                 justify-content: center !important;
                 text-align: center !important;            
             }
-            .gr-markdown-span span{
-                overflow: hidden;
-            }
             .gr-rating {
+                width: 300px;
                 white-space: nowrap !important;
                 padding:0 5px 0 0 !important;
                 font-size: 12px !important;
