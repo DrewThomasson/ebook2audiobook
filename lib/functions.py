@@ -2872,7 +2872,7 @@ def web_interface(args, ctx):
             rating = default_engine_settings[tts_engine]['rating']
 
             return f'''
-            <span class="gr-markdown-span" style="width: 80px !important; padding: 6px 0 0 6px">TTS Engine</span>
+            <span class="gr-markdown-span">TTS Engine</span>
             <table style="border-collapse: collapse; margin: 0; padding: 0; border: none; font-size: 12px;">
               <tr style="border: none">
                 <td style="padding: 0 5px 0 2.5px; margin: 0; border: none;"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</td>
