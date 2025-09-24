@@ -2491,9 +2491,6 @@ def web_interface(args, ctx):
               gap: 6px;
               line-height: 1.2 !important;
             }
-            #gr_chapters_control input[type="checkbox"] {
-              margin: 0 !important;
-            }
             #gr_tts_rating {
                 overflow: hidden !important;
             }
