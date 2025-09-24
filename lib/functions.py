@@ -2398,7 +2398,7 @@ def web_interface(args, ctx):
                 border-radius: var(--radius-md) !important;
             }
             .gr-markdown p {
-                margin-top: 20px !important;
+                margin-top: 6px !important;
                 width: 100px !important;
                 padding: 6px 0 0 6px !important;
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
@@ -2846,7 +2846,7 @@ def web_interface(args, ctx):
             rating = default_engine_settings[tts_engine]['rating']
 
             return f'''
-            <div style="display:flex; justify-content:space-between; align-items:center; font-size:14px; line-height:1.2; gap:12px;">
+            <div style="display:flex; justify-content:space-between; margin-top: 6px; align-items:center; font-size:14px; line-height:1.2; gap:12px;">
               <span style="width: 100px !important; padding: 6px 0 0 6px !important; border-radius: var(--radius-md) !important; background: var(--block-background-fill) !important;">TTS Engine</span>
               <span style="display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px">
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
