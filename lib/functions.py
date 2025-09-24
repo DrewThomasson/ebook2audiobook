@@ -2746,6 +2746,14 @@ def web_interface(args, ctx):
                 gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
                 gr_audiobook_files_toggled = gr.State(False)
             gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
+        
+        gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
+            <div style="right:0;margin:auto;padding:10px;text-align:right">
+                <a href="https://github.com/DrewThomasson/ebook2audiobook" style="text-decoration:none;font-size:14px" target="_blank">
+                <b>{title}</b>&nbsp;<b style="color:orange; text-shadow: 0.3px 0.3px 0.3px #303030">{prog_version}</b></a>
+            </div>
+            '''
+        )
 
         with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes=['gr-group-blocks']) as gr_group_blocks:
             gr.Markdown('### Confirm Blocks')
