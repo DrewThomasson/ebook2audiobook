@@ -2480,6 +2480,9 @@ def web_interface(args, ctx):
             #gr_tab_progress span[data-testid="block-info"]{
                 display: none !important;
             }
+            #gr_row_ebook_mode {
+                align-items: center !important;
+            }
             #gr_tts_rating {
                 overflow: hidden !important;
             }
