@@ -2363,11 +2363,11 @@ def web_interface(args, ctx):
                 overflow: auto !important;
             }
             .selected {
-                color: orange !important;
+                color: var(--secondary-500) !important;
                 text-shadow: 0.3px 0.3px 0.3px #303030;
             }
             .progress-bar.svelte-ls20lj {
-                background: orange !important;
+                background: var(--secondary-500) !important;
             }
             .file-preview-holder {
                 height: auto !important;
@@ -2398,7 +2398,7 @@ def web_interface(args, ctx):
             }
             .gr-markdown p {
                 padding: 10px 0 0 0 !important;
-                background: none transparent !important;
+                background: var(--background-fill-primary) !important;
             }
             ////////////////////
             #glass-mask {
