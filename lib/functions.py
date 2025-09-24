@@ -4198,8 +4198,10 @@ def web_interface(args, ctx):
                                                     const now = performance.now();
                                                     if(now - last_time > 1000){
                                                         //console.log("timeupdate", window.playback_time);
-                                                        gr_playback_time.value = String(window.playback_time);
-                                                        gr_playback_time.dispatchEvent(new Event("input",{ bubbles: true }));
+                                                        if(gr_playback_time){
+                                                            gr_playback_time.value = String(window.playback_time);
+                                                            gr_playback_time.dispatchEvent(new Event("input",{ bubbles: true }));
+                                                        }
                                                         last_time = now;
                                                     }
                                                 }
