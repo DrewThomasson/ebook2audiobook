@@ -2655,78 +2655,79 @@ def web_interface(args, ctx):
                         
                 gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=visible_gr_tab_xtts_params)           
                 with gr_tab_xtts_params:
-                    gr_xtts_temperature = gr.Slider(
-                        label='Temperature',
-                        minimum=0.05,
-                        maximum=10.0,
-                        step=0.05,
-                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
-                        elem_id='gr_xtts_temperature',
-                        info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
-                    )
-                    gr_xtts_length_penalty = gr.Slider(
-                        label='Length Penalty',
-                        minimum=0.3,
-                        maximum=5.0,
-                        step=0.1,
-                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
-                        elem_id='gr_xtts_length_penalty',
-                        info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
-                        visible=False
-                    )
-                    gr_xtts_num_beams = gr.Slider(
-                        label='Number Beams',
-                        minimum=1,
-                        maximum=10,
-                        step=1,
-                        value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
-                        elem_id='gr_xtts_num_beams',
-                        info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
-                        visible=False
-                    )
-                    gr_xtts_repetition_penalty = gr.Slider(
-                        label='Repetition Penalty',
-                        minimum=1.0,
-                        maximum=10.0,
-                        step=0.1,
-                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
-                        elem_id='gr_xtts_repetition_penalty',
-                        info='Penalizes repeated phrases. Higher values reduce repetition.'
-                    )
-                    gr_xtts_top_k = gr.Slider(
-                        label='Top-k Sampling',
-                        minimum=10,
-                        maximum=100,
-                        step=1,
-                        value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
-                        elem_id='gr_xtts_top_k',
-                        info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
-                    )
-                    gr_xtts_top_p = gr.Slider(
-                        label='Top-p Sampling',
-                        minimum=0.1,
-                        maximum=1.0, 
-                        step=0.01,
-                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']),
-                        elem_id='gr_xtts_top_p',
-                        info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
-                    )
-                    gr_xtts_speed = gr.Slider(
-                        label='Speed', 
-                        minimum=0.5, 
-                        maximum=3.0, 
-                        step=0.1, 
-                        value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']),
-                        elem_id='gr_xtts_speed',
-                        info='Adjusts how fast the narrator will speak.'
-                    )
-                    gr_xtts_enable_text_splitting = gr.Checkbox(
-                        label='Enable Text Splitting', 
-                        value=default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
-                        elem_id='gr_xtts_enable_text_splitting',
-                        info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
-                        visible=False
-                    )
+                    with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
+                        gr_xtts_temperature = gr.Slider(
+                            label='Temperature',
+                            minimum=0.05,
+                            maximum=10.0,
+                            step=0.05,
+                            value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']),
+                            elem_id='gr_xtts_temperature',
+                            info='Higher values lead to more creative, unpredictable outputs. Lower values make it more monotone.'
+                        )
+                        gr_xtts_length_penalty = gr.Slider(
+                            label='Length Penalty',
+                            minimum=0.3,
+                            maximum=5.0,
+                            step=0.1,
+                            value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']),
+                            elem_id='gr_xtts_length_penalty',
+                            info='Adjusts how much longer sequences are preferred. Higher values encourage the model to produce longer and more natural speech.',
+                            visible=False
+                        )
+                        gr_xtts_num_beams = gr.Slider(
+                            label='Number Beams',
+                            minimum=1,
+                            maximum=10,
+                            step=1,
+                            value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']),
+                            elem_id='gr_xtts_num_beams',
+                            info='Controls how many alternative sequences the model explores. Higher values improve speech coherence and pronunciation but increase inference time.',
+                            visible=False
+                        )
+                        gr_xtts_repetition_penalty = gr.Slider(
+                            label='Repetition Penalty',
+                            minimum=1.0,
+                            maximum=10.0,
+                            step=0.1,
+                            value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']),
+                            elem_id='gr_xtts_repetition_penalty',
+                            info='Penalizes repeated phrases. Higher values reduce repetition.'
+                        )
+                        gr_xtts_top_k = gr.Slider(
+                            label='Top-k Sampling',
+                            minimum=10,
+                            maximum=100,
+                            step=1,
+                            value=int(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']),
+                            elem_id='gr_xtts_top_k',
+                            info='Lower values restrict outputs to more likely words and increase speed at which audio generates.'
+                        )
+                        gr_xtts_top_p = gr.Slider(
+                            label='Top-p Sampling',
+                            minimum=0.1,
+                            maximum=1.0, 
+                            step=0.01,
+                            value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']),
+                            elem_id='gr_xtts_top_p',
+                            info='Controls cumulative probability for word selection. Lower values make the output more predictable and increase speed at which audio generates.'
+                        )
+                        gr_xtts_speed = gr.Slider(
+                            label='Speed', 
+                            minimum=0.5, 
+                            maximum=3.0, 
+                            step=0.1, 
+                            value=float(default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']),
+                            elem_id='gr_xtts_speed',
+                            info='Adjusts how fast the narrator will speak.'
+                        )
+                        gr_xtts_enable_text_splitting = gr.Checkbox(
+                            label='Enable Text Splitting', 
+                            value=default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+                            elem_id='gr_xtts_enable_text_splitting',
+                            info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
+                            visible=False
+                        )
                 gr_tab_bark_params = gr.TabItem('BARK fine Tuned Parameters', elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=visible_gr_tab_bark_params)           
                 with gr_tab_bark_params:
                     gr.Markdown(
@@ -2736,24 +2737,25 @@ def web_interface(args, ctx):
                         Adjust the settings below to influence how the audio is generated, emotional and voice behavior random or more conservative
                         '''
                     )
-                    gr_bark_text_temp = gr.Slider(
-                        label='Text Temperature', 
-                        minimum=0.0,
-                        maximum=1.0,
-                        step=0.01,
-                        value=float(default_engine_settings[TTS_ENGINES['BARK']]['text_temp']),
-                        elem_id='gr_bark_text_temp',
-                        info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
-                    )
-                    gr_bark_waveform_temp = gr.Slider(
-                        label='Waveform Temperature', 
-                        minimum=0.0,
-                        maximum=1.0,
-                        step=0.01,
-                        value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
-                        elem_id='gr_bark_waveform_temp',
-                        info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
-                    )
+                    with gr.Group(elem_id='gr_group_bark_params', elem_classes=['gr-group']):
+                        gr_bark_text_temp = gr.Slider(
+                            label='Text Temperature', 
+                            minimum=0.0,
+                            maximum=1.0,
+                            step=0.01,
+                            value=float(default_engine_settings[TTS_ENGINES['BARK']]['text_temp']),
+                            elem_id='gr_bark_text_temp',
+                            info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
+                        )
+                        gr_bark_waveform_temp = gr.Slider(
+                            label='Waveform Temperature', 
+                            minimum=0.0,
+                            maximum=1.0,
+                            step=0.01,
+                            value=float(default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']),
+                            elem_id='gr_bark_waveform_temp',
+                            info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
+                        )
             with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Progress')
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
