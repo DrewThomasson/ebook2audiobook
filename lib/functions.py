@@ -2871,7 +2871,7 @@ def web_interface(args, ctx):
             
             rating = default_engine_settings[tts_engine]['rating']
             return f'''
-                <div style="display:flex; justify-content:space-between">
+                <div style="display:flex; justify-content:space-between; align-items: center;">
                     <span class="gr-markdown-span">TTS Engine</span>
                     <table style="display: inline-block; border-collapse: collapse; margin: 0; padding: 0; border: none; font-size: 12px;">
                       <tr style="border: none">
