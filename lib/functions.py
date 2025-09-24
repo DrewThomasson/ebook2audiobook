@@ -2399,7 +2399,7 @@ def web_interface(args, ctx):
             }
             .gr-markdown p {
                 margin-top: 8px !important;
-                width: 100px !important;
+                width: 80px !important;
                 padding: 6px 0 0 6px !important;
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
                 background: var(--block-background-fill) !important;
@@ -2601,7 +2601,7 @@ def web_interface(args, ctx):
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device', elem_classes=['custom-group']):
-                                gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor Unit')
+                                gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
                                 gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
                         with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_engine', elem_classes=['custom-group']):
@@ -2850,7 +2850,7 @@ def web_interface(args, ctx):
 
             return f'''
             <div style="display:flex; justify-content:space-between; margin-top: 8px; align-items:center; font-size:14px; line-height:1.2; gap:12px;">
-              <span style="width: 100px !important; padding: 6px 0 0 6px !important; border-radius: var(--radius-md) !important; background: var(--block-background-fill) !important;">TTS Engine</span>
+              <span style="width: 80px !important; padding: 6px 0 0 6px !important; border-radius: var(--radius-md) !important; background: var(--block-background-fill) !important;">TTS Engine</span>
               <span style="display:inline-flex; flex-wrap:wrap; align-items:center; gap:6px 12px; font-size:12px">
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}</span>
                 <span style="white-space:nowrap; padding:0 5px 0 0"><b>CPU:</b> {yellow_stars(rating["CPU"])}</span>
