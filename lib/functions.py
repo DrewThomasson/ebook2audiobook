@@ -2393,11 +2393,13 @@ def web_interface(args, ctx):
                 margin: 0 !important;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
-            #gr_group_progress {
-                margin-left: var(--size-16);
-                margin-right: var(--size-16);
-                padding-left: var(--size-16);
-                padding-right: var(--size-16);
+            .gr-group-padded {
+                padding: 0 !important;
+                margin: 0 !important;
+                border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
+                margin-right: var(--size-16) !important;;
+                padding-left: var(--size-16) !important;;
+                padding-right: var(--size-16) !important;;
             }
             .gr-markdown p {
                 margin-top: 8px !important;
@@ -2757,10 +2759,10 @@ def web_interface(args, ctx):
                             elem_id='gr_bark_waveform_temp',
                             info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                         )
-            with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group']):
+            with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Progress')
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
-            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group'], visible=False)
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-padded'], visible=False)
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
