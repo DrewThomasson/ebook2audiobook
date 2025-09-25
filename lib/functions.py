@@ -2352,7 +2352,7 @@ def web_interface(args, ctx):
                 font-size: 30px !important;
             }
             .small-btn{
-                background: none !important;
+                background: red !important;
                 font-size: 22px !important;
                 width: 60px !important;
                 height: 60px !important;
