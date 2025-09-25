@@ -2427,9 +2427,6 @@ def web_interface(args, ctx):
                 padding:0 5px 0 0 !important;
                 font-size: 12px !important;
             }
-            button {
-              background-color: red !important;
-            }
             ////////////////////
             #glass-mask {
                 position: fixed !important;
