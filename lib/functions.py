@@ -2391,15 +2391,13 @@ def web_interface(args, ctx):
             .gr-group {
                 padding: 0 !important;
                 margin: 0 !important;
-                border: 2px solid var(--border-color-primary) !important;
-                box-shadow: 2px 2px 6px rgba(0,0,0,0.2), -2px -2px 6px rgba(255,255,255,0.1) !important;
+                box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             .gr-group-sides-padded{
                 margin-left: var(--size-2) !important;;
                 margin-right: var(--size-2) !important;;
-                border: 2px solid var(--border-color-primary) !important;
-                box-shadow: 2px 2px 6px rgba(0,0,0,0.2), -2px -2px 6px rgba(255,255,255,0.1) !important;
+                box-shadow: 0 1px 1px rgba(0, 0, 0, .2);
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             .gr-group-convert-btn{
