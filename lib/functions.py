@@ -2482,7 +2482,6 @@ def web_interface(args, ctx):
             }
             #gr_row_ebook_mode { align-items: center !important; }
             #gr_chapters_control {
-                height: 100px;
                 align-self: center !important; 
                 overflow: visible !important;
             }
