@@ -2428,6 +2428,17 @@ def web_interface(args, ctx):
                 justify-content: center !important;
                 text-align: center !important;            
             }
+            .gr-markdown-output-split-hours {
+                min-width: 100px;
+                overflow: hidden;
+                background: var(--block-background-fill);
+                border-radius: 0; font-size: 12px;
+                text-align: center;
+                vertical-align: middle;
+                padding-top: 14px;
+                padding-bottom: 13px;
+                white-space: nowrap;
+            }
             .gr-rating {
                 white-space: nowrap !important;
                 padding:0 5px 0 0 !important;
