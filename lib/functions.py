@@ -2528,7 +2528,7 @@ def web_interface(args, ctx):
                 display: block !important;
                 position: absolute !important;
                 left: 15px !important;
-                top: 10px !important;
+                top: 5px !important;
             }
             ///////////
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
