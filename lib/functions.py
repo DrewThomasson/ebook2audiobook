@@ -2359,6 +2359,9 @@ def web_interface(args, ctx):
                 margin: 0 !important;
                 padding: 0 !important;
             }
+            .small-btn:hover {
+                background: yellow !important;
+            }
             .file-preview-holder {
                 height: 116px !important;
                 overflow: auto !important;
