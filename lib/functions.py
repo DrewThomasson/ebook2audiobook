@@ -2429,15 +2429,15 @@ def web_interface(args, ctx):
                 text-align: center !important;            
             }
             .gr-markdown-output-split-hours {
-                min-width: 100px;
-                overflow: hidden;
-                background: var(--block-background-fill);
-                border-radius: 0; font-size: 12px;
-                text-align: center;
-                vertical-align: middle;
-                padding-top: 4px;
-                padding-bottom: 4px;
-                white-space: nowrap;
+                min-width: 100px !important;
+                overflow: hidden !important;
+                background: var(--block-background-fill) !important;
+                border-radius: 0; font-size: 12px !important;
+                text-align: center !important;
+                vertical-align: middle !important;
+                padding-top: 4px !important;
+                padding-bottom: 4px !important;
+                white-space: nowrap !important;
             }
             .gr-rating {
                 white-space: nowrap !important;
