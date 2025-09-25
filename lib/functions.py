@@ -2435,8 +2435,8 @@ def web_interface(args, ctx):
                 border-radius: 0; font-size: 12px;
                 text-align: center;
                 vertical-align: middle;
-                padding-top: 9px;
-                padding-bottom: 9px;
+                padding-top: 4px;
+                padding-bottom: 4px;
                 white-space: nowrap;
             }
             .gr-rating {
