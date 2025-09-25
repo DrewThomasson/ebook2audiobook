@@ -2484,10 +2484,10 @@ def web_interface(args, ctx):
             #gr_chapters_control {
                 align-self: center !important; 
                 overflow: visible !important;
-                padding: 20px 0 20px 0;
+                padding: 20px 0 20px 0 !important;
             }
             #gr_group_output_split {
-                border-radius: 0;
+                border-radius: 0 !important;
             }
             #gr_tts_rating {
                 overflow: hidden !important;
