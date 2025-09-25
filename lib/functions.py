@@ -2349,8 +2349,6 @@ def web_interface(args, ctx):
                 margin: 0 !important;
             }
             .icon-btn {
-                padding-bottom: 5px !important;
-                margin-bottom: 5px !important;
                 font-size: 30px !important;
             }
             .small-btn{
@@ -2399,6 +2397,10 @@ def web_interface(args, ctx):
                 margin-left: var(--size-2) !important;;
                 margin-right: var(--size-2) !important;;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
+            }
+            .gr-group-button{
+                margin: var(--size-2) !important;;
+                border-radius: var(--radius-md) !important;
             }
             .gr-markdown p {
                 margin-top: 8px !important;
@@ -2788,7 +2790,7 @@ def web_interface(args, ctx):
                     gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
                 gr_audiobook_files_toggled = gr.State(False)
-            with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-padded']):
+            with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-button']):
                 gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
 
         gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
