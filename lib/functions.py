@@ -2348,8 +2348,9 @@ def web_interface(args, ctx):
                 padding: 0 !important;
                 margin: 0 !important;
             }
-            .icon-btn {
-                font-size: 30px !important;
+            .selected {
+                color: var(--secondary-500) !important;
+                text-shadow: 0.3px 0.3px 0.3px #303030;
             }
             .small-btn{
                 background: var(--block-background-fill) !important;
@@ -2365,10 +2366,6 @@ def web_interface(args, ctx):
             .file-preview-holder {
                 height: 116px !important;
                 overflow: auto !important;
-            }
-            .selected {
-                color: var(--secondary-500) !important;
-                text-shadow: 0.3px 0.3px 0.3px #303030;
             }
             .progress-bar.svelte-ls20lj {
                 background: var(--secondary-500) !important;
@@ -2394,14 +2391,18 @@ def web_interface(args, ctx):
             .gr-group {
                 padding: 0 !important;
                 margin: 0 !important;
+                border: 2px solid var(--border-color-primary) !important;
+                box-shadow: 2px 2px 6px rgba(0,0,0,0.2), -2px -2px 6px rgba(255,255,255,0.1) !important;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
-            .gr-group-padded{
+            .gr-group-sides-padded{
                 margin-left: var(--size-2) !important;;
                 margin-right: var(--size-2) !important;;
+                border: 2px solid var(--border-color-primary) !important;
+                box-shadow: 2px 2px 6px rgba(0,0,0,0.2), -2px -2px 6px rgba(255,255,255,0.1) !important;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
-            .gr-group-button{
+            .gr-group-convert-btn{
                 margin: var(--size-2) !important;;
                 border-radius: var(--radius-md) !important;
             }
@@ -2441,8 +2442,11 @@ def web_interface(args, ctx):
                 height: 60px !important;
                 background: var(--block-background-fill) !important;
             }
+            .gr-convert-btn {
+                font-size: 30px !important;
+            }
             ////////////////////
-            #glass-mask {
+            #glass_mask {
                 position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
@@ -2459,13 +2463,9 @@ def web_interface(args, ctx):
                 transition: opacity 2s ease-out 2s !important;
                 pointer-events: all !important;
             }
-            #glass-mask.hide {
+            #glass_mask.hide {
                 opacity: 0 !important;
                 pointer-events: none !important;
-            }
-            #gr_markdown_logo {
-                position: absolute !important; 
-                text-align: right !important;
             }
             #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                 height: 140px !important;
@@ -2473,7 +2473,7 @@ def web_interface(args, ctx):
             #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                 display: none !important;
             }               
-            #gr_fine_tuned_list, #gr_output_format_list {
+            #gr_fine_tuned_list {
                 height: 95px !important;
             }
             #gr_voice_list {
@@ -2777,10 +2777,10 @@ def web_interface(args, ctx):
                             elem_id='gr_bark_waveform_temp',
                             info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                         )
-            with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-padded']):
+            with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Progress')
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
-            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-padded'], visible=False)
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=False)
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
@@ -2793,8 +2793,8 @@ def web_interface(args, ctx):
                     gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
                 gr_audiobook_files_toggled = gr.State(False)
-            with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-button']):
-                gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
+            with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
+                gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='gr-convert-btn', variant='primary', interactive=False)
 
         gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
             <div style="right:0;margin:auto;padding:10px;text-align:center">
@@ -2813,7 +2813,7 @@ def web_interface(args, ctx):
                 gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
 
         gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(f'<div id="glass-mask" style="position: absolute">{glass_mask_msg}</div>')
+        gr_glass_mask = gr.HTML(f'<div id="glass_mask" style="position: absolute">{glass_mask_msg}</div>')
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
@@ -2992,7 +2992,7 @@ def web_interface(args, ctx):
             return gr.update(value=selected)
         
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
-            return gr.update(value=f'<div id="glass-mask" {attr}>{str}</div>')
+            return gr.update(value=f'<div id="glass_mask" {attr}>{str}</div>')
         
         def change_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
