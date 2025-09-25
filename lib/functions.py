@@ -2787,7 +2787,7 @@ def web_interface(args, ctx):
                 gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
                 gr_audiobook_files_toggled = gr.State(False)
             with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-padded']):
-            gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
+                gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
 
         gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
             <div style="right:0;margin:auto;padding:10px;text-align:center">
