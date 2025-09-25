@@ -2519,7 +2519,7 @@ def web_interface(args, ctx):
                 height: 60px !important;
             }
             #gr_voice_player:hover {
-                background: yellow !important;
+                background: #71a1ab !important;
             }
             #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
                 display: none !important;
@@ -2528,7 +2528,7 @@ def web_interface(args, ctx):
                 display: block !important;
                 position: absolute !important;
                 left: 15px !important;
-                top: 0 !important;
+                top: 10px !important;
             }
             ///////////
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
