@@ -2484,6 +2484,7 @@ def web_interface(args, ctx):
             #gr_chapters_control {
                 align-self: center !important; 
                 overflow: visible !important;
+                padding: 30px 0 30px 0;
             }
             #gr_tts_rating {
                 overflow: hidden !important;
