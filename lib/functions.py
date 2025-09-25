@@ -2491,7 +2491,7 @@ def web_interface(args, ctx):
             #gr_chapters_control {
                 align-self: center !important; 
                 overflow: visible !important;
-                padding: 20px 10px 20px 0 !important;
+                padding: 20px 0 20px 10px !important;
             }
             #gr_group_output_split {
                 border-radius: 0 !important;
