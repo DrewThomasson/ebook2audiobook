@@ -2499,21 +2499,33 @@ def web_interface(args, ctx):
             #gr_tts_rating {
                 overflow: hidden !important;
             }
-            #gr_custom_model_file {
-                position: relative !important;
+            .block.file {
+            display: flex !important;
+            align-items: stretch !important;
+            justify-content: stretch !important;
             }
-            #gr_custom_model_file button {
-                position: absolute !important;
-                top: 0;
-                left: 0;
-                width: 100% !important;
-                height: 100% !important;
-                margin: 0 !important;
-                border-radius: inherit !important;  /* match the file box shape */
-                display: flex !important;
-                align-items: center !important;
-                justify-content: center !important;
-                font-size: 14px; /* optional: adjust text */
+
+            /* Force the upload button to fill the File component */
+            .block.file button {
+            flex: 1 1 auto !important;
+            height: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border-radius: inherit !important;
+            display: flex !important;
+            align-items: stretch !important;
+            justify-content: stretch !important;
+            }
+
+            /* Force all divs inside the button to also stretch */
+            .block.file button > div {
+            flex: 1 1 auto !important;
+            height: 100% !important;
+            width: 100% !important;
+            display: flex !important;
+            align-items: center !important;   /* vertical centering */
+            justify-content: center !important; /* horizontal centering */
             }
             ///////////////
             #gr_row_voice_player {
