@@ -2486,6 +2486,9 @@ def web_interface(args, ctx):
                 overflow: visible !important;
                 padding: 20px 0 20px 0;
             }
+            #gr_group_output_split {
+                border-radius: 0;
+            }
             #gr_tts_rating {
                 overflow: hidden !important;
             }
