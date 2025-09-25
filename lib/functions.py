@@ -2651,8 +2651,8 @@ def web_interface(args, ctx):
                                         gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_output_format', elem_classes=['gr-group']):
                                 gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value='Output')
-                                gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
                                 with gr.Row(elem_id='gr_row_output_format'):
+                                    gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)                               
                                     gr_output_split = gr.Checkbox(label='Split File', elem_id='gr_output_split', value=default_output_split, interactive=True)
                                     gr_row_output_split_hours = gr.Row(elem_id='gr_row_output_split_hours', visible=False)
                                     with gr_row_output_split_hours:
