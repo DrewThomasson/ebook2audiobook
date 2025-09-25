@@ -2499,34 +2499,6 @@ def web_interface(args, ctx):
             #gr_tts_rating {
                 overflow: hidden !important;
             }
-            .block.file {
-            display: flex !important;
-            align-items: stretch !important;
-            justify-content: stretch !important;
-            }
-
-            /* Force the upload button to fill the File component */
-            .block.file button {
-            flex: 1 1 auto !important;
-            height: 100% !important;
-            width: 100% !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border-radius: inherit !important;
-            display: flex !important;
-            align-items: stretch !important;
-            justify-content: stretch !important;
-            }
-
-            /* Force all divs inside the button to also stretch */
-            .block.file button > div {
-            flex: 1 1 auto !important;
-            height: 100% !important;
-            width: 100% !important;
-            display: flex !important;
-            align-items: center !important;   /* vertical centering */
-            justify-content: center !important; /* horizontal centering */
-            }
             ///////////////
             #gr_row_voice_player {
                 height: 60px !important;
@@ -2814,6 +2786,7 @@ def web_interface(args, ctx):
                     gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
                 gr_audiobook_files_toggled = gr.State(False)
+            with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-padded']):
             gr_convert_btn = gr.Button(elem_id='gr_convert_btn', value='📚', elem_classes='icon-btn', variant='primary', interactive=False)
 
         gr_version_markdown = gr.Markdown(elem_id='gr_version_markdown', value=f'''
