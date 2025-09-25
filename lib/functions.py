@@ -2485,12 +2485,6 @@ def web_interface(args, ctx):
               align-self: center !important; 
               overflow: visible !important;
             }
-            #gr_chapters_control > label {
-              display: flex !important;
-              align-items: center !important;
-              gap: 6px;
-              line-height: 1.2 !important;
-            }
             #gr_tts_rating {
                 overflow: hidden !important;
             }
