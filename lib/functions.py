@@ -2499,6 +2499,22 @@ def web_interface(args, ctx):
             #gr_tts_rating {
                 overflow: hidden !important;
             }
+            #gr_custom_model_file {
+                position: relative !important;
+            }
+            #gr_custom_model_file button {
+                position: absolute !important;
+                top: 0;
+                left: 0;
+                width: 100% !important;
+                height: 100% !important;
+                margin: 0 !important;
+                border-radius: inherit !important;  /* match the file box shape */
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 14px; /* optional: adjust text */
+            }
             ///////////////
             #gr_row_voice_player {
                 height: 60px !important;
