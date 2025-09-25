@@ -2361,7 +2361,7 @@ def web_interface(args, ctx):
                 padding: 0 !important;
             }
             .small-btn:hover {
-                background: yellow !important;
+                background: #71a1ab !important;
             }
             .file-preview-holder {
                 height: 116px !important;
