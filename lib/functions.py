@@ -2429,7 +2429,6 @@ def web_interface(args, ctx):
                 text-align: center !important;            
             }
             .gr-markdown-output-split-hours {
-                min-width: 100px !important;
                 overflow: hidden !important;
                 background: var(--block-background-fill) !important;
                 border-radius: 0; font-size: 12px !important;
