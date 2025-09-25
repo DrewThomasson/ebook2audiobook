@@ -2349,7 +2349,8 @@ def web_interface(args, ctx):
                 margin: 0 !important;
             }
             .icon-btn {
-                margin-bottom: 30px !important;
+                padding-bottom: 5px !important;
+                margin-bottom: 5px !important;
                 font-size: 30px !important;
             }
             .small-btn{
