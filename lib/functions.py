@@ -2410,6 +2410,24 @@ def web_interface(args, ctx):
                 margin: 0 var(--size-2) 0 var(--size-2)!important;;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
+            
+            
+            /* Hide Gradio’s default placeholder text */
+            .block.file span {
+              display: none !important;
+            }
+
+            /* Insert your own text */
+            .block.file::after {
+              content: "OK";  /* your custom text */
+              display: block;
+              text-align: center;
+              font-size: 14px;
+              color: var(--body-text-color);
+              padding: 8px;
+            }
+            
+            
             .gr-group-convert-btn{
                 margin: var(--size-2) !important;;
                 border-radius: var(--radius-md) !important;
