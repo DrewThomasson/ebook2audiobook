@@ -2592,8 +2592,8 @@ def web_interface(args, ctx):
                 }
                 to {
                     opacity: 0 !important;
-                    /*visibility: hidden;*/
-                    pointer-events: none !importnant;
+                    visibility: hidden !important;
+                    pointer-events: none !important;
                 }
             }
             //////////
