@@ -3562,7 +3562,7 @@ def web_interface(args, ctx):
                     session['status'] = 'converting'
                     session['progress'] = len(audiobook_options)
                     if isinstance(args['ebook_list'], list):
-                        arts['chapters_control'] = None
+                        args['chapters_control'] = None
                         ebook_list = args['ebook_list'][:]
                         for file in ebook_list:
                             if any(file.endswith(ext) for ext in ebook_formats):
