@@ -2680,7 +2680,7 @@ def web_interface(args, ctx):
                                 gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                 gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                                 with gr_group_custom_model:
-                                    gr_custom_model_file = gr.File(label=f"Upload ZIP file", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=140)
+                                    gr_custom_model_file = gr.File(label=f"Upload ZIP File", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=140)
                                     with gr.Row(elem_id='gr_row_custom_model'):
                                         gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                         gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
@@ -3418,7 +3418,8 @@ def web_interface(args, ctx):
                 return (
                        gr.update(value=show_rating(session['tts_engine'])), 
                        gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
-                       gr.update(label=f"Upload {session['tts_engine']} Model"),
+                       gr.update(label=f"Upload {session['tts_engine']} ZIP file "),
+                       gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
                        gr.update(label=f"My {session['tts_engine']} custom models")
                 )
             else:
