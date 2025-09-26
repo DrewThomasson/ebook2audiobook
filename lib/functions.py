@@ -3074,9 +3074,9 @@ def web_interface(args, ctx):
             session = context.get_session(id)
             session['ebook_mode'] = val
             if val == 'single':
-                return gr.update(label=src_label_file, value=None, file_count='single')
+                return gr.update(label=src_label_file, value=None, file_count='single'), gr.update(visible=True)
             else:
-                return gr.update(label=src_label_dir, value=None, file_count='directory')
+                return gr.update(label=src_label_dir, value=None, file_count='directory'), gr.update(visible=False)
 
         def change_gr_voice_file(f, id):
             if f is not None:
@@ -3819,7 +3819,7 @@ def web_interface(args, ctx):
         gr_ebook_mode.change(
             fn=change_gr_ebook_mode,
             inputs=[gr_ebook_mode, gr_session],
-            outputs=[gr_ebook_file]
+            outputs=[gr_ebook_file, gr_chapters_control]
         )
         gr_chapters_control.change(
             fn=lambda val, id: change_param('chapters_control', bool(val), id),
