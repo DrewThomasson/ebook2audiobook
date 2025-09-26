@@ -3059,6 +3059,7 @@ def web_interface(args, ctx):
                         session['cancellation_requested'] = True
                         msg = 'Cancellation requested, please wait...'
                         yield gr.update(value=show_gr_modal('wait', msg), visible=True)
+                        return
                 if isinstance(data, list):
                     session['ebook_list'] = data
                 else:
