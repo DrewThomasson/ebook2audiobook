@@ -2449,11 +2449,6 @@ def web_interface(args, ctx):
                 padding-bottom: 4px !important;
                 white-space: nowrap !important;
             }
-            .gr-rating td{
-                white-space: nowrap !important;
-                padding:0 5px 0 0 !important;
-                font-size: 12px !important;
-            }
             .gr-voice-player {
                 margin: 0 !important;
                 padding: 0 !important;
@@ -2915,7 +2910,7 @@ def web_interface(args, ctx):
                     color = "#FF9800"  # Orange = medium
                 else:
                     color = "#F44336"  # Red = high
-                return f"<span style='background:{color};color:white; padding: 0 3px 0 3px; border-radius:3px; font-size:11px'>{value} GB</span>"
+                return f"<span style='background:{color};color:white; padding: 0 3px 0 3px; border-radius:3px; font-size:11px; white-space: nowrap'>{value} GB</span>"
             
             rating = default_engine_settings[tts_engine]['rating']
             return f'''
