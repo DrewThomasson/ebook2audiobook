@@ -2379,7 +2379,7 @@ def web_interface(args, ctx):
                 pointer-events: all !important;
             }
             .gr-glass-mask.hide {
-                color: #ff0000;
+                color: #ff0000 !importnant;
                 animation: fadeOut 2s ease-out forwards !important;
             }
             .small-btn{
@@ -2579,19 +2579,19 @@ def web_interface(args, ctx):
             }
             @keyframes fadeIn {
                 from {
-                    opacity: 0 !important;
+                    opacity: 0;
                     visibility: visible !important;
                 }
                 to {
-                    opacity: 1 !important;
+                    opacity: 1;
                 }
             }
             @keyframes fadeOut {
                 from {
-                    opacity: 1 !important;
+                    opacity: 1;
                 }
                 to {
-                    opacity: 0 !important;
+                    opacity: 0;
                     visibility: hidden !important;
                     pointer-events: none !important;
                 }
