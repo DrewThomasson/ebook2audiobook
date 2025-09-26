@@ -2595,7 +2595,7 @@ def web_interface(args, ctx):
                 }
                 to {
                     opacity: 0;
-                    visibility: hidden;
+                    
                 }
             }
             //////////
