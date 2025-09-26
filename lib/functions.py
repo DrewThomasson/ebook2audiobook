@@ -2654,7 +2654,7 @@ def web_interface(args, ctx):
                         with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_select', elem_classes=['gr-group']):
                                 gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', elem_classes=['gr-markdown'], value='Selection')
-                                gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
+                                gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', value='OK', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
                                 gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                                 with gr_row_ebook_mode:
                                     gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
