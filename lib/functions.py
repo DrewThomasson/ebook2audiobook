@@ -2419,14 +2419,13 @@ def web_interface(args, ctx):
                 padding: 0 3px 0 3px !important;
                 margin: 0 !important;
                 border: none !important;
-                border-radius: var(--radius-md) !important;
             }
             .gr-col {
                 padding: 0 6px 0 6px !important;
                 margin: 0 !important;
                 border: none !important;
             }
-            .gr-group-main {
+            .gr-group-main > div{
                 background: none !important;
                 border-radius: var(--radius-md) !important;
             }
