@@ -2363,25 +2363,50 @@ def web_interface(args, ctx):
                 text-shadow: 0.3px 0.3px 0.3px #303030;
             }
             .gr-glass-mask {
-                z-index: 9999 !importnant;
-                position: fixed !importnant;
-                top: 0 !importnant;
-                left: 0 !importnant;
-                width: 100vw !importnant; 
-                height: 100vh !importnant;
-                background: rgba(0,0,0,0.5) !importnant;
-                display: flex !importnant;
-                align-items: center !importnant;
-                justify-content: center !importnant;
-                font-size: 1.2rem !importnant;
-                color: #fff !importnant;
-                opacity: 1 !importnant;
-                pointer-events: all !importnant;
-                transition: none !importnant;
+                z-index: 9999 !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important; 
+                height: 100vh !important;
+                background: rgba(0,0,0,0.5) !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 1.2rem !important;
+                color: #fff !important;
+                opacity: 1 !important;
+                pointer-events: all !important;
+                transition: none !important;
             }
             .gr-glass-mask.hide {
-                animation: fadeOut 2s ease-out forwards !importnant;
+                animation: fadeOut 2s ease-out forwards !important;
             }
+            /*
+            .gr-glass-mask {
+                z-index: 9999 !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important; 
+                height: 100vh !important;
+                background: rgba(0,0,0,0.5) !important;
+                display: flex !important;
+                text-align: center;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 1.2rem !important;
+                color: #ffffff !important;
+                opacity: 1 !important;
+                transition: opacity 2s ease-out 2s !important;
+                pointer-events: all !important;
+            }
+            .gr-glass-mask.hide {
+                opacity: 0 !important;
+                pointer-events: none !important;
+                animation: fadeOut 2s ease-out forwards !important;
+            }
+            */
             .small-btn{
                 background: var(--block-background-fill) !important;
                 font-size: 22px !important;
