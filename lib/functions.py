@@ -2587,6 +2587,7 @@ def web_interface(args, ctx):
                 position: fixed !important;
             }
             .hide-elem {
+                z-index: -1;
                 position: absolute;
                 top: 0;
                 left: 0;
