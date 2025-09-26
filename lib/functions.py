@@ -2413,12 +2413,12 @@ def web_interface(args, ctx):
             
             
             /* Hide Gradio’s default placeholder text */
-            .block.file span {
+            file span {
               display: none !important;
             }
 
             /* Insert your own text */
-            .block.file::after {
+            file::after {
               content: "OK";  /* your custom text */
               display: block;
               text-align: center;
