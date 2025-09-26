@@ -2841,7 +2841,7 @@ def web_interface(args, ctx):
                 gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
 
         gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(f'<div>{gr_glass_mask_msg}</div>', elem_id='gr_glass_mask', elem_classes=['gr-glass-mask'])
+        gr_glass_mask = gr.HTML(gr_glass_mask_msg, elem_id='gr_glass_mask', elem_classes=['gr-glass-mask'])
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
@@ -3020,7 +3020,7 @@ def web_interface(args, ctx):
             return gr.update(value=selected)
         
         def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
-            return gr.update(value=f'<div>{str}</div>', elem_id='gr_glass_mask', elem_classes=attr)
+            return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
         
         def change_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
