@@ -2492,6 +2492,9 @@ def web_interface(args, ctx):
             #gr_voice_list {
                 height: 60px !important;
             }
+            #gr_voice_del_btn:hover, #gr_audiobook_del_btn:hover {
+                background-color: #dc3545 !important;
+            }
             #gr_output_format_list {
                 height: 103px !important;
             }
