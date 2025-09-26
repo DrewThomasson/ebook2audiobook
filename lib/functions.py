@@ -2361,7 +2361,7 @@ def web_interface(args, ctx):
                 padding: 0 !important;
             }
             .small-btn:hover {
-                background: #71a1ab !important;
+                background: var(--button-primary-background-fill-hover) !important;
             }
             .file-preview-holder {
                 height: 116px !important;
@@ -2518,7 +2518,7 @@ def web_interface(args, ctx):
             #gr_row_voice_player {
                 height: 60px !important;
             }
-            #gr_voice_player:hover {
+            #gr_voice_player button:hove {
                 background: var(--button-primary-background-fill-hover) !important;
             }
             #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
