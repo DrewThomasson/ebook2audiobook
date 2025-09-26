@@ -2363,6 +2363,17 @@ def web_interface(args, ctx):
             .small-btn:hover {
                 background: var(--button-primary-background-fill-hover) !important;
             }
+            .small-btn-red{
+                background: var(--block-background-fill) !important;
+                font-size: 22px !important;
+                width: 60px !important;
+                height: 60px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .small-btn-red:hover {
+                background-color: #dc3545 !important;
+            }
             .file-preview-holder {
                 height: 116px !important;
                 overflow: auto !important;
@@ -2491,9 +2502,6 @@ def web_interface(args, ctx):
             }
             #gr_voice_list {
                 height: 60px !important;
-            }
-            #gr_voice_del_btn:hover, #gr_audiobook_del_btn:hover {
-                background-color: #dc3545 !important;
             }
             #gr_output_format_list {
                 height: 103px !important;
@@ -2660,7 +2668,7 @@ def web_interface(args, ctx):
                                 with gr_row_voice_player:
                                     gr_voice_player = gr.Audio(elem_id='gr_voice_player', elem_classes=['gr-voice-player'], type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
-                                    gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
+                                    gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
                                 gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
                                 gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
@@ -2806,7 +2814,7 @@ def web_interface(args, ctx):
                 with gr.Row(elem_id='gr_row_audiobook_list'):
                     gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                     gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
-                    gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
+                    gr_audiobook_del_btn = gr.Button(elem_id='gr_audiobook_del_btn', value='🗑', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                 gr_audiobook_files = gr.Files(label="Downloads", elem_id='gr_audiobook_files', visible=False)
                 gr_audiobook_files_toggled = gr.State(False)
             with gr.Group(elem_id='gr_convert_btn', elem_classes=['gr-group-convert-btn']):
