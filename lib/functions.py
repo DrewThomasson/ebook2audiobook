@@ -2375,7 +2375,7 @@ def web_interface(args, ctx):
                 justify-content: center !important;
                 font-size: 1.2rem !important;
                 color: #ffffff !important;
-                opacity: 0.6 !important;
+                opacity: 1 !important;
                 pointer-events: all !important;
             }
             .gr-glass-mask.hide {
@@ -2587,7 +2587,7 @@ def web_interface(args, ctx):
             }
             @keyframes fadeOut {
                 from {
-                    opacity: 0.6 !important;
+                    opacity: 1 !important;
                 }
                 to {
                     opacity: 0 !important;
