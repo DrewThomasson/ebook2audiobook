@@ -2473,7 +2473,7 @@ def web_interface(args, ctx):
                 font-size: 30px !important;
             }
             ////////////////////
-            #gr_glass_mask {
+            .gr-glass-mask {
                 position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
@@ -2490,7 +2490,7 @@ def web_interface(args, ctx):
                 transition: opacity 2s ease-out 2s !important;
                 pointer-events: all !important;
             }
-            #gr_glass_mask.hide {
+            .gr-glass-mask.hide {
                 opacity: 0 !important;
                 pointer-events: none !important;
             }
@@ -2840,7 +2840,7 @@ def web_interface(args, ctx):
                 gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
 
         gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(f'<div id="gr_glass_mask" style="position: absolute">{glass_mask_msg}</div>')
+        gr_glass_mask = gr.HTML(f'<div id="gr_glass_mask" class="gr-glass-mask">{glass_mask_msg}</div>')
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
@@ -3018,7 +3018,7 @@ def web_interface(args, ctx):
                 session['playback_time'] = 0
             return gr.update(value=selected)
         
-        def update_gr_glass_mask(str=glass_mask_msg, attr=''):
+        def update_gr_glass_mask(str=glass_mask_msg, attr='class="gr-glass-mask"'):
             return gr.update(value=f'<div id="gr_glass_mask" {attr}>{str}</div>')
         
         def change_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
@@ -4073,7 +4073,7 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
-            fn=lambda session: update_gr_glass_mask(attr='class="hide"') if session else gr.update(),
+            fn=lambda session: update_gr_glass_mask(attr='class="gr-glass-mask hide"') if session else gr.update(),
             inputs=[gr_session],
             outputs=[gr_glass_mask]
         ).then(
