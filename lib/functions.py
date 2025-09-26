@@ -2263,7 +2263,7 @@ def web_interface(args, ctx):
     audiobook_options = []
     options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     
-    src_label_file = 'Select a File'
+    src_label_file = 'Upload File'
     src_label_dir = 'Select a Directory'
     
     visible_gr_tab_xtts_params = interface_component_options['gr_tab_xtts_params']
@@ -2307,18 +2307,7 @@ def web_interface(args, ctx):
                 scrollbar-width: thin !important;
                 scrollbar-color: #c09340 none !important;
             }
-            button div.wrap span {
-                display: none !important;
-            }
-            button div.wrap::after {
-                content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%2300f' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/></svg>") !important;
-                display: inline-block !important;
-                width: 24px !important;
-                height: 24px !important;
-                font-size: 14px !important;
-                vertical-align: middle !important;
-                padding: 8px !important;
-            }
+
             .svelte-1xyfx7i.center.boundedheight.flex{
                 height: 120px !important;
             }
@@ -2667,7 +2656,7 @@ def web_interface(args, ctx):
                             gr_group_voice_file = gr.Group(elem_id='gr_group_voice_file', elem_classes=['gr-group'], visible=visible_gr_group_voice_file)
                             with gr_group_voice_file:
                                 gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
-                                gr_voice_file = gr.File(label='Upload New Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
+                                gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=140)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player', elem_classes=['gr-group'])
                                 with gr_row_voice_player:
                                     gr_voice_player = gr.Audio(elem_id='gr_voice_player', elem_classes=['gr-voice-player'], type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
