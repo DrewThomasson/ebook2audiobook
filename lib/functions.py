@@ -2311,7 +2311,7 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             button div.wrap::after {
-                content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%2300f' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/></svg>");
+                content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%2300f' viewBox='0 0 24 24'><circle cx='120' cy='120' r='100'/></svg>");
                 display: inline-block;
                 width: 24px;
                 height: 24px;
