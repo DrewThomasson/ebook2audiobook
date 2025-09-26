@@ -2572,9 +2572,7 @@ def web_interface(args, ctx):
             }
             #gr_state_update, #gr_read_data, #gr_write_data,
             #gr_audiobook_vtt, #gr_playback_time {
-                position: absolute;
-                top: 0;
-                visibility: hidden !important;
+                display: none !important;
             }
             ///////////
             .fade-in {
