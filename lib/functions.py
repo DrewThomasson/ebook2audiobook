@@ -2400,6 +2400,7 @@ def web_interface(args, ctx):
                 padding: 0 3px 0 3px !important;
                 margin: 0 !important;
                 border: none !important;
+                background: red !important;
             }
             .gr-col {
                 padding: 0 6px 0 6px !important;
@@ -2407,7 +2408,7 @@ def web_interface(args, ctx):
                 border: none !important;
             }
             .gr-group-main, .gr-group-blocks {
-                background: red !important;
+                background: none !important;
             }
             .gr-group {
                 background: none !important;
