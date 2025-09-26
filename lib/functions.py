@@ -2425,11 +2425,11 @@ def web_interface(args, ctx):
                 margin: 0 !important;
                 border: none !important;
             }
-            .gr-group-main > div{
+            .gr-group-main > div {
                 background: none !important;
                 border-radius: var(--radius-md) !important;
             }
-            .gr-group {
+            .gr-group > div {
                 background: none !important;
                 padding: 0 !important;
                 margin: 0 !important;
