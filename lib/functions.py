@@ -2449,7 +2449,7 @@ def web_interface(args, ctx):
                 padding-bottom: 4px !important;
                 white-space: nowrap !important;
             }
-            .gr-rating {
+            .gr-rating td{
                 white-space: nowrap !important;
                 padding:0 5px 0 0 !important;
                 font-size: 12px !important;
