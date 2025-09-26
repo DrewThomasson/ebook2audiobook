@@ -2379,7 +2379,6 @@ def web_interface(args, ctx):
                 pointer-events: all !important;
             }
             .gr-glass-mask.hide {
-                color: #ff0000 !importnant;
                 animation: fadeOut 2s ease-out 2s forwards !important;
             }
             .small-btn{
@@ -2592,8 +2591,8 @@ def web_interface(args, ctx):
                 }
                 to {
                     opacity: 0;
-                    visibility: hidden !important;
-                    pointer-events: none !important;
+                    visibility: hidden;
+                    pointer-events: none;
                 }
             }
             //////////
@@ -4276,7 +4275,6 @@ def web_interface(args, ctx):
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
                                             let osTheme;
-                                            console.log('---->',theme);
                                             if(theme){
                                                 if(theme == "dark"){
                                                     audioFilter = "invert(1) hue-rotate(180deg)";
