@@ -2419,13 +2419,14 @@ def web_interface(args, ctx):
                 padding: 0 3px 0 3px !important;
                 margin: 0 !important;
                 border: none !important;
+                border-radius: var(--radius-md) !important;
             }
             .gr-col {
                 padding: 0 6px 0 6px !important;
                 margin: 0 !important;
                 border: none !important;
             }
-            .gr-group-main, .gr-group-blocks {
+            .gr-group-main {
                 background: none !important;
                 border-radius: var(--radius-md) !important;
             }
@@ -2844,7 +2845,7 @@ def web_interface(args, ctx):
             '''
         )
 
-        with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes=['gr-group-blocks']) as gr_group_blocks:
+        with gr.Group(visible=False, elem_id='gr_group_blocks', elem_classes=['gr-group-main']) as gr_group_blocks:
             gr.Markdown('### Confirm Blocks')
             with gr.Group() as gr_group_blocks_content:
                 pass
