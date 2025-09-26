@@ -2411,20 +2411,18 @@ def web_interface(args, ctx):
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             
-            
-            /* Hide Gradio’s default placeholder text */
+
             button div.wrap {
               display: none !important;
             }
 
-            /* Insert your own text */
-            file::after {
-              content: "OK";  /* your custom text */
-              display: block;
-              text-align: center;
-              font-size: 14px;
-              color: var(--body-text-color);
-              padding: 8px;
+            button div.wrap::after {
+              content: "OK" !immportant;
+              display: block !immportant;
+              text-align: center !immportant;
+              font-size: 14px !immportant;
+              color: var(--body-text-color) !immportant;
+              padding: 8px !immportant;
             }
             
             
