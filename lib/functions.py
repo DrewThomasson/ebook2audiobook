@@ -2413,7 +2413,7 @@ def web_interface(args, ctx):
             
             
             /* Hide Gradio’s default placeholder text */
-            file span {
+            button div.wrap {
               display: none !important;
             }
 
