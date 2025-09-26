@@ -2379,7 +2379,7 @@ def web_interface(args, ctx):
                 pointer-events: all !important;
             }
             .gr-glass-mask.hide {
-                animation: fadeOut 2s ease-out forwards;
+                animation: fadeOut 2s ease-out forwards !important;
             }
             .small-btn{
                 background: var(--block-background-fill) !important;
