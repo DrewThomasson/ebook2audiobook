@@ -2372,7 +2372,7 @@ def web_interface(args, ctx):
                 padding: 0 !important;
             }
             .small-btn-red:hover {
-                background-color: #dc3545 !important;
+                background-color: #ff5050 !important;
             }
             .file-preview-holder {
                 height: 116px !important;
