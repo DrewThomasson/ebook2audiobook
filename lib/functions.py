@@ -2818,9 +2818,9 @@ def web_interface(args, ctx):
                             elem_id='gr_bark_waveform_temp',
                             info='Higher values lead to more creative, unpredictable outputs. Lower values make it more conservative.'
                         )
-            with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
-                gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Progress')
-                gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
+            #with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
+            gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Progress')
+            gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
             gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=False)
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
