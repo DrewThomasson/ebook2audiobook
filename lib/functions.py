@@ -2473,7 +2473,7 @@ def web_interface(args, ctx):
                 font-size: 30px !important;
             }
             ////////////////////
-            #glass_mask {
+            #gr_glass_mask {
                 position: fixed !important;
                 top: 0 !important;
                 left: 0 !important;
@@ -2490,7 +2490,7 @@ def web_interface(args, ctx):
                 transition: opacity 2s ease-out 2s !important;
                 pointer-events: all !important;
             }
-            #glass_mask.hide {
+            #gr_glass_mask.hide {
                 opacity: 0 !important;
                 pointer-events: none !important;
             }
@@ -2840,7 +2840,7 @@ def web_interface(args, ctx):
                 gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
 
         gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(f'<div id="glass_mask" style="position: absolute">{glass_mask_msg}</div>')
+        gr_glass_mask = gr.HTML(f'<div id="gr_glass_mask" style="position: absolute">{glass_mask_msg}</div>')
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
@@ -3019,7 +3019,7 @@ def web_interface(args, ctx):
             return gr.update(value=selected)
         
         def update_gr_glass_mask(str=glass_mask_msg, attr=''):
-            return gr.update(value=f'<div id="glass_mask" {attr}>{str}</div>')
+            return gr.update(value=f'<div id="gr_glass_mask" {attr}>{str}</div>')
         
         def change_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
