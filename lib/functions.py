@@ -2375,7 +2375,7 @@ def web_interface(args, ctx):
                 justify-content: center !important;
                 font-size: 1.2rem !important;
                 color: #ffffff !important;
-                opacity: 1 !important;
+                opacity: 1;
                 pointer-events: all !important;
             }
             .gr-glass-mask.hide {
