@@ -4156,16 +4156,15 @@ def web_interface(args, ctx):
                         if (typeof window.init_elements !== "function") {
                             window.init_elements = () => {
                                 try {
-                                    let gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    let gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                    let gr_playback_time = gr_root.querySelector("#gr_playback_time input");
+                                    gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
+                                    gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                     if (!gr_root || !gr_tab_progress || !gr_playback_time) {
                                         clearTimeout(init_elements_timeout);
                                         console.log("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_elements, 1000);
                                         return;
                                     }
-                                    console.log(gr_tab_progress);
                                     // Function to apply theme borders
                                     function applyThemeBorders() {
                                         const url = new URL(window.location);
