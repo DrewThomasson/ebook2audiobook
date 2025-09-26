@@ -2518,7 +2518,7 @@ def web_interface(args, ctx):
             #gr_row_voice_player {
                 height: 60px !important;
             }
-            #gr_voice_player button:hove {
+            #gr_voice_player button:hover {
                 background: #ffab00 !important;
             }
             #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
