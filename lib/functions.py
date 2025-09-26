@@ -2311,12 +2311,12 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             button div.wrap::after {
-                content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%2300f' viewBox='0 0 24 24'><circle cx='120' cy='120' r='100'/></svg>");
-                display: inline-block;
-                width: 24px;
-                height: 24px;
+                content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='%2300f' viewBox='0 0 24 24'><circle cx='120' cy='120' r='100'/></svg>") !important;
+                display: inline-block !important;
+                width: 24px !important;
+                height: 24px !important;
                 font-size: 14px !important;
-                vertical-align: middle;
+                vertical-align: middle !important;
                 padding: 8px !important;
             }
             .svelte-1xyfx7i.center.boundedheight.flex{
