@@ -4326,11 +4326,10 @@ def web_interface(args, ctx):
                         if(typeof(window.tab_progress) !== "function"){
                             window.tab_progress = () =>{
                                 try{
+                                    console.log(gr_tab_progress);
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const txt = val.trim().split(" ")[2] || "";
                                     const title = txt.length > 20 ? txt.slice(0, 20).trimEnd() + '…' : txt;
-                                    console.log('val',val);
-                                    console.log('title',title);
                                     const prct = val.trim().split(" ")[4];
                                     if(prct && /^\d+(\.\d+)?%$/.test(prct)){
                                         document.title = title + ": " + prct;
