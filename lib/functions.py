@@ -1990,7 +1990,7 @@ def convert_ebook(args, ctx=None):
                 session['is_gui_process'] = args['is_gui_process']
                 session['ebook'] = args['ebook']
                 session['ebook_list'] = args['ebook_list']
-                session['chapters_control'] = args['chapters_control']
+                session['chapters_control'] = args['chapters_control'] if args['chapters_control'] else None
                 session['device'] = args['device']
                 session['language'] = args['language']
                 session['language_iso1'] = args['language_iso1']
@@ -3562,6 +3562,7 @@ def web_interface(args, ctx):
                     session['status'] = 'converting'
                     session['progress'] = len(audiobook_options)
                     if isinstance(args['ebook_list'], list):
+                        arts['chapters_control'] = None
                         ebook_list = args['ebook_list'][:]
                         for file in ebook_list:
                             if any(file.endswith(ext) for ext in ebook_formats):
@@ -3576,24 +3577,17 @@ def web_interface(args, ctx):
                                         error = 'Conversion failed.'
                                         break
                                 else:
-                                    if progress_status == 'confirm_blocks':
-                                        session['event'] = progress_status
-                                        msg = 'Select the blocks to convert:'
-                                        print(msg)
-                                        yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
-                                        return
-                                    else:
-                                        show_alert({"type": "success", "msg": progress_status})
-                                        args['ebook_list'].remove(file)
-                                        reset_session(args['session'])
-                                        count_file = len(args['ebook_list'])
-                                        if count_file > 0:
-                                            msg = f"{len(args['ebook_list'])} remaining..."
-                                            yield gr.update(value=msg), gr.update()
-                                        else: 
-                                            msg = 'Conversion successful!'
-                                            session['status'] = 'ready'
-                                            return gr.update(value=msg), gr.update()
+                                    show_alert({"type": "success", "msg": progress_status})
+                                    args['ebook_list'].remove(file)
+                                    reset_session(args['session'])
+                                    count_file = len(args['ebook_list'])
+                                    if count_file > 0:
+                                        msg = f"{len(args['ebook_list'])} remaining..."
+                                        yield gr.update(value=msg), gr.update()
+                                    else: 
+                                        msg = 'Conversion successful!'
+                                        session['status'] = 'ready'
+                                        return gr.update(value=msg), gr.update()
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
