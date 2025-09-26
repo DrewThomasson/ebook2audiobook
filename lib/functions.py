@@ -2374,39 +2374,13 @@ def web_interface(args, ctx):
                 align-items: center !important;
                 justify-content: center !important;
                 font-size: 1.2rem !important;
-                color: #fff !important;
-                opacity: 1 !important;
-                pointer-events: all !important;
-                transition: none !important;
-            }
-            .gr-glass-mask.hide {
-                animation: fadeOut 2s ease-out forwards !important;
-            }
-            /*
-            .gr-glass-mask {
-                z-index: 9999 !important;
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important; 
-                height: 100vh !important;
-                background: rgba(0,0,0,0.5) !important;
-                display: flex !important;
-                text-align: center;
-                align-items: center !important;
-                justify-content: center !important;
-                font-size: 1.2rem !important;
                 color: #ffffff !important;
-                opacity: 1 !important;
-                transition: opacity 2s ease-out 2s !important;
+                opacity: 0.6 !important;
                 pointer-events: all !important;
             }
             .gr-glass-mask.hide {
-                opacity: 0 !important;
-                pointer-events: none !important;
-                animation: fadeOut 2s ease-out forwards !important;
+                animation: fadeOut 2s ease-out forwards;
             }
-            */
             .small-btn{
                 background: var(--block-background-fill) !important;
                 font-size: 22px !important;
@@ -2613,7 +2587,7 @@ def web_interface(args, ctx):
             }
             @keyframes fadeOut {
                 from {
-                    opacity: 1 !important;
+                    opacity: 0.6 !important;
                 }
                 to {
                     opacity: 0 !important;
