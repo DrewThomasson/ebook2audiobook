@@ -2583,7 +2583,7 @@ def web_interface(args, ctx):
                     visibility: visible !important;
                 }
                 to {
-                    opacity: 1;
+                    opacity: 1 !important;
                 }
             }
             @keyframes fadeOut {
