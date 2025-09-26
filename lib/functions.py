@@ -2247,7 +2247,7 @@ def web_interface(args, ctx):
     is_gui_process = args['is_gui_process']
     is_gui_shared = args['share']
     title = 'Ebook2Audiobook'
-    glass_mask_msg = 'Initialization, please wait...'
+    gr_glass_mask_msg = 'Initialization, please wait...'
     ebook_src = None
     language_options = [
         (
@@ -2583,8 +2583,8 @@ def web_interface(args, ctx):
                 to { opacity: 1; }
             }
             //////////
-            #custom-modal-container,
-            #custom-modal-container .modal {
+            #custom-gr-modal-container,
+            #custom-gr-modal-container .gr-modal {
                 position: fixed !important;
             }
             .hide-elem {
@@ -2593,7 +2593,7 @@ def web_interface(args, ctx):
                 top: 0;
                 left: 0;
             }
-            .modal {
+            .gr-modal {
                 position: fixed !important;
                 top: 0 !important; left: 0 !important;
                 width: 100% !important; height: 100% !important;
@@ -2603,7 +2603,7 @@ def web_interface(args, ctx):
                 justify-content: center !important;
                 align-items: center !important;
             }
-            .modal-content {
+            .gr-modal-content {
                 background-color: #333 !important;
                 padding: 20px !important;
                 border-radius: 9px !important;
@@ -2840,7 +2840,7 @@ def web_interface(args, ctx):
                 gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
 
         gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(f'<div id="gr_glass_mask" class="gr-glass-mask">{glass_mask_msg}</div>')
+        gr_glass_mask = gr.HTML(f'<div id="gr_glass_mask" class="gr-glass-mask">{gr_glass_mask_msg}</div>')
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
@@ -2881,10 +2881,10 @@ def web_interface(args, ctx):
             except Exception:
                 return None
 
-        def show_modal(type, msg):
+        def show_gr_modal(type, msg):
             return f'''
-            <div id="custom-modal" class="modal">
-                <div class="modal-content">
+            <div id="custom-gr_modal" class="gr-modal">
+                <div class="gr-modal-content">
                     <p style="color:#ffffff">{msg}</p>            
                     {show_confirm_buttons(type)}
                 </div>
@@ -3018,7 +3018,7 @@ def web_interface(args, ctx):
                 session['playback_time'] = 0
             return gr.update(value=selected)
         
-        def update_gr_glass_mask(str=glass_mask_msg, attr='class="gr-glass-mask"'):
+        def update_gr_glass_mask(str=gr_glass_mask_msg, attr='class="gr-glass-mask"'):
             return gr.update(value=f'<div id="gr_glass_mask" {attr}>{str}</div>')
         
         def change_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
@@ -3045,7 +3045,7 @@ def web_interface(args, ctx):
                     if session['status'] == 'converting':
                         session['cancellation_requested'] = True
                         msg = 'Cancellation requested, please wait...'
-                        yield gr.update(value=show_modal('wait', msg), visible=True)
+                        yield gr.update(value=show_gr_modal('wait', msg), visible=True)
                         return
                 if isinstance(data, list):
                     session['ebook_list'] = data
@@ -3129,7 +3129,7 @@ def web_interface(args, ctx):
                             msg = f'Are you sure to delete {speaker}...'
                             return (
                                 gr.update(value='confirm_voice_del'),
-                                gr.update(value=show_modal('confirm_deletion', msg), visible=True)
+                                gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
                             )
                         else:
                             error = f'{speaker} is part of the global voices directory. Only your own custom uploaded voices can be deleted!'
@@ -3152,7 +3152,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = os.path.basename(selected)
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_modal('confirm_deletion', msg), visible=True)
+                    return gr.update(value='confirm_custom_model_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
             except Exception as e:
                 error = f'Could not delete the custom model {selected_name}!'
                 alert_exception(error)
@@ -3164,7 +3164,7 @@ def web_interface(args, ctx):
                     session = context.get_session(id)
                     selected_name = Path(selected).stem
                     msg = f'Are you sure to delete {selected_name}...'
-                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_modal('confirm_deletion', msg), visible=True)
+                    return gr.update(value='confirm_audiobook_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
             except Exception as e:
                 error = f'Could not delete the audiobook {selected_name}!'
                 alert_exception(error)
@@ -3567,7 +3567,7 @@ def web_interface(args, ctx):
                                         session['event'] = progress_status
                                         msg = 'Select the blocks to convert:'
                                         print(msg)
-                                        yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                        yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
                                         return
                                     else:
                                         show_alert({"type": "success", "msg": progress_status})
@@ -3595,7 +3595,7 @@ def web_interface(args, ctx):
                                 session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                yield gr.update(value=''), gr.update(value=show_modal(progress_status, msg), visible=True)
+                                yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
                                 return
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
