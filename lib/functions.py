@@ -2375,7 +2375,7 @@ def web_interface(args, ctx):
                 align-items: center !important;
                 justify-content: center !important;
                 font-size: 1.2rem !important;
-                color: #ffff00 !important;
+                color: #ffffff !important;
                 transition: opacity 2s ease-out 2s !important;
                 pointer-events: all !important;
             }
@@ -4073,7 +4073,7 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
-            fn=lambda session: update_gr_glass_mask(attr='class="gr-glass-mask hide"') if session else gr.update(),
+            fn=lambda session: update_gr_glass_mask(attr='class="gr-glass-mask"') if session else gr.update(),
             inputs=[gr_session],
             outputs=[gr_glass_mask]
         ).then(
