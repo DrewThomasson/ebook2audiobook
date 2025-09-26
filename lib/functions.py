@@ -2376,6 +2376,7 @@ def web_interface(args, ctx):
                 justify-content: center !important;
                 font-size: 1.2rem !important;
                 color: #ffffff !important;
+                opacity: 1 !important;
                 transition: opacity 2s ease-out 3s !important;
                 pointer-events: all !important;
             }
