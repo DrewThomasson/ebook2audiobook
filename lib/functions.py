@@ -2311,13 +2311,11 @@ def web_interface(args, ctx):
                 display: none !important;
             }
             button div.wrap::after {
-                content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='90%' height='90%' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='feather feather-upload'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'></path><polyline points='17 8 12 3 7 8'></polyline><line x1='12' y1='3' x2='12' y2='15'></line></svg>") !important;
+                content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/><polyline points='17 8 12 3 7 8'/><line x1='12' y1='3' x2='12' y2='15'/></svg>") !important;
                 display: inline-block !important;
                 width: 24px !important;
                 height: 24px !important;
-                font-size: 14px !important;
                 vertical-align: middle !important;
-                padding: 8px !important;
             }
             .svelte-1xyfx7i.center.boundedheight.flex{
                 height: 120px !important;
@@ -2654,7 +2652,7 @@ def web_interface(args, ctx):
                         with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_select', elem_classes=['gr-group']):
                                 gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', elem_classes=['gr-markdown'], value='Selection')
-                                gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', value='OK', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
+                                gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=140)
                                 gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                                 with gr_row_ebook_mode:
                                     gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
