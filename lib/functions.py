@@ -2400,17 +2400,14 @@ def web_interface(args, ctx):
                 background: none !important;
             }
             .gr-group {
-                background: none transparent !important;
+                background: none !important;
                 padding: 0 !important;
                 margin: 0 !important;
-                box-shadow: 0 10px 10px 0 rgba(0, 0, 0, .7);
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             .gr-group-sides-padded{
-                background: none transparent !important;
-                margin-left: var(--size-2) !important;;
-                margin-right: var(--size-2) !important;;
-                box-shadow: 0 10px 10px 0 rgba(0, 0, 0, .7);
+                background: none !important;
+                margin: 0 var(--size-2) 0 var(--size-2)!important;;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             .gr-group-convert-btn{
@@ -2420,7 +2417,7 @@ def web_interface(args, ctx):
             .gr-markdown p {
                 margin-top: 8px !important;
                 width: 90px !important;
-                padding: 2px 6px !important;
+                /*padding: 2px 6px !important;*/
                 line-height: 1.2 !important;
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
                 background: var(--block-background-fill) !important;
