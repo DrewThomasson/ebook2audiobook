@@ -2412,19 +2412,17 @@ def web_interface(args, ctx):
             }
             
 
-            button div.wrap {
-              display: none !important;
+            button div.wrap span {
+                display: none !important;
             }
-
             button div.wrap::after {
-              content: "OK" !immportant;
-              display: block !immportant;
-              text-align: center !immportant;
-              font-size: 14px !immportant;
-              color: var(--body-text-color) !immportant;
-              padding: 8px !immportant;
+                content: "OK" !important;
+                display: block !important;
+                text-align: center !important;
+                font-size: 14px !important;
+                color: var(--body-text-color) !important;
+                padding: 8px !important;
             }
-            
             
             .gr-group-convert-btn{
                 margin: var(--size-2) !important;;
