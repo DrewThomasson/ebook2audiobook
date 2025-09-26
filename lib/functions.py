@@ -2680,7 +2680,7 @@ def web_interface(args, ctx):
                                 gr_fine_tuned_list = gr.Dropdown(label='Fine Tuned Models (Presets)', elem_id='gr_fine_tuned_list', choices=fine_tuned_options, type='value', interactive=True)
                                 gr_group_custom_model = gr.Group(visible=visible_gr_group_custom_model)
                                 with gr_group_custom_model:
-                                    gr_custom_model_file = gr.File(label=f"Upload Model", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=140)
+                                    gr_custom_model_file = gr.File(label=f"Upload ZIP file ({', '.join(models[session['tts_engine']][default_fine_tuned]['files'])}", elem_id='gr_custom_model_file', value=None, file_types=['.zip'], height=140)
                                     with gr.Row(elem_id='gr_row_custom_model'):
                                         gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                         gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
