@@ -2307,6 +2307,17 @@ def web_interface(args, ctx):
                 scrollbar-width: thin !important;
                 scrollbar-color: #c09340 none !important;
             }
+            button div.wrap span {
+                display: none !important;
+            }
+            button div.wrap::after {
+                content: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='red' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10'/></svg>");
+                display: block !important;
+                text-align: center !important;
+                font-size: 14px !important;
+                color: var(--body-text-color) !important;
+                padding: 8px !important;
+            }
             .svelte-1xyfx7i.center.boundedheight.flex{
                 height: 120px !important;
             }
@@ -2410,20 +2421,6 @@ def web_interface(args, ctx):
                 margin: 0 var(--size-2) 0 var(--size-2)!important;;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
-            
-
-            button div.wrap span {
-                display: none !important;
-            }
-            button div.wrap::after {
-                content: "OK" !important;
-                display: block !important;
-                text-align: center !important;
-                font-size: 14px !important;
-                color: var(--body-text-color) !important;
-                padding: 8px !important;
-            }
-            
             .gr-group-convert-btn{
                 margin: var(--size-2) !important;;
                 border-radius: var(--radius-md) !important;
