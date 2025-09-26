@@ -2644,16 +2644,17 @@ def web_interface(args, ctx):
             .button_red  { background-color: #dc3545 !important; color: white !important; }
             .button_red:hover  { background-color: #ff6f71 !important; }
             .spinner {
-                margin: 15px auto !important;
-                border: 4px solid rgba(255, 255, 255, 0.2) !important;
-                border-top: 4px solid #FFA500 !important;
-                border-radius: 50% !important;
-                width: 30px !important; height: 30px !important;
-                animation: spin 1s linear infinite !important;
+                margin: 15px auto;
+                border: 4px solid rgba(255, 255, 255, 0.2);
+                border-top: 4px solid #FFA500;
+                border-radius: 50%;
+                width: 30px;
+                height: 30px;
+                animation: spin 1s linear infinite;
             }
             @keyframes spin {
-                0% { transform: rotate(0deg) !important; }
-                100% { transform: rotate(360deg) !important; }
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
             }
         </style>
     '''
@@ -2862,7 +2863,6 @@ def web_interface(args, ctx):
         gr_read_data = gr.JSON(elem_id='gr_read_data')
         gr_write_data = gr.JSON(elem_id='gr_write_data') 
 
- 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
             if any(socket_hash in session for session in context.sessions.values()):
@@ -3059,7 +3059,6 @@ def web_interface(args, ctx):
                         session['cancellation_requested'] = True
                         msg = 'Cancellation requested, please wait...'
                         yield gr.update(value=show_gr_modal('wait', msg), visible=True)
-                        return
                 if isinstance(data, list):
                     session['ebook_list'] = data
                 else:
@@ -3582,9 +3581,9 @@ def web_interface(args, ctx):
                                     reset_session(args['session'])
                                     count_file = len(args['ebook_list'])
                                     if count_file > 0:
-                                        msg = f"{len(args['ebook_list'])} remaining..."
+                                        msg = f"{len(args['ebook_list'])} ebook(s) conversion remaining..."
                                         yield gr.update(value=msg), gr.update()
-                                    else: 
+                                    else:
                                         msg = 'Conversion successful!'
                                         session['status'] = 'ready'
                                         return gr.update(value=msg), gr.update()
@@ -3639,14 +3638,9 @@ def web_interface(args, ctx):
                                 show_alert({"type": "success", "msg": progress_status})
                                 session['ebook_list'].remove(file)
                                 reset_session(session['id'])
-                                count_file = len(session['ebook_list'])
-                                if count_file > 0:
-                                    msg = f"{len(session['ebook_list'])} remaining..."
-                                    yield gr.update(value=msg), gr.update()
-                                else: 
-                                    msg = 'Conversion successful!'
-                                    session['status'] = 'ready'
-                                    return gr.update(value=msg), gr.update()
+                                msg = 'Conversion successful!'
+                                session['status'] = 'ready'
+                                return gr.update(value=msg), gr.update()
                 else:
                     print(f"Processing eBook file: {os.path.basename(session['ebook'])}")
                     progress_status, passed = convert_ebook(session)
