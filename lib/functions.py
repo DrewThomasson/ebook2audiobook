@@ -2381,7 +2381,7 @@ def web_interface(args, ctx):
                 pointer-events: all !important;
             }
             .gr-glass-mask.hide {
-                /*opacity: 0 !important;*/
+                opacity: 0 !important;
                 pointer-events: none !important;
             }
             .small-btn{
@@ -3020,7 +3020,7 @@ def web_interface(args, ctx):
             return gr.update(value=selected)
         
         def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
-            return gr.update(value=f'<div {str}</div>', elem_classes=attr)
+            return gr.update(value=f'<div>{str}</div>', elem_id='gr_glass_mask', elem_classes=attr)
         
         def change_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
             try:
