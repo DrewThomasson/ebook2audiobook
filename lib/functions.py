@@ -2383,7 +2383,7 @@ def web_interface(args, ctx):
             .gr-glass-mask.hide {
                 opacity: 0 !important;
                 pointer-events: none !important;
-                display: none !important;
+                animation: fadeOut 2s ease-out forwards !important;
             }
             .small-btn{
                 background: var(--block-background-fill) !important;
@@ -2581,8 +2581,22 @@ def web_interface(args, ctx):
                 display: inline-block !important;
             }
             @keyframes fadeIn {
-                from { opacity: 0; }
-                to { opacity: 1; }
+                from {
+                    opacity: 0;
+                    visibility: visible;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+            @keyframes fadeOut {
+                from {
+                    opacity: 1;
+                }
+                to {
+                    opacity: 0;
+                    visibility: hidden;
+                }
             }
             //////////
             #custom-gr-modal-container,
