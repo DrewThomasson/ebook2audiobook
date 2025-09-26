@@ -2404,7 +2404,6 @@ def web_interface(args, ctx):
                 padding: 0 !important;
                 margin: 0 !important;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
-                box-shadow: 0 10px 10px 0 rgba(0, 0, 0, 1);
             }
             .gr-group-sides-padded{
                 background: none !important;
