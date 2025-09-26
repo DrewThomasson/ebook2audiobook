@@ -2369,7 +2369,7 @@ def web_interface(args, ctx):
                 left: 0 !important;
                 width: 100vw !important; 
                 height: 100vh !important;
-                background: rgba(0,0,0,0.4) !important;
+                background: rgba(0,0,0,0.5) !important;
                 display: flex !important;
                 text-align: center;
                 align-items: center !important;
@@ -2383,6 +2383,7 @@ def web_interface(args, ctx):
             .gr-glass-mask.hide {
                 opacity: 0 !important;
                 pointer-events: none !important;
+                transition: opacity 2s ease-out !important;
             }
             .small-btn{
                 background: var(--block-background-fill) !important;
