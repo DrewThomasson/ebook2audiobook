@@ -2386,7 +2386,7 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
-            .block {
+            .block > .wrap {
                 box-shadow: 0 10px 10px 0 rgba(0, 0, 0, .7);
             }
             .gr-tab {
