@@ -2380,7 +2380,7 @@ def web_interface(args, ctx):
                 pointer-events: all !important;
             }
             .gr-glass-mask.hide {
-                opacity: 0 !important;
+                opacity: 0;
                 pointer-events: none !important;
             }
             .small-btn{
