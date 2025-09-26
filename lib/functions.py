@@ -2400,12 +2400,14 @@ def web_interface(args, ctx):
                 background: none !important;
             }
             .gr-group {
+                background: none transparent !important;
                 padding: 0 !important;
                 margin: 0 !important;
                 box-shadow: 0 10px 10px 0 rgba(0, 0, 0, .7);
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             .gr-group-sides-padded{
+                background: none transparent !important;
                 margin-left: var(--size-2) !important;;
                 margin-right: var(--size-2) !important;;
                 box-shadow: 0 10px 10px 0 rgba(0, 0, 0, .7);
