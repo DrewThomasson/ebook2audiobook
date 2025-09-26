@@ -4276,7 +4276,7 @@ def web_interface(args, ctx):
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
                                             let osTheme;
-                                            console.log(them);
+                                            console.log('---->',theme);
                                             if(theme){
                                                 if(theme == "dark"){
                                                     audioFilter = "invert(1) hue-rotate(180deg)";
