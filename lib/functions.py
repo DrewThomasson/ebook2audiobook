@@ -4183,7 +4183,7 @@ def web_interface(args, ctx):
                                         const theme = url.searchParams.get("__theme");
                                         let elColor = "#666666";
 
-                                        if (theme === "dark") {
+                                        if (theme == "dark") {
                                             elColor = "#fff";
                                         } else if (!theme) {
                                             const osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
@@ -4276,8 +4276,9 @@ def web_interface(args, ctx):
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
                                             let osTheme;
+                                            console.log(them);
                                             if(theme){
-                                                if(theme === "dark"){
+                                                if(theme == "dark"){
                                                     audioFilter = "invert(1) hue-rotate(180deg)";
                                                 }
                                             }else{
