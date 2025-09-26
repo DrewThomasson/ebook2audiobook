@@ -2386,6 +2386,9 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
+            .block {
+                box-shadow: 0 10px 10px 0 rgba(0, 0, 0, .7);
+            }
             .gr-tab {
                 padding: 0 3px 0 3px !important;
                 margin: 0 !important;
@@ -2402,13 +2405,11 @@ def web_interface(args, ctx):
             .gr-group {
                 padding: 0 !important;
                 margin: 0 !important;
-                box-shadow: 0 10px 10px 0 rgba(0, 0, 0, .7);
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             .gr-group-sides-padded{
                 margin-left: var(--size-2) !important;;
                 margin-right: var(--size-2) !important;;
-                box-shadow: 0 10px 10px 0 rgba(0, 0, 0, .7);
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
             }
             .gr-group-convert-btn{
