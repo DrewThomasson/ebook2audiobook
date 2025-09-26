@@ -2407,7 +2407,7 @@ def web_interface(args, ctx):
                 border: none !important;
             }
             .gr-group-main, .gr-group-blocks {
-                background: none !important;
+                background: red !important;
             }
             .gr-group {
                 background: none !important;
