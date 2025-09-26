@@ -3062,6 +3062,7 @@ def web_interface(args, ctx):
                         return
                 if isinstance(data, list):
                     session['ebook_list'] = data
+                    print(session['ebook_list'])
                 else:
                     session['ebook'] = data
                 session['cancellation_requested'] = False
