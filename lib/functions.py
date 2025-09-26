@@ -2362,6 +2362,27 @@ def web_interface(args, ctx):
                 color: var(--secondary-500) !important;
                 text-shadow: 0.3px 0.3px 0.3px #303030;
             }
+            .gr-glass-mask {
+                z-index: 9999 !important;
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                width: 100vw !important; 
+                height: 100vh !important;
+                background: rgba(0,0,0,0.6) !important;
+                display: flex !important;
+                text-align: center;
+                align-items: center !important;
+                justify-content: center !important;
+                font-size: 1.2rem !important;
+                color: #ffff00 !important;
+                transition: opacity 2s ease-out 2s !important;
+                pointer-events: all !important;
+            }
+            .gr-glass-mask.hide {
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
             .small-btn{
                 background: var(--block-background-fill) !important;
                 font-size: 22px !important;
@@ -2473,27 +2494,6 @@ def web_interface(args, ctx):
                 font-size: 30px !important;
             }
             ////////////////////
-            .gr-glass-mask {
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                width: 100vw !important; 
-                height: 100vh !important;
-                background: rgba(0,0,0,0.6) !important;
-                display: flex !important;
-                text-align: center;
-                align-items: center !important;
-                justify-content: center !important;
-                font-size: 1.2rem !important;
-                color: #fff !important;
-                z-index: 9999 !important;
-                transition: opacity 2s ease-out 2s !important;
-                pointer-events: all !important;
-            }
-            .gr-glass-mask.hide {
-                opacity: 0 !important;
-                pointer-events: none !important;
-            }
             #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                 height: 140px !important;
             }
