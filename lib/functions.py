@@ -2404,6 +2404,7 @@ def web_interface(args, ctx):
                 padding: 0 !important;
                 margin: 0 !important;
                 border-radius: 0 var(--radius-md) var(--radius-md) var(--radius-md) !important;
+                box-shadow: 0 10px 10px 0 rgba(0, 0, 0, 1);
             }
             .gr-group-sides-padded{
                 background: none !important;
@@ -2418,7 +2419,6 @@ def web_interface(args, ctx):
                 margin-top: 8px !important;
                 width: 90px !important;
                 padding: 0 !important;
-                /*line-height: 1.2 !important;*/
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
                 background: var(--block-background-fill) !important;
                 display: flex !important;
@@ -2429,8 +2429,7 @@ def web_interface(args, ctx):
             .gr-markdown-span {
                 margin-top: 8px !important;
                 width: 90px !important;
-                padding: 2px 6px !important;
-                line-height: 1.2 !important;
+                padding: 0 !important;
                 border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
                 background: var(--block-background-fill) !important;
                 display: flex !important;
