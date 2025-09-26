@@ -2519,7 +2519,7 @@ def web_interface(args, ctx):
                 height: 60px !important;
             }
             #gr_voice_player button:hove {
-                background: var(--button-primary-background-fill-hover) !important;
+                background: #ffab00 !important;
             }
             #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
                 display: none !important;
