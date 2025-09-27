@@ -4334,14 +4334,15 @@ def web_interface(args, ctx):
                                     const valArray = val.trim().split("-")
                                     let proc = valArray[-1];
                                     let txt = valArray[0];
-                                    if(prct && !/^\d+(\.\d+)?%$/.test(prct)){
+                                    console.log(proc, txt);
+                                    if(proc && !/^\d+(\.\d+)?%$/.test(proc)){
                                         proc = valArray[0];
                                         txt = valArray[-1];
                                     }
                                     const title = txt.length > 20 ? txt.slice(0, 20).trimEnd() + '…' : txt;
-                                    if(prct && /^\d+(\.\d+)?%$/.test(prct)){
-                                        document.title = title + ": " + prct;
-                                    }
+                                    //if(prct && /^\d+(\.\d+)?%$/.test(prct)){
+                                    //    document.title = title + ": " + prct;
+                                    //}
                                 }catch(e){
                                     console.log("tab_progress error:", e);
                                 }
