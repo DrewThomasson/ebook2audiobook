@@ -4332,17 +4332,16 @@ def web_interface(args, ctx):
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const valArray = val.trim().split("-")
-                                    console.log(valArray);
-                                    let proc = valArray[-1];
-                                    let txt = valArray[0];
-                                    if(proc && !/^\d+(\.\d+)?%$/.test(proc)){
-                                        proc = valArray[0];
-                                        txt = valArray[-1];
+                                    if(valArray[1]){
+                                        const proc = valArray[1].trim();
+                                        const title = valArray[0].trim();
+                                        console.log("proc = ", proc);
+                                        console.log("title = ", title);
+                                        //const title = title.length > 20 ? title.slice(0, 20).trimEnd() + '…' : title;
+                                        //if(prct && /^\d+(\.\d+)?%$/.test(prct)){
+                                        //    document.title = title + ": " + prct;
+                                        //}
                                     }
-                                    const title = txt.length > 20 ? txt.slice(0, 20).trimEnd() + '…' : txt;
-                                    //if(prct && /^\d+(\.\d+)?%$/.test(prct)){
-                                    //    document.title = title + ": " + prct;
-                                    //}
                                 }catch(e){
                                     console.log("tab_progress error:", e);
                                 }
