@@ -4162,8 +4162,7 @@ def web_interface(args, ctx):
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                    gr_playback_time = gr_root.querySelector("#gr_playback_time input");
-                                    if (!gr_root || !gr_tab_progress || !gr_playback_time) {
+                                    if (!gr_root || !gr_tab_progress) {
                                         clearTimeout(init_elements_timeout);
                                         console.log("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_elements, 1000);
@@ -4213,6 +4212,7 @@ def web_interface(args, ctx):
                                     if(gr_root){
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                        gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                         let lastCue = null;
                                         let fade_timeout = null;
                                         let last_time = 0;
