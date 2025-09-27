@@ -2492,7 +2492,7 @@ def web_interface(args, ctx):
                 font-size: 30px !important;
             }
             ////////////////////
-            #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
+            #gr_ebook_file, #gr_custom_model_file, #gr_voice_file, #gr_ebook_file[disabled], #gr_custom_model_file[disabled], #gr_voice_file[disabled] {
                 height: 100px !important;
             }
             #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
@@ -2545,10 +2545,7 @@ def web_interface(args, ctx):
                 top: 5px !important;
             }
             ///////////
-            #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper) {
-                display: none !important;
-            }
-            #gr_audiobook_player label{
+            #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
                 display: none !important;
             }
             #gr_audiobook_player audio {
