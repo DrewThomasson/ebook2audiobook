@@ -4334,11 +4334,11 @@ def web_interface(args, ctx):
                                     const valArray = val.trim().split("-")
                                     if(valArray[1]){
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
-                                        const proc = valArray[1].trim();
-                                        console.log("proc:", proc);
+                                        const percentage = valArray[1].trim();
+                                        console.log("percentage:", percentage);
                                         console.log("title:", title);
                                         const titleShort = title.length > 20 ? title.slice(0, 20).trimEnd() + '…' : title;
-                                        document.title = title + ": " + prct;
+                                        document.title = title + ": " + percentage;
                                     }
                                 }catch(e){
                                     console.log("tab_progress error:", e);
