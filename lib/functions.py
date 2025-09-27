@@ -3902,15 +3902,6 @@ def web_interface(args, ctx):
             inputs=None,
             outputs=[gr_audiobook_sentence]
         )
-        gr_tab_progress.change(
-            fn=None,
-            inputs=[gr_tab_progress],
-            js=f'''
-                (filename)=>{{
-                    document.title = "{title}";
-                }}
-            '''
-        )
         gr_playback_time.change(
             fn=change_gr_playback_time,
             inputs=[gr_playback_time, gr_session],
@@ -4086,7 +4077,12 @@ def web_interface(args, ctx):
         ).then(
             fn=None,
             inputs=None,
-            js='()=>{window.init_elements();}',
+            js=f'''
+                ()=>{{
+                    window.title = {title};
+                    window.init_elements();
+                }}
+            ''',
             outputs=None
         )
         gr_confirm_deletion_yes_btn.click(
