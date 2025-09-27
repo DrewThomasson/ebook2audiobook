@@ -4332,9 +4332,9 @@ def web_interface(args, ctx):
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const valArray = val.trim().split("-")
+                                    console.log(JSON.stringify(valArray));
                                     let proc = valArray[-1];
                                     let txt = valArray[0];
-                                    console.log(proc, txt);
                                     if(proc && !/^\d+(\.\d+)?%$/.test(proc)){
                                         proc = valArray[0];
                                         txt = valArray[-1];
