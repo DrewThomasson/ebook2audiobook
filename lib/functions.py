@@ -3910,7 +3910,8 @@ def web_interface(args, ctx):
             fn=None,
             inputs=[gr_tab_progress],
             js=f'''
-                ()=>{{
+                (filename)=>{{
+                    console.log(filename);
                     document.title = "{title}";
                 }}
             '''
