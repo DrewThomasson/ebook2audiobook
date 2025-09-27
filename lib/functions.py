@@ -4333,14 +4333,12 @@ def web_interface(args, ctx):
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const valArray = val.trim().split("-")
                                     if(valArray[1]){
-                                        const title = valArray[0].trim().split(/ (.*)/)[1];
+                                        const title = valArray[0].trim().split(/ (.*)/)[1].trim();
                                         const proc = valArray[1].trim();
-                                        console.log("proc = ", proc);
-                                        console.log("title = ", title);
-                                        //const title = title.length > 20 ? title.slice(0, 20).trimEnd() + '…' : title;
-                                        //if(prct && /^\d+(\.\d+)?%$/.test(prct)){
-                                        //    document.title = title + ": " + prct;
-                                        //}
+                                        console.log("proc:", proc);
+                                        console.log("title:", title);
+                                        const titleShort = title.length > 20 ? title.slice(0, 20).trimEnd() + '…' : title;
+                                        document.title = title + ": " + prct;
                                     }
                                 }catch(e){
                                     console.log("tab_progress error:", e);
