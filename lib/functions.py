@@ -4327,7 +4327,7 @@ def web_interface(args, ctx):
                                     if(valArray[1]){
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
                                         const percentage = valArray[1].trim();
-                                        console.log("title:", title);
+                                        console.log(title.length);
                                         const titleShort = title.length > 20 ? title.slice(0, 20).trimEnd() + "…" : title;
                                         document.title = titleShort + ": " + percentage;
                                     }else{
