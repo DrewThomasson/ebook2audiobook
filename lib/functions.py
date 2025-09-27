@@ -1435,7 +1435,7 @@ def convert_chapters2audio(id):
         msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
         print(msg)
         progress_bar = gr.Progress(track_tqdm=False)
-        ebook_name = Path(session['ebook']).stem
+        ebook_name = Path(session['ebook']).name
         with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
@@ -4327,8 +4327,7 @@ def web_interface(args, ctx):
                                     if(valArray[1]){
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
                                         const percentage = valArray[1].trim();
-                                        console.log(title.length);
-                                        const titleShort = title.length > 20 ? title.slice(0, 20).trimEnd() + "…" : title;
+                                        const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
                                         document.title = titleShort + ": " + percentage;
                                     }else{
                                         document.title = "Ebook2Audiobook";
