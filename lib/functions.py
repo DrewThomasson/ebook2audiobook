@@ -3814,7 +3814,6 @@ def web_interface(args, ctx):
         gr_chapters_control.change(
             fn=lambda val, id: change_param('chapters_control', bool(val), id),
             inputs=[gr_chapters_control, gr_session],
-            outputs=None
         )
         gr_voice_file.upload(
             fn=change_gr_voice_file,
@@ -3838,7 +3837,6 @@ def web_interface(args, ctx):
         gr_device.change(
             fn=change_gr_device,
             inputs=[gr_device, gr_session],
-            outputs=None
         )
         gr_language.change(
             fn=change_gr_language,
@@ -3889,7 +3887,6 @@ def web_interface(args, ctx):
         gr_output_format_list.change(
             fn=change_gr_output_format_list,
             inputs=[gr_output_format_list, gr_session],
-            outputs=None
         )
         gr_output_split.change(
             fn=change_gr_output_split,
@@ -3899,22 +3896,23 @@ def web_interface(args, ctx):
         gr_output_split_hours.change(
             fn=lambda val, id: change_param('output_split_hours', str(val), id),
             inputs=[gr_output_split_hours, gr_session],
-            outputs=None
         )
         gr_audiobook_vtt.change(
             fn=lambda: gr.update(value='...'),
-            inputs=None,
             outputs=[gr_audiobook_sentence]
         )
         gr_tab_progress.change(
-            fn=None,
             inputs=[gr_tab_progress],
-            js=f'()=>{{document.title = "{title}";}}'
+            js=f'''
+                (filename)=>{{
+                    console.log(filename);
+                    document.title = "{title}";
+                }}
+            '''
         )
         gr_playback_time.change(
             fn=change_gr_playback_time,
             inputs=[gr_playback_time, gr_session],
-            outputs=None
         )
         gr_audiobook_download_btn.click(
             fn=toggle_audiobook_files,
@@ -3931,7 +3929,6 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_list],
             outputs=[gr_audiobook_vtt]
         ).then(
-            fn=None,
             inputs=[gr_audiobook_vtt],
             js='''
                 (data)=>{
@@ -3942,8 +3939,7 @@ def web_interface(args, ctx):
                 
                     }
                 }
-            ''',
-            outputs=None
+            '''
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -3953,54 +3949,44 @@ def web_interface(args, ctx):
         ########### XTTSv2 Params
         gr_xtts_temperature.change(
             fn=lambda val, id: change_param('temperature', float(val), id),
-            inputs=[gr_xtts_temperature, gr_session],
-            outputs=None
+            inputs=[gr_xtts_temperature, gr_session]
         )
         gr_xtts_length_penalty.change(
             fn=lambda val, id, val2: change_param('length_penalty', int(val), id, int(val2)),
-            inputs=[gr_xtts_length_penalty, gr_session, gr_xtts_num_beams],
-            outputs=None,
+            inputs=[gr_xtts_length_penalty, gr_session, gr_xtts_num_beams]
         )
         gr_xtts_num_beams.change(
             fn=lambda val, id, val2: change_param('num_beams', int(val), id, int(val2)),
-            inputs=[gr_xtts_num_beams, gr_session, gr_xtts_length_penalty],
-            outputs=None,
+            inputs=[gr_xtts_num_beams, gr_session, gr_xtts_length_penalty]
         )
         gr_xtts_repetition_penalty.change(
             fn=lambda val, id: change_param('repetition_penalty', float(val), id),
-            inputs=[gr_xtts_repetition_penalty, gr_session],
-            outputs=None
+            inputs=[gr_xtts_repetition_penalty, gr_session]
         )
         gr_xtts_top_k.change(
             fn=lambda val, id: change_param('top_k', int(val), id),
-            inputs=[gr_xtts_top_k, gr_session],
-            outputs=None
+            inputs=[gr_xtts_top_k, gr_session]
         )
         gr_xtts_top_p.change(
             fn=lambda val, id: change_param('top_p', float(val), id),
-            inputs=[gr_xtts_top_p, gr_session],
-            outputs=None
+            inputs=[gr_xtts_top_p, gr_session]
         )
         gr_xtts_speed.change(
             fn=lambda val, id: change_param('speed', float(val), id),
-            inputs=[gr_xtts_speed, gr_session],
-            outputs=None
+            inputs=[gr_xtts_speed, gr_session]
         )
         gr_xtts_enable_text_splitting.change(
             fn=lambda val, id: change_param('enable_text_splitting', bool(val), id),
-            inputs=[gr_xtts_enable_text_splitting, gr_session],
-            outputs=None
+            inputs=[gr_xtts_enable_text_splitting, gr_session]
         )
         ########### BARK Params
         gr_bark_text_temp.change(
             fn=lambda val, id: change_param('text_temp', float(val), id),
-            inputs=[gr_bark_text_temp, gr_session],
-            outputs=None
+            inputs=[gr_bark_text_temp, gr_session]
         )
         gr_bark_waveform_temp.change(
             fn=lambda val, id: change_param('waveform_temp', float(val), id),
-            inputs=[gr_bark_waveform_temp, gr_session],
-            outputs=None
+            inputs=[gr_bark_waveform_temp, gr_session]
         )
         ############ Timer to save session to localStorage
         gr_timer = gr.Timer(9, active=False)
@@ -4011,15 +3997,12 @@ def web_interface(args, ctx):
         ).then(
             fn=clear_event,
             inputs=[gr_session],
-            outputs=None
         )
         gr_convert_btn.click(
             fn=change_convert_btn,
-            inputs=None,
             outputs=[gr_convert_btn]
         ).then(
             fn=disable_components,
-            inputs=None,
             outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
             fn=submit_convert_btn,
@@ -4040,11 +4023,9 @@ def web_interface(args, ctx):
             outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
         ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
             outputs=[gr_group_audiobook_list],
         )
         gr_write_data.change(
-            fn=None,
             inputs=[gr_write_data],
             js="""
                 (data)=>{
@@ -4081,13 +4062,9 @@ def web_interface(args, ctx):
             outputs=[gr_glass_mask]
         ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
             outputs=[gr_group_audiobook_list],
         ).then(
-            fn=None,
-            inputs=None,
             js='()=>{window.init_elements();}',
-            outputs=None
         )
         gr_confirm_deletion_yes_btn.click(
             fn=confirm_deletion,
@@ -4095,7 +4072,6 @@ def web_interface(args, ctx):
             outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
         ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
             outputs=[gr_group_audiobook_list],
         )
         gr_confirm_deletion_no_btn.click(
@@ -4121,7 +4097,6 @@ def web_interface(args, ctx):
             outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
         ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
             outputs=[gr_group_audiobook_list],
         )
         gr_confirm_blocks_no_btn.click(
@@ -4138,7 +4113,6 @@ def web_interface(args, ctx):
             outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         )
         app.load(
-            fn=None,
             js=r'''
                 ()=>{
                     try{
