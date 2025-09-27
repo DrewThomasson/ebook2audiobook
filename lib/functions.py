@@ -4077,9 +4077,8 @@ def web_interface(args, ctx):
         ).then(
             fn=None,
             inputs=None,
-            js=f'''
+            js='''
                 ()=>{{
-                    window.title = {title};
                     window.init_elements();
                 }}
             ''',
