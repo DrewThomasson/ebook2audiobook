@@ -2877,6 +2877,13 @@ def web_interface(args, ctx):
             else:
                 outputs = tuple([gr.update(interactive=True) for _ in range(9)])
             return outputs
+            
+        def extract_original_name(obj):
+            return (
+                getattr(obj, "orig_name", None) 
+                or (obj.metadata.get("name") if hasattr(obj, "metadata") and obj.metadata else None) 
+                or Path(obj.name).name
+            )
 
         def load_vtt_data(path):
             if not path or not os.path.exists(path):
@@ -3057,10 +3064,11 @@ def web_interface(args, ctx):
                         msg = 'Cancellation requested, please wait...'
                         yield gr.update(value=show_gr_modal('wait', msg), visible=True)
                         return
+                fileObj = data
                 if isinstance(data, list):
-                    session['ebook_list'] = data
+                    session['ebook_list'] = [extract_original_name(f) for f in data]
                 else:
-                    session['ebook'] = data
+                    session['ebook'] = extract_original_name(data)
                 session['cancellation_requested'] = False
             except Exception as e:
                 error = f'change_gr_ebook_file(): {e}'
@@ -3095,7 +3103,7 @@ def web_interface(args, ctx):
                     status, msg = extractor.extract_voice()
                     if status:
                         session['voice'] = final_voice_file
-                        msg = f"Voice {voice_name} added to the voices list"
+                        msg = f'Voice {voice_name} added to the voices list'
                         state['type'] = 'success'
                         state['msg'] = msg
                     else:
