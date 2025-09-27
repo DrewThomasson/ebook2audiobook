@@ -3062,7 +3062,6 @@ def web_interface(args, ctx):
                         return
                 if isinstance(data, list):
                     session['ebook_list'] = data
-                    print(session['ebook_list'])
                 else:
                     session['ebook'] = data
                 session['cancellation_requested'] = False
@@ -3909,11 +3908,7 @@ def web_interface(args, ctx):
         gr_tab_progress.change(
             fn=None,
             inputs=[gr_tab_progress],
-            js=f'''
-                ()=>{{
-                    document.title = "{title}";
-                }}
-            '''
+            js=f'()=>{{document.title = "{title}";}}'
         )
         gr_playback_time.change(
             fn=change_gr_playback_time,
