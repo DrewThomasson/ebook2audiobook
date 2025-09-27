@@ -2895,7 +2895,7 @@ def web_interface(args, ctx):
             return f'''
             <div id="custom-gr_modal" class="gr-modal">
                 <div class="gr-modal-content">
-                    <p style="color:#ffffff">{msg}</p>            
+                    <p style="color:#ffffff">{msg[:32]}...</p>            
                     {show_confirm_buttons(type)}
                 </div>
             </div>
