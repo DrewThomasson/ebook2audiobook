@@ -2493,7 +2493,7 @@ def web_interface(args, ctx):
             }
             ////////////////////
             #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
-                height: 140px !important;
+                height: 100px !important;
             }
             #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                 display: none !important;
