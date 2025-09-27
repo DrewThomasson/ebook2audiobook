@@ -3908,7 +3908,11 @@ def web_interface(args, ctx):
         gr_tab_progress.change(
             fn=None,
             inputs=[gr_tab_progress],
-            js=f'()=>{{document.title = "{title}";}}'
+            js=f'''
+                (filename)=>{{
+                    document.title = "{title}";
+                }}
+            '''
         )
         gr_playback_time.change(
             fn=change_gr_playback_time,
@@ -4327,6 +4331,7 @@ def web_interface(args, ctx):
                             window.tab_progress = () =>{
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
+                                    console.log(val);
                                     const txt = val.trim().split(" ")[2] || "";
                                     const title = txt.length > 20 ? txt.slice(0, 20).trimEnd() + '…' : txt;
                                     const prct = val.trim().split(" ")[4];
