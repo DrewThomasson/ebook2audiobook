@@ -2154,7 +2154,7 @@ def finalize_audiobook(id):
             show_alert({"type": "info", "msg": msg})
             exported_files = combine_audio_chapters(session['id'])               
             if exported_files is not None:
-                progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
+                progress_status = f'Audiobook {", ".join(os.path.basename(f) for f in exported_files)} created!'
                 session['audiobook'] = exported_files[-1]
                 info_session = f"\n*********** Session: {id} **************\nStore it in case of interruption, crash, reuse of custom model or custom voice,\nyou can resume the conversion with --session option"
                 print(info_session)
@@ -4328,8 +4328,10 @@ def web_interface(args, ctx):
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
                                         const percentage = valArray[1].trim();
                                         console.log("title:", title);
-                                        const titleShort = title.length > 20 ? title.slice(0, 20).trimEnd() + '…' : title;
+                                        const titleShort = title.length > 20 ? title.slice(0, 20).trimEnd() + "…" : title;
                                         document.title = titleShort + ": " + percentage;
+                                    }else{
+                                        document.title = "Ebook2Audiobook";
                                     }
                                 }catch(e){
                                     console.log("tab_progress error:", e);
