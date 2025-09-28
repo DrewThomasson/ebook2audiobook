@@ -2492,7 +2492,7 @@ def web_interface(args, ctx):
                 font-size: 30px !important;
             }
             ////////////////////
-            #gr_ebook_file, #gr_custom_model_file, #gr_voice_file, #gr_ebook_file div button, #gr_custom_model_file div button, #gr_voice_file div button {
+            #gr_ebook_file, #gr_custom_model_file, #gr_voice_file, #gr_ebook_file div, #gr_custom_model_file div, #gr_voice_file div {
                 height: 100px !important;
             }
             #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
