@@ -4333,8 +4333,8 @@ def web_interface(args, ctx):
                             window.tab_progress = () =>{
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
-                                    console.log(val, val.length);
-                                    const valArray = val.trim().split("-")
+                                    const valArray = splitAtLastDash(val);
+                                    console.log(valArray);
                                     if(valArray[1]){
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
                                         const percentage = valArray[1].trim();
@@ -4377,7 +4377,6 @@ def web_interface(args, ctx):
                             }
                             pushCue();
                         }
-                        
                         function toSeconds(ts){
                             const parts = ts.split(":");
                             if(parts.length === 3){
@@ -4387,7 +4386,6 @@ def web_interface(args, ctx):
                             }
                             return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
                         }
-
                         function findCue(time){
                             let lo = 0, hi = cues.length - 1;
                             while(lo <= hi){
@@ -4403,7 +4401,13 @@ def web_interface(args, ctx):
                             }
                             return null;
                         }
-                        
+                        function splitAtLastDash(s){
+                            const idx = s.lastIndexOf("-");
+                            if(idx === -1){
+                                return [s];
+                            }
+                            return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
+                        }
                         //////////////////////
                         
                         function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
