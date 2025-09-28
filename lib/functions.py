@@ -4333,11 +4333,11 @@ def web_interface(args, ctx):
                             window.tab_progress = () =>{
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
+                                    console.log(val, val.length);
                                     const valArray = val.trim().split("-")
                                     if(valArray[1]){
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
                                         const percentage = valArray[1].trim();
-                                        console.log(title, title.length);
                                         const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
                                         document.title = titleShort + ": " + percentage;
                                     }else{
