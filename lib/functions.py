@@ -4334,7 +4334,6 @@ def web_interface(args, ctx):
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const valArray = splitAtLastDash(val);
-                                    console.log(valArray);
                                     if(valArray[1]){
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
                                         const percentage = valArray[1].trim();
