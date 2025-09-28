@@ -2492,8 +2492,21 @@ def web_interface(args, ctx):
                 font-size: 30px !important;
             }
             ////////////////////
-            #gr_ebook_file, #gr_custom_model_file, #gr_voice_file, #gr_ebook_file.empty, #gr_custom_model_file.empty, #gr_voice_file.empty {
+            #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                 height: 100px !important;
+                min-height: 100px !important;
+                max-height: 100px !important;
+                display: flex  !important;
+                align-items: center !important;
+                justify-content: center !important;
+            }
+            #gr_ebook_file .empty, #gr_custom_model_file .empty, #gr_voice_file .empty,
+            #gr_ebook_file .wrap, #gr_custom_model_file .wrap, #gr_voice_file .wrap {
+                height: 100% !important;
+                min-height: 100px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
             }
             #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                 display: none !important;
