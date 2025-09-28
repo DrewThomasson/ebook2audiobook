@@ -2879,9 +2879,11 @@ def web_interface(args, ctx):
             return outputs
             
         def extract_original_name(obj):
+            if obj is None:
+                return None
             return (
-                getattr(obj, "orig_name", None) 
-                or (obj.metadata.get("name") if hasattr(obj, "metadata") and obj.metadata else None) 
+                getattr(obj, "orig_name", None)
+                or (obj.metadata.get("name") if hasattr(obj, "metadata") and obj.metadata else None)
                 or Path(obj.name).name
             )
 
