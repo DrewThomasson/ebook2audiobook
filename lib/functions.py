@@ -2528,7 +2528,6 @@ def web_interface(args, ctx):
                 height: 60px !important;
             }
             #gr_voice_player {
-                position: absolute;
                 margin: 0 !important;
                 padding: 0 !important;
                 background: var(--block-background-fill) !important;
