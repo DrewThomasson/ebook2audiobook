@@ -3046,6 +3046,7 @@ def web_interface(args, ctx):
                 session['playback_time'] = 0
                 audio_info = mediainfo(selected)
                 session['duration'] = float(audio_info['duration'])
+                print('change_gr_audiobook_list called')
             return gr.update(value=selected)
         
         def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
@@ -4297,7 +4298,6 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;      
                                             gr_audiobook_player.load();
-                                            console.log("player load called");
                                         }
                                     }
                                 }catch(e){
@@ -4336,7 +4336,6 @@ def web_interface(args, ctx):
                                                     gr_audiobook_player.style.filter = audioFilter;
                                                 }
                                             });
-                                            console.log("vtt load called");
                                         }
                                     }
                                 }catch(e){
