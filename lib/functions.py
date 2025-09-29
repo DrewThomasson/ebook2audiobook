@@ -2446,9 +2446,9 @@ def web_interface(args, ctx):
                 background: var(--block-background-fill) !important;
             }
             .play-pause-button:hover svg {
-                fill: #ffab00;
-                stroke: #ffab00;
-                transform: scale(1.2);
+                fill: #ffab00 !important;
+                stroke: #ffab00 !important;
+                transform: scale(1.2) !important;
             }
             .gr-convert-btn {
                 font-size: 30px !important;
@@ -2527,14 +2527,31 @@ def web_interface(args, ctx):
             #gr_row_voice_player {
                 height: 60px !important;
             }
-            #gr_voice_player :is(#waveform, .rewind, .skip, .playback, label, .volume, .empty) {
+            #gr_voice_player {
+                position: absolute;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: var(--block-background-fill) !important;
+                border: none !important;
+                width: 60px !important;
+                height: 60px !important;
+                min-width: min(60px, 100%) !important;
+            }
+            #gr_voice_player label, #gr_voice_player .waveform-container, 
+            #gr_voice_player .timestamps, #gr_voice_player .control-wrapper, 
+            #gr_voice_player .rewind, #gr_voice_player .skip, #gr_voice_player .icon-button-wrapper {
                 display: none !important;
             }
-            #gr_voice_player .controls {
-                display: block !important;
-                position: absolute !important;
-                left: 15px !important;
-                top: 5px !important;
+            #gr_voice_player > * {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 60px !important;
+                height: 60px !important; 
+            }
+            #gr_voice_player .play-pause-button:hover svg {
+                fill: #ffab00 !important;
+                stroke: #ffab00 !important;
+                transform: scale(1.2) !important;
             }
             ///////////
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
