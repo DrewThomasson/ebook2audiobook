@@ -2462,6 +2462,9 @@ def web_interface(args, ctx):
                 align-items: center !important;
                 justify-content: center !important;
             }
+            #gr_ebook_file button>div, #gr_custom_model_file button>div, #gr_voice_file button>div {
+                font-size: 12px !important;
+            }
             #gr_ebook_file .empty, #gr_custom_model_file .empty, #gr_voice_file .empty,
             #gr_ebook_file .wrap, #gr_custom_model_file .wrap, #gr_voice_file .wrap {
                 height: 100% !important;
@@ -2469,7 +2472,6 @@ def web_interface(args, ctx):
                 display: flex !important;
                 align-items: center !important;
                 justify-content: center !important;
-                font-size: 12px !important;
             }
             #gr_custom_model_file [aria-label="Clear"], #gr_voice_file [aria-label="Clear"] {
                 display: none !important;
