@@ -2907,7 +2907,6 @@ def web_interface(args, ctx):
                     return None
                 with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
                     content = f.read()
-                print(content)
                 return content
             except Exception:
                 return None
@@ -3948,6 +3947,7 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_vtt],
             js='''
                 (data)=>{
+                    console.log("gr_audiobook_list change then called: ", data);
                    const empty = data == null || (typeof data === "string" && data.trim() === "");
                    if(!empty){
                        const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));
