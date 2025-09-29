@@ -2548,7 +2548,7 @@ def web_interface(args, ctx):
                 height: 60px !important; 
             }
             #gr_voice_player .play-pause-button svg {
-                padding: 5px !important;
+                padding-top: 5px !important;
             }
             #gr_voice_player .play-pause-button:hover svg {
                 fill: #ffab00 !important;
