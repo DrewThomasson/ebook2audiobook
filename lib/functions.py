@@ -2547,8 +2547,10 @@ def web_interface(args, ctx):
                 width: 60px !important;
                 height: 60px !important; 
             }
+            #gr_voice_player .play-pause-button svg {
+                padding: 5px !important;
+            }
             #gr_voice_player .play-pause-button:hover svg {
-                padding: 20px !important;
                 fill: #ffab00 !important;
                 stroke: #ffab00 !important;
                 transform: scale(1.2) !important;
