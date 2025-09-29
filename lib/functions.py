@@ -2891,13 +2891,13 @@ def web_interface(args, ctx):
                 outputs = tuple([gr.update(interactive=True) for _ in range(9)])
             return outputs
             
-        def extract_original_name(obj):
+        def extract_original_uploaded_filename(obj):
             if obj is None:
                 return None
             return (
                 getattr(obj, "orig_name", None)
                 or (obj.metadata.get("name") if hasattr(obj, "metadata") and obj.metadata else None)
-                or Path(obj.name).name
+                or Path(obj).name
             )
 
         def load_vtt_data(path):
@@ -3081,9 +3081,9 @@ def web_interface(args, ctx):
                         return
                 fileObj = data
                 if isinstance(data, list):
-                    session['ebook_list'] = [extract_original_name(f) for f in data]
+                    session['ebook_list'] = [extract_original_uploaded_filename(f) for f in data]
                 else:
-                    session['ebook'] = extract_original_name(data)
+                    session['ebook'] = extract_original_uploaded_filename(data)
                 session['cancellation_requested'] = False
             except Exception as e:
                 error = f'change_gr_ebook_file(): {e}'
@@ -3604,10 +3604,13 @@ def web_interface(args, ctx):
                                     if count_file > 0:
                                         msg = f"{len(args['ebook_list'])} ebook(s) conversion remaining..."
                                         yield gr.update(value=msg), gr.update()
+                                        return
                                     else:
                                         msg = 'Conversion successful!'
+                                        print(msg)
                                         session['status'] = 'ready'
-                                        return gr.update(value=msg), gr.update()
+                                        yield gr.update(value=''), gr.update()
+                                        return
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
@@ -3622,14 +3625,15 @@ def web_interface(args, ctx):
                                 session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
+                                yield gr.update(value=msg), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
                                 return
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
-                                msg = 'Conversion successful!'
                                 session['status'] = 'ready'
-                                return gr.update(value=msg), gr.update()
+                                msg = 'Conversion successful!'
+                                print(msg)
+                                return gr.update(value=''), gr.update()
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
@@ -4214,7 +4218,7 @@ def web_interface(args, ctx):
                                         subtree: true,
                                         characterData: true
                                     });
-                                    gr_tab_progress.addEventListener("input", tab_progress);
+                                    gr_tab_progress.addEventListener("change", tab_progress);
                                     console.log("Components ready!");
                                 } catch (e) {
                                     console.log("init_elements error:", e);
@@ -4309,7 +4313,7 @@ def web_interface(args, ctx):
                                 try{
                                     cues = [];
                                     if(path){
-                                        gr_root = (window.gradioApp && window.gradioApp()) || document;
+                                        //gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
                                         if(existing){
@@ -4343,9 +4347,8 @@ def web_interface(args, ctx):
                             };
                         }
                         if(typeof(window.tab_progress) !== "function"){
-                            window.tab_progress = () =>{
+                            window.tab_progress = (val) =>{
                                 try{
-                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const valArray = splitAtLastDash(val);
                                     if(valArray[1]){
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
