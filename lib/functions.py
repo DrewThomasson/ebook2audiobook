@@ -4309,7 +4309,6 @@ def web_interface(args, ctx):
                                 try{
                                     cues = [];
                                     if(path){
-                                        gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
                                         if(existing){
