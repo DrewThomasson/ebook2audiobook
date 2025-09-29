@@ -3046,6 +3046,7 @@ def web_interface(args, ctx):
             session['audiobook'] = selected
             if selected is not None:
                 audio_info = mediainfo(selected)
+                print(audio_info)
                 session['duration'] = float(audio_info['duration'])
                 session['playback_time'] = 0
             return gr.update(value=selected)
