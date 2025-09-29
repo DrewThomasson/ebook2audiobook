@@ -2899,16 +2899,15 @@ def web_interface(args, ctx):
             )
 
         def load_vtt_data(path):
-            print('load_vtt_data called')
             if not path or not os.path.exists(path):
                 return None
             try:
                 vtt_path = Path(path).with_suffix('.vtt')
-                print(vtt_path)
                 if not os.path.exists(vtt_path):
                     return None
                 with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
                     content = f.read()
+                print(content)
                 return content
             except Exception:
                 return None
