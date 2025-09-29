@@ -3943,6 +3943,10 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_list],
             outputs=[gr_audiobook_vtt]
         ).then(
+            fn=lambda audiobook: gr.update(value=audiobook),
+            inputs=gr_audiobook_list,
+            outputs=[gr_audiobook_player]
+        ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
             js='''
@@ -4296,7 +4300,6 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;      
-                                            //gr_audiobook_player.load();
                                         }
                                     }
                                 }catch(e){
