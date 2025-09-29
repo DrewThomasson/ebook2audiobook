@@ -2535,6 +2535,7 @@ def web_interface(args, ctx):
                 width: 60px !important;
                 height: 60px !important;
                 min-width: min(60px, 100%) !important;
+                border-radius: none !important;
             }
             #gr_voice_player label, #gr_voice_player .waveform-container, 
             #gr_voice_player .timestamps, #gr_voice_player .control-wrapper, 
