@@ -3045,10 +3045,12 @@ def web_interface(args, ctx):
             session = context.get_session(id)
             session['audiobook'] = selected
             if selected is not None:
-                audio_info = mediainfo(selected)
-                print(audio_info)
-                session['duration'] = float(audio_info['duration'])
                 session['playback_time'] = 0
+                audio_info = mediainfo(selected)
+                if audio_info:
+                    print(audio_info)
+                    session['duration'] = float(audio_info['duration'])
+                
             return gr.update(value=selected)
         
         def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
