@@ -3604,13 +3604,10 @@ def web_interface(args, ctx):
                                     if count_file > 0:
                                         msg = f"{len(args['ebook_list'])} ebook(s) conversion remaining..."
                                         yield gr.update(value=msg), gr.update()
-                                        return
                                     else:
                                         msg = 'Conversion successful!'
-                                        print(msg)
                                         session['status'] = 'ready'
-                                        yield gr.update(value=''), gr.update()
-                                        return
+                                        return gr.update(value=msg), gr.update()
                     else:
                         print(f"Processing eBook file: {os.path.basename(args['ebook'])}")
                         progress_status, passed = convert_ebook(args)
@@ -3625,15 +3622,14 @@ def web_interface(args, ctx):
                                 session['event'] = progress_status
                                 msg = 'Select the blocks to convert:'
                                 print(msg)
-                                yield gr.update(value=msg), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
+                                yield gr.update(value=''), gr.update(value=show_gr_modal(progress_status, msg), visible=True)
                                 return
                             else:
                                 show_alert({"type": "success", "msg": progress_status})
                                 reset_session(args['session'])
-                                session['status'] = 'ready'
                                 msg = 'Conversion successful!'
-                                print(msg)
-                                return gr.update(value=''), gr.update()
+                                session['status'] = 'ready'
+                                return gr.update(value=msg), gr.update()
                 if error is not None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
@@ -4347,8 +4343,9 @@ def web_interface(args, ctx):
                             };
                         }
                         if(typeof(window.tab_progress) !== "function"){
-                            window.tab_progress = (val) =>{
+                            window.tab_progress = () =>{
                                 try{
+                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const valArray = splitAtLastDash(val);
                                     if(valArray[1]){
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
