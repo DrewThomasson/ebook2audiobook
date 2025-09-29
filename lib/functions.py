@@ -2489,7 +2489,7 @@ def web_interface(args, ctx):
                 height: 103px !important;
             }
             #gr_tab_progress .progress-bar {
-                background: #303030 !important;
+                background: #ff7b00 !important;
             }
             #gr_session textarea, #gr_tab_progress textarea {
                 overflow: hidden !important;
