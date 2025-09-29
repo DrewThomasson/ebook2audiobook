@@ -2454,6 +2454,9 @@ def web_interface(args, ctx):
                 font-size: 30px !important;
             }
             ////////////////////
+            #gr_session textarea, gr_tab_progress textarea {
+                overflow: hidden !important;
+            }
             #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                 height: 100px !important;
                 min-height: 100px !important;
