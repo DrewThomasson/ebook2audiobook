@@ -2535,7 +2535,6 @@ def web_interface(args, ctx):
                 width: 60px !important;
                 height: 60px !important;
                 min-width: min(60px, 100%) !important;
-                border-radius: none !important;
             }
             #gr_voice_player label, #gr_voice_player .waveform-container, 
             #gr_voice_player .timestamps, #gr_voice_player .control-wrapper, 
@@ -2689,7 +2688,7 @@ def web_interface(args, ctx):
                             with gr_group_voice_file:
                                 gr_voice_markdown = gr.Markdown(elem_id='gr_voice_markdown', elem_classes=['gr-markdown'], value='Voices')
                                 gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
-                                gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player', elem_classes=['gr-group'])
+                                gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                 with gr_row_voice_player:
                                     gr_voice_player = gr.Audio(elem_id='gr_voice_player', elem_classes=['gr-voice-player'], type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
