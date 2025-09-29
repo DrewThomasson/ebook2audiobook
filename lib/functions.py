@@ -2454,8 +2454,13 @@ def web_interface(args, ctx):
                 font-size: 30px !important;
             }
             ////////////////////
-            #gr_session textarea, gr_tab_progress textarea {
+            #gr_session textarea, #gr_tab_progress textarea {
                 overflow: hidden !important;
+                overflow-y: auto !important;
+                scrollbar-width: none !important;
+            }
+            #gr_session textarea::-webkit-scrollbar, #gr_tab_progress textarea::-webkit-scrollbar {
+                display: none !important; 
             }
             #gr_ebook_file, #gr_custom_model_file, #gr_voice_file {
                 height: 100px !important;
