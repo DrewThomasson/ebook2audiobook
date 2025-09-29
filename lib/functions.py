@@ -4297,6 +4297,7 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;      
                                             gr_audiobook_player.load();
+                                            console.log("player load called");
                                         }
                                     }
                                 }catch(e){
@@ -4335,7 +4336,7 @@ def web_interface(args, ctx):
                                                     gr_audiobook_player.style.filter = audioFilter;
                                                 }
                                             });
-                                            gr_audiobook_player.load();
+                                            console.log("vtt load called");
                                         }
                                     }
                                 }catch(e){
