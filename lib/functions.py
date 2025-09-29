@@ -2317,46 +2317,8 @@ def web_interface(args, ctx):
                 display: inline-block !important;
                 vertical-align: middle !important;
             }
-            .svelte-1xyfx7i.center.boundedheight.flex{
-                height: 120px !important;
-            }
             .wrap-inner {
                 border: 1px solid #666666;
-            }
-            .block.svelte-5y6bt2 {
-                padding: 10px !important;
-                margin: 0 !important;
-                height: auto !important;
-                font-size: 16px !important;
-            }
-            .wrap.svelte-12ioyct {
-                padding: 0 !important;
-                margin: 0 !important;
-                font-size: 12px !important;
-            }
-            .block.svelte-5y6bt2.padded {
-                height: auto !important;
-                padding: 10px !important;
-            }
-            .block.svelte-5y6bt2.padded.hide-container {
-                height: auto !important;
-                padding: 0 !important;
-            }
-            .waveform-container.svelte-19usgod {
-                height: 58px !important;
-                overflow: hidden !important;
-                padding: 0 !important;
-                margin: 0 !important;
-            }
-            .component-wrapper.svelte-19usgod {
-                height: 110px !important;
-            }
-            .timestamps.svelte-19usgod {
-                display: none !important;
-            }
-            .controls.svelte-ije4bl {
-                padding: 0 !important;
-                margin: 0 !important;
             }
             .selected {
                 color: var(--secondary-500) !important;
