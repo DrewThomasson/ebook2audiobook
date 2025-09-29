@@ -3947,12 +3947,14 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_vtt],
             js='''
                 (data)=>{
-                    console.log("gr_audiobook_list change then called: ", data);
-                   const empty = data == null || (typeof data === "string" && data.trim() === "");
-                   if(!empty){
-                       const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));
-                       window.load_vtt?.(url);
-                
+                    const empty = data == null || (typeof data === "string" && data.trim() === "");
+                    if(!empty){
+                        const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));
+                        try{
+                            window.load_vtt(url);
+                        }catch(e){
+                            console.log('gr_audiobook_list.change error: '+e)
+                        }
                     }
                 }
             ''',
@@ -4333,6 +4335,7 @@ def web_interface(args, ctx):
                                                     gr_audiobook_player.style.filter = audioFilter;
                                                 }
                                             });
+                                            gr_audiobook_player.load();
                                         }
                                     }
                                 }catch(e){
