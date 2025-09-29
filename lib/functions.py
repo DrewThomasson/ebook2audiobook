@@ -2880,7 +2880,7 @@ def web_interface(args, ctx):
                 ctx_tracker.end_session(session_id, socket_hash)
 
         def disable_components():
-            outputs = tuple([gr.update(interactive=False) for _ in range(9)])
+            outputs = tuple([gr.update(interactive=False) for _ in range(10)])
             return outputs
         
         def enable_components(id):
@@ -2888,7 +2888,7 @@ def web_interface(args, ctx):
             if session['event'] == 'confirm_blocks':
                 outputs = tuple([gr.update() for _ in range(9)])
             else:
-                outputs = tuple([gr.update(interactive=True) for _ in range(9)])
+                outputs = tuple([gr.update(interactive=True) for _ in range(10)])
             return outputs
             
         def extract_original_uploaded_filename(obj):
@@ -4034,7 +4034,7 @@ def web_interface(args, ctx):
         ).then(
             fn=disable_components,
             inputs=None,
-            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
         ).then(
             fn=submit_convert_btn,
             inputs=[
@@ -4047,7 +4047,7 @@ def web_interface(args, ctx):
         ).then(
             fn=enable_components,
             inputs=[gr_session],
-            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+            outputs=[gr_ebook_mode, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
@@ -4309,7 +4309,6 @@ def web_interface(args, ctx):
                                 try{
                                     cues = [];
                                     if(path){
-                                        //gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
                                         if(existing){
