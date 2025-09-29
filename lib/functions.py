@@ -2899,10 +2899,12 @@ def web_interface(args, ctx):
             )
 
         def load_vtt_data(path):
+            print('load_vtt_data called')
             if not path or not os.path.exists(path):
                 return None
             try:
                 vtt_path = Path(path).with_suffix('.vtt')
+                print(vtt_path)
                 if not os.path.exists(vtt_path):
                     return None
                 with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
@@ -4307,7 +4309,6 @@ def web_interface(args, ctx):
                                 try{
                                     cues = [];
                                     if(path){
-                                        gr_root = (window.gradioApp && window.gradioApp()) || document;
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
                                         if(existing){
