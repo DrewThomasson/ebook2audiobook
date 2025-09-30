@@ -4224,7 +4224,7 @@ def web_interface(args, ctx):
                                     if(gr_root){
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                        gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list input");
+                                        gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list select");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                         let lastCue = null;
                                         let fade_timeout = null;
@@ -4302,8 +4302,8 @@ def web_interface(args, ctx):
                             };
                         }      
                         const attempt_load_audiobook = ()=>{
-                            console.log(gr_audiobook_list.length);
-                            if(gr_audiobook_player.src == "" && gr_audiobook_list.length > 0){
+                            console.log(gr_audiobook_list.options.length);
+                            if(gr_audiobook_player.src == "" && gr_audiobook_list.options.length > 0){
                                 console.log("gr_audiobook_player.src empty!");
                                 setTimeout(()=>attempt_load_audiobook(), 1000);
                             }else{
