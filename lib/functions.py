@@ -4214,6 +4214,7 @@ def web_interface(args, ctx):
                                                 if(!empty){
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt], {type:"text/vtt"}));
                                                     try{
+                                                        console.log("load_vtt", url);
                                                         window.load_vtt(url);
                                                     }catch(e){
                                                         console.log('gr_audiobook_list.change error: '+e)
@@ -4359,7 +4360,6 @@ def web_interface(args, ctx):
                                 }
                             }
                             pushCue();
-                            console.log(cues);
                         }
                         function toSeconds(ts){
                             const parts = ts.split(":");
