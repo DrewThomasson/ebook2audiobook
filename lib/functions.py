@@ -3017,7 +3017,7 @@ def web_interface(args, ctx):
                 return (
                     gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['chapters_control']), gr.update(value=session['device']),
                     gr.update(value=session['language']), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id), gr.update(value=load_vtt_data(session['audiobook'])),
+                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id), load_vtt_data(session['audiobook']),
                     gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
                     gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
                     gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id),
