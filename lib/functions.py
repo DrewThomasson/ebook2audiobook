@@ -4212,6 +4212,7 @@ def web_interface(args, ctx):
                                                     }
                                                     set_playback_time = true;
                                                     const empty = gr_audiobook_vtt == null || (typeof gr_audiobook_vtt === "string" && gr_audiobook_vtt.trim() === "");
+                                                    console.log('empty: ', empty);
                                                     if(!empty){
                                                         const url = URL.createObjectURL(new Blob([gr_audiobook_vtt], {type:"text/vtt"}));
                                                         try{
