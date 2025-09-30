@@ -4090,13 +4090,13 @@ def web_interface(args, ctx):
             inputs=None,
             outputs=[gr_group_audiobook_list]
         ).then(
-            fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
-            inputs=[gr_session],
-            outputs=[gr_glass_mask]
-        ).then(
             fn=None,
             inputs=None,
             js='()=>{window.init_elements();}'
+        ).then(
+            fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
+            inputs=[gr_session],
+            outputs=[gr_glass_mask]
         )
         gr_confirm_deletion_yes_btn.click(
             fn=confirm_deletion,
