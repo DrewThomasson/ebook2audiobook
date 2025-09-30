@@ -4228,6 +4228,7 @@ def web_interface(args, ctx):
                                         let fade_timeout = null;
                                         let last_time = 0;
                                         let set_playback_time = false;
+                                        console.log(gr_audiobook_player.src);
                                         if(gr_audiobook_player && gr_audiobook_sentence){
                                             console.log('gr_audiobook_player ready!');
                                             gr_audiobook_player.addEventListener("loadedmetadata", () =>{
@@ -4292,7 +4293,6 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
                                             gr_audiobook_player.load();
-                                            console.log(gr_audiobook_player.src);
                                         }
                                     }
                                 }catch(e){
