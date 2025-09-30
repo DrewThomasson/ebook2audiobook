@@ -4449,11 +4449,6 @@ def web_interface(args, ctx):
                             return () => observer.disconnect();
                         }
                         init_audiobook_player();
-                        const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
-                            console.log('gr_audiobook_player visible...');
-                            clearTimeout(init_audiobook_player_timeout);
-                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
-                        }, { once: false });
                         
                         //////////////////////
 
