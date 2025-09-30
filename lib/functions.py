@@ -3943,10 +3943,6 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_list],
             outputs=[gr_audiobook_vtt]
         ).then(
-            fn=lambda audiobook: gr.update(value=audiobook),
-            inputs=gr_audiobook_list,
-            outputs=[gr_audiobook_player]
-        ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
             js='''
@@ -3955,6 +3951,7 @@ def web_interface(args, ctx):
                     if(!empty){
                         const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));
                         try{
+                            console.log(url);
                             window.load_vtt(url);
                         }catch(e){
                             console.log('gr_audiobook_list.change error: '+e)
