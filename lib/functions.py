@@ -2829,13 +2829,14 @@ def web_interface(args, ctx):
             with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Progress')
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
-            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True)
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=False)
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
                 gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
                 gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, visible=True, lines=3, max_lines=3)
                 gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+                gr_audiobook_player_src_hidden = gr.Textbox(elem_id='gr_audiobook_player_src_hidden', visible=False)
                 with gr.Row(elem_id='gr_row_audiobook_list'):
                     gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                     gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
@@ -3046,7 +3047,7 @@ def web_interface(args, ctx):
                 session['playback_time'] = 0
                 audio_info = mediainfo(selected)
                 session['duration'] = float(audio_info['duration'])
-            return gr.update(value=selected)
+            return gr.update(value=selected), gr.update(value=selected)
         
         def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
@@ -3932,7 +3933,7 @@ def web_interface(args, ctx):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_player]
+            outputs=[gr_audiobook_player, gr_audiobook_player_src_hidden]
         ).then(
             fn=lambda audiobook: load_vtt_data(audiobook),
             inputs=[gr_audiobook_list],
@@ -4162,6 +4163,7 @@ def web_interface(args, ctx):
                         let gr_playback_time;
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
+                        let gr_audiobook_player_src_hidden;
                         let gr_tab_progress;
                         let init_elements_timeout;
                         let init_audiobook_player_timeout;
@@ -4222,6 +4224,7 @@ def web_interface(args, ctx):
                                 try{
                                     if(gr_root){
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
+                                        gr_audiobook_player_src_hidden = gr_root.querySelector("#gr_audiobook_player_src_hidden textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                         let lastCue = null;
@@ -4291,6 +4294,7 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
+                                            gr_audiobook_player.src = gr_audiobook_player_src_hidden.value;
                                             gr_audiobook_player.load();
                                         }
                                     }
