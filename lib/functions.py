@@ -4086,13 +4086,13 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
-            fn=lambda audiobook: (gr.update(visible=bool(audiobook_options)), gr.update(value=audiobook)),
-            inputs=[gr_audiobook_list],
-            outputs=[gr_group_audiobook_list, gr_audiobook_player]
+            fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
+            inputs=[gr_session],
+            outputs=[gr_glass_mask]
         ).then(
             fn=None,
-            inputs=[gr_audiobook_player],
-            js='()=>{window.init_elements();}',
+            inputs=None,
+            js='()=>{window.init_elements();}}',
             outputs=None
         )
         gr_confirm_deletion_yes_btn.click(
