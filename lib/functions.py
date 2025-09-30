@@ -3918,11 +3918,6 @@ def web_interface(args, ctx):
             inputs=[gr_output_split_hours, gr_session],
             outputs=None
         )
-        gr_audiobook_vtt.change(
-            fn=lambda: gr.update(value='...'),
-            inputs=None,
-            outputs=[gr_audiobook_sentence]
-        )
         gr_playback_time.change(
             fn=change_gr_playback_time,
             inputs=[gr_playback_time, gr_session],
@@ -4295,14 +4290,32 @@ def web_interface(args, ctx):
                                                 }
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
-                                            gr_audiobook_player.style.filter = audioFilter;      
+                                            gr_audiobook_player.style.filter = audioFilter;
                                         }
                                     }
                                 }catch(e){
                                     console.log("init_audiobook_player error:", e);
                                 }
                             };
-                        }              
+                        }      
+                        if(typeof(window.tab_progress) !== "function"){
+                            window.tab_progress = () =>{
+                                try{
+                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
+                                    const valArray = splitAtLastDash(val);
+                                    if(valArray[1]){
+                                        const title = valArray[0].trim().split(/ (.*)/)[1].trim();
+                                        const percentage = valArray[1].trim();
+                                        const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
+                                        document.title = titleShort + ": " + percentage;
+                                    }else{
+                                        document.title = "Ebook2Audiobook";
+                                    }
+                                }catch(e){
+                                    console.log("tab_progress error:", e);
+                                }
+                            };
+                        }
                         if(typeof(window.load_vtt) !== "function"){
                             window.load_vtt_timeout = null;
                             window.load_vtt = (path) =>{
@@ -4329,34 +4342,11 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
-                                                console.log(gr_audiobook_player);
-                                                if(gr_audiobook_player){                                          
-                                                    gr_audiobook_player.style.transition = "filter 1s ease";
-                                                    gr_audiobook_player.style.filter = audioFilter;
-                                                }
                                             });
                                         }
                                     }
                                 }catch(e){
                                     console.log("load_vtt error:", e);
-                                }
-                            };
-                        }
-                        if(typeof(window.tab_progress) !== "function"){
-                            window.tab_progress = () =>{
-                                try{
-                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
-                                    const valArray = splitAtLastDash(val);
-                                    if(valArray[1]){
-                                        const title = valArray[0].trim().split(/ (.*)/)[1].trim();
-                                        const percentage = valArray[1].trim();
-                                        const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
-                                        document.title = titleShort + ": " + percentage;
-                                    }else{
-                                        document.title = "Ebook2Audiobook";
-                                    }
-                                }catch(e){
-                                    console.log("tab_progress error:", e);
                                 }
                             };
                         }
@@ -4420,6 +4410,7 @@ def web_interface(args, ctx):
                             }
                             return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
                         }
+
                         //////////////////////
                         
                         function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
