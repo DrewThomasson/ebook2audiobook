@@ -2904,12 +2904,12 @@ def web_interface(args, ctx):
             try:
                 vtt_path = Path(audiobook).with_suffix('.vtt')
                 if not os.audiobook.exists(vtt_path):
-                    return None
+                    return gr.update(value=None)
                 with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
                     content = f.read()
-                return content
+                return gr.update(value=content)
             except Exception:
-                return None
+                return gr.update(value=None)
 
         def show_gr_modal(type, msg):
             return f'''
@@ -3941,10 +3941,10 @@ def web_interface(args, ctx):
             fn=None,
             inputs=[gr_audiobook_vtt],
             js='''
-                (data)=>{
-                    const empty = data == null || (typeof data === "string" && data.trim() === "");
+                (audiobook_vtt)=>{
+                    const empty = audiobook_vtt == null || (typeof audiobook_vtt === "string" && audiobook_vtt.trim() === "");
                     if(!empty){
-                        const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));
+                        const url = URL.createObjectURL(new Blob([audiobook_vtt], {type:"text/vtt"}));
                         try{
                             window.load_vtt?.(url);
                         }catch(e){
