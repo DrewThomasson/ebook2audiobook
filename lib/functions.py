@@ -3950,22 +3950,11 @@ def web_interface(args, ctx):
                     const empty = data == null || (typeof data === "string" && data.trim() === "");
                     if(!empty){
                         const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));
-
-                        const tryLoad = (attempts = 0)=>{
-                            if (typeof window.load_vtt === "function") {
-                                try {
-                                    window.load_vtt(url);
-                                } catch(e) {
-                                    console.log("gr_audiobook_list.change error: " + e);
-                                }
-                            } else if (attempts < 20) { // retry max 20 times
-                                setTimeout(()=>tryLoad(attempts+1), 200); // retry every 200ms
-                            } else {
-                                console.warn("window.load_vtt not found after multiple attempts");
-                            }
-                        };
-
-                        tryLoad();
+                        try{
+                            window.load_vtt?.(url);
+                        }catch(e){
+                            console.log('gr_audiobook_list.change error: '+e)
+                        }
                     }
                 }
             ''',
@@ -4326,6 +4315,7 @@ def web_interface(args, ctx):
                                             existing.remove();
                                         }
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                        console.log(gr_audiobook_sentence);
                                         if(gr_audiobook_sentence){
                                             gr_audiobook_sentence.style.fontSize = "14px";
                                             gr_audiobook_sentence.style.fontWeight = "bold";
