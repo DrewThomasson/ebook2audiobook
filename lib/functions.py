@@ -3701,7 +3701,6 @@ def web_interface(args, ctx):
                     else None
                 )
                 session['playback_time'] = 0
-                audiobook_options.insert(0, None)
                 if len(audiobook_options) > 0:
                     if session['audiobook'] is not None:
                         return gr.update(choices=audiobook_options, value=session['audiobook'])
@@ -4087,13 +4086,13 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
+            fn=lambda audiobook: (gr.update(visible=bool(audiobook_options)), gr.update(value=audiobook)),
+            inputs=[gr_audiobook_list],
+            outputs=[gr_group_audiobook_list, gr_audiobook_player]
+        ).then(
             fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
             inputs=[gr_session],
             outputs=[gr_glass_mask]
-        ).then(
-            fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
-            outputs=[gr_group_audiobook_list]
         ).then(
             fn=None,
             inputs=None,
