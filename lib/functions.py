@@ -3039,8 +3039,7 @@ def web_interface(args, ctx):
                     session['duration'] = float(audio_info['duration'])
                     with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                         vtt_content = f.read()
-                    cache_buster = int(time.time() * 1000)
-                    return gr.update(value=f'{audiobook}?v={cache_buster}')
+                    return gr.update(value=audiobook)
             except Exception as e:
                 error = f'change_gr_audiobook_list(): {e}'
                 alert_exception(error)
