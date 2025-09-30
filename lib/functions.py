@@ -2898,19 +2898,6 @@ def web_interface(args, ctx):
                 or Path(obj).name
             )
 
-        def load_vtt_data(audiobook):
-            if not audiobook or not os.audiobook.exists(audiobook):
-                return None
-            try:
-                vtt_path = Path(audiobook).with_suffix('.vtt')
-                if not os.audiobook.exists(vtt_path):
-                    return gr.update(value=None)
-                with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
-                    content = f.read()
-                return gr.update(value=content)
-            except Exception:
-                return gr.update(value=None)
-
         def show_gr_modal(type, msg):
             return f'''
             <div id="custom-gr_modal" class="gr-modal">
@@ -3017,7 +3004,7 @@ def web_interface(args, ctx):
                 return (
                     gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['chapters_control']), gr.update(value=session['device']),
                     gr.update(value=session['language']), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id), load_vtt_data(session['audiobook']),
+                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
                     gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
                     gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
                     gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id),
@@ -3039,14 +3026,24 @@ def web_interface(args, ctx):
                         gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
                 )
 
-        def change_gr_audiobook_list(selected, id):
-            session = context.get_session(id)
-            session['audiobook'] = selected
-            if selected is not None:
-                session['playback_time'] = 0
-                audio_info = mediainfo(selected)
-                session['duration'] = float(audio_info['duration'])
-            return gr.update(value=selected)
+        def change_gr_audiobook_list(audiobook, id):
+            try:
+                session = context.get_session(id)
+                session['audiobook'] = audiobook
+                if audiobook is not None:
+                    vtt = Path(audiobook).with_suffix('.vtt')
+                    if not os.audiobook.exists(audiobook) or not os.audiobook.exists(vtt):
+                        return gr.update(value=None), gr.update(value=None)
+                    session['playback_time'] = 0
+                    audio_info = mediainfo(audiobook)
+                    session['duration'] = float(audio_info['duration'])
+                    with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
+                        vtt_content = f.read()
+                    return gr.update(value=audiobook), gr.update(value=vtt_content)
+            except Exception as e:
+                error = f'change_gr_audiobook_list(): {e}'
+                alert_exception(error)
+            return gr.update(value=None), gr.update(value=None)
         
         def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
@@ -3932,11 +3929,7 @@ def web_interface(args, ctx):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_player]
-        ).then(
-            fn=load_vtt_data,
-            inputs=[gr_audiobook_list],
-            outputs=[gr_audiobook_vtt]
+            outputs=[gr_audiobook_player, gr_audiobook_vtt]
         ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
@@ -4080,7 +4073,7 @@ def web_interface(args, ctx):
             outputs=[
                 gr_ebook_file, gr_ebook_mode, gr_chapters_control, gr_device, gr_language,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
-                gr_output_format_list, gr_audiobook_list, gr_audiobook_vtt,
+                gr_output_format_list, gr_audiobook_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
                 gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp,
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
