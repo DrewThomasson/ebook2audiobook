@@ -4092,7 +4092,7 @@ def web_interface(args, ctx):
         ).then(
             fn=lambda: gr.update(visible=bool(audiobook_options)),
             inputs=None,
-            outputs=[gr_group_audiobook_list],
+            outputs=[gr_group_audiobook_list]
         ).then(
             fn=None,
             inputs=None,
@@ -4102,6 +4102,10 @@ def web_interface(args, ctx):
                 }}
             ''',
             outputs=None
+        ).then(
+            fn=lambda audiobook: gr.update(value=audiobook),
+            inputs=[gr_audiobook_list],
+            outputs=[gr_audiobook_player]
         )
         gr_confirm_deletion_yes_btn.click(
             fn=confirm_deletion,
@@ -4448,7 +4452,11 @@ def web_interface(args, ctx):
                             observer.observe(root, { childList: true, subtree: true });
                             return () => observer.disconnect();
                         }
-                        init_audiobook_player();
+                        const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
+                            console.log('gr_audiobook_player visible...');
+                            clearTimeout(init_audiobook_player_timeout);
+                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
+                        }, { once: false });
                         
                         //////////////////////
 
