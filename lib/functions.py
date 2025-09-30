@@ -3030,7 +3030,7 @@ def web_interface(args, ctx):
             try:
                 session = context.get_session(id)
                 session['audiobook'] = audiobook
-                if audiobook is not None:
+                if audiobook is not None: 
                     vtt = Path(audiobook).with_suffix('.vtt')
                     if not os.path.exists(audiobook) or not os.path.exists(vtt):
                         return gr.update(value=None)
@@ -3039,7 +3039,8 @@ def web_interface(args, ctx):
                     session['duration'] = float(audio_info['duration'])
                     with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                         vtt_content = f.read()
-                    return gr.update(value=audiobook)
+                    cache_buster = int(time.time() * 1000)
+                    return gr.update(value=f'{audiobook}?v={cache_buster}')
             except Exception as e:
                 error = f'change_gr_audiobook_list(): {e}'
                 alert_exception(error)
