@@ -2835,7 +2835,7 @@ def web_interface(args, ctx):
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
                 gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
                 gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, visible=True, lines=3, max_lines=3)
-                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=True, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
                 with gr.Row(elem_id='gr_row_audiobook_list'):
                     gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                     gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
@@ -4162,7 +4162,6 @@ def web_interface(args, ctx):
                         let gr_playback_time;
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
-                        let gr_audiobook_list;
                         let gr_tab_progress;
                         let init_elements_timeout;
                         let init_audiobook_player_timeout;
@@ -4224,7 +4223,6 @@ def web_interface(args, ctx):
                                     if(gr_root){
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                        gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list select");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                         let lastCue = null;
                                         let fade_timeout = null;
@@ -4450,7 +4448,7 @@ def web_interface(args, ctx):
                             observer.observe(root, { childList: true, subtree: true });
                             return () => observer.disconnect();
                         }
-                        const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
+                        const stop = onElementAvailable('#gr_audiobook_player', (el) => {
                             console.log('gr_audiobook_player visible...');
                             clearTimeout(init_audiobook_player_timeout);
                             init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
