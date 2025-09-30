@@ -4328,9 +4328,9 @@ def web_interface(args, ctx):
                                             fetch(path)
                                             .then(res => res.text())
                                             .then(vttText =>{
-                                                console.log(vttText);
                                                 parseVTTFast(vttText);
                                                 if(gr_audiobook_player){
+                                                    console.log(gr_audiobook_player);
                                                     gr_audiobook_player.style.transition = "filter 1s ease";
                                                     gr_audiobook_player.style.filter = audioFilter;
                                                 }
