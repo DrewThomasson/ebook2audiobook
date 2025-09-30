@@ -4096,12 +4096,7 @@ def web_interface(args, ctx):
         ).then(
             fn=None,
             inputs=None,
-            js='''
-                ()=>{{
-                    window.init_elements();
-                }}
-            ''',
-            outputs=None
+            js='()=>{window.init_elements();}'
         )
         gr_confirm_deletion_yes_btn.click(
             fn=confirm_deletion,
