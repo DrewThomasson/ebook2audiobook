@@ -2898,12 +2898,12 @@ def web_interface(args, ctx):
                 or Path(obj).name
             )
 
-        def load_vtt_data(path):
-            if not path or not os.path.exists(path):
+        def load_vtt_data(audiobook):
+            if not audiobook or not os.audiobook.exists(audiobook):
                 return None
             try:
-                vtt_path = Path(path).with_suffix('.vtt')
-                if not os.path.exists(vtt_path):
+                vtt_path = Path(audiobook).with_suffix('.vtt')
+                if not os.audiobook.exists(vtt_path):
                     return None
                 with open(vtt_path, "r", encoding="utf-8-sig", errors="replace") as f:
                     content = f.read()
@@ -3930,13 +3930,13 @@ def web_interface(args, ctx):
             show_progress="minimal",
         )
         gr_audiobook_list.change(
-            fn=lambda audiobook: load_vtt_data(audiobook),
-            inputs=[gr_audiobook_list],
-            outputs=[gr_audiobook_vtt]
-        ).then(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_audiobook_player]
+        ).then(
+            fn=load_vtt_data,
+            inputs=[gr_audiobook_list],
+            outputs=[gr_audiobook_vtt]
         ).then(
             fn=None,
             inputs=[gr_audiobook_vtt],
