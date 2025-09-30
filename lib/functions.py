@@ -3042,6 +3042,7 @@ def web_interface(args, ctx):
         def change_gr_audiobook_list(selected, id):
             session = context.get_session(id)
             session['audiobook'] = selected
+            print(selected)
             if selected is not None:
                 session['playback_time'] = 0
                 audio_info = mediainfo(selected)
