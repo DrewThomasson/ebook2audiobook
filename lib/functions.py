@@ -4228,7 +4228,6 @@ def web_interface(args, ctx):
                                         let fade_timeout = null;
                                         let last_time = 0;
                                         let set_playback_time = false;
-                                        console.log(gr_audiobook_player.src);
                                         if(gr_audiobook_player && gr_audiobook_sentence){
                                             console.log('gr_audiobook_player ready!');
                                             gr_audiobook_player.addEventListener("loadedmetadata", () =>{
@@ -4237,6 +4236,7 @@ def web_interface(args, ctx):
                                                     gr_audiobook_player.currentTime = Number(window.playback_time);
                                                 }
                                                 set_playback_time = true;
+                                                console.log(gr_audiobook_player.src);
                                             },{once: true});
                                             gr_audiobook_player.addEventListener("timeupdate", () =>{
                                                 if(set_playback_time == true){
