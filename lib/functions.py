@@ -4092,7 +4092,7 @@ def web_interface(args, ctx):
         ).then(
             fn=None,
             inputs=None,
-            js='()=>{window.init_elements();}}',
+            js='()=>{window.init_elements();}',
             outputs=None
         )
         gr_confirm_deletion_yes_btn.click(
