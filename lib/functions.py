@@ -3930,22 +3930,6 @@ def web_interface(args, ctx):
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_audiobook_player]
-        ).then(
-            fn=None,
-            inputs=[gr_audiobook_vtt],
-            js='''
-                (audiobook_vtt)=>{
-                    const empty = audiobook_vtt == null || (typeof audiobook_vtt === "string" && audiobook_vtt.trim() === "");
-                    if(!empty){
-                        const url = URL.createObjectURL(new Blob([audiobook_vtt], {type:"text/vtt"}));
-                        try{
-                            window.load_vtt?.(url);
-                        }catch(e){
-                            console.log('gr_audiobook_list.change error: '+e)
-                        }
-                    }
-                }
-            '''
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -4147,6 +4131,7 @@ def web_interface(args, ctx):
                         let gr_checkboxes;
                         let gr_radios;
                         let gr_playback_time;
+                        let gr_audiobook_vtt;
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
                         let gr_audiobook_player_src_hidden;
@@ -4210,6 +4195,7 @@ def web_interface(args, ctx):
                                 try{
                                     if(gr_root){
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
+                                        gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                         let lastCue = null;
@@ -4224,6 +4210,15 @@ def web_interface(args, ctx):
                                                     gr_audiobook_player.currentTime = Number(window.playback_time);
                                                 }
                                                 set_playback_time = true;
+                                                const empty = gr_audiobook_vtt == null || (typeof gr_audiobook_vtt === "string" && gr_audiobook_vtt.trim() === "");
+                                                if(!empty){
+                                                    const url = URL.createObjectURL(new Blob([gr_audiobook_vtt], {type:"text/vtt"}));
+                                                    try{
+                                                        window.load_vtt(url);
+                                                    }catch(e){
+                                                        console.log('gr_audiobook_list.change error: '+e)
+                                                    }
+                                                }
                                             },{once: true});
                                             gr_audiobook_player.addEventListener("timeupdate", () =>{
                                                 if(set_playback_time == true){
