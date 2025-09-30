@@ -4090,9 +4090,17 @@ def web_interface(args, ctx):
             inputs=[gr_session],
             outputs=[gr_glass_mask]
         ).then(
+            fn=lambda: gr.update(visible=bool(audiobook_options)),
+            inputs=None,
+            outputs=[gr_group_audiobook_list]
+        ).then(
             fn=None,
             inputs=None,
-            js='()=>{window.init_elements();}',
+            js='''
+                ()=>{{
+                    window.init_elements();
+                }}
+            ''',
             outputs=None
         )
         gr_confirm_deletion_yes_btn.click(
