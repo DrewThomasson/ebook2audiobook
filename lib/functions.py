@@ -4224,7 +4224,7 @@ def web_interface(args, ctx):
                                     if(gr_root){
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                        gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list select");
+                                        gr_audiobook_list = gr_root.querySelector("#gr_audiobook_list input");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
                                         let lastCue = null;
                                         let fade_timeout = null;
