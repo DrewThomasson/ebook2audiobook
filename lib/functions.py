@@ -4303,6 +4303,7 @@ def web_interface(args, ctx):
                         }      
                         function attempt_load_audiobook{
                             if(gr_audiobook_player.src == "" && gr_audiobook_list.length > 0){
+                                console.log("gr_audiobook_player.src empty!");
                                 setTimeout(()=>attempt_load_audiobook(), 1000);
                             }else{
                                 gr_audiobook_player.load();
