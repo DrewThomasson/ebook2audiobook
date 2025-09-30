@@ -4315,7 +4315,6 @@ def web_interface(args, ctx):
                                             existing.remove();
                                         }
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                        console.log(gr_audiobook_sentence);
                                         if(gr_audiobook_sentence){
                                             gr_audiobook_sentence.style.fontSize = "14px";
                                             gr_audiobook_sentence.style.fontWeight = "bold";
@@ -4329,6 +4328,7 @@ def web_interface(args, ctx):
                                             fetch(path)
                                             .then(res => res.text())
                                             .then(vttText =>{
+                                                console.log(vttText);
                                                 parseVTTFast(vttText);
                                                 if(gr_audiobook_player){
                                                     gr_audiobook_player.style.transition = "filter 1s ease";
