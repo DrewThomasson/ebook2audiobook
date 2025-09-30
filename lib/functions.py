@@ -4238,7 +4238,6 @@ def web_interface(args, ctx):
                                                 set_playback_time = true;
                                             },{once: true});
                                             gr_audiobook_player.addEventListener("timeupdate", () =>{
-                                                console.log(set_playback_time);
                                                 if(set_playback_time == true){
                                                     window.playback_time = gr_audiobook_player.currentTime;
                                                     const cue = findCue(window.playback_time);
@@ -4292,6 +4291,7 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
+                                            gr_audiobook_player.load();
                                         }
                                     }
                                 }catch(e){
