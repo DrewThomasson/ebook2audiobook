@@ -3701,6 +3701,7 @@ def web_interface(args, ctx):
                     else None
                 )
                 session['playback_time'] = 0
+                audiobook_options.insert(0, [])
                 if len(audiobook_options) > 0:
                     if session['audiobook'] is not None:
                         return gr.update(choices=audiobook_options, value=session['audiobook'])
