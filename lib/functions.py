@@ -3951,8 +3951,7 @@ def web_interface(args, ctx):
                     if(!empty){
                         const url = URL.createObjectURL(new Blob([data], {type:"text/vtt"}));
                         try{
-                            console.log(url);
-                            window.load_vtt(url);
+                            window.load_vtt?.(url);
                         }catch(e){
                             console.log('gr_audiobook_list.change error: '+e)
                         }
