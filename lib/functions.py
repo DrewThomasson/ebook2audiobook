@@ -4258,7 +4258,6 @@ def web_interface(args, ctx):
                                                 gr_audiobook_sentence.value = "...";
                                                 lastCue = null;
                                             });
-
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
                                             let osTheme;
@@ -4335,19 +4334,17 @@ def web_interface(args, ctx):
                             };
                         }
                         function parseVTTFast(vtt){
-                            const lines = vtt.split(/\r?\n/);
-                            const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
-                            let start = null, end = null, textBuffer = [];
-                            cues = [];
-
-                            function pushCue(){
+                            const pushCue = ()=>{
                                 if(start !== null && end !== null && textBuffer.length){
                                     cues.push({ start, end, text: textBuffer.join("\n") });
                                 }
                                 start = end = null;
                                 textBuffer.length = 0;
                             }
-
+                            const lines = vtt.split(/\r?\n/);
+                            const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
+                            let start = null, end = null, textBuffer = [];
+                            cues = [];
                             for(let i = 0, len = lines.length; i < len; i++){
                                 const line = lines[i];
                                 if(!line.trim()){ pushCue(); continue; }
@@ -4362,6 +4359,7 @@ def web_interface(args, ctx):
                                 }
                             }
                             pushCue();
+                            console.log(cues);
                         }
                         function toSeconds(ts){
                             const parts = ts.split(":");
