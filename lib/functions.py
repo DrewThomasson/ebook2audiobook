@@ -2839,7 +2839,7 @@ def web_interface(args, ctx):
             with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Progress')
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
-            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True)
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible='hidden')
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
@@ -3029,11 +3029,11 @@ def web_interface(args, ctx):
         def refresh_interface(id):
             session = context.get_session(id)
             if session['event'] == 'confirm_blocks':
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
             else:
                 return (
-                        gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
-                        gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
+                    gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
+                    gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
                 )
 
         def change_gr_audiobook_list(audiobook, id):
@@ -3043,17 +3043,17 @@ def web_interface(args, ctx):
                 if audiobook is not None: 
                     vtt = Path(audiobook).with_suffix('.vtt')
                     if not os.path.exists(audiobook) or not os.path.exists(vtt):
-                        return gr.update(value=None), gr.update(value=None)
+                        return gr.update(), gr.update(value=None), gr.update(value=None)
                     session['playback_time'] = 0
                     audio_info = mediainfo(audiobook)
                     session['duration'] = float(audio_info['duration'])
                     with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                         vtt_content = f.read()
-                    return gr.update(value=audiobook), gr.update(value=vtt_content)
+                    return gr.update(visible=True if audiobook_options else 'hidden'), gr.update(value=audiobook), gr.update(value=vtt_content)
             except Exception as e:
                 error = f'change_gr_audiobook_list(): {e}'
                 alert_exception(error)
-            return gr.update(value=None), gr.update(value=None)
+            return gr.update(), gr.update(value=None), gr.update(value=None)
         
         def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
@@ -3249,7 +3249,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
                 alert_exception(error)
-            return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()          
+            return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
 
         def confirm_blocks(choice, id):
             session = context.get_session(id)
@@ -3939,7 +3939,7 @@ def web_interface(args, ctx):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_audiobook_player, gr_audiobook_vtt]
+            outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_audiobook_vtt]
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
@@ -4034,10 +4034,6 @@ def web_interface(args, ctx):
             fn=refresh_interface,
             inputs=[gr_session],
             outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
-        ).then(
-            fn=lambda: gr.update(visible=True if audiobook_options else 'hidden'),
-            inputs=None,
-            outputs=[gr_group_audiobook_list]
         )
         gr_write_data.change(
             fn=None,
@@ -4072,10 +4068,6 @@ def web_interface(args, ctx):
                 gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
             ]
         ).then(
-            fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
-            outputs=[gr_group_audiobook_list]
-        ).then(
             fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
             inputs=[gr_session],
             outputs=[gr_glass_mask]
@@ -4088,10 +4080,6 @@ def web_interface(args, ctx):
             fn=confirm_deletion,
             inputs=[gr_voice_list, gr_custom_model_list, gr_audiobook_list, gr_session, gr_confirm_deletion_field_hidden],
             outputs=[gr_custom_model_list, gr_audiobook_list, gr_modal, gr_voice_list]
-        ).then(
-            fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
-            outputs=[gr_group_audiobook_list],
         )
         gr_confirm_deletion_no_btn.click(
             fn=confirm_deletion,
@@ -4114,10 +4102,6 @@ def web_interface(args, ctx):
             fn=refresh_interface,
             inputs=[gr_session],
             outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
-        ).then(
-            fn=lambda: gr.update(visible=bool(audiobook_options)),
-            inputs=None,
-            outputs=[gr_group_audiobook_list],
         )
         gr_confirm_blocks_no_btn.click(
             fn=lambda session: confirm_blocks("no", session),
