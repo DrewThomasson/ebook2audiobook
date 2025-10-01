@@ -4032,7 +4032,7 @@ def web_interface(args, ctx):
         gr_write_data.change(
             fn=None,
             inputs=[gr_write_data],
-            js'''
+            js='''
                 (data)=>{
                     try{
                         if(data){
