@@ -2845,7 +2845,7 @@ def web_interface(args, ctx):
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
                 gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
                 gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, lines=3, max_lines=3)
-                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, value='start.wav', waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, value=None, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
                 with gr.Row(elem_id='gr_row_audiobook_list', visible=True):
                     gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                     gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
@@ -4057,17 +4057,6 @@ def web_interface(args, ctx):
             fn=change_gr_read_data,
             inputs=[gr_read_data, gr_state_update],
             outputs=[gr_write_data, gr_state_update, gr_session, gr_glass_mask]
-        ).then(
-            fn=restore_interface,
-            inputs=[gr_session],
-            outputs=[
-                gr_ebook_file, gr_ebook_mode, gr_chapters_control, gr_device, gr_language,
-                gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
-                gr_output_format_list, gr_audiobook_list,
-                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
-                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp,
-                gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
-            ]
         ).then(
             fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
             inputs=[gr_session],
