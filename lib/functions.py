@@ -4262,7 +4262,6 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                console.log("volumechange", gr_audiobook_player.volume);
                                                 window.playback_volume = gr_audiobook_player.volume;
                                             });
                                             const url = new URL(window.location);
@@ -4460,7 +4459,7 @@ def web_interface(args, ctx):
                         });
 
                         window.playback_time = 0;
-                        window.playback_volume = 100;
+                        window.playback_volume = 1;
                         const stored = window.localStorage.getItem("data");
                         if(stored){
                             const parsed = JSON.parse(stored);
