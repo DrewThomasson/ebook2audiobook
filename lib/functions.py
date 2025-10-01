@@ -4197,6 +4197,7 @@ def web_interface(args, ctx):
                                         let last_time = 0;
                                         if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time){
                                             console.log('gr_audiobook_player ready!');
+                                            /*
                                             gr_audiobook_player.addEventListener("timeupdate", ()=>{
                                                 try{
                                                     window.playback_time = gr_audiobook_player.currentTime;
@@ -4229,6 +4230,64 @@ def web_interface(args, ctx):
                                                 }catch(e){
                                                     console.log("gr_audiobook_player timeupdate error:", e);
                                                 }
+                                            });
+                                            */
+                                            // Setup Web Audio API
+                                            const audioCtx = new AudioContext();
+                                            const sourceNode = audioCtx.createMediaElementSource(gr_audiobook_player);
+                                            sourceNode.connect(audioCtx.destination);
+
+                                            // Animation frame loop for precise timing
+                                            function trackPlayback() {
+                                                try {
+                                                    // Use audioCtx.currentTime for stable playback time
+                                                    // (sync with gr_audiobook_player for consistency)
+                                                    window.playback_time = gr_audiobook_player.currentTime;
+
+                                                    const cue = findCue(window.playback_time);
+                                                    if (cue && cue !== lastCue) {
+                                                        if (fade_timeout) {
+                                                            gr_audiobook_sentence.style.opacity = "1";
+                                                        } else {
+                                                            gr_audiobook_sentence.style.opacity = "0";
+                                                        }
+                                                        gr_audiobook_sentence.style.transition = "none";
+                                                        gr_audiobook_sentence.value = cue.text;
+                                                        clearTimeout(fade_timeout);
+                                                        fade_timeout = setTimeout(() => {
+                                                            gr_audiobook_sentence.style.transition = "opacity 0.25s ease-in";
+                                                            gr_audiobook_sentence.style.opacity = "1";
+                                                            fade_timeout = null;
+                                                        }, 33);
+                                                        lastCue = cue;
+                                                    } else if (!cue && lastCue !== null) {
+                                                        gr_audiobook_sentence.value = "...";
+                                                        lastCue = null;
+                                                    }
+
+                                                    // Update external UI every ~1s (instead of spamming every frame)
+                                                    const now = performance.now();
+                                                    if (now - last_time > 1000) {
+                                                        gr_playback_time.value = String(window.playback_time);
+                                                        gr_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                        last_time = now;
+                                                    }
+                                                } catch (e) {
+                                                    console.log("gr_audiobook_player tracking error:", e);
+                                                }
+
+                                                // Keep the loop going if audio is playing
+                                                if (!gr_audiobook_player.paused && !gr_audiobook_player.ended) {
+                                                    requestAnimationFrame(trackPlayback);
+                                                }
+                                            }
+
+                                            // Kick off loop when playback starts
+                                            gr_audiobook_player.addEventListener("play", () => {
+                                                if (audioCtx.state === "suspended") {
+                                                    audioCtx.resume(); // Needed in some browsers (autoplay restrictions)
+                                                }
+                                                requestAnimationFrame(trackPlayback);
                                             });
                                             gr_audiobook_player.addEventListener("ended", ()=>{
                                                 gr_audiobook_sentence.value = "...";
