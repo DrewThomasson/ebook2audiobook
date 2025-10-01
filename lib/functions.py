@@ -4347,7 +4347,6 @@ def web_interface(args, ctx):
                             window.load_vtt_timeout = null;
                             window.load_vtt = (path) =>{
                                 try{
-                                    cues = [];
                                     if(path){
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
@@ -4389,8 +4388,9 @@ def web_interface(args, ctx):
                             }
                             const lines = vtt.split(/\r?\n/);
                             const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
-                            let start = null, end = null, textBuffer = [];
+                            let start = null, end = null;
                             cues = [];
+                            textBuffer = [];
                             for(let i = 0, len = lines.length; i < len; i++){
                                 const line = lines[i];
                                 if(!line.trim()){ pushCue(); continue; }
