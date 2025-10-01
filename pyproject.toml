@@ -26,7 +26,7 @@ dependencies = [
 	"ebooklib",
 	"fastapi",
 	"fugashi",
-	"gradio>=5.42.0",
+	"gradio>=5.47.2",
 	"hangul-romanize",
 	"indic-nlp-library",
 	"iso-639",

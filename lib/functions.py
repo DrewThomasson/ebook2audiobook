@@ -2839,7 +2839,7 @@ def web_interface(args, ctx):
             with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Progress')
                 gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
-            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=False)
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible='hidden')
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
@@ -4035,9 +4035,9 @@ def web_interface(args, ctx):
             inputs=[gr_session],
             outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list]
         ).then(
-            fn=lambda: gr.update(visible=bool(audiobook_options)),
+            fn=lambda: gr.update(visible=True if audiobook_options else "hidden"),
             inputs=None,
-            outputs=[gr_group_audiobook_list],
+            outputs=[gr_group_audiobook_list]
         )
         gr_write_data.change(
             fn=None,
