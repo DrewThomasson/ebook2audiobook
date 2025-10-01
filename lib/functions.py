@@ -4448,7 +4448,6 @@ def web_interface(args, ctx):
                             try{
                                 const saved = JSON.parse(localStorage.getItem("data") || "{}");
                                 if(saved.tab_id == window.tab_id || !saved.tab_id){
-                                    console.log("beforeunload", window.playback_volume);
                                     saved.playback_volume = window.playback_volume.toString();
                                     saved.tab_id = undefined;
                                     saved.status = undefined;
