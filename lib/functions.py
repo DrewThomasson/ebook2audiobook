@@ -4279,6 +4279,7 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
+                                            gr_audiobook_player.volume = window.playback_volume;
                                         }
                                     }
                                 }catch(e){
