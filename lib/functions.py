@@ -2324,6 +2324,9 @@ def web_interface(args, ctx):
                 color: var(--secondary-500) !important;
                 text-shadow: 0.3px 0.3px 0.3px #303030;
             }
+            .overflow-menu {
+                display: none !important;
+            }
             .gr-glass-mask {
                 z-index: 9999 !important;
                 position: fixed !important;
@@ -2680,7 +2683,7 @@ def web_interface(args, ctx):
     with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
         with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
             with gr.Tabs(elem_id='gr_tabs'):
-                gr_tab_main = gr.TabItem('Main Parameters', elem_id='gr_tab_main', elem_classes='gr-tab')
+                gr_tab_main = gr.TabItem('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab')
                 with gr_tab_main:
                     with gr.Row(elem_id='gr_row_tab_main'):
                         with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
@@ -2733,7 +2736,7 @@ def web_interface(args, ctx):
                                 gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                 gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                         
-                gr_tab_xtts_params = gr.TabItem('XTTSv2 Fine Tuned Parameters', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=visible_gr_tab_xtts_params)           
+                gr_tab_xtts_params = gr.TabItem('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=visible_gr_tab_xtts_params)           
                 with gr_tab_xtts_params:
                     with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                         gr_xtts_temperature = gr.Slider(
@@ -2808,7 +2811,7 @@ def web_interface(args, ctx):
                             info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                             visible=False
                         )
-                gr_tab_bark_params = gr.TabItem('BARK fine Tuned Parameters', elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=visible_gr_tab_bark_params)           
+                gr_tab_bark_params = gr.TabItem('Bark Settings', elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=visible_gr_tab_bark_params)           
                 with gr_tab_bark_params:
                     gr.Markdown(
                         elem_id='gr_markdown_tab_bark_params',
