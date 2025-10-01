@@ -4246,6 +4246,7 @@ def web_interface(args, ctx):
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
                                                     gr_audiobook_player.volume = window.playback_volume;
+                                                    gr_audiobook_player.currentTime = Number(window.playback_time);
                                                 }
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
@@ -4330,7 +4331,6 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
-                                                gr_audiobook_player.currentTime = Number(window.playback_time);
                                             });
                                         }
                                     }
@@ -4464,7 +4464,7 @@ def web_interface(args, ctx):
                             const parsed = JSON.parse(stored);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
-                            window.playback_volume = parseFloat(parsed.playback_volume);
+                            window.playback_volume = Number(parsed.playback_volume);
                             return parsed;
                         }
                     }catch(e){
