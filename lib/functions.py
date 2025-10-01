@@ -4261,6 +4261,9 @@ def web_interface(args, ctx):
                                                 window.playback_time = 0;
                                                 lastCue = null;
                                             });
+                                            gr_audiobook_player.addEventListener("volumechange", ()=>{
+                                                window.playback_volume = gr_audiobook_player.volume;
+                                            });
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
                                             let osTheme;
@@ -4444,6 +4447,7 @@ def web_interface(args, ctx):
                             try{
                                 const saved = JSON.parse(localStorage.getItem("data") || "{}");
                                 if(saved.tab_id == window.tab_id || !saved.tab_id){
+                                    saved.playback_volume = window.playback_volume;
                                     saved.tab_id = undefined;
                                     saved.status = undefined;
                                     localStorage.setItem("data", JSON.stringify(saved));
@@ -4454,11 +4458,13 @@ def web_interface(args, ctx):
                         });
 
                         window.playback_time = 0;
+                        window.playback_volume = 100;
                         const stored = window.localStorage.getItem("data");
                         if(stored){
                             const parsed = JSON.parse(stored);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
+                            window.playback_volume = parsed.playback_volume;
                             console.log("window.playback_time", window.playback_time);
                             return parsed;
                         }
