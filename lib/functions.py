@@ -2491,6 +2491,10 @@ def web_interface(args, ctx):
             #gr_tab_progress .progress-bar {
                 background: #ff7b00 !important;
             }
+            #gr_audiobook_sentence textarea{
+                margin: auto;
+                text-align: center;
+            }
             #gr_session textarea, #gr_tab_progress textarea {
                 overflow: hidden !important;
                 overflow-y: auto !important;
