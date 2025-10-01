@@ -3038,6 +3038,7 @@ def web_interface(args, ctx):
 
         def change_gr_audiobook_list(audiobook, id):
             try:
+                print(len(audiobook_options))
                 session = context.get_session(id)
                 session['audiobook'] = audiobook
                 if audiobook is not None: 
