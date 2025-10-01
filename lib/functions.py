@@ -4237,11 +4237,10 @@ def web_interface(args, ctx):
                                             const sourceNode = audioCtx.createMediaElementSource(gr_audiobook_player);
                                             sourceNode.connect(audioCtx.destination);
 
-                                            // Animation frame loop for precise timing
+                                            // Animation frame loop
                                             function trackPlayback() {
                                                 try {
-                                                    // Use audioCtx.currentTime for stable playback time
-                                                    // (sync with gr_audiobook_player for consistency)
+                                                    // Update playback time
                                                     window.playback_time = gr_audiobook_player.currentTime;
 
                                                     const cue = findCue(window.playback_time);
@@ -4265,7 +4264,7 @@ def web_interface(args, ctx):
                                                         lastCue = null;
                                                     }
 
-                                                    // Update external UI every ~1s (instead of spamming every frame)
+                                                    // Update external UI every ~1s
                                                     const now = performance.now();
                                                     if (now - last_time > 1000) {
                                                         gr_playback_time.value = String(window.playback_time);
@@ -4276,17 +4275,20 @@ def web_interface(args, ctx):
                                                     console.log("gr_audiobook_player tracking error:", e);
                                                 }
 
-                                                // Keep the loop going if audio is playing
-                                                if (!gr_audiobook_player.paused && !gr_audiobook_player.ended) {
+                                                // Keep looping if playing OR if scrubbing/paused (optional)
+                                                if (!gr_audiobook_player.ended) {
                                                     requestAnimationFrame(trackPlayback);
                                                 }
                                             }
-
-                                            // Kick off loop when playback starts
+                                            // Kick off loop on play
                                             gr_audiobook_player.addEventListener("play", () => {
                                                 if (audioCtx.state === "suspended") {
-                                                    audioCtx.resume(); // Needed in some browsers (autoplay restrictions)
+                                                    audioCtx.resume();
                                                 }
+                                                requestAnimationFrame(trackPlayback);
+                                            });
+                                            // Restart loop when scrubbing/seek completes
+                                            gr_audiobook_player.addEventListener("seeked", () => {
                                                 requestAnimationFrame(trackPlayback);
                                             });
                                             gr_audiobook_player.addEventListener("ended", ()=>{
