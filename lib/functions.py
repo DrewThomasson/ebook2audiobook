@@ -4211,7 +4211,7 @@ def web_interface(args, ctx):
                                                         gr_audiobook_sentence.value = cue.text;
                                                         clearTimeout(fade_timeout);
                                                         fade_timeout = setTimeout(() =>{
-                                                            gr_audiobook_sentence.style.transition = "opacity 0.5s ease-in";
+                                                            gr_audiobook_sentence.style.transition = "opacity 0.25s ease-in";
                                                             gr_audiobook_sentence.style.opacity = "1";
                                                             fade_timeout = null;
                                                         }, 33);
@@ -4222,9 +4222,8 @@ def web_interface(args, ctx):
                                                     }
                                                     const now = performance.now();
                                                     if(now - last_time > 1000){
-                                                        //console.log("timeupdate", window.playback_time);
                                                         gr_playback_time.value = String(window.playback_time);
-                                                        gr_playback_time.dispatchEvent(new Event("input",{ bubbles: true }));
+                                                        gr_playback_time.dispatchEvent(new Event("input",{bubbles: true}));
                                                         last_time = now;
                                                     }
                                                 }catch(e){
@@ -4303,10 +4302,10 @@ def web_interface(args, ctx):
                                             gr_audiobook_sentence.style.lineHeight = "14px";
                                             gr_audiobook_sentence.value = "...";
                                             fetch(path)
-                                            .then(res => res.text())
-                                            .then(vttText =>{
-                                                parseVTTFast(vttText);
+                                            .then(res => {
+                                                parseVTTFast(res.text());
                                                 gr_audiobook_player.currentTime = Number(window.playback_time);
+                                                
                                             });
                                         }
                                     }
@@ -4316,7 +4315,7 @@ def web_interface(args, ctx):
                             };
                         }
                         function parseVTTFast(vtt){
-                            const pushCue = ()=>{
+                            function pushCue(){
                                 if(start !== null && end !== null && textBuffer.length){
                                     cues.push({ start, end, text: textBuffer.join("\n") });
                                 }
