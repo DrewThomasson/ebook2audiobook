@@ -2462,8 +2462,11 @@ def web_interface(args, ctx):
                 align-items: center !important;
                 justify-content: center !important;
             }
-            #gr_ebook_file label, #gr_custom_model_file label, #gr_voice_file label, #gr_audiobook_player label {
+            #gr_ebook_file label, #gr_custom_model_file label, #gr_voice_file label {
                 background: none !important;
+            }
+            #gr_audiobook_player label {
+                display: none !important;
             }
             #gr_ebook_file button>div, #gr_custom_model_file button>div, #gr_voice_file button>div {
                 font-size: 12px !important;
