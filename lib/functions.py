@@ -4410,9 +4410,11 @@ def web_interface(args, ctx):
                             observer.observe(root, { childList: true, subtree: true });
                             return () => observer.disconnect();
                         }
+                        init_audiobook_player();
                         const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
                             console.log('gr_audiobook_player visible...');
-                            init_audiobook_player();
+                            clearTimeout(init_audiobook_player_timeout);
+                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 100);
                         }, { once: true });
                         
                         //////////////////////
