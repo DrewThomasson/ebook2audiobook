@@ -2842,7 +2842,7 @@ def web_interface(args, ctx):
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
                 gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
                 gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, visible=True, lines=3, max_lines=3)
-                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=True, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
                 with gr.Row(elem_id='gr_row_audiobook_list'):
                     gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=True, scale=0, min_width=60)
                     gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, visible=True, scale=2)
@@ -3038,15 +3038,15 @@ def web_interface(args, ctx):
                 session = context.get_session(id)
                 session['audiobook'] = audiobook
                 if audiobook is not None: 
-                    audiobook_vtt = Path(audiobook).with_suffix('.vtt')
-                    if not os.path.exists(audiobook) or not os.path.exists(audiobook_vtt):
+                    vtt = Path(audiobook).with_suffix('.vtt')
+                    if not os.path.exists(audiobook) or not os.path.exists(vtt):
                         return gr.update(value=None), gr.update(value=None)
                     session['playback_time'] = 0
                     audio_info = mediainfo(audiobook)
                     session['duration'] = float(audio_info['duration'])
-                    with open(audiobook_vtt, "r", encoding="utf-8-sig", errors="replace") as f:
-                        audiobook_vtt_content = f.read()
-                    return gr.update(value=audiobook), gr.update(value=audiobook_vtt_content)
+                    with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
+                        vtt_content = f.read()
+                    return gr.update(value=audiobook), gr.update(value=vtt_content)
             except Exception as e:
                 error = f'change_gr_audiobook_list(): {e}'
                 alert_exception(error)
