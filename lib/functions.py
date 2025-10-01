@@ -4302,10 +4302,11 @@ def web_interface(args, ctx):
                                             gr_audiobook_sentence.style.lineHeight = "14px";
                                             gr_audiobook_sentence.value = "...";
                                             fetch(path)
-                                            .then(res => {
-                                                parseVTTFast(res.text());
+                                            .then(res => res.text())
+                                            .then(vttText =>{
+                                                parseVTTFast(vttText);
                                                 gr_audiobook_player.currentTime = Number(window.playback_time);
-                                                
+                                                console.log(cues);
                                             });
                                         }
                                     }
