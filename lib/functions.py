@@ -3040,20 +3040,21 @@ def web_interface(args, ctx):
             try:
                 session = context.get_session(id)
                 session['audiobook'] = audiobook
+                group_visible = True if len(audiobook_options) > 0 else False
                 if audiobook is not None: 
                     vtt = Path(audiobook).with_suffix('.vtt')
                     if not os.path.exists(audiobook) or not os.path.exists(vtt):
-                        return gr.update(visible=True if len(audiobook_options) > 0 else False), gr.update(value=None), gr.update(value=None)
+                        return gr.update(visible=group_visible), gr.update(value=None), gr.update(value=None)
                     session['playback_time'] = 0
                     audio_info = mediainfo(audiobook)
                     session['duration'] = float(audio_info['duration'])
                     with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                         vtt_content = f.read()
-                    return gr.update(visible=True if len(audiobook_options) > 0 else False), gr.update(value=audiobook), gr.update(value=vtt_content)
+                    return gr.update(visible=group_visible), gr.update(value=audiobook), gr.update(value=vtt_content)
             except Exception as e:
                 error = f'change_gr_audiobook_list(): {e}'
                 alert_exception(error)
-            return gr.update(visible=True if len(audiobook_options) > 0 else False), gr.update(value=None), gr.update(value=None)
+            return gr.update(visible=group_visible), gr.update(value=None), gr.update(value=None)
         
         def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
