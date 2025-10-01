@@ -2491,12 +2491,15 @@ def web_interface(args, ctx):
             #gr_output_format_list {
                 height: 103px !important;
             }
+            #gr_row_output_split_hours {
+                border-radius: 0 !important;
+            }
             #gr_tab_progress .progress-bar {
                 background: #ff7b00 !important;
             }
             #gr_audiobook_sentence textarea{
-                margin: auto;
-                text-align: center;
+                margin: auto !important;
+                text-align: center !important;
             }
             #gr_session textarea, #gr_tab_progress textarea {
                 overflow: hidden !important;
@@ -2616,10 +2619,10 @@ def web_interface(args, ctx):
                 position: fixed !important;
             }
             .hide-elem {
-                z-index: -1;
-                position: absolute;
-                top: 0;
-                left: 0;
+                z-index: -1 !important;
+                position: absolute !important;
+                top: 0 !important;
+                left: 0 !important;
             }
             .gr-modal {
                 position: fixed !important;
@@ -2659,13 +2662,13 @@ def web_interface(args, ctx):
             .button_red  { background-color: #dc3545 !important; color: white !important; }
             .button_red:hover  { background-color: #ff6f71 !important; }
             .spinner {
-                margin: 15px auto;
-                border: 4px solid rgba(255, 255, 255, 0.2);
-                border-top: 4px solid #FFA500;
-                border-radius: 50%;
-                width: 30px;
-                height: 30px;
-                animation: spin 1s linear infinite;
+                margin: 15px auto !important;
+                border: 4px solid rgba(255, 255, 255, 0.2) !important;
+                border-top: 4px solid #FFA500 !important;
+                border-radius: 50% !important;
+                width: 30px !important;
+                height: 30px !important;
+                animation: spin 1s linear infinite !important;
             }
             @keyframes spin {
                 0% { transform: rotate(0deg); }
