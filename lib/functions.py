@@ -4129,7 +4129,6 @@ def web_interface(args, ctx):
                         let gr_audiobook_vtt;
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
-                        let gr_audiobook_player_src_hidden;
                         let gr_tab_progress;
                         let init_elements_timeout;
                         let init_audiobook_player_timeout;
@@ -4413,8 +4412,7 @@ def web_interface(args, ctx):
                         }
                         const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
                             console.log('gr_audiobook_player visible...');
-                            clearTimeout(init_audiobook_player_timeout);
-                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
+                            init_audiobook_player();
                         }, { once: true });
                         
                         //////////////////////
