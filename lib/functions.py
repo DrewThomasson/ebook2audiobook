@@ -2511,6 +2511,7 @@ def web_interface(args, ctx):
             #gr_output_split_hours span[data-testid="block-info"],
             #gr_session span[data-testid="block-info"],
             #gr_audiobook_sentence span[data-testid="block-info"],
+            #gr_audiobook_player span[data-testid="block-info"],
             #gr_audiobook_list span[data-testid="block-info"],
             #gr_tab_progress span[data-testid="block-info"]{
                 display: none !important;
