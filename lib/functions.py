@@ -4200,57 +4200,19 @@ def web_interface(args, ctx):
                                         let last_time = 0;
                                         if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time){
                                             console.log('gr_audiobook_player ready!');
-                                            /*
-                                            gr_audiobook_player.addEventListener("timeupdate", ()=>{
-                                                try{
-                                                    window.playback_time = gr_audiobook_player.currentTime;
-                                                    const cue = findCue(window.playback_time);
-                                                    if(cue && cue !== lastCue){
-                                                        if(fade_timeout){
-                                                            gr_audiobook_sentence.style.opacity = "1";
-                                                        }else{
-                                                            gr_audiobook_sentence.style.opacity = "0";
-                                                        }
-                                                        gr_audiobook_sentence.style.transition = "none";
-                                                        gr_audiobook_sentence.value = cue.text;
-                                                        clearTimeout(fade_timeout);
-                                                        fade_timeout = setTimeout(() =>{
-                                                            gr_audiobook_sentence.style.transition = "opacity 0.15s ease-in";
-                                                            gr_audiobook_sentence.style.opacity = "1";
-                                                            fade_timeout = null;
-                                                        }, 33);
-                                                        lastCue = cue;
-                                                    }else if(!cue && lastCue !== null){
-                                                        gr_audiobook_sentence.value = "...";
-                                                        lastCue = null;
-                                                    }
-                                                    const now = performance.now();
-                                                    if(now - last_time > 1000){
-                                                        gr_playback_time.value = String(window.playback_time);
-                                                        gr_playback_time.dispatchEvent(new Event("input",{bubbles: true}));
-                                                        last_time = now;
-                                                    }
-                                                }catch(e){
-                                                    console.log("gr_audiobook_player timeupdate error:", e);
-                                                }
-                                            });
-                                            */
                                             // Setup Web Audio API
                                             const audioCtx = new AudioContext();
                                             const sourceNode = audioCtx.createMediaElementSource(gr_audiobook_player);
                                             sourceNode.connect(audioCtx.destination);
-
                                             // Animation frame loop
-                                            function trackPlayback() {
+                                            function trackPlayback(){
                                                 try {
-                                                    // Update playback time
                                                     window.playback_time = gr_audiobook_player.currentTime;
-
                                                     const cue = findCue(window.playback_time);
-                                                    if (cue && cue !== lastCue) {
-                                                        if (fade_timeout) {
+                                                    if(cue && cue !== lastCue) {
+                                                        if(fade_timeout){
                                                             gr_audiobook_sentence.style.opacity = "1";
-                                                        } else {
+                                                        }else{
                                                             gr_audiobook_sentence.style.opacity = "0";
                                                         }
                                                         gr_audiobook_sentence.style.transition = "none";
@@ -4262,36 +4224,36 @@ def web_interface(args, ctx):
                                                             fade_timeout = null;
                                                         }, 33);
                                                         lastCue = cue;
-                                                    } else if (!cue && lastCue !== null) {
+                                                    }else if(!cue && lastCue !== null){
                                                         gr_audiobook_sentence.value = "...";
                                                         lastCue = null;
                                                     }
-
-                                                    // Update external UI every ~1s
                                                     const now = performance.now();
-                                                    if (now - last_time > 1000) {
+                                                    if(now - last_time > 1000){
                                                         gr_playback_time.value = String(window.playback_time);
-                                                        gr_playback_time.dispatchEvent(new Event("input", { bubbles: true }));
+                                                        gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
                                                         last_time = now;
                                                     }
                                                 } catch (e) {
                                                     console.log("gr_audiobook_player tracking error:", e);
                                                 }
-
-                                                // Keep looping if playing OR if scrubbing/paused (optional)
-                                                if (!gr_audiobook_player.ended) {
+                                                if (!gr_audiobook_player.ended){
                                                     requestAnimationFrame(trackPlayback);
                                                 }
                                             }
-                                            // Kick off loop on play
-                                            gr_audiobook_player.addEventListener("play", () => {
+                                            gr_audiobook_player.addEventListener("loadeddata", ()=>{
+                                                if(gr_audiobook_vtt.value != ""){
+                                                    const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
+                                                    window.load_vtt(url);
+                                                }
+                                            });
+                                            gr_audiobook_player.addEventListener("play", ()=>{
                                                 if (audioCtx.state === "suspended") {
                                                     audioCtx.resume();
                                                 }
                                                 requestAnimationFrame(trackPlayback);
                                             });
-                                            // Restart loop when scrubbing/seek completes
-                                            gr_audiobook_player.addEventListener("seeked", () => {
+                                            gr_audiobook_player.addEventListener("seeked", ()=>{
                                                 requestAnimationFrame(trackPlayback);
                                             });
                                             gr_audiobook_player.addEventListener("ended", ()=>{
@@ -4314,10 +4276,6 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
-                                            if(gr_audiobook_vtt.value != ""){
-                                                const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
-                                                window.load_vtt(url);
-                                            }
                                         }
                                     }
                                 }catch(e){
