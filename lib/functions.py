@@ -2872,7 +2872,7 @@ def web_interface(args, ctx):
                 gr_confirm_blocks_no_btn = gr.Button(elem_id='gr_confirm_blocks_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, min_width=30)
 
         gr_modal = gr.HTML(visible=False)
-        gr_glass_mask = gr.HTML(gr_glass_mask_msg, elem_id='gr_glass_mask', elem_classes=['gr-glass-mask'])
+        gr_glass_mask = gr.HTML(gr_glass_mask_msg, elem_id='gr_glass_mask', elem_classes=['gr-glass-mask'], visible=True)
         gr_confirm_deletion_field_hidden = gr.Textbox(elem_id='confirm_hidden', visible=False)
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
@@ -4058,7 +4058,18 @@ def web_interface(args, ctx):
             inputs=[gr_read_data, gr_state_update],
             outputs=[gr_write_data, gr_state_update, gr_session, gr_glass_mask]
         ).then(
-            fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
+            fn=restore_interface,
+            inputs=[gr_session],
+            outputs=[
+                gr_ebook_file, gr_ebook_mode, gr_chapters_control, gr_device, gr_language,
+                gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
+                gr_output_format_list, gr_audiobook_list,
+                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
+                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp,
+                gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
+            ]
+        ).then(
+            fn=lambda session: update_gr_glass_mask(visible=False) if session else gr.update(),
             inputs=[gr_session],
             outputs=[gr_glass_mask]
         ).then(
