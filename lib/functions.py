@@ -3053,7 +3053,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'change_gr_audiobook_list(): {e}'
                 alert_exception(error)
-            return gr.update(), gr.update(value=None), gr.update(value=None)
+            return gr.update(visible=True if audiobook_options else 'hidden'), gr.update(value=None), gr.update(value=None)
         
         def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
