@@ -4032,19 +4032,19 @@ def web_interface(args, ctx):
         gr_write_data.change(
             fn=None,
             inputs=[gr_write_data],
-            js="""
+            js'''
                 (data)=>{
                     try{
                         if(data){
                             localStorage.clear();
-                            console.log('save: ', data);
-                            window.localStorage.setItem('data', JSON.stringify(data));
+                            console.log("save: ", data);
+                            window.localStorage.setItem("data", JSON.stringify(data));
                         }
                     }catch(e){
-                        console.log('gr_write_data.change error: '+e)
+                        console.log("gr_write_data.change error: "+e);
                     }
                 }
-            """
+            '''
         )       
         gr_read_data.change(
             fn=change_gr_read_data,
@@ -4202,7 +4202,7 @@ def web_interface(args, ctx):
                                         let fade_timeout = null;
                                         let last_time = 0;
                                         let set_playback_time = false;
-                                        if(gr_audiobook_player && gr_audiobook_sentence){
+                                        if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time){
                                             console.log('gr_audiobook_player ready!');
                                             gr_audiobook_player.addEventListener("loadedmetadata",()=>{
                                                 try{
@@ -4218,7 +4218,7 @@ def web_interface(args, ctx):
                                                         try{
                                                             window.load_vtt(url);
                                                         }catch(e){
-                                                            console.log('gr_audiobook_list.change error: '+e)
+                                                            console.log('gr_audiobook_list.change error: '+e);
                                                         }
                                                     }
                                                 }catch(e){
@@ -4253,10 +4253,8 @@ def web_interface(args, ctx):
                                                         const now = performance.now();
                                                         if(now - last_time > 1000){
                                                             //console.log("timeupdate", window.playback_time);
-                                                            if(gr_playback_time){
-                                                                gr_playback_time.value = String(window.playback_time);
-                                                                gr_playback_time.dispatchEvent(new Event("input",{ bubbles: true }));
-                                                            }
+                                                            gr_playback_time.value = String(window.playback_time);
+                                                            gr_playback_time.dispatchEvent(new Event("input",{ bubbles: true }));
                                                             last_time = now;
                                                         }
                                                     }catch(e){
@@ -4283,7 +4281,6 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
-                                            gr_audiobook_player.load();
                                         }
                                     }
                                 }catch(e){
@@ -4442,7 +4439,7 @@ def web_interface(args, ctx):
                             console.log('gr_audiobook_player visible...');
                             clearTimeout(init_audiobook_player_timeout);
                             init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
-                        }, { once: false });
+                        }, { once: true });
                         
                         //////////////////////
 
