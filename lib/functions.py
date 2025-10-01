@@ -3039,7 +3039,7 @@ def web_interface(args, ctx):
                 session['audiobook'] = audiobook
                 if audiobook is not None: 
                     audiobook_vtt = Path(audiobook).with_suffix('.vtt')
-                    if not os.path.exists(audiobook) or not os.path.exists(vtt):
+                    if not os.path.exists(audiobook) or not os.path.exists(audiobook_vtt):
                         return gr.update(value=None), gr.update(value=None)
                     session['playback_time'] = 0
                     audio_info = mediainfo(audiobook)
