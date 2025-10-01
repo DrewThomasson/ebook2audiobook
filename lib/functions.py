@@ -2462,7 +2462,7 @@ def web_interface(args, ctx):
                 align-items: center !important;
                 justify-content: center !important;
             }
-            #gr_ebook_file label, #gr_custom_model_file label, #gr_voice_file label {
+            #gr_ebook_file label, #gr_custom_model_file label, #gr_voice_file label, #gr_audiobook_player label {
                 background: none !important;
             }
             #gr_ebook_file button>div, #gr_custom_model_file button>div, #gr_voice_file button>div {
@@ -2511,7 +2511,6 @@ def web_interface(args, ctx):
             #gr_output_split_hours span[data-testid="block-info"],
             #gr_session span[data-testid="block-info"],
             #gr_audiobook_sentence span[data-testid="block-info"],
-            #gr_audiobook_player span[data-testid="block-info"],
             #gr_audiobook_list span[data-testid="block-info"],
             #gr_tab_progress span[data-testid="block-info"]{
                 display: none !important;
