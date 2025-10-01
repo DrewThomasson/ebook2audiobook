@@ -2716,7 +2716,7 @@ def web_interface(args, ctx):
                                     with gr.Row(elem_id='gr_row_custom_model'):
                                         gr_custom_model_list = gr.Dropdown(label='', elem_id='gr_custom_model_list', choices=custom_model_options, type='value', interactive=True, scale=2)
                                         gr_custom_model_del_btn = gr.Button('🗑', elem_id='gr_custom_model_del_btn', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
-                            with gr.Group(elem_id='gr_group_output_format', elem_classes=['gr-group']):
+                            with gr.Group(elem_id='gr_group_output_format'):
                                 gr_output_markdown = gr.Markdown(elem_id='gr_output_markdown', elem_classes=['gr-markdown'], value='Output')
                                 with gr.Row(elem_id='gr_row_output_format'):
                                     gr_output_format_list = gr.Dropdown(label='Format', elem_id='gr_output_format_list', choices=output_formats, type='value', value=default_output_format, interactive=True, scale=1)
