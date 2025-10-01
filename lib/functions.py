@@ -4245,6 +4245,7 @@ def web_interface(args, ctx):
                                                 if(gr_audiobook_vtt.value != ""){
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
+                                                    gr_audiobook_player.volume = window.playback_volume;
                                                 }
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
@@ -4279,7 +4280,6 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
-                                            gr_audiobook_player.volume = window.playback_volume;
                                         }
                                     }
                                 }catch(e){
@@ -4466,7 +4466,6 @@ def web_interface(args, ctx):
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
                             window.playback_volume = parseFloat(parsed.playback_volume);
-                            console.log("window.playback_time", window.playback_time);
                             return parsed;
                         }
                     }catch(e){
