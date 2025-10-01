@@ -4245,6 +4245,7 @@ def web_interface(args, ctx):
                                                 if(gr_audiobook_vtt.value != ""){
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
+                                                    console.log(window.playback_volume);
                                                     gr_audiobook_player.volume = window.playback_volume;
                                                     gr_audiobook_player.currentTime = Number(window.playback_time);
                                                 }
