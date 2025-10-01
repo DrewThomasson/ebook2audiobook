@@ -4270,10 +4270,9 @@ def web_interface(args, ctx):
                                             if(window.playback_time > 0){
                                                 gr_audiobook_player.currentTime = Number(window.playback_time);
                                             }
-                                            const empty = gr_audiobook_vtt == null || (typeof gr_audiobook_vtt === "string" && gr_audiobook_vtt.trim() === "");
-                                            console.log('empty: ', empty);
-                                            if(!empty){
-                                                const url = URL.createObjectURL(new Blob([gr_audiobook_vtt], {type:"text/vtt"}));
+                                            console.log('gr_audiobook_vtt: ', gr_audiobook_vtt.value);
+                                            if(gr_audiobook_vtt.value != ""){
+                                                const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                 window.load_vtt(url);
                                             }
                                         }
