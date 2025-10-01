@@ -4324,7 +4324,7 @@ def web_interface(args, ctx):
                                                 parseVTTFast(vttText);
                                                 if(window.playback_time > 0){
                                                     gr_audiobook_player.currentTime = Number(window.playback_time);
-                                                    console.log(gr_audiobook_player.currentTime);
+                                                    gr_audiobook_player.src = gr_audiobook_player;
                                                 }
                                             });
                                         }
