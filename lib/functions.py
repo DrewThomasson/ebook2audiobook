@@ -4267,10 +4267,6 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
-                                            if(window.playback_time > 0){
-                                                gr_audiobook_player.currentTime = Number(window.playback_time);
-                                            }
-                                            console.log('gr_audiobook_vtt: ', gr_audiobook_vtt.value);
                                             if(gr_audiobook_vtt.value != ""){
                                                 const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                 window.load_vtt(url);
@@ -4326,6 +4322,10 @@ def web_interface(args, ctx):
                                             .then(res => res.text())
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
+                                                if(window.playback_time > 0){
+                                                    gr_audiobook_player.currentTime = Number(window.playback_time);
+                                                    gr_audiobook_player.load();
+                                                }
                                             });
                                         }
                                     }
