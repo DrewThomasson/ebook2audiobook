@@ -4254,7 +4254,7 @@ def web_interface(args, ctx):
                                                     window.load_vtt(url);
                                                     const stored_volume = localStorage.getItem("volume");
                                                     console.log("stored_volume: ", stored_volume);
-                                                    if(stored_volume !== null && !isNaN(stored_volume)){
+                                                    if(stored_volume && !isNaN(stored_volume)){
                                                         gr_audiobook_player.volume = stored_volume;
                                                     }
                                                     gr_audiobook_player.currentTime = Number(window.playback_time);
@@ -4275,7 +4275,9 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                localStorage.setItem("volume", gr_audiobook_player.volume);
+                                                if(gr_audiobook_player.volume){
+                                                    localStorage.setItem("volume", gr_audiobook_player.volume);
+                                                }
                                             });
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
