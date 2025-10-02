@@ -2991,7 +2991,7 @@ def web_interface(args, ctx):
                 session = context.get_session(id)
                 socket_hash = req.session_hash
                 if not session.get(socket_hash):
-                    outputs = tuple([gr.update() for _ in range(25)])
+                    outputs = tuple([gr.update() for _ in range(24)])
                     return outputs
                 session = context.get_session(id)
                 ebook_data = None
@@ -3027,7 +3027,7 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
-                outputs = tuple([gr.update() for _ in range(25)])
+                outputs = tuple([gr.update() for _ in range(24)])
                 return outputs
 
         def refresh_interface(id):
