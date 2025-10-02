@@ -160,7 +160,8 @@ class SessionContext:
                 "chapters": None,
                 "cover": None,
                 "duration": 0,
-                "playback_time": 0
+                "playback_time": 0,
+                "playback_volume": 0
             }, manager=self.manager)
         return self.sessions[id]
 
