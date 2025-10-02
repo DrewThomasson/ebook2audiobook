@@ -3015,32 +3015,6 @@ def web_interface(args, ctx):
                 outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
 
-        def restore_models_settings(id):
-            try:
-                session = context.get_session(id)
-                ### XTTSv2 Params
-                session['temperature'] = session['temperature'] if session['temperature'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']
-                session['length_penalty'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']
-                session['num_beams'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']
-                session['repetition_penalty'] = session['repetition_penalty'] if session['repetition_penalty'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']
-                session['top_k'] = session['top_k'] if session['top_k'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']
-                session['top_p'] = session['top_p'] if session['top_p'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']
-                session['speed'] = session['speed'] if session['speed'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']
-                session['enable_text_splitting'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting']
-                ### BARK Params
-                session['text_temp'] = session['text_temp'] if session['text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
-                session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
-                return (
-                    gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
-                    gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
-                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp']))
-                )
-            except Exception as e:
-                error = f'restore_models_settings(): {e}'
-                alert_exception(error)
-                outputs = tuple([gr.update() for _ in range(10)])
-                return outputs
-
         def restore_audiobook_player(audiobook):
             try:
                 return (
@@ -4092,14 +4066,6 @@ def web_interface(args, ctx):
                 gr_output_split, gr_output_split_hours, gr_audiobook_list
             ]
         ).then(
-            fn=restore_models_settings,
-            inputs=[gr_session],
-            outputs=[
-                gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
-                gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp,
-                gr_bark_waveform_temp
-            ]
-        ).then(
             fn=restore_audiobook_player,
             inputs=[gr_audiobook_list],
             outputs=[
@@ -4475,12 +4441,12 @@ def web_interface(args, ctx):
 
                         window.addEventListener("beforeunload", () =>{
                             try{
-                                const saved_session = JSON.parse(localStorage.getItem("data") || "{}");
-                                if(saved_session.tab_id == window.tab_id || !saved_session.tab_id){
-                                    saved_session.playback_volume = window.playback_volume;
-                                    delete saved_session.tab_id;
-                                    delete saved_session.status;
-                                    localStorage.setItem("data", JSON.stringify(saved_session));
+                                const data = JSON.parse(localStorage.getItem("data") || "{}");
+                                if(data.tab_id == window.tab_id || !data.tab_id){
+                                    data.playback_volume = window.playback_volume;
+                                    delete data.tab_id;
+                                    delete data.status;
+                                    localStorage.setItem("data", JSON.stringify(data));
                                 }
                             }catch(e){
                                 console.log("Error updating status on unload:", e);
@@ -4494,9 +4460,9 @@ def web_interface(args, ctx):
                         }, { once: true });
                         window.playback_time = 0;
                         window.playback_volume = 1.0;
-                        const stored_session = window.localStorage.getItem("data");
-                        if(stored_session){
-                            const parsed = JSON.parse(stored_session);
+                        const data = window.localStorage.getItem("data");
+                        if(data){
+                            const parsed = JSON.parse(data);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parseFloat(parsed.playback_time);
                             window.playback_volume = parseFloat(parsed.playback_volume);
