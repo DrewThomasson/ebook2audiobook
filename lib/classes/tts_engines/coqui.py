@@ -464,20 +464,20 @@ class Coqui:
                             else:
                                 settings['gpt_cond_latent'], settings['speaker_embedding'] = tts.get_conditioning_latents(audio_path=[settings['voice_path']])  
                             settings['latent_embedding'][settings['voice_path']] = settings['gpt_cond_latent'], settings['speaker_embedding']
-                            fine_tuned_params = {
-                                key.removeprefix("xtts_"): cast_type(self.session[key])
-                                for key, cast_type in {
-                                    "xtts_temperature": float,
-                                    "xtts_length_penalty": float,
-                                    "xtts_num_beams": int,
-                                    "xtts_repetition_penalty": float,
-                                    "xtts_top_k": int,
-                                    "xtts_top_p": float,
-                                    "xtts_speed": float,
-                                    "xtts_enable_text_splitting": bool
-                                }.items()
-                                if self.session.get(key) is not None
-                            }
+                        fine_tuned_params = {
+                            key.removeprefix("xtts_"): cast_type(self.session[key])
+                            for key, cast_type in {
+                                "xtts_temperature": float,
+                                "xtts_length_penalty": float,
+                                "xtts_num_beams": int,
+                                "xtts_repetition_penalty": float,
+                                "xtts_top_k": int,
+                                "xtts_top_p": float,
+                                "xtts_speed": float,
+                                "xtts_enable_text_splitting": bool
+                            }.items()
+                            if self.session.get(key) is not None
+                        }
                         with torch.no_grad():
                             result = tts.inference(
                                 text=sentence.replace('.', ' —'),
