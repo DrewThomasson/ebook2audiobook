@@ -124,16 +124,16 @@ class SessionContext:
                 "voice_dir": None,
                 "custom_model": None,
                 "custom_model_dir": None,
-                "temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
-                "length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
-                "num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
-                "repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
-                "top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
-                "top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'],
-                "speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
-                "enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
-                "text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
-                "waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
+                "xtts_temperature": default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'],
+                "xtts_length_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'],
+                "xtts_num_beams": default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'],
+                "xtts_repetition_penalty": default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'],
+                "xtts_top_k": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'],
+                "xtts_top_p": default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'],
+                "xtts_speed": default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'],
+                "xtts_enable_text_splitting": default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting'],
+                "bark_text_temp": default_engine_settings[TTS_ENGINES['BARK']]['text_temp'],
+                "bark_waveform_temp": default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'],
                 "final_name": None,
                 "output_format": default_output_format,
                 "output_split": default_output_split,
@@ -1999,16 +1999,16 @@ def convert_ebook(args, ctx=None):
                 session['custom_model'] = args['custom_model'] if not session['is_gui_process'] or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
                 session['fine_tuned'] = args['fine_tuned']
                 session['voice'] = args['voice']
-                session['temperature'] =  args['temperature']
-                session['length_penalty'] = args['length_penalty']
-                session['num_beams'] = args['num_beams']
-                session['repetition_penalty'] = args['repetition_penalty']
-                session['top_k'] =  args['top_k']
-                session['top_p'] = args['top_p']
-                session['speed'] = args['speed']
-                session['enable_text_splitting'] = args['enable_text_splitting']
-                session['text_temp'] =  args['text_temp']
-                session['waveform_temp'] =  args['waveform_temp']
+                session['xtts_temperature'] =  args['xtts_temperature']
+                session['xtts_length_penalty'] = args['xtts_length_penalty']
+                session['xtts_num_beams'] = args['xtts_num_beams']
+                session['xtts_repetition_penalty'] = args['xtts_repetition_penalty']
+                session['xtts_top_k'] =  args['xtts_top_k']
+                session['xtts_top_p'] = args['xtts_top_p']
+                session['xtts_speed'] = args['xtts_speed']
+                session['xtts_enable_text_splitting'] = args['xtts_enable_text_splitting']
+                session['bark_text_temp'] =  args['bark_text_temp']
+                session['bark_waveform_temp'] =  args['bark_waveform_temp']
                 session['audiobooks_dir'] = args['audiobooks_dir']
                 session['output_format'] = args['output_format']
                 session['output_split'] = args['output_split']    
@@ -3014,7 +3014,33 @@ def web_interface(args, ctx):
                 alert_exception(error)
                 outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
-
+        '''
+        def restore_models_settings(id):
+            try:
+                session = context.get_session(id)
+                ### XTTSv2 Params
+                session['xtts_temperature'] = session['xtts_temperature'] if session['xtts_temperature'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']
+                session['xtts_length_penalty'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']
+                session['xtts_num_beams'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']
+                session['xtts_repetition_penalty'] = session['xtts_repetition_penalty'] if session['xtts_repetition_penalty'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']
+                session['xtts_top_k'] = session['xtts_top_k'] if session['xtts_top_k'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']
+                session['xtts_top_p'] = session['xtts_top_p'] if session['xtts_top_p'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']
+                session['xtts_speed'] = session['xtts_speed'] if session['xtts_speed'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']
+                session['xtts_enable_text_splitting'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting']
+                ### BARK Params
+                session['bark_text_temp'] = session['bark_text_temp'] if session['bark_text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
+                session['bark_waveform_temp'] = session['bark_waveform_temp'] if session['bark_waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
+                return (
+                    gr.update(value=float(session['xtts_temperature'])), gr.update(value=float(session['xtts_length_penalty'])), gr.update(value=int(session['xtts_num_beams'])),
+                    gr.update(value=float(session['xtts_repetition_penalty'])), gr.update(value=int(session['xtts_top_k'])), gr.update(value=float(session['xtts_top_p'])), gr.update(value=float(session['xtts_speed'])), 
+                    gr.update(value=bool(session['xtts_enable_text_splitting'])), gr.update(value=float(session['bark_text_temp'])), gr.update(value=float(session['bark_waveform_temp']))
+                )
+            except Exception as e:
+                error = f'restore_models_settings(): {e}'
+                alert_exception(error)
+                outputs = tuple([gr.update() for _ in range(10)])
+                return outputs
+        '''
         def restore_audiobook_player(audiobook):
             try:
                 return (
@@ -3542,8 +3568,8 @@ def web_interface(args, ctx):
             return
 
         def submit_convert_btn(
-                id, device, ebook_file, chapters_control, tts_engine, language, voice, custom_model, fine_tuned, output_format, temperature, 
-                length_penalty, num_beams, repetition_penalty, top_k, top_p, speed, enable_text_splitting, text_temp, waveform_temp,
+                id, device, ebook_file, chapters_control, tts_engine, language, voice, custom_model, fine_tuned, output_format, xtts_temperature, 
+                xtts_length_penalty, xtts_num_beams, xtts_repetition_penalty, xtts_top_k, xtts_top_p, xtts_speed, xtts_enable_text_splitting, bark_text_temp, bark_waveform_temp,
                 output_split, output_split_hours
             ):
             try:
@@ -3563,16 +3589,16 @@ def web_interface(args, ctx):
                     "custom_model": custom_model,
                     "fine_tuned": fine_tuned,
                     "output_format": output_format,
-                    "temperature": float(temperature),
-                    "length_penalty": float(length_penalty),
-                    "num_beams": session['num_beams'],
-                    "repetition_penalty": float(repetition_penalty),
-                    "top_k": int(top_k),
-                    "top_p": float(top_p),
-                    "speed": float(speed),
-                    "enable_text_splitting": enable_text_splitting,
-                    "text_temp": float(text_temp),
-                    "waveform_temp": float(waveform_temp),
+                    "xtts_temperature": float(xtts_temperature),
+                    "xtts_length_penalty": float(xtts_length_penalty),
+                    "xtts_num_beams": session['xtts_num_beams'],
+                    "xtts_repetition_penalty": float(xtts_repetition_penalty),
+                    "xtts_top_k": int(xtts_top_k),
+                    "xtts_top_p": float(xtts_top_p),
+                    "xtts_speed": float(xtts_speed),
+                    "xtts_enable_text_splitting": xtts_enable_text_splitting,
+                    "bark_text_temp": float(bark_text_temp),
+                    "bark_waveform_temp": float(bark_waveform_temp),
                     "output_split": output_split,
                     "output_split_hours": output_split_hours,
                     "event": None
@@ -3581,7 +3607,7 @@ def web_interface(args, ctx):
                 if args['ebook'] is None and args['ebook_list'] is None:
                     error = 'Error: a file or directory is required.'
                     show_alert({"type": "warning", "msg": error})
-                elif args['num_beams'] < args['length_penalty']:
+                elif args['xtts_num_beams'] < args['xtts_length_penalty']:
                     error = 'Error: num beams must be greater or equal than length penalty.'
                     show_alert({"type": "warning", "msg": error})                   
                 else:
@@ -3984,7 +4010,7 @@ def web_interface(args, ctx):
             outputs=None
         )
         gr_xtts_enable_text_splitting.change(
-            fn=lambda val, id: change_param('enable_text_splitting', bool(val), id),
+            fn=lambda val, id: change_param('xtts_enable_text_splitting', bool(val), id),
             inputs=[gr_xtts_enable_text_splitting, gr_session],
             outputs=None
         )
@@ -4207,8 +4233,8 @@ def web_interface(args, ctx):
                                             // Animation frame loop
                                             function trackPlayback(){
                                                 try {
-                                                    window.playback_time = parseFloat(gr_audiobook_player.currentTime);
-                                                    const cue = findCue(window.playback_time);
+                                                    window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
+                                                    const cue = findCue(window.session_storage.playback_time);
                                                     if(cue && cue !== lastCue) {
                                                         if(fade_timeout){
                                                             gr_audiobook_sentence.style.opacity = "1";
@@ -4230,7 +4256,7 @@ def web_interface(args, ctx):
                                                     }
                                                     const now = performance.now();
                                                     if(now - last_time > 1000){
-                                                        gr_playback_time.value = String(window.playback_time);
+                                                        gr_playback_time.value = String(window.session_storage.playback_time);
                                                         gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
                                                         last_time = now;
                                                     }
@@ -4245,8 +4271,8 @@ def web_interface(args, ctx):
                                                 if(gr_audiobook_vtt.value != ""){
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
-                                                    gr_audiobook_player.currentTime = window.playback_time;
-                                                    gr_audiobook_player.volume = window.playback_volume;
+                                                    gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
+                                                    gr_audiobook_player.volume = parseFloat(window.session_storage.playback_volume);
                                                 }
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
@@ -4260,11 +4286,11 @@ def web_interface(args, ctx):
                                             });
                                             gr_audiobook_player.addEventListener("ended", ()=>{
                                                 gr_audiobook_sentence.value = "...";
-                                                window.playback_time = 0;
+                                                window.session_storage.playback_time = 0;
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                window.playback_volume = gr_audiobook_player.volume;
+                                                window.session_storage.playback_volume = gr_audiobook_player.volume;
                                             });
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
@@ -4281,7 +4307,7 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
-                                            gr_audiobook_player.volume = window.playback_volume || 1.0;
+                                            gr_audiobook_player.volume = parseFloat(window.session_storage.playback_volume) || 1.0;
                                         }
                                     }
                                 }catch(e){
@@ -4443,7 +4469,7 @@ def web_interface(args, ctx):
                             try{
                                 const data = JSON.parse(localStorage.getItem("data") || "{}");
                                 if(data.tab_id == window.tab_id || !data.tab_id){
-                                    data.playback_volume = window.playback_volume;
+                                    data.playback_volume = parseFloat(window.session_storage.playback_volume);
                                     delete data.tab_id;
                                     delete data.status;
                                     localStorage.setItem("data", JSON.stringify(data));
@@ -4458,15 +4484,15 @@ def web_interface(args, ctx):
                             clearTimeout(init_audiobook_player_timeout);
                             init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
                         }, { once: true });
-                        window.playback_time = 0;
-                        window.playback_volume = 1.0;
+
+                        window.session_storage = {};
+                        window.session_storage.playback_time = 0;
+                        window.session_storage.playback_volume = 1.0;
                         const data = window.localStorage.getItem("data");
                         if(data){
-                            const parsed = JSON.parse(data);
-                            parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
-                            window.playback_time = parseFloat(parsed.playback_time);
-                            window.playback_volume = parseFloat(parsed.playback_volume);
-                            return parsed;
+                            window.session_storage = JSON.parse(data);
+                            window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
+                            return window.session_storage;
                         }
                     }catch(e){
                         console.log("gr_raed_data js error:", e);

@@ -264,16 +264,16 @@ class Coqui:
                             else:
                                 gpt_cond_latent, speaker_embedding = tts.get_conditioning_latents(audio_path=[voice_path])
                             fine_tuned_params = {
-                                key: cast_type(self.session[key])
+                                key.removeprefix("xtts_"): cast_type(self.session[key])
                                 for key, cast_type in {
-                                    "temperature": float,
-                                    "length_penalty": float,
-                                    "num_beams": int,
-                                    "repetition_penalty": float,
-                                    "top_k": int,
-                                    "top_p": float,
-                                    "speed": float,
-                                    "enable_text_splitting": bool
+                                    "xtts_temperature": float,
+                                    "xtts_length_penalty": float,
+                                    "xtts_num_beams": int,
+                                    "xtts_repetition_penalty": float,
+                                    "xtts_top_k": int,
+                                    "xtts_top_p": float,
+                                    "xtts_speed": float,
+                                    "xtts_enable_text_splitting": bool
                                 }.items()
                                 if self.session.get(key) is not None
                             }
@@ -344,10 +344,10 @@ class Coqui:
                         default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         fine_tuned_params = {
-                            key: cast_type(self.session[key])
+                            key.removeprefix("bark_"): cast_type(self.session[key])
                             for key, cast_type in {
-                                "text_temp": float,
-                                "waveform_temp": float
+                                "bark_text_temp": float,
+                                "bark_waveform_temp": float
                             }.items()
                             if self.session.get(key) is not None
                         }
@@ -464,20 +464,20 @@ class Coqui:
                             else:
                                 settings['gpt_cond_latent'], settings['speaker_embedding'] = tts.get_conditioning_latents(audio_path=[settings['voice_path']])  
                             settings['latent_embedding'][settings['voice_path']] = settings['gpt_cond_latent'], settings['speaker_embedding']
-                        fine_tuned_params = {
-                            key: cast_type(self.session[key])
-                            for key, cast_type in {
-                                "temperature": float,
-                                "length_penalty": float,
-                                "num_beams": int,
-                                "repetition_penalty": float,
-                                "top_k": int,
-                                "top_p": float,
-                                "speed": float,
-                                "enable_text_splitting": bool
-                            }.items()
-                            if self.session.get(key) is not None
-                        }
+                            fine_tuned_params = {
+                                key.removeprefix("xtts_"): cast_type(self.session[key])
+                                for key, cast_type in {
+                                    "xtts_temperature": float,
+                                    "xtts_length_penalty": float,
+                                    "xtts_num_beams": int,
+                                    "xtts_repetition_penalty": float,
+                                    "xtts_top_k": int,
+                                    "xtts_top_p": float,
+                                    "xtts_speed": float,
+                                    "xtts_enable_text_splitting": bool
+                                }.items()
+                                if self.session.get(key) is not None
+                            }
                         with torch.no_grad():
                             result = tts.inference(
                                 text=sentence.replace('.', ' —'),
@@ -513,10 +513,10 @@ class Coqui:
                                 return False
                         npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                         fine_tuned_params = {
-                            key: cast_type(self.session[key])
+                            key.removeprefix("bark_"): cast_type(self.session[key])
                             for key, cast_type in {
-                                "text_temp": float,
-                                "waveform_temp": float
+                                "bark_text_temp": float,
+                                "bark_waveform_temp": float
                             }.items()
                             if self.session.get(key) is not None
                         }

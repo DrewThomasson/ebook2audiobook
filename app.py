@@ -166,7 +166,8 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         '--script_mode', '--session', '--share', '--headless', 
         '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
         '--custom_model', '--fine_tuned', '--output_format',
-        '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', '--top_k', '--top_p', '--speed', '--enable_text_splitting',
+        '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', 
+        '--top_k', '--top_p', '--speed', '--enable_text_splitting',
         '--text_temp', '--waveform_temp',
         '--output_dir', '--version', '--workflow', '--help'
     ]
@@ -270,6 +271,13 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
             args['output_split_hours'] = default_output_split_hours
+            engine_setting_keys = {engine: list(settings.keys()) for engine, settings in default_engine_settings.items()}
+            valid_model_keys = engine_setting_keys.get(args['tts_engine'], [])
+            renamed_args = {}
+            for key in valid_model_keys:
+                if key in args:
+                    renamed_args[f"{args['tts_engine']}_{key}"] = args.pop(key)
+            args.update(renamed_args)
             # Condition to stop if both --ebook and --ebooks_dir are provided
             if args['ebook'] and args['ebooks_dir']:
                 error = 'Error: You cannot specify both --ebook and --ebooks_dir in headless mode.'
