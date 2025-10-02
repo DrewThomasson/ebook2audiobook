@@ -4138,13 +4138,7 @@ def web_interface(args, ctx):
                         let init_audiobook_player_timeout;
                         let audioFilter = "";
                         let cues = [];
-                        
-                        const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
-                            console.log('gr_audiobook_player visible...');
-                            clearTimeout(init_audiobook_player_timeout);
-                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
-                        }, { once: true });
- 
+
                         if (typeof window.init_elements !== "function") {
                             window.init_elements = () => {
                                 try {
@@ -4462,11 +4456,17 @@ def web_interface(args, ctx):
                                 console.log("Error updating status on unload:", e);
                             }
                         });
+                        
+                        const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
+                            console.log('gr_audiobook_player visible...');
+                            const stored_volume = localStorage.getItem("volume");
+                            console.log("stored_volume", stored_volume);
+                            clearTimeout(init_audiobook_player_timeout);
+                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
+                        }, { once: true });
 
                         window.playback_time = 0;
                         const stored_session = window.localStorage.getItem("data");
-                        const stored_volume = localStorage.getItem("volume");
-                        console.log("stored_volume", stored_volume);
                         if(stored_session){
                             const parsed = JSON.parse(stored_session);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
