@@ -4252,8 +4252,10 @@ def web_interface(args, ctx):
                                                 if(gr_audiobook_vtt.value != ""){
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
-                                                    console.log(window.playback_volume);
-                                                    //gr_audiobook_player.volume = window.playback_volume;
+                                                    const stored_volume = localStorage.getItem("volume");
+                                                    if(stored_volume !== undefined && !isNaN(stored_volume)){
+                                                        gr_audiobook_player.volume = stored_volume;
+                                                    }
                                                     gr_audiobook_player.currentTime = Number(window.playback_time);
                                                 }
                                             });
@@ -4261,7 +4263,6 @@ def web_interface(args, ctx):
                                                 if (audioCtx.state === "suspended") {
                                                     audioCtx.resume();
                                                 }
-                                                gr_audiobook_player.volume = window.playback_volume;
                                                 requestAnimationFrame(trackPlayback);
                                             });
                                             gr_audiobook_player.addEventListener("seeked", ()=>{
@@ -4273,7 +4274,7 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                window.playback_volume = gr_audiobook_player.volume;
+                                                localStorage.setItem("volume", JSON.stringify(gr_audiobook_player.volume));
                                             });
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
@@ -4449,12 +4450,11 @@ def web_interface(args, ctx):
 
                         window.addEventListener("beforeunload", () =>{
                             try{
-                                const saved = JSON.parse(localStorage.getItem("data") || "{}");
-                                if(saved.tab_id == window.tab_id || !saved.tab_id){
-                                    saved.playback_volume = window.playback_volume;
-                                    saved.tab_id = undefined;
-                                    saved.status = undefined;
-                                    localStorage.setItem("data", JSON.stringify(saved));
+                                const saved_session = JSON.parse(localStorage.getItem("data") || "{}");
+                                if(saved_session.tab_id == window.tab_id || !saved_session.tab_id){
+                                    saved_session.tab_id = undefined;
+                                    saved_session.status = undefined;
+                                    localStorage.setItem("data", JSON.stringify(saved_session));
                                 }
                             }catch(e){
                                 console.log("Error updating status on unload:", e);
@@ -4462,16 +4462,11 @@ def web_interface(args, ctx):
                         });
 
                         window.playback_time = 0;
-                        window.playback_volume = 1.0;
-                        const stored = window.localStorage.getItem("data");
-                        if(stored){
-                            const parsed = JSON.parse(stored);
+                        const stored_session = window.localStorage.getItem("data");
+                        if(stored_session){
+                            const parsed = JSON.parse(stored_session);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
-                            if(parsed.playback_volume !== undefined && !isNaN(parsed.playback_volume)){
-                                window.playback_volume = parseFloat(parsed.playback_volume);
-                            }
-                            console.log("window.playback_volume: ", window.playback_volume);
                             return parsed;
                         }
                     }catch(e){
