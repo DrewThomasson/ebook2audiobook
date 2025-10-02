@@ -4278,11 +4278,7 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
-                                            const stored_volume = localStorage.getItem("volume");
-                                            if(!isNaN(stored_volume)){
-                                                gr_audiobook_player.volume = parseFloat(stored_volume);;
-                                            }
-                                            console.log("stored_volume", stored_volume);
+                                            gr_audiobook_player.volume = window.playback_volume || 1.0;
                                         }
                                     }
                                 }catch(e){
@@ -4444,14 +4440,14 @@ def web_interface(args, ctx):
                             try{
                                 const saved_session = JSON.parse(localStorage.getItem("data") || "{}");
                                 if(saved_session.tab_id == window.tab_id || !saved_session.tab_id){
+                                    if(gr_audiobook_player){
+                                        if(!isNaN(gr_audiobook_player.volume)){
+                                            saved_session.playback_volume = gr_audiobook_player.volume;
+                                        }
+                                    }
                                     delete saved_session.tab_id;
                                     delete saved_session.status;
                                     localStorage.setItem("data", JSON.stringify(saved_session));
-                                }
-                                if(gr_audiobook_player){
-                                    if(!isNaN(gr_audiobook_player.volume)){
-                                        localStorage.setItem("volume", gr_audiobook_player.volume);
-                                    }
                                 }
                             }catch(e){
                                 console.log("Error updating status on unload:", e);
@@ -4463,13 +4459,13 @@ def web_interface(args, ctx):
                             clearTimeout(init_audiobook_player_timeout);
                             init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
                         }, { once: true });
-
                         window.playback_time = 0;
                         const stored_session = window.localStorage.getItem("data");
                         if(stored_session){
                             const parsed = JSON.parse(stored_session);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
+                            window.playback_volume = parsed.playback_volume;
                             return parsed;
                         }
                     }catch(e){
