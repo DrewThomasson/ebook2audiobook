@@ -4071,7 +4071,7 @@ def web_interface(args, ctx):
                         if(data){
                             localStorage.clear();
                             console.log("save: ", data);
-                            window.localStorage.setItem("data", JSON.stringify(data));
+                            localStorage.setItem("data", JSON.stringify(data));
                         }
                     }catch(e){
                         console.log("gr_write_data.change error: "+e);
@@ -4488,9 +4488,9 @@ def web_interface(args, ctx):
                             try{
                                 const data = JSON.parse(localStorage.getItem("data") || "{}");
                                 if(data.tab_id == window.tab_id || !data.tab_id){
-                                    data.playback_volume = parseFloat(window.session_storage.playback_volume);
                                     delete data.tab_id;
                                     delete data.status;
+                                    data.playback_volume = parseFloat(window.session_storage.playback_volume);
                                     localStorage.setItem("data", JSON.stringify(data));
                                 }
                             }catch(e){
@@ -4498,7 +4498,7 @@ def web_interface(args, ctx):
                             }
                         });
 
-                        const data = window.localStorage.getItem("data");
+                        const data = localStorage.getItem("data");
                         if(data){
                             window.session_storage = JSON.parse(data);
                             window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
