@@ -4280,7 +4280,7 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.style.filter = audioFilter;
                                             const stored_volume = localStorage.getItem("volume");
                                             if(!isNaN(stored_volume)){
-                                                gr_audiobook_player.volume = stored_volume;
+                                                gr_audiobook_player.volume = parseFloat(savedVolume);;
                                             }
                                             console.log("stored_volume", stored_volume);
                                         }
@@ -4444,8 +4444,8 @@ def web_interface(args, ctx):
                             try{
                                 const saved_session = JSON.parse(localStorage.getItem("data") || "{}");
                                 if(saved_session.tab_id == window.tab_id || !saved_session.tab_id){
-                                    saved_session.tab_id = undefined;
-                                    saved_session.status = undefined;
+                                    delete saved_session.tab_id;
+                                    delete saved_session.status;
                                     localStorage.setItem("data", JSON.stringify(saved_session));
                                 }
                                 if(gr_audiobook_player){
