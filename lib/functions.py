@@ -4226,7 +4226,7 @@ def web_interface(args, ctx):
                                                         gr_audiobook_sentence.value = cue.text;
                                                         clearTimeout(fade_timeout);
                                                         fade_timeout = setTimeout(() => {
-                                                            gr_audiobook_sentence.style.transition = "opacity 0.25s ease-in";
+                                                            gr_audiobook_sentence.style.transition = "opacity 0.15s ease-in";
                                                             gr_audiobook_sentence.style.opacity = "1";
                                                             fade_timeout = null;
                                                         }, 33);
