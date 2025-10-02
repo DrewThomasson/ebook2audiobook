@@ -4246,10 +4246,6 @@ def web_interface(args, ctx):
                                                 if(gr_audiobook_vtt.value != ""){
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
-                                                    console.log("stored_volume: ", stored_volume);
-                                                    if(!isNaN(stored_volume)){
-                                                        gr_audiobook_player.volume = stored_volume;
-                                                    }
                                                     gr_audiobook_player.currentTime = Number(window.playback_time);
                                                 }
                                             });
@@ -4460,6 +4456,9 @@ def web_interface(args, ctx):
                         const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
                             console.log('gr_audiobook_player visible...');
                             const stored_volume = localStorage.getItem("volume");
+                            if(!isNaN(stored_volume)){
+                                gr_audiobook_player.volume = stored_volume;
+                            }
                             console.log("stored_volume", stored_volume);
                             clearTimeout(init_audiobook_player_timeout);
                             init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
