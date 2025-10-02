@@ -4278,6 +4278,11 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
+                                            const stored_volume = localStorage.getItem("volume");
+                                            if(!isNaN(stored_volume)){
+                                                gr_audiobook_player.volume = stored_volume;
+                                            }
+                                            console.log("stored_volume", stored_volume);
                                         }
                                     }
                                 }catch(e){
@@ -4455,11 +4460,6 @@ def web_interface(args, ctx):
                         
                         const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
                             console.log('gr_audiobook_player visible...');
-                            const stored_volume = localStorage.getItem("volume");
-                            if(!isNaN(stored_volume)){
-                                gr_audiobook_player.volume = stored_volume;
-                            }
-                            console.log("stored_volume", stored_volume);
                             clearTimeout(init_audiobook_player_timeout);
                             init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
                         }, { once: true });
