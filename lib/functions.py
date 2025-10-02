@@ -4266,8 +4266,7 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                window.playback_volume = gr_audiobook_player.volume;
-                                                console.log(window.playback_volume);
+                                                window.playback_volume = gr_audiobook_player.volume.toString();
                                             });
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
