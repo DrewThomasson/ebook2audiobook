@@ -4275,7 +4275,7 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                localStorage.setItem("volume", JSON.stringify(gr_audiobook_player.volume));
+                                                localStorage.setItem("volume", gr_audiobook_player.volume);
                                             });
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
