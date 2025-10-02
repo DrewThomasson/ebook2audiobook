@@ -4261,6 +4261,7 @@ def web_interface(args, ctx):
                                                 if (audioCtx.state === "suspended") {
                                                     audioCtx.resume();
                                                 }
+                                                gr_audiobook_player.volume = window.playback_volume;
                                                 requestAnimationFrame(trackPlayback);
                                             });
                                             gr_audiobook_player.addEventListener("seeked", ()=>{
@@ -4467,7 +4468,9 @@ def web_interface(args, ctx):
                             const parsed = JSON.parse(stored);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
-                            window.playback_volume = parseFloat(parsed.playback_volume);
+                            if(parsed.playback_volume !== undefined && !isNaN(parsed.playback_volume)){
+                                window.playback_volume = parseFloat(parsed.playback_volume);
+                            }
                             console.log("window.playback_volume: ", window.playback_volume);
                             return parsed;
                         }
