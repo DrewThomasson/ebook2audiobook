@@ -4437,11 +4437,6 @@ def web_interface(args, ctx):
                             observer.observe(root, { childList: true, subtree: true });
                             return () => observer.disconnect();
                         }
-                        const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
-                            console.log('gr_audiobook_player visible...');
-                            clearTimeout(init_audiobook_player_timeout);
-                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 100);
-                        }, { once: true });
                         
                         //////////////////////
 
@@ -4460,7 +4455,7 @@ def web_interface(args, ctx):
                         });
 
                         window.playback_time = 0;
-                        window.playback_volume = 1.00;
+                        window.playback_volume = 1.0;
                         const stored = window.localStorage.getItem("data");
                         if(stored){
                             const parsed = JSON.parse(stored);
@@ -4470,6 +4465,14 @@ def web_interface(args, ctx):
                             console.log("window.playback_volume: ", window.playback_volume);
                             return parsed;
                         }
+                        
+                        //////////////////////
+                        
+                        const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
+                            console.log('gr_audiobook_player visible...');
+                            clearTimeout(init_audiobook_player_timeout);
+                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 100);
+                        }, { once: true });
                     }catch(e){
                         console.log("gr_raed_data js error:", e);
                     }
