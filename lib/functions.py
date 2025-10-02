@@ -4273,11 +4273,6 @@ def web_interface(args, ctx):
                                                 window.playback_time = 0;
                                                 lastCue = null;
                                             });
-                                            gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                if(!isNaN(gr_audiobook_player.volume)){
-                                                    localStorage.setItem("volume", gr_audiobook_player.volume);
-                                                }
-                                            });
                                             const url = new URL(window.location);
                                             const theme = url.searchParams.get("__theme");
                                             let osTheme;
