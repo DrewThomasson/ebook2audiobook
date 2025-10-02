@@ -4254,7 +4254,7 @@ def web_interface(args, ctx):
                                                     window.load_vtt(url);
                                                     const stored_volume = localStorage.getItem("volume");
                                                     console.log("stored_volume: ", stored_volume);
-                                                    if(stored_volume && !isNaN(stored_volume)){
+                                                    if(!isNaN(stored_volume)){
                                                         gr_audiobook_player.volume = stored_volume;
                                                     }
                                                     gr_audiobook_player.currentTime = Number(window.playback_time);
@@ -4275,7 +4275,7 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                if(gr_audiobook_player.volume){
+                                                if(!isNaN(gr_audiobook_player.volume)){
                                                     localStorage.setItem("volume", gr_audiobook_player.volume);
                                                 }
                                             });
@@ -4303,7 +4303,7 @@ def web_interface(args, ctx):
                             };
                         }      
                         if(typeof(window.tab_progress) !== "function"){
-                            window.tab_progress = () =>{
+                            window.tab_progress = ()=>{
                                 try{
                                     const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
                                     const valArray = splitAtLastDash(val);
@@ -4459,6 +4459,11 @@ def web_interface(args, ctx):
                                     saved_session.tab_id = undefined;
                                     saved_session.status = undefined;
                                     localStorage.setItem("data", JSON.stringify(saved_session));
+                                }
+                                if(gr_audiobook_player){
+                                    if(!isNaN(gr_audiobook_player.volume){
+                                        localStorage.setItem("volume", gr_audiobook_player.volume);
+                                    }
                                 }
                             }catch(e){
                                 console.log("Error updating status on unload:", e);
