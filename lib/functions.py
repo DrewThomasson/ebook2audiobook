@@ -4241,7 +4241,7 @@ def web_interface(args, ctx):
                                             // Animation frame loop
                                             function trackPlayback(){
                                                 try {
-                                                    window.playback_time = gr_audiobook_player.currentTime;
+                                                    window.playback_time = parseFloat(gr_audiobook_player.currentTime);
                                                     const cue = findCue(window.playback_time);
                                                     if(cue && cue !== lastCue) {
                                                         if(fade_timeout){
@@ -4279,7 +4279,8 @@ def web_interface(args, ctx):
                                                 if(gr_audiobook_vtt.value != ""){
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
-                                                    gr_audiobook_player.currentTime = Number(window.playback_time);
+                                                    gr_audiobook_player.currentTime = window.playback_time;
+                                                    gr_audiobook_player.volume = window.playback_volume;
                                                 }
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
@@ -4497,7 +4498,7 @@ def web_interface(args, ctx):
                         if(stored_session){
                             const parsed = JSON.parse(stored_session);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
-                            window.playback_time = parsed.playback_time;
+                            window.playback_time = parseFloat(parsed.playback_time);
                             window.playback_volume = parseFloat(parsed.playback_volume);
                             return parsed;
                         }
