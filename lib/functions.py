@@ -4280,7 +4280,7 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.style.filter = audioFilter;
                                             const stored_volume = localStorage.getItem("volume");
                                             if(!isNaN(stored_volume)){
-                                                gr_audiobook_player.volume = parseFloat(savedVolume);;
+                                                gr_audiobook_player.volume = parseFloat(stored_volume);;
                                             }
                                             console.log("stored_volume", stored_volume);
                                         }
