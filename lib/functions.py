@@ -4448,7 +4448,7 @@ def web_interface(args, ctx):
                             try{
                                 const saved = JSON.parse(localStorage.getItem("data") || "{}");
                                 if(saved.tab_id == window.tab_id || !saved.tab_id){
-                                    saved.playback_volume = window.playback_volume.toString();
+                                    saved.playback_volume = window.playback_volume;
                                     saved.tab_id = undefined;
                                     saved.status = undefined;
                                     localStorage.setItem("data", JSON.stringify(saved));
@@ -4465,7 +4465,7 @@ def web_interface(args, ctx):
                             const parsed = JSON.parse(stored);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
-                            window.playback_volume = Number(parsed.playback_volume);
+                            window.playback_volume = parsed.playback_volume;
                             console.log('window.playback_volume: ', window.playback_volume);
                             return parsed;
                         }
