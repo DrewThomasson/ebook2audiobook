@@ -4252,7 +4252,8 @@ def web_interface(args, ctx):
                                                 if(gr_audiobook_vtt.value != ""){
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
-                                                    const stored_volume = localStorage.getItem("volume");
+                                                    const stored_volume = localStorage.getItem("volume
+                                                    console.log("stored_volume: ", stored_volume);
                                                     if(stored_volume !== undefined && !isNaN(stored_volume)){
                                                         gr_audiobook_player.volume = stored_volume;
                                                     }
