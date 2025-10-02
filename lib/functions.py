@@ -4461,7 +4461,7 @@ def web_interface(args, ctx):
                                     localStorage.setItem("data", JSON.stringify(saved_session));
                                 }
                                 if(gr_audiobook_player){
-                                    if(!isNaN(gr_audiobook_player.volume){
+                                    if(!isNaN(gr_audiobook_player.volume)){
                                         localStorage.setItem("volume", gr_audiobook_player.volume);
                                     }
                                 }
