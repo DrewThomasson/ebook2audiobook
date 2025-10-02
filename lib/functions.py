@@ -3044,7 +3044,7 @@ def web_interface(args, ctx):
         def restore_audiobook_player(audiobook):
             try:
                 return (
-                    gr.update(value=audiobook, gr.update(active=True)
+                    gr.update(value=audiobook), gr.update(active=True)
                 )
             except Exception as e:
                 error = f'restore_audiobook_player(): {e}'
