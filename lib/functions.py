@@ -2689,7 +2689,7 @@ def web_interface(args, ctx):
                 with gr_tab_main:
                     with gr.Row(elem_id='gr_row_tab_main'):
                         with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
-                            with gr.Group(elem_id='gr_group_select', elem_classes=['gr-group']):
+                            with gr.Group(elem_id='gr_group_ebook_file', elem_classes=['gr-group']):
                                 gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', elem_classes=['gr-markdown'], value='Selection')
                                 gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
                                 gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
@@ -2987,14 +2987,13 @@ def web_interface(args, ctx):
             gr.Error(error)
             DependencyError(error)
 
-        def restore_interface(id, req: gr.Request):
+        def restore_dashboard(id, req: gr.Request):
             try:
                 session = context.get_session(id)
                 socket_hash = req.session_hash
                 if not session.get(socket_hash):
-                    outputs = tuple([gr.update() for _ in range(24)])
+                    outputs = tuple([gr.update() for _ in range(13)])
                     return outputs
-                session = context.get_session(id)
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
@@ -3004,6 +3003,21 @@ def web_interface(args, ctx):
                     ebook_data = session['ebook']
                 else:
                     ebook_data = None
+                return (
+                    gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['chapters_control']), gr.update(value=session['device']),
+                    gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
+                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), gr.update(value=session['output_split']), gr.update(value=session['output_split_hours']),
+                    update_gr_audiobook_list(id)
+                )
+            except Exception as e:
+                error = f'restore_dashboard(): {e}'
+                alert_exception(error)
+                outputs = tuple([gr.update() for _ in range(13)])
+                return outputs
+
+        def restore_models_settings(id):
+            try:
+                session = context.get_session(id)
                 ### XTTSv2 Params
                 session['temperature'] = session['temperature'] if session['temperature'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']
                 session['length_penalty'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']
@@ -3017,18 +3031,25 @@ def web_interface(args, ctx):
                 session['text_temp'] = session['text_temp'] if session['text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
                 session['waveform_temp'] = session['waveform_temp'] if session['waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
                 return (
-                    gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=session['chapters_control']), gr.update(value=session['device']),
-                    gr.update(value=session['language']), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), update_gr_audiobook_list(id),
                     gr.update(value=float(session['temperature'])), gr.update(value=float(session['length_penalty'])), gr.update(value=int(session['num_beams'])),
                     gr.update(value=float(session['repetition_penalty'])), gr.update(value=int(session['top_k'])), gr.update(value=float(session['top_p'])), gr.update(value=float(session['speed'])), 
-                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp'])), update_gr_voice_list(id),
-                    gr.update(value=session['output_split']), gr.update(value=session['output_split_hours']), gr.update(active=True)
+                    gr.update(value=bool(session['enable_text_splitting'])), gr.update(value=float(session['text_temp'])), gr.update(value=float(session['waveform_temp']))
                 )
             except Exception as e:
-                error = f'restore_interface(): {e}'
+                error = f'restore_models_settings(): {e}'
                 alert_exception(error)
-                outputs = tuple([gr.update() for _ in range(24)])
+                outputs = tuple([gr.update() for _ in range(10)])
+                return outputs
+
+        def restore_audiobook_player(audiobook):
+            try:
+                return (
+                    gr.update(value=audiobook, gr.update(active=True)
+                )
+            except Exception as e:
+                error = f'restore_audiobook_player(): {e}'
+                alert_exception(error)
+                outputs = tuple([gr.update() for _ in range(2)])
                 return outputs
 
         def refresh_interface(id):
@@ -4063,15 +4084,26 @@ def web_interface(args, ctx):
             inputs=[gr_read_data, gr_state_update],
             outputs=[gr_write_data, gr_state_update, gr_session, gr_glass_mask]
         ).then(
-            fn=restore_interface,
+            fn=restore_dashboard,
             inputs=[gr_session],
             outputs=[
-                gr_ebook_file, gr_ebook_mode, gr_chapters_control, gr_device, gr_language,
-                gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list,
-                gr_output_format_list, gr_audiobook_list,
+                gr_ebook_file, gr_ebook_mode, gr_chapters_control, gr_device, gr_language, gr_voice_list,
+                gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
+                gr_output_split, gr_output_split_hours, gr_audiobook_list
+            ]
+        ).then(
+            fn=restore_models_settings,
+            inputs=[gr_session],
+            outputs=[
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty,
                 gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting, gr_bark_text_temp,
-                gr_bark_waveform_temp, gr_voice_list, gr_output_split, gr_output_split_hours, gr_timer
+                gr_bark_waveform_temp
+            ]
+        ).then(
+            fn=restore_audiobook_player,
+            inputs=[gr_audiobook_list],
+            outputs=[
+                gr_audiobook_player, gr_timer
             ]
         ).then(
             fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
