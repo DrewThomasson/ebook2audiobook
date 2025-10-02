@@ -4502,7 +4502,6 @@ def web_interface(args, ctx):
                         if(data){
                             window.session_storage = JSON.parse(data);
                             window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
-                            console.log("window.session_storage.playback_volume", window.session_storage.playback_volume);
                         }
 
                         const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
