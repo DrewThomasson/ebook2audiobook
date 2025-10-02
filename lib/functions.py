@@ -4213,6 +4213,26 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
+                        
+                        if(typeof(window.tab_progress) !== "function"){
+                            window.tab_progress = ()=>{
+                                try{
+                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
+                                    const valArray = splitAtLastDash(val);
+                                    if(valArray[1]){
+                                        const title = valArray[0].trim().split(/ (.*)/)[1].trim();
+                                        const percentage = valArray[1].trim();
+                                        const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
+                                        document.title = titleShort + ": " + percentage;
+                                    }else{
+                                        document.title = "Ebook2Audiobook";
+                                    }
+                                }catch(e){
+                                    console.log("tab_progress error:", e);
+                                }
+                            };
+                        }
+
                         if(typeof(window.init_audiobook_player) !== "function"){
                             window.init_audiobook_player = () =>{
                                 try{
@@ -4314,25 +4334,8 @@ def web_interface(args, ctx):
                                     console.log("init_audiobook_player error:", e);
                                 }
                             };
-                        }      
-                        if(typeof(window.tab_progress) !== "function"){
-                            window.tab_progress = ()=>{
-                                try{
-                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
-                                    const valArray = splitAtLastDash(val);
-                                    if(valArray[1]){
-                                        const title = valArray[0].trim().split(/ (.*)/)[1].trim();
-                                        const percentage = valArray[1].trim();
-                                        const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
-                                        document.title = titleShort + ": " + percentage;
-                                    }else{
-                                        document.title = "Ebook2Audiobook";
-                                    }
-                                }catch(e){
-                                    console.log("tab_progress error:", e);
-                                }
-                            };
                         }
+
                         if(typeof(window.load_vtt) !== "function"){
                             window.load_vtt_timeout = null;
                             window.load_vtt = (path) =>{
@@ -4366,103 +4369,115 @@ def web_interface(args, ctx):
                                 }
                             };
                         }
-                        function parseVTTFast(vtt){
-                            function pushCue(){
-                                if(start !== null && end !== null && textBuffer.length){
-                                    cues.push({ start, end, text: textBuffer.join("\n") });
-                                }
-                                start = end = null;
-                                textBuffer.length = 0;
-                            }
-                            const lines = vtt.split(/\r?\n/);
-                            const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
-                            let start = null, end = null;
-                            cues = [];
-                            textBuffer = [];
-                            for(let i = 0, len = lines.length; i < len; i++){
-                                const line = lines[i];
-                                if(!line.trim()){ pushCue(); continue; }
-                                if(line.includes("-->")){
-                                    const [s, e] = line.split("-->").map(l => l.trim().split(" ")[0]);
-                                    if(timePattern.test(s) && timePattern.test(e)){
-                                        start = toSeconds(s);
-                                        end = toSeconds(e);
+                        if(typeof(parseVTTFast) !== "function"){
+                            function parseVTTFast(vtt){
+                                function pushCue(){
+                                    if(start !== null && end !== null && textBuffer.length){
+                                        cues.push({ start, end, text: textBuffer.join("\n") });
                                     }
-                                }else if(!timePattern.test(line)){
-                                    textBuffer.push(line);
+                                    start = end = null;
+                                    textBuffer.length = 0;
                                 }
-                            }
-                            pushCue();
-                        }
-                        function toSeconds(ts){
-                            const parts = ts.split(":");
-                            if(parts.length === 3){
-                                return parseInt(parts[0], 10) * 3600 +
-                                       parseInt(parts[1], 10) * 60 +
-                                       parseFloat(parts[2]);
-                            }
-                            return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
-                        }
-                        function findCue(time){
-                            let lo = 0, hi = cues.length - 1;
-                            while(lo <= hi){
-                                const mid = (lo + hi) >> 1;
-                                const cue = cues[mid];
-                                if(time < cue.start){
-                                    hi = mid - 1;
-                                }else if(time >= cue.end){
-                                    lo = mid + 1;
-                                }else{
-                                    return cue;
+                                const lines = vtt.split(/\r?\n/);
+                                const timePattern = /(\d{2}:)?\d{2}:\d{2}\.\d{3}/;
+                                let start = null, end = null;
+                                cues = [];
+                                textBuffer = [];
+                                for(let i = 0, len = lines.length; i < len; i++){
+                                    const line = lines[i];
+                                    if(!line.trim()){ pushCue(); continue; }
+                                    if(line.includes("-->")){
+                                        const [s, e] = line.split("-->").map(l => l.trim().split(" ")[0]);
+                                        if(timePattern.test(s) && timePattern.test(e)){
+                                            start = toSeconds(s);
+                                            end = toSeconds(e);
+                                        }
+                                    }else if(!timePattern.test(line)){
+                                        textBuffer.push(line);
+                                    }
                                 }
+                                pushCue();
                             }
-                            return null;
                         }
-                        function splitAtLastDash(s){
-                            const idx = s.lastIndexOf("-");
-                            if(idx === -1){
-                                return [s];
+                        
+                        if(typeof(toSeconds) !== "function"){
+                            function toSeconds(ts){
+                                const parts = ts.split(":");
+                                if(parts.length === 3){
+                                    return parseInt(parts[0], 10) * 3600 +
+                                           parseInt(parts[1], 10) * 60 +
+                                           parseFloat(parts[2]);
+                                }
+                                return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
                             }
-                            return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
+                        }
+ 
+                        if(typeof(findCue) !== "function"){
+                            function findCue(time){
+                                let lo = 0, hi = cues.length - 1;
+                                while(lo <= hi){
+                                    const mid = (lo + hi) >> 1;
+                                    const cue = cues[mid];
+                                    if(time < cue.start){
+                                        hi = mid - 1;
+                                    }else if(time >= cue.end){
+                                        lo = mid + 1;
+                                    }else{
+                                        return cue;
+                                    }
+                                }
+                                return null;
+                            }
                         }
 
+                        if(typeof(splitAtLastDash) !== "function"){
+                            function splitAtLastDash(s){
+                                const idx = s.lastIndexOf("-");
+                                if(idx === -1){
+                                    return [s];
+                                }
+                                return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
+                            }
+                        }
                         //////////////////////
                         
-                        function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
-                            const seen = new WeakSet();
-                            const fireFor = (ctx) => {
-                                ctx.querySelectorAll(selector).forEach((el) => {
-                                    if(seen.has(el)){
-                                        return;
-                                    }
-                                    seen.add(el);
-                                    callback(el);
-                                });
-                            };
-                            fireFor(root);
-                            const observer = new MutationObserver((mutations) => {
-                                for (const m of mutations) {
-                                    for (const n of m.addedNodes) {
-                                        if (n.nodeType !== 1) continue;
-                                        if (n.matches?.(selector)) {
-                                            if (!seen.has(n)) {
-                                                seen.add(n);
-                                                callback(n);
-                                                if (once) {
-                                                    observer.disconnect();
-                                                    return;
+                        if(typeof(onElementAvailable) !== "function"){
+                            function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
+                                const seen = new WeakSet();
+                                const fireFor = (ctx) => {
+                                    ctx.querySelectorAll(selector).forEach((el) => {
+                                        if(seen.has(el)){
+                                            return;
+                                        }
+                                        seen.add(el);
+                                        callback(el);
+                                    });
+                                };
+                                fireFor(root);
+                                const observer = new MutationObserver((mutations) => {
+                                    for (const m of mutations) {
+                                        for (const n of m.addedNodes) {
+                                            if (n.nodeType !== 1) continue;
+                                            if (n.matches?.(selector)) {
+                                                if (!seen.has(n)) {
+                                                    seen.add(n);
+                                                    callback(n);
+                                                    if (once) {
+                                                        observer.disconnect();
+                                                        return;
+                                                    }
                                                 }
+                                            } else {
+                                                fireFor(n);
                                             }
-                                        } else {
-                                            fireFor(n);
                                         }
                                     }
-                                }
-                            });
-                            observer.observe(root, { childList: true, subtree: true });
-                            return () => observer.disconnect();
+                                });
+                                observer.observe(root, { childList: true, subtree: true });
+                                return () => observer.disconnect();
+                            }
                         }
-                        
+
                         //////////////////////
 
                         window.addEventListener("beforeunload", () =>{
