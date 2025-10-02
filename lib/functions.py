@@ -4466,6 +4466,7 @@ def web_interface(args, ctx):
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             window.playback_time = parsed.playback_time;
                             window.playback_volume = Number(parsed.playback_volume);
+                            console.log('window.playback_volume: ', window.playback_volume);
                             return parsed;
                         }
                     }catch(e){
