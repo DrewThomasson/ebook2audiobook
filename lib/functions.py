@@ -4478,22 +4478,24 @@ def web_interface(args, ctx):
                                 console.log("Error updating status on unload:", e);
                             }
                         });
-                        
+
+                        window.session_storage = {};
+                        window.session_storage.playback_time = 0;
+                        window.session_storage.playback_volume = 1.0;
+
+                        const data = window.localStorage.getItem("data");
+                        if(data){
+                            window.session_storage = JSON.parse(data);
+                            window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
+                        }
+
                         const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
                             console.log('gr_audiobook_player visible...');
                             clearTimeout(init_audiobook_player_timeout);
                             init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
                         }, { once: true });
 
-                        window.session_storage = {};
-                        window.session_storage.playback_time = 0;
-                        window.session_storage.playback_volume = 1.0;
-                        const data = window.localStorage.getItem("data");
-                        if(data){
-                            window.session_storage = JSON.parse(data);
-                            window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
-                            return window.session_storage;
-                        }
+                        return window.session_storage;
                     }catch(e){
                         console.log("gr_raed_data js error:", e);
                     }
