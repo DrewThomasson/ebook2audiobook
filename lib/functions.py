@@ -4252,7 +4252,6 @@ def web_interface(args, ctx):
                                                 if(gr_audiobook_vtt.value != ""){
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
-                                                    const stored_volume = localStorage.getItem("volume");
                                                     console.log("stored_volume: ", stored_volume);
                                                     if(!isNaN(stored_volume)){
                                                         gr_audiobook_player.volume = stored_volume;
@@ -4471,8 +4470,7 @@ def web_interface(args, ctx):
 
                         window.playback_time = 0;
                         const stored_session = window.localStorage.getItem("data");
-                                                    const stored_volume = localStorage.getItem("volume");
-                                                    console.log("stored_volume: ", stored_volume);
+                        const stored_volume = localStorage.getItem("volume");
                         if(stored_session){
                             const parsed = JSON.parse(stored_session);
                             parsed.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
