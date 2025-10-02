@@ -4163,9 +4163,14 @@ def web_interface(args, ctx):
                         let init_audiobook_player_timeout;
                         let audioFilter = "";
                         let cues = [];
+                        
+                        window.session_storage = {};
+                        window.session_storage.playback_time = 0;
+                        window.session_storage.playback_volume = 1.0;
+                        window.load_vtt_timeout = null;
 
-                        if (typeof window.init_elements !== "function") {
-                            window.init_elements = () => {
+                        if (typeof window.init_elements !== "function"){
+                            window.init_elements = ()=>{
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
@@ -4234,7 +4239,7 @@ def web_interface(args, ctx):
                         }
 
                         if(typeof(window.init_audiobook_player) !== "function"){
-                            window.init_audiobook_player = () =>{
+                            window.init_audiobook_player = ()=>{
                                 try{
                                     if(gr_root){
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
@@ -4337,8 +4342,7 @@ def web_interface(args, ctx):
                         }
 
                         if(typeof(window.load_vtt) !== "function"){
-                            window.load_vtt_timeout = null;
-                            window.load_vtt = (path) =>{
+                            window.load_vtt = (path)=>{
                                 try{
                                     if(path){
                                         // Remove any <track> to bypass browser subtitle engine
@@ -4493,10 +4497,6 @@ def web_interface(args, ctx):
                                 console.log("Error updating status on unload:", e);
                             }
                         });
-
-                        window.session_storage = {};
-                        window.session_storage.playback_time = 0;
-                        window.session_storage.playback_volume = 1.0;
 
                         const data = window.localStorage.getItem("data");
                         if(data){
