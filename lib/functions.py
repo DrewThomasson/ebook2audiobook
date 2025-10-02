@@ -2467,6 +2467,7 @@ def web_interface(args, ctx):
             }
             #gr_ebook_file label, #gr_custom_model_file label, #gr_voice_file label {
                 background: none !important;
+                border: none !important;
             }
             #gr_audiobook_player label {
                 display: none !important;
