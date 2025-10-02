@@ -4254,7 +4254,7 @@ def web_interface(args, ctx):
                                                     window.load_vtt(url);
                                                     const stored_volume = localStorage.getItem("volume");
                                                     console.log("stored_volume: ", stored_volume);
-                                                    if(stored_volume !== undefined && !isNaN(stored_volume)){
+                                                    if(stored_volume !== null && !isNaN(stored_volume)){
                                                         gr_audiobook_player.volume = stored_volume;
                                                     }
                                                     gr_audiobook_player.currentTime = Number(window.playback_time);
