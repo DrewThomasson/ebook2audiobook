@@ -3967,12 +3967,18 @@ def web_interface(args, ctx):
             fn=None,
             inputs=None,
             js='''
-                ()=>{
-                    if (!window._audiobook_player_initialized) {
-                        window._audiobook_player_initialized = true;
-                        init_audiobook_player();
-                    }
+            () => {
+                if (!window._audiobook_player_initialized) {
+                    const checkPlayerExist = setInterval(() => {
+                        const player = document.querySelector("#gr_audiobook_player audio");
+                        if(player){
+                            clearInterval(checkPlayerExist);
+                            window._audiobook_player_initialized = true;
+                            init_audiobook_player();
+                        }
+                    }, 500);
                 }
+            }
             '''
         )
         gr_audiobook_list.change(
@@ -4053,10 +4059,10 @@ def web_interface(args, ctx):
             js='''
             () => {
                 if (!window._bark_sliders_initialized) {
-                    const checkXttsExist = setInterval(() => {
-                        const slider = document.querySelector("#gr_bark_speed input[type=range]");
+                    const checkBarkExist = setInterval(() => {
+                        const slider = document.querySelector("#gr_bark_waveform_temp input[type=range]");
                         if(slider){
-                            clearInterval(checkXttsExist);
+                            clearInterval(checkBarkExist);
                             window._bark_sliders_initialized = true;
                             init_bark_sliders();
                         }
