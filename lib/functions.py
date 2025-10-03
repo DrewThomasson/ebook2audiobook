@@ -3966,7 +3966,7 @@ def web_interface(args, ctx):
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_audiobook_vtt],
+            #outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_audiobook_vtt],
             js='''
                 () => {
                     if (!window._audiobook_player_initialized) {
