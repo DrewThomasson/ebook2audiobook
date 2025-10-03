@@ -53,7 +53,7 @@ def check_and_install_requirements(file_path):
         except ImportError:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
             from packaging.specifiers import SpecifierSet
-        import regex as re
+        import re
         from tqdm import tqdm
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
