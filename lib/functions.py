@@ -4293,7 +4293,7 @@ def web_interface(args, ctx):
                                     sliders.forEach(slider => {
                                         if(!slider) return;
                                         const key = slider.closest("div[id]").id;
-                                        console.log(key);
+                                        console.log(window.session_storage);
                                         const saved = window.session_storage[key];
                                         slider.value = (slider === gr_xtts_top_k_slider) ? parseInt(saved) : parseFloat(saved);
                                     });
