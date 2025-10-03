@@ -4293,8 +4293,8 @@ def web_interface(args, ctx):
                                     sliders.forEach(slider => {
                                         if(!slider) return;
                                         const key = slider.closest("div[id]").id.replace(/^gr_/, "");
-                                        console.log(window.session_storage);
                                         const saved = window.session_storage[key];
+                                        console.log(key, saved);
                                         slider.value = (slider === gr_xtts_top_k) ? parseInt(saved) : parseFloat(saved);
                                     });
                                 }catch(e){
@@ -4317,7 +4317,6 @@ def web_interface(args, ctx):
                                         const key = slider.closest("div[id]").id.replace(/^gr_/, "");
                                         const saved = window.session_storage[key];
                                         slider.value = parseFloat(saved);
-                                        slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
                                 }catch(e){
                                     console.log("init_bark_sliders error:", e);
