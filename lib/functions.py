@@ -3980,6 +3980,7 @@ def web_interface(args, ctx):
                 (audiobook) => {
                     if (!window._audiobook_player_initialized) {
                         const checkPlayerExist = setInterval(() => {
+                            console.log(audiobook);
                             const player = document.querySelector("#gr_audiobook_player audio");
                             if(player){
                                 clearInterval(checkPlayerExist);
