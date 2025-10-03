@@ -4278,24 +4278,24 @@ def web_interface(args, ctx):
                         if(typeof(window.init_xtts_sliders) !== "function"){
                             window.init_xtts_sliders = ()=>{
                                 try{
-                                    const gr_xtts_temperature_slider     = gr_root.querySelector("#gr_xtts_temperature input[type=number]");
-                                    const gr_xtts_repetition_penalty_slider = gr_root.querySelector("#gr_xtts_repetition_penalty input[type=number]");
-                                    const gr_xtts_top_k_slider           = gr_root.querySelector("#gr_xtts_top_k input[type=number]");
-                                    const gr_xtts_top_p_slider           = gr_root.querySelector("#gr_xtts_top_p input[type=number]");
-                                    const gr_xtts_speed_slider           = gr_root.querySelector("#gr_xtts_speed input[type=number]");
+                                    const gr_xtts_temperature           = gr_root.querySelector("#gr_xtts_temperature input[type=number]");
+                                    const gr_xtts_repetition_penalty    = gr_root.querySelector("#gr_xtts_repetition_penalty input[type=number]");
+                                    const gr_xtts_top_k                 = gr_root.querySelector("#gr_xtts_top_k input[type=number]");
+                                    const gr_xtts_top_p                 = gr_root.querySelector("#gr_xtts_top_p input[type=number]");
+                                    const gr_xtts_speed                 = gr_root.querySelector("#gr_xtts_speed input[type=number]");
                                     const sliders = [
-                                        gr_xtts_temperature_slider,
-                                        gr_xtts_repetition_penalty_slider,
-                                        gr_xtts_top_k_slider,
-                                        gr_xtts_top_p_slider,
-                                        gr_xtts_speed_slider
+                                        gr_xtts_temperature,
+                                        gr_xtts_repetition_penalty,
+                                        gr_xtts_top_k,
+                                        gr_xtts_top_p,
+                                        gr_xtts_speed
                                     ];
                                     sliders.forEach(slider => {
                                         if(!slider) return;
-                                        const key = slider.closest("div[id]").id;
+                                        const key = slider.closest("div[id]").id.replace(/^gr_/, "");
                                         console.log(window.session_storage);
                                         const saved = window.session_storage[key];
-                                        slider.value = (slider === gr_xtts_top_k_slider) ? parseInt(saved) : parseFloat(saved);
+                                        slider.value = (slider === gr_xtts_top_k) ? parseInt(saved) : parseFloat(saved);
                                     });
                                 }catch(e){
                                     console.log("init_xtts_sliders error:", e);
@@ -4314,7 +4314,7 @@ def web_interface(args, ctx):
                                     ];
                                     sliders.forEach(slider => {
                                         if(!slider) return;
-                                        const key = slider.closest("div[id]").id;
+                                        const key = slider.closest("div[id]").id.replace(/^gr_/, "");
                                         const saved = window.session_storage[key];
                                         slider.value = parseFloat(saved);
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
