@@ -4295,7 +4295,8 @@ def web_interface(args, ctx):
                                         if(!slider) return;
                                         const key = slider.closest("div[id]").id;
                                         const saved = window.session_storage[key];
-                                        slider.value = saved;
+                                        slider.value = (slider === gr_xtts_top_k_slider) ? parseInt(saved) : parseFloat(saved);
+                                        slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
                                 }catch(e){
                                     console.log("init_xtts_sliders error:", e);
@@ -4317,7 +4318,8 @@ def web_interface(args, ctx):
                                         if(!slider) return;
                                         const key = slider.closest("div[id]").id;
                                         const saved = window.session_storage[key];
-                                        slider.value = saved;
+                                        slider.value = parseFloat(saved);
+                                        slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
                                 }catch(e){
                                     console.log("init_bark_sliders error:", e);
