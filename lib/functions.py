@@ -3975,12 +3975,11 @@ def web_interface(args, ctx):
         )
         gr_audiobook_player.change(
             fn=None,
-            inputs=[gr_audiobook_list],
+            inputs=None,
             js='''
-                (audiobook) => {
+                () => {
                     if (!window._audiobook_player_initialized) {
                         const checkPlayerExist = setInterval(() => {
-                            console.log(audiobook);
                             const player = document.querySelector("#gr_audiobook_player audio");
                             if(player){
                                 clearInterval(checkPlayerExist);
