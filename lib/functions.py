@@ -3974,7 +3974,7 @@ def web_interface(args, ctx):
             outputs=[gr_confirm_deletion_field_hidden, gr_modal]
         )
         gr_audiobook_player.change(
-            fn=test_player,
+            fn=None,
             inputs=[gr_audiobook_list],
             js='''
                 (audiobook) => {
