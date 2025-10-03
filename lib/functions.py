@@ -4278,11 +4278,11 @@ def web_interface(args, ctx):
                         if(typeof(window.init_xtts_sliders) !== "function"){
                             window.init_xtts_sliders = ()=>{
                                 try{
-                                    const gr_xtts_temperature_slider     = gr_root.querySelector("#gr_xtts_temperature input[type=range]");
-                                    const gr_xtts_repetition_penalty_slider = gr_root.querySelector("#gr_xtts_repetition_penalty input[type=range]");
-                                    const gr_xtts_top_k_slider           = gr_root.querySelector("#gr_xtts_top_k input[type=range]");
-                                    const gr_xtts_top_p_slider           = gr_root.querySelector("#gr_xtts_top_p input[type=range]");
-                                    const gr_xtts_speed_slider           = gr_root.querySelector("#gr_xtts_speed input[type=range]");
+                                    const gr_xtts_temperature_slider     = gr_root.querySelector("#gr_xtts_temperature input[type=number]");
+                                    const gr_xtts_repetition_penalty_slider = gr_root.querySelector("#gr_xtts_repetition_penalty input[type=number]");
+                                    const gr_xtts_top_k_slider           = gr_root.querySelector("#gr_xtts_top_k input[type=number]");
+                                    const gr_xtts_top_p_slider           = gr_root.querySelector("#gr_xtts_top_p input[type=number]");
+                                    const gr_xtts_speed_slider           = gr_root.querySelector("#gr_xtts_speed input[type=number]");
                                     const sliders = [
                                         gr_xtts_temperature_slider,
                                         gr_xtts_repetition_penalty_slider,
@@ -4306,8 +4306,8 @@ def web_interface(args, ctx):
                         if(typeof(window.init_bark_sliders) !== "function"){
                             window.init_bark_sliders = ()=>{
                                 try{
-                                    const gr_bark_text_temp_slider       = gr_root.querySelector("#gr_bark_text_temp input[type=range]");
-                                    const gr_bark_waveform_temp_slider   = gr_root.querySelector("#gr_bark_waveform_temp input[type=range]");
+                                    const gr_bark_text_temp_slider       = gr_root.querySelector("#gr_bark_text_temp input[type=number]");
+                                    const gr_bark_waveform_temp_slider   = gr_root.querySelector("#gr_bark_waveform_temp input[type=number]");
                                     const sliders = [
                                         gr_bark_text_temp_slider,
                                         gr_bark_waveform_temp_slider
