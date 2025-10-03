@@ -4271,7 +4271,7 @@ def web_interface(args, ctx):
                                         gr_xtts_speed_slider
                                     ];
                                     sliders.forEach(slider => {
-                                        console.log(slider.id);
+                                        console.log(slider);
                                         if(!slider) return;
                                         const key = slider.closest("div[id]").id;
                                         const saved = window.session_storage[key];
@@ -4293,7 +4293,7 @@ def web_interface(args, ctx):
                                         gr_bark_waveform_temp_slider
                                     ];
                                     sliders.forEach(slider => {
-                                        console.log(slider.id);
+                                        console.log(slider);
                                         if(!slider) return;
                                         const key = slider.closest("div[id]").id;
                                         const saved = window.session_storage[key];
