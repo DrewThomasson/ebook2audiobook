@@ -3963,22 +3963,25 @@ def web_interface(args, ctx):
             outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
             show_progress="minimal",
         )
+        def test_player(val):
+            print(val)
+            return val
         gr_audiobook_player.change(
-            fn=None,
-            inputs=None,
+            fn=test_player,
+            inputs=gr_audiobook_player,
             js='''
-            () => {
-                if (!window._audiobook_player_initialized) {
-                    const checkPlayerExist = setInterval(() => {
-                        const player = document.querySelector("#gr_audiobook_player audio");
-                        if(player){
-                            clearInterval(checkPlayerExist);
-                            window._audiobook_player_initialized = true;
-                            init_audiobook_player();
-                        }
-                    }, 500);
+                (audiobook) => {
+                    if (!window._audiobook_player_initialized) {
+                        const checkPlayerExist = setInterval(() => {
+                            const player = document.querySelector("#gr_audiobook_player audio");
+                            if(player){
+                                clearInterval(checkPlayerExist);
+                                window._audiobook_player_initialized = true;
+                                init_audiobook_player();
+                            }
+                        }, 500);
+                    }
                 }
-            }
             '''
         )
         gr_audiobook_list.change(
