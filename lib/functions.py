@@ -3989,13 +3989,20 @@ def web_interface(args, ctx):
         gr_tab_xtts_params.select(
             fn=None,
             inputs=None,
+            outputs=None,
             js='''
-                ()=>{
-                    if (!window._xtts_sliders_initialized) {
-                        window._xtts_sliders_initialized = true;
-                        init_xtts_sliders();
-                    }
+            () => {
+                if (!window._xtts_sliders_initialized) {
+                    const checkXttsExist = setInterval(() => {
+                        const slider = document.querySelector("#gr_xtts_speed input[type=range]");
+                        if(slider){
+                            clearInterval(checkXttsExist);
+                            window._xtts_sliders_initialized = true;
+                            init_xtts_sliders();
+                        }
+                    }, 500);
                 }
+            }
             '''
         )
         gr_xtts_temperature.change(
@@ -4042,13 +4049,20 @@ def web_interface(args, ctx):
         gr_tab_bark_params.select(
             fn=None,
             inputs=None,
+            outputs=None,
             js='''
-                ()=>{
-                    if (!window._bark_sliders_initialized) {
-                        window._bark_sliders_initialized = true;
-                        init_bark_sliders();
-                    }
+            () => {
+                if (!window._bark_sliders_initialized) {
+                    const checkXttsExist = setInterval(() => {
+                        const slider = document.querySelector("#gr_bark_speed input[type=range]");
+                        if(slider){
+                            clearInterval(checkXttsExist);
+                            window._bark_sliders_initialized = true;
+                            init_bark_sliders();
+                        }
+                    }, 500);
                 }
+            }
             '''
         )
         gr_bark_text_temp.change(
