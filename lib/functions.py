@@ -3062,21 +3062,22 @@ def web_interface(args, ctx):
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id),
                 )
 
-        def change_gr_audiobook_list(audiobook, id):
+        def change_gr_audiobook_list(selected, id):
             try:
                 session = context.get_session(id)
-                session['audiobook'] = audiobook
+                session['audiobook'] = selected
                 group_visible = True if len(audiobook_options) > 0 else False
-                if audiobook is not None: 
-                    vtt = Path(audiobook).with_suffix('.vtt')
-                    if not os.path.exists(audiobook) or not os.path.exists(vtt):
+                if selected is not None: 
+                    vtt = Path(selected).with_suffix('.vtt')
+                    if not os.path.exists(selected) or not os.path.exists(vtt):
                         return gr.update(visible=group_visible), gr.update(value=None), gr.update(value=None)
                     session['playback_time'] = 0
-                    audio_info = mediainfo(audiobook)
+                    audio_info = mediainfo(selected)
                     session['duration'] = float(audio_info['duration'])
                     with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                         vtt_content = f.read()
-                    return gr.update(visible=group_visible), gr.update(value=audiobook), gr.update(value=vtt_content)
+                    print(f"change_gr_audiobook_list {gr_audiobook_list}")
+                    return gr.update(visible=group_visible), gr.update(value=selected), gr.update(value=vtt_content)
             except Exception as e:
                 error = f'change_gr_audiobook_list(): {e}'
                 alert_exception(error)
@@ -4624,7 +4625,6 @@ def web_interface(args, ctx):
                             window.session_storage = JSON.parse(data);
                             window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                         }
-                        console.log("window.session_storage[xtts_temperature]", window.session_storage["xtts_temperature"]);
                         return window.session_storage;
                     }catch(e){
                         console.log("gr_raed_data js error:", e);
