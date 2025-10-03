@@ -2542,7 +2542,34 @@ def web_interface(args, ctx):
             #gr_row_voice_player {
                 height: 60px !important;
             }
-
+            #gr_voice_player {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: var(--block-background-fill) !important;
+                border: none !important;
+                width: 60px !important;
+                height: 60px !important;
+                min-width: min(60px, 100%) !important;
+            }
+            #gr_voice_player label, #gr_voice_player .waveform-container, 
+            #gr_voice_player .timestamps, #gr_voice_player .control-wrapper, 
+            #gr_voice_player .rewind, #gr_voice_player .skip, #gr_voice_player .icon-button-wrapper {
+                display: none !important;
+            }
+            #gr_voice_player > * {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 60px !important;
+                height: 60px !important; 
+            }
+            #gr_voice_player .play-pause-button svg {
+                padding: 5px 0 0 5px !important;
+            }
+            #gr_voice_player .play-pause-button:hover svg {
+                fill: #ffab00 !important;
+                stroke: #ffab00 !important;
+                transform: scale(1.2) !important;
+            }
             ///////////
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
                 display: none !important;
@@ -2678,7 +2705,7 @@ def web_interface(args, ctx):
                                 gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                 with gr_row_voice_player:
-                                    gr_voice_player = gr.Audio(elem_id='gr_voice_player', elem_classes=['gr-voice-player'], type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
+                                    gr_voice_player = gr.Audio(elem_id='gr_voice_player', elem_classes=['gr-voice-player'], type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=True), scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
