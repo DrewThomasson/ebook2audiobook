@@ -4219,23 +4219,45 @@ def web_interface(args, ctx):
                             };
                         }
                         
-                        if(typeof(window.tab_progress) !== "function"){
-                            window.tab_progress = ()=>{
+                        if(typeof(window.init_sliders) !== "function"){
+                            window.init_sliders = ()=>{
                                 try{
-                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
-                                    const valArray = splitAtLastDash(val);
-                                    if(valArray[1]){
-                                        const title = valArray[0].trim().split(/ (.*)/)[1].trim();
-                                        const percentage = valArray[1].trim();
-                                        const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
-                                        document.title = titleShort + ": " + percentage;
-                                    }else{
-                                        document.title = "Ebook2Audiobook";
-                                    }
+                                    const gr_xtts_temperature_slider     = gr_root.querySelector("#gr_xtts_temperature input[type=range]");
+                                    const gr_xtts_repetition_penalty_slider = gr_root.querySelector("#gr_xtts_repetition_penalty input[type=range]");
+                                    const gr_xtts_top_k_slider           = gr_root.querySelector("#gr_xtts_top_k input[type=range]");
+                                    const gr_xtts_top_p_slider           = gr_root.querySelector("#gr_xtts_top_p input[type=range]");
+                                    const gr_xtts_speed_slider           = gr_root.querySelector("#gr_xtts_speed input[type=range]");
+                                    const gr_bark_text_temp_slider       = gr_root.querySelector("#gr_bark_text_temp input[type=range]");
+                                    const gr_bark_waveform_temp_slider   = gr_root.querySelector("#gr_bark_waveform_temp input[type=range]");
+                                    const sliders = [
+                                        gr_xtts_temperature_slider,
+                                        gr_xtts_repetition_penalty_slider,
+                                        gr_xtts_top_k_slider,
+                                        gr_xtts_top_p_slider,
+                                        gr_xtts_speed_slider,
+                                        gr_bark_text_temp_slider,
+                                        gr_bark_waveform_temp_slider
+                                    ];
+                                    sliders.forEach(slider=>{
+                                        if(!slider) return;
+                                        const key = slider.closest("div[id]").id;
+                                        const saved = window.session_storage[key];
+                                        slider.value = saved;
+                                    });
                                 }catch(e){
-                                    console.log("tab_progress error:", e);
+                                    console.log("init_sliders error:", e);
                                 }
                             };
+                        }
+                        
+                        if(typeof(splitAtLastDash) !== "function"){
+                            function splitAtLastDash(s){
+                                const idx = s.lastIndexOf("-");
+                                if(idx === -1){
+                                    return [s];
+                                }
+                                return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
+                            }
                         }
 
                         if(typeof(window.init_audiobook_player) !== "function"){
@@ -4443,6 +4465,7 @@ def web_interface(args, ctx):
                                 return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
                             }
                         }
+
                         //////////////////////
                         
                         if(typeof(onElementAvailable) !== "function"){
@@ -4504,10 +4527,15 @@ def web_interface(args, ctx):
                             window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                         }
 
-                        const stop = onElementAvailable('#gr_audiobook_player audio', (el) => {
+                        const check_audiobook_player = onElementAvailable('#gr_audiobook_player audio', (el) => {
                             console.log('gr_audiobook_player visible...');
                             clearTimeout(init_audiobook_player_timeout);
                             init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
+                        }, { once: true });
+
+                        const check_slider = onElementAvailable('#gr_bark_waveform_temp input[type=range]', (el) => {
+                            console.log('gr_bark_waveform_temp visible...');
+                            init_sliders();
                         }, { once: true });
 
                         return window.session_storage;
