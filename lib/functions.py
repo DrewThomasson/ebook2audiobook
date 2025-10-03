@@ -4440,6 +4440,7 @@ def web_interface(args, ctx):
                                                     audioCtx.resume();
                                                 }
                                                 requestAnimationFrame(trackPlayback);
+                                                gr_audiobook_player.dispatchEvent(new Event("volumechange", { bubbles: true }));
                                             });
                                             gr_audiobook_player.addEventListener("seeked", ()=>{
                                                 requestAnimationFrame(trackPlayback);
