@@ -4415,6 +4415,22 @@ def web_interface(args, ctx):
                                                     gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                                     gr_audiobook_player.volume = parseFloat(window.session_storage.playback_volume);
                                                 }
+                                                const url = new URL(window.location);
+                                                const theme = url.searchParams.get("__theme");
+                                                let osTheme;
+                                                if(theme){
+                                                    if(theme == "dark"){
+                                                        audioFilter = "invert(1) hue-rotate(180deg)";
+                                                    }
+                                                }else{
+                                                    osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+                                                    if(osTheme){
+                                                        audioFilter = "invert(1) hue-rotate(180deg)";
+                                                    }
+                                                }
+                                                gr_audiobook_player.style.transition = "filter 1s ease";
+                                                gr_audiobook_player.style.filter = audioFilter;
+                                                gr_audiobook_player.volume = parseFloat(window.session_storage.playback_volume) || 1.0;
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
                                                 if (audioCtx.state === "suspended") {
@@ -4433,22 +4449,6 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
                                                 window.session_storage.playback_volume = gr_audiobook_player.volume;
                                             });
-                                            const url = new URL(window.location);
-                                            const theme = url.searchParams.get("__theme");
-                                            let osTheme;
-                                            if(theme){
-                                                if(theme == "dark"){
-                                                    audioFilter = "invert(1) hue-rotate(180deg)";
-                                                }
-                                            }else{
-                                                osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                                if(osTheme){
-                                                    audioFilter = "invert(1) hue-rotate(180deg)";
-                                                }
-                                            }
-                                            gr_audiobook_player.style.transition = "filter 1s ease";
-                                            gr_audiobook_player.style.filter = audioFilter;
-                                            gr_audiobook_player.volume = parseFloat(window.session_storage.playback_volume) || 1.0;
                                         }
                                     }
                                 }catch(e){
