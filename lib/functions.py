@@ -4294,7 +4294,6 @@ def web_interface(args, ctx):
                                         if(!slider) return;
                                         const key = slider.closest("div[id]").id.replace(/^gr_/, "");
                                         const saved = window.session_storage[key];
-                                        console.log(key, saved);
                                         slider.value = (slider === gr_xtts_top_k) ? parseInt(saved) : parseFloat(saved);
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
