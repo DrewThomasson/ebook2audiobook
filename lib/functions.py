@@ -4621,7 +4621,7 @@ def web_interface(args, ctx):
                             window.session_storage = JSON.parse(data);
                             window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                         }
-
+                        console.log("window.session_storage[xtts_temperature]", window.session_storage["xtts_temperature"]);
                         return window.session_storage;
                     }catch(e){
                         console.log("gr_raed_data js error:", e);
