@@ -4296,6 +4296,7 @@ def web_interface(args, ctx):
                                         const saved = window.session_storage[key];
                                         console.log(key, saved);
                                         slider.value = (slider === gr_xtts_top_k) ? parseInt(saved) : parseFloat(saved);
+                                        slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
                                 }catch(e){
                                     console.log("init_xtts_sliders error:", e);
@@ -4317,6 +4318,7 @@ def web_interface(args, ctx):
                                         const key = slider.closest("div[id]").id.replace(/^gr_/, "");
                                         const saved = window.session_storage[key];
                                         slider.value = parseFloat(saved);
+                                        slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
                                 }catch(e){
                                     console.log("init_bark_sliders error:", e);
