@@ -4210,10 +4210,11 @@ def web_interface(args, ctx):
                         let gr_root;
                         let gr_checkboxes;
                         let gr_radios;
-                        let gr_playback_time;
+                        let gr_voice_player;
                         let gr_audiobook_vtt;
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
+                        let gr_playback_time;
                         let gr_tab_progress;
                         let init_elements_timeout;
                         let init_audiobook_player_timeout;
@@ -4358,6 +4359,7 @@ def web_interface(args, ctx):
                             window.init_audiobook_player = ()=>{
                                 try{
                                     if(gr_root){
+                                        gr_voice_player = gr_root.querySelector("#gr_voice_player audio");
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                         gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
@@ -4413,7 +4415,7 @@ def web_interface(args, ctx):
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
                                                     gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
-                                                    gr_audiobook_player.volume = parseFloat(window.session_storage.playback_volume);
+                                                    gr_audiobook_player.volume = gr_voice_player.volume = parseFloat(window.session_storage.playback_volume);
                                                 }
                                                 const url = new URL(window.location);
                                                 const theme = url.searchParams.get("__theme");
@@ -4447,7 +4449,7 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                window.session_storage.playback_volume = gr_audiobook_player.volume;
+                                                window.session_storage.playback_volume = gr_voice_player.volume = gr_audiobook_player.volume;
                                             });
                                         }
                                     }
