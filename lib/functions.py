@@ -3967,20 +3967,8 @@ def web_interface(args, ctx):
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_audiobook_vtt]
-        )
-        gr_audiobook_del_btn.click(
-            fn=click_gr_audiobook_del_btn,
-            inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_confirm_deletion_field_hidden, gr_modal]
-        )
-        def test_player(val):
-            print(val)
-            return val
-        gr_audiobook_player.change(
-            fn=test_player,
-            inputs=[gr_audiobook_player],
             js='''
-                (audiobook) => {
+                () => {
                     if (!window._audiobook_player_initialized) {
                         const checkPlayerExist = setInterval(() => {
                             const player = document.querySelector("#gr_audiobook_player audio");
@@ -3993,6 +3981,11 @@ def web_interface(args, ctx):
                     }
                 }
             '''
+        )
+        gr_audiobook_del_btn.click(
+            fn=click_gr_audiobook_del_btn,
+            inputs=[gr_audiobook_list, gr_session],
+            outputs=[gr_confirm_deletion_field_hidden, gr_modal]
         )
         ########### XTTSv2 Params
         gr_tab_xtts_params.select(
