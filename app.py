@@ -53,20 +53,20 @@ def check_and_install_requirements(file_path):
         except ImportError:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
             from packaging.specifiers import SpecifierSet
-        import re
+        import re as regex
         from tqdm import tqdm
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
             packages = [
                 pkg.strip()
                 for pkg in contents.splitlines()
-                if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)
+                if pkg.strip() and regex.search(r'[a-zA-Z0-9]', pkg)
             ]
         missing_packages = []
         for package in packages:
             # remove extras so '[lang]==x.y' becomes 'pkg==x.y'
-            clean_pkg = re.sub(r'\[.*?\]', '', package)
-            pkg_name  = re.split(r'[<>=]', clean_pkg, 1)[0].strip()
+            clean_pkg = regex.sub(r'\[.*?\]', '', package)
+            pkg_name  = regex.split(r'[<>=]', clean_pkg, 1)[0].strip()
             try:
                 installed_version = version(pkg_name)
                 if pkg_name == 'num2words':
