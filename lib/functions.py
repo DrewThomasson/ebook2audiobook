@@ -4250,6 +4250,25 @@ def web_interface(args, ctx):
                             };
                         }
                         
+                        if(typeof(window.tab_progress) !== "function"){
+                            window.tab_progress = ()=>{
+                                try{
+                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
+                                    const valArray = splitAtLastDash(val);
+                                    if(valArray[1]){
+                                        const title = valArray[0].trim().split(/ (.*)/)[1].trim();
+                                        const percentage = valArray[1].trim();
+                                        const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
+                                        document.title = titleShort + ": " + percentage;
+                                    }else{
+                                        document.title = "Ebook2Audiobook";
+                                    }
+                                }catch(e){
+                                    console.log("tab_progress error:", e);
+                                }
+                            };
+                        }
+                        
                         if(typeof(splitAtLastDash) !== "function"){
                             function splitAtLastDash(s){
                                 const idx = s.lastIndexOf("-");
