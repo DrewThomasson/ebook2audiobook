@@ -2685,7 +2685,7 @@ def web_interface(args, ctx):
     with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
         with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
             with gr.Tabs(elem_id='gr_tabs'):
-                gr_tab_main = gr.TabItem('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab')
+                gr_tab_main = gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab')
                 with gr_tab_main:
                     with gr.Row(elem_id='gr_row_tab_main'):
                         with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
@@ -2738,7 +2738,7 @@ def web_interface(args, ctx):
                                 gr_session_markdown = gr.Markdown(elem_id='gr_session_markdown', elem_classes=['gr-markdown'], value='Session')
                                 gr_session = gr.Textbox(label='', elem_id='gr_session', interactive=False)
                         
-                gr_tab_xtts_params = gr.TabItem('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=visible_gr_tab_xtts_params)           
+                gr_tab_xtts_params = gr.Tab('XTTSv2 Settings', elem_id='gr_tab_xtts_params', elem_classes='gr-tab', visible=visible_gr_tab_xtts_params)           
                 with gr_tab_xtts_params:
                     with gr.Group(elem_id='gr_group_xtts_params', elem_classes=['gr-group']):
                         gr_xtts_temperature = gr.Slider(
@@ -2813,7 +2813,7 @@ def web_interface(args, ctx):
                             info='Coqui-tts builtin text splitting. Can help against hallucinations bu can also be worse.',
                             visible=False
                         )
-                gr_tab_bark_params = gr.TabItem('Bark Settings', elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=visible_gr_tab_bark_params)           
+                gr_tab_bark_params = gr.Tab('Bark Settings', elem_id='gr_tab_bark_params', elem_classes='gr-tab', visible=visible_gr_tab_bark_params)           
                 with gr_tab_bark_params:
                     gr.Markdown(
                         elem_id='gr_markdown_tab_bark_params',
@@ -3963,6 +3963,18 @@ def web_interface(args, ctx):
             outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
             show_progress="minimal",
         )
+        gr_audiobook_player.change(
+            fn=None,
+            inputs=None,
+            js='''
+                ()=>{
+                    if (!window._audiobook_player_initialized) {
+                        window._audiobook_player_initialized = true;
+                        init_audiobook_player();
+                    }
+                }
+            '''
+        )
         gr_audiobook_list.change(
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
@@ -3974,6 +3986,18 @@ def web_interface(args, ctx):
             outputs=[gr_confirm_deletion_field_hidden, gr_modal]
         )
         ########### XTTSv2 Params
+        gr_tab_xtts_params.select(
+            fn=None,
+            inputs=None,
+            js='''
+                ()=>{
+                    if (!window._xtts_sliders_initialized) {
+                        window._xtts_sliders_initialized = true;
+                        init_xtts_sliders();
+                    }
+                }
+            '''
+        )
         gr_xtts_temperature.change(
             fn=lambda val, id: change_param('temperature', float(val), id),
             inputs=[gr_xtts_temperature, gr_session],
@@ -4015,6 +4039,18 @@ def web_interface(args, ctx):
             outputs=None
         )
         ########### BARK Params
+        gr_tab_bark_params.select(
+            fn=None,
+            inputs=None,
+            js='''
+                ()=>{
+                    if (!window._bark_sliders_initialized) {
+                        window._bark_sliders_initialized = true;
+                        init_bark_sliders();
+                    }
+                }
+            '''
+        )
         gr_bark_text_temp.change(
             fn=lambda val, id: change_param('text_temp', float(val), id),
             inputs=[gr_bark_text_temp, gr_session],
@@ -4104,7 +4140,7 @@ def web_interface(args, ctx):
         ).then(
             fn=None,
             inputs=None,
-            js='()=>{window.init_elements();}'
+            js='()=>{init_interface();}'
         )
         gr_confirm_deletion_yes_btn.click(
             fn=confirm_deletion,
@@ -4169,15 +4205,15 @@ def web_interface(args, ctx):
                         window.session_storage.playback_volume = 1.0;
                         window.load_vtt_timeout = null;
 
-                        if (typeof window.init_elements !== "function"){
-                            window.init_elements = ()=>{
+                        if (typeof window.init_interface !== "function"){
+                            window.init_interface = ()=>{
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                     if (!gr_root || !gr_tab_progress) {
                                         clearTimeout(init_elements_timeout);
                                         console.log("Components not ready... retrying");
-                                        init_elements_timeout = setTimeout(init_elements, 1000);
+                                        init_elements_timeout = setTimeout(init_interface, 1000);
                                         return;
                                     }
                                     // Function to apply theme borders
@@ -4212,40 +4248,59 @@ def web_interface(args, ctx):
                                         characterData: true
                                     });
                                     gr_tab_progress.addEventListener("change", tab_progress);
-                                    console.log("Components ready!");
+                                    console.log("Dashboard set!");
                                 } catch (e) {
-                                    console.log("init_elements error:", e);
+                                    console.log("init_interface error:", e);
                                 }
                             };
                         }
                         
-                        if(typeof(window.init_sliders) !== "function"){
-                            window.init_sliders = ()=>{
+                        if(typeof(window.init_xtts_sliders) !== "function"){
+                            window.init_xtts_sliders = ()=>{
                                 try{
                                     const gr_xtts_temperature_slider     = gr_root.querySelector("#gr_xtts_temperature input[type=range]");
                                     const gr_xtts_repetition_penalty_slider = gr_root.querySelector("#gr_xtts_repetition_penalty input[type=range]");
                                     const gr_xtts_top_k_slider           = gr_root.querySelector("#gr_xtts_top_k input[type=range]");
                                     const gr_xtts_top_p_slider           = gr_root.querySelector("#gr_xtts_top_p input[type=range]");
                                     const gr_xtts_speed_slider           = gr_root.querySelector("#gr_xtts_speed input[type=range]");
-                                    const gr_bark_text_temp_slider       = gr_root.querySelector("#gr_bark_text_temp input[type=range]");
-                                    const gr_bark_waveform_temp_slider   = gr_root.querySelector("#gr_bark_waveform_temp input[type=range]");
                                     const sliders = [
                                         gr_xtts_temperature_slider,
                                         gr_xtts_repetition_penalty_slider,
                                         gr_xtts_top_k_slider,
                                         gr_xtts_top_p_slider,
-                                        gr_xtts_speed_slider,
-                                        gr_bark_text_temp_slider,
-                                        gr_bark_waveform_temp_slider
+                                        gr_xtts_speed_slider
                                     ];
-                                    sliders.forEach(slider=>{
+                                    sliders.forEach(slider => {
+                                        console.log(slider.id);
                                         if(!slider) return;
                                         const key = slider.closest("div[id]").id;
                                         const saved = window.session_storage[key];
                                         slider.value = saved;
                                     });
                                 }catch(e){
-                                    console.log("init_sliders error:", e);
+                                    console.log("init_xtts_sliders error:", e);
+                                }
+                            };
+                        }
+                        
+                        if(typeof(window.init_bark_sliders) !== "function"){
+                            window.init_bark_sliders = ()=>{
+                                try{
+                                    const gr_bark_text_temp_slider       = gr_root.querySelector("#gr_bark_text_temp input[type=range]");
+                                    const gr_bark_waveform_temp_slider   = gr_root.querySelector("#gr_bark_waveform_temp input[type=range]");
+                                    const sliders = [
+                                        gr_bark_text_temp_slider,
+                                        gr_bark_waveform_temp_slider
+                                    ];
+                                    sliders.forEach(slider => {
+                                        console.log(slider.id);
+                                        if(!slider) return;
+                                        const key = slider.closest("div[id]").id;
+                                        const saved = window.session_storage[key];
+                                        slider.value = saved;
+                                    });
+                                }catch(e){
+                                    console.log("init_bark_sliders error:", e);
                                 }
                             };
                         }
@@ -4541,21 +4596,11 @@ def web_interface(args, ctx):
                         });
 
                         const data = localStorage.getItem("data");
+
                         if(data){
                             window.session_storage = JSON.parse(data);
                             window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                         }
-
-                        const check_audiobook_player = onElementAvailable('#gr_audiobook_player audio', (el) => {
-                            console.log('gr_audiobook_player visible...');
-                            clearTimeout(init_audiobook_player_timeout);
-                            init_audiobook_player_timeout = setTimeout(init_audiobook_player, 1000);
-                        }, { once: true });
-
-                        const check_slider = onElementAvailable('#gr_bark_waveform_temp input[type=range]', (el) => {
-                            console.log('gr_bark_waveform_temp visible...');
-                            init_sliders();
-                        }, { once: true });
 
                         return window.session_storage;
                     }catch(e){
