@@ -3984,7 +3984,7 @@ def web_interface(args, ctx):
                             if(player){
                                 clearInterval(checkPlayerExist);
                                 window._audiobook_player_initialized = true;
-                                setTimeout(init_audiobook_player, 3000);
+                                init_audiobook_player();
                             }
                         }, 500);
                     }
@@ -4449,6 +4449,7 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
                                                 window.session_storage.playback_volume = gr_audiobook_player.volume;
                                             });
+                                            gr_audiobook_player.load();
                                         }
                                     }
                                 }catch(e){
