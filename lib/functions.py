@@ -3551,14 +3551,14 @@ def web_interface(args, ctx):
             session = context.get_session(id)
             session[key] = val
             state = {}
-            if key == 'length_penalty':
+            if key == 'xtts_length_penalty':
                 if val2 is not None:
                     if float(val) > float(val2):
                         error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
                         state['type'] = 'warning'
                         state['msg'] = error
                         show_alert(state)
-            elif key == 'num_beams':
+            elif key == 'xtts_num_beams':
                 if val2 is not None:
                     if float(val) < float(val2):
                         error = 'Num beams must be always higher than length penalty or equal if its value is 1.0'   
@@ -4012,37 +4012,37 @@ def web_interface(args, ctx):
             '''
         )
         gr_xtts_temperature.change(
-            fn=lambda val, id: change_param('temperature', float(val), id),
+            fn=lambda val, id: change_param('xtts_temperature', float(val), id),
             inputs=[gr_xtts_temperature, gr_session],
             outputs=None
         )
         gr_xtts_length_penalty.change(
-            fn=lambda val, id, val2: change_param('length_penalty', int(val), id, int(val2)),
+            fn=lambda val, id, val2: change_param('xtts_length_penalty', int(val), id, int(val2)),
             inputs=[gr_xtts_length_penalty, gr_session, gr_xtts_num_beams],
             outputs=None,
         )
         gr_xtts_num_beams.change(
-            fn=lambda val, id, val2: change_param('num_beams', int(val), id, int(val2)),
+            fn=lambda val, id, val2: change_param('xtts_num_beams', int(val), id, int(val2)),
             inputs=[gr_xtts_num_beams, gr_session, gr_xtts_length_penalty],
             outputs=None,
         )
         gr_xtts_repetition_penalty.change(
-            fn=lambda val, id: change_param('repetition_penalty', float(val), id),
+            fn=lambda val, id: change_param('xtts_repetition_penalty', float(val), id),
             inputs=[gr_xtts_repetition_penalty, gr_session],
             outputs=None
         )
         gr_xtts_top_k.change(
-            fn=lambda val, id: change_param('top_k', int(val), id),
+            fn=lambda val, id: change_param('xtts_top_k', int(val), id),
             inputs=[gr_xtts_top_k, gr_session],
             outputs=None
         )
         gr_xtts_top_p.change(
-            fn=lambda val, id: change_param('top_p', float(val), id),
+            fn=lambda val, id: change_param('xtts_top_p', float(val), id),
             inputs=[gr_xtts_top_p, gr_session],
             outputs=None
         )
         gr_xtts_speed.change(
-            fn=lambda val, id: change_param('speed', float(val), id),
+            fn=lambda val, id: change_param('xtts_speed', float(val), id),
             inputs=[gr_xtts_speed, gr_session],
             outputs=None
         )
@@ -4072,12 +4072,12 @@ def web_interface(args, ctx):
             '''
         )
         gr_bark_text_temp.change(
-            fn=lambda val, id: change_param('text_temp', float(val), id),
+            fn=lambda val, id: change_param('bark_text_temp', float(val), id),
             inputs=[gr_bark_text_temp, gr_session],
             outputs=None
         )
         gr_bark_waveform_temp.change(
-            fn=lambda val, id: change_param('waveform_temp', float(val), id),
+            fn=lambda val, id: change_param('bark_waveform_temp', float(val), id),
             inputs=[gr_bark_waveform_temp, gr_session],
             outputs=None
         )
