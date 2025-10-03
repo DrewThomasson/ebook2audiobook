@@ -2850,7 +2850,7 @@ def web_interface(args, ctx):
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
                 gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
                 gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, lines=3, max_lines=3)
-                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, value=None, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
+                gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='',type='filepath', autoplay=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, interactive=False, visible=True)
                 with gr.Row(elem_id='gr_row_audiobook_list', visible=True):
                     gr_audiobook_download_btn = gr.Button(elem_id='gr_audiobook_download_btn', value='↧', elem_classes=['small-btn'], variant='secondary', interactive=True, scale=0, min_width=60)
                     gr_audiobook_list = gr.Dropdown(elem_id='gr_audiobook_list', label='', choices=audiobook_options, type='value', interactive=True, scale=2)
@@ -3076,7 +3076,6 @@ def web_interface(args, ctx):
                     session['duration'] = float(audio_info['duration'])
                     with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                         vtt_content = f.read()
-                    print(f"change_gr_audiobook_list {gr_audiobook_list}")
                     return gr.update(visible=group_visible), gr.update(value=selected), gr.update(value=vtt_content)
             except Exception as e:
                 error = f'change_gr_audiobook_list(): {e}'
@@ -3964,6 +3963,16 @@ def web_interface(args, ctx):
             outputs=[gr_audiobook_files, gr_audiobook_files_toggled],
             show_progress="minimal",
         )
+        gr_audiobook_list.change(
+            fn=change_gr_audiobook_list,
+            inputs=[gr_audiobook_list, gr_session],
+            outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_audiobook_vtt]
+        )
+        gr_audiobook_del_btn.click(
+            fn=click_gr_audiobook_del_btn,
+            inputs=[gr_audiobook_list, gr_session],
+            outputs=[gr_confirm_deletion_field_hidden, gr_modal]
+        )
         def test_player(val):
             print(val)
             return val
@@ -3984,16 +3993,6 @@ def web_interface(args, ctx):
                     }
                 }
             '''
-        )
-        gr_audiobook_list.change(
-            fn=change_gr_audiobook_list,
-            inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_audiobook_vtt]
-        )
-        gr_audiobook_del_btn.click(
-            fn=click_gr_audiobook_del_btn,
-            inputs=[gr_audiobook_list, gr_session],
-            outputs=[gr_confirm_deletion_field_hidden, gr_modal]
         )
         ########### XTTSv2 Params
         gr_tab_xtts_params.select(
