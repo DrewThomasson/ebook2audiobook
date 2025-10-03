@@ -3984,7 +3984,7 @@ def web_interface(args, ctx):
                             if(player){
                                 clearInterval(checkPlayerExist);
                                 window._audiobook_player_initialized = true;
-                                init_audiobook_player();
+                                setTimeout(init_audiobook_player, 3000);
                             }
                         }, 500);
                     }
