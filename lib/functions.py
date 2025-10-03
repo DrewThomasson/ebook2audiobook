@@ -2705,7 +2705,7 @@ def web_interface(args, ctx):
                                 gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                 with gr_row_voice_player:
-                                    gr_voice_player = gr.Audio(elem_id='gr_voice_player', elem_classes=['gr-voice-player'], type='filepath', interactive=False, show_download_button=False, container=False, visible=True, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
+                                    gr_voice_player = gr.Audio(elem_id='gr_voice_player', elem_classes=['gr-voice-player'], type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, waveform_options=gr.WaveformOptions(show_controls=False), scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
@@ -4416,6 +4416,8 @@ def web_interface(args, ctx):
                                                     window.load_vtt(url);
                                                     gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                                     gr_audiobook_player.volume = gr_voice_player.volume = parseFloat(window.session_storage.playback_volume);
+                                                    gr_audiobook_player.dispatchEvent(new Event("volumechange"));
+                                                    gr_voice_player.dispatchEvent(new Event("volumechange"));
                                                 }
                                                 const url = new URL(window.location);
                                                 const theme = url.searchParams.get("__theme");
@@ -4450,6 +4452,7 @@ def web_interface(args, ctx):
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
                                                 window.session_storage.playback_volume = gr_voice_player.volume = gr_audiobook_player.volume;
+                                                gr_voice_player.dispatchEvent(new Event("volumechange"));
                                             });
                                         }
                                     }
