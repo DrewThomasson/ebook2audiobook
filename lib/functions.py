@@ -3968,7 +3968,7 @@ def web_interface(args, ctx):
             return val
         gr_audiobook_player.change(
             fn=test_player,
-            inputs=gr_audiobook_player,
+            inputs=[gr_audiobook_player],
             js='''
                 (audiobook) => {
                     if (!window._audiobook_player_initialized) {
