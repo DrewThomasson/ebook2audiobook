@@ -4454,6 +4454,9 @@ def web_interface(args, ctx):
                                                 window.session_storage.playback_volume = gr_voice_player.volume = gr_audiobook_player.volume;
                                                 gr_voice_player.dispatchEvent(new Event("volumechange"));
                                             });
+                                            gr_voice_player.addEventListener("volumechange", ()=>{
+                                                console.log("gr_voice_player", gr_voice_player.volume);
+                                            });
                                         }
                                     }
                                 }catch(e){
