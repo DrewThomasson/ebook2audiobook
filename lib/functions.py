@@ -4265,6 +4265,7 @@ def web_interface(args, ctx):
                         let gr_audiobook_player;
                         let gr_playback_time;
                         let gr_tab_progress;
+                        let voice_btn;
                         let init_elements_timeout;
                         let init_audiobook_player_timeout;
                         let audioFilter = "";
@@ -4413,11 +4414,15 @@ def web_interface(args, ctx):
                                         gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
+                                        
+                                        voice_btn = gr_root.getElementById("voice_btn");
+                                        
                                         let lastCue = null;
                                         let fade_timeout = null;
                                         let last_time = 0;
-                                        if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time){
-                                            console.log('gr_audiobook_player ready!');
+                                        
+                                        if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time && voice_btn){
+                                            console.log("gr_audiobook_player ready!");
                                             const audioCtx = new AudioContext();
                                             const sourceNode = audioCtx.createMediaElementSource(gr_audiobook_player);
                                             sourceNode.connect(audioCtx.destination);
@@ -4494,6 +4499,41 @@ def web_interface(args, ctx):
                                                 gr_audiobook_sentence.value = "...";
                                                 window.session_storage.playback_time = 0;
                                                 lastCue = null;
+                                            });
+  
+                                            ///////////////////
+
+                                            const createPauseBars = ()=>{
+                                                if(!voice_btn.querySelector("span.left")){
+                                                    const left = gr_root.createElement("span");
+                                                    const right = gr_root.createElement("span");
+                                                    left.classList.add("left");
+                                                    right.classList.add("right");
+                                                    voice_btn.appendChild(left);
+                                                    voice_btn.appendChild(right);
+                                                }
+                                            };
+
+                                            voice_btn.addEventListener("click", ()=>{
+                                                if(gr_voice_player.paused){
+                                                    gr_voice_player.play();
+                                                    voice_btn.classList.add("paused");
+                                                    createPauseBars();
+                                                }else{
+                                                    gr_voice_player.pause();
+                                                    voice_btn.classList.remove("paused");
+                                                    const bars = voice_btn.querySelectorAll("span");
+                                                    bars.forEach(b => b.remove());
+                                                }
+                                            });
+                                            gr_voice_player.addEventListener("play", ()=>{
+                                                voice_btn.classList.add("paused");
+                                                createPauseBars();
+                                            });
+                                            gr_voice_player.addEventListener("pause", ()=>{
+                                                voice_btn.classList.remove("paused");
+                                                const bars = voice_btn.querySelectorAll("span");
+                                                bars.forEach(b => b.remove());
                                             });
                                         }
                                     }
