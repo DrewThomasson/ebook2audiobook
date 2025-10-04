@@ -4484,6 +4484,7 @@ def web_interface(args, ctx):
                                                 }
                                                 gr_audiobook_player.style.transition = "filter 1s ease";
                                                 gr_audiobook_player.style.filter = audioFilter;
+                                                gr_voice_player.volume = gr_audiobook_player.volume = window.session_storage.playback_volume;
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
                                                 if (audioCtx.state === "suspended") {
@@ -4499,6 +4500,9 @@ def web_interface(args, ctx):
                                                 gr_audiobook_sentence.value = "...";
                                                 window.session_storage.playback_time = 0;
                                                 lastCue = null;
+                                            });
+                                            gr_audiobook_player.addEventListener("volumechange", ()=>{
+                                                gr_voice_player.volume = window.session_storage.playback_volume = gr_audiobook_player.volume;
                                             });
   
                                             ///////////////////
