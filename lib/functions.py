@@ -2551,6 +2551,8 @@ def web_interface(args, ctx):
                 overflow: hidden !important;
                 margin: 0 !important;
                 padding: 0 !important;
+                width: 60px !important;
+                height: 60px !important;
             }
             /* ///////////////////// */
             #voice_btn {
