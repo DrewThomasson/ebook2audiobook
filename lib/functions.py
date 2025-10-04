@@ -2553,67 +2553,67 @@ def web_interface(args, ctx):
             }
             /* ///////////////////// */
             #voice_btn {
-                position: relative;
-                width: 60px;
-                height: 60px;
-                background: transparent;
-                border: none;
-                cursor: pointer;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                transition: transform 0.2s ease-in-out;
+                position: relative !important;
+                width: 60px !important;
+                height: 60px !important;
+                background: transparent !important;
+                border: none !important;
+                cursor: pointer !important;
+                display: flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                transition: transform 0.2s ease-in-out !important;
             }
             #voice_btn::before {
-                content: '';
-                border-style: solid;
-                border-width: 12px 0 12px 20px;
-                border-color: transparent transparent transparent white;
-                transition: all 0.25s ease-in-out;
-                display: inline-block;
-                width: 0;
-                height: 0;
+                content: '' !important;
+                border-style: solid !important;
+                border-width: 12px 0 12px 20px !important;
+                border-color: transparent transparent transparent white !important;
+                transition: all 0.25s ease-in-out !important;
+                display: inline-block !important;
+                width: 0 !important;
+                height: 0 !important;
             }
             #voice_btn:hover::before {
-                border-color: transparent transparent transparent orange;
-                transform: scale(1.2);
+                border-color: transparent transparent transparent orange !important;
+                transform: scale(1.2) !important;
             }
             #voice_btn.paused::before {
-                opacity: 0;
-                transform: scale(0.6);
+                opacity: 0 !important;
+                transform: scale(0.6) !important;
             }
             #voice_btn.paused::after {
-                content: '';
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                width: 20px;
-                height: 24px;
-                transform: translate(-50%, -50%) scale(1);
-                background: transparent;
+                content: '' !important;
+                position: absolute !important;
+                top: 50% !important;
+                left: 50% !important;
+                width: 20px !important;
+                height: 24px !important;
+                transform: translate(-50%, -50%) scale(1) !important;
+                background: transparent !important;
             }
             #voice_btn.paused::after,
             #voice_btn.paused::before {
-                transition: all 0.25s ease-in-out;
+                transition: all 0.25s ease-in-out !important;
             }
             #voice_btn.paused span {
-                position: absolute;
-                width: 6px;
-                height: 20px;
-                background: white;
-                transition: all 0.25s ease-in-out;
-                top: 50%;
-                transform: translateY(-50%);
+                position: absolute !important;
+                width: 6px !important;
+                height: 20px !important;
+                background: white !important;
+                transition: all 0.25s ease-in-out !important;
+                top: 50% !important;
+                transform: translateY(-50%) !important;
             }
             #voice_btn.paused span.left {
-                left: calc(50% - 12px);
+                left: calc(50% - 12px) !important;
             }
             #voice_btn.paused span.right {
-                left: calc(50% - 2px);
+                left: calc(50% - 2px) !important;
             }
             #voice_btn.paused:hover span {
-                background: orange;
-                transform: translateY(-50%) scale(1.2);
+                background: orange !important;
+                transform: translateY(-50%) scale(1.2) !important;
             }
             ///////////
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
