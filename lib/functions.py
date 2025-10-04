@@ -2559,7 +2559,8 @@ def web_interface(args, ctx):
                 position: relative !important;
                 width: 60px !important;
                 height: 60px !important;
-                background: transparent !important;
+                /*background: transparent !important;*/
+                background: yellow !important;
                 border: none !important;
                 cursor: pointer !important;
                 display: flex !important;
