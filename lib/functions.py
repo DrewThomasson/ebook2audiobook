@@ -2442,6 +2442,13 @@ def web_interface(args, ctx):
                 padding-bottom: 4px !important;
                 white-space: nowrap !important;
             }
+            .gr-voice-player {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 60px !important;
+                height: 60px !important;
+                background: var(--block-background-fill) !important;
+            }
             .play-pause-button:hover svg {
                 fill: #ffab00 !important;
                 stroke: #ffab00 !important;
@@ -2534,6 +2541,34 @@ def web_interface(args, ctx):
             ///////////////
             #gr_row_voice_player {
                 height: 60px !important;
+            }
+            #gr_voice_player {
+                margin: 0 !important;
+                padding: 0 !important;
+                background: var(--block-background-fill) !important;
+                border: none !important;
+                width: 60px !important;
+                height: 60px !important;
+                min-width: min(60px, 100%) !important;
+            }
+            #gr_voice_player label, #gr_voice_player .waveform-container, 
+            #gr_voice_player .timestamps, #gr_voice_player .control-wrapper, 
+            #gr_voice_player .rewind, #gr_voice_player .skip, #gr_voice_player .icon-button-wrapper {
+                display: none !important;
+            }
+            #gr_voice_player > * {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 60px !important;
+                height: 60px !important; 
+            }
+            #gr_voice_player .play-pause-button svg {
+                padding: 5px 0 0 5px !important;
+            }
+            #gr_voice_player .play-pause-button:hover svg {
+                fill: #ffab00 !important;
+                stroke: #ffab00 !important;
+                transform: scale(1.2) !important;
             }
             ///////////
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
@@ -2670,8 +2705,7 @@ def web_interface(args, ctx):
                                 gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                 with gr_row_voice_player:
-                                    gr_voice_player = gr.Audio(elem_id='gr_voice_player', type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, scale=0, min_width=60)
-                                    gr.HTML('<button id="voice-btn" title="Play Voice"></button>')
+                                    gr_voice_player = gr.Audio(elem_id='gr_voice_player', elem_classes=['gr-voice-player'], type='filepath', interactive=False, show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
@@ -4335,7 +4369,6 @@ def web_interface(args, ctx):
                                         let last_time = 0;
                                         if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time){
                                             console.log('gr_audiobook_player ready!');
-                                            // Setup Web Audio API
                                             const audioCtx = new AudioContext();
                                             const sourceNode = audioCtx.createMediaElementSource(gr_audiobook_player);
                                             sourceNode.connect(audioCtx.destination);
@@ -4381,8 +4414,6 @@ def web_interface(args, ctx):
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
                                                     gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
-                                                    gr_audiobook_player.volume = parseFloat(window.session_storage.playback_volume);
-                                                    gr_audiobook_player.dispatchEvent(new Event("volumechange"));
                                                 }
                                                 const url = new URL(window.location);
                                                 const theme = url.searchParams.get("__theme");
@@ -4399,7 +4430,6 @@ def web_interface(args, ctx):
                                                 }
                                                 gr_audiobook_player.style.transition = "filter 1s ease";
                                                 gr_audiobook_player.style.filter = audioFilter;
-                                                gr_audiobook_player.volume = parseFloat(window.session_storage.playback_volume) || 1.0;
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
                                                 if (audioCtx.state === "suspended") {
@@ -4415,15 +4445,6 @@ def web_interface(args, ctx):
                                                 gr_audiobook_sentence.value = "...";
                                                 window.session_storage.playback_time = 0;
                                                 lastCue = null;
-                                            });
-                                            gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                window.session_storage.playback_volume = gr_audiobook_player.volume;
-                                                gr_voice_player.volume = gr_audiobook_player.volume;
-                                                gr_voice_player.dispatchEvent(new Event("volumechange", { bubbles: true }));
-                                            });
-                                            gr_voice_player.addEventListener("play", ()=>{
-                                                gr_voice_player.volume = gr_audiobook_player.volume;
-                                                gr_voice_player.dispatchEvent(new Event("volumechange", { bubbles: true }));
                                             });
                                         }
                                     }
