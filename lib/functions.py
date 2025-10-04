@@ -2544,6 +2544,7 @@ def web_interface(args, ctx):
             }
             /* TO REMOVE IF GRADIO > 5.45.0 */
             #gr_voice_player {
+                position: absolute;
                 visibility: hidden !important;
                 height: 0 !important;
                 width: 0 !important;
