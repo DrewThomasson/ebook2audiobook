@@ -2542,6 +2542,14 @@ def web_interface(args, ctx):
             #gr_row_voice_player {
                 height: 60px !important;
             }
+            #gr_voice_player {
+                visibility: hidden !important;
+                height: 0 !important;
+                width: 0 !important;
+                overflow: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
             ///////////
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
                 display: none !important;
