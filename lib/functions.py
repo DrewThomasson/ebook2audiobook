@@ -2542,6 +2542,7 @@ def web_interface(args, ctx):
             #gr_row_voice_player {
                 height: 60px !important;
             }
+            /* TO REMOVE IF GRADIO > 5.45.0 */
             #gr_voice_player {
                 visibility: hidden !important;
                 height: 0 !important;
@@ -2549,6 +2550,70 @@ def web_interface(args, ctx):
                 overflow: hidden !important;
                 margin: 0 !important;
                 padding: 0 !important;
+            }
+            /* ///////////////////// */
+            #voice-btn {
+                position: relative;
+                width: 60px;
+                height: 60px;
+                background: transparent;
+                border: none;
+                cursor: pointer;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                transition: transform 0.2s ease-in-out;
+            }
+            #voice-btn::before {
+                content: '';
+                border-style: solid;
+                border-width: 12px 0 12px 20px;
+                border-color: transparent transparent transparent white;
+                transition: all 0.25s ease-in-out;
+                display: inline-block;
+                width: 0;
+                height: 0;
+            }
+            #voice-btn:hover::before {
+                border-color: transparent transparent transparent orange;
+                transform: scale(1.2);
+            }
+            #voice-btn.paused::before {
+                opacity: 0;
+                transform: scale(0.6);
+            }
+            #voice-btn.paused::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 20px;
+                height: 24px;
+                transform: translate(-50%, -50%) scale(1);
+                background: transparent;
+            }
+            #voice-btn.paused::after,
+            #voice-btn.paused::before {
+                transition: all 0.25s ease-in-out;
+            }
+            #voice-btn.paused span {
+                position: absolute;
+                width: 6px;
+                height: 20px;
+                background: white;
+                transition: all 0.25s ease-in-out;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+            #voice-btn.paused span.left {
+                left: calc(50% - 12px);
+            }
+            #voice-btn.paused span.right {
+                left: calc(50% - 2px);
+            }
+            #voice-btn.paused:hover span {
+                background: orange;
+                transform: translateY(-50%) scale(1.2);
             }
             ///////////
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
