@@ -4510,15 +4510,15 @@ def web_interface(args, ctx):
                                             gr_audiobook_sentence.style.padding = "7px 0 7px 0";
                                             gr_audiobook_sentence.style.lineHeight = "14px";
                                             gr_audiobook_sentence.value = "...";
-                                            fetch(path)
+                                            fetch(url)
                                             .then(res => res.text())
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
                                             });
                                         }
                                     }
-                                    const urltheme = new URL(window.location);
-                                    const theme = urltheme.searchParams.get("__theme");
+                                    const themURL = new URL(window.location);
+                                    const theme = themURL.searchParams.get("__theme");
                                     let osTheme;
                                     if(theme){
                                         if(theme == "dark"){
