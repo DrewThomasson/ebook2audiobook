@@ -4344,8 +4344,10 @@ def web_interface(args, ctx):
                                     gr_voice_play.addEventListener("click", ()=>{
                                         if(gr_voice_player_hidden.paused){
                                             gr_voice_player_hidden.play();
+                                            gr_voice_play.value = "▶";
                                         }else{
                                             gr_voice_player_hidden.pause();
+                                            gr_voice_play.value = "⏸";
                                         }
                                     });
                                     gr_voice_player_hidden.volume = window.session_storage.playback_volume;
