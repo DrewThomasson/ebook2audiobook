@@ -4446,7 +4446,6 @@ def web_interface(args, ctx):
                                                     audioCtx.resume();
                                                 }
                                                 requestAnimationFrame(trackPlayback);
-                                                gr_audiobook_player.dispatchEvent(new Event("volumechange", { bubbles: true }));
                                             });
                                             gr_audiobook_player.addEventListener("seeked", ()=>{
                                                 requestAnimationFrame(trackPlayback);
@@ -4460,6 +4459,7 @@ def web_interface(args, ctx):
                                                 window.session_storage.playback_volume = gr_audiobook_player.volume;
                                                 if(gr_voice_player_hidden){
                                                     gr_voice_player_hidden.volume = gr_audiobook_player.volume;
+                                                    gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
                                                 }
                                             });
                                             gr_audiobook_player.style.transition = "filter 1s ease";
