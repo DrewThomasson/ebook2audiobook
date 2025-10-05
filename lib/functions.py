@@ -502,7 +502,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             toc = epubBook.toc  # Extract TOC
             toc_list = [
                     nt for item in toc if hasattr(item, 'title')
-                    if (nt := normalize_text(
+                    if(nt := normalize_text(
                         str(item.title),
                         session['language'],
                         session['language_iso1'],
@@ -3981,7 +3981,7 @@ def web_interface(args, ctx):
             outputs=None,
             js='''
             () => {
-                if (!window._xtts_sliders_initialized) {
+                if(!window._xtts_sliders_initialized) {
                     const checkXttsExist = setInterval(() => {
                         const slider = document.querySelector("#gr_xtts_speed input[type=range]");
                         if(slider){
@@ -4041,7 +4041,7 @@ def web_interface(args, ctx):
             outputs=None,
             js='''
             () => {
-                if (!window._bark_sliders_initialized) {
+                if(!window._bark_sliders_initialized) {
                     const checkBarkExist = setInterval(() => {
                         const slider = document.querySelector("#gr_bark_waveform_temp input[type=range]");
                         if(slider){
@@ -4215,7 +4215,7 @@ def web_interface(args, ctx):
                                 const seen = new WeakSet();
                                 const fireFor = (ctx) => {
                                     ctx.querySelectorAll(selector).forEach((el) => {
-                                        if (seen.has(el)) return;
+                                        if(seen.has(el)) return;
                                         seen.add(el);
                                         callback(el);
                                     });
@@ -4224,17 +4224,17 @@ def web_interface(args, ctx):
                                 const observer = new MutationObserver((mutations) => {
                                     for (const m of mutations) {
                                         for (const n of m.addedNodes) {
-                                            if (n.nodeType !== 1) continue;
-                                            if (n.matches?.(selector)) {
-                                                if (!seen.has(n)) {
+                                            if(n.nodeType !== 1) continue;
+                                            if(n.matches?.(selector)) {
+                                                if(!seen.has(n)) {
                                                     seen.add(n);
                                                     callback(n);
-                                                    if (once) {
+                                                    if(once) {
                                                         observer.disconnect();
                                                         return;
                                                     }
                                                 }
-                                            } else {
+                                            }else{
                                                 fireFor(n);
                                             }
                                         }
@@ -4245,12 +4245,12 @@ def web_interface(args, ctx):
                             }
                         }
 
-                        if (typeof window.init_interface !== "function"){
+                        if(typeof window.init_interface !== "function"){
                             window.init_interface = ()=>{
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                    if (!gr_root || !gr_tab_progress) {
+                                    if(!gr_root || !gr_tab_progress) {
                                         clearTimeout(init_elements_timeout);
                                         console.log("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_interface, 1000);
@@ -4262,11 +4262,11 @@ def web_interface(args, ctx):
                                         const theme = url.searchParams.get("__theme");
                                         let elColor = "#666666";
 
-                                        if (theme == "dark") {
+                                        if(theme == "dark") {
                                             elColor = "#fff";
-                                        } else if (!theme) {
+                                        }else if{!theme) {
                                             const osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                            if (osTheme) {
+                                            if(osTheme) {
                                                 elColor = "#fff";
                                             }
                                         }
@@ -4345,25 +4345,39 @@ def web_interface(args, ctx):
                             };
                         }
                         
-                        if(typeof(window.init_voice_player_hidden) !== "function"){
+                        if(typeof window.init_voice_player_hidden !== "function"){
                             window.init_voice_player_hidden = ()=>{
-                                gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
-                                gr_voice_play = gr_root.querySelector("#gr_voice_play");
+                                const gr_root = document.querySelector("gradio-app, body"); // fallback root
+                                const gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
+                                const gr_voice_play = gr_root.querySelector("#gr_voice_play");
                                 if(gr_voice_player_hidden && gr_voice_play){
-                                    gr_voice_play.addEventListener("click", ()=>{
-                                        if(gr_voice_player_hidden.paused){
-                                            gr_voice_player_hidden.play();
-                                            gr_voice_play.textContent = "⏸";
+                                    if(gr_voice_play.dataset.bound === "true") return;
+                                    gr_voice_play.dataset.bound = "true";
+                                    gr_voice_play.addEventListener("click", () => {
+                                        if(gr_voice_player_hidden.paused) {
+                                            gr_voice_player_hidden.play().then(() => {
+                                                gr_voice_play.textContent = "⏸";
+                                            }).catch(err => console.warn("Play failed:", err));
                                         }else{
                                             gr_voice_player_hidden.pause();
                                             gr_voice_play.textContent = "▶";
                                         }
                                     });
-                                    gr_voice_player_hidden.addEventListener("play", ()=>{
-                                        gr_voice_player_hidden.volume = window.session_storage.playback_volume;
+                                    gr_voice_player_hidden.addEventListener("pause", () => {
+                                        gr_voice_play.textContent = "▶";
                                     });
+                                    gr_voice_player_hidden.addEventListener("ended", () => {
+                                        gr_voice_play.textContent = "▶";
+                                    });
+                                    gr_voice_player_hidden.addEventListener("play", () => {
+                                        const v = window.session_storage?.playback_volume ?? 1;
+                                        gr_voice_player_hidden.volume = v;
+                                    });
+                                }else{
+                                    console.warn("Voice player not found yet, retrying...");
+                                    setTimeout(window.init_voice_player_hidden, 500); // retry until ready
                                 }
-                            }
+                            };
                         }
 
                         if(typeof(window.init_audiobook_player) !== "function"){
@@ -4417,7 +4431,7 @@ def web_interface(args, ctx):
                                                 } catch (e) {
                                                     console.log("gr_audiobook_player tracking error:", e);
                                                 }
-                                                if (!gr_audiobook_player.ended){
+                                                if(!gr_audiobook_player.ended){
                                                     requestAnimationFrame(trackPlayback);
                                                 }
                                             }
@@ -4429,7 +4443,7 @@ def web_interface(args, ctx):
                                                 gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
-                                                if (audioCtx.state === "suspended") {
+                                                if(audioCtx.state === "suspended") {
                                                     audioCtx.resume();
                                                 }
                                                 requestAnimationFrame(trackPlayback);
