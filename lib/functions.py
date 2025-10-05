@@ -3965,24 +3965,6 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_confirm_deletion_field_hidden, gr_modal]
         )
-        gr_audiobook_player.change(
-            fn=None,
-            inputs=None,
-            js='''
-                () => {
-                    if (!window._audiobook_player_initialized) {
-                        const checkPlayerExist = setInterval(() => {
-                            const player = document.querySelector("#gr_audiobook_player audio");
-                            if(player){
-                                clearInterval(checkPlayerExist);
-                                window._audiobook_player_initialized = true;
-                                init_audiobook_player();
-                            }
-                        }, 500);
-                    }
-                }
-            '''
-        )
         ########### XTTSv2 Params
         gr_tab_xtts_params.select(
             fn=None,
@@ -4199,7 +4181,7 @@ def web_interface(args, ctx):
             js=r'''
                 ()=>{
                     try{
-                        let gr_root;
+                        let gr_root = (window.gradioApp && window.gradioApp()) || document;
                         let gr_checkboxes;
                         let gr_radios;
                         let gr_voice_player_hidden;
@@ -4218,6 +4200,41 @@ def web_interface(args, ctx):
                         window.session_storage.playback_time = 0;
                         window.session_storage.playback_volume = 1.0;
                         window.load_vtt_timeout = null;
+                        
+                        if(typeof(onElementAvailable) !== 'function'){
+                            function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
+                                const seen = new WeakSet();
+                                const fireFor = (ctx) => {
+                                    ctx.querySelectorAll(selector).forEach((el) => {
+                                        if (seen.has(el)) return;
+                                        seen.add(el);
+                                        callback(el);
+                                    });
+                                };
+                                fireFor(root);
+                                const observer = new MutationObserver((mutations) => {
+                                    for (const m of mutations) {
+                                        for (const n of m.addedNodes) {
+                                            if (n.nodeType !== 1) continue;
+                                            if (n.matches?.(selector)) {
+                                                if (!seen.has(n)) {
+                                                    seen.add(n);
+                                                    callback(n);
+                                                    if (once) {
+                                                        observer.disconnect();
+                                                        return;
+                                                    }
+                                                }
+                                            } else {
+                                                fireFor(n);
+                                            }
+                                        }
+                                    }
+                                });
+                                observer.observe(root, { childList: true, subtree: true });
+                                return () => observer.disconnect();
+                            }
+                        }
 
                         if (typeof window.init_interface !== "function"){
                             window.init_interface = ()=>{
@@ -4319,32 +4336,20 @@ def web_interface(args, ctx):
                             };
                         }
                         
-                        if(typeof(window.tab_progress) !== "function"){
-                            window.tab_progress = ()=>{
-                                try{
-                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
-                                    const valArray = splitAtLastDash(val);
-                                    if(valArray[1]){
-                                        const title = valArray[0].trim().split(/ (.*)/)[1].trim();
-                                        const percentage = valArray[1].trim();
-                                        const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
-                                        document.title = titleShort + ": " + percentage;
-                                    }else{
-                                        document.title = "Ebook2Audiobook";
-                                    }
-                                }catch(e){
-                                    console.log("tab_progress error:", e);
+                        if(typeof(window.init_voice_player_hidden) !== "function"){
+                            window.init_voice_player_hidden = ()=>{
+                                gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
+                                gr_voice_play = gr_root.querySelector("#gr_voice_play");
+                                if(gr_voice_play_hidden && gr_voice_play){
+                                    gr_voice_play.addEventListener("click", ()=>{
+                                        if(gr_voice_player_hidden.paused){
+                                            gr_voice_player_hidden.play();
+                                        }else{
+                                            gr_voice_player_hidden.pause();
+                                        }
+                                    });
+                                    gr_voice_player_hidden.volume = window.session_storage.playback_volume;
                                 }
-                            };
-                        }
-                        
-                        if(typeof(splitAtLastDash) !== "function"){
-                            function splitAtLastDash(s){
-                                const idx = s.lastIndexOf("-");
-                                if(idx === -1){
-                                    return [s];
-                                }
-                                return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
                             }
                         }
 
@@ -4451,6 +4456,35 @@ def web_interface(args, ctx):
                                     console.log("init_audiobook_player error:", e);
                                 }
                             };
+                        }
+                        
+                        if(typeof(window.tab_progress) !== "function"){
+                            window.tab_progress = ()=>{
+                                try{
+                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
+                                    const valArray = splitAtLastDash(val);
+                                    if(valArray[1]){
+                                        const title = valArray[0].trim().split(/ (.*)/)[1].trim();
+                                        const percentage = valArray[1].trim();
+                                        const titleShort = title.length >= 20 ? title.slice(0, 20).trimEnd() + "…" : title;
+                                        document.title = titleShort + ": " + percentage;
+                                    }else{
+                                        document.title = "Ebook2Audiobook";
+                                    }
+                                }catch(e){
+                                    console.log("tab_progress error:", e);
+                                }
+                            };
+                        }
+                        
+                        if(typeof(splitAtLastDash) !== "function"){
+                            function splitAtLastDash(s){
+                                const idx = s.lastIndexOf("-");
+                                if(idx === -1){
+                                    return [s];
+                                }
+                                return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
+                            }
                         }
 
                         if(typeof(window.load_vtt) !== "function"){
@@ -4582,18 +4616,13 @@ def web_interface(args, ctx):
                             }
                         }
                         
-                        gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
-                        gr_voice_play = gr_root.querySelector("#gr_voice_play");
-                        if(gr_voice_play_hidden && gr_voice_play){
-                            gr_voice_play.addEventListener("click", ()=>{
-                                if(gr_voice_player_hidden.paused){
-                                    gr_voice_player_hidden.play();
-                                }else{
-                                    gr_voice_player_hidden.pause();
-                                }
-                            });
-                            gr_voice_player_hidden.volume = window.session_storage.playback_volume;
-                        }
+                        onElementAvailable('#gr_voice_player_hidden audio', (el)=>{
+                            init_voice_player_hidden();
+                        }, {once: false});
+                        
+                        onElementAvailable('#gr_audiobook_player audio', (el)=>{
+                            init_audiobook_player();
+                        }, {once: false});
 
                         return window.session_storage;
                     }catch(e){
