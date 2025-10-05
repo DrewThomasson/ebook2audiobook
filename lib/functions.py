@@ -2581,6 +2581,7 @@ def web_interface(args, ctx):
                 background-color: #ebedf0 !important;
                 color: #ffffff !important;
             }
+            /* to remove if gradio >= 5.46.0
             #gr_state_update, #gr_read_data, #gr_write_data,
             #gr_audiobook_vtt, #gr_playback_time {
                 display: none !important;
@@ -2839,8 +2840,8 @@ def web_interface(args, ctx):
             gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True)
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
-                gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False)
-                gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, value=0.0)
+                gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
+                gr_playback_time = gr.Number(elem_id="gr_playback_time", label='', interactive=False, visible='hidden', value=0.0)
                 gr_audiobook_sentence = gr.Textbox(elem_id='gr_audiobook_sentence', label='', value='...', interactive=False, lines=3, max_lines=3)
                 gr_audiobook_player = gr.Audio(elem_id='gr_audiobook_player', label='', type='filepath', autoplay=False, interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, show_share_button=False, container=True, visible=True)
                 with gr.Row(elem_id='gr_row_audiobook_list', visible=True):
@@ -2874,9 +2875,9 @@ def web_interface(args, ctx):
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
 
-        gr_state_update = gr.State(value={"hash": None})
-        gr_read_data = gr.JSON(elem_id='gr_read_data')
-        gr_write_data = gr.JSON(elem_id='gr_write_data') 
+        gr_state_update = gr.State(value={"hash": None}, visible='hidden')
+        gr_read_data = gr.JSON(elem_id='gr_read_data', visible='hidden')
+        gr_write_data = gr.JSON(elem_id='gr_write_data', visible='hidden') 
 
         def cleanup_session(req: gr.Request):
             socket_hash = req.session_hash
@@ -3959,20 +3960,15 @@ def web_interface(args, ctx):
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_audiobook_vtt]
+        ).then(
+            fn=None,
+            inputs=None,
+            js='''()=>{load_vtt();}'''
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_confirm_deletion_field_hidden, gr_modal]
-        )
-        gr_audiobook_player.change(
-            fn=None,
-            inputs=[gr_audiobook_list],
-            js='''
-                (audiobook)=>{
-                    load_vtt(audiobook);
-                }
-            '''
         )
         ########### XTTSv2 Params
         gr_tab_xtts_params.select(
@@ -4529,33 +4525,31 @@ def web_interface(args, ctx):
                         }
 
                         if(typeof(window.load_vtt) !== "function"){
-                            window.load_vtt = (path)=>{
+                            window.load_vtt = ()=>{
                                 try{
-                                    if(path != ""){
-                                        gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                        gr_audiobook_sentence.style.fontSize = "14px";
-                                        gr_audiobook_sentence.style.fontWeight = "bold";
-                                        gr_audiobook_sentence.style.width = "100%";
-                                        gr_audiobook_sentence.style.height = "auto";
-                                        gr_audiobook_sentence.style.textAlign = "center";
-                                        gr_audiobook_sentence.style.margin = "0";
-                                        gr_audiobook_sentence.style.padding = "7px 0 7px 0";
-                                        gr_audiobook_sentence.style.lineHeight = "14px";
-                                        const url = URL.createObjectURL(new Blob([path], {type:"text/vtt"}));
-                                        fetch(url)
-                                        .then(res => res.text())
-                                        .then(vttText =>{
-                                            console.log("vtt loaded!");
-                                            parseVTTFast(vttText);
-                                        });
+                                    gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
+                                    gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
+                                    gr_audiobook_sentence.style.fontSize = "14px";
+                                    gr_audiobook_sentence.style.fontWeight = "bold";
+                                    gr_audiobook_sentence.style.width = "100%";
+                                    gr_audiobook_sentence.style.height = "auto";
+                                    gr_audiobook_sentence.style.textAlign = "center";
+                                    gr_audiobook_sentence.style.margin = "0";
+                                    gr_audiobook_sentence.style.padding = "7px 0 7px 0";
+                                    gr_audiobook_sentence.style.lineHeight = "14px";
+                                    const txt = gr_audiobook_vtt.value;
+                                    if(txt == ""){
+                                        gr_audiobook_sentence.value = "...";
+                                    }else{
+                                        parseVTT(txt);
                                     }
                                 }catch(e){
                                     console.warn("load_vtt error:", e);
                                 }
                             };
                         }
-                        if(typeof(parseVTTFast) !== "function"){
-                             window.parseVTTFast = (vtt)=>{
+                        if(typeof(parseVTT) !== "function"){
+                             window.parseVTT = (vtt)=>{
                                 console.log(vtt);
                                 function pushCue(){
                                     if(start !== null && end !== null && textBuffer.length){
