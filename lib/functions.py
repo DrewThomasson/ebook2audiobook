@@ -4211,7 +4211,7 @@ def web_interface(args, ctx):
                         window.load_vtt_timeout = null;
                         
                         if(typeof(onElementAvailable) !== 'function'){
-                            function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
+                            function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}){
                                 const seen = new WeakSet();
                                 const fireFor = (ctx) => {
                                     ctx.querySelectorAll(selector).forEach((el) => {
@@ -4222,19 +4222,19 @@ def web_interface(args, ctx):
                                 };
                                 fireFor(root);
                                 const observer = new MutationObserver((mutations) => {
-                                    for (const m of mutations) {
-                                        for (const n of m.addedNodes) {
+                                    for (const m of mutations){
+                                        for (const n of m.addedNodes){
                                             if(n.nodeType !== 1) continue;
-                                            if(n.matches?.(selector)) {
-                                                if(!seen.has(n)) {
+                                            if(n.matches?.(selector)){
+                                                if(!seen.has(n)){
                                                     seen.add(n);
                                                     callback(n);
-                                                    if(once) {
+                                                    if(once){
                                                         observer.disconnect();
                                                         return;
                                                     }
                                                 }
-                                            } else {
+                                            }else{
                                                 fireFor(n);
                                             }
                                         }
@@ -4250,23 +4250,23 @@ def web_interface(args, ctx):
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                    if(!gr_root || !gr_tab_progress) {
+                                    if(!gr_root || !gr_tab_progress){
                                         clearTimeout(init_elements_timeout);
                                         console.log("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_interface, 1000);
                                         return;
                                     }
                                     // Function to apply theme borders
-                                    function applyThemeBorders() {
+                                    function applyThemeBorders(){
                                         const url = new URL(window.location);
                                         const theme = url.searchParams.get("__theme");
                                         let elColor = "#666666";
 
-                                        if(theme == "dark") {
+                                        if(theme == "dark"){
                                             elColor = "#fff";
-                                        } else if(!theme) {
+                                        }else if(!theme){
                                             const osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                            if(osTheme) {
+                                            if(osTheme){
                                                 elColor = "#fff";
                                             }
                                         }
@@ -4289,7 +4289,7 @@ def web_interface(args, ctx):
                                     });
                                     gr_tab_progress.addEventListener("change", tab_progress);
                                     console.log("Dashboard set!");
-                                } catch (e) {
+                                }catch(e){
                                     console.log("init_interface error:", e);
                                 }
                             };
@@ -4353,7 +4353,7 @@ def web_interface(args, ctx):
                                     if(gr_voice_play.dataset.bound === "true") return;
                                     gr_voice_play.dataset.bound = "true";
                                     gr_voice_play.addEventListener("click", ()=>{
-                                        if(gr_voice_player_hidden.paused) {
+                                        if(gr_voice_player_hidden.paused){
                                             gr_voice_player_hidden.play().then(()=>{
                                                 gr_voice_play.textContent = "⏸";
                                             }).catch(err => console.warn("Play failed:", err));
@@ -4402,7 +4402,7 @@ def web_interface(args, ctx):
                                                 try {
                                                     window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
                                                     const cue = findCue(window.session_storage.playback_time);
-                                                    if(cue && cue !== lastCue) {
+                                                    if(cue && cue !== lastCue){
                                                         if(fade_timeout){
                                                             gr_audiobook_sentence.style.opacity = "1";
                                                         }else{
@@ -4427,7 +4427,7 @@ def web_interface(args, ctx):
                                                         gr_playback_time.dispatchEvent(new Event("input", {bubbles: true}));
                                                         last_time = now;
                                                     }
-                                                } catch (e) {
+                                                }catch(e){
                                                     console.log("gr_audiobook_player tracking error:", e);
                                                 }
                                                 if(!gr_audiobook_player.ended){
@@ -4442,7 +4442,7 @@ def web_interface(args, ctx):
                                                 gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
-                                                if(audioCtx.state === "suspended") {
+                                                if(audioCtx.state === "suspended"){
                                                     audioCtx.resume();
                                                 }
                                                 requestAnimationFrame(trackPlayback);
