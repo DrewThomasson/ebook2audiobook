@@ -4340,7 +4340,7 @@ def web_interface(args, ctx):
                             window.init_voice_player_hidden = ()=>{
                                 gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
                                 gr_voice_play = gr_root.querySelector("#gr_voice_play");
-                                if(gr_voice_play_hidden && gr_voice_play){
+                                if(gr_voice_player_hidden && gr_voice_play){
                                     gr_voice_play.addEventListener("click", ()=>{
                                         if(gr_voice_player_hidden.paused){
                                             gr_voice_player_hidden.play();
