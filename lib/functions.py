@@ -4208,33 +4208,43 @@ def web_interface(args, ctx):
                         window.session_storage = {};
                         window.session_storage.playback_time = 0;
                         window.session_storage.playback_volume = 1.0;
-                        window.load_vtt_timeout = null;
                         
-                        if(typeof(onElementAvailable) !== 'function'){
-                            function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}){
+                        if(typeof onElementAvailable !== "function"){
+                            function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
                                 const seen = new WeakSet();
                                 const fireFor = (ctx) => {
                                     ctx.querySelectorAll(selector).forEach((el) => {
-                                        if(seen.has(el)) return;
-                                        seen.add(el);
-                                        callback(el);
+                                        if (seen.has(el)) return;
+                                        const success = callback(el);
+                                        if (success !== false) {
+                                            // Mark as seen only if callback succeeded
+                                            seen.add(el);
+                                            if (once) return;
+                                        } else {
+                                            // Retry check later (in case conditions weren’t met yet)
+                                            setTimeout(() => fireFor(root), 300);
+                                        }
                                     });
                                 };
                                 fireFor(root);
                                 const observer = new MutationObserver((mutations) => {
-                                    for (const m of mutations){
-                                        for (const n of m.addedNodes){
-                                            if(n.nodeType !== 1) continue;
-                                            if(n.matches?.(selector)){
-                                                if(!seen.has(n)){
-                                                    seen.add(n);
-                                                    callback(n);
-                                                    if(once){
-                                                        observer.disconnect();
-                                                        return;
+                                    for (const m of mutations) {
+                                        for (const n of m.addedNodes) {
+                                            if (n.nodeType !== 1) continue;
+                                            if (n.matches?.(selector)) {
+                                                if (!seen.has(n)) {
+                                                    const success = callback(n);
+                                                    if (success !== false) {
+                                                        seen.add(n);
+                                                        if (once) {
+                                                            observer.disconnect();
+                                                            return;
+                                                        }
+                                                    } else {
+                                                        setTimeout(() => fireFor(root), 300);
                                                     }
                                                 }
-                                            }else{
+                                            } else {
                                                 fireFor(n);
                                             }
                                         }
@@ -4317,6 +4327,7 @@ def web_interface(args, ctx):
                                         slider.value = (slider === gr_xtts_top_k) ? parseInt(saved) : parseFloat(saved);
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
+                                    console.log("init_xtts_sliders set!");
                                 }catch(e){
                                     console.warn("init_xtts_sliders error:", e);
                                 }
@@ -4339,6 +4350,7 @@ def web_interface(args, ctx):
                                         slider.value = parseFloat(saved);
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
+                                    console.log("init_bark_sliders set!");
                                 }catch(e){
                                     console.warn("init_bark_sliders error:", e);
                                 }
@@ -4347,35 +4359,41 @@ def web_interface(args, ctx):
                         
                         if(typeof window.init_voice_player_hidden !== "function"){
                             window.init_voice_player_hidden = ()=>{
-                                const gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
-                                const gr_voice_play = gr_root.querySelector("#gr_voice_play");
-                                if(gr_voice_player_hidden && gr_voice_play){
-                                    if(gr_voice_play.dataset.bound === "true") return;
-                                    gr_voice_play.dataset.bound = "true";
-                                    gr_voice_play.addEventListener("click", ()=>{
-                                        if(gr_voice_player_hidden.paused){
-                                            gr_voice_player_hidden.play().then(()=>{
-                                                gr_voice_play.textContent = "⏸";
-                                            }).catch(err => console.warn("Play failed:", err));
-                                        }else{
-                                            gr_voice_player_hidden.pause();
+                                try{
+                                    const gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
+                                    const gr_voice_play = gr_root.querySelector("#gr_voice_play");
+                                    if(gr_voice_player_hidden && gr_voice_play){
+                                        if(gr_voice_play.dataset.bound === "true") return;
+                                        gr_voice_play.dataset.bound = "true";
+                                        gr_voice_play.addEventListener("click", ()=>{
+                                            if(gr_voice_player_hidden.paused){
+                                                gr_voice_player_hidden.play().then(()=>{
+                                                    gr_voice_play.textContent = "⏸";
+                                                }).catch(err => console.warn("Play failed:", err));
+                                            }else{
+                                                gr_voice_player_hidden.pause();
+                                                gr_voice_play.textContent = "▶";
+                                            }
+                                        });
+                                        gr_voice_player_hidden.addEventListener("pause", () => {
                                             gr_voice_play.textContent = "▶";
-                                        }
-                                    });
-                                    gr_voice_player_hidden.addEventListener("pause", () => {
-                                        gr_voice_play.textContent = "▶";
-                                    });
-                                    gr_voice_player_hidden.addEventListener("ended", () => {
-                                        gr_voice_play.textContent = "▶";
-                                    });
-                                    gr_voice_player_hidden.addEventListener("play", () => {
-                                        const v = window.session_storage?.playback_volume ?? 1;
-                                        gr_voice_player_hidden.volume = v;
-                                    });
-                                }else{
-                                    console.warn("Voice player not found yet, retrying...");
-                                    setTimeout(window.init_voice_player_hidden, 500);
+                                        });
+                                        gr_voice_player_hidden.addEventListener("ended", () => {
+                                            gr_voice_play.textContent = "▶";
+                                        });
+                                        gr_voice_player_hidden.addEventListener("play", () => {
+                                            const v = window.session_storage?.playback_volume ?? 1;
+                                            gr_voice_player_hidden.volume = v;
+                                        });
+                                        return true;
+                                    }else{
+                                        console.warn("Voice player not found yet, retrying...");
+                                        setTimeout(window.init_voice_player_hidden, 500);
+                                    }
+                                }catch(e){
+                                    console.warn("init_voice_player_hidden error:", e);
                                 }
+                                return false;
                             };
                         }
 
@@ -4393,7 +4411,7 @@ def web_interface(args, ctx):
                                         let fade_timeout = null;
                                         let last_time = 0;
 
-                                        if(gr_audiobook_player){
+                                        if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time){
                                             console.log("gr_audiobook_player ready!");
                                             const audioCtx = new AudioContext();
                                             const sourceNode = audioCtx.createMediaElementSource(gr_audiobook_player);
@@ -4465,11 +4483,13 @@ def web_interface(args, ctx):
                                             });
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
+                                            return true;
                                         }
                                     }
                                 }catch(e){
                                     console.warn("init_audiobook_player error:", e);
                                 }
+                                return false;
                             };
                         }
                         
