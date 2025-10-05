@@ -2543,8 +2543,8 @@ def web_interface(args, ctx):
                 height: 60px !important;
             }
             /* TO REMOVE IF GRADIO > 5.45.0 */
-            #gr_voice_player audio{
-                position: absolute;
+            #gr_voice_player_hidden {
+                position: absolute !important;
                 visibility: hidden !important;
                 height: 0 !important;
                 width: 0 !important;
@@ -2554,73 +2554,14 @@ def web_interface(args, ctx):
                 width: 60px !important;
                 height: 60px !important;
             }
-            /* ///////////////////// */
-            
-            #voice_btn {
-                position: relative !important;
+            #gr_voice_player_hidden > div {
+                padding: 0 !important;
+                margin: 0 !important;
                 width: 60px !important;
                 height: 60px !important;
-                /*background: transparent !important;*/
-                background: yellow !important;
-                border: none !important;
-                cursor: pointer !important;
-                display: flex !important;
-                justify-content: center !important;
-                align-items: center !important;
-                transition: transform 0.2s ease-in-out !important;
             }
-            #voice_btn::before {
-                content: '' !important;
-                border-style: solid !important;
-                border-width: 12px 0 12px 20px !important;
-                border-color: transparent transparent transparent white !important;
-                transition: all 0.25s ease-in-out !important;
-                display: inline-block !important;
-                width: 0 !important;
-                height: 0 !important;
-            }
-            #voice_btn:hover::before {
-                border-color: transparent transparent transparent orange !important;
-                transform: scale(1.2) !important;
-            }
-            #voice_btn.paused::before {
-                opacity: 0 !important;
-                transform: scale(0.6) !important;
-            }
-            #voice_btn.paused::after {
-                content: '' !important;
-                position: absolute !important;
-                top: 50% !important;
-                left: 50% !important;
-                width: 20px !important;
-                height: 24px !important;
-                transform: translate(-50%, -50%) scale(1) !important;
-                background: transparent !important;
-            }
-            #voice_btn.paused::after,
-            #voice_btn.paused::before {
-                transition: all 0.25s ease-in-out !important;
-            }
-            #voice_btn.paused span {
-                position: absolute !important;
-                width: 6px !important;
-                height: 20px !important;
-                background: white !important;
-                transition: all 0.25s ease-in-out !important;
-                top: 50% !important;
-                transform: translateY(-50%) !important;
-            }
-            #voice_btn.paused span.left {
-                left: calc(50% - 12px) !important;
-            }
-            #voice_btn.paused span.right {
-                left: calc(50% - 2px) !important;
-            }
-            #voice_btn.paused:hover span {
-                background: orange !important;
-                transform: translateY(-50%) scale(1.2) !important;
-            }
-            ///////////
+            /*  ////////////////// */
+            
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
                 display: none !important;
             }
@@ -2755,8 +2696,8 @@ def web_interface(args, ctx):
                                 gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                 with gr_row_voice_player:
-                                    gr_voice_player = gr.Audio(elem_id='gr_voice_player', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible=False, show_share_button=False, show_label=False, scale=0, min_width=60)
-                                    gr.HTML('<button id="voice_btn" title="Play Voice"></button>')
+                                    gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible=False, show_share_button=True, show_label=False, scale=0, min_width=60)
+                                    gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
@@ -3217,7 +3158,7 @@ def web_interface(args, ctx):
             session['voice'] = next((value for label, value in voice_options if value == selected), None)
             visible = True if session['voice'] is not None else False
             min_width = 60 if session['voice'] is not None else 0
-            return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible)
+            return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible), gr.update(visible=visible)
 
         def click_gr_voice_del_btn(selected, id):
             try:
@@ -3930,7 +3871,7 @@ def web_interface(args, ctx):
         gr_voice_list.change(
             fn=change_gr_voice_list,
             inputs=[gr_voice_list, gr_session],
-            outputs=[gr_voice_player, gr_voice_del_btn]
+            outputs=[gr_voice_player_hidden, gr_voice_play, gr_voice_del_btn]
         )
         gr_voice_del_btn.click(
             fn=click_gr_voice_del_btn,
@@ -4261,13 +4202,13 @@ def web_interface(args, ctx):
                         let gr_root;
                         let gr_checkboxes;
                         let gr_radios;
-                        let gr_voice_player;
+                        let gr_voice_player_hidden;
                         let gr_audiobook_vtt;
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
                         let gr_playback_time;
                         let gr_tab_progress;
-                        let voice_btn;
+                        let gr_voice_play;
                         let init_elements_timeout;
                         let init_audiobook_player_timeout;
                         let audioFilter = "";
@@ -4411,19 +4352,18 @@ def web_interface(args, ctx):
                             window.init_audiobook_player = ()=>{
                                 try{
                                     if(gr_root){
-                                        gr_voice_player = gr_root.querySelector("#gr_voice_player audio");
+                                        gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
+                                        gr_voice_play = gr_root.querySelector("#gr_voice_play");
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                         gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
-                                        
-                                        voice_btn = gr_root.getElementById("voice_btn");
-                                        
+
                                         let lastCue = null;
                                         let fade_timeout = null;
                                         let last_time = 0;
                                         
-                                        if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time && voice_btn){
+                                        if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time && gr_voice_play){
                                             console.log("gr_audiobook_player ready!");
                                             const audioCtx = new AudioContext();
                                             const sourceNode = audioCtx.createMediaElementSource(gr_audiobook_player);
@@ -4466,11 +4406,7 @@ def web_interface(args, ctx):
                                                 }
                                             }
                                             gr_audiobook_player.addEventListener("loadeddata", ()=>{
-                                                if(gr_audiobook_vtt.value != ""){
-                                                    const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
-                                                    window.load_vtt(url);
-                                                    gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
-                                                }
+                                                console.log(gr_audiobook_player.src, gr_audiobook_vtt.value);
                                                 const url = new URL(window.location);
                                                 const theme = url.searchParams.get("__theme");
                                                 let osTheme;
@@ -4486,7 +4422,12 @@ def web_interface(args, ctx):
                                                 }
                                                 gr_audiobook_player.style.transition = "filter 1s ease";
                                                 gr_audiobook_player.style.filter = audioFilter;
-                                                gr_voice_player.volume = gr_audiobook_player.volume = window.session_storage.playback_volume;
+                                                gr_audiobook_player.volume = window.session_storage.playback_volume;
+                                                if(gr_audiobook_vtt.value != ""){
+                                                    const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
+                                                    window.load_vtt(url);
+                                                    gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
+                                                }
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
                                                 if (audioCtx.state === "suspended") {
@@ -4504,43 +4445,20 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                gr_voice_player.volume = window.session_storage.playback_volume = gr_audiobook_player.volume;
+                                                gr_voice_player_hidden.volume = window.session_storage.playback_volume = gr_audiobook_player.volume;
                                             });
   
                                             ///////////////////
 
-                                            const createPauseBars = ()=>{
-                                                if(!voice_btn.querySelector("span.left")){
-                                                    const left = gr_root.createElement("span");
-                                                    const right = gr_root.createElement("span");
-                                                    left.classList.add("left");
-                                                    right.classList.add("right");
-                                                    voice_btn.appendChild(left);
-                                                    voice_btn.appendChild(right);
-                                                }
-                                            };
-
-                                            voice_btn.addEventListener("click", ()=>{
-                                                if(gr_voice_player.paused){
-                                                    gr_voice_player.play();
-                                                    voice_btn.classList.add("paused");
-                                                    createPauseBars();
+                                            gr_voice_play.addEventListener("click", ()=>{
+                                                if(gr_voice_player_hidden.paused){
+                                                    gr_voice_player_hidden.play();
                                                 }else{
-                                                    gr_voice_player.pause();
-                                                    voice_btn.classList.remove("paused");
-                                                    const bars = voice_btn.querySelectorAll("span");
-                                                    bars.forEach(b => b.remove());
+                                                    gr_voice_player_hidden.pause();
                                                 }
                                             });
-                                            gr_voice_player.addEventListener("play", ()=>{
-                                                voice_btn.classList.add("paused");
-                                                createPauseBars();
-                                            });
-                                            gr_voice_player.addEventListener("pause", ()=>{
-                                                voice_btn.classList.remove("paused");
-                                                const bars = voice_btn.querySelectorAll("span");
-                                                bars.forEach(b => b.remove());
-                                            });
+
+                                            gr_voice_player_hidden.volume = window.session_storage.playback_volume;
                                         }
                                     }
                                 }catch(e){
@@ -4712,6 +4630,9 @@ def web_interface(args, ctx):
                         if(data){
                             window.session_storage = JSON.parse(data);
                             window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
+                            if(window.session_storage.playback_volume == 0){
+                                window.session_storage.playback_volume = 1.0;
+                            }
                         }
                         return window.session_storage;
                     }catch(e){
