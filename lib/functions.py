@@ -4608,12 +4608,13 @@ def web_interface(args, ctx):
 
                         //////////////////////
 
-                        window.addEventListener("beforeunload", () =>{
+                        window.addEventListener("beforeunload", ()=>{
                             try{
                                 const data = JSON.parse(localStorage.getItem("data") || "{}");
                                 if(data.tab_id == window.tab_id || !data.tab_id){
                                     delete data.tab_id;
                                     delete data.status;
+                                    data.playback_time = parseFloat(window.session_storage.playback_time);
                                     data.playback_volume = parseFloat(window.session_storage.playback_volume);
                                     localStorage.setItem("data", JSON.stringify(data));
                                 }
