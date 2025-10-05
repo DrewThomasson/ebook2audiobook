@@ -4209,8 +4209,8 @@ def web_interface(args, ctx):
                         window.session_storage.playback_time = 0;
                         window.session_storage.playback_volume = 1.0;
                         
-                        if(typeof onElementAvailable !== "function"){
-                            function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
+                        if(typeof window.onElementAvailable !== "function"){
+                            function window.onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
                                 const seen = new WeakSet();
                                 const fireFor = (ctx) => {
                                     ctx.querySelectorAll(selector).forEach((el) => {
@@ -4385,6 +4385,9 @@ def web_interface(args, ctx):
                                             const v = window.session_storage?.playback_volume ?? 1;
                                             gr_voice_player_hidden.volume = v;
                                         });
+                                        window.onElementAvailable('#gr_audiobook_player audio', (el)=>{
+                                            init_audiobook_player();
+                                        }, {once: false});
                                         return true;
                                     }else{
                                         console.warn("Voice player not found yet, retrying...");
@@ -4456,7 +4459,6 @@ def web_interface(args, ctx):
                                                 gr_audiobook_player.style.filter = audioFilter;
                                                 gr_audiobook_player.volume = window.session_storage.playback_volume;
                                                 gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
-                                                window.load_vtt(gr_audiobook_vtt.value);
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
                                                 if(audioCtx.state === "suspended"){
@@ -4525,32 +4527,21 @@ def web_interface(args, ctx):
                             window.load_vtt = (path)=>{
                                 try{
                                     if(path != ""){
+                                        gr_audiobook_sentence.style.fontSize = "14px";
+                                        gr_audiobook_sentence.style.fontWeight = "bold";
+                                        gr_audiobook_sentence.style.width = "100%";
+                                        gr_audiobook_sentence.style.height = "auto";
+                                        gr_audiobook_sentence.style.textAlign = "center";
+                                        gr_audiobook_sentence.style.margin = "0";
+                                        gr_audiobook_sentence.style.padding = "7px 0 7px 0";
+                                        gr_audiobook_sentence.style.lineHeight = "14px";
                                         const url = URL.createObjectURL(new Blob([path], {type:"text/vtt"}));
-                                        // Remove any <track> to bypass browser subtitle engine
-                                        let existing = gr_root.querySelector("#gr_audiobook_track");
-                                        if(existing){
-                                            existing.remove();
-                                        }
-                                        gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                        if(gr_audiobook_sentence){
-                                            gr_audiobook_sentence.style.fontSize = "14px";
-                                            gr_audiobook_sentence.style.fontWeight = "bold";
-                                            gr_audiobook_sentence.style.width = "100%";
-                                            gr_audiobook_sentence.style.height = "auto";
-                                            gr_audiobook_sentence.style.textAlign = "center";
-                                            gr_audiobook_sentence.style.margin = "0";
-                                            gr_audiobook_sentence.style.padding = "7px 0 7px 0";
-                                            gr_audiobook_sentence.style.lineHeight = "14px";
-                                            gr_audiobook_sentence.value = "...";
-                                            fetch(url)
-                                            .then(res => res.text())
-                                            .then(vttText =>{
-                                                console.log('vtt loaded!');
-                                                parseVTTFast(vttText);
-                                            });
-                                        }else{
-                                            console.warn("gr_audiobook_sentence not ready!");
-                                        }
+                                        fetch(url)
+                                        .then(res => res.text())
+                                        .then(vttText =>{
+                                            console.log('vtt loaded!');
+                                            parseVTTFast(vttText);
+                                        });
                                     }
                                     const themURL = new URL(window.location);
                                     const theme = themURL.searchParams.get("__theme");
@@ -4668,12 +4659,8 @@ def web_interface(args, ctx):
                             }
                         }
                         
-                        onElementAvailable('#gr_voice_player_hidden audio', (el)=>{
+                        window.onElementAvailable('#gr_voice_player_hidden audio', (el)=>{
                             init_voice_player_hidden();
-                        }, {once: false});
-                        
-                        onElementAvailable('#gr_audiobook_player audio', (el)=>{
-                            init_audiobook_player();
                         }, {once: false});
 
                         return window.session_storage;
