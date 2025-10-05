@@ -502,7 +502,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             toc = epubBook.toc  # Extract TOC
             toc_list = [
                     nt for item in toc if hasattr(item, 'title')
-                    if(nt := normalize_text(
+                    if (nt := normalize_text(
                         str(item.title),
                         session['language'],
                         session['language_iso1'],
@@ -3981,7 +3981,7 @@ def web_interface(args, ctx):
             outputs=None,
             js='''
             () => {
-                if(!window._xtts_sliders_initialized) {
+                if (!window._xtts_sliders_initialized) {
                     const checkXttsExist = setInterval(() => {
                         const slider = document.querySelector("#gr_xtts_speed input[type=range]");
                         if(slider){
@@ -4041,7 +4041,7 @@ def web_interface(args, ctx):
             outputs=None,
             js='''
             () => {
-                if(!window._bark_sliders_initialized) {
+                if (!window._bark_sliders_initialized) {
                     const checkBarkExist = setInterval(() => {
                         const slider = document.querySelector("#gr_bark_waveform_temp input[type=range]");
                         if(slider){
@@ -4113,7 +4113,7 @@ def web_interface(args, ctx):
                             localStorage.setItem("data", JSON.stringify(data));
                         }
                     }catch(e){
-                        console.warn("gr_write_data.change error: "+e);
+                        console.log("gr_write_data.change error: "+e);
                     }
                 }
             '''
@@ -4215,7 +4215,7 @@ def web_interface(args, ctx):
                                 const seen = new WeakSet();
                                 const fireFor = (ctx) => {
                                     ctx.querySelectorAll(selector).forEach((el) => {
-                                        if(seen.has(el)) return;
+                                        if (seen.has(el)) return;
                                         seen.add(el);
                                         callback(el);
                                     });
@@ -4224,17 +4224,17 @@ def web_interface(args, ctx):
                                 const observer = new MutationObserver((mutations) => {
                                     for (const m of mutations) {
                                         for (const n of m.addedNodes) {
-                                            if(n.nodeType !== 1) continue;
-                                            if(n.matches?.(selector)) {
-                                                if(!seen.has(n)) {
+                                            if (n.nodeType !== 1) continue;
+                                            if (n.matches?.(selector)) {
+                                                if (!seen.has(n)) {
                                                     seen.add(n);
                                                     callback(n);
-                                                    if(once) {
+                                                    if (once) {
                                                         observer.disconnect();
                                                         return;
                                                     }
                                                 }
-                                            }else{
+                                            } else {
                                                 fireFor(n);
                                             }
                                         }
@@ -4245,14 +4245,14 @@ def web_interface(args, ctx):
                             }
                         }
 
-                        if(typeof window.init_interface !== "function"){
+                        if (typeof window.init_interface !== "function"){
                             window.init_interface = ()=>{
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                    if(!gr_root || !gr_tab_progress) {
+                                    if (!gr_root || !gr_tab_progress) {
                                         clearTimeout(init_elements_timeout);
-                                        console.warn("Components not ready... retrying");
+                                        console.log("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_interface, 1000);
                                         return;
                                     }
@@ -4262,11 +4262,11 @@ def web_interface(args, ctx):
                                         const theme = url.searchParams.get("__theme");
                                         let elColor = "#666666";
 
-                                        if(theme == "dark") {
+                                        if (theme == "dark") {
                                             elColor = "#fff";
-                                        }else if{!theme) {
+                                        } else if (!theme) {
                                             const osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                            if(osTheme) {
+                                            if (osTheme) {
                                                 elColor = "#fff";
                                             }
                                         }
@@ -4290,7 +4290,7 @@ def web_interface(args, ctx):
                                     gr_tab_progress.addEventListener("change", tab_progress);
                                     console.log("Dashboard set!");
                                 } catch (e) {
-                                    console.warn("init_interface error:", e);
+                                    console.log("init_interface error:", e);
                                 }
                             };
                         }
@@ -4318,7 +4318,7 @@ def web_interface(args, ctx):
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
                                 }catch(e){
-                                    console.warn("init_xtts_sliders error:", e);
+                                    console.log("init_xtts_sliders error:", e);
                                 }
                             };
                         }
@@ -4340,15 +4340,17 @@ def web_interface(args, ctx):
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
                                 }catch(e){
-                                    console.warn("init_bark_sliders error:", e);
+                                    console.log("init_bark_sliders error:", e);
                                 }
                             };
                         }
                         
                         if(typeof window.init_voice_player_hidden !== "function"){
                             window.init_voice_player_hidden = ()=>{
+                                const gr_root = document.querySelector("gradio-app, body"); // fallback root
+                                const gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
                                 const gr_voice_play = gr_root.querySelector("#gr_voice_play");
-                                if(gr_voice_play){
+                                if(gr_voice_player_hidden && gr_voice_play){
                                     if(gr_voice_play.dataset.bound === "true") return;
                                     gr_voice_play.dataset.bound = "true";
                                     gr_voice_play.addEventListener("click", () => {
@@ -4356,7 +4358,7 @@ def web_interface(args, ctx):
                                             gr_voice_player_hidden.play().then(() => {
                                                 gr_voice_play.textContent = "⏸";
                                             }).catch(err => console.warn("Play failed:", err));
-                                        }else{
+                                        } else {
                                             gr_voice_player_hidden.pause();
                                             gr_voice_play.textContent = "▶";
                                         }
@@ -4372,8 +4374,8 @@ def web_interface(args, ctx):
                                         gr_voice_player_hidden.volume = v;
                                     });
                                 }else{
-                                    console.warn("Voice player not found yet, retrying...");
-                                    setTimeout(window.init_voice_player_hidden, 500);
+                                    console.warn("Voice player elements not found yet, retrying...");
+                                    setTimeout(window.init_voice_player_hidden, 500); // retry until ready
                                 }
                             };
                         }
@@ -4427,7 +4429,7 @@ def web_interface(args, ctx):
                                                         last_time = now;
                                                     }
                                                 } catch (e) {
-                                                    console.warn("gr_audiobook_player tracking error:", e);
+                                                    console.log("gr_audiobook_player tracking error:", e);
                                                 }
                                                 if(!gr_audiobook_player.ended){
                                                     requestAnimationFrame(trackPlayback);
@@ -4466,7 +4468,7 @@ def web_interface(args, ctx):
                                         }
                                     }
                                 }catch(e){
-                                    console.warn("init_audiobook_player error:", e);
+                                    console.log("init_audiobook_player error:", e);
                                 }
                             };
                         }
@@ -4485,7 +4487,7 @@ def web_interface(args, ctx):
                                         document.title = "Ebook2Audiobook";
                                     }
                                 }catch(e){
-                                    console.warn("tab_progress error:", e);
+                                    console.log("tab_progress error:", e);
                                 }
                             };
                         }
@@ -4504,6 +4506,7 @@ def web_interface(args, ctx):
                             window.load_vtt = (path)=>{
                                 try{
                                     if(path != ""){
+                                        console.log('vtt ok');
                                         const url = URL.createObjectURL(new Blob([path], {type:"text/vtt"}));
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
@@ -4524,7 +4527,6 @@ def web_interface(args, ctx):
                                             fetch(url)
                                             .then(res => res.text())
                                             .then(vttText =>{
-                                                console.log('vtt loaded!');
                                                 parseVTTFast(vttText);
                                             });
                                         }
@@ -4543,7 +4545,7 @@ def web_interface(args, ctx):
                                         }
                                     }
                                 }catch(e){
-                                    console.warn("load_vtt error:", e);
+                                    console.log("load_vtt error:", e);
                                 }
                             };
                         }
@@ -4631,7 +4633,7 @@ def web_interface(args, ctx):
                                     localStorage.setItem("data", JSON.stringify(data));
                                 }
                             }catch(e){
-                                console.warn("Error updating status on unload:", e);
+                                console.log("Error updating status on unload:", e);
                             }
                         });
 
@@ -4655,7 +4657,7 @@ def web_interface(args, ctx):
 
                         return window.session_storage;
                     }catch(e){
-                        console.warn("gr_raed_data js error:", e);
+                        console.log("gr_raed_data js error:", e);
                     }
                     return null;
                 }
