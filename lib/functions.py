@@ -4452,11 +4452,11 @@ def web_interface(args, ctx):
                                                 }
                                             }
                                             gr_audiobook_player.addEventListener("loadeddata", ()=>{
-                                                window.load_vtt(gr_audiobook_vtt.value);
                                                 gr_audiobook_player.style.transition = "filter 1s ease";
                                                 gr_audiobook_player.style.filter = audioFilter;
                                                 gr_audiobook_player.volume = window.session_storage.playback_volume;
                                                 gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
+                                                window.load_vtt(gr_audiobook_vtt.value);
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
                                                 if(audioCtx.state === "suspended"){
@@ -4476,7 +4476,6 @@ def web_interface(args, ctx):
                                                 window.session_storage.playback_volume = gr_audiobook_player.volume;
                                                 gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
                                                 if(gr_voice_player_hidden){
-                                                    console.log("gr_voice_player_hidden volume set");
                                                     gr_voice_player_hidden.volume = gr_audiobook_player.volume;
                                                     gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
                                                 }
@@ -4549,6 +4548,8 @@ def web_interface(args, ctx):
                                                 console.log('vtt loaded!');
                                                 parseVTTFast(vttText);
                                             });
+                                        }else{
+                                            console.warn("gr_audiobook_sentence not ready!");
                                         }
                                     }
                                     const themURL = new URL(window.location);
