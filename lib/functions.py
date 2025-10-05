@@ -4419,7 +4419,6 @@ def web_interface(args, ctx):
                                                         }, 33);
                                                         lastCue = cue;
                                                     }else if(!cue && lastCue !== null){
-                                                        gr_audiobook_sentence.value = "...";
                                                         lastCue = null;
                                                     }
                                                     const now = performance.now();
