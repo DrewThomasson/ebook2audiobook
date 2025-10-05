@@ -4409,7 +4409,6 @@ def web_interface(args, ctx):
                                                 }
                                             }
                                             gr_audiobook_player.addEventListener("loadeddata", ()=>{
-                                                console.log(gr_audiobook_player.src, gr_audiobook_vtt.value);
                                                 const url = new URL(window.location);
                                                 const theme = url.searchParams.get("__theme");
                                                 let osTheme;
@@ -4427,6 +4426,7 @@ def web_interface(args, ctx):
                                                 gr_audiobook_player.style.filter = audioFilter;
                                                 gr_audiobook_player.volume = window.session_storage.playback_volume;
                                                 if(gr_audiobook_vtt.value != ""){
+                                                    console.log('vtt ok');
                                                     const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
                                                     window.load_vtt(url);
                                                     gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
