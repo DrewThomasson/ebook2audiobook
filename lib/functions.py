@@ -4362,8 +4362,8 @@ def web_interface(args, ctx):
                                         let lastCue = null;
                                         let fade_timeout = null;
                                         let last_time = 0;
-                                        
-                                        if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time && gr_voice_play){
+
+                                        if(gr_audiobook_player){
                                             console.log("gr_audiobook_player ready!");
                                             const audioCtx = new AudioContext();
                                             const sourceNode = audioCtx.createMediaElementSource(gr_audiobook_player);
@@ -4447,18 +4447,17 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
                                                 gr_voice_player_hidden.volume = window.session_storage.playback_volume = gr_audiobook_player.volume;
                                             });
-  
-                                            ///////////////////
-
-                                            gr_voice_play.addEventListener("click", ()=>{
-                                                if(gr_voice_player_hidden.paused){
-                                                    gr_voice_player_hidden.play();
-                                                }else{
-                                                    gr_voice_player_hidden.pause();
-                                                }
-                                            });
-
-                                            gr_voice_player_hidden.volume = window.session_storage.playback_volume;
+                                            
+                                            if(gr_voice_play_hidden && gr_voice_play){
+                                                gr_voice_play.addEventListener("click", ()=>{
+                                                    if(gr_voice_player_hidden.paused){
+                                                        gr_voice_player_hidden.play();
+                                                    }else{
+                                                        gr_voice_player_hidden.pause();
+                                                    }
+                                                });
+                                                gr_voice_player_hidden.volume = window.session_storage.playback_volume;
+                                            }
                                         }
                                     }
                                 }catch(e){
@@ -4567,45 +4566,6 @@ def web_interface(args, ctx):
                                     return [s];
                                 }
                                 return [s.slice(0, idx).trim(), s.slice(idx + 1).trim()];
-                            }
-                        }
-
-                        //////////////////////
-                        
-                        if(typeof(onElementAvailable) !== "function"){
-                            function onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
-                                const seen = new WeakSet();
-                                const fireFor = (ctx) => {
-                                    ctx.querySelectorAll(selector).forEach((el) => {
-                                        if(seen.has(el)){
-                                            return;
-                                        }
-                                        seen.add(el);
-                                        callback(el);
-                                    });
-                                };
-                                fireFor(root);
-                                const observer = new MutationObserver((mutations) => {
-                                    for (const m of mutations) {
-                                        for (const n of m.addedNodes) {
-                                            if (n.nodeType !== 1) continue;
-                                            if (n.matches?.(selector)) {
-                                                if (!seen.has(n)) {
-                                                    seen.add(n);
-                                                    callback(n);
-                                                    if (once) {
-                                                        observer.disconnect();
-                                                        return;
-                                                    }
-                                                }
-                                            } else {
-                                                fireFor(n);
-                                            }
-                                        }
-                                    }
-                                });
-                                observer.observe(root, { childList: true, subtree: true });
-                                return () => observer.disconnect();
                             }
                         }
 
