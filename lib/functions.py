@@ -4402,7 +4402,6 @@ def web_interface(args, ctx):
                                 try{
                                     if(gr_root){
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
-                                        gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
                                         gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
@@ -4475,6 +4474,7 @@ def web_interface(args, ctx):
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
                                                 window.session_storage.playback_volume = gr_audiobook_player.volume;
+                                                gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
                                                 if(gr_voice_player_hidden){
                                                     console.log("gr_voice_player_hidden volume set");
                                                     gr_voice_player_hidden.volume = gr_audiobook_player.volume;
