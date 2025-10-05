@@ -4350,7 +4350,7 @@ def web_interface(args, ctx):
                                             gr_voice_play.value = "⏸";
                                         }
                                     });
-                                    init_voice_player_hidden.addEventListener("play", ()=>{
+                                    gr_voice_player_hidden.addEventListener("play", ()=>{
                                         gr_voice_player_hidden.volume = window.session_storage.playback_volume;
                                     });
                                 }
