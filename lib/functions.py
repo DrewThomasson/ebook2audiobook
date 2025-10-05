@@ -4352,8 +4352,6 @@ def web_interface(args, ctx):
                             window.init_audiobook_player = ()=>{
                                 try{
                                     if(gr_root){
-                                        gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
-                                        gr_voice_play = gr_root.querySelector("#gr_voice_play");
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                         gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
@@ -4447,17 +4445,6 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
                                                 gr_voice_player_hidden.volume = window.session_storage.playback_volume = gr_audiobook_player.volume;
                                             });
-                                            
-                                            if(gr_voice_play_hidden && gr_voice_play){
-                                                gr_voice_play.addEventListener("click", ()=>{
-                                                    if(gr_voice_player_hidden.paused){
-                                                        gr_voice_player_hidden.play();
-                                                    }else{
-                                                        gr_voice_player_hidden.pause();
-                                                    }
-                                                });
-                                                gr_voice_player_hidden.volume = window.session_storage.playback_volume;
-                                            }
                                         }
                                     }
                                 }catch(e){
@@ -4594,6 +4581,20 @@ def web_interface(args, ctx):
                                 window.session_storage.playback_volume = 1.0;
                             }
                         }
+                        
+                        gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
+                        gr_voice_play = gr_root.querySelector("#gr_voice_play");
+                        if(gr_voice_play_hidden && gr_voice_play){
+                            gr_voice_play.addEventListener("click", ()=>{
+                                if(gr_voice_player_hidden.paused){
+                                    gr_voice_player_hidden.play();
+                                }else{
+                                    gr_voice_player_hidden.pause();
+                                }
+                            });
+                            gr_voice_player_hidden.volume = window.session_storage.playback_volume;
+                        }
+
                         return window.session_storage;
                     }catch(e){
                         console.log("gr_raed_data js error:", e);
