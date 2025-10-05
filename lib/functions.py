@@ -4350,7 +4350,9 @@ def web_interface(args, ctx):
                                             gr_voice_play.value = "⏸";
                                         }
                                     });
-                                    gr_voice_player_hidden.volume = window.session_storage.playback_volume;
+                                    init_voice_player_hidden.addEventListener("play", ()=>{
+                                        gr_voice_player_hidden.volume = window.session_storage.playback_volume;
+                                    });
                                 }
                             }
                         }
@@ -4450,7 +4452,7 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
-                                                gr_voice_player_hidden.volume = window.session_storage.playback_volume = gr_audiobook_player.volume;
+                                                window.session_storage.playback_volume = gr_audiobook_player.volume;
                                             });
                                         }
                                     }
