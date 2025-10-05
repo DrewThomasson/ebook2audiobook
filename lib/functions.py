@@ -4113,7 +4113,7 @@ def web_interface(args, ctx):
                             localStorage.setItem("data", JSON.stringify(data));
                         }
                     }catch(e){
-                        console.log("gr_write_data.change error: "+e);
+                        console.warn("gr_write_data.change error: "+e);
                     }
                 }
             '''
@@ -4252,7 +4252,7 @@ def web_interface(args, ctx):
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
                                     if(!gr_root || !gr_tab_progress){
                                         clearTimeout(init_elements_timeout);
-                                        console.log("Components not ready... retrying");
+                                        console.warn("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_interface, 1000);
                                         return;
                                     }
@@ -4290,7 +4290,7 @@ def web_interface(args, ctx):
                                     gr_tab_progress.addEventListener("change", tab_progress);
                                     console.log("Dashboard set!");
                                 }catch(e){
-                                    console.log("init_interface error:", e);
+                                    console.warn("init_interface error:", e);
                                 }
                             };
                         }
@@ -4318,7 +4318,7 @@ def web_interface(args, ctx):
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
                                 }catch(e){
-                                    console.log("init_xtts_sliders error:", e);
+                                    console.warn("init_xtts_sliders error:", e);
                                 }
                             };
                         }
@@ -4340,7 +4340,7 @@ def web_interface(args, ctx):
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
                                 }catch(e){
-                                    console.log("init_bark_sliders error:", e);
+                                    console.warn("init_bark_sliders error:", e);
                                 }
                             };
                         }
@@ -4428,7 +4428,7 @@ def web_interface(args, ctx):
                                                         last_time = now;
                                                     }
                                                 }catch(e){
-                                                    console.log("gr_audiobook_player tracking error:", e);
+                                                    console.warn("gr_audiobook_player tracking error:", e);
                                                 }
                                                 if(!gr_audiobook_player.ended){
                                                     requestAnimationFrame(trackPlayback);
@@ -4456,6 +4456,7 @@ def web_interface(args, ctx):
                                                 lastCue = null;
                                             });
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
+                                                console.log("gr_audiobook_player volumechange called")
                                                 window.session_storage.playback_volume = gr_audiobook_player.volume;
                                                 if(gr_voice_player_hidden){
                                                     console.log("gr_voice_player_hidden volume set");
@@ -4468,7 +4469,7 @@ def web_interface(args, ctx):
                                         }
                                     }
                                 }catch(e){
-                                    console.log("init_audiobook_player error:", e);
+                                    console.warn("init_audiobook_player error:", e);
                                 }
                             };
                         }
@@ -4487,7 +4488,7 @@ def web_interface(args, ctx):
                                         document.title = "Ebook2Audiobook";
                                     }
                                 }catch(e){
-                                    console.log("tab_progress error:", e);
+                                    console.warn("tab_progress error:", e);
                                 }
                             };
                         }
@@ -4506,7 +4507,6 @@ def web_interface(args, ctx):
                             window.load_vtt = (path)=>{
                                 try{
                                     if(path != ""){
-                                        console.log('vtt ok');
                                         const url = URL.createObjectURL(new Blob([path], {type:"text/vtt"}));
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
@@ -4527,6 +4527,7 @@ def web_interface(args, ctx):
                                             fetch(url)
                                             .then(res => res.text())
                                             .then(vttText =>{
+                                                console.log('vtt loaded!');
                                                 parseVTTFast(vttText);
                                             });
                                         }
@@ -4545,7 +4546,7 @@ def web_interface(args, ctx):
                                         }
                                     }
                                 }catch(e){
-                                    console.log("load_vtt error:", e);
+                                    console.warn("load_vtt error:", e);
                                 }
                             };
                         }
@@ -4633,7 +4634,7 @@ def web_interface(args, ctx):
                                     localStorage.setItem("data", JSON.stringify(data));
                                 }
                             }catch(e){
-                                console.log("Error updating status on unload:", e);
+                                console.warn("Error updating status on unload:", e);
                             }
                         });
 
@@ -4657,7 +4658,7 @@ def web_interface(args, ctx):
 
                         return window.session_storage;
                     }catch(e){
-                        console.log("gr_raed_data js error:", e);
+                        console.warn("gr_raed_data js error:", e);
                     }
                     return null;
                 }
