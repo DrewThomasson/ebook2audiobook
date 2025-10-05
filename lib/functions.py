@@ -3965,6 +3965,15 @@ def web_interface(args, ctx):
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_confirm_deletion_field_hidden, gr_modal]
         )
+        gr_audiobook_player.change(
+            fn=None,
+            inputs={gr_audiobook_list],
+            js='''
+                (audiobook)=>{
+                    load_vtt(audiobook);
+                }
+            '''
+        )
         ########### XTTSv2 Params
         gr_tab_xtts_params.select(
             fn=None,
@@ -4413,28 +4422,11 @@ def web_interface(args, ctx):
                                                 }
                                             }
                                             gr_audiobook_player.addEventListener("loadeddata", ()=>{
-                                                const url = new URL(window.location);
-                                                const theme = url.searchParams.get("__theme");
-                                                let osTheme;
-                                                if(theme){
-                                                    if(theme == "dark"){
-                                                        audioFilter = "invert(1) hue-rotate(180deg)";
-                                                    }
-                                                }else{
-                                                    osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                                    if(osTheme){
-                                                        audioFilter = "invert(1) hue-rotate(180deg)";
-                                                    }
-                                                }
+                                                window.load_vtt(gr_audiobook_vtt.value);
                                                 gr_audiobook_player.style.transition = "filter 1s ease";
                                                 gr_audiobook_player.style.filter = audioFilter;
                                                 gr_audiobook_player.volume = window.session_storage.playback_volume;
-                                                if(gr_audiobook_vtt.value != ""){
-                                                    console.log('vtt ok');
-                                                    const url = URL.createObjectURL(new Blob([gr_audiobook_vtt.value], {type:"text/vtt"}));
-                                                    window.load_vtt(url);
-                                                    gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
-                                                }
+                                                gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
                                                 if (audioCtx.state === "suspended") {
@@ -4457,6 +4449,8 @@ def web_interface(args, ctx):
                                                     gr_voice_player_hidden.volume = gr_audiobook_player.volume;
                                                 }
                                             });
+                                            gr_audiobook_player.style.transition = "filter 1s ease";
+                                            gr_audiobook_player.style.filter = audioFilter;
                                         }
                                     }
                                 }catch(e){
@@ -4497,7 +4491,9 @@ def web_interface(args, ctx):
                         if(typeof(window.load_vtt) !== "function"){
                             window.load_vtt = (path)=>{
                                 try{
-                                    if(path){
+                                    if(path != ""){
+                                        console.log('vtt ok');
+                                        const url = URL.createObjectURL(new Blob([path], {type:"text/vtt"}));
                                         // Remove any <track> to bypass browser subtitle engine
                                         let existing = gr_root.querySelector("#gr_audiobook_track");
                                         if(existing){
@@ -4519,6 +4515,19 @@ def web_interface(args, ctx):
                                             .then(vttText =>{
                                                 parseVTTFast(vttText);
                                             });
+                                        }
+                                    }
+                                    const urltheme = new URL(window.location);
+                                    const theme = urltheme.searchParams.get("__theme");
+                                    let osTheme;
+                                    if(theme){
+                                        if(theme == "dark"){
+                                            audioFilter = "invert(1) hue-rotate(180deg)";
+                                        }
+                                    }else{
+                                        osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+                                        if(osTheme){
+                                            audioFilter = "invert(1) hue-rotate(180deg)";
                                         }
                                     }
                                 }catch(e){
