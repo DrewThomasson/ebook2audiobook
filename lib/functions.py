@@ -4415,10 +4415,6 @@ def web_interface(args, ctx):
 
                                         if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time){
                                             console.log("gr_audiobook_player ready!");
-                                            const audioCtx = new AudioContext();
-                                            const sourceNode = audioCtx.createMediaElementSource(gr_audiobook_player);
-                                            sourceNode.connect(audioCtx.destination);
-                                            // Animation frame loop
                                             function trackPlayback(){
                                                 try {
                                                     window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
