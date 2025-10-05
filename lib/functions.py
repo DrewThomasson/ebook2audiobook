@@ -4215,7 +4215,7 @@ def web_interface(args, ctx):
                                 const seen = new WeakSet();
                                 const fireFor = (ctx) => {
                                     ctx.querySelectorAll(selector).forEach((el) => {
-                                        if (seen.has(el)) return;
+                                        if(seen.has(el)) return;
                                         seen.add(el);
                                         callback(el);
                                     });
@@ -4224,12 +4224,12 @@ def web_interface(args, ctx):
                                 const observer = new MutationObserver((mutations) => {
                                     for (const m of mutations) {
                                         for (const n of m.addedNodes) {
-                                            if (n.nodeType !== 1) continue;
-                                            if (n.matches?.(selector)) {
-                                                if (!seen.has(n)) {
+                                            if(n.nodeType !== 1) continue;
+                                            if(n.matches?.(selector)) {
+                                                if(!seen.has(n)) {
                                                     seen.add(n);
                                                     callback(n);
-                                                    if (once) {
+                                                    if(once) {
                                                         observer.disconnect();
                                                         return;
                                                     }
@@ -4245,12 +4245,12 @@ def web_interface(args, ctx):
                             }
                         }
 
-                        if (typeof window.init_interface !== "function"){
+                        if(typeof window.init_interface !== "function"){
                             window.init_interface = ()=>{
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
                                     gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                    if (!gr_root || !gr_tab_progress) {
+                                    if(!gr_root || !gr_tab_progress) {
                                         clearTimeout(init_elements_timeout);
                                         console.log("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_interface, 1000);
@@ -4262,11 +4262,11 @@ def web_interface(args, ctx):
                                         const theme = url.searchParams.get("__theme");
                                         let elColor = "#666666";
 
-                                        if (theme == "dark") {
+                                        if(theme == "dark") {
                                             elColor = "#fff";
-                                        } else if (!theme) {
+                                        } else if(!theme) {
                                             const osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                            if (osTheme) {
+                                            if(osTheme) {
                                                 elColor = "#fff";
                                             }
                                         }
@@ -4430,7 +4430,7 @@ def web_interface(args, ctx):
                                                 } catch (e) {
                                                     console.log("gr_audiobook_player tracking error:", e);
                                                 }
-                                                if (!gr_audiobook_player.ended){
+                                                if(!gr_audiobook_player.ended){
                                                     requestAnimationFrame(trackPlayback);
                                                 }
                                             }
@@ -4442,7 +4442,7 @@ def web_interface(args, ctx):
                                                 gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
-                                                if (audioCtx.state === "suspended") {
+                                                if(audioCtx.state === "suspended") {
                                                     audioCtx.resume();
                                                 }
                                                 requestAnimationFrame(trackPlayback);
