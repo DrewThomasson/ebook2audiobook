@@ -4458,6 +4458,7 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.addEventListener("volumechange", ()=>{
                                                 window.session_storage.playback_volume = gr_audiobook_player.volume;
                                                 if(gr_voice_player_hidden){
+                                                    console.log("gr_voice_player_hidden volume set");
                                                     gr_voice_player_hidden.volume = gr_audiobook_player.volume;
                                                     gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
                                                 }
