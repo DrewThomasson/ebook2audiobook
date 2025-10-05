@@ -4347,8 +4347,9 @@ def web_interface(args, ctx):
                         
                         if(typeof window.init_voice_player_hidden !== "function"){
                             window.init_voice_player_hidden = ()=>{
+                                const gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
                                 const gr_voice_play = gr_root.querySelector("#gr_voice_play");
-                                if(gr_voice_play){
+                                if(gr_voice_player_hidden && gr_voice_play){
                                     if(gr_voice_play.dataset.bound === "true") return;
                                     gr_voice_play.dataset.bound = "true";
                                     gr_voice_play.addEventListener("click", ()=>{
