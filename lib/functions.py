@@ -4210,7 +4210,7 @@ def web_interface(args, ctx):
                         window.session_storage.playback_volume = 1.0;
                         
                         if(typeof window.onElementAvailable !== "function"){
-                            function window.onElementAvailable(selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {}) {
+                            window.onElementAvailable = (selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {})=> {
                                 const seen = new WeakSet();
                                 const fireFor = (ctx) => {
                                     ctx.querySelectorAll(selector).forEach((el) => {
@@ -4385,7 +4385,7 @@ def web_interface(args, ctx):
                                             const v = window.session_storage?.playback_volume ?? 1;
                                             gr_voice_player_hidden.volume = v;
                                         });
-                                        window.onElementAvailable('#gr_audiobook_player audio', (el)=>{
+                                        window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
                                             init_audiobook_player();
                                         }, {once: false});
                                         return true;
@@ -4539,7 +4539,7 @@ def web_interface(args, ctx):
                                         fetch(url)
                                         .then(res => res.text())
                                         .then(vttText =>{
-                                            console.log('vtt loaded!');
+                                            console.log("vtt loaded!");
                                             parseVTTFast(vttText);
                                         });
                                     }
@@ -4659,7 +4659,7 @@ def web_interface(args, ctx):
                             }
                         }
                         
-                        window.onElementAvailable('#gr_voice_player_hidden audio', (el)=>{
+                        window.onElementAvailable("#gr_voice_player_hidden audio", (el)=>{
                             init_voice_player_hidden();
                         }, {once: false});
 
