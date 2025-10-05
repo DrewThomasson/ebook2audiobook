@@ -4347,18 +4347,16 @@ def web_interface(args, ctx):
                         
                         if(typeof window.init_voice_player_hidden !== "function"){
                             window.init_voice_player_hidden = ()=>{
-                                const gr_root = document.querySelector("gradio-app, body"); // fallback root
-                                const gr_voice_player_hidden = gr_root.querySelector("#gr_voice_player_hidden audio");
                                 const gr_voice_play = gr_root.querySelector("#gr_voice_play");
-                                if(gr_voice_player_hidden && gr_voice_play){
+                                if(gr_voice_play){
                                     if(gr_voice_play.dataset.bound === "true") return;
                                     gr_voice_play.dataset.bound = "true";
-                                    gr_voice_play.addEventListener("click", () => {
+                                    gr_voice_play.addEventListener("click", ()=>{
                                         if(gr_voice_player_hidden.paused) {
-                                            gr_voice_player_hidden.play().then(() => {
+                                            gr_voice_player_hidden.play().then(()=>{
                                                 gr_voice_play.textContent = "⏸";
                                             }).catch(err => console.warn("Play failed:", err));
-                                        } else {
+                                        }else{
                                             gr_voice_player_hidden.pause();
                                             gr_voice_play.textContent = "▶";
                                         }
@@ -4374,8 +4372,8 @@ def web_interface(args, ctx):
                                         gr_voice_player_hidden.volume = v;
                                     });
                                 }else{
-                                    console.warn("Voice player elements not found yet, retrying...");
-                                    setTimeout(window.init_voice_player_hidden, 500); // retry until ready
+                                    console.warn("Voice player not found yet, retrying...");
+                                    setTimeout(window.init_voice_player_hidden, 500);
                                 }
                             };
                         }
@@ -4431,7 +4429,7 @@ def web_interface(args, ctx):
                                                 } catch (e) {
                                                     console.log("gr_audiobook_player tracking error:", e);
                                                 }
-                                                if(!gr_audiobook_player.ended){
+                                                if (!gr_audiobook_player.ended){
                                                     requestAnimationFrame(trackPlayback);
                                                 }
                                             }
@@ -4443,7 +4441,7 @@ def web_interface(args, ctx):
                                                 gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
-                                                if(audioCtx.state === "suspended") {
+                                                if (audioCtx.state === "suspended") {
                                                     audioCtx.resume();
                                                 }
                                                 requestAnimationFrame(trackPlayback);
