@@ -4457,9 +4457,6 @@ def web_interface(args, ctx):
                                                 gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
-                                                if(audioCtx.state === "suspended"){
-                                                    audioCtx.resume();
-                                                }
                                                 requestAnimationFrame(trackPlayback);
                                             });
                                             gr_audiobook_player.addEventListener("seeked", ()=>{
