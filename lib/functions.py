@@ -4482,6 +4482,19 @@ def web_interface(args, ctx):
                                                     gr_voice_player_hidden.dispatchEvent(new Event("volumechange", { bubbles: true }));
                                                 }
                                             });
+                                            const themURL = new URL(window.location);
+                                            const theme = themURL.searchParams.get("__theme");
+                                            let osTheme;
+                                            if(theme){
+                                                if(theme == "dark"){
+                                                    audioFilter = "invert(1) hue-rotate(180deg)";
+                                                }
+                                            }else{
+                                                osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+                                                if(osTheme){
+                                                    audioFilter = "invert(1) hue-rotate(180deg)";
+                                                }
+                                            }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
                                             return true;
@@ -4542,19 +4555,6 @@ def web_interface(args, ctx):
                                             console.log("vtt loaded!");
                                             parseVTTFast(vttText);
                                         });
-                                    }
-                                    const themURL = new URL(window.location);
-                                    const theme = themURL.searchParams.get("__theme");
-                                    let osTheme;
-                                    if(theme){
-                                        if(theme == "dark"){
-                                            audioFilter = "invert(1) hue-rotate(180deg)";
-                                        }
-                                    }else{
-                                        osTheme = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-                                        if(osTheme){
-                                            audioFilter = "invert(1) hue-rotate(180deg)";
-                                        }
                                     }
                                 }catch(e){
                                     console.warn("load_vtt error:", e);
