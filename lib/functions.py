@@ -4611,7 +4611,7 @@ def web_interface(args, ctx):
                         if(data){
                             window.session_storage = JSON.parse(data);
                             window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
-                            if(window.session_storage.playback_volume == 0){
+                            if(window.session_storage.playback_volume === 0){
                                 window.session_storage.playback_volume = 1.0;
                             }
                         }
