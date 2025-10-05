@@ -3967,7 +3967,7 @@ def web_interface(args, ctx):
         )
         gr_audiobook_player.change(
             fn=None,
-            inputs={gr_audiobook_list],
+            inputs=[gr_audiobook_list],
             js='''
                 (audiobook)=>{
                     load_vtt(audiobook);
