@@ -4405,7 +4405,6 @@ def web_interface(args, ctx):
                                 try{
                                     if(gr_root){
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
-                                        gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
 
@@ -4556,7 +4555,8 @@ def web_interface(args, ctx):
                             };
                         }
                         if(typeof(parseVTTFast) !== "function"){
-                            function parseVTTFast(vtt){
+                             window.parseVTTFast = (vtt)=>{
+                                console.log(vtt);
                                 function pushCue(){
                                     if(start !== null && end !== null && textBuffer.length){
                                         cues.push({ start, end, text: textBuffer.join("\n") });
