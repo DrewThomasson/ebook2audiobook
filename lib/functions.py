@@ -4399,9 +4399,7 @@ def web_interface(args, ctx):
                         if(typeof(window.init_audiobook_player) !== "function"){
                             window.init_audiobook_player = ()=>{
                                 try{
-                                    console.log("init_audiobook_player called");
                                     if(gr_root){
-                                        console.log("init_audiobook_player set!");
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
@@ -4410,7 +4408,7 @@ def web_interface(args, ctx):
                                         let fade_timeout = null;
                                         let last_time = 0;
 
-                                        if(gr_audiobook_player && gr_audiobook_vtt && gr_audiobook_sentence && gr_playback_time){
+                                        if(gr_audiobook_player && gr_audiobook_sentence && gr_playback_time){
                                             console.log("gr_audiobook_player ready!");
                                             function trackPlayback(){
                                                 try {
