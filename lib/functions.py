@@ -4634,13 +4634,14 @@ def web_interface(args, ctx):
 
                         window.addEventListener("beforeunload", ()=>{
                             try{
-                                const data = JSON.parse(localStorage.getItem("data") || "{}");
-                                if(data.tab_id == window.tab_id || !data.tab_id){
-                                    delete data.tab_id;
-                                    delete data.status;
-                                    data.playback_time = parseFloat(window.session_storage.playback_time);
-                                    data.playback_volume = parseFloat(window.session_storage.playback_volume);
-                                    localStorage.setItem("data", JSON.stringify(data));
+                                const newStorage = JSON.parse(localStorage.getItem("data") || "{}");
+                                if(newStorage.tab_id == window.tab_id || !newStorage.tab_id){
+                                    delete newStorage.tab_id;
+                                    delete newStorage.status;
+                                    if(gr_audiobook_player){
+                                        newStorage.playback_time = parseFloat(gr_audiobook_player.currentTime);
+                                        newStorage.playback_volume = parseFloat(gr_audiobook_player.volume);
+                                    localStorage.setItem("data", JSON.stringify(newStorage));
                                 }
                             }catch(e){
                                 console.warn("Error updating status on unload:", e);
