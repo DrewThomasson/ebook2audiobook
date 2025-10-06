@@ -2069,10 +2069,10 @@ def convert_ebook(args, ctx=None):
                             msg_extra = ''
                             vram_avail = get_vram()
                             if vram_avail <= 4:
-                                msg_extra += '<br/>VRAM capacity could not be detected' if vram_avail == 0 else '<br/>VRAM under 4GB'
+                                msg_extra += 'VRAM capacity could not be detected' if vram_avail == 0 else 'VRAM under 4GB'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
-                                    msg_extra += f"<br/>Switching BARK to SMALL models"
+                                    msg_extra += f"Switching BARK to SMALL models"
                             else:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
@@ -2096,7 +2096,7 @@ def convert_ebook(args, ctx=None):
                                 else: 
                                     msg_extra += '<br/>Deepspeed detected and ready!'
                             if msg == '':
-                                msg = f"<br/>Using {session['device'].upper()}"
+                                msg = f"Using {session['device'].upper()}"
                             msg += msg_extra.replace('<br/>','\n');
                             if session['is_gui_process']:
                                 show_alert({"type": "warning", "msg": msg})
