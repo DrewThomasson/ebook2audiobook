@@ -2065,21 +2065,21 @@ def convert_ebook(args, ctx=None):
                             msg_extra = ''
                             vram_avail = get_vram()
                             if vram_avail <= 4:
-                                msg_extra += 'VRAM capacity could not be detected' if vram_avail == 0 else 'VRAM under 4GB'
+                                msg_extra += '<br/>- VRAM capacity could not be detected' if vram_avail == 0 else '<br/>VRAM under 4GB'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
-                                    msg_extra += f"Switching BARK to SMALL models"
+                                    msg_extra += f"<br/>Switching BARK to SMALL models"
                             else:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
                             if session['device'] == 'cuda':
                                 session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                                 if session['device'] == 'cpu':
-                                    msg += f"GPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
+                                    msg += f"- GPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
                             elif session['device'] == 'mps':
                                 session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
                                 if session['device'] == 'cpu':
-                                    msg += f"MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
+                                    msg += f"- MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
                             if session['device'] == 'cpu':
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_OFFLOAD_CPU'] = 'True'
