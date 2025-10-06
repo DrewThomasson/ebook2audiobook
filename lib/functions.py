@@ -4116,8 +4116,8 @@ def web_interface(args, ctx):
                     try{
                         if(newStorage){
                             localStorage.clear();
-                            newStorage.playback_time = window.session_storage.playback_time;
-                            newStorage.playback_volume = window.session_storage.playback_volume;
+                            newStorage.playback_time = Number(window.session_storage.playback_time);
+                            newStorage.playback_volume = parseFloat(window.session_storage.playback_volume);
                             localStorage.setItem("data", JSON.stringify(newStorage));
                         }
                     }catch(e){
@@ -4636,7 +4636,7 @@ def web_interface(args, ctx):
                                 if(newStorage.tab_id == window.tab_id || !newStorage.tab_id){
                                     delete newStorage.tab_id;
                                     delete newStorage.status;
-                                    newStorage.playback_time = parseFloat(window.session_storage.playback_time);
+                                    newStorage.playback_time = Number(window.session_storage.playback_time);
                                     newStorage.playback_volume = parseFloat(window.session_storage.playback_volume);
                                     localStorage.setItem("data", JSON.stringify(newStorage));
                                 }
