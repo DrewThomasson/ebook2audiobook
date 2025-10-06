@@ -3335,7 +3335,7 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if fine_tuned is not None and if fine_tuned != 'internal':
+                if fine_tuned is not None and fine_tuned != 'internal':
                     session['voice'] = default_voice_path
                 else:
                     if session['voice'] is None:
