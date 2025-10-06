@@ -2371,6 +2371,7 @@ def web_interface(args, ctx):
             }
             .small-btn:active, .small-btn-red:active {
                 background: var(--body-text-color) !important;
+                font-size: 26px;
                 color: var(--body-background-fill) !important;
             }
             .file-preview-holder {
