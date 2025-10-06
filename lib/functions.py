@@ -2665,7 +2665,6 @@ def web_interface(args, ctx):
             .button-red:hover  { background-color: #ff6f71 !important; }
             .button-green:active, .button-red:active {
                 background: var(--body-text-color) !important;
-                font-size: 30px !important;
                 color: var(--body-background-fill) !important;
             }
             .spinner {
@@ -4524,19 +4523,21 @@ def web_interface(args, ctx):
                                 try{
                                     gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                     gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
-                                    gr_audiobook_sentence.style.fontSize = "14px";
-                                    gr_audiobook_sentence.style.fontWeight = "bold";
-                                    gr_audiobook_sentence.style.width = "100%";
-                                    gr_audiobook_sentence.style.height = "auto";
-                                    gr_audiobook_sentence.style.textAlign = "center";
-                                    gr_audiobook_sentence.style.margin = "0";
-                                    gr_audiobook_sentence.style.padding = "7px 0 7px 0";
-                                    gr_audiobook_sentence.style.lineHeight = "14px";
-                                    const txt = gr_audiobook_vtt.value;
-                                    if(txt == ""){
-                                        gr_audiobook_sentence.value = "...";
-                                    }else{
-                                        parseVTT(txt);
+                                    if(gr_audiobook_sentence){
+                                        gr_audiobook_sentence.style.fontSize = "14px";
+                                        gr_audiobook_sentence.style.fontWeight = "bold";
+                                        gr_audiobook_sentence.style.width = "100%";
+                                        gr_audiobook_sentence.style.height = "auto";
+                                        gr_audiobook_sentence.style.textAlign = "center";
+                                        gr_audiobook_sentence.style.margin = "0";
+                                        gr_audiobook_sentence.style.padding = "7px 0 7px 0";
+                                        gr_audiobook_sentence.style.lineHeight = "14px";
+                                        const txt = gr_audiobook_vtt.value;
+                                        if(txt == ""){
+                                            gr_audiobook_sentence.value = "...";
+                                        }else{
+                                            parseVTT(txt);
+                                        }
                                     }
                                 }catch(e){
                                     console.warn("load_vtt error:", e);
