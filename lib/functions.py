@@ -2875,7 +2875,7 @@ def web_interface(args, ctx):
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
 
-        gr_state_update = gr.State(value={"hash": None}, visible='hidden')
+        gr_state_update = gr.State(value={"hash": None})
         gr_read_data = gr.JSON(elem_id='gr_read_data', visible='hidden')
         gr_write_data = gr.JSON(elem_id='gr_write_data', visible='hidden') 
 
