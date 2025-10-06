@@ -3335,23 +3335,22 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if session['voice'] is None:
-                    if voice_options[0][1] is not None:
-                        default_name = Path(default_voice_path).stem
-                        for name, value in voice_options:
-                            if name == default_name:
-                                session['voice'] = value
-                                break
+                if fine_tuned is not None:
+                    session['voice'] = models[session['tts_engine']][fine_tuned]['voice']
+                elif session['voice'] is None and default_voice_path is not None:
+                    default_name = Path(default_voice_path).stem
+                    for name, value in voice_options:
+                        if name == default_name:
+                            session['voice'] = value
+                            break
+                    else:
+                        values = [v for _, v in voice_options]
+                        if default_voice_path in values:
+                            session['voice'] = default_voice_path
                         else:
-                            values = [v for _, v in voice_options]
-                            if default_voice_path in values:
-                                session['voice'] = default_voice_path
-                            else:
-                                session['voice'] = voice_options[0][1]
+                            session['voice'] = voice_options[0][1]
                 else:
-                    if fine_tuned is not None:
-                        session['voice'] = models[session['tts_engine']][fine_tuned]['voice']
-                    elif current_voice_path:
+                    if current_voice_path:
                         current_voice_name = Path(session['voice']).stem
                         current_voice_path = next(
                             (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
