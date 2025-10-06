@@ -4382,7 +4382,6 @@ def web_interface(args, ctx):
                                             gr_voice_player_hidden.volume = v;
                                         });
                                         window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
-                                            console.log("onElementAvailable gr_audiobook_player set!");
                                             window.init_audiobook_player();
                                         }, {once: false});
                                         return true;
@@ -4400,7 +4399,9 @@ def web_interface(args, ctx):
                         if(typeof(window.init_audiobook_player) !== "function"){
                             window.init_audiobook_player = ()=>{
                                 try{
+                                    console.log("init_audiobook_player called");
                                     if(gr_root){
+                                        console.log("init_audiobook_player set!");
                                         gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                         gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                         gr_playback_time = gr_root.querySelector("#gr_playback_time input");
@@ -4648,7 +4649,7 @@ def web_interface(args, ctx):
                         }
                         
                         window.onElementAvailable("#gr_voice_player_hidden audio", (el)=>{
-                            init_voice_player_hidden();
+                            window.init_voice_player_hidden();
                         }, {once: false});
 
                         return window.session_storage;
