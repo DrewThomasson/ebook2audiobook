@@ -1026,7 +1026,7 @@ def get_vram():
             pass
         except Exception as e:
             pass
-    msg = 'Could not detect GPU VRAM Capacity!'
+    msg = 'Could not detect GPU and VRAM Capacity!'
     return 0
 
 def get_sanitized(str, replacement="_"):
@@ -2069,7 +2069,7 @@ def convert_ebook(args, ctx=None):
                             msg_extra = ''
                             vram_avail = get_vram()
                             if vram_avail <= 4:
-                                msg_extra += 'VRAM capacity could not be detected. -' if vram_avail == 0 else 'VRAM under 4GB - '
+                                msg_extra += '<br/>- VRAM capacity could not be detected. -' if vram_avail == 0 else '<br/>- VRAM under 4GB - '
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"Switching BARK to SMALL models - "
