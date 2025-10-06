@@ -2369,6 +2369,10 @@ def web_interface(args, ctx):
             .small-btn-red:hover {
                 background-color: #ff5050 !important;
             }
+            .small-btn:active, .small-btn-red:active {
+                background: var(--body-text-color) !important;
+                color: var(--body-background-fill) !important;
+            }
             .file-preview-holder {
                 height: 116px !important;
                 overflow: auto !important;
@@ -4105,7 +4109,6 @@ def web_interface(args, ctx):
                     try{
                         if(data){
                             localStorage.clear();
-                            console.log("save: ", data);
                             localStorage.setItem("data", JSON.stringify(data));
                         }
                     }catch(e){
@@ -4294,7 +4297,6 @@ def web_interface(args, ctx):
                                         characterData: true
                                     });
                                     gr_tab_progress.addEventListener("change", tab_progress);
-                                    console.log("Dashboard set!");
                                 }catch(e){
                                     console.warn("init_interface error:", e);
                                 }
@@ -4323,7 +4325,6 @@ def web_interface(args, ctx):
                                         slider.value = (slider === gr_xtts_top_k) ? parseInt(saved) : parseFloat(saved);
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
-                                    console.log("init_xtts_sliders set!");
                                 }catch(e){
                                     console.warn("init_xtts_sliders error:", e);
                                 }
@@ -4346,7 +4347,6 @@ def web_interface(args, ctx):
                                         slider.value = parseFloat(saved);
                                         slider.dispatchEvent(new Event("input", { bubbles: true }));
                                     });
-                                    console.log("init_bark_sliders set!");
                                 }catch(e){
                                     console.warn("init_bark_sliders error:", e);
                                 }
@@ -4409,7 +4409,6 @@ def web_interface(args, ctx):
                                         let last_time = 0;
 
                                         if(gr_audiobook_player && gr_audiobook_sentence && gr_playback_time){
-                                            console.log("gr_audiobook_player ready!");
                                             function trackPlayback(){
                                                 try {
                                                     window.session_storage.playback_time = parseFloat(gr_audiobook_player.currentTime);
