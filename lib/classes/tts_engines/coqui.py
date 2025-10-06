@@ -452,6 +452,8 @@ class Coqui:
                 else:
                     if sentence[-1].isalnum():
                         sentence = f'{sentence} —'
+                    elif sentence.endswith("'"):
+                        sentence = sentence[:-1]
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                         trim_audio_buffer = 0.008
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
