@@ -3401,10 +3401,18 @@ def web_interface(args, ctx):
                 nonlocal fine_tuned_options
                 session = context.get_session(id)
                 fine_tuned_options = [
-                    name for name, details in models.get(session['tts_engine'],{}).items()
-                    if details.get('lang') == 'multi' or details.get('lang') == session['language']
+                    name for name, details in models.get(session['tts_engine'], {}).items()
+                    if details.get('lang') in ('multi', session['language'])
                 ]
-                session['fine_tuned'] = 'internal'
+                if session.get('fine_tuned') in fine_tuned_options:
+                    value = session['fine_tuned']
+                elif default_fine_tuned in fine_tuned_options:
+                    value = default_fine_tuned
+                elif fine_tuned_options:
+                    value = fine_tuned_options[0]
+                else:
+                    value = 'internal'
+                session['fine_tuned'] = value
                 return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
             except Exception as e:
                 error = f'update_gr_fine_tuned_list(): {e}!'
