@@ -3350,11 +3350,11 @@ def web_interface(args, ctx):
                         else:
                             session['voice'] = voice_options[0][1]
                 else:
+                    current_voice_name = Path(session['voice']).stem
+                    current_voice_path = next(
+                        (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
+                    )
                     if current_voice_path:
-                        current_voice_name = Path(session['voice']).stem
-                        current_voice_path = next(
-                            (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
-                        )
                         session['voice'] = current_voice_path
                     else:
                         session['voice'] = default_voice_path
