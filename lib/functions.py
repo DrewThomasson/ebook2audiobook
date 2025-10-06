@@ -4550,7 +4550,6 @@ def web_interface(args, ctx):
                         }
                         if(typeof(parseVTT) !== "function"){
                              window.parseVTT = (vtt)=>{
-                                console.log(vtt);
                                 function pushCue(){
                                     if(start !== null && end !== null && textBuffer.length){
                                         cues.push({ start, end, text: textBuffer.join("\n") });
