@@ -3288,7 +3288,7 @@ def web_interface(args, ctx):
                 session['status'] = 'ready'
             return gr.update(value='', visible=False)
 
-        def update_gr_voice_list(id):
+        def update_gr_voice_list(id, fine_tuned=None):
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
@@ -3335,28 +3335,31 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if session['voice'] is None:
-                    if default_voice_path is not None:
-                        default_name = Path(default_voice_path).stem
-                        for name, value in voice_options:
-                            if name == default_name:
-                                session['voice'] = value
-                                break
-                        else:
-                            values = [v for _, v in voice_options]
-                            if default_voice_path in values:
-                                session['voice'] = default_voice_path
-                            else:
-                                session['voice'] = voice_options[0][1]
+                if fine_tuned is not None and if fine_tuned != 'internal':
+                    session['voice'] = default_voice_path
                 else:
-                    current_voice_name = Path(session['voice']).stem
-                    current_voice_path = next(
-                        (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
-                    )
-                    if current_voice_path:
-                        session['voice'] = current_voice_path
+                    if session['voice'] is None:
+                        if default_voice_path is not None:
+                            default_name = Path(default_voice_path).stem
+                            for name, value in voice_options:
+                                if name == default_name:
+                                    session['voice'] = value
+                                    break
+                            else:
+                                values = [v for _, v in voice_options]
+                                if default_voice_path in values:
+                                    session['voice'] = default_voice_path
+                                else:
+                                    session['voice'] = voice_options[0][1]
                     else:
-                        session['voice'] = default_voice_path
+                        current_voice_name = Path(session['voice']).stem
+                        current_voice_path = next(
+                            (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
+                        )
+                        if current_voice_path:
+                            session['voice'] = current_voice_path
+                        else:
+                            session['voice'] = default_voice_path
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
@@ -3515,8 +3518,8 @@ def web_interface(args, ctx):
                     if selected == 'internal':
                         visible = visible_gr_group_custom_model
                 session['fine_tuned'] = selected
-                return gr.update(visible=visible)
-            return gr.update()
+                return gr.update(visible=visible), update_gr_voice_list(id, selected)
+            return gr.update(), gr.update()
 
         def change_gr_custom_model_list(selected, id):
             session = context.get_session(id)
@@ -3922,11 +3925,7 @@ def web_interface(args, ctx):
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
             inputs=[gr_fine_tuned_list, gr_session],
-            outputs=[gr_group_custom_model]
-        ).then(
-            fn=update_gr_voice_list,
-            inputs=[gr_session],
-            outputs=[gr_voice_list]        
+            outputs=[gr_group_custom_model, gr_voice_list]
         )
         gr_custom_model_file.upload(
             fn=change_gr_custom_model_file,
