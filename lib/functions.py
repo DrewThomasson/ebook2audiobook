@@ -768,10 +768,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         specialchars_remove_table = str.maketrans({ch: ' ' for ch in specialchars_remove})
         text = text.translate(specialchars_remove_table)
         text = normalize_text(text, lang, lang_iso1, tts_engine)
-        # Ensure space before and after punctuation_list
-        #pattern_space = re.escape(''.join(punctuation_list))
-        #punctuation_pattern_space = r'(?<!\s)([{}])'.format(pattern_space)
-        #text = re.sub(punctuation_pattern_space, r' \1', text)
         sentences = get_sentences(text, lang, tts_engine)
         if len(sentences) == 0:
             error = 'No sentences found!'
@@ -872,7 +868,7 @@ def get_sentences(text, lang, tts_engine):
                     for text_part in parts:
                         text_part = text_part.strip()
                         if text_part:
-                            hard_list.append(text_part)
+                            hard_list.append(f' {text_part}')
                 else:
                     s = s.strip()
                     if s:
