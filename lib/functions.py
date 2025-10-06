@@ -4641,6 +4641,7 @@ def web_interface(args, ctx):
                                     if(gr_audiobook_player){
                                         newStorage.playback_time = parseFloat(gr_audiobook_player.currentTime);
                                         newStorage.playback_volume = parseFloat(gr_audiobook_player.volume);
+                                    }
                                     localStorage.setItem("data", JSON.stringify(newStorage));
                                 }
                             }catch(e){
