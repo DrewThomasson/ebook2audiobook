@@ -3407,15 +3407,10 @@ def web_interface(args, ctx):
                     if details.get('lang') in ('multi', session['language'])
                 ]
                 if session.get('fine_tuned') in fine_tuned_options:
-                    print(f" {session['fine_tuned']} in fine_tuned_options")
-                    value = session['fine_tuned']
+                    fine_tuned = session['fine_tuned']
                 elif default_fine_tuned in fine_tuned_options:
-                    value = default_fine_tuned
-                elif fine_tuned_options:
-                    value = fine_tuned_options[0]
-                else:
-                    value = 'internal'
-                session['fine_tuned'] = value
+                    fine_tuned = default_fine_tuned
+                session['fine_tuned'] = fine_tuned
                 return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
             except Exception as e:
                 error = f'update_gr_fine_tuned_list(): {e}!'
