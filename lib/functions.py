@@ -3160,8 +3160,8 @@ def web_interface(args, ctx):
                         state['type'] = 'warning'
                         state['msg'] = error
                 show_alert(state)
-                return gr.update(value=None)
-            return gr.update()
+                return gr.update(value=None), update_gr_voice_list(id)
+            return gr.update(), gr.update()
 
         def change_gr_voice_list(selected, id):
             session = context.get_session(id)
@@ -3430,9 +3430,10 @@ def web_interface(args, ctx):
                     gr.update(value=session['language']),
                     update_gr_tts_engine_list(id),
                     update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id)
+                    update_gr_fine_tuned_list(id),
+                    update_gr_voice_list(id)
                 )
-            return (gr.update(), gr.update(), gr.update(), gr.update())
+            return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
         def check_custom_model_tts(custom_model_dir, tts_engine):
             dir_path = None
@@ -3443,15 +3444,15 @@ def web_interface(args, ctx):
             return dir_path
 
         def change_gr_custom_model_file(f, t, id):
-            if f is not None:
-                state = {}
-                try:
+            try:
+                session = context.get_session(id)
+                if f is not None:
+                    state = {}
                     if len(custom_model_options) > max_custom_model:
                         error = f'You are allowed to upload a max of {max_custom_models} models'   
                         state['type'] = 'warning'
                         state['msg'] = error
                     else:
-                        session = context.get_session(id)
                         session['tts_engine'] = t
                         required_files = models[session['tts_engine']]['internal']['files']
                         if analyze_uploaded_file(f, required_files):
@@ -3469,17 +3470,17 @@ def web_interface(args, ctx):
                             error = f'{os.path.basename(f)} is not a valid model or some required files are missing'
                             state['type'] = 'warning'
                             state['msg'] = error
-                except ClientDisconnect:
-                    error = 'Client disconnected during upload. Operation aborted.'
-                    state['type'] = 'error'
-                    state['msg'] = error
-                except Exception as e:
-                    error = f'change_gr_custom_model_file() exception: {str(e)}'
-                    state['type'] = 'error'
-                    state['msg'] = error
-                show_alert(state)
-                return gr.update(value=None)
-            return gr.update()
+                    show_alert(state)
+                    return gr.update(value=None), update_gr_custom_model_list(id)
+            except ClientDisconnect:
+                error = 'Client disconnected during upload. Operation aborted.'
+                state['type'] = 'error'
+                state['msg'] = error
+            except Exception as e:
+                error = f'change_gr_custom_model_file() exception: {str(e)}'
+                state['type'] = 'error'
+                state['msg'] = error
+            return gr.update(), gr.update()
 
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
@@ -3495,14 +3496,14 @@ def web_interface(args, ctx):
                        gr.update(value=show_rating(session['tts_engine'])), 
                        gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
                        gr.update(label=f"Upload {session['tts_engine']} ZIP file (Mandatory: {', '.join(models[session['tts_engine']][default_fine_tuned]['files'])})"),
-                       gr.update(label=f"My {session['tts_engine']} custom models")
+                       gr.update(label=f"My {session['tts_engine']} custom models"), update_gr_voice_list(id)
                 )
             else:
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                     bark_visible = visible_gr_tab_bark_params
                 return (
                         gr.update(value=show_rating(session['tts_engine'])), gr.update(visible=False), gr.update(visible=bark_visible), 
-                        gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"), gr.update(label='')
+                        gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"), gr.update(label=''), update_gr_voice_list(id)
                 )
                 
         def change_gr_fine_tuned_list(selected, id):
@@ -3878,11 +3879,7 @@ def web_interface(args, ctx):
         gr_voice_file.upload(
             fn=change_gr_voice_file,
             inputs=[gr_voice_file, gr_session],
-            outputs=[gr_voice_file]
-        ).then(
-            fn=update_gr_voice_list,
-            inputs=[gr_session],
-            outputs=[gr_voice_list]
+            outputs=[gr_voice_file, gr_voice_list]
         )
         gr_voice_list.change(
             fn=change_gr_voice_list,
@@ -3902,20 +3899,12 @@ def web_interface(args, ctx):
         gr_language.change(
             fn=change_gr_language,
             inputs=[gr_language, gr_session],
-            outputs=[gr_language, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list]
-        ).then(
-            fn=update_gr_voice_list,
-            inputs=[gr_session],
-            outputs=[gr_voice_list]
+            outputs=[gr_language, gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_voice_list]
         )
         gr_tts_engine_list.change(
             fn=change_gr_tts_engine_list,
             inputs=[gr_tts_engine_list, gr_session],
-            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list] 
-        ).then(
-            fn=update_gr_voice_list,
-            inputs=[gr_session],
-            outputs=[gr_voice_list]        
+            outputs=[gr_tts_rating, gr_tab_xtts_params, gr_tab_bark_params, gr_group_custom_model, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_voice_list]
         )
         gr_fine_tuned_list.change(
             fn=change_gr_fine_tuned_list,
@@ -3925,11 +3914,7 @@ def web_interface(args, ctx):
         gr_custom_model_file.upload(
             fn=change_gr_custom_model_file,
             inputs=[gr_custom_model_file, gr_tts_engine_list, gr_session],
-            outputs=[gr_custom_model_file]
-        ).then(
-            fn=update_gr_custom_model_list,
-            inputs=[gr_session],
-            outputs=[gr_custom_model_list]
+            outputs=[gr_custom_model_file, gr_custom_model_list]
         )
         gr_custom_model_list.change(
             fn=change_gr_custom_model_list,
