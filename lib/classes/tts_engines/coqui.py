@@ -453,7 +453,7 @@ class Coqui:
                     if sentence[-1].isalnum():
                         sentence = f'{sentence} —'
                     if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                        trim_audio_buffer = 0.008
+                        trim_audio_buffer = 0.004
                         if settings['voice_path'] is not None and settings['voice_path'] in settings['latent_embedding'].keys():
                             settings['gpt_cond_latent'], settings['speaker_embedding'] = settings['latent_embedding'][settings['voice_path']]
                         else:
