@@ -4212,11 +4212,7 @@ def web_interface(args, ctx):
                         let init_audiobook_player_timeout;
                         let audioFilter = "";
                         let cues = [];
-                        
-                        window.session_storage = {};
-                        window.session_storage.playback_time = 0;
-                        window.session_storage.playback_volume = 1.0;
-                        
+
                         if(typeof window.onElementAvailable !== "function"){
                             window.onElementAvailable = (selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {})=> {
                                 const seen = new WeakSet();
@@ -4649,14 +4645,17 @@ def web_interface(args, ctx):
                             }
                         });
 
-                        const data = localStorage.getItem("data");
-
-                        if(data){
-                            window.session_storage = JSON.parse(data);
+                        const currentStorage = localStorage.getItem("data");
+                        if(currentStorage){
+                            window.session_storage = JSON.parse(currentStorage);
                             window.session_storage.tab_id = "tab-" + performance.now().toString(36) + "-" + Math.random().toString(36).substring(2, 10);
                             if(window.session_storage.playback_volume === 0){
                                 window.session_storage.playback_volume = 1.0;
                             }
+                        }else{
+                            window.session_storage = {};
+                            window.session_storage.playback_time = 0;
+                            window.session_storage.playback_volume = 1.0;
                         }
                         
                         window.onElementAvailable("#gr_voice_player_hidden audio", (el)=>{
