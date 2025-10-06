@@ -4457,7 +4457,6 @@ def web_interface(args, ctx):
                                             gr_audiobook_player.addEventListener("loadeddata", ()=>{
                                                 gr_audiobook_player.style.transition = "filter 1s ease";
                                                 gr_audiobook_player.style.filter = audioFilter;
-                                                gr_audiobook_player.volume = window.session_storage.playback_volume;
                                                 gr_audiobook_player.currentTime = parseFloat(window.session_storage.playback_time);
                                             });
                                             gr_audiobook_player.addEventListener("play", ()=>{
@@ -4494,6 +4493,7 @@ def web_interface(args, ctx):
                                             }
                                             gr_audiobook_player.style.transition = "filter 1s ease";
                                             gr_audiobook_player.style.filter = audioFilter;
+                                            gr_audiobook_player.volume = window.session_storage.playback_volume;
                                             return true;
                                         }
                                     }
