@@ -269,19 +269,19 @@ models = {
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
-        "JhonButlerASMR": {
+        "JohnButlerASMR": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/JhonButlerASMR/",
-            "voice": os.path.join(voices_dir, 'eng', 'elder', 'male', 'JhonButlerASMR.wav'),
+            "sub": "xtts-v2/eng/JohnButlerASMR/",
+            "voice": os.path.join(voices_dir, 'eng', 'elder', 'male', 'JohnButlerASMR.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
-        "JhonMulaney": {
+        "JohnMulaney": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
-            "sub": "xtts-v2/eng/JhonMulaney/",
-            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'JhonMulaney.wav'),
+            "sub": "xtts-v2/eng/JohnMulaney/",
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'JohnMulaney.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
