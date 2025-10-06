@@ -3404,7 +3404,7 @@ def web_interface(args, ctx):
                     name for name, details in models.get(session['tts_engine'],{}).items()
                     if details.get('lang') == 'multi' or details.get('lang') == session['language']
                 ]
-                session['fine_tuned'] = session['fine_tuned'] if session['fine_tuned'] in fine_tuned_options else default_fine_tuned
+                session['fine_tuned'] = 'internal'
                 return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
             except Exception as e:
                 error = f'update_gr_fine_tuned_list(): {e}!'
