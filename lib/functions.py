@@ -4381,6 +4381,7 @@ def web_interface(args, ctx):
                                             const v = window.session_storage?.playback_volume ?? 1;
                                             gr_voice_player_hidden.volume = v;
                                         });
+                                        console.log("init_voice_player_hidden set!");
                                         window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
                                             init_audiobook_player();
                                         }, {once: false});
