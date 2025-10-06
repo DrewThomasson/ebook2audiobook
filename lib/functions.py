@@ -3288,7 +3288,7 @@ def web_interface(args, ctx):
                 session['status'] = 'ready'
             return gr.update(value='', visible=False)
 
-        def update_gr_voice_list(id, fine_tuned=None):
+        def update_gr_voice_list(id):
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
@@ -3335,8 +3335,6 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if fine_tuned is not None:
-                    session['voice'] = models[session['tts_engine']][fine_tuned]['voice']
                 elif session['voice'] is None and default_voice_path is not None:
                     default_name = Path(default_voice_path).stem
                     for name, value in voice_options:
@@ -3487,6 +3485,7 @@ def web_interface(args, ctx):
         def change_gr_tts_engine_list(engine, id):
             session = context.get_session(id)
             session['tts_engine'] = engine
+            session['fine_tuned'] = default_fine_tuned
             default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
             if default_voice_path is None:
                 session['voice'] = default_voice_path
@@ -3925,7 +3924,7 @@ def web_interface(args, ctx):
             outputs=[gr_group_custom_model]
         ).then(
             fn=update_gr_voice_list,
-            inputs=[gr_session, gr_fine_tuned_list],
+            inputs=[gr_session],
             outputs=[gr_voice_list]        
         )
         gr_custom_model_file.upload(
