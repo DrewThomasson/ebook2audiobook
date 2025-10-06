@@ -4365,6 +4365,9 @@ def web_interface(args, ctx):
                                     if(gr_voice_player_hidden && gr_voice_play){
                                         if(gr_voice_play.dataset.bound === "true") return;
                                         gr_voice_play.dataset.bound = "true";
+                                        gr_voice_player_hidden.addEventListener("loadeddata", ()=>{
+                                            gr_voice_play.textContent = "▶";
+                                        });
                                         gr_voice_play.addEventListener("click", ()=>{
                                             if(gr_voice_player_hidden.paused){
                                                 gr_voice_player_hidden.play().then(()=>{
@@ -4375,13 +4378,13 @@ def web_interface(args, ctx):
                                                 gr_voice_play.textContent = "▶";
                                             }
                                         });
-                                        gr_voice_player_hidden.addEventListener("pause", () => {
+                                        gr_voice_player_hidden.addEventListener("pause", ()=>{
                                             gr_voice_play.textContent = "▶";
                                         });
-                                        gr_voice_player_hidden.addEventListener("ended", () => {
+                                        gr_voice_player_hidden.addEventListener("ended", ()=>{
                                             gr_voice_play.textContent = "▶";
                                         });
-                                        gr_voice_player_hidden.addEventListener("play", () => {
+                                        gr_voice_player_hidden.addEventListener("play", ()=>{
                                             const v = window.session_storage?.playback_volume ?? 1;
                                             gr_voice_player_hidden.volume = v;
                                         });
