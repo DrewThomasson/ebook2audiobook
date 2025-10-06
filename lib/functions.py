@@ -2097,10 +2097,10 @@ def convert_ebook(args, ctx=None):
                                     msg_extra += '<br/>Deepspeed detected and ready!'
                             if msg == '':
                                 msg = f"Using {session['device'].upper()}"
-                            msg += msg_extra.replace('<br/>','\n');
+                            msg += msg_extra;
                             if session['is_gui_process']:
                                 show_alert({"type": "warning", "msg": msg})
-                            print(msg)
+                            print(msg.replace('<br/>','\n'))
                             session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
                             if convert2epub(id):
                                 epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
