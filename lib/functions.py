@@ -3335,18 +3335,19 @@ def web_interface(args, ctx):
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
                 default_voice_path = models[session['tts_engine']][session['fine_tuned']]['voice']
-                if session['voice'] is None and default_voice_path is not None:
-                    default_name = Path(default_voice_path).stem
-                    for name, value in voice_options:
-                        if name == default_name:
-                            session['voice'] = value
-                            break
-                    else:
-                        values = [v for _, v in voice_options]
-                        if default_voice_path in values:
-                            session['voice'] = default_voice_path
+                if session['voice'] is None:
+                    if default_voice_path is not None:
+                        default_name = Path(default_voice_path).stem
+                        for name, value in voice_options:
+                            if name == default_name:
+                                session['voice'] = value
+                                break
                         else:
-                            session['voice'] = voice_options[0][1]
+                            values = [v for _, v in voice_options]
+                            if default_voice_path in values:
+                                session['voice'] = default_voice_path
+                            else:
+                                session['voice'] = voice_options[0][1]
                 else:
                     current_voice_name = Path(session['voice']).stem
                     current_voice_path = next(
