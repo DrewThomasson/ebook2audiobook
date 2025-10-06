@@ -3349,13 +3349,13 @@ def web_interface(args, ctx):
                             else:
                                 session['voice'] = voice_options[0][1]
                 else:
-                    current_voice_name = Path(session['voice']).stem
-                    current_voice_path = next(
-                        (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
-                    )
                     if fine_tuned is not None:
-                        session['voice'] = fine_tuned
+                        session['voice'] = models[session['tts_engine']][fine_tuned]['voice']
                     elif current_voice_path:
+                        current_voice_name = Path(session['voice']).stem
+                        current_voice_path = next(
+                            (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
+                        )
                         session['voice'] = current_voice_path
                     else:
                         session['voice'] = default_voice_path
