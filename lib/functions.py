@@ -2658,10 +2658,14 @@ def web_interface(args, ctx):
                 font-size: 16px !important;
                 cursor: pointer !important;
             }
-            .button_green { background-color: #28a745 !important; color: white !important; }
-            .button_green:hover { background-color: #34d058 !important; }
-            .button_red  { background-color: #dc3545 !important; color: white !important; }
-            .button_red:hover  { background-color: #ff6f71 !important; }
+            .button-green { background-color: #28a745 !important; color: white !important; }
+            .button-green:hover { background-color: #34d058 !important; }
+            .button-red  { background-color: #dc3545 !important; color: white !important; }
+            .button-red:hover  { background-color: #ff6f71 !important; }
+            .button-green:active, .button-red:active {
+                background: var(--body-text-color) !important;
+                color: var(--body-background-fill) !important;
+            }
             .spinner {
                 margin: 15px auto !important;
                 border: 4px solid rgba(255, 255, 255, 0.2) !important;
@@ -2926,8 +2930,8 @@ def web_interface(args, ctx):
                 button_no = f'#gr_{mode}_no_btn'
                 return f'''
                 <div class="confirm-buttons">
-                    <button class="button_green" onclick="document.querySelector('{button_yes}').click()">✔</button>
-                    <button class="button_red" onclick="document.querySelector('{button_no}').click()">⨉</button>
+                    <button class="button-green" onclick="document.querySelector('{button_yes}').click()">✔</button>
+                    <button class="button-red" onclick="document.querySelector('{button_no}').click()">⨉</button>
                 </div>
                 '''
             else:
