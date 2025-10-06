@@ -3405,6 +3405,7 @@ def web_interface(args, ctx):
                     if details.get('lang') in ('multi', session['language'])
                 ]
                 if session.get('fine_tuned') in fine_tuned_options:
+                    print(f" {session['fine_tuned']} in fine_tuned_options")
                     value = session['fine_tuned']
                 elif default_fine_tuned in fine_tuned_options:
                     value = default_fine_tuned
@@ -3491,9 +3492,7 @@ def web_interface(args, ctx):
                 session['voice'] = default_voice_path
             bark_visible = False
             if session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                visible_custom_model = True
-                if session['fine_tuned'] != 'internal':
-                    visible_custom_model = False
+                visible_custom_model = True if session['fine_tuned'] == 'internal' else False
                 return (
                        gr.update(value=show_rating(session['tts_engine'])), 
                        gr.update(visible=visible_gr_tab_xtts_params), gr.update(visible=False), gr.update(visible=visible_custom_model), update_gr_fine_tuned_list(id),
