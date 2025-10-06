@@ -2371,7 +2371,7 @@ def web_interface(args, ctx):
             }
             .small-btn:active, .small-btn-red:active {
                 background: var(--body-text-color) !important;
-                font-size: 26px !important;
+                font-size: 30px !important;
                 color: var(--body-background-fill) !important;
             }
             .file-preview-holder {
@@ -2665,6 +2665,7 @@ def web_interface(args, ctx):
             .button-red:hover  { background-color: #ff6f71 !important; }
             .button-green:active, .button-red:active {
                 background: var(--body-text-color) !important;
+                font-size: 30px !important;
                 color: var(--body-background-fill) !important;
             }
             .spinner {
