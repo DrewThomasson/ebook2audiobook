@@ -3288,7 +3288,7 @@ def web_interface(args, ctx):
                 session['status'] = 'ready'
             return gr.update(value='', visible=False)
 
-        def update_gr_voice_list(id):
+        def update_gr_voice_list(id, fine_tuned=None):
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
@@ -3353,7 +3353,9 @@ def web_interface(args, ctx):
                     current_voice_path = next(
                         (path for name, path in voice_options if name == current_voice_name and path == session['voice']), False
                     )
-                    if current_voice_path:
+                    if fine_tuned is not None:
+                        session['voice'] = fine_tuned
+                    elif current_voice_path:
                         session['voice'] = current_voice_path
                     else:
                         session['voice'] = default_voice_path
@@ -3917,7 +3919,7 @@ def web_interface(args, ctx):
             outputs=[gr_group_custom_model]
         ).then(
             fn=update_gr_voice_list,
-            inputs=[gr_session],
+            inputs=[gr_session, gr_fine_tuned_list],
             outputs=[gr_voice_list]        
         )
         gr_custom_model_file.upload(
