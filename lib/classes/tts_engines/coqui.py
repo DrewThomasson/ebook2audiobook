@@ -687,7 +687,7 @@ class Coqui:
                             )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
                         speaker_argument = {}
-                        not_supported_punc_pattern = re.compile(r'["—…]')
+                        not_supported_punc_pattern = re.compile(r'["—…¡¿]')
                         if settings['voice_path'] is not None:
                             proc_dir = os.path.join(self.session['voice_dir'], 'proc')
                             os.makedirs(proc_dir, exist_ok=True)
