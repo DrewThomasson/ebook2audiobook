@@ -2124,6 +2124,8 @@ def convert_ebook(args, ctx=None):
                                 if session['metadata']['language'] != session['language']:
                                     error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
                                     print(error)
+                                    if session['is_gui_process']:
+                                        show_alert({"type": "warning", "msg": error})
                                 session['cover'] = get_cover(epubBook, session)
                                 if session['cover']:
                                     session['toc'], session['chapters'] = get_chapters(epubBook, session)
@@ -2145,7 +2147,8 @@ def convert_ebook(args, ctx=None):
         if session['cancellation_requested']:
             error = 'Cancelled' if error is None else error + '. Cancelled'
         print(error)
-        show_alert({"type": "error", "msg": error})
+        if session['is_gui_process']:
+            show_alert({"type": "warning", "msg": error})
         return error, False
     except Exception as e:
         print(f'convert_ebook() Exception: {e}')
