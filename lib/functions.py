@@ -2129,10 +2129,13 @@ def convert_ebook(args, ctx=None):
                                 session['cover'] = get_cover(epubBook, session)
                                 if session['cover']:
                                     session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                    if session['chapters_control']:
-                                        return 'confirm_blocks', True
+                                    if session['chapters'] is not None:
+                                        if session['chapters_control']:
+                                            return 'confirm_blocks', True
+                                        else:
+                                            return finalize_audiobook(id)
                                     else:
-                                        return finalize_audiobook(id)
+                                        error = 'get_chapters() failed!'
                                 else:
                                     error = 'get_cover() failed!'
                             else:
