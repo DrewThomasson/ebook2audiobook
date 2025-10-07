@@ -74,7 +74,7 @@ default_engine_settings = {
             "FerranSimen": "Ferran Simen", "XavierHayasaka": "Xavier Hayasaka", "LuisMoray": "Luis Moray",
             "MarcosRudaski": "Marcos Rudaski"
         },
-        "rating": {"GPU VRAM": 4, "CPU": 3, "RAM": 8, "Realism": 4}
+        "rating": {"GPU VRAM": 4, "CPU": 3, "RAM": 8, "Realism": 5}
     },
     TTS_ENGINES['BARK']: {
         "samplerate": 24000,
@@ -128,31 +128,31 @@ default_engine_settings = {
             "zh_speaker_6": "Speaker 6", "zh_speaker_7": "Speaker 7", "zh_speaker_8": "Speaker 8",
             "zh_speaker_9": "Speaker 9"
         },
-        "rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Realism": 3}
+        "rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Realism": 4}
     },
     TTS_ENGINES['VITS']: {
         "samplerate": 22050,
         "files": ['config.json', 'model_file.pth', 'language_ids.json'],
         "voices": {},
-        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 2}
+        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
     },
     TTS_ENGINES['FAIRSEQ']: {
         "samplerate": 16000,
         "files": ['config.json', 'G_100000.pth', 'vocab.json'],
         "voices": {},
-        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 2}
+        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
     },
     TTS_ENGINES['TACOTRON2']: {
         "samplerate": 22050,
         "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
         "voices": {},
-        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 2}
+        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
     },
     TTS_ENGINES['YOURTTS']: {
         "samplerate": 16000,
         "files": ['config.json', 'model_file.pth'],
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
-        "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 4, "Realism": 1}
+        "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 4, "Realism": 2}
     }
 }
 models = {

@@ -3641,6 +3641,7 @@ def web_interface(args, ctx):
                                     if count_file > 0:
                                         msg = f"{len(args['ebook_list'])} ebook(s) conversion remaining..."
                                         yield gr.update(value=msg), gr.update()
+                                        return
                                     else:
                                         msg = 'Conversion successful!'
                                         session['status'] = 'ready'
