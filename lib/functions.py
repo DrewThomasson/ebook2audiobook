@@ -496,10 +496,10 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         print(msg)
         if session['cancellation_requested']:
             print('Cancel requested')
-            return False
+            return None, None
         # Step 1: Extract TOC (Table of Contents)
         try:
-            toc = epubBook.toc  # Extract TOC
+            toc = epubBook.toc
             toc_list = [
                     nt for item in toc if hasattr(item, 'title')
                     if (nt := normalize_text(
@@ -510,8 +510,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 )) is not None
             ]
         except Exception as toc_error:
-            error = f"Error extracting TOC: {toc_error}"
+            error = f"Error extracting Table of Content: {toc_error}"
             print(error)
+            show_alert({"type": "error", "msg": error})
         # Get spine item IDs
         spine_ids = [item[0] for item in epubBook.spine]
         # Filter only spine documents (i.e., reading order)
@@ -520,7 +521,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             if item.id in spine_ids
         ]
         if not all_docs:
-            return [], []
+            error = 'No document body found!'
+            show_alert({"type": "error", "msg": error})
+            return None, None
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
         stanza_nlp = False
@@ -538,6 +541,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 chapters.append(sentences_list)
         if len(chapters) == 0:
             error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
+            show_alert({"type": "error", "msg": error})
             return None, None
         return toc_list, chapters
     except Exception as e:
