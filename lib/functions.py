@@ -3944,7 +3944,7 @@ def web_interface(args, ctx):
                 (filename)=>{
                     console.log("gr_progress.change called");
                     const gr_root = (window.gradioApp && window.gradioApp()) || document;
-                    const gr_ebook_file = document.querySelector("#gr_ebook_file");
+                    const gr_ebook_file = gr_root.querySelector("#gr_ebook_file");
                     if(!gr_ebook_file){
                         return;
                     }
