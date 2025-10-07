@@ -3939,7 +3939,7 @@ def web_interface(args, ctx):
         )
         gr_progress.change(
             fn=None,
-            inputs=[gr_tab_progress],
+            inputs=[gr_progress],
             js=r'''
                 (filename)=>{
                     const gr_root = (window.gradioApp && window.gradioApp()) || document;
