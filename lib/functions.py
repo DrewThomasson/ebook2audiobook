@@ -597,7 +597,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         break_tags = ['br', 'p']
         pause_tags = ['div', 'span']
         proc_tags = heading_tags + break_tags + pause_tags
-        raw_html = doc_body.decode("utf-8") if isinstance(doc_body, bytes) else doc.get_body_content()
+        doc_body = doc.get_body_content()
+        raw_html = doc_body.decode("utf-8") if isinstance(doc_body, bytes) else doc_body
         if not raw_html:
             return []
         soup = BeautifulSoup(raw_html, 'html.parser')
