@@ -495,8 +495,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         '''
         print(msg)
         if session['cancellation_requested']:
-            print('Cancel requested')
-            return None, None
+            msg = 'Cancel requested'
+            return msg, None
         # Step 1: Extract TOC (Table of Contents)
         try:
             toc = epubBook.toc
@@ -522,8 +522,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         ]
         if not all_docs:
             error = 'No document body found!'
-            show_alert({"type": "error", "msg": error})
-            return None, None
+            return error, None
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
         stanza_nlp = False
@@ -541,13 +540,12 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 chapters.append(sentences_list)
         if len(chapters) == 0:
             error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
-            show_alert({"type": "error", "msg": error})
-            return None, None
+            return error, None
         return toc_list, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
-        return None, None
+        return error, None
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
     def tuple_row(node, last_text_char=None):
@@ -2135,7 +2133,7 @@ def convert_ebook(args, ctx=None):
                                         else:
                                             return finalize_audiobook(id)
                                     else:
-                                        error = 'get_chapters() failed!'
+                                        error = 'get_chapters() failed! '+session['toc']
                                 else:
                                     error = 'get_cover() failed!'
                             else:
@@ -2145,8 +2143,9 @@ def convert_ebook(args, ctx=None):
             else:
                 error = f"Language {args['language']} is not supported."
         if session['cancellation_requested']:
-            error = 'Cancelled'
+            error = 'Cancelled' if error is None else error + '. Cancelled'
         print(error)
+        show_alert({"type": "error", "msg": error})
         return error, False
     except Exception as e:
         print(f'convert_ebook() Exception: {e}')
