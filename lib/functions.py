@@ -511,8 +511,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             ]
         except Exception as toc_error:
             error = f"Error extracting Table of Content: {toc_error}"
-            print(error)
-            show_alert({"type": "error", "msg": error})
+            show_alert({"type": "warning", "msg": error})
         # Get spine item IDs
         spine_ids = [item[0] for item in epubBook.spine]
         # Filter only spine documents (i.e., reading order)
@@ -2998,6 +2997,7 @@ def web_interface(args, ctx):
             '''
 
         def alert_exception(error):
+            print(error)
             gr.Error(error)
             DependencyError(error)
 
@@ -3028,33 +3028,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
                 outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
-        '''
-        def restore_models_settings(id):
-            try:
-                session = context.get_session(id)
-                ### XTTSv2 Params
-                session['xtts_temperature'] = session['xtts_temperature'] if session['xtts_temperature'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature']
-                session['xtts_length_penalty'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty']
-                session['xtts_num_beams'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams']
-                session['xtts_repetition_penalty'] = session['xtts_repetition_penalty'] if session['xtts_repetition_penalty'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty']
-                session['xtts_top_k'] = session['xtts_top_k'] if session['xtts_top_k'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k']
-                session['xtts_top_p'] = session['xtts_top_p'] if session['xtts_top_p'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p']
-                session['xtts_speed'] = session['xtts_speed'] if session['xtts_speed'] else default_engine_settings[TTS_ENGINES['XTTSv2']]['speed']
-                session['xtts_enable_text_splitting'] = default_engine_settings[TTS_ENGINES['XTTSv2']]['enable_text_splitting']
-                ### BARK Params
-                session['bark_text_temp'] = session['bark_text_temp'] if session['bark_text_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['text_temp']
-                session['bark_waveform_temp'] = session['bark_waveform_temp'] if session['bark_waveform_temp'] else default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']
-                return (
-                    gr.update(value=float(session['xtts_temperature'])), gr.update(value=float(session['xtts_length_penalty'])), gr.update(value=int(session['xtts_num_beams'])),
-                    gr.update(value=float(session['xtts_repetition_penalty'])), gr.update(value=int(session['xtts_top_k'])), gr.update(value=float(session['xtts_top_p'])), gr.update(value=float(session['xtts_speed'])), 
-                    gr.update(value=bool(session['xtts_enable_text_splitting'])), gr.update(value=float(session['bark_text_temp'])), gr.update(value=float(session['bark_waveform_temp']))
-                )
-            except Exception as e:
-                error = f'restore_models_settings(): {e}'
-                alert_exception(error)
-                outputs = tuple([gr.update() for _ in range(10)])
-                return outputs
-        '''
+
         def restore_audiobook_player(audiobook):
             try:
                 return (
