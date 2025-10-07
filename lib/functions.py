@@ -537,7 +537,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             elif len(sentences_list) > 0:
                 chapters.append(sentences_list)
         if len(chapters) == 0:
-            error = 'No chapters found!'
+            error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
             return None, None
         return toc_list, chapters
     except Exception as e:
