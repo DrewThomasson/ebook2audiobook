@@ -547,7 +547,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return error, None
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
-
     def tuple_row(node, last_text_char=None):
         try:
             for child in node.children:
@@ -556,7 +555,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                     if text:
                         yield ("text", text)
                         last_text_char = text[-1] if text else last_text_char
-
                 elif isinstance(child, Tag):
                     name = child.name.lower()
                     if name in heading_tags:
@@ -567,7 +565,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
 
                     elif name == "table":
                         yield ("table", child)
-
                     else:
                         return_data = False
                         if name in proc_tags:
@@ -577,7 +574,6 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                 # Track last char if this is text or heading
                                 if inner[0] in ("text", "heading") and inner[1]:
                                     last_text_char = inner[1][-1]
-
                             if return_data:
                                 if name in break_tags:
                                     # Only yield break if last char is NOT alnum or space
@@ -585,10 +581,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
                                         yield ("break", TTS_SML['break'])
                                 elif name in heading_tags or name in pause_tags:
                                     yield ("pause", TTS_SML['pause'])
-
                         else:
                             yield from tuple_row(child, last_text_char)
-
         except Exception as e:
             error = f'filter_chapter() tuple_row() error: {e}'
             DependencyError(error)
@@ -599,7 +593,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         break_tags = ['br', 'p']
         pause_tags = ['div', 'span']
         proc_tags = heading_tags + break_tags + pause_tags
-        raw_html = doc.get_body_content().decode("utf-8")
+        doc_body = doc.get_body_content()
+        raw_html = doc_body.decode("utf-8") if isinstance(doc_body, bytes) else doc_body
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
         if not body or not body.get_text(strip=True):
