@@ -600,11 +600,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         doc_body = doc.get_body_content()
         raw_html = doc_body.decode("utf-8") if isinstance(doc_body, bytes) else doc_body
         if not raw_html:
-            return []
+            return None
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
         if not body or not body.get_text(strip=True):
-            return []
+            return None
         # Skip known non-chapter types
         epub_type = body.get("epub:type", "").lower()
         if not epub_type:
@@ -617,7 +617,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             "appendix", "bibliography", "copyright-page", "landmark"
         }
         if any(part in epub_type for part in excluded):
-            return []
+            return None
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
