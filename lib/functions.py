@@ -495,11 +495,11 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         '''
         print(msg)
         if session['cancellation_requested']:
-            msg = 'Cancel requested'
-            return msg, None
+            print('Cancel requested')
+            return False
         # Step 1: Extract TOC (Table of Contents)
         try:
-            toc = epubBook.toc
+            toc = epubBook.toc  # Extract TOC
             toc_list = [
                     nt for item in toc if hasattr(item, 'title')
                     if (nt := normalize_text(
@@ -510,8 +510,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 )) is not None
             ]
         except Exception as toc_error:
-            error = f"Error extracting Table of Content: {toc_error}"
-            show_alert({"type": "warning", "msg": error})
+            error = f"Error extracting TOC: {toc_error}"
+            print(error)
         # Get spine item IDs
         spine_ids = [item[0] for item in epubBook.spine]
         # Filter only spine documents (i.e., reading order)
@@ -520,8 +520,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             if item.id in spine_ids
         ]
         if not all_docs:
-            error = 'No document body found!'
-            return error, None
+            return [], []
         title = get_ebook_title(epubBook, all_docs)
         chapters = []
         stanza_nlp = False
@@ -538,15 +537,16 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             elif len(sentences_list) > 0:
                 chapters.append(sentences_list)
         if len(chapters) == 0:
-            error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
-            return error, None
+            error = 'No chapters found!'
+            return None, None
         return toc_list, chapters
     except Exception as e:
         error = f'Error extracting main content pages: {e}'
         DependencyError(error)
-        return error, None
+        return None, None
 
 def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
+
     def tuple_row(node, last_text_char=None):
         try:
             for child in node.children:
@@ -598,15 +598,11 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         break_tags = ['br', 'p']
         pause_tags = ['div', 'span']
         proc_tags = heading_tags + break_tags + pause_tags
-        doc_body = doc.get_body_content()
-        raw_html = doc_body.decode("utf-8") if isinstance(doc_body, bytes) else doc_body
-        if not raw_html:
-            return None
+        raw_html = doc.get_body_content().decode("utf-8")
         soup = BeautifulSoup(raw_html, 'html.parser')
         body = soup.body
-        print(f'---------{body}----------')
         if not body or not body.get_text(strip=True):
-            return None
+            return []
         # Skip known non-chapter types
         epub_type = body.get("epub:type", "").lower()
         if not epub_type:
@@ -619,7 +615,7 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
             "appendix", "bibliography", "copyright-page", "landmark"
         }
         if any(part in epub_type for part in excluded):
-            return None
+            return []
         # remove scripts/styles
         for tag in soup(["script", "style"]):
             tag.decompose()
