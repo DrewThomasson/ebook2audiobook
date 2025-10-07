@@ -3983,7 +3983,7 @@ def web_interface(args, ctx):
                                     const globalClear = gr_ebook_file.querySelector("button[aria-label='Clear']");
                                     if(globalClear){
                                         console.log("Fallback: clearing last row via global clear button");
-                                        globalClear.click();
+                                        //globalClear.click();
                                     }
                                 }
                             }
@@ -4007,10 +4007,7 @@ def web_interface(args, ctx):
             fn=change_gr_audiobook_list,
             inputs=[gr_audiobook_list, gr_session],
             outputs=[gr_group_audiobook_list, gr_audiobook_player, gr_audiobook_vtt]
-        ).then(
-            fn=None,
-            inputs=None,
-            js='''()=>{load_vtt();}'''
+            js='()=>{window.load_vtt();}'
         )
         gr_audiobook_del_btn.click(
             fn=click_gr_audiobook_del_btn,
