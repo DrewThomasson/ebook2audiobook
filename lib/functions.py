@@ -2324,7 +2324,7 @@ def web_interface(args, ctx):
                 display: inline-block !important;
                 vertical-align: middle !important;
             }
-            table.file-preview button.label-clear-button {
+            body:has(#gr_convert_btn:disabled) table.file-preview button.label-clear-button {
                 visibility: hidden !important;
             }
             /////////////////////
