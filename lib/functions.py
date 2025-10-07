@@ -2500,19 +2500,19 @@ def web_interface(args, ctx):
             #gr_row_output_split_hours {
                 border-radius: 0 !important;
             }
-            #gr_tab_progress .progress-bar {
+            #gr_progress .progress-bar {
                 background: #ff7b00 !important;
             }
             #gr_audiobook_sentence textarea{
                 margin: auto !important;
                 text-align: center !important;
             }
-            #gr_session textarea, #gr_tab_progress textarea {
+            #gr_session textarea, #gr_progress textarea {
                 overflow: hidden !important;
                 overflow-y: auto !important;
                 scrollbar-width: none !important;
             }
-            #gr_session textarea::-webkit-scrollbar, #gr_tab_progress textarea::-webkit-scrollbar {
+            #gr_session textarea::-webkit-scrollbar, #gr_progress textarea::-webkit-scrollbar {
                 display: none !important; 
             }
             #gr_ebook_mode span[data-testid="block-info"],
@@ -2524,7 +2524,7 @@ def web_interface(args, ctx):
             #gr_session span[data-testid="block-info"],
             #gr_audiobook_sentence span[data-testid="block-info"],
             #gr_audiobook_list span[data-testid="block-info"],
-            #gr_tab_progress span[data-testid="block-info"]{
+            #gr_progress span[data-testid="block-info"]{
                 display: none !important;
             }
             #gr_row_ebook_mode { align-items: center !important; }
@@ -2841,7 +2841,7 @@ def web_interface(args, ctx):
                         )
             with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
-                gr_tab_progress = gr.Textbox(elem_id='gr_tab_progress', label='', interactive=False, visible=True)
+                gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
             gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True)
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
@@ -3937,6 +3937,56 @@ def web_interface(args, ctx):
             inputs=[gr_output_split_hours, gr_session],
             outputs=None
         )
+        gr_tab_progress.change(
+            fn=None,
+            inputs=[gr_tab_progress],
+            js=r'''
+                (filename) => {
+                    const container = document.querySelector("#gr_ebook_file");
+                    if(!container){
+                        return;
+                    }
+                    function normalizeForGradio(name) {
+                        return name
+                            .normalize("NFC")
+                            // Remove chars not supported by OS paths
+                            .replace(/[<>:"/\\|?*\x00-\x1F]/g, "")
+                            // Remove Gradio-sanitized odd punctuation (including quotes)
+                            .replace(/[!(){}\[\]']/g, "")
+                            // Collapse multiple dots/spaces before extension
+                            .replace(/\s+\./g, ".")
+                            // Strip trailing spaces/dots (Windows forbids)
+                            .replace(/[. ]+$/, "")
+                            // Remove Arabic tatweel/harakat
+                            .replace(/[\u0640\u0651\u064B-\u065F]/g, "")
+                            .trim();
+                    }
+                    const rows = container.querySelectorAll("table.file-preview tr.file");
+                    rows.forEach((row, idx) => {
+                        const filenameCell = row.querySelector("td.filename");
+                        if (filenameCell) {
+                            const btn = row.querySelector("button.label-clear-button");
+                            if (btn) {
+                                btn.style.display = "none";
+                            }
+                            const rowName = normalizeForGradio(filenameCell.getAttribute("aria-label"));
+                            if (rowName === filename) {
+                                console.log("converted:", rowName);
+                                if (btn) {
+                                    btn.click();
+                                } else if (idx === rows.length - 1) {
+                                    const globalClear = container.querySelector("button[aria-label='Clear']");
+                                    if (globalClear) {
+                                        console.log("Fallback: clearing last row via global clear button");
+                                        globalClear.click();
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            '''
+        )
         gr_playback_time.change(
             fn=change_gr_playback_time,
             inputs=[gr_playback_time, gr_session],
@@ -4079,7 +4129,7 @@ def web_interface(args, ctx):
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
             ],
-            outputs=[gr_tab_progress, gr_modal]
+            outputs=[gr_progress, gr_modal]
         ).then(
             fn=enable_components,
             inputs=[gr_session],
@@ -4151,7 +4201,7 @@ def web_interface(args, ctx):
         ).then(
             fn=submit_confirmed_blocks,
             inputs=[gr_session],
-            outputs=[gr_tab_progress, gr_modal]
+            outputs=[gr_progress, gr_modal]
         ).then(
             fn=enable_components,
             inputs=[gr_session],
@@ -4187,7 +4237,7 @@ def web_interface(args, ctx):
                         let gr_audiobook_sentence;
                         let gr_audiobook_player;
                         let gr_playback_time;
-                        let gr_tab_progress;
+                        let gr_progress;
                         let gr_voice_play;
                         let init_elements_timeout;
                         let init_audiobook_player_timeout;
@@ -4244,8 +4294,8 @@ def web_interface(args, ctx):
                             window.init_interface = ()=>{
                                 try {
                                     gr_root = (window.gradioApp && window.gradioApp()) || document;
-                                    gr_tab_progress = gr_root.querySelector("#gr_tab_progress");
-                                    if(!gr_root || !gr_tab_progress){
+                                    gr_progress = gr_root.querySelector("#gr_progress");
+                                    if(!gr_root || !gr_progress){
                                         clearTimeout(init_elements_timeout);
                                         console.warn("Components not ready... retrying");
                                         init_elements_timeout = setTimeout(init_interface, 1000);
@@ -4276,13 +4326,13 @@ def web_interface(args, ctx):
                                         subtree: true
                                     });
                                     // Keep your progress observer too
-                                    new MutationObserver(tab_progress).observe(gr_tab_progress, {
+                                    new MutationObserver(tab_progress).observe(gr_progress, {
                                         attributes: true,
                                         childList: true,
                                         subtree: true,
                                         characterData: true
                                     });
-                                    gr_tab_progress.addEventListener("change", tab_progress);
+                                    gr_progress.addEventListener("change", tab_progress);
                                 }catch(e){
                                     console.warn("init_interface error:", e);
                                 }
@@ -4488,7 +4538,7 @@ def web_interface(args, ctx):
                         if(typeof(window.tab_progress) !== "function"){
                             window.tab_progress = ()=>{
                                 try{
-                                    const val = gr_tab_progress?.value || gr_tab_progress?.textContent || "";
+                                    const val = gr_progress?.value || gr_progress?.textContent || "";
                                     const valArray = splitAtLastDash(val);
                                     if(valArray[1]){
                                         const title = valArray[0].trim().split(/ (.*)/)[1].trim();
