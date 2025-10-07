@@ -3639,9 +3639,8 @@ def web_interface(args, ctx):
                                     reset_session(args['session'])
                                     count_file = len(args['ebook_list'])
                                     if count_file > 0:
-                                        msg = f"{len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                        msg = f"{os.path.basename(file)}: converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
                                         yield gr.update(value=msg), gr.update()
-                                        return
                                     else:
                                         msg = 'Conversion successful!'
                                         session['status'] = 'ready'
@@ -3943,6 +3942,7 @@ def web_interface(args, ctx):
             inputs=[gr_progress],
             js=r'''
                 (filename)=>{
+                    console.log("gr_progress.change called");
                     const gr_root = (window.gradioApp && window.gradioApp()) || document;
                     const gr_ebook_file = document.querySelector("#gr_ebook_file");
                     if(!gr_ebook_file){
@@ -3972,6 +3972,9 @@ def web_interface(args, ctx):
                                 btn.style.display = "none";
                             }
                             const rowName = normalizeForGradio(filenameCell.getAttribute("aria-label"));
+                            filename = filename.split(":")[0];
+                            console.log("rowName: ", rowName);
+                            console.log("filename: ", filename);
                             if(rowName === filename){
                                 console.log("converted:", rowName);
                                 if(btn){
