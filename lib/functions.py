@@ -3937,16 +3937,17 @@ def web_interface(args, ctx):
             inputs=[gr_output_split_hours, gr_session],
             outputs=None
         )
-        gr_tab_progress.change(
+        gr_progress.change(
             fn=None,
             inputs=[gr_tab_progress],
             js=r'''
-                (filename) => {
-                    const container = document.querySelector("#gr_ebook_file");
-                    if(!container){
+                (filename)=>{
+                    const gr_root = (window.gradioApp && window.gradioApp()) || document;
+                    const gr_ebook_file = document.querySelector("#gr_ebook_file");
+                    if(!gr_ebook_file){
                         return;
                     }
-                    function normalizeForGradio(name) {
+                    function normalizeForGradio(name){
                         return name
                             .normalize("NFC")
                             // Remove chars not supported by OS paths
@@ -3961,22 +3962,22 @@ def web_interface(args, ctx):
                             .replace(/[\u0640\u0651\u064B-\u065F]/g, "")
                             .trim();
                     }
-                    const rows = container.querySelectorAll("table.file-preview tr.file");
-                    rows.forEach((row, idx) => {
+                    const rows = gr_ebook_file.querySelectorAll("table.file-preview tr.file");
+                    rows.forEach((row, idx)=>{
                         const filenameCell = row.querySelector("td.filename");
-                        if (filenameCell) {
+                        if(filenameCell){
                             const btn = row.querySelector("button.label-clear-button");
-                            if (btn) {
+                            if(btn){
                                 btn.style.display = "none";
                             }
                             const rowName = normalizeForGradio(filenameCell.getAttribute("aria-label"));
-                            if (rowName === filename) {
+                            if(rowName === filename){
                                 console.log("converted:", rowName);
-                                if (btn) {
+                                if(btn){
                                     btn.click();
-                                } else if (idx === rows.length - 1) {
-                                    const globalClear = container.querySelector("button[aria-label='Clear']");
-                                    if (globalClear) {
+                                }else if (idx === rows.length - 1){
+                                    const globalClear = gr_ebook_file.querySelector("button[aria-label='Clear']");
+                                    if(globalClear){
                                         console.log("Fallback: clearing last row via global clear button");
                                         globalClear.click();
                                     }
