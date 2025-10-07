@@ -2314,6 +2314,10 @@ def web_interface(args, ctx):
                 display: inline-block !important;
                 vertical-align: middle !important;
             }
+            table.file-preview button.label-clear-button {
+                visibility: hidden !important;
+            }
+            /////////////////////
             .wrap-inner {
                 border: 1px solid #666666;
             }
@@ -2382,6 +2386,7 @@ def web_interface(args, ctx):
                 min-height: 0 !important;
                 max-height: none !important;
             }
+            ///////////////////
             .gr-tab {
                 padding: 0 3px 0 3px !important;
                 margin: 0 !important;
@@ -3964,28 +3969,13 @@ def web_interface(args, ctx):
                             .trim();
                     }
                     const rows = gr_ebook_file.querySelectorAll("table.file-preview tr.file");
-                    rows.forEach((row, idx)=>{
+                    rows.forEach((row, idx) => {
                         const filenameCell = row.querySelector("td.filename");
-                        if(filenameCell){
-                            const btn = row.querySelector("button.label-clear-button");
-                            if(btn){
-                                btn.style.display = "none";
-                            }
+                        if (filenameCell) {
                             const rowName = normalizeForGradio(filenameCell.getAttribute("aria-label"));
                             filename = filename.split(":")[0];
-                            console.log("rowName: ", rowName);
-                            console.log("filename: ", filename);
-                            if(rowName === filename){
-                                console.log("converted:", rowName);
-                                if(btn){
-                                    btn.click();
-                                }else if (idx === rows.length - 1){
-                                    const globalClear = gr_ebook_file.querySelector("button[aria-label='Clear']");
-                                    if(globalClear){
-                                        console.log("Fallback: clearing last row via global clear button");
-                                        //globalClear.click();
-                                    }
-                                }
+                            if (rowName === filename) {
+                                row.style.display = "none";
                             }
                         }
                     });
@@ -4425,9 +4415,6 @@ def web_interface(args, ctx):
                                             const v = window.session_storage?.playback_volume ?? 1;
                                             gr_voice_player_hidden.volume = v;
                                         });
-                                        window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
-                                            window.init_audiobook_player();
-                                        }, {once: false});
                                         return true;
                                     }else{
                                         console.warn("Voice player not found yet, retrying...");
@@ -4572,7 +4559,6 @@ def web_interface(args, ctx):
                         if(typeof(window.load_vtt) !== "function"){
                             window.load_vtt = ()=>{
                                 try{
-                                    gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                     gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                     gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     if(gr_audiobook_sentence){
@@ -4589,10 +4575,6 @@ def web_interface(args, ctx):
                                             gr_audiobook_sentence.value = "...";
                                         }else{
                                             parseVTT(txt);
-                                        }
-                                        if(gr_audiobook_player){
-                                            gr_audiobook_player.style.transition = "filter 1s ease";
-                                            gr_audiobook_player.style.filter = audioFilter;
                                         }
                                     }
                                 }catch(e){
@@ -4704,7 +4686,11 @@ def web_interface(args, ctx):
                         window.onElementAvailable("#gr_voice_player_hidden audio", (el)=>{
                             window.init_voice_player_hidden();
                         }, {once: false});
-
+                        
+                        window.onElementAvailable("#gr_audiobook_player audio", (el)=>{
+                            window.init_audiobook_player();
+                        }, {once: false});
+                        
                         return window.session_storage;
                     }catch(e){
                         console.warn("gr_raed_data js error:", e);
