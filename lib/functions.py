@@ -4572,6 +4572,7 @@ def web_interface(args, ctx):
                         if(typeof(window.load_vtt) !== "function"){
                             window.load_vtt = ()=>{
                                 try{
+                                    gr_audiobook_player = gr_root.querySelector("#gr_audiobook_player audio");
                                     gr_audiobook_vtt = gr_root.querySelector("#gr_audiobook_vtt textarea");
                                     gr_audiobook_sentence = gr_root.querySelector("#gr_audiobook_sentence textarea");
                                     if(gr_audiobook_sentence){
@@ -4588,6 +4589,10 @@ def web_interface(args, ctx):
                                             gr_audiobook_sentence.value = "...";
                                         }else{
                                             parseVTT(txt);
+                                        }
+                                        if(gr_audiobook_player){
+                                            gr_audiobook_player.style.transition = "filter 1s ease";
+                                            gr_audiobook_player.style.filter = audioFilter;
                                         }
                                     }
                                 }catch(e){
