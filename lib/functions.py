@@ -1502,13 +1502,11 @@ def assemble_chunks(txt_file, out_file):
                                 pass
         except Exception as e:
             print(f"⚠️ Could not calculate total duration: {e}")
-
         ffmpeg_cmd = [
             shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
             '-safe', '0', '-f', 'concat', '-i', txt_file,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
         ]
-
         process = subprocess.Popen(
             ffmpeg_cmd,
             stdout=subprocess.PIPE,
@@ -1516,15 +1514,11 @@ def assemble_chunks(txt_file, out_file):
             encoding='utf-8',
             errors='ignore'
         )
-
         time_pattern = re.compile(r'time=(\d{2}:\d{2}:\d{2}\.\d{2})')
         current_time = 0.0
         last_percent = -1
-
-        print(f"🔊 Combining audio → {out_file}")
-
         progress_bar = gr.Progress(track_tqdm=False)
-
+        print(f"🔊 Combining audio → {out_file}")
         for line in process.stdout:
             match = time_pattern.search(line)
             if match:
@@ -1534,19 +1528,17 @@ def assemble_chunks(txt_file, out_file):
                     percent = min((current_time / total_duration) * 100, 100)
                     if int(percent) != int(last_percent):
                         last_percent = percent
-                        progress_bar(progress=percent / 100, desc=f"Combining audio... {percent:.1f}%")
+                        progress_bar(progress=percent / 100, desc=f"FFmpeg combining... {percent:.1f}%")
             print(line, end='')
-
         process.wait()
-
         if process.returncode == 0:
-            progress_bar(progress=1.0, desc="✅ Audio combination complete")
+            progress_bar(progress=1.0, desc="✅ FFmpeg combination complete")
             print(f"\n✅ Audio combined successfully → {out_file}")
             return True
         else:
             print(f"❌ FFmpeg exited with code {process.returncode}: {ffmpeg_cmd}")
+            progress_bar(progress=0, desc="❌ FFmpeg failed")
             return False
-
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return False
