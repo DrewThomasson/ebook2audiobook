@@ -1427,7 +1427,8 @@ def convert_chapters2audio(id):
         sentence_number = 0
         msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
         print(msg)
-        progress_bar = gr.Progress(track_tqdm=False)
+        if session['is_gui_process']:
+            progress_bar = gr.Progress(track_tqdm=False)
         ebook_name = Path(session['ebook']).name
         with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
@@ -1451,7 +1452,8 @@ def convert_chapters2audio(id):
                         success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
                         if success:
                             total_progress = (t.n + 1) / total_iterations
-                            progress_bar(progress=total_progress, desc=ebook_name)
+                            if session['is_gui_process']:
+                                progress_bar(progress=total_progress, desc=ebook_name)
                             is_sentence = sentence.strip() not in TTS_SML.values()
                             percentage = total_progress * 100
                             t.set_description(f"{percentage:.2f}%")
@@ -1481,38 +1483,6 @@ def convert_chapters2audio(id):
         DependencyError(e)
         return False
 
-def assemble_chunks(txt_file, out_file):
-    try:
-        ffmpeg_cmd = [
-            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
-            '-safe', '0', '-f', 'concat', '-i', txt_file,
-            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
-        ]
-        process = subprocess.Popen(
-            ffmpeg_cmd,
-            env={},
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            encoding='utf-8',
-            errors='ignore'
-        )
-        for line in process.stdout:
-            print(line, end='')  # Print each line of stdout
-        process.wait()
-        if process.returncode == 0:
-            return True
-        else:
-            error = process.returncode
-            print(error, ffmpeg_cmd)
-            return False
-    except subprocess.CalledProcessError as e:
-        DependencyError(e)
-        return False
-    except Exception as e:
-        error = f"assemble_chanks() Error: Failed to process {txt_file} → {out_file}: {e}"
-        print(error)
-        return False
-
 def combine_audio_sentences(chapter_audio_file, start, end, session):
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
@@ -1533,8 +1503,6 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         if not selected_files:
             print('No audio files found in the specified range.')
             return False
-        progress_bar = gr.Progress(track_tqdm=False)
-        progress_bar(progress=0.0, desc="Merging sentence chunks...")
         with tempfile.TemporaryDirectory() as tmpdir:
             chunk_list = []
             for i in range(0, len(selected_files), batch_size):
@@ -1545,29 +1513,29 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                     for file in batch:
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
                 chunk_list.append((txt, out))
-            total_chunks = len(chunk_list)
-            if total_chunks == 0:
-                print("No chunks to merge.")
+            try:
+                with Pool(cpu_count()) as pool:
+                    results = pool.starmap(assemble_chunks, chunk_list)
+            except Exception as e:
+                error = f"combine_audio_sentences() multiprocessing error: {e}"
+                print(error)
                 return False
-            for idx, (txt, out) in enumerate(chunk_list, 1):
-                desc = f"Combining chunk {idx}/{total_chunks}..."
-                progress_bar(progress=(idx - 1) / total_chunks, desc=desc)
-                if not assemble_chunks(txt, out):
-                    print(f"combine_audio_sentences() chunk {idx} failed.")
-                    return False
-                progress_bar(progress=idx / total_chunks, desc=f"Chunk {idx}/{total_chunks} complete")
-            progress_bar(progress=0.0, desc="Merging chunks into chapter file...")
+            if not all(results):
+                error = "combine_audio_sentences() One or more chunks failed."
+                print(error)
+                return False
+            # Final merge
             final_list = os.path.join(tmpdir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
                 for _, chunk_path in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
             if assemble_chunks(final_list, chapter_audio_file):
-                progress_bar(progress=1.0, desc="✅ Chapter audio ready")
-                print(f'********* Combined block audio file saved in {chapter_audio_file}')
+                msg = f'********* Combined block audio file saved in {chapter_audio_file}'
+                print(msg)
                 return True
             else:
-                progress_bar(progress=0.0, desc="❌ Final merge failed")
-                print("combine_audio_sentences() Final merge failed.")
+                error = "combine_audio_sentences() Final merge failed."
+                print(error)
                 return False
     except Exception as e:
         DependencyError(e)
@@ -1816,25 +1784,18 @@ def combine_audio_chapters(id):
                         exported_files.append(final_file)
         else:
             with tempfile.TemporaryDirectory() as tmpdir:
-                # 1) build a single ffmpeg file list
                 txt = os.path.join(tmpdir, 'all_chapters.txt')
                 merged_tmp = os.path.join(tmpdir, f'all.{default_audio_proc_format}')
                 with open(txt, 'w') as f:
                     for file in chapter_files:
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
-
-                # 2) merge into one temp file
                 if not assemble_chunks(txt, merged_tmp):
                     print("assemble_segments() Final merge failed.")
                     return None
-
-                # 3) generate metadata for entire book
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
                 all_chapters = list(zip(chapter_files, chapter_titles))
                 generate_ffmpeg_metadata(all_chapters, session, metadata_file, default_audio_proc_format)
-
-                # 4) export in one go
                 final_file = os.path.join(
                     session['audiobooks_dir'],
                     session['final_name']
@@ -1844,6 +1805,77 @@ def combine_audio_chapters(id):
         return exported_files if exported_files else None
     except Exception as e:
         DependencyError(e)
+        return False
+
+def assemble_chunks(txt_file, out_file):
+    try:
+        total_duration = 0.0
+        try:
+            with open(txt_file, 'r') as f:
+                for line in f:
+                    if line.strip().startswith("file"):
+                        file_path = line.strip().split("file ")[1].strip().strip("'").strip('"')
+                        if os.path.exists(file_path):
+                            result = subprocess.run(
+                                [shutil.which("ffprobe"), "-v", "error",
+                                 "-show_entries", "format=duration",
+                                 "-of", "default=noprint_wrappers=1:nokey=1", file_path],
+                                capture_output=True, text=True
+                            )
+                            try:
+                                total_duration += float(result.stdout.strip())
+                            except ValueError:
+                                pass
+        except Exception:
+            pass
+        if session['is_gui_process']:
+            progress_bar = gr.Progress(track_tqdm=False)
+            progress_bar(progress=0.0, desc=f"Combining → {os.path.basename(out_file)}")
+        ffmpeg_cmd = [
+            shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
+            '-safe', '0', '-f', 'concat', '-i', txt_file,
+            '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
+        ]
+        process = subprocess.Popen(
+            ffmpeg_cmd,
+            env={},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            encoding='utf-8',
+            errors='ignore'
+        )
+        time_pattern = re.compile(r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})")
+        last_progress = -1
+        for line in process.stdout:
+            match = time_pattern.search(line)
+            if match and total_duration > 0:
+                h, m, s = match.groups()
+                current_time = int(h) * 3600 + int(m) * 60 + float(s)
+                percent = min((current_time / total_duration) * 100, 100)
+                if int(percent) != int(last_progress):
+                    last_progress = percent
+                    if session['is_gui_process']:
+                        progress_bar(progress=percent / 100, desc=f"Combining {percent:.1f}% → {os.path.basename(out_file)}")
+                    sys.stdout.write(f"\rCombining {os.path.basename(out_file)}: {percent:.2f}%")
+                    sys.stdout.flush()
+        process.wait()
+        print()
+        if process.returncode == 0:
+            if session['is_gui_process']:
+                progress_bar(progress=1.0, desc=f"Completed → {os.path.basename(out_file)}")
+            print(f"Completed → {out_file}")
+            return True
+        else:
+            if session['is_gui_process']:
+                progress_bar(progress=0.0, desc=f"Failed → {os.path.basename(out_file)}")
+            print(f"Failed ({process.returncode}) → {out_file}")
+            print(ffmpeg_cmd)
+            return False
+    except subprocess.CalledProcessError as e:
+        DependencyError(e)
+        return False
+    except Exception as e:
+        print(f"assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}")
         return False
 
 def ellipsize_utf8_bytes(s: str, max_bytes: int, ellipsis: str = "...") -> str:
