@@ -1855,19 +1855,19 @@ def assemble_chunks(txt_file, out_file, is_gui_process):
                 percent = min((current_time / total_duration) * 100, 100)
                 if int(percent) != int(last_progress):
                     last_progress = percent
-                    if session['is_gui_process']:
+                    if is_gui_process:
                         progress_bar(progress=percent / 100, desc=f"Combining {percent:.1f}% → {os.path.basename(out_file)}")
                     sys.stdout.write(f"\rCombining {os.path.basename(out_file)}: {percent:.2f}%")
                     sys.stdout.flush()
         process.wait()
         print()
         if process.returncode == 0:
-            if session['is_gui_process']:
+            if is_gui_process:
                 progress_bar(progress=1.0, desc=f"Completed → {os.path.basename(out_file)}")
             print(f"Completed → {out_file}")
             return True
         else:
-            if session['is_gui_process']:
+            if is_gui_process:
                 progress_bar(progress=0.0, desc=f"Failed → {os.path.basename(out_file)}")
             print(f"Failed ({process.returncode}) → {out_file}")
             print(ffmpeg_cmd)
