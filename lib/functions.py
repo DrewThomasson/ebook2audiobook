@@ -1570,9 +1570,10 @@ def combine_audio_chapters(id):
                 print("Cancel requested")
                 return False
             total_duration = get_audio_duration(ffmpeg_combined_audio)
-            print(f"⏳ Total duration: {total_duration:.2f} s")
+            print(f"Total duration: {total_duration:.2f} s")
             progress_bar = None
-            if session.get('is_gui_process'):
+            is_gui = session.get('is_gui_process', False)
+            if is_gui:
                 progress_bar = gr.Progress(track_tqdm=False)
                 progress_bar(0, desc=f"Exporting → {os.path.basename(ffmpeg_final_file)}")
             ffmpeg_cmd = [shutil.which("ffmpeg"), "-hide_banner", "-nostats", "-i", ffmpeg_combined_audio]
@@ -1593,58 +1594,50 @@ def combine_audio_chapters(id):
                 elif session["output_format"] == "ogg":
                     ffmpeg_cmd += ["-c:a", "libopus", "-compression_level", "0", "-b:a", "192k", "-ar", "48000"]
                 ffmpeg_cmd += ["-map_metadata", "1"]
-            ffmpeg_cmd += [
-                "-af", "loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70",
-                "-threads", "1",
-                "-progress", "pipe:1",
-                "-y", ffmpeg_final_file
-            ]
+            ffmpeg_cmd += ["-af", "loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70", "-threads", "1", "-y", ffmpeg_final_file]
             process = subprocess.Popen(
                 ffmpeg_cmd,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
                 bufsize=1,
-                universal_newlines=True
+                universal_newlines=True,
+                encoding="utf-8",
+                errors="ignore"
             )
+            time_pattern = re.compile(r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})")
             last_gui_update = 0.0
             last_print = 0.0
-            for line in process.stdout:
+            for line in process.stderr:
                 line = line.strip()
-                if "out_time_ms=" in line:
-                    ms = int(line.split("=")[1])
-                    sec = ms / 1_000_000
-                    if total_duration > 0:
-                        progress_value = min(1.0, sec / total_duration)
-                        if progress_value - last_print >= 0.05:
-                            print(f"\r🎧 Export progress: {progress_value*100:.1f}%", end="", flush=True)
-                            last_print = progress_value
-                        if session.get('is_gui_process') and progress_bar and progress_value - last_gui_update >= 0.01:
-                            progress_bar(progress_value, desc=f"Encoding → {int(progress_value*100)}%")
-                            last_gui_update = progress_value
-                elif "progress=end" in line:
-                    print("\r🎧 Export progress: 100.0% ✓")
-                    if session.get('is_gui_process') and progress_bar:
-                        progress_bar(1.0, desc="Finalizing…")
-
+                match = time_pattern.search(line)
+                if match and total_duration > 0:
+                    h, m, s = match.groups()
+                    sec = int(h) * 3600 + int(m) * 60 + float(s)
+                    progress_value = min(1.0, sec / total_duration)
+                    if progress_value - last_print >= 0.05:
+                        print(f"\rExport progress: {progress_value * 100:.1f}%", end="", flush=True)
+                        last_print = progress_value
+                    if is_gui and progress_bar and progress_value - last_gui_update >= 0.01:
+                        progress_bar(progress_value, desc=f"Encoding → {int(progress_value * 100)}%")
+                        last_gui_update = progress_value
                 elif "error" in line.lower():
                     print(line)
             process.wait()
-            print()  # newline
+            print()
             if process.returncode != 0:
-                print(f"❌ FFmpeg failed ({process.returncode})")
+                print(f"FFmpeg failed ({process.returncode})")
                 print("CMD:", " ".join(ffmpeg_cmd))
-                if session.get('is_gui_process') and progress_bar:
-                    progress_bar(0, desc="Error ❌")
+                if is_gui and progress_bar:
+                    progress_bar(0, desc="Error")
                 return False
-            print("✅ FFmpeg export complete.")
-            if session.get('is_gui_process') and progress_bar:
-                progress_bar(1.0, desc="Completed ✓")
+            print("FFmpeg export complete.")
+            if is_gui and progress_bar:
+                progress_bar(1.0, desc="Completed")
             return True
         except Exception as e:
             print("Export failed:", e)
             if session.get('is_gui_process'):
-                gr.Progress()(0, desc="Error ❌")
+                gr.Progress()(0, desc="Error")
             return False
 
     try:
