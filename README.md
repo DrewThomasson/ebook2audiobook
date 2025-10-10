@@ -443,7 +443,7 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
 ### Compose Headless
 A headless example is already contained within the `docker-compose.yml` file.
 
-The docker-compose.yml file will act as the base dir for any headless commands
+The `docker-compose.yml` file will act as the base dir for any headless commands added.
 
 
 
