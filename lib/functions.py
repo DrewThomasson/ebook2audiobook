@@ -3655,7 +3655,7 @@ def web_interface(args, ctx):
                                     reset_session(args['session'])
                                     count_file = len(args['ebook_list'])
                                     if count_file > 0:
-                                        msg = f"{os.path.basename(file)}: converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                        msg = f"{os.path.basename(file)}| converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
                                         yield gr.update(value=msg), gr.update()
                                     else:
                                         msg = 'Conversion successful!'
@@ -3983,7 +3983,7 @@ def web_interface(args, ctx):
                         const filenameCell = row.querySelector("td.filename");
                         if (filenameCell) {
                             const rowName = normalizeForGradio(filenameCell.getAttribute("aria-label"));
-                            filename = filename.split(":")[0];
+                            filename = filename.split("|")[0];
                             if (rowName === filename) {
                                 row.style.display = "none";
                             }
