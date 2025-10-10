@@ -1567,86 +1567,85 @@ def combine_audio_chapters(id):
     def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file):
         try:
             if session['cancellation_requested']:
-                print('Cancel requested')
+                print("Cancel requested")
                 return False
-            is_gui_process = session.get('is_gui_process', False)
-            if is_gui_process:
+            total_duration = get_audio_duration(ffmpeg_combined_audio)
+            print(f"⏳ Total duration: {total_duration:.2f} s")
+            progress_bar = None
+            if session.get('is_gui_process'):
                 progress_bar = gr.Progress(track_tqdm=False)
-                progress_bar(progress=0.0, desc=f"Exporting → {os.path.basename(ffmpeg_final_file)}")
-            cover_path = None
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
-            if session['output_format'] == 'wav':
-                ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
-            elif session['output_format'] == 'aac':
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
-            elif session['output_format'] == 'flac':
-                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
+                progress_bar(0, desc=f"Exporting → {os.path.basename(ffmpeg_final_file)}")
+            ffmpeg_cmd = [shutil.which("ffmpeg"), "-hide_banner", "-nostats", "-i", ffmpeg_combined_audio]
+            if session["output_format"] == "wav":
+                ffmpeg_cmd += ["-map", "0:a", "-ar", "44100", "-sample_fmt", "s16"]
+            elif session["output_format"] == "aac":
+                ffmpeg_cmd += ["-c:a", "aac", "-b:a", "192k", "-ar", "44100"]
+            elif session["output_format"] == "flac":
+                ffmpeg_cmd += ["-c:a", "flac", "-compression_level", "5", "-ar", "44100", "-sample_fmt", "s16"]
             else:
-                ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
-                if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
-                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
-                elif session['output_format'] == 'mp3':
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
-                elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
-                elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
-                ffmpeg_cmd += ['-map_metadata', '1']
-            ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70', '-strict', 'experimental', '-threads', '1', '-y', ffmpeg_final_file]
-            try:
-                probe = subprocess.run([shutil.which("ffprobe"), "-v", "error", "-show_entries", "format=duration", "-of", "default=noprint_wrappers=1:nokey=1", ffmpeg_combined_audio], capture_output=True, text=True)
-                total_duration = float(probe.stdout.strip())
-            except Exception:
-                total_duration = 0.0
-            process = subprocess.Popen(ffmpeg_cmd, env={}, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding='utf-8', errors='ignore')
-            time_pattern = re.compile(r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})")
-            last_progress = -1
+                ffmpeg_cmd += ["-f", "ffmetadata", "-i", ffmpeg_metadata_file, "-map", "0:a"]
+                if session["output_format"] in ["m4a", "m4b", "mp4", "mov"]:
+                    ffmpeg_cmd += ["-c:a", "aac", "-b:a", "192k", "-ar", "44100", "-movflags", "+faststart+use_metadata_tags"]
+                elif session["output_format"] == "mp3":
+                    ffmpeg_cmd += ["-c:a", "libmp3lame", "-b:a", "192k", "-ar", "44100"]
+                elif session["output_format"] == "webm":
+                    ffmpeg_cmd += ["-c:a", "libopus", "-b:a", "192k", "-ar", "48000"]
+                elif session["output_format"] == "ogg":
+                    ffmpeg_cmd += ["-c:a", "libopus", "-compression_level", "0", "-b:a", "192k", "-ar", "48000"]
+                ffmpeg_cmd += ["-map_metadata", "1"]
+            ffmpeg_cmd += [
+                "-af", "loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70",
+                "-threads", "1",
+                "-progress", "pipe:1",
+                "-y", ffmpeg_final_file
+            ]
+            process = subprocess.Popen(
+                ffmpeg_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True
+            )
+            last_gui_update = 0.0
+            last_print = 0.0
             for line in process.stdout:
-                match = time_pattern.search(line)
-                if match and total_duration > 0:
-                    h, m, s = match.groups()
-                    current_time = int(h) * 3600 + int(m) * 60 + float(s)
-                    percent = min((current_time / total_duration) * 100, 100)
-                    if int(percent) != int(last_progress):
-                        last_progress = percent
-                        if is_gui_process:
-                            progress_bar(progress=percent / 100, desc=f"Exporting {percent:.1f}% → {os.path.basename(ffmpeg_final_file)}")
-                        sys.stdout.write(f"\rExport progress: {percent:.1f}%")
-                        sys.stdout.flush()
-            process.wait(); print()
-            if process.returncode == 0:
-                if is_gui_process:
-                    progress_bar(progress=1.0, desc=f"Completed → {os.path.basename(ffmpeg_final_file)}")
-                print(f"\nCompleted → {ffmpeg_final_file}")
-                if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
-                    if session['cover'] is not None:
-                        cover_path = session['cover']
-                        print(f'Adding cover {cover_path} into the final audiobook file...')
-                        if session['output_format'] == 'mp3':
-                            from mutagen.mp3 import MP3; from mutagen.id3 import ID3, APIC, error
-                            audio = MP3(ffmpeg_final_file, ID3=ID3)
-                            try: audio.add_tags()
-                            except error: pass
-                            with open(cover_path, 'rb') as img:
-                                audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=img.read()))
-                        elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
-                            from mutagen.mp4 import MP4, MP4Cover
-                            audio = MP4(ffmpeg_final_file)
-                            with open(cover_path, 'rb') as f:
-                                cover_data = f.read()
-                            audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
-                        if audio: audio.save()
-                final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
-                proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
-                final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
-                if os.path.exists(proc_vtt_path): shutil.move(proc_vtt_path, final_vtt_path)
-                else: print(f"Warning: VTT file not found → {proc_vtt_path}")
-                return True
-            else:
-                if is_gui_process: progress_bar(progress=0.0, desc=f"Failed → {os.path.basename(ffmpeg_final_file)}")
-                print(f"Failed ({process.returncode}) → {ffmpeg_final_file}"); print(ffmpeg_cmd); return False
+                line = line.strip()
+                if "out_time_ms=" in line:
+                    ms = int(line.split("=")[1])
+                    sec = ms / 1_000_000
+                    if total_duration > 0:
+                        progress_value = min(1.0, sec / total_duration)
+                        if progress_value - last_print >= 0.05:
+                            print(f"\r🎧 Export progress: {progress_value*100:.1f}%", end="", flush=True)
+                            last_print = progress_value
+                        if session.get('is_gui_process') and progress_bar and progress_value - last_gui_update >= 0.01:
+                            progress_bar(progress_value, desc=f"Encoding → {int(progress_value*100)}%")
+                            last_gui_update = progress_value
+                elif "progress=end" in line:
+                    print("\r🎧 Export progress: 100.0% ✓")
+                    if session.get('is_gui_process') and progress_bar:
+                        progress_bar(1.0, desc="Finalizing…")
+
+                elif "error" in line.lower():
+                    print(line)
+            process.wait()
+            print()  # newline
+            if process.returncode != 0:
+                print(f"❌ FFmpeg failed ({process.returncode})")
+                print("CMD:", " ".join(ffmpeg_cmd))
+                if session.get('is_gui_process') and progress_bar:
+                    progress_bar(0, desc="Error ❌")
+                return False
+            print("✅ FFmpeg export complete.")
+            if session.get('is_gui_process') and progress_bar:
+                progress_bar(1.0, desc="Completed ✓")
+            return True
         except Exception as e:
-            DependencyError(e); return False
+            print("Export failed:", e)
+            if session.get('is_gui_process'):
+                gr.Progress()(0, desc="Error ❌")
+            return False
 
     try:
         session = context.get_session(id)
