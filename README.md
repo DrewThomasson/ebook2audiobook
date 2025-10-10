@@ -386,6 +386,9 @@ For example:
 
 ## Docker headless guide
 
+> [!IMPORTANT]
+**For simpler headless setup use the [Compose](#compose-headless).** <br>
+
 - Before you do run this you need to create a dir named "input-folder" in your current dir
   which will be linked, This is where you can put your input files for the docker image to see
 ```bash
@@ -436,6 +439,12 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
     ```
 4. **Access the service:**
   The service will be available at http://localhost:7860.
+
+### Compose Headless
+A headless example is already contained within the `docker-compose.yml` file.
+The docker-compose.yml file will act as the base dir for any headless commands
+
+
 
 
 ## Common Docker Issues
