@@ -18,6 +18,8 @@ services:
     # To update ebook2audiobook to the latest you may have to rebuild  
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here
+    # The dir of this docker-compose.yml file will act as the base dir for any headless commands.
+    # Example Headless: command: ["--headless", "--ebook", "The-Tell-Tale-Heart.epub", "--tts_engine", "yourtts"] # "The-Tell-Tale-Heart.epub" file is located in the same dir as this docker-compose.yml
     tty: true
     stdin_open: true
     ports:
