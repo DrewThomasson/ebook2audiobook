@@ -2034,7 +2034,7 @@ def convert_ebook(args, ctx=None):
                             msg = ''
                             msg_extra = ''
                             vram_dict = VRAMDetector().detect_vram()
-                            total_vram_bytes = vram_info.get('total_vram_bytes', 0)
+                            total_vram_bytes = vram_dict.get('total_vram_bytes', 0)
                             total_vram_gb = total_vram_bytes / (1024 ** 3)
                             if total_vram_gb <= 4:
                                 msg_extra += '<br/>- VRAM capacity could not be detected' if total_vram_gb == 0 else '<br/>VRAM under 4GB'
