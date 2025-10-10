@@ -1488,6 +1488,8 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
         batch_size = 1024
+        start = int(start)
+        end = int(end)
         sentence_files = [
             f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1514,28 +1516,25 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
                 chunk_list.append((txt, out))
             try:
+                # Don't pass 'session' to workers; it's a DictProxy
                 with Pool(cpu_count()) as pool:
-                    results = pool.starmap(assemble_chunks, chunk_list, session)
+                    results = pool.starmap(assemble_chunks, chunk_list)
             except Exception as e:
                 error = f"combine_audio_sentences() multiprocessing error: {e}"
                 print(error)
                 return False
             if not all(results):
-                error = "combine_audio_sentences() One or more chunks failed."
-                print(error)
+                print("combine_audio_sentences() One or more chunks failed.")
                 return False
-            # Final merge
             final_list = os.path.join(tmpdir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
                 for _, chunk_path in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            if assemble_chunks(final_list, chapter_audio_file, session):
-                msg = f'********* Combined block audio file saved in {chapter_audio_file}'
-                print(msg)
+            if assemble_chunks(final_list, chapter_audio_file):
+                print(f'********* Combined block audio file saved in {chapter_audio_file}')
                 return True
             else:
-                error = "combine_audio_sentences() Final merge failed."
-                print(error)
+                print("combine_audio_sentences() Final merge failed.")
                 return False
     except Exception as e:
         DependencyError(e)
