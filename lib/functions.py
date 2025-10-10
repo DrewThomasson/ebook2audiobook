@@ -1483,25 +1483,6 @@ def convert_chapters2audio(id):
 
 def assemble_chunks(txt_file, out_file):
     try:
-        total_duration = 0.0
-        try:
-            with open(txt_file, 'r') as f:
-                for line in f:
-                    if line.strip().startswith("file"):
-                        file_path = line.strip().split("file ")[1].strip().strip("'").strip('"')
-                        if os.path.exists(file_path):
-                            result = subprocess.run(
-                                [shutil.which("ffprobe"), "-v", "error",
-                                 "-show_entries", "format=duration",
-                                 "-of", "default=noprint_wrappers=1:nokey=1", file_path],
-                                capture_output=True, text=True
-                            )
-                            try:
-                                total_duration += float(result.stdout.strip())
-                            except ValueError:
-                                pass
-        except Exception as e:
-            print(f"⚠️ Could not calculate total duration: {e}")
         ffmpeg_cmd = [
             shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
             '-safe', '0', '-f', 'concat', '-i', txt_file,
@@ -1509,41 +1490,27 @@ def assemble_chunks(txt_file, out_file):
         ]
         process = subprocess.Popen(
             ffmpeg_cmd,
+            env={},
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             encoding='utf-8',
             errors='ignore'
         )
-        time_pattern = re.compile(r'time=(\d{2}:\d{2}:\d{2}\.\d{2})')
-        current_time = 0.0
-        last_percent = -1
-        progress_bar = gr.Progress(track_tqdm=False)
-        print(f"🔊 Combining audio → {out_file}")
         for line in process.stdout:
-            match = time_pattern.search(line)
-            if match:
-                h, m, s = match.group(1).split(':')
-                current_time = int(h) * 3600 + int(m) * 60 + float(s)
-                if total_duration > 0:
-                    percent = min((current_time / total_duration) * 100, 100)
-                    if int(percent) != int(last_percent):
-                        last_percent = percent
-                        progress_bar(progress=percent / 100, desc=f"FFmpeg combining... {percent:.1f}%")
-            print(line, end='')
+            print(line, end='')  # Print each line of stdout
         process.wait()
         if process.returncode == 0:
-            progress_bar(progress=1.0, desc="✅ FFmpeg combination complete")
-            print(f"\n✅ Audio combined successfully → {out_file}")
             return True
         else:
-            print(f"❌ FFmpeg exited with code {process.returncode}: {ffmpeg_cmd}")
-            progress_bar(progress=0, desc="❌ FFmpeg failed")
+            error = process.returncode
+            print(error, ffmpeg_cmd)
             return False
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return False
     except Exception as e:
-        print(f"assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}")
+        error = f"assemble_chanks() Error: Failed to process {txt_file} → {out_file}: {e}"
+        print(error)
         return False
 
 def combine_audio_sentences(chapter_audio_file, start, end, session):
@@ -1566,6 +1533,8 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         if not selected_files:
             print('No audio files found in the specified range.')
             return False
+        progress_bar = gr.Progress(track_tqdm=False)
+        progress_bar(progress=0.0, desc="Merging sentence chunks...")
         with tempfile.TemporaryDirectory() as tmpdir:
             chunk_list = []
             for i in range(0, len(selected_files), batch_size):
@@ -1576,29 +1545,29 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                     for file in batch:
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
                 chunk_list.append((txt, out))
-            try:
-                with Pool(cpu_count()) as pool:
-                    results = pool.starmap(assemble_chunks, chunk_list)
-            except Exception as e:
-                error = f"combine_audio_sentences() multiprocessing error: {e}"
-                print(error)
+            total_chunks = len(chunk_list)
+            if total_chunks == 0:
+                print("No chunks to merge.")
                 return False
-            if not all(results):
-                error = "combine_audio_sentences() One or more chunks failed."
-                print(error)
-                return False
-            # Final merge
+            for idx, (txt, out) in enumerate(chunk_list, 1):
+                desc = f"Combining chunk {idx}/{total_chunks}..."
+                progress_bar(progress=(idx - 1) / total_chunks, desc=desc)
+                if not assemble_chunks(txt, out):
+                    print(f"combine_audio_sentences() chunk {idx} failed.")
+                    return False
+                progress_bar(progress=idx / total_chunks, desc=f"Chunk {idx}/{total_chunks} complete")
+            progress_bar(progress=0.0, desc="Merging chunks into chapter file...")
             final_list = os.path.join(tmpdir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
                 for _, chunk_path in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
             if assemble_chunks(final_list, chapter_audio_file):
-                msg = f'********* Combined block audio file saved in {chapter_audio_file}'
-                print(msg)
+                progress_bar(progress=1.0, desc="✅ Chapter audio ready")
+                print(f'********* Combined block audio file saved in {chapter_audio_file}')
                 return True
             else:
-                error = "combine_audio_sentences() Final merge failed."
-                print(error)
+                progress_bar(progress=0.0, desc="❌ Final merge failed")
+                print("combine_audio_sentences() Final merge failed.")
                 return False
     except Exception as e:
         DependencyError(e)
