@@ -1482,35 +1482,79 @@ def convert_chapters2audio(id):
         return False
 
 def assemble_chunks(txt_file, out_file):
+    """
+    Enhanced assemble_chunks() that tracks FFmpeg progress in real-time.
+    Maintains the same function signature and return behavior.
+    """
     try:
+        # Detect total duration of all concatenated files
+        total_duration = 0.0
+        try:
+            with open(txt_file, 'r') as f:
+                for line in f:
+                    if line.strip().startswith("file"):
+                        file_path = line.strip().split("file ")[1].strip().strip("'").strip('"')
+                        if os.path.exists(file_path):
+                            result = subprocess.run(
+                                [shutil.which("ffprobe"), "-v", "error",
+                                 "-show_entries", "format=duration",
+                                 "-of", "default=noprint_wrappers=1:nokey=1", file_path],
+                                capture_output=True, text=True
+                            )
+                            try:
+                                total_duration += float(result.stdout.strip())
+                            except ValueError:
+                                pass
+        except Exception as e:
+            print(f"⚠️ Could not calculate total duration: {e}")
+
         ffmpeg_cmd = [
             shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
             '-safe', '0', '-f', 'concat', '-i', txt_file,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
         ]
+
         process = subprocess.Popen(
             ffmpeg_cmd,
-            env={},
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             encoding='utf-8',
             errors='ignore'
         )
-        for line in process.stdout:
-            print(line, end='')  # Print each line of stdout
-        process.wait()
-        if process.returncode == 0:
-            return True
-        else:
-            error = process.returncode
-            print(error, ffmpeg_cmd)
-            return False
+
+        time_pattern = re.compile(r'time=(\d{2}:\d{2}:\d{2}\.\d{2})')
+        current_time = 0.0
+        last_percent = -1
+
+        print(f"🔊 Combining audio → {out_file}")
+        with gr.Progress(track_tqdm=False) as progress_bar:
+            for line in process.stdout:
+                match = time_pattern.search(line)
+                if match:
+                    h, m, s = match.group(1).split(':')
+                    current_time = int(h) * 3600 + int(m) * 60 + float(s)
+                    if total_duration > 0:
+                        percent = min((current_time / total_duration) * 100, 100)
+                        if int(percent) != int(last_percent):
+                            last_percent = percent
+                            progress_bar(progress=percent / 100, desc=f"Combining audio... {percent:.1f}%")
+                print(line, end='')
+
+            process.wait()
+
+            if process.returncode == 0:
+                progress_bar(progress=1.0, desc="✅ Audio combination complete")
+                print(f"\n✅ Audio combined successfully → {out_file}")
+                return True
+            else:
+                print(f"❌ FFmpeg exited with code {process.returncode}: {ffmpeg_cmd}")
+                return False
+
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return False
     except Exception as e:
-        error = f"assemble_chanks() Error: Failed to process {txt_file} → {out_file}: {e}"
-        print(error)
+        print(f"assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}")
         return False
 
 def combine_audio_sentences(chapter_audio_file, start, end, session):
@@ -3040,7 +3084,7 @@ def web_interface(args, ctx):
             else:
                 return (
                     gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
-                    gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='...')
+                    gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
                 )
 
         def change_gr_audiobook_list(selected, id):
