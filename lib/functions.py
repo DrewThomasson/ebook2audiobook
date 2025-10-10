@@ -1482,12 +1482,7 @@ def convert_chapters2audio(id):
         return False
 
 def assemble_chunks(txt_file, out_file):
-    """
-    Enhanced assemble_chunks() that tracks FFmpeg progress in real-time.
-    Maintains the same function signature and return behavior.
-    """
     try:
-        # Detect total duration of all concatenated files
         total_duration = 0.0
         try:
             with open(txt_file, 'r') as f:
@@ -1527,28 +1522,30 @@ def assemble_chunks(txt_file, out_file):
         last_percent = -1
 
         print(f"🔊 Combining audio → {out_file}")
-        with gr.Progress(track_tqdm=False) as progress_bar:
-            for line in process.stdout:
-                match = time_pattern.search(line)
-                if match:
-                    h, m, s = match.group(1).split(':')
-                    current_time = int(h) * 3600 + int(m) * 60 + float(s)
-                    if total_duration > 0:
-                        percent = min((current_time / total_duration) * 100, 100)
-                        if int(percent) != int(last_percent):
-                            last_percent = percent
-                            progress_bar(progress=percent / 100, desc=f"Combining audio... {percent:.1f}%")
-                print(line, end='')
 
-            process.wait()
+        progress_bar = gr.Progress(track_tqdm=False)
 
-            if process.returncode == 0:
-                progress_bar(progress=1.0, desc="✅ Audio combination complete")
-                print(f"\n✅ Audio combined successfully → {out_file}")
-                return True
-            else:
-                print(f"❌ FFmpeg exited with code {process.returncode}: {ffmpeg_cmd}")
-                return False
+        for line in process.stdout:
+            match = time_pattern.search(line)
+            if match:
+                h, m, s = match.group(1).split(':')
+                current_time = int(h) * 3600 + int(m) * 60 + float(s)
+                if total_duration > 0:
+                    percent = min((current_time / total_duration) * 100, 100)
+                    if int(percent) != int(last_percent):
+                        last_percent = percent
+                        progress_bar(progress=percent / 100, desc=f"Combining audio... {percent:.1f}%")
+            print(line, end='')
+
+        process.wait()
+
+        if process.returncode == 0:
+            progress_bar(progress=1.0, desc="✅ Audio combination complete")
+            print(f"\n✅ Audio combined successfully → {out_file}")
+            return True
+        else:
+            print(f"❌ FFmpeg exited with code {process.returncode}: {ffmpeg_cmd}")
+            return False
 
     except subprocess.CalledProcessError as e:
         DependencyError(e)
