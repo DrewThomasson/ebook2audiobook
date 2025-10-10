@@ -1572,9 +1572,8 @@ def combine_audio_chapters(id):
             total_duration = get_audio_duration(ffmpeg_combined_audio)
             print(f"Total duration: {total_duration:.2f} s")
             is_gui = session.get('is_gui_process', False)
-            progress_bar = None
+            progress_bar = gr.Progress(track_tqdm=False) if is_gui else None
             if is_gui:
-                progress_bar = gr.Progress(track_tqdm=False)
                 progress_bar(0, desc=f"Exporting → {os.path.basename(ffmpeg_final_file)}")
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
             if session['output_format'] == 'wav':
@@ -1611,6 +1610,8 @@ def combine_audio_chapters(id):
                                 last_print = progress_value
                             if is_gui and progress_bar and progress_value - last_gui_update >= 0.01:
                                 progress_bar(progress_value, desc=f"Encoding → {int(progress_value * 100)}%")
+                                sys.stdout.flush()
+                                time.sleep(0.01)
                                 last_gui_update = progress_value
                     except Exception:
                         pass
@@ -1618,6 +1619,7 @@ def combine_audio_chapters(id):
                     print("\rExport progress: 100.0%")
                     if is_gui and progress_bar:
                         progress_bar(1.0, desc='Completed')
+                        sys.stdout.flush()
             process.wait()
             print()
             if process.returncode == 0:
