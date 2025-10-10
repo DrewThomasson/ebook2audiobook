@@ -35,6 +35,7 @@ from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
 
 from lib import *
+from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
@@ -960,67 +961,6 @@ def get_ram():
     vm = psutil.virtual_memory()
     return vm.total // (1024 ** 3)
 
-def get_vram():
-    os_name = platform.system()
-    # NVIDIA (Cross-Platform: Windows, Linux, macOS)
-    try:
-        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
-        nvmlInit()
-        handle = nvmlDeviceGetHandleByIndex(0)  # First GPU
-        info = nvmlDeviceGetMemoryInfo(handle)
-        vram = info.total
-        return int(vram // (1024 ** 3))  # Convert to GB
-    except ImportError:
-        pass
-    except Exception as e:
-        pass
-    # AMD (Windows)
-    if os_name == "Windows":
-        try:
-            cmd = 'wmic path Win32_VideoController get AdapterRAM'
-            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
-            lines = output.stdout.splitlines()
-            vram_values = [int(line.strip()) for line in lines if line.strip().isdigit()]
-            if vram_values:
-                return int(vram_values[0] // (1024 ** 3))
-        except Exception as e:
-            pass
-    # AMD (Linux)
-    if os_name == "Linux":
-        try:
-            cmd = "lspci -v | grep -i 'VGA' -A 12 | grep -i 'preallocated' | awk '{print $2}'"
-            output = subprocess.run(cmd, capture_output=True, text=True, shell=True)
-            if output.stdout.strip().isdigit():
-                return int(output.stdout.strip()) // 1024
-        except Exception as e:
-            pass
-    # Intel (Linux Only)
-    intel_vram_paths = [
-        "/sys/kernel/debug/dri/0/i915_vram_total",  # Intel dedicated GPUs
-        "/sys/class/drm/card0/device/resource0"  # Some integrated GPUs
-    ]
-    for path in intel_vram_paths:
-        if os.path.exists(path):
-            try:
-                with open(path, "r") as f:
-                    vram = int(f.read().strip()) // (1024 ** 3)
-                    return vram
-            except Exception as e:
-                pass
-    # macOS (OpenGL Alternative)
-    if os_name == "Darwin":
-        try:
-            from OpenGL.GL import glGetIntegerv
-            from OpenGL.GLX import GLX_RENDERER_VIDEO_MEMORY_MB_MESA
-            vram = int(glGetIntegerv(GLX_RENDERER_VIDEO_MEMORY_MB_MESA) // 1024)
-            return vram
-        except ImportError:
-            pass
-        except Exception as e:
-            pass
-    msg = 'Could not detect GPU and VRAM Capacity!'
-    return 0
-
 def get_sanitized(str, replacement="_"):
     str = str.replace('&', 'And')
     forbidden_chars = r'[<>:"/\\|?*\x00-\x1F ()]'
@@ -1797,10 +1737,7 @@ def combine_audio_chapters(id):
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
                 all_chapters = list(zip(chapter_files, chapter_titles))
                 generate_ffmpeg_metadata(all_chapters, session, metadata_file, default_audio_proc_format)
-                final_file = os.path.join(
-                    session['audiobooks_dir'],
-                    session['final_name']
-                )
+                final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
                 if export_audio(merged_tmp, metadata_file, final_file):
                     exported_files.append(final_file)
         return exported_files if exported_files else None
@@ -2094,9 +2031,11 @@ def convert_ebook(args, ctx=None):
                             session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                             msg = ''
                             msg_extra = ''
-                            vram_avail = get_vram()
-                            if vram_avail <= 4:
-                                msg_extra += '<br/>- VRAM capacity could not be detected' if vram_avail == 0 else '<br/>VRAM under 4GB'
+                            vram_dict = VRAMDetector().detect_vram()
+                            total_vram_bytes = vram_info.get('total_vram_bytes', 0)
+                            total_vram_gb = total_vram_bytes / (1024 ** 3)
+                            if total_vram_gb <= 4:
+                                msg_extra += '<br/>- VRAM capacity could not be detected' if total_vram_gb == 0 else '<br/>VRAM under 4GB'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
