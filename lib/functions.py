@@ -1490,6 +1490,8 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         batch_size = 1024
         start = int(start)
         end = int(end)
+        is_gui_process = session.get('is_gui_process', False)
+
         sentence_files = [
             f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1514,22 +1516,23 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 with open(txt, 'w') as f:
                     for file in batch:
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
-                chunk_list.append((txt, out))
+                # include is_gui_process for each tuple
+                chunk_list.append((txt, out, is_gui_process))
             try:
                 with Pool(cpu_count()) as pool:
-                    results = pool.starmap(assemble_chunks, chunk_list, session['is_gui_process'])
+                    results = pool.starmap(assemble_chunks, chunk_list)
             except Exception as e:
-                error = f"combine_audio_sentences() multiprocessing error: {e}"
-                print(error)
+                print(f"combine_audio_sentences() multiprocessing error: {e}")
                 return False
             if not all(results):
                 print("combine_audio_sentences() One or more chunks failed.")
                 return False
+
             final_list = os.path.join(tmpdir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
-                for _, chunk_path in chunk_list:
+                for _, chunk_path, _ in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            if assemble_chunks(final_list, chapter_audio_file, session['is_gui_process']):
+            if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
                 print(f'********* Combined block audio file saved in {chapter_audio_file}')
                 return True
             else:
@@ -1755,7 +1758,7 @@ def combine_audio_chapters(id):
                     with Pool(cpu_count()) as pool:
                         results = pool.starmap(assemble_chunks, chunk_list, session['is_gui_process'])
                     if not all(results):
-                        print(f"assemble_segments() One or more chunks failed for part {part_idx+1}.")
+                        print(f"assemble_chunks() One or more chunks failed for part {part_idx+1}.")
                         return None
                     # Final merge for this part
                     combined_chapters_file = os.path.join(
@@ -1767,7 +1770,7 @@ def combine_audio_chapters(id):
                         for _, chunk_path in chunk_list:
                             f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
                     if not assemble_chunks(final_list, combined_chapters_file, session['is_gui_process']):
-                        print(f"assemble_segments() Final merge failed for part {part_idx+1}.")
+                        print(f"assemble_chunks() Final merge failed for part {part_idx+1}.")
                         return None
 
                     metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
@@ -1789,7 +1792,7 @@ def combine_audio_chapters(id):
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
                 if not assemble_chunks(txt, merged_tmp, session['is_gui_process']):
-                    print("assemble_segments() Final merge failed.")
+                    print("assemble_chunks() Final merge failed.")
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
                 all_chapters = list(zip(chapter_files, chapter_titles))
