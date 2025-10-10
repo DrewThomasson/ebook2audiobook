@@ -1575,7 +1575,7 @@ def combine_audio_chapters(id):
             progress_bar = gr.Progress(track_tqdm=False) if is_gui else None
             if is_gui:
                 progress_bar(0, desc=f"Exporting → {os.path.basename(ffmpeg_final_file)}")
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y', '-i', ffmpeg_combined_audio]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
             elif session['output_format'] == 'aac':
@@ -1593,33 +1593,38 @@ def combine_audio_chapters(id):
                 elif session['output_format'] == 'ogg':
                     ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
                 ffmpeg_cmd += ['-map_metadata', '1']
-            ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70', '-threads', '1', '-progress', 'pipe:1', '-y', ffmpeg_final_file]
-            process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True, bufsize=1, universal_newlines=True)
+            ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70', '-threads', '1', ffmpeg_final_file]
+            process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
+            fcntl.fcntl(process.stderr.fileno(), fcntl.F_SETFL, fcntl.fcntl(process.stderr.fileno(), fcntl.F_GETFL) | os.O_NONBLOCK)
+            time_pattern = re.compile(r'time=(\d{2}):(\d{2}):(\d{2}\.\d{2})')
             last_gui_update = 0.0
             last_print = 0.0
-            for line in process.stdout:
-                line = line.strip()
-                if line.startswith('out_time_ms='):
+            while True:
+                ready, _, _ = select.select([process.stderr], [], [], 0.1)
+                if ready:
                     try:
-                        ms = int(line.split('=')[1])
-                        sec = ms / 1_000_000
-                        if total_duration > 0:
-                            progress_value = min(1.0, sec / total_duration)
-                            if progress_value - last_print >= 0.05:
-                                print(f"\rExport progress: {progress_value * 100:.1f}%", end='', flush=True)
-                                last_print = progress_value
-                            if is_gui and progress_bar and progress_value - last_gui_update >= 0.01:
-                                progress_bar(progress_value, desc=f"Encoding → {int(progress_value * 100)}%")
-                                sys.stdout.flush()
-                                time.sleep(0.01)
-                                last_gui_update = progress_value
+                        chunk = process.stderr.read().decode(errors='ignore')
                     except Exception:
-                        pass
-                elif line.startswith('progress=end'):
-                    print("\rExport progress: 100.0%")
-                    if is_gui and progress_bar:
-                        progress_bar(1.0, desc='Completed')
-                        sys.stdout.flush()
+                        chunk = ''
+                    if not chunk:
+                        if process.poll() is not None:
+                            break
+                        continue
+                    for line in chunk.splitlines():
+                        match = time_pattern.search(line)
+                        if match:
+                            h, m, s = match.groups()
+                            current_time = int(h) * 3600 + int(m) * 60 + float(s)
+                            if total_duration > 0:
+                                progress_value = min(1.0, current_time / total_duration)
+                                if progress_value - last_print >= 0.05:
+                                    print(f"\rExport progress: {progress_value * 100:.1f}%", end='', flush=True)
+                                    last_print = progress_value
+                                if is_gui and progress_bar and progress_value - last_gui_update >= 0.01:
+                                    progress_bar(progress_value, desc=f"Encoding → {int(progress_value * 100)}%")
+                                    last_gui_update = progress_value
+                if process.poll() is not None:
+                    break
             process.wait()
             print()
             if process.returncode == 0:
@@ -1651,17 +1656,19 @@ def combine_audio_chapters(id):
                 final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
                 shutil.move(proc_vtt_path, final_vtt_path)
                 print("FFmpeg export complete.")
+                if is_gui and progress_bar:
+                    progress_bar(1.0, desc="Completed")
                 return True
             else:
                 print(f"FFmpeg failed ({process.returncode})")
                 print("CMD:", " ".join(ffmpeg_cmd))
                 if is_gui and progress_bar:
-                    progress_bar(0, desc='Error')
+                    progress_bar(0, desc="Error")
                 return False
         except Exception as e:
             print(f"Export failed: {e}")
             if session.get('is_gui_process'):
-                gr.Progress()(0, desc='Error')
+                gr.Progress()(0, desc="Error")
             return False
 
     try:
