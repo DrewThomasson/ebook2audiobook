@@ -1595,11 +1595,11 @@ def combine_audio_chapters(id):
                     ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
                 ffmpeg_cmd += ['-map_metadata', '1']
             ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70', '-threads', '1', '-y', ffmpeg_final_file]
-            process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, bufsize=1, universal_newlines=True, encoding='utf-8', errors='ignore')
+            process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, bufsize=0, universal_newlines=True, encoding='utf-8', errors='ignore')
             time_pattern = re.compile(r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})")
             last_gui_update = 0.0
             last_print = 0.0
-            for line in process.stderr:
+            for line in iter(process.stderr.readline, ''):
                 line = line.strip()
                 match = time_pattern.search(line)
                 if match and total_duration > 0:
