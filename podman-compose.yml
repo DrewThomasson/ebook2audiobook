@@ -17,7 +17,7 @@ services:
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here
     # The dir of this podman-compose.yml file will act as the base dir for any headless commands.
-    # Example Headless: command: ["--headless", "--ebook", "The-Tell-Tale-Heart.epub", "--tts_engine", "yourtts"] # "The-Tell-Tale-Heart.epub" file is located in the same dir as this podman-compose.yml
+    # Example Headless: command: ["--headless", "--ebook", "./tools/workflow-testing/test1.txt", "--tts_engine", "yourtts"] # "./tools/workflow-testing/test1.txt" file is located in the same dir as this podman-compose.yml
     tty: true
     stdin_open: true
     ports:
