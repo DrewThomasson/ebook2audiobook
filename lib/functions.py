@@ -1594,37 +1594,24 @@ def combine_audio_chapters(id):
                     ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
                 ffmpeg_cmd += ['-map_metadata', '1']
             ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70', '-threads', '1', ffmpeg_final_file]
-            process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, bufsize=0)
-            fcntl.fcntl(process.stderr.fileno(), fcntl.F_SETFL, fcntl.fcntl(process.stderr.fileno(), fcntl.F_GETFL) | os.O_NONBLOCK)
+            process = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True, bufsize=1)
             time_pattern = re.compile(r'time=(\d{2}):(\d{2}):(\d{2}\.\d{2})')
             last_gui_update = 0.0
             last_print = 0.0
-            while True:
-                ready, _, _ = select.select([process.stderr], [], [], 0.1)
-                if ready:
-                    try:
-                        chunk = process.stderr.read().decode(errors='ignore')
-                    except Exception:
-                        chunk = ''
-                    if not chunk:
-                        if process.poll() is not None:
-                            break
-                        continue
-                    for line in chunk.splitlines():
-                        match = time_pattern.search(line)
-                        if match:
-                            h, m, s = match.groups()
-                            current_time = int(h) * 3600 + int(m) * 60 + float(s)
-                            if total_duration > 0:
-                                progress_value = min(1.0, current_time / total_duration)
-                                if progress_value - last_print >= 0.05:
-                                    print(f"\rExport progress: {progress_value * 100:.1f}%", end='', flush=True)
-                                    last_print = progress_value
-                                if is_gui and progress_bar and progress_value - last_gui_update >= 0.01:
-                                    progress_bar(progress_value, desc=f"Encoding → {int(progress_value * 100)}%")
-                                    last_gui_update = progress_value
-                if process.poll() is not None:
-                    break
+            for line in iter(process.stdout.readline, ''):
+                line = line.strip()
+                match = time_pattern.search(line)
+                if match:
+                    h, m, s = match.groups()
+                    current_time = int(h) * 3600 + int(m) * 60 + float(s)
+                    if total_duration > 0:
+                        progress_value = min(1.0, current_time / total_duration)
+                        if progress_value - last_print >= 0.05:
+                            print(f"\rExport progress: {progress_value * 100:.1f}%", end='', flush=True)
+                            last_print = progress_value
+                        if is_gui and progress_bar and progress_value - last_gui_update >= 0.01:
+                            progress_bar(progress_value, desc=f"Encoding → {int(progress_value * 100)}%")
+                            last_gui_update = progress_value
             process.wait()
             print()
             if process.returncode == 0:
