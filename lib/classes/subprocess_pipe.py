@@ -12,11 +12,11 @@ class SubprocessPipe:
     def _update_progress(self, percent):
         sys.stdout.write(f"\rExport progress: {percent:.1f}%")
         sys.stdout.flush()
-        if self.progress_bar:
-            try:
-                self.progress_bar(percent / 100, desc=f"Encoding {percent:.1f}%")
-            except Exception:
-                pass
+        try:
+            self.progress_bar(percent / 100, desc=f"Encoding {percent:.1f}%")
+        except Exception as e:
+            print('error: ', e)
+            pass
 
     def start(self):
         self.process = subprocess.Popen(
