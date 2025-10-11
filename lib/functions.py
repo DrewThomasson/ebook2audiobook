@@ -35,7 +35,7 @@ from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
 
 from lib import *
-from lib.classes.subprocess_thread import SubprocessThread
+from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
@@ -1567,41 +1567,68 @@ def combine_audio_chapters(id):
             print(error)
             return False
 
-def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file):
-    try:
-        if session['cancellation_requested']:
-            print('Cancel requested')
-            return False
-        cover_path = None
-        ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
-        if session['output_format'] == 'wav':
-            ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
-        elif session['output_format'] == 'aac':
-            ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
-        elif session['output_format'] == 'flac':
-            ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
-        else:
-            ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
-            if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
-            elif session['output_format'] == 'mp3':
-                ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
-            elif session['output_format'] == 'webm':
-                ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
-            elif session['output_format'] == 'ogg':
-                ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
-            ffmpeg_cmd += ['-map_metadata', '1']
-        ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70', '-strict', 'experimental', '-threads', '1', '-y', ffmpeg_final_file]
-
-        pipe_runner = SubprocessPipe(ffmpeg_cmd, session=session, total_duration=get_audio_duration(ffmpeg_combined_audio))
-        for line in pipe_runner.start():
-            print(line)
-
-        if session['cancellation_requested']:
-            print('Cancel requested during export')
-            return False
-
-        if os.path.exists(ffmpeg_final_file):
+    def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file):
+        try:
+            if session['cancellation_requested']:
+                print('Cancel requested')
+                return False
+            cover_path = None
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
+            if session['output_format'] == 'wav':
+                ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
+            elif session['output_format'] == 'aac':
+                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
+            elif session['output_format'] == 'flac':
+                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
+            else:
+                ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
+                if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
+                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
+                elif session['output_format'] == 'mp3':
+                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
+                elif session['output_format'] == 'webm':
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
+                elif session['output_format'] == 'ogg':
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
+                ffmpeg_cmd += ['-map_metadata', '1']
+            ffmpeg_cmd += [
+                '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70',
+                '-strict', 'experimental', '-threads', '1',
+                '-progress', 'pipe:1', '-y', ffmpeg_final_file
+            ]
+            total_duration = get_audio_duration(ffmpeg_combined_audio)
+            print(f'Total duration: {total_duration:.2f} s')
+            progress_bar = None
+            if session.get('is_gui_process'):
+                progress_bar = gr.Progress(track_tqdm=False)
+                progress_bar(0.0, desc=f'Exporting → {os.path.basename(ffmpeg_final_file)}')
+            pipe_runner = SubprocessPipe(ffmpeg_cmd, session=session, total_duration=total_duration)
+            last_terminal_update = 0.0
+            last_gui_update = 0.0
+            for line in pipe_runner.start():
+                if 'out_time_ms=' in line:
+                    try:
+                        ms = int(line.split('=')[1])
+                        sec = ms / 1_000_000
+                        if total_duration > 0:
+                            progress = min(sec / total_duration, 1.0)
+                            if progress - last_terminal_update >= 0.05:
+                                print(f'\rExport progress: {progress*100:.1f}%', end='', flush=True)
+                                last_terminal_update = progress
+                            if progress_bar and session.get('is_gui_process') and progress - last_gui_update >= 0.01:
+                                progress_bar(progress, desc=f'Exporting {int(progress*100)}%')
+                                last_gui_update = progress
+                    except Exception:
+                        pass
+                elif 'progress=end' in line:
+                    if progress_bar:
+                        progress_bar(1.0, desc='Completed')
+                    print('\rExport progress: 100.0%')
+            if pipe_runner.process and pipe_runner.process.returncode != 0:
+                print(f'Export failed with code {pipe_runner.process.returncode}')
+                if progress_bar:
+                    progress_bar(0.0, desc='Failed')
+                return False
             if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                 if session['cover'] is not None:
                     cover_path = session['cover']
@@ -1616,21 +1643,13 @@ def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file)
                         except error:
                             pass
                         with open(cover_path, 'rb') as img:
-                            audio.tags.add(
-                                APIC(
-                                    encoding=3,
-                                    mime='image/jpeg',
-                                    type=3,
-                                    desc='Cover',
-                                    data=img.read()
-                                )
-                            )
+                            audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=img.read()))
                     elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
                         from mutagen.mp4 import MP4, MP4Cover
                         audio = MP4(ffmpeg_final_file)
                         with open(cover_path, 'rb') as f:
                             cover_data = f.read()
-                        audio["covr"] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
+                        audio['covr'] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
                     if audio:
                         audio.save()
             final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
@@ -1638,12 +1657,11 @@ def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file)
             final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
             shutil.move(proc_vtt_path, final_vtt_path)
             return True
-        else:
-            print(f"Export failed: file not found {ffmpeg_final_file}")
+        except Exception as e:
+            print(f'Export failed: {e}')
+            if session.get('is_gui_process'):
+                gr.Progress()(0, desc='Error')
             return False
-    except Exception as e:
-        DependencyError(e)
-        return False
 
     def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file):
         try:
