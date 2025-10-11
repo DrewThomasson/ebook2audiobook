@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
-import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn
+import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn, fcntl
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
