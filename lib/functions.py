@@ -2829,7 +2829,7 @@ def web_interface(args, ctx):
             with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
                 gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
-            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=True)
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible='hidden')
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
@@ -3026,7 +3026,7 @@ def web_interface(args, ctx):
             try:
                 session = context.get_session(id)
                 session['audiobook'] = selected
-                group_visible = True if len(audiobook_options) > 0 else False
+                group_visible = True if len(audiobook_options) > 0 else 'hidden'
                 if selected is not None: 
                     vtt = Path(selected).with_suffix('.vtt')
                     if not os.path.exists(selected) or not os.path.exists(vtt):
