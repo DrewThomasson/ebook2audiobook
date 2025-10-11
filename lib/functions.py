@@ -2071,9 +2071,16 @@ def convert_ebook(args, ctx=None):
                                 if session['device'] == 'cpu':
                                     msg += f"- GPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
                             elif session['device'] == 'mps':
-                                session['device'] = session['device'] if torch.backends.mps.is_available() else 'cpu'
-                                if session['device'] == 'cpu':
-                                    msg += f"- MPS not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
+                                if not torch.backends.mps.is_available():
+                                    session['device'] = 'cpu'
+                                    if not torch.backends.mps.is_built():
+                                        msg += "- MPS not available because the current PyTorch was not built with MPS enabled"
+                                    else:
+                                        msg += "- MPS not available because the current device does not have MPS-enabled"
+                                    msg += f"<br/>- Read {default_gpu_wiki}<br/>- Switching to CPU for now"
+                                else:
+                                    mps_device = torch.device("mps")
+                                    x = torch.ones(5, device="mps")
                             if session['device'] == 'cpu':
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_OFFLOAD_CPU'] = 'True'
