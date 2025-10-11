@@ -1594,12 +1594,8 @@ def combine_audio_chapters(id):
                 elif session['output_format'] == 'ogg':
                     ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
                 ffmpeg_cmd += ['-map_metadata', '1']
-            ffmpeg_cmd += [
-                '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70',
-                '-threads', '1',
-                '-progress', 'pipe:1',
-                ffmpeg_final_file
-            ]
+            ffmpeg_cmd += ['-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70', '-threads', '1', '-progress', 'pipe:1', ffmpeg_final_file]
+            from lib.classes.subprocess_thread import SubprocessThread
             runner = SubprocessThread(ffmpeg_cmd)
             time_pattern = re.compile(r"out_time_ms=(\d+)")
             last_gui_update = 0.0
