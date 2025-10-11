@@ -1448,12 +1448,14 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         if not selected_files:
             print('No audio files found in the specified range.')
             return False
-        with tempfile.TemporaryDirectory(dir=f"{session['process_dir']}/sentence_chunks") as tmpdir:
+        temp_sentence = os.path.join(session['process_dir'], "sentence_chunks")
+        os.makedirs(temp_sentence, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=temp_sentence) as temp_dir:
             chunk_list = []
             for i in range(0, len(selected_files), batch_size):
                 batch = selected_files[i:i + batch_size]
-                txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
-                out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
+                txt = os.path.join(temp_dir, f'chunk_{i:04d}.txt')
+                out = os.path.join(temp_dir, f'chunk_{i:04d}.{default_audio_proc_format}')
                 with open(txt, 'w') as f:
                     for file in batch:
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
@@ -1469,7 +1471,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
                 print("combine_audio_sentences() One or more chunks failed.")
                 return False
 
-            final_list = os.path.join(tmpdir, 'sentences_final.txt')
+            final_list = os.path.join(temp_dir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
                 for _, chunk_path, _ in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
@@ -1700,14 +1702,16 @@ def combine_audio_chapters(id):
                 part_files.append(cur_part)
                 part_chapter_indices.append(cur_indices)
 
+            temp_export = os.path.join(session['process_dir'], "export")
+            os.makedirs(temp_export, exist_ok=True)
             for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                with tempfile.TemporaryDirectory(dir=f"{session['process_dir']}/export") as tmpdir:
+                with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
                     batch_size = 1024
                     chunk_list = []
                     for i in range(0, len(part_file_list), batch_size):
                         batch = part_file_list[i:i + batch_size]
-                        txt = os.path.join(tmpdir, f'chunk_{i:04d}.txt')
-                        out = os.path.join(tmpdir, f'chunk_{i:04d}.{default_audio_proc_format}')
+                        txt = os.path.join(temp_dir, f'chunk_{i:04d}.txt')
+                        out = os.path.join(temp_dir, f'chunk_{i:04d}.{default_audio_proc_format}')
                         with open(txt, 'w') as f:
                             for file in batch:
                                 path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
@@ -1723,7 +1727,7 @@ def combine_audio_chapters(id):
                         session['process_dir'],
                         f"{get_sanitized(session['metadata']['title'])}_part{part_idx+1}.{default_audio_proc_format}" if needs_split else f"{get_sanitized(session['metadata']['title'])}.{default_audio_proc_format}"
                     )
-                    final_list = os.path.join(tmpdir, f'part_{part_idx+1:02d}_final.txt')
+                    final_list = os.path.join(temp_dir, f'part_{part_idx+1:02d}_final.txt')
                     with open(final_list, 'w') as f:
                         for _, chunk_path in chunk_list:
                             f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
@@ -1742,9 +1746,11 @@ def combine_audio_chapters(id):
                     if export_audio(combined_chapters_file, metadata_file, final_file):
                         exported_files.append(final_file)
         else:
-            with tempfile.TemporaryDirectory(dir=f"{session['process_dir']}/export") as tmpdir:
-                txt = os.path.join(tmpdir, 'all_chapters.txt')
-                merged_tmp = os.path.join(tmpdir, f'all.{default_audio_proc_format}')
+            temp_export = os.path.join(session['process_dir'], "export")
+            os.makedirs(temp_export, exist_ok=True)
+            with tempfile.TemporaryDirectory(dir=temp_export) as temp_dir:
+                txt = os.path.join(temp_dir, 'all_chapters.txt')
+                merged_tmp = os.path.join(temp_dir, f'all.{default_audio_proc_format}')
                 with open(txt, 'w') as f:
                     for file in chapter_files:
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
