@@ -16,19 +16,9 @@ class SubprocessThread:
         self.return_code = None
         self.run_time = 0
         self._stop_requested = False
-
     @property
     def _default_popen_kwargs(self):
-        return {
-            "stdout": subprocess.PIPE,
-            "stderr": subprocess.PIPE,
-            "shell": self.shell,
-            "universal_newlines": True,
-            "bufsize": 1,
-            "cwd": self.cwd,
-            "env": self.env,
-        }
-
+        return {"stdout": subprocess.PIPE, "stderr": subprocess.PIPE, "shell": self.shell, "universal_newlines": True, "bufsize": 1, "cwd": self.cwd, "env": self.env}
     def _watch_output(self, process, q):
         for line in iter(process.stderr.readline, ""):
             if line:
@@ -36,7 +26,6 @@ class SubprocessThread:
             if self._stop_requested or process.poll() is not None:
                 break
         process.stderr.close()
-
     def stop(self):
         self._stop_requested = True
         if self.process and self.process.poll() is None:
@@ -47,14 +36,17 @@ class SubprocessThread:
                     self.process.kill()
             except Exception:
                 pass
-
     def start(self, wait_limit=15):
         start_time = time.time()
         pargs = self._default_popen_kwargs
-        # Auto resolve ffmpeg / ffprobe if in PATH
         if isinstance(self.cmd, list):
-            self.cmd = " ".join([shutil.which(x) if shutil.which(x) else x for x in self.cmd])
-        self.process = subprocess.Popen(self.cmd, **pargs)
+            resolved_cmd = []
+            for part in self.cmd:
+                exe = shutil.which(part)
+                resolved_cmd.append(exe if exe else part)
+        else:
+            resolved_cmd = self.cmd
+        self.process = subprocess.Popen(resolved_cmd, **pargs)
         self.returned = None
         last_output = time.time()
         q = queue.Queue()
