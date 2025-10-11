@@ -1,7 +1,8 @@
-import subprocess, threading, os, time, uuid, tempfile, stat
+import subprocess, threading, os, time, uuid, tempfile, fcntl, re, gradio as gr
 
 class SubprocessPipe:
     def __init__(self, cmd, session=None, total_duration=0):
+        self.cmd = cmd
         self.session = session or {}
         self.total_duration = total_duration
         base_dir = self.session.get("process_dir", tempfile.gettempdir())
@@ -10,43 +11,67 @@ class SubprocessPipe:
         self.pipe_path = os.path.join(base_dir, f"subproc_{session_id}.pipe")
         self.process = None
         self._stop_requested = False
-        # prepend stdbuf to disable buffering
-        self.cmd = ["stdbuf", "-oL", "-eL"] + cmd
+        self.progress_bar = gr.Progress(track_tqdm=False) if self.session.get("is_gui_process") else None
 
-    def _ensure_pipe_exists(self):
-        if not os.path.exists(self.pipe_path):
-            os.mkfifo(self.pipe_path)
-        elif not stat.S_ISFIFO(os.stat(self.pipe_path).st_mode):
-            os.remove(self.pipe_path)
-            os.mkfifo(self.pipe_path)
-
-    def _reader(self, q):
-        while not self._stop_requested:
-            self._ensure_pipe_exists()
+    def _create_pipe(self):
+        if os.path.exists(self.pipe_path):
             try:
-                with open(self.pipe_path, "r", encoding="utf-8", errors="ignore") as pipe:
-                    for line in iter(pipe.readline, ""):
-                        if not line.strip():
-                            continue
-                        q.append(line.strip())
-                        if self._stop_requested or self.session.get("cancellation_requested"):
-                            break
+                os.remove(self.pipe_path)
             except Exception:
-                time.sleep(0.05)
+                pass
+        os.mkfifo(self.pipe_path, mode=0o666)
+
+    def _update_progress(self, percent):
+        if self.progress_bar and self.session.get("is_gui_process"):
+            self.progress_bar(percent / 100, desc=f"Encoding {percent:.1f}%")
+        sys.stdout.write(f"\rExport progress: {percent:.1f}%")
+        sys.stdout.flush()
 
     def start(self):
-        self._ensure_pipe_exists()
-        output_queue = []
-        # launch ffmpeg with output redirected to FIFO
-        pipe_writer = open(self.pipe_path, "w")
+        self._create_pipe()
+        read_fd = os.open(self.pipe_path, os.O_RDONLY | os.O_NONBLOCK)
+        write_fd = os.open(self.pipe_path, os.O_WRONLY)
+        os.set_blocking(read_fd, False)
         self.process = subprocess.Popen(
             self.cmd,
-            stdout=pipe_writer,
+            stdout=write_fd,
             stderr=subprocess.STDOUT,
-            bufsize=1,
+            bufsize=0,
             universal_newlines=True
         )
-        t = threading.Thread(target=self._reader, args=(output_queue,))
+        time_pattern = re.compile(r"out_time_ms=(\d+)")
+        def reader():
+            last_update = 0
+            while not self._stop_requested:
+                try:
+                    data = os.read(read_fd, 4096)
+                    if not data:
+                        if self.process.poll() is not None:
+                            break
+                        time.sleep(0.05)
+                        continue
+                    for line in data.decode("utf-8", errors="ignore").splitlines():
+                        line = line.strip()
+                        if not line:
+                            continue
+                        match = time_pattern.search(line)
+                        if match and self.total_duration > 0:
+                            current_time = int(match.group(1)) / 1_000_000
+                            percent = min((current_time / self.total_duration) * 100, 100)
+                            if percent - last_update >= 0.2:
+                                self._update_progress(percent)
+                                last_update = percent
+                        if "progress=end" in line:
+                            self._update_progress(100)
+                            return
+                        if self.session.get("cancellation_requested"):
+                            self.stop()
+                            return
+                except BlockingIOError:
+                    time.sleep(0.05)
+                except Exception:
+                    break
+        t = threading.Thread(target=reader)
         t.daemon = True
         t.start()
         while self.process.poll() is None:
@@ -56,13 +81,12 @@ class SubprocessPipe:
             time.sleep(0.05)
         self._stop_requested = True
         t.join(timeout=2)
-        pipe_writer.close()
+        os.close(read_fd)
+        os.close(write_fd)
         try:
             os.remove(self.pipe_path)
         except Exception:
             pass
-        for line in output_queue:
-            yield line
 
     def stop(self):
         self._stop_requested = True

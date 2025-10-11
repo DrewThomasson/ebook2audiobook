@@ -1598,37 +1598,8 @@ def combine_audio_chapters(id):
             ]
             total_duration = get_audio_duration(ffmpeg_combined_audio)
             print(f'Total duration: {total_duration:.2f} s')
-            progress_bar = None
-            if session.get('is_gui_process'):
-                progress_bar = gr.Progress(track_tqdm=False)
-                progress_bar(0.0, desc=f'Exporting → {os.path.basename(ffmpeg_final_file)}')
-            pipe_runner = SubprocessPipe(ffmpeg_cmd, session=session, total_duration=total_duration)
-            last_terminal_update = 0.0
-            last_gui_update = 0.0
-            for line in pipe_runner.start():
-                if 'out_time_ms=' in line:
-                    try:
-                        ms = int(line.split('=')[1])
-                        sec = ms / 1_000_000
-                        if total_duration > 0:
-                            progress = min(sec / total_duration, 1.0)
-                            if progress - last_terminal_update >= 0.05:
-                                print(f'\rExport progress: {progress*100:.1f}%', end='', flush=True)
-                                last_terminal_update = progress
-                            if progress_bar and session.get('is_gui_process') and progress - last_gui_update >= 0.01:
-                                progress_bar(progress, desc=f'Exporting {int(progress*100)}%')
-                                last_gui_update = progress
-                    except Exception:
-                        pass
-                elif 'progress=end' in line:
-                    if progress_bar:
-                        progress_bar(1.0, desc='Completed')
-                    print('\rExport progress: 100.0%')
-            if pipe_runner.process and pipe_runner.process.returncode != 0:
-                print(f'Export failed with code {pipe_runner.process.returncode}')
-                if progress_bar:
-                    progress_bar(0.0, desc='Failed')
-                return False
+            pipe = SubprocessPipe(ffmpeg_cmd, session=session, total_duration=total_duration)
+            pipe.start()
             if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                 if session['cover'] is not None:
                     cover_path = session['cover']
