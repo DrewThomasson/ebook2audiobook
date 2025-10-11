@@ -16,8 +16,8 @@ services:
     # To update ebook2audiobook to the latest you may have to rebuild  
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here
-    # The dir of this podman-compose.yml file will act as the base dir for any headless commands.
-    # Example Headless: command: ["--headless", "--ebook", "./tools/workflow-testing/test1.txt", "--tts_engine", "yourtts"] # "./tools/workflow-testing/test1.txt" file is located in the same dir as this podman-compose.yml
+    # The dir containing this podman-compose.yml file will be used as the base directory for any commands.
+    # Example Headless Command: ["--headless", "--ebook", "The-Tell-Tale-Heart.epub", "--tts_engine", "yourtts"] # "The-Tell-Tale-Heart.epub" file is located in the same dir as this podman-compose.yml. # More compose headless info can be found at wiki "https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide"
     tty: true
     stdin_open: true
     ports:
