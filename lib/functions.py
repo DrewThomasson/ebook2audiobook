@@ -2547,30 +2547,9 @@ def web_interface(args, ctx):
             #gr_tts_rating {
                 overflow: hidden !important;
             }
-            ///////////////
             #gr_row_voice_player {
                 height: 60px !important;
-            }
-            /* TO REMOVE IF GRADIO > 5.45.0 */
-            #gr_voice_player_hidden {
-                position: absolute !important;
-                visibility: hidden !important;
-                height: 0 !important;
-                width: 0 !important;
-                overflow: hidden !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                width: 60px !important;
-                height: 60px !important;
-            }
-            #gr_voice_player_hidden > div {
-                padding: 0 !important;
-                margin: 0 !important;
-                width: 60px !important;
-                height: 60px !important;
-            }
-            /*  ////////////////// */
-            
+            }  
             #gr_audiobook_player :is(.volume, .empty, .source-selection, .control-wrapper, .settings-wrapper, label) {
                 display: none !important;
             }
@@ -2710,7 +2689,7 @@ def web_interface(args, ctx):
                                 gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                 with gr_row_voice_player:
-                                    gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible=False, show_share_button=True, show_label=False, scale=0, min_width=60)
+                                    gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
                                     gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
