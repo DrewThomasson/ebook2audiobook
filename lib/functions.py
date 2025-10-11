@@ -1448,7 +1448,7 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         if not selected_files:
             print('No audio files found in the specified range.')
             return False
-        with tempfile.TemporaryDirectory() as tmpdir:
+        with tempfile.TemporaryDirectory(dir=f"{session['process_dir']}/sentence_chunks") as tmpdir:
             chunk_list = []
             for i in range(0, len(selected_files), batch_size):
                 batch = selected_files[i:i + batch_size]
@@ -1701,7 +1701,7 @@ def combine_audio_chapters(id):
                 part_chapter_indices.append(cur_indices)
 
             for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
-                with tempfile.TemporaryDirectory() as tmpdir:
+                with tempfile.TemporaryDirectory(dir=f"{session['process_dir']}/export") as tmpdir:
                     batch_size = 1024
                     chunk_list = []
                     for i in range(0, len(part_file_list), batch_size):
@@ -1742,7 +1742,7 @@ def combine_audio_chapters(id):
                     if export_audio(combined_chapters_file, metadata_file, final_file):
                         exported_files.append(final_file)
         else:
-            with tempfile.TemporaryDirectory() as tmpdir:
+            with tempfile.TemporaryDirectory(dir=f"{session['process_dir']}/export") as tmpdir:
                 txt = os.path.join(tmpdir, 'all_chapters.txt')
                 merged_tmp = os.path.join(tmpdir, f'all.{default_audio_proc_format}')
                 with open(txt, 'w') as f:
