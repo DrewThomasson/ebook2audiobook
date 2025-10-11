@@ -441,6 +441,9 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
   The service will be available at http://localhost:7860.
 
 ### Compose Headless
+
+[Headless Wiki for more info](https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide)
+
 A headless example is already contained within the `docker-compose.yml` file.
 
 The `docker-compose.yml` file will act as the base dir for any headless commands added.
