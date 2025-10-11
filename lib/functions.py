@@ -2562,7 +2562,23 @@ def web_interface(args, ctx):
                 background-color: #ebedf0 !important;
                 color: #ffffff !important;
             }
-            /* to remove if gradio >= 5.46.0 */
+            #gr_voice_player_hidden {
+                position: absolute !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                width: 0 !important;
+                overflow: hidden !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 60px !important;
+                height: 60px !important;
+            }
+            #gr_voice_player_hidden > div {
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 60px !important;
+                height: 60px !important;
+            }
             #gr_state_update, #gr_read_data, #gr_write_data,
             #gr_audiobook_vtt, #gr_playback_time {
                 display: none !important;
