@@ -8,11 +8,12 @@ class SubprocessPipe:
         self.process = None
         self._stop_requested = False
         self.progress_bar = gr.Progress(track_tqdm=False) if self.session.get("is_gui_process") else None
-        print(self.progress_bar, self.session.get("is_gui_process"))
 
     def _update_progress(self, percent):
         sys.stdout.write(f"\rExport progress: {percent:.1f}%")
+        print(self.progress_bar, self.session.get("is_gui_process"))
         sys.stdout.flush()
+        print(self.progress_bar, self.session.get("is_gui_process"))
         if self.progress_bar and self.session.get("is_gui_process"):
             try:
                 self.progress_bar(percent / 100, desc=f"Encoding {percent:.1f}%")
