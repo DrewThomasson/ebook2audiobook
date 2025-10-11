@@ -3117,7 +3117,7 @@ def web_interface(args, ctx):
         def change_gr_voice_list(selected, id):
             session = context.get_session(id)
             session['voice'] = next((value for label, value in voice_options if value == selected), None)
-            visible = True if session['voice'] is not None else False
+            visible = True if session['voice'] is not None else 'hidden'
             min_width = 60 if session['voice'] is not None else 0
             return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible), gr.update(visible=visible)
 
