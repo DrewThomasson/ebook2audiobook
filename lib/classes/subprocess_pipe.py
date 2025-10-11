@@ -16,8 +16,11 @@ class SubprocessPipe:
             try:
                 self.progress_bar(percent / 100, desc=f"Encoding {percent:.1f}%")
                 time.sleep(0.01)
-            except Exception:
+            except Exception as e:
+                print(e)
                 pass
+        else:
+            print('self.progress_bar failed')
 
     def start(self):
         self.process = subprocess.Popen(
