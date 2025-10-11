@@ -1599,7 +1599,7 @@ def combine_audio_chapters(id):
             total_duration = get_audio_duration(ffmpeg_combined_audio)
             print(f'Total duration: {total_duration:.2f} s')
             pipe = SubprocessPipe(ffmpeg_cmd, session=session, total_duration=total_duration)
-            pipe.start()  # <--- only call, no loop
+            pipe.start()
             if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                 if session['cover'] is not None:
                     cover_path = session['cover']
