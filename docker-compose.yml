@@ -19,7 +19,7 @@ services:
     entrypoint: ["python", "app.py", "--script_mode", "full_docker"]
     command: [] # <- Extra ebook2audiobook parameters can be added here
     # The dir containing this docker-compose.yml file will be used as the base directory for any commands.
-    # Example Headless Command: ["--headless", "--ebook", "The-Tell-Tale-Heart.epub", "--tts_engine", "yourtts"] # "The-Tell-Tale-Heart.epub" file is located in the same dir as this docker-compose.yml. # More compose headless info can be found at wiki "https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide"
+    # Example Headless || command: ["--headless", "--ebook", "The-Tell-Tale-Heart.epub", "--tts_engine", "yourtts"] # "The-Tell-Tale-Heart.epub" file is located in the same dir as this docker-compose.yml. # More compose headless info can be found at wiki "https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide"
     tty: true
     stdin_open: true
     ports:
