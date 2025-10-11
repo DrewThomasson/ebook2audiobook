@@ -1397,7 +1397,7 @@ def convert_chapters2audio(id):
                             is_sentence = sentence.strip() not in TTS_SML.values()
                             percentage = total_progress * 100
                             t.set_description(f"{percentage:.2f}%")
-                            msg = f" | {sentence}" if is_sentence else f" / {sentence}"
+                            msg = f" : {sentence}" if is_sentence else f" : {sentence}"
                             print(msg)
                         else:
                             return False
@@ -2826,7 +2826,7 @@ def web_interface(args, ctx):
             with gr.Group(elem_id='gr_group_progress', elem_classes=['gr-group-sides-padded']):
                 gr_progress_markdown = gr.Markdown(elem_id='gr_progress_markdown', elem_classes=['gr-markdown'], value='Status')
                 gr_progress = gr.Textbox(elem_id='gr_progress', label='', interactive=False, visible=True)
-            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible='hidden')
+            gr_group_audiobook_list = gr.Group(elem_id='gr_group_audiobook_list', elem_classes=['gr-group-sides-padded'], visible=False)
             with gr_group_audiobook_list:
                 gr_audiobook_markdown = gr.Markdown(elem_id='gr_audiobook_markdown', elem_classes=['gr-markdown'], value='Audiobook')
                 gr_audiobook_vtt = gr.Textbox(elem_id='gr_audiobook_vtt', label='', interactive=False, visible='hidden')
@@ -3023,7 +3023,7 @@ def web_interface(args, ctx):
             try:
                 session = context.get_session(id)
                 session['audiobook'] = selected
-                group_visible = True if len(audiobook_options) > 0 else 'hidden'
+                group_visible = True if len(audiobook_options) > 0 else False
                 if selected is not None: 
                     vtt = Path(selected).with_suffix('.vtt')
                     if not os.path.exists(selected) or not os.path.exists(vtt):
@@ -3598,7 +3598,7 @@ def web_interface(args, ctx):
                                     reset_session(args['session'])
                                     count_file = len(args['ebook_list'])
                                     if count_file > 0:
-                                        msg = f"{os.path.basename(file)}| converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
+                                        msg = f"{os.path.basename(file)} / converted. {len(args['ebook_list'])} ebook(s) conversion remaining..."
                                         yield gr.update(value=msg), gr.update()
                                     else:
                                         msg = 'Conversion successful!'
@@ -3926,7 +3926,7 @@ def web_interface(args, ctx):
                         const filenameCell = row.querySelector("td.filename");
                         if (filenameCell) {
                             const rowName = normalizeForGradio(filenameCell.getAttribute("aria-label"));
-                            filename = filename.split("/")[0];
+                            filename = filename.split("/")[0].trim();
                             if (rowName === filename) {
                                 row.style.display = "none";
                             }
