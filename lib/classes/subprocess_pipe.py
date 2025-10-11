@@ -13,10 +13,13 @@ class SubprocessPipe:
         sys.stdout.write(f"\rExport progress: {percent:.1f}%")
         sys.stdout.flush()
         if self.progress_bar and self.session.get("is_gui_process"):
-            self.progress_bar(percent / 100, desc=f"Encoding {percent:.1f}%")
+            try:
+                self.progress_bar(percent / 100, desc=f"Encoding {percent:.1f}%")
+                time.sleep(0.01)
+            except Exception:
+                pass
 
     def start(self):
-        # Launch ffmpeg with progress to stdout (not stderr)
         self.process = subprocess.Popen(
             self.cmd,
             stdout=subprocess.PIPE,
