@@ -1,76 +1,107 @@
-import subprocess, re, threading, sys
+import subprocess, re, sys, gradio as gr
 
 class SubprocessPipe:
-	def __init__(self, cmd, total_duration=0):
-		self.cmd = cmd
-		self.total_duration = total_duration
-		self.progress = 0.0
-		self.returncode = None
-		self.process = None
-		self._stop_requested = False
+    def __init__(self, cmd, session=None, total_duration=0, on_start=None, on_progress=None, on_complete=None, on_error=None, on_cancel=None):
+        self.cmd = cmd
+        self.session = session or {}
+        self.total_duration = total_duration
+        self.on_start = on_start
+        self.on_progress = on_progress
+        self.on_complete = on_complete
+        self.on_error = on_error
+        self.on_cancel = on_cancel
+        self.process = None
+        self._stop_requested = False
+        self.progress_bar = gr.Progress(track_tqdm=False)
 
-	def _drain_pipe(self, pipe):
-		time_pattern = re.compile(rb"out_time_ms=(\d+)")
-		last_print = 0.0
-		for raw_line in iter(pipe.readline, b''):
-			if self._stop_requested:
-				break
-			line = raw_line.decode(errors="ignore").strip()
-			match = time_pattern.search(raw_line)
-			if match and self.total_duration > 0:
-				current_time = int(match.group(1)) / 1_000_000
-				self.progress = min((current_time / self.total_duration) * 100, 100)
-				# print progress every 0.5%
-				if abs(self.progress - last_print) >= 0.5:
-					sys.stdout.write(f"\rFinal Encoding: {self.progress:.1f}%")
-					sys.stdout.flush()
-					last_print = self.progress
-			elif b"progress=end" in raw_line:
-				self.progress = 100.0
-				sys.stdout.write("\rFinal Encoding: 100.0%\n")
-				sys.stdout.flush()
-				break
-			elif line and not line.startswith("out_time_ms"):
-				# Print other ffmpeg lines (errors, warnings)
-				print(line)
-		pipe.close()
+    def _emit(self, handler, *args):
+        try:
+            if callable(handler):
+                handler(*args)
+        except Exception:
+            pass
+            
+    def on_progress(self, percent):
+        sys.stdout.write(f"\rFinal Encoding: {percent:.1f}%")
+        sys.stdout.flush()
+        try:
+            if self.is_gui:
+                self.progress_bar(percent / 100, desc=f"Final Encoding")
+        except Exception as e:
+            error = f'ProgressHandler on_progress error: {e}"
+            print(error)
+            pass
 
-	def start(self):
-		try:
-			print("Export started")
-			self.process = subprocess.Popen(
-				self.cmd,
-				stdout=subprocess.DEVNULL,
-				stderr=subprocess.PIPE,
-				bufsize=0
-			)
-			threading.Thread(
-				target=self._drain_pipe,
-				args=(self.process.stderr,),
-				daemon=True
-			).start()
+    def on_complete(self, *_):
+        print("\nExport completed successfully")
+        try:
+            if self.is_gui:
+                self.progress_bar(1.0, desc="Export completed")
+        except Exception as e:
+            error = f'ProgressHandler on_complete error: {e}"
+            print(error)
+            pass
 
-			self.process.wait()
-			self.returncode = self.process.returncode
-			if self.returncode == 0:
-				print("\nExport completed successfully")
-			elif not self._stop_requested:
-				print(f"\nExport failed with return code {self.returncode}")
-			return self.returncode
-		except Exception as e:
-			self.returncode = -1
-			print(f"\nSubprocessPipe error: {e}")
-			return self.returncode
+    def on_error(self, err):
+        print(f"\nExport failed: {err}")
+        try:
+            if self.is_gui:
+                self.progress_bar(0.0, desc="Export failed")
+        except Exception:
+            pass
 
-	def stop(self):
-		self._stop_requested = True
-		if self.process and self.process.poll() is None:
-			print("\nExport cancelled")
-			try:
-				self.process.terminate()
-				self.process.wait(timeout=2)
-			except Exception:
-				pass
-			finally:
-				self.returncode = -1
-				self.progress = 0.0
+    def on_cancel(self):
+        print("\nExport cancelled")
+        try:
+            if self.is_gui:
+                self.progress_bar(0.0, desc="Cancelled")
+        except Exception:
+            pass
+
+    def start(self):
+        try:
+            self._emit(self.on_start)
+            self.process = subprocess.Popen(
+                self.cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+                text=False,
+                bufsize=0
+            )
+            time_pattern = re.compile(r"out_time_ms=(\d+)")
+            last_percent = 0.0
+            for raw_line in self.process.stderr:
+                line = raw_line.decode(errors='ignore')
+                match = time_pattern.search(line)
+                if self.session.get("cancellation_requested"):
+                    self.stop()
+                    self._emit(self.on_cancel)
+                    return False
+                match = time_pattern.search(line)
+                if match and self.total_duration > 0:
+                    current_time = int(match.group(1)) / 1_000_000
+                    percent = min((current_time / self.total_duration) * 100, 100)
+                    if abs(percent - last_percent) >= 0.5:
+                        self._emit(self.on_progress, percent)
+                        last_percent = percent
+                elif "progress=end" in line:
+                    self._emit(self.on_progress, 100)
+                    break
+            self.process.wait()
+            if self.process.returncode == 0:
+                self._emit(self.on_complete, True)
+                return True
+            else:
+                self._emit(self.on_error, self.process.returncode)
+                return False
+        except Exception as e:
+            self._emit(self.on_error, e)
+            return False
+
+    def stop(self):
+        self._stop_requested = True
+        if self.process and self.process.poll() is None:
+            try:
+                self.process.terminate()
+            except Exception:
+                pass
