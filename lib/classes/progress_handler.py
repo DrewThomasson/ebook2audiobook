@@ -10,7 +10,7 @@ class ProgressHandler:
                 self.progress_bar = gr.Progress(track_tqdm=False)
                 self.progress_bar(0, desc="Preparing export…")
             except Exception as e:
-                error = f'ProgressHandler __init__ error: {e}"
+                error = f'ProgressHandler __init__ error: {e}'
                 print(error)
                 self.progress_bar = None
 
@@ -20,7 +20,7 @@ class ProgressHandler:
             if self.is_gui:
                 self.progress_bar(0, desc="Starting export…")
         except Exception as e:
-            error = f'ProgressHandler on_start error: {e}"
+            error = f'ProgressHandler on_start error: {e}'
             print(error)
             pass
 
@@ -31,7 +31,7 @@ class ProgressHandler:
             if self.is_gui:
                 self.progress_bar(percent / 100, desc=f"Final Encoding")
         except Exception as e:
-            error = f'ProgressHandler on_progress error: {e}"
+            error = f'ProgressHandler on_progress error: {e}'
             print(error)
             pass
 
@@ -41,7 +41,7 @@ class ProgressHandler:
             if self.is_gui:
                 self.progress_bar(1.0, desc="Export completed")
         except Exception as e:
-            error = f'ProgressHandler on_complete error: {e}"
+            error = f'ProgressHandler on_complete error: {e}'
             print(error)
             pass
 
@@ -51,7 +51,7 @@ class ProgressHandler:
             if self.is_gui:
                 self.progress_bar(0.0, desc="Export failed")
         except Exception as e:
-            error = f'ProgressHandler on_error error: {e}"
+            error = f'ProgressHandler on_error error: {e}'
             print(error)
             pass
 
@@ -61,6 +61,6 @@ class ProgressHandler:
             if self.is_gui:
                 self.progress_bar(0.0, desc="Cancelled")
         except Exception:
-            error = f'ProgressHandler on_cancel error: {e}"
+            error = f'ProgressHandler on_cancel error: {e}'
             print(error)
             pass
