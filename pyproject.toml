@@ -32,7 +32,7 @@ dependencies = [
 	"iso-639",
 	"jieba",
 	"soynlp",
-	"pythainlp">
+	"pythainlp",
 	"pydub",
 	"pyannote-audio",
 	"mutagen",
@@ -61,4 +61,5 @@ classifiers = [
 scripts = { "ebook2audiobook" = "app:main" }
 
 [project.urls]
+
 "Homepage" = "https://github.com/DrewThomasson/ebook2audiobook"

@@ -16,9 +16,8 @@ RUN apt-get update && \
 # Install Rust compiler
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-# Copy the application
+# Set the working directory
 WORKDIR /app
-COPY . /app
 # Install UniDic (non-torch dependent)
 RUN pip install --no-cache-dir unidic-lite unidic && \
     python3 -m unidic download && \
@@ -115,6 +114,8 @@ RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
         echo "Skipping XTTS test run as requested."; \
     fi
 
+# Copy the application
+COPY . /app
 
 # Expose the required port
 EXPOSE 7860
