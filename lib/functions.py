@@ -1668,7 +1668,7 @@ def combine_audio_chapters(id):
                     '-filter_complex_threads', '0',
                     '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
                     '-threads', '0',
-                    '-progress', 'pipe:2',
+                    '-progress', 'pipe:1',
                     '-y', ffmpeg_final_file
                 ]
             total_duration = get_audio_duration(ffmpeg_combined_audio)
