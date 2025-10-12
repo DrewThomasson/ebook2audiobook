@@ -21,11 +21,11 @@ class ProgressHandler:
             pass
 
     def on_progress(self, percent):
-        sys.stdout.write(f"\rExport progress: {percent:.1f}%")
+        sys.stdout.write(f"\rFinal Encoding: {percent:.1f}%")
         sys.stdout.flush()
         try:
             if self.is_gui and self.progress_bar is not None:
-                self.progress_bar(percent / 100, desc=f"Encoding {percent:.1f}%")
+                self.progress_bar(percent / 100, desc=f"Final Encoding")
         except Exception:
             pass
 
