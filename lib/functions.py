@@ -1610,39 +1610,40 @@ def combine_audio_chapters(id):
                 on_cancel=handler.on_cancel
             )
             pipe.start()
-            if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
-                if session['cover'] is not None:
-                    cover_path = session['cover']
-                    msg = f'Adding cover {cover_path} into the final audiobook file...'
-                    print(msg)
-                    if session['output_format'] == 'mp3':
-                        from mutagen.mp3 import MP3
-                        from mutagen.id3 import ID3, APIC, error
-                        audio = MP3(ffmpeg_final_file, ID3=ID3)
-                        try:
-                            audio.add_tags()
-                        except error:
-                            pass
-                        with open(cover_path, 'rb') as img:
-                            audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=img.read()))
-                    elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
-                        from mutagen.mp4 import MP4, MP4Cover
-                        audio = MP4(ffmpeg_final_file)
-                        with open(cover_path, 'rb') as f:
-                            cover_data = f.read()
-                        audio['covr'] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
-                    if audio:
-                        audio.save()
-            final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
-            proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
-            final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
-            shutil.move(proc_vtt_path, final_vtt_path)
-            return True
+            if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
+                if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
+                    if session['cover'] is not None:
+                        cover_path = session['cover']
+                        msg = f'Adding cover {cover_path} into the final audiobook file...'
+                        print(msg)
+                        if session['output_format'] == 'mp3':
+                            from mutagen.mp3 import MP3
+                            from mutagen.id3 import ID3, APIC, error
+                            audio = MP3(ffmpeg_final_file, ID3=ID3)
+                            try:
+                                audio.add_tags()
+                            except error:
+                                pass
+                            with open(cover_path, 'rb') as img:
+                                audio.tags.add(APIC(encoding=3, mime='image/jpeg', type=3, desc='Cover', data=img.read()))
+                        elif session['output_format'] in ['mp4', 'm4a', 'm4b']:
+                            from mutagen.mp4 import MP4, MP4Cover
+                            audio = MP4(ffmpeg_final_file)
+                            with open(cover_path, 'rb') as f:
+                                cover_data = f.read()
+                            audio['covr'] = [MP4Cover(cover_data, imageformat=MP4Cover.FORMAT_JPEG)]
+                        if audio:
+                            audio.save()
+                final_vtt = f"{Path(ffmpeg_final_file).stem}.vtt"
+                proc_vtt_path = os.path.join(session['process_dir'], final_vtt)
+                final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
+                shutil.move(proc_vtt_path, final_vtt_path)
+                return True
         except Exception as e:
             print(f'Export failed: {e}')
             if session.get('is_gui_process'):
                 gr.Progress()(0, desc='Error')
-            return False
+        return False
 
     try:
         session = context.get_session(id)
