@@ -1651,7 +1651,7 @@ def combine_audio_chapters(id):
                 session=session,
                 total_duration=total_duration,
                 on_progress=on_progress,
-                on_error=on_error,
+                on_error=on_error
             )
             pipe.start()
             if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
