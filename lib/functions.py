@@ -3053,6 +3053,7 @@ def web_interface(args, ctx):
                     if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
                         return gr.update(value=None), gr.update(value=None)
                     session['playback_time'] = 0
+                    print(session['audiobook'])
                     audio_info = mediainfo(session['audiobook'])
                     session['duration'] = float(audio_info['duration'])
                     with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
