@@ -1,4 +1,4 @@
-import subprocess, re
+import subprocess, re, sys, gradio as gr
 
 class SubprocessPipe:
     def __init__(self, cmd, session=None, total_duration=0, on_start=None, on_progress=None, on_complete=None, on_error=None, on_cancel=None):
