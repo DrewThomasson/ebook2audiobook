@@ -1639,11 +1639,15 @@ def combine_audio_chapters(id):
                 final_vtt_path = os.path.join(session['audiobooks_dir'], final_vtt)
                 shutil.move(proc_vtt_path, final_vtt_path)
                 return True
+            else:
+                error = f"{Path(ffmpeg_final_file).name} is corrupted or does not exist"
+                print(error)
         except Exception as e:
-            print(f'Export failed: {e}')
+            error = f'Export failed: {e}'
+            print(error)
             if session.get('is_gui_process'):
-                gr.Progress()(0, desc='Error')
-        return False
+                gr.Progress()(0, desc=error)
+            return False
 
     try:
         session = context.get_session(id)
