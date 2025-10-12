@@ -11,10 +11,10 @@ class SubprocessPipe:
 
     def _update_progress(self, percent):
         try:
-            sys.stdout.write(f"\rExport progress: {percent:.1f}%")
+            sys.stdout.write(f"\Final encoding progress: {percent:.1f}%")
             sys.stdout.flush()
             if self.session.get("is_gui_process"):
-                self.progress_bar(percent / 100, desc=f"Encoding {percent:.1f}%")
+                self.progress_bar(percent / 100, desc=f"Final encoding")
         except Exception:
             pass
 
