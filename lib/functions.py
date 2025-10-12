@@ -1618,8 +1618,9 @@ def combine_audio_chapters(id):
             codec_info = probe.stdout.strip().splitlines()
             input_codec = codec_info[0] if len(codec_info) > 0 else None
             input_rate = codec_info[1] if len(codec_info) > 1 else None
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-i', ffmpeg_combined_audio]
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
             target_codec, target_rate = None, None
+
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
                 target_rate = '44100'
@@ -1667,7 +1668,7 @@ def combine_audio_chapters(id):
                     '-filter_complex_threads', '0',
                     '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
                     '-threads', '0',
-                    '-progress', 'pipe:1',
+                    '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
             total_duration = get_audio_duration(ffmpeg_combined_audio)
