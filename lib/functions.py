@@ -2038,7 +2038,7 @@ def convert_ebook(args, ctx=None):
                             total_vram_bytes = vram_dict.get('total_vram_bytes', 0)
                             total_vram_gb = total_vram_bytes / (1024 ** 3)
                             if total_vram_gb <= 4:
-                                msg_extra += '<br/>- VRAM capacity could not be detected. restrict to 4GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}'
+                                msg_extra += '<br/>- VRAM not detected! restrict to 4GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
