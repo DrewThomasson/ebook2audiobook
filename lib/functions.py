@@ -3045,19 +3045,19 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(visible=group_visible)
 
-        def update_audiobook_player(selected, id):
+        def update_audiobook_player(id):
             try:
                 session = context.get_session(id)
-                if selected is not None: 
-                    vtt = Path(selected).with_suffix('.vtt')
-                    if not os.path.exists(selected) or not os.path.exists(vtt):
+                if session['audiobook'] is not None: 
+                    vtt = Path(session['audiobook']).with_suffix('.vtt')
+                    if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
                         return gr.update(value=None), gr.update(value=None)
                     session['playback_time'] = 0
-                    audio_info = mediainfo(selected)
+                    audio_info = mediainfo(session['audiobook'])
                     session['duration'] = float(audio_info['duration'])
                     with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
                         vtt_content = f.read()
-                    return gr.update(value=selected), gr.update(value=vtt_content)
+                    return gr.update(value=session['audiobook']), gr.update(value=vtt_content)
             except Exception as e:
                 error = f'update_audiobook_player(): {e}'
                 alert_exception(error)
@@ -3976,7 +3976,7 @@ def web_interface(args, ctx):
             outputs=[gr_group_audiobook_list]
         ).then(
             fn=update_audiobook_player,
-            inputs=[gr_audiobook_list, gr_session],
+            inputs=[gr_session],
             outputs=[gr_audiobook_player, gr_audiobook_vtt]
         ).then(
             fn=None,
