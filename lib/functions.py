@@ -1578,23 +1578,23 @@ def combine_audio_chapters(id):
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
             elif session['output_format'] == 'aac':
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
+                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
             elif session['output_format'] == 'flac':
                 ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
             else:
                 ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
-                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
+                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
                 elif session['output_format'] == 'mp3':
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
+                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
                 elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-ar', '48000']
                 elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '128k', '-ar', '48000']
                 ffmpeg_cmd += ['-map_metadata', '1']
             ffmpeg_cmd += [
                 '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70',
-                '-strict', 'experimental', '-threads', '0',
+                '-strict', 'experimental', '-threads', '4',
                 '-progress', 'pipe:1', '-y', ffmpeg_final_file
             ]
             total_duration = get_audio_duration(ffmpeg_combined_audio)
