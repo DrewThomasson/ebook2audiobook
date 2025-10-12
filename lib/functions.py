@@ -1583,31 +1583,6 @@ def combine_audio_chapters(id):
                 print('Cancel requested')
                 return False
             cover_path = None
-            """
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
-            if session['output_format'] == 'wav':
-                ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
-            elif session['output_format'] == 'aac':
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
-            elif session['output_format'] == 'flac':
-                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
-            else:
-                ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
-                if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
-                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
-                elif session['output_format'] == 'mp3':
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
-                elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
-                elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
-                ffmpeg_cmd += ['-map_metadata', '1']
-            ffmpeg_cmd += [
-                '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70',
-                '-strict', 'experimental', '-threads', '4',
-                '-progress', 'pipe:1', '-y', ffmpeg_final_file
-            ]
-            """
             ffprobe_cmd = [
                 shutil.which('ffprobe'), '-v', 'error', '-select_streams', 'a:0',
                 '-show_entries', 'stream=codec_name,sample_rate,sample_fmt',
@@ -1671,16 +1646,12 @@ def combine_audio_chapters(id):
                     '-y', ffmpeg_final_file
                 ]
             total_duration = get_audio_duration(ffmpeg_combined_audio)
-            handler = ProgressHandler(session)
             pipe = SubprocessPipe(
                 ffmpeg_cmd,
                 session=session,
                 total_duration=total_duration,
-                on_start=handler.on_start,
-                on_progress=handler.on_progress,
-                on_complete=handler.on_complete,
-                on_error=handler.on_error,
-                on_cancel=handler.on_cancel
+                on_progress=on_progress,
+                on_error=on_error,
             )
             pipe.start()
             if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
