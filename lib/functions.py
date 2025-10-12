@@ -2038,7 +2038,7 @@ def convert_ebook(args, ctx=None):
                             total_vram_bytes = vram_dict.get('total_vram_bytes', 0)
                             total_vram_gb = total_vram_bytes / (1024 ** 3)
                             if total_vram_gb <= 4:
-                                msg_extra += '<br/>- VRAM capacity could not be detected' if total_vram_gb == 0 else '<br/>VRAM under 4GB'
+                                msg_extra += '<br/>- VRAM capacity could not be detected. restrict to 4GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
@@ -3003,13 +3003,14 @@ def web_interface(args, ctx):
 
         def restore_audiobook_player(audiobook):
             try:
+                visible = True if audiobook is not None else False
                 return (
-                    gr.update(value=audiobook), gr.update(active=True)
+                    gr.update(visible=visible), gr.update(value=audiobook), gr.update(active=True)
                 )
             except Exception as e:
                 error = f'restore_audiobook_player(): {e}'
                 alert_exception(error)
-                outputs = tuple([gr.update() for _ in range(2)])
+                outputs = tuple([gr.update() for _ in range(3)])
                 return outputs
 
         def refresh_interface(id):
@@ -4137,7 +4138,7 @@ def web_interface(args, ctx):
             fn=restore_audiobook_player,
             inputs=[gr_audiobook_list],
             outputs=[
-                gr_audiobook_player, gr_timer
+                gr_group_audiobook_list, gr_audiobook_player, gr_timer
             ]
         ).then(
             fn=lambda session: update_gr_glass_mask(attr=['gr-glass-mask', 'hide']) if session else gr.update(),
