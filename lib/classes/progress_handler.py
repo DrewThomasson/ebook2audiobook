@@ -28,6 +28,7 @@ class ProgressHandler:
         sys.stdout.write(f"\rFinal Encoding: {percent:.1f}%")
         sys.stdout.flush()
         try:
+            print(self.is_gui)
             if self.is_gui:
                 self.progress_bar(percent / 100, desc=f"Final Encoding")
         except Exception as e:
