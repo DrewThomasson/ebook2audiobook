@@ -1,5 +1,15 @@
+import torch
+
+_original_load = torch.load
+
+def patched_torch_load(*args, **kwargs):
+	kwargs.setdefault("weights_only", False)
+	return _original_load(*args, **kwargs)
+
+torch.load = patched_torch_load
+
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
-import numpy as np, regex as re, soundfile as sf, torch, torchaudio
+import numpy as np, regex as re, soundfile as sf, torchaudio
 
 from huggingface_hub import hf_hub_download
 from pathlib import Path

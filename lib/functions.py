@@ -5,8 +5,18 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
+import torch
+
+_original_load = torch.load
+
+def patched_torch_load(*args, **kwargs):
+	kwargs.setdefault("weights_only", False)
+	return _original_load(*args, **kwargs)
+
+torch.load = patched_torch_load
+
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
-import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, torch, uvicorn
+import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -1574,29 +1584,92 @@ def combine_audio_chapters(id):
                 print('Cancel requested')
                 return False
             cover_path = None
+            """
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio]
             if session['output_format'] == 'wav':
                 ffmpeg_cmd += ['-map', '0:a', '-ar', '44100', '-sample_fmt', 's16']
             elif session['output_format'] == 'aac':
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100']
+                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100']
             elif session['output_format'] == 'flac':
                 ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', '44100', '-sample_fmt', 's16']
             else:
                 ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
-                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '128k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
+                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-movflags', '+faststart+use_metadata_tags']
                 elif session['output_format'] == 'mp3':
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100']
+                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100']
                 elif session['output_format'] == 'webm':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '128k', '-ar', '48000']
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', '48000']
                 elif session['output_format'] == 'ogg':
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '128k', '-ar', '48000']
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', '48000']
                 ffmpeg_cmd += ['-map_metadata', '1']
             ffmpeg_cmd += [
                 '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70',
                 '-strict', 'experimental', '-threads', '4',
                 '-progress', 'pipe:1', '-y', ffmpeg_final_file
             ]
+            """
+            ffprobe_cmd = [
+                shutil.which('ffprobe'), '-v', 'error', '-select_streams', 'a:0',
+                '-show_entries', 'stream=codec_name,sample_rate,sample_fmt',
+                '-of', 'default=nokey=1:noprint_wrappers=1', ffmpeg_combined_audio
+            ]
+            probe = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+            codec_info = probe.stdout.strip().splitlines()
+            input_codec = codec_info[0] if len(codec_info) > 0 else None
+            input_rate = codec_info[1] if len(codec_info) > 1 else None
+            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-i', ffmpeg_combined_audio]
+            target_codec, target_rate = None, None
+            if session['output_format'] == 'wav':
+                target_codec = 'pcm_s16le'
+                target_rate = '44100'
+                ffmpeg_cmd += ['-map', '0:a', '-ar', target_rate, '-sample_fmt', 's16']
+
+            elif session['output_format'] == 'aac':
+                target_codec = 'aac'
+                target_rate = '44100'
+                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart']
+
+            elif session['output_format'] == 'flac':
+                target_codec = 'flac'
+                target_rate = '44100'
+                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', target_rate]
+            else:
+                ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
+                if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
+                    target_codec = 'aac'
+                    target_rate = '44100'
+                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart+use_metadata_tags']
+                elif session['output_format'] == 'mp3':
+                    target_codec = 'mp3'
+                    target_rate = '44100'
+                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', target_rate]
+                elif session['output_format'] == 'webm':
+                    target_codec = 'opus'
+                    target_rate = '48000'
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', target_rate]
+                elif session['output_format'] == 'ogg':
+                    target_codec = 'opus'
+                    target_rate = '48000'
+                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
+                ffmpeg_cmd += ['-map_metadata', '1']
+            
+            if input_codec == target_codec and input_rate == target_rate:
+                ffmpeg_cmd = [
+                    shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio,
+                    '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
+                    '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
+                    '-y', ffmpeg_final_file
+                ]
+            else:
+                ffmpeg_cmd += [
+                    '-filter_threads', '0',
+                    '-filter_complex_threads', '0',
+                    '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
+                    '-threads', '0',
+                    '-progress', 'pipe:1',
+                    '-y', ffmpeg_final_file
+                ]
             total_duration = get_audio_duration(ffmpeg_combined_audio)
             handler = ProgressHandler(session)
             pipe = SubprocessPipe(
@@ -2043,7 +2116,7 @@ def convert_ebook(args, ctx=None):
                             total_vram_bytes = vram_dict.get('total_vram_bytes', 0)
                             total_vram_gb = total_vram_bytes / (1024 ** 3)
                             if total_vram_gb <= 4:
-                                msg_extra += '<br/>- VRAM not detected! restrict to 4GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}'
+                                msg_extra += '<br/>- VRAM not detected! restrict to 4GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}GB'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
