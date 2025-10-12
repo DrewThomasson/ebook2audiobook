@@ -1594,7 +1594,7 @@ def combine_audio_chapters(id):
                 ffmpeg_cmd += ['-map_metadata', '1']
             ffmpeg_cmd += [
                 '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5,afftdn=nf=-70',
-                '-strict', 'experimental', '-threads', '1',
+                '-strict', 'experimental', '-threads', '0',
                 '-progress', 'pipe:1', '-y', ffmpeg_final_file
             ]
             total_duration = get_audio_duration(ffmpeg_combined_audio)
