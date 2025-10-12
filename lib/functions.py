@@ -3051,16 +3051,25 @@ def web_interface(args, ctx):
                 if session['audiobook'] is not None: 
                     vtt = Path(session['audiobook']).with_suffix('.vtt')
                     if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
+                        error = f"{Path(session['audiobook']).name} does not exist!"
+                        print(error)
+                        alert_exception(error)
                         return gr.update(value=None), gr.update(value=None)
                     session['playback_time'] = 0
-                    print(session['audiobook'])
                     audio_info = mediainfo(session['audiobook'])
-                    session['duration'] = float(audio_info['duration'])
-                    with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
-                        vtt_content = f.read()
-                    return gr.update(value=session['audiobook']), gr.update(value=vtt_content)
+                    duration = audio_info.get('duration', False)
+                    if duration:
+                        session['duration'] = float(audio_info['duration'])
+                        with open(vtt, "r", encoding="utf-8-sig", errors="replace") as f:
+                            vtt_content = f.read()
+                        return gr.update(value=session['audiobook']), gr.update(value=vtt_content)
+                    else:
+                        error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
+                        print(error)
+                        alert_exception(error)
             except Exception as e:
                 error = f'update_audiobook_player(): {e}'
+                print(error)
                 alert_exception(error)
             return gr.update(value=None), gr.update(value=None)
      
