@@ -3,34 +3,27 @@ import sys, gradio as gr
 class ProgressHandler:
     def __init__(self, session):
         self.session = session
-        self.is_gui = bool(session.get("is_gui_process"))
+        self.is_gui = session.get("is_gui_process")
         self.progress_bar = None
-        if self.is_gui:
-            try:
-                self.progress_bar = gr.Progress(track_tqdm=False)
-                self.progress_bar(0, desc="Preparing export…")
-            except Exception as e:
-                error = f'ProgressHandler __init__ error: {e}'
-                print(error)
-                self.progress_bar = None
 
     def on_start(self):
         print("Export started")
         try:
             if self.is_gui:
+                self.progress_bar = gr.Progress(track_tqdm=False)
                 self.progress_bar(0, desc="Starting export…")
         except Exception as e:
             error = f'ProgressHandler on_start error: {e}'
             print(error)
+            self.progress_bar = None
             pass
 
     def on_progress(self, percent):
         sys.stdout.write(f"\rFinal Encoding: {percent:.1f}%")
         sys.stdout.flush()
         try:
-            print(self.is_gui)
             if self.is_gui:
-                self.progress_bar(percent / 100, desc=f"Final Encoding")
+                self.progress_bar(percent / 100, desc="Final Encoding")
         except Exception as e:
             error = f'ProgressHandler on_progress error: {e}'
             print(error)
