@@ -15,7 +15,7 @@ class ProgressHandler:
     def on_start(self):
         print("Export started")
         try:
-            if self.is_gui and self.progress_bar is not None:
+            if self.is_gui:
                 self.progress_bar(0, desc="Starting export…")
         except Exception:
             pass
@@ -24,7 +24,7 @@ class ProgressHandler:
         sys.stdout.write(f"\rFinal Encoding: {percent:.1f}%")
         sys.stdout.flush()
         try:
-            if self.is_gui and self.progress_bar is not None:
+            if self.is_gui:
                 self.progress_bar(percent / 100, desc=f"Final Encoding")
         except Exception:
             pass
@@ -32,7 +32,7 @@ class ProgressHandler:
     def on_complete(self, *_):
         print("\nExport completed successfully")
         try:
-            if self.is_gui and self.progress_bar is not None:
+            if self.is_gui:
                 self.progress_bar(1.0, desc="Export completed")
         except Exception:
             pass
@@ -40,7 +40,7 @@ class ProgressHandler:
     def on_error(self, err):
         print(f"\nExport failed: {err}")
         try:
-            if self.is_gui and self.progress_bar is not None:
+            if self.is_gui:
                 self.progress_bar(0.0, desc="Export failed")
         except Exception:
             pass
@@ -48,7 +48,7 @@ class ProgressHandler:
     def on_cancel(self):
         print("\nExport cancelled")
         try:
-            if self.is_gui and self.progress_bar is not None:
+            if self.is_gui:
                 self.progress_bar(0.0, desc="Cancelled")
         except Exception:
             pass
