@@ -20,7 +20,8 @@ class ProgressHandler:
         sys.stdout.write(f'\rFinal Encoding: {percent:.1f}%')
         sys.stdout.flush()
         try:
-            self.progress_bar(percent / 100, desc='Final Encoding')
+            if session['is_gui_process']:
+                self.progress_bar(percent / 100, desc='Final Encoding')
         except Exception as e:
             error = f'ProgressHandler on_progress error: {e}'
             print(error)

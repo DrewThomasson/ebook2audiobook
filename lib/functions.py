@@ -45,7 +45,6 @@ from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
 
 from lib import *
-from lib.classes.progress_handler import ProgressHandler
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
@@ -1720,7 +1719,7 @@ def combine_audio_chapters(id):
             error = f'Export failed: {e}'
             print(error)
             if session.get('is_gui_process'):
-                gr.Progress()(0, desc=error)
+                gr.Progress(0, desc=error)
             return False
 
     try:
