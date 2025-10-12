@@ -35,6 +35,7 @@ from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
 
 from lib import *
+from lib.classes.progress_handler import ProgressHandler
 from lib.classes.subprocess_pipe import SubprocessPipe
 from lib.classes.vram_detector import VRAMDetector
 from lib.classes.voice_extractor import VoiceExtractor
@@ -1597,8 +1598,17 @@ def combine_audio_chapters(id):
                 '-progress', 'pipe:1', '-y', ffmpeg_final_file
             ]
             total_duration = get_audio_duration(ffmpeg_combined_audio)
-            print(f'Total duration: {total_duration:.2f} s')
-            pipe = SubprocessPipe(ffmpeg_cmd, session=session, total_duration=total_duration)
+            handler = ProgressHandler(session)
+            pipe = SubprocessPipe(
+                ffmpeg_cmd,
+                session=session,
+                total_duration=total_duration,
+                on_start=handler.on_start,
+                on_progress=handler.on_progress,
+                on_complete=handler.on_complete,
+                on_error=handler.on_error,
+                on_cancel=handler.on_cancel
+            )
             pipe.start()
             if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                 if session['cover'] is not None:
