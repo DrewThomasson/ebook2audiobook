@@ -76,3 +76,8 @@ default_audio_proc_format = 'flac' # or 'mp3', 'aac', 'm4a', 'm4b', 'amr', '3gp'
 default_output_format = 'm4b'
 default_output_split = False
 default_output_split_hours = '6' # if the final ouput esceed outpout_split_hours * 2 hours the final file will be splitted by outpout_split_hours + the end if any.
+
+# Logging configuration
+enable_run_logging = True  # Enable per-run log file capture
+logs_dir = os.path.abspath('logs')
+log_retention_days = 14  # days to keep log files

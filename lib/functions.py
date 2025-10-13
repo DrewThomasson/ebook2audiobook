@@ -37,6 +37,7 @@ from starlette.requests import ClientDisconnect
 from lib import *
 from lib.classes.voice_extractor import VoiceExtractor
 from lib.classes.tts_manager import TTSManager
+from lib.classes.run_logger import RunLogger
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 
@@ -1932,6 +1933,7 @@ def convert_ebook_batch(args, ctx=None):
         sys.exit(1)       
 
 def convert_ebook(args, ctx=None):
+    run_logger = None
     try:
         global is_gui_process, context        
         error = None
@@ -2048,7 +2050,22 @@ def convert_ebook(args, ctx=None):
                         os.rename(old_session_dir, session['session_dir'])
                     session['process_dir'] = os.path.join(session['session_dir'], f"{hashlib.md5(session['ebook'].encode()).hexdigest()}")
                     session['chapters_dir'] = os.path.join(session['process_dir'], "chapters")
-                    session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')       
+                    session['chapters_dir_sentences'] = os.path.join(session['chapters_dir'], 'sentences')
+                    
+                    # Initialize run logging
+                    if enable_run_logging:
+                        # Prefer process_dir/logs if available, otherwise use top-level logs/
+                        log_dir = os.path.join(session['process_dir'], 'logs') if session.get('process_dir') else logs_dir
+                        run_logger = RunLogger(log_dir, session_id=id, enabled=enable_run_logging)
+                        run_logger.start()
+                        # Cleanup old logs from top-level logs directory
+                        RunLogger.cleanup_old_logs(logs_dir, log_retention_days)
+                        # Also cleanup old logs from process_dir if it exists
+                        if session.get('process_dir') and os.path.exists(session['process_dir']):
+                            process_log_dir = os.path.join(session['process_dir'], 'logs')
+                            if os.path.exists(process_log_dir):
+                                RunLogger.cleanup_old_logs(process_log_dir, log_retention_days)
+                    
                     if prepare_dirs(args['ebook'], session):
                         session['filename_noext'] = os.path.splitext(os.path.basename(session['ebook']))[0]
                         msg = ''
@@ -2148,6 +2165,8 @@ def convert_ebook(args, ctx=None):
                                             progress_status = f'Audiobook(s) {", ".join(os.path.basename(f) for f in exported_files)} created!'
                                             session['audiobook'] = exported_files[-1]
                                             print(info_session)
+                                            if run_logger:
+                                                run_logger.stop()
                                             return progress_status, True
                                         else:
                                             error = 'combine_audio_chapters() error: exported_files not created!'
@@ -2169,9 +2188,13 @@ def convert_ebook(args, ctx=None):
             if not is_gui_process and id is not None:
                 error += info_session
         print(error)
+        if run_logger:
+            run_logger.stop()
         return error, False
     except Exception as e:
         print(f'convert_ebook() Exception: {e}')
+        if run_logger:
+            run_logger.stop()
         return e, False
 
 def restore_session_from_data(data, session):
