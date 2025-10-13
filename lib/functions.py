@@ -1645,15 +1645,7 @@ def combine_audio_chapters(id):
                     '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
-            total_duration = get_audio_duration(ffmpeg_combined_audio)
-            pipe = SubprocessPipe(
-                ffmpeg_cmd,
-                session=session,
-                total_duration=total_duration,
-                on_progress=on_progress,
-                on_error=on_error
-            )
-            pipe.start()
+            SubprocessPipe(cmd, session=session, total_duration=get_audio_duration(ffmpeg_combined_audio))
             if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
                 if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
                     if session['cover'] is not None:
