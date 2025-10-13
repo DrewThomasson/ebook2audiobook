@@ -64,8 +64,8 @@ active_sessions = set()
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
-class DependencyError(Exception)->None:
-    def __init__(self, message:str | None=None):
+class DependencyError(Exception):
+    def __init__(self, message:Optional[str]=None):
         super().__init__(message)
         print(message)
         # Automatically handle the exception when it's raised
@@ -198,7 +198,7 @@ class JSONEncoderWithDictProxy(json.JSONEncoder):
 
 ctx_tracker = SessionTracker()
 
-def recursive_proxy(data: Any, manager: Optional[Manager] = None) -> Any:
+def recursive_proxy(data: Any, manager:Optional[Manager]=None)->Any:
 	if manager is None:
 		manager = Manager()
 	if isinstance(data, dict):
