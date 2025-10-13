@@ -926,7 +926,7 @@ def get_sentences(text, lang, tts_engine):
                 cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                 if any(ch.isalnum() for ch in cleaned):
                     soft_list.append(s.strip())
-
+        soft_list = [s for s in soft_list if any(ch.isalnum() for ch in re.sub(r'[^\p{L}\p{N}]+', '', s))]
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:
@@ -958,7 +958,7 @@ def get_sentences(text, lang, tts_engine):
                                 sentences.append(text_part)
                             text_part = w
                     if text_part:
-                        cleaned = re.sub(r'[^\p{L}\p{N} \-—]+', '', text_part).strip()
+                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part).strip()
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         sentences.append(text_part)
