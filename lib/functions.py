@@ -6,6 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import torch
+from typing import Any, Optional, Union, Callable
 
 _original_load = torch.load
 
@@ -41,7 +42,6 @@ from pydub import AudioSegment
 from pydub.utils import mediainfo
 from queue import Queue, Empty
 from types import MappingProxyType
-from typing import Any, Optional, Union, Callable
 from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
 
