@@ -3,7 +3,7 @@ import tempfile
 import argostranslate.package
 import argostranslate.translate
 
-from iso639 import languages
+from iso639 import Lang
 from lib.conf import models_dir
 from lib.lang import language_mapping
 
@@ -18,9 +18,9 @@ class ArgosTranslator:
     def get_language_iso3(self, lang_iso1):
         lang = lang_iso1
         try:  
-            lang_array = languages.get(part1=lang_iso1)
-            if lang_array:
-                lang = lang_array.part3
+            lang_dict = Lang(lang_iso1)
+            if lang_dict:
+                lang = lang_dict.pt3
         except Exception:
             pass
         return lang

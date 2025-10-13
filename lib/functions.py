@@ -30,7 +30,7 @@ from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
 from glob import glob
-from iso639 import languages
+from iso639 import Lang
 from markdown import markdown
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
@@ -1968,16 +1968,11 @@ def convert_ebook(args, ctx=None):
                     print(error)
                     return error, false
                 try:
-                    if len(args['language']) == 2:
-                        lang_array = languages.get(part1=args['language'])
-                        if lang_array:
-                            args['language'] = lang_array.part3
-                            args['language_iso1'] = lang_array.part1
-                    elif len(args['language']) == 3:
-                        lang_array = languages.get(part3=args['language'])
-                        if lang_array:
-                            args['language'] = lang_array.part3
-                            args['language_iso1'] = lang_array.part1 
+                    if len(args['language']) in (2, 3):
+                        lang_dict = Lang(args['language'])
+                        if lang_dict:
+                            args['language'] = lang_dict.pt3
+                            args['language_iso1'] = lang_dict.pt1
                     else:
                         args['language_iso1'] = None
                 except Exception as e:
@@ -2129,9 +2124,9 @@ def convert_ebook(args, ctx=None):
                                 session['metadata'] = metadata                  
                                 try:
                                     if len(session['metadata']['language']) == 2:
-                                        lang_array = languages.get(part1=session['language'])
-                                        if lang_array:
-                                            session['metadata']['language'] = lang_array.part3
+                                        lang_dict = Lang(session['language'])
+                                        if lang_dict:
+                                            session['metadata']['language'] = lang_dict.pt3
                                 except Exception as e:
                                     pass                         
                                 if session['metadata']['language'] != session['language']:
@@ -3325,9 +3320,9 @@ def web_interface(args, ctx):
                         if base not in builtin_names
                     ]
                 if session['tts_engine'] == TTS_ENGINES['BARK']:
-                    lang_array = languages.get(part3=session['language'])
-                    if lang_array:
-                        lang_iso1 = lang_array.part1 
+                    lang_dict = Lang(session['language'])
+                    if lang_dict:
+                        lang_iso1 = lang_dict.pt1
                         lang = lang_iso1.lower()
                         speakers_path = Path(default_engine_settings[TTS_ENGINES['BARK']]['speakers_path'])
                         pattern_speaker = re.compile(r"^.*?_speaker_(\d+)$")

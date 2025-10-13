@@ -10,7 +10,7 @@ fugashi
 gradio>=5.47.2
 hangul-romanize
 indic-nlp-library
-iso-639
+iso639-lang
 jieba
 soynlp
 pythainlp
