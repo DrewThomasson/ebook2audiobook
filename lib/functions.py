@@ -1689,8 +1689,6 @@ def combine_audio_chapters(id):
         except Exception as e:
             error = f'Export failed: {e}'
             print(error)
-            if session.get('is_gui_process'):
-                gr.Progress(0, desc=error)
             return False
 
     try:
