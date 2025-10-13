@@ -179,7 +179,10 @@ class Coqui:
                     if device == 'cuda':
                         tts.cuda()
                     else:
-                        tts.to(device)
+                        if device == 'mps':
+                            tts.to(torch.device('mps'))
+                        else:
+                            tts.to(device)
                     loaded_tts[key] = {"engine": tts, "config": None} 
                     msg = f'{model_path} Loaded!'
                     print(msg)
@@ -236,7 +239,10 @@ class Coqui:
                 if device == 'cuda':
                     tts.cuda()
                 else:
-                    tts.to(device)
+                    if device == 'mps':
+                        tts.to(torch.device('mps'))
+                    else:
+                        tts.to(device)
                 loaded_tts[key] = {"engine": tts, "config": config}
                 msg = f'{tts_engine} Loaded!'
                 print(msg)

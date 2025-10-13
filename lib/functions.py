@@ -5,18 +5,8 @@
 # IS USED TO PRINT IT OUT TO THE TERMINAL, AND "CHAPTER" TO THE CODE
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
-import torch
-
-_original_load = torch.load
-
-def patched_torch_load(*args, **kwargs):
-    kwargs.setdefault("weights_only", False)
-    return _original_load(*args, **kwargs)
-
-torch.load = patched_torch_load
-
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
-import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn
+import unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, torch
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -2097,9 +2087,6 @@ def convert_ebook(args, ctx=None):
                                     else:
                                         msg += "- MPS not available because the current device does not have MPS-enabled"
                                     msg += f"<br/>- Read {default_gpu_wiki}<br/>- Switching to CPU for now"
-                                else:
-                                    mps_device = torch.device("mps")
-                                    x = torch.ones(5, device="mps")
                             if session['device'] == 'cpu':
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_OFFLOAD_CPU'] = 'True'
