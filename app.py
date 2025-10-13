@@ -116,35 +116,6 @@ def check_and_install_requirements(file_path):
                         return False
             msg = '\nAll required packages are installed.'
             print(msg)
-        ##### to remove if jieba package is updated
-        jieba = importlib.import_module('jieba')
-        compat_path = os.path.join(os.path.dirname(jieba.__file__), '_compat.py')
-        if os.path.exists(compat_path):
-            with open(compat_path, "r", encoding="utf-8") as f:
-                content = f.read()
-            if 'pkg_resources' in content:
-                match = regex.search(r"^(\s*)import\s+pkg_resources", content, flags=regex.M)
-                indent = match.group(1) if match else ""
-                replacement = (
-                    f"{indent}try:\n"
-                    f"{indent}    import importlib.metadata as importlib_metadata\n"
-                    f"{indent}except ImportError:\n"
-                    f"{indent}    import importlib_metadata\n"
-                )
-                new_content = regex.sub(
-                    r"^(\s*)import\s+pkg_resources.*$",
-                    replacement.rstrip(),
-                    content,
-                    flags=regex.M
-                )
-                new_content = regex.sub(
-                    r"pkg_resources\.get_distribution\(['\"]jieba['\"]\)\.version",
-                    "importlib_metadata.version('jieba')",
-                    new_content
-                )
-                with open(compat_path, "w", encoding="utf-8") as f:
-                    f.write(new_content)
-        ##########
         return True
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
