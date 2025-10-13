@@ -819,7 +819,7 @@ def get_sentences(text, lang, tts_engine):
                         result.extend([t for t in pc.segment(segment) if t.strip()])
                     elif lang == 'zho':
                         import jieba
-                        jieba.dt.cache_file = os.path.join('tmp', 'jieba.cache')
+                        jieba.dt.cache_file = os.path.join(session['models_dir'], 'jieba.cache')
                         os.makedirs(jieba.dt.cache_file, exist_ok=True)
                         result.extend([t for t in jieba.cut(segment) if t.strip()])
                     elif lang == 'jpn':
