@@ -958,7 +958,7 @@ def get_sentences(text, lang, tts_engine):
                                 sentences.append(text_part)
                             text_part = w
                     if text_part:
-                        cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', text_part).strip()
+                        cleaned = re.sub(r'[^\p{L}\p{N} \-—]+', '', text_part).strip()
                         if not any(ch.isalnum() for ch in cleaned):
                             continue
                         sentences.append(text_part)
