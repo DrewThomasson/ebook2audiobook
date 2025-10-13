@@ -8,7 +8,7 @@ class SubprocessPipe:
 		self.process = None
 		self._stop_requested = False
 		self.progress_bar = None
-		self.start()  # synchronous — starts immediately (for Gradio compatibility)
+		self.start()
 
 	def _on_start(self):
 		print("Export started")
@@ -73,7 +73,7 @@ class SubprocessPipe:
 
 			self.process.wait()
 			if self._stop_requested:
-				self._on_cancel()
+                return False
 			elif self.process.returncode == 0:
 				self._on_complete()
 				return True
