@@ -8,7 +8,11 @@ class RunLogger:
     """
     Captures stdout and stderr to a log file while preserving normal output.
     Does not change what the user sees in terminal/Gradio UI.
+    Uses memory buffering to minimize disk I/O overhead.
     """
+    
+    # Buffer size for log file writes (128KB for optimal performance)
+    BUFFER_SIZE = 128 * 1024
     
     def __init__(self, log_dir, session_id=None, enabled=True):
         """
@@ -28,6 +32,8 @@ class RunLogger:
         self.original_stderr = None
         self.tee_stdout = None
         self.tee_stderr = None
+        self.buffer = []
+        self.buffer_size = 0
         
     def start(self):
         """Start capturing stdout/stderr to log file."""
@@ -43,13 +49,14 @@ class RunLogger:
             log_filename = f"run_{timestamp}_{self.session_id}.log"
             self.log_file_path = os.path.join(self.log_dir, log_filename)
             
-            # Open log file
-            self.log_file = open(self.log_file_path, 'w', encoding='utf-8', buffering=1)
+            # Open log file with larger buffer for better performance
+            self.log_file = open(self.log_file_path, 'w', encoding='utf-8', buffering=self.BUFFER_SIZE)
             
             # Write header
             self.log_file.write(f"=== Log started at {datetime.now().isoformat()} ===\n")
             self.log_file.write(f"Session ID: {self.session_id}\n")
             self.log_file.write("=" * 60 + "\n\n")
+            # Flush header to ensure it's written immediately
             self.log_file.flush()
             
             # Save original streams
@@ -57,8 +64,9 @@ class RunLogger:
             self.original_stderr = sys.stderr
             
             # Create tee streams that write to both original and log file
-            self.tee_stdout = TeeStream(self.original_stdout, self.log_file)
-            self.tee_stderr = TeeStream(self.original_stderr, self.log_file)
+            # Pass the RunLogger instance for buffered writing
+            self.tee_stdout = TeeStream(self.original_stdout, self)
+            self.tee_stderr = TeeStream(self.original_stderr, self)
             
             # Replace sys streams
             sys.stdout = self.tee_stdout
@@ -68,6 +76,30 @@ class RunLogger:
             # If logging fails, just continue without logging
             print(f"Warning: Could not initialize log file: {e}", file=sys.stderr)
             self.enabled = False
+    
+    def write_to_log(self, message):
+        """
+        Write message to log file with buffering to minimize disk I/O.
+        
+        Args:
+            message: String to write to log file
+        """
+        if not self.enabled or not self.log_file or self.log_file.closed:
+            return
+        
+        try:
+            # Write to file (Python's buffering handles the actual I/O optimization)
+            self.log_file.write(message)
+        except:
+            pass
+    
+    def flush_log(self):
+        """Flush the log file buffer to disk."""
+        if self.enabled and self.log_file and not self.log_file.closed:
+            try:
+                self.log_file.flush()
+            except:
+                pass
             
     def stop(self):
         """Stop capturing stdout/stderr and close log file."""
@@ -80,6 +112,9 @@ class RunLogger:
                 sys.stdout = self.original_stdout
             if self.original_stderr:
                 sys.stderr = self.original_stderr
+            
+            # Flush any remaining buffered data
+            self.flush_log()
                 
             # Write footer and close log file
             if self.log_file and not self.log_file.closed:
@@ -148,50 +183,49 @@ class RunLogger:
 class TeeStream:
     """
     A stream that writes to two destinations simultaneously.
-    Used to write to both terminal and log file.
+    Used to write to both terminal and log file with buffered writes.
     """
     
-    def __init__(self, stream1, stream2):
+    def __init__(self, terminal_stream, logger):
         """
         Initialize TeeStream.
         
         Args:
-            stream1: First output stream (usually terminal)
-            stream2: Second output stream (usually log file)
+            terminal_stream: Output stream for terminal (usually sys.__stdout__ or sys.__stderr__)
+            logger: RunLogger instance for buffered log file writing
         """
-        self.stream1 = stream1
-        self.stream2 = stream2
+        self.terminal_stream = terminal_stream
+        self.logger = logger
         
     def write(self, message):
-        """Write message to both streams."""
+        """Write message to both terminal and log file."""
+        # Always write to terminal immediately for real-time feedback
         try:
-            # Write to terminal
-            self.stream1.write(message)
-            self.stream1.flush()
+            self.terminal_stream.write(message)
+            self.terminal_stream.flush()
         except:
             pass
             
+        # Write to log file via buffered method (no immediate flush)
         try:
-            # Write to log file
-            self.stream2.write(message)
-            self.stream2.flush()
+            self.logger.write_to_log(message)
         except:
             pass
             
     def flush(self):
-        """Flush both streams."""
+        """Flush both terminal and log file."""
         try:
-            self.stream1.flush()
+            self.terminal_stream.flush()
         except:
             pass
         try:
-            self.stream2.flush()
+            self.logger.flush_log()
         except:
             pass
             
     def isatty(self):
-        """Check if stream is a TTY (delegate to stream1)."""
+        """Check if stream is a TTY (delegate to terminal_stream)."""
         try:
-            return self.stream1.isatty()
+            return self.terminal_stream.isatty()
         except:
             return False
