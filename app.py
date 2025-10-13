@@ -123,18 +123,18 @@ def check_and_install_requirements(file_path):
             with open(compat_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             if 'pkg_resources' in content:
-            new_content = re.sub(
-                r'import\s+pkg_resources',
-                'try:\n    import importlib.metadata as importlib_metadata\nexcept ImportError:\n    import importlib_metadata',
-                content
-            )
-            new_content = re.sub(
-                r'pkg_resources\.get_distribution\(['\']jieba['\']\)\.version',
-                'importlib_metadata.version('jieba')',
-                new_content
-            )
-            with open(compat_path, 'w', encoding='utf-8') as f:
-                f.write(new_content)
+                new_content = re.sub(
+                    r'import\s+pkg_resources',
+                    'try:\n    import importlib.metadata as importlib_metadata\nexcept ImportError:\n    import importlib_metadata',
+                    content
+                )
+                new_content = re.sub(
+                    r'pkg_resources\.get_distribution\(['\']jieba['\']\)\.version',
+                    'importlib_metadata.version('jieba')',
+                    new_content
+                )
+                with open(compat_path, 'w', encoding='utf-8') as f:
+                    f.write(new_content)
         return True
     except Exception as e:
         error = f'check_and_install_requirements() error: {e}'
