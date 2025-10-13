@@ -123,12 +123,12 @@ def check_and_install_requirements(file_path):
             with open(compat_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             if 'pkg_resources' in content:
-                new_content = re.sub(
+                new_content = regex.sub(
                     r"import\s+pkg_resources",
                     "try:\n    import importlib.metadata as importlib_metadata\nexcept ImportError:\n    import importlib_metadata",
                     content
                 )
-                new_content = re.sub(
+                new_content = regex.sub(
                     r"pkg_resources\.get_distribution\(['\']jieba['\']\)\.version",
                     "importlib_metadata.version('jieba')",
                     new_content
