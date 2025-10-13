@@ -809,11 +809,13 @@ def get_sentences(text, lang, tts_engine):
             for segment in segments:
                 if not segment:
                     continue
-                # If the segment is a SML token, keep as its own
                 if re.fullmatch(sml_pattern, segment):
                     result.append(segment)
                 else:
-                    if lang == 'zho':
+                    if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
+                        import pycantonese as pc
+                        result.extend([t for t in pc.segment(segment) if t.strip()])
+                    elif lang == 'zho':
                         import jieba
                         result.extend([t for t in jieba.cut(segment) if t.strip()])
                     elif lang == 'jpn':
@@ -823,14 +825,14 @@ def get_sentences(text, lang, tts_engine):
                     elif lang == 'kor':
                         ltokenizer = LTokenizer()
                         result.extend([t for t in ltokenizer.tokenize(segment) if t.strip()])
-                    elif lang in ['tha', 'lao', 'mya', 'khm']:
+                    elif lang in ['tha','lao','mya','khm']:
                         result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
                     else:
                         result.append(segment.strip())
             return result
         except Exception as e:
             DependencyError(e)
-            return [text]   
+            return [text] 
 
     def join_ideogramms(idg_list):
         try:
@@ -926,7 +928,7 @@ def get_sentences(text, lang, tts_engine):
                 cleaned = re.sub(r'[^\p{L}\p{N} ]+', '', s)
                 if any(ch.isalnum() for ch in cleaned):
                     soft_list.append(s.strip())
-        soft_list = [s for s in soft_list if any(ch.isalnum() for ch in re.sub(r'[^\p{L}\p{N}]+', '', s))]
+        soft_list = [s for s in soft_list if any(ch.isalnum() for ch in re.sub(r'[^\p{L}\p{N} ]+', '', s))]
         if lang in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
             result = []
             for s in soft_list:

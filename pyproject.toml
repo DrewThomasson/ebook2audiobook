@@ -31,6 +31,7 @@ dependencies = [
 	"indic-nlp-library",
 	"iso639-lang",
 	"jieba",
+	"pycantonese",
 	"soynlp",
 	"pythainlp">
 	"pydub",
