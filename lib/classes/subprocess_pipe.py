@@ -32,11 +32,6 @@ class SubprocessPipe:
 		if self.session.get("is_gui_process"):
 			self.progress_bar(0.0, desc="Export failed")
 
-	def _on_cancel(self):
-		print("\nExport cancelled")
-		if self.session.get("is_gui_process"):
-			self.progress_bar(0.0, desc="Cancelled")
-
 	def start(self):
 		try:
 			self._on_start()
@@ -56,9 +51,8 @@ class SubprocessPipe:
 
 				line = raw_line.decode(errors="ignore")
 				if self.session.get("cancellation_requested"):
-					self.stop()
-					self._on_cancel()
-					break
+                    print("\nExport cancelled")
+					return self.stop()
 
 				match = time_pattern.search(raw_line)
 				if match and self.total_duration > 0:
@@ -92,3 +86,4 @@ class SubprocessPipe:
 				self.process.terminate()
 			except Exception:
 				pass
+        return False
