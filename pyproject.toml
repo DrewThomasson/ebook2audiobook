@@ -30,7 +30,7 @@ dependencies = [
 	"hangul-romanize",
 	"indic-nlp-library",
 	"iso639-lang",
-	"jieba",
+	"spacy-pkuseg",
 	"pycantonese",
 	"soynlp",
 	"pythainlp">
