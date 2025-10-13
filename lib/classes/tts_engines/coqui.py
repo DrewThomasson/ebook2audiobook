@@ -497,6 +497,9 @@ class Coqui:
                             if self.session.get(key) is not None
                         }
                         with torch.no_grad():
+                            print("self.session['language_iso1']: ", self.session['language_iso1'])
+                            print("self.session['gpt_cond_latent']: ", self.session['gpt_cond_latent'])
+                            print("self.session['speaker_embedding']: ", self.session['speaker_embedding'])
                             result = tts.inference(
                                 text=sentence.replace('.', ' —'),
                                 language=self.session['language_iso1'],
