@@ -123,7 +123,7 @@ def check_and_install_requirements(file_path):
             with open(compat_path, "r", encoding="utf-8") as f:
                 content = f.read()
             if 'pkg_resources' in content:
-                match = regex.search(r"^(\s*)import\s+pkg_resources", content, flags=re.M)
+                match = regex.search(r"^(\s*)import\s+pkg_resources", content, flags=regex.M)
                 indent = match.group(1) if match else ""
                 replacement = (
                     f"{indent}try:\n"
