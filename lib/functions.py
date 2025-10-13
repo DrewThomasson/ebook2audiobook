@@ -9,7 +9,7 @@ import torch
 
 _original_load = torch.load
 
-def patched_torch_load(*args, **kwargs):
+def patched_torch_load(*args, **kwargs)->Any:
     kwargs.setdefault("weights_only", False)
     return _original_load(*args, **kwargs)
 
@@ -41,6 +41,7 @@ from pydub import AudioSegment
 from pydub.utils import mediainfo
 from queue import Queue, Empty
 from types import MappingProxyType
+from typing import Any, Optional, Union, Callable
 from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
 
@@ -63,14 +64,14 @@ active_sessions = set()
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
-class DependencyError(Exception):
-    def __init__(self, message=None):
+class DependencyError(Exception)->None:
+    def __init__(self, message:str | None=None):
         super().__init__(message)
         print(message)
         # Automatically handle the exception when it's raised
         self.handle_exception()
 
-    def handle_exception(self):
+    def handle_exception(self)->None:
         # Print the full traceback of the exception
         traceback.print_exc()      
         # Print the exception message
@@ -81,7 +82,7 @@ class SessionTracker:
     def __init__(self):
         self.lock = threading.Lock()
 
-    def start_session(self, id):
+    def start_session(self, id:str)->bool:
         with self.lock:
             session = context.get_session(id)
             if session['status'] is None:
@@ -89,7 +90,7 @@ class SessionTracker:
                 return True
         return False
 
-    def end_session(self, id, socket_hash):
+    def end_session(self, id:str, socket_hash:str)->None:
         active_sessions.discard(socket_hash)
         with self.lock:
             session = context.get_session(id)
@@ -104,7 +105,7 @@ class SessionContext:
         self.sessions = self.manager.dict()
         self.cancellation_events = {}
 
-    def get_session(self, id):
+    def get_session(self, id:str)->str:
         if id not in self.sessions:
             self.sessions[id] = recursive_proxy({
                 "script_mode": NATIVE,
@@ -179,14 +180,14 @@ class SessionContext:
             }, manager=self.manager)
         return self.sessions[id]
 
-    def find_id_by_hash(self, socket_hash):
+    def find_id_by_hash(self, socket_hash:str)->Optional[str]:
         for id, session in self.sessions.items():
             if socket_hash in session:
                 return session['id']
         return None
 
 class JSONEncoderWithDictProxy(json.JSONEncoder):
-    def default(self, o):
+    def default(self, o:Any)->Any:
         if isinstance(o, DictProxy):
             return dict(o)
         elif isinstance(o, ListProxy):
@@ -197,25 +198,25 @@ class JSONEncoderWithDictProxy(json.JSONEncoder):
 
 ctx_tracker = SessionTracker()
 
-def recursive_proxy(data, manager=None):
-    if manager is None:
-        manager = Manager()
-    if isinstance(data, dict):
-        proxy_dict = manager.dict()
-        for key, value in data.items():
-            proxy_dict[key] = recursive_proxy(value, manager)
-        return proxy_dict
-    elif isinstance(data, list):
-        proxy_list = manager.list()
-        for item in data:
-            proxy_list.append(recursive_proxy(item, manager))
-        return proxy_list
-    elif isinstance(data, (str, int, float, bool, type(None))):
-        return data
-    else:
-        error = f"Unsupported data type: {type(data)}"
-        print(error)
-        return
+def recursive_proxy(data: Any, manager: Optional[Manager] = None) -> Any:
+	if manager is None:
+		manager = Manager()
+	if isinstance(data, dict):
+		proxy_dict = manager.dict()
+		for key, value in data.items():
+			proxy_dict[key] = recursive_proxy(value, manager)
+		return proxy_dict
+	elif isinstance(data, list):
+		proxy_list = manager.list()
+		for item in data:
+			proxy_list.append(recursive_proxy(item, manager))
+		return proxy_list
+	elif isinstance(data, (str, int, float, bool, type(None))):
+		return data
+	else:
+		error = f"Unsupported data type: {type(data)}"
+		print(error)
+		return None
 
 def prepare_dirs(src, session):
     try:
