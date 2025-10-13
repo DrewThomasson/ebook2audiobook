@@ -29,6 +29,7 @@ from collections.abc import Mapping
 from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
+from functools import lru_cache
 from glob import glob
 from iso639 import Lang
 from markdown import markdown
@@ -801,6 +802,11 @@ def get_sentences(text, lang, tts_engine):
                 result.append(tail)
         return result
 
+    @lru_cache(maxsize=1)
+    def _pkuseg(model="mixed", user_dict=None):
+        from spacy_pkuseg import pkuseg
+        return pkuseg.pkuseg(model_name=model, user_dict=user_dict)
+
     def segment_ideogramms(text):
         sml_pattern = "|".join(re.escape(token) for token in sml_tokens)
         segments = re.split(f"({sml_pattern})", text)
@@ -812,12 +818,12 @@ def get_sentences(text, lang, tts_engine):
                 if re.fullmatch(sml_pattern, segment):
                     result.append(segment)
                 else:
-                    if lang in ['yue','yue-Hant','yue-Hans','zh-yue','cantonese']:
+                    if lang in {'yue','zh-yue','yue-Hant','yue-Hans'}:
                         import pycantonese as pc
                         result.extend([t for t in pc.segment(segment) if t.strip()])
-                    elif lang == 'zho':
-                        import jieba
-                        result.extend([t for t in jieba.cut(segment) if t.strip()])
+                    elif lang in {'zho','cmn','zh','zh-Hans','zh-Hant'}:
+                        seg = _pkuseg()
+                        result.extend([t for t in seg.cut(segment) if t.strip()])
                     elif lang == 'jpn':
                         sudachi = dictionary.Dictionary().create()
                         mode = tokenizer.Tokenizer.SplitMode.C
@@ -825,14 +831,14 @@ def get_sentences(text, lang, tts_engine):
                     elif lang == 'kor':
                         ltokenizer = LTokenizer()
                         result.extend([t for t in ltokenizer.tokenize(segment) if t.strip()])
-                    elif lang in ['tha','lao','mya','khm']:
+                    elif lang in {'tha','lao','mya','khm'}:
                         result.extend([t for t in word_tokenize(segment, engine='newmm') if t.strip()])
                     else:
                         result.append(segment.strip())
             return result
         except Exception as e:
             DependencyError(e)
-            return [text] 
+            return [text]
 
     def join_ideogramms(idg_list):
         try:
