@@ -49,6 +49,10 @@ device_list = ['cpu', 'gpu', 'mps']
 default_device = 'cpu'
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">howto wiki</a>'
 
+# Parallel processing configuration
+enable_parallel_processing = True  # Enable/disable parallel processing feature
+parallel_min_free_ram_gb = 2  # Minimum free RAM (GB) to maintain when calculating parallel instances
+
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
 requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 

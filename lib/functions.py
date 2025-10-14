@@ -983,29 +983,91 @@ def get_ram():
     vm = psutil.virtual_memory()
     return vm.total // (1024 ** 3)
 
+def get_available_ram():
+    """Get available RAM in GB"""
+    vm = psutil.virtual_memory()
+    return vm.available // (1024 ** 3)
+
+def calculate_max_parallel_instances(device, tts_engine):
+    """
+    Calculate the maximum number of parallel TTS instances based on available resources.
+    
+    Strategy:
+    - For GPU: Consider both system RAM and GPU VRAM
+    - For CPU: Only consider system RAM
+    - Always maintain at least parallel_min_free_ram_gb GB free RAM
+    - Return number of instances (1 means sequential, >1 means parallel)
+    
+    Returns tuple: (num_instances, reason)
+    """
+    from lib.conf import enable_parallel_processing, parallel_min_free_ram_gb
+    
+    # Check if parallel processing is enabled in config
+    if not enable_parallel_processing:
+        return 1, "Parallel processing disabled in config"
+    
+    # Only enable parallel processing for GPU devices
+    if device not in ['cuda', 'mps']:
+        return 1, "CPU mode - parallel processing disabled"
+    
+    # Get model requirements
+    model_rating = default_engine_settings.get(tts_engine, {}).get('rating', {})
+    model_ram_required = model_rating.get('RAM', 8)
+    model_vram_required = model_rating.get('GPU VRAM', 4)
+    
+    # Get available resources
+    system_ram = get_ram()
+    available_ram = get_available_ram()
+    vram = get_vram()
+    
+    # Calculate how many instances can fit in RAM
+    # Reserve parallel_min_free_ram_gb GB for system
+    usable_ram = max(0, available_ram - parallel_min_free_ram_gb)
+    max_ram_instances = max(1, int(usable_ram / model_ram_required))
+    
+    # Calculate how many instances can fit in VRAM (if GPU available)
+    max_vram_instances = 1  # Default to 1 (GPU instance)
+    if vram > 0 and device == 'cuda':
+        # One GPU instance + additional CPU instances if RAM allows
+        max_vram_instances = 1  # GPU instance always counts as 1
+        # We can add CPU instances if RAM allows
+        remaining_ram_for_cpu = usable_ram - model_ram_required  # After GPU instance
+        additional_cpu_instances = max(0, int(remaining_ram_for_cpu / model_ram_required))
+        max_vram_instances += additional_cpu_instances
+    elif device == 'mps':
+        # MPS shares memory with system RAM
+        # Calculate based on available RAM only
+        max_vram_instances = max_ram_instances
+    
+    # The limiting factor is the minimum of RAM and VRAM calculations
+    max_instances = min(max_ram_instances, max_vram_instances) if device == 'cuda' else max_ram_instances
+    
+    # Ensure at least 1 instance
+    max_instances = max(1, max_instances)
+    
+    # Build informative message
+    if max_instances == 1:
+        msg = f"Sequential processing: Available RAM ({available_ram}GB) insufficient for parallel instances"
+    else:
+        msg = f"Parallel processing: {max_instances} instances (System RAM: {system_ram}GB, Available: {available_ram}GB"
+        if vram > 0 and device == 'cuda':
+            msg += f", VRAM: {vram}GB"
+        msg += f", Model requires: {model_ram_required}GB RAM"
+        if device == 'cuda':
+            msg += f" + {model_vram_required}GB VRAM"
+        msg += f", Keeping {parallel_min_free_ram_gb}GB free)"
+    
+    return max_instances, msg
+
 def should_enable_parallel_processing(device, tts_engine):
     """
     Determine if parallel GPU+CPU processing should be enabled.
-    Enabled when:
-    - Device is GPU (cuda or mps)
-    - System RAM > 2x the model's RAM requirement
+    This is a wrapper around calculate_max_parallel_instances for backward compatibility.
     
     Returns tuple: (enable_parallel, reason)
     """
-    if device not in ['cuda', 'mps']:
-        return False, "Not using GPU"
-    
-    # Get RAM requirements from model rating
-    model_ram_required = default_engine_settings.get(tts_engine, {}).get('rating', {}).get('RAM', 8)
-    system_ram = get_ram()
-    
-    # Check if we have more than double the RAM needed
-    if system_ram > (2 * model_ram_required):
-        msg = f"Parallel processing enabled: System RAM ({system_ram}GB) > 2x Model RAM ({model_ram_required}GB)"
-        return True, msg
-    else:
-        msg = f"Parallel processing disabled: System RAM ({system_ram}GB) <= 2x Model RAM ({model_ram_required}GB)"
-        return False, msg
+    max_instances, msg = calculate_max_parallel_instances(device, tts_engine)
+    return max_instances > 1, msg
 
 def get_vram():
     os_name = platform.system()
@@ -1425,29 +1487,36 @@ def convert_chapters2audio(id):
             print('Cancel requested')
             return False
         
-        # Check if parallel processing should be enabled
-        enable_parallel, parallel_msg = should_enable_parallel_processing(session['device'], session['tts_engine'])
+        # Calculate maximum parallel instances based on available resources
+        max_instances, parallel_msg = calculate_max_parallel_instances(session['device'], session['tts_engine'])
         print(parallel_msg)
         
-        if enable_parallel:
-            # Create both GPU and CPU TTS managers for parallel processing
-            tts_manager_gpu = TTSManager(session)  # Uses the configured device (GPU)
+        # Create TTS managers based on max_instances
+        tts_managers = []
+        if max_instances > 1:
+            # First instance on GPU
+            tts_manager_gpu = TTSManager(session)
             if not tts_manager_gpu:
                 error = f"GPU TTS engine {session['tts_engine']} could not be loaded!"
                 print(error)
                 return False
+            tts_managers.append(tts_manager_gpu)
             
-            tts_manager_cpu = TTSManager(session, force_device='cpu')
-            if not tts_manager_cpu:
-                error = f"CPU TTS engine {session['tts_engine']} could not be loaded!"
-                print(error)
-                # Fall back to GPU-only if CPU fails
-                enable_parallel = False
-                tts_managers = [tts_manager_gpu]
-            else:
-                msg = "Parallel GPU+CPU processing enabled - sentences will be processed concurrently on both devices"
+            # Additional instances on CPU
+            for i in range(1, max_instances):
+                tts_manager_cpu = TTSManager(session, force_device='cpu')
+                if not tts_manager_cpu:
+                    msg = f"Warning: Could not create CPU TTS instance {i}. Continuing with {len(tts_managers)} instance(s)."
+                    print(msg)
+                    break
+                tts_managers.append(tts_manager_cpu)
+            
+            if len(tts_managers) > 1:
+                msg = f"Parallel processing with {len(tts_managers)} instances (1 GPU + {len(tts_managers)-1} CPU)"
                 print(msg)
-                tts_managers = [tts_manager_gpu, tts_manager_cpu]
+            else:
+                msg = "Falling back to sequential processing (GPU only)"
+                print(msg)
         else:
             # Single TTS manager with configured device
             tts_manager = TTSManager(session)
@@ -1518,8 +1587,8 @@ def convert_chapters2audio(id):
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
                 
-                # Process sentences - use parallel execution if enabled
-                if enable_parallel and len(tts_managers) > 1:
+                # Process sentences - use parallel execution if multiple managers available
+                if len(tts_managers) > 1:
                     # Parallel processing: submit sentences to thread pool
                     # Collect sentences to process in batches
                     batch_size = 2 * len(tts_managers)  # Process in small batches
