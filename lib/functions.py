@@ -983,6 +983,30 @@ def get_ram():
     vm = psutil.virtual_memory()
     return vm.total // (1024 ** 3)
 
+def should_enable_parallel_processing(device, tts_engine):
+    """
+    Determine if parallel GPU+CPU processing should be enabled.
+    Enabled when:
+    - Device is GPU (cuda or mps)
+    - System RAM > 2x the model's RAM requirement
+    
+    Returns tuple: (enable_parallel, reason)
+    """
+    if device not in ['cuda', 'mps']:
+        return False, "Not using GPU"
+    
+    # Get RAM requirements from model rating
+    model_ram_required = default_engine_settings.get(tts_engine, {}).get('rating', {}).get('RAM', 8)
+    system_ram = get_ram()
+    
+    # Check if we have more than double the RAM needed
+    if system_ram > (2 * model_ram_required):
+        msg = f"Parallel processing enabled: System RAM ({system_ram}GB) > 2x Model RAM ({model_ram_required}GB)"
+        return True, msg
+    else:
+        msg = f"Parallel processing disabled: System RAM ({system_ram}GB) <= 2x Model RAM ({model_ram_required}GB)"
+        return False, msg
+
 def get_vram():
     os_name = platform.system()
     # NVIDIA (Cross-Platform: Windows, Linux, macOS)
@@ -1400,11 +1424,37 @@ def convert_chapters2audio(id):
         if session['cancellation_requested']:
             print('Cancel requested')
             return False
-        tts_manager = TTSManager(session)
-        if not tts_manager:
-            error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
-            print(error)
-            return False
+        
+        # Check if parallel processing should be enabled
+        enable_parallel, parallel_msg = should_enable_parallel_processing(session['device'], session['tts_engine'])
+        print(parallel_msg)
+        
+        if enable_parallel:
+            # Create both GPU and CPU TTS managers
+            tts_manager_gpu = TTSManager(session)  # Uses the configured device (GPU)
+            if not tts_manager_gpu:
+                error = f"GPU TTS engine {session['tts_engine']} could not be loaded!"
+                print(error)
+                return False
+            
+            tts_manager_cpu = TTSManager(session, force_device='cpu')
+            if not tts_manager_cpu:
+                error = f"CPU TTS engine {session['tts_engine']} could not be loaded!"
+                print(error)
+                # Fall back to GPU-only if CPU fails
+                enable_parallel = False
+                tts_manager = tts_manager_gpu
+            else:
+                msg = "Parallel GPU+CPU processing enabled - processing will alternate between devices"
+                print(msg)
+        else:
+            # Single TTS manager with configured device
+            tts_manager = TTSManager(session)
+            if not tts_manager:
+                error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
+                print(error)
+                return False
+        
         resume_chapter = 0
         missing_chapters = []
         resume_sentence = 0
@@ -1461,6 +1511,10 @@ def convert_chapters2audio(id):
                 start = sentence_number
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
+                
+                # Track which TTS manager to use (alternate between GPU and CPU for parallel mode)
+                use_gpu = True
+                
                 for i, sentence in enumerate(sentences):
                     if session['cancellation_requested']:
                         msg = 'Cancel requested'
@@ -1471,7 +1525,15 @@ def convert_chapters2audio(id):
                             msg = f'**Recovering missing file sentence {sentence_number}'
                             print(msg)
                         sentence = sentence.strip()
-                        success = tts_manager.convert_sentence2audio(sentence_number, sentence) if sentence else True
+                        
+                        # Select which TTS manager to use for parallel processing
+                        if enable_parallel and sentence and sentence not in TTS_SML.values():
+                            current_tts = tts_manager_gpu if use_gpu else tts_manager_cpu
+                            use_gpu = not use_gpu  # Alternate for next sentence
+                        else:
+                            current_tts = tts_manager
+                        
+                        success = current_tts.convert_sentence2audio(sentence_number, sentence) if sentence else True
                         if success:
                             total_progress = (t.n + 1) / total_iterations
                             progress_bar(total_progress)
