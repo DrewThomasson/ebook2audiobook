@@ -1430,7 +1430,7 @@ def convert_chapters2audio(id):
         print(parallel_msg)
         
         if enable_parallel:
-            # Create both GPU and CPU TTS managers
+            # Create both GPU and CPU TTS managers for parallel processing
             tts_manager_gpu = TTSManager(session)  # Uses the configured device (GPU)
             if not tts_manager_gpu:
                 error = f"GPU TTS engine {session['tts_engine']} could not be loaded!"
@@ -1443,10 +1443,11 @@ def convert_chapters2audio(id):
                 print(error)
                 # Fall back to GPU-only if CPU fails
                 enable_parallel = False
-                tts_manager = tts_manager_gpu
+                tts_managers = [tts_manager_gpu]
             else:
-                msg = "Parallel GPU+CPU processing enabled - processing will alternate between devices"
+                msg = "Parallel GPU+CPU processing enabled - sentences will be processed concurrently on both devices"
                 print(msg)
+                tts_managers = [tts_manager_gpu, tts_manager_cpu]
         else:
             # Single TTS manager with configured device
             tts_manager = TTSManager(session)
@@ -1454,6 +1455,7 @@ def convert_chapters2audio(id):
                 error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
                 print(error)
                 return False
+            tts_managers = [tts_manager]
         
         resume_chapter = 0
         missing_chapters = []
@@ -1502,6 +1504,10 @@ def convert_chapters2audio(id):
         msg = f"--------------------------------------------------\nA total of {total_chapters} {'block' if total_chapters <= 1 else 'blocks'} and {total_sentences} {'sentence' if total_sentences <= 1 else 'sentences'}.\n--------------------------------------------------"
         print(msg)
         progress_bar = gr.Progress(track_tqdm=False)
+        
+        # Use threading for parallel processing when enabled
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
         with tqdm(total=total_iterations, desc='0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step', initial=0) as t:
             for x in range(0, total_chapters):
                 chapter_num = x + 1
@@ -1512,41 +1518,105 @@ def convert_chapters2audio(id):
                 msg = f'Block {chapter_num} containing {sentences_count} sentences...'
                 print(msg)
                 
-                # Track which TTS manager to use (alternate between GPU and CPU for parallel mode)
-                use_gpu = True
-                
-                for i, sentence in enumerate(sentences):
-                    if session['cancellation_requested']:
-                        msg = 'Cancel requested'
-                        print(msg)
-                        return False
-                    if sentence_number in missing_sentences or sentence_number > resume_sentence or (sentence_number == 0 and resume_sentence == 0):
-                        if sentence_number <= resume_sentence and sentence_number > 0:
-                            msg = f'**Recovering missing file sentence {sentence_number}'
+                # Process sentences - use parallel execution if enabled
+                if enable_parallel and len(tts_managers) > 1:
+                    # Parallel processing: submit sentences to thread pool
+                    # Collect sentences to process in batches
+                    batch_size = 2 * len(tts_managers)  # Process in small batches
+                    sentences_to_process = []
+                    
+                    for i, sentence in enumerate(sentences):
+                        if session['cancellation_requested']:
+                            msg = 'Cancel requested'
                             print(msg)
-                        sentence = sentence.strip()
-                        
-                        # Select which TTS manager to use for parallel processing
-                        if enable_parallel and sentence and sentence not in TTS_SML.values():
-                            current_tts = tts_manager_gpu if use_gpu else tts_manager_cpu
-                            use_gpu = not use_gpu  # Alternate for next sentence
-                        else:
-                            current_tts = tts_manager
-                        
-                        success = current_tts.convert_sentence2audio(sentence_number, sentence) if sentence else True
-                        if success:
-                            total_progress = (t.n + 1) / total_iterations
-                            progress_bar(total_progress)
-                            is_sentence = sentence.strip() not in TTS_SML.values()
-                            percentage = total_progress * 100
-                            t.set_description(f'{percentage:.2f}%')
-                            msg = f" | {sentence}" if is_sentence else f" | {sentence}"
-                            print(msg)
-                        else:
                             return False
-                    if sentence.strip() not in TTS_SML.values():
-                        sentence_number += 1
-                    t.update(1)  # advance for every iteration, including SML
+                        
+                        if sentence_number in missing_sentences or sentence_number > resume_sentence or (sentence_number == 0 and resume_sentence == 0):
+                            if sentence_number <= resume_sentence and sentence_number > 0:
+                                msg = f'**Recovering missing file sentence {sentence_number}'
+                                print(msg)
+                            sentence_text = sentence.strip()
+                            
+                            # Collect sentences for batch processing
+                            if sentence_text and sentence_text not in TTS_SML.values():
+                                sentences_to_process.append((sentence_number, sentence_text, i))
+                            else:
+                                # Process SML markers immediately (not in parallel)
+                                success = tts_managers[0].convert_sentence2audio(sentence_number, sentence_text) if sentence_text else True
+                                if not success:
+                                    return False
+                                total_progress = (t.n + 1) / total_iterations
+                                progress_bar(total_progress)
+                                percentage = total_progress * 100
+                                t.set_description(f'{percentage:.2f}%')
+                                msg = f" | {sentence_text}"
+                                print(msg)
+                                t.update(1)
+                            
+                            # Process batch when we have enough sentences or at end
+                            if len(sentences_to_process) >= batch_size or (i == len(sentences) - 1 and len(sentences_to_process) > 0):
+                                with ThreadPoolExecutor(max_workers=len(tts_managers)) as executor:
+                                    futures = {}
+                                    manager_idx = 0
+                                    
+                                    for sent_num, sent_text, sent_idx in sentences_to_process:
+                                        current_manager = tts_managers[manager_idx]
+                                        manager_idx = (manager_idx + 1) % len(tts_managers)
+                                        future = executor.submit(current_manager.convert_sentence2audio, sent_num, sent_text)
+                                        futures[future] = (sent_num, sent_text, sent_idx)
+                                    
+                                    # Wait for all futures in this batch to complete
+                                    for future in as_completed(futures):
+                                        sent_num, sent_text, sent_idx = futures[future]
+                                        try:
+                                            success = future.result()
+                                            if success:
+                                                total_progress = (t.n + 1) / total_iterations
+                                                progress_bar(total_progress)
+                                                percentage = total_progress * 100
+                                                t.set_description(f'{percentage:.2f}%')
+                                                msg = f" | {sent_text}"
+                                                print(msg)
+                                            else:
+                                                return False
+                                        except Exception as e:
+                                            error = f"Error processing sentence {sent_num}: {e}"
+                                            print(error)
+                                            return False
+                                        t.update(1)
+                                
+                                # Clear the batch
+                                sentences_to_process = []
+                        
+                        if sentence.strip() not in TTS_SML.values():
+                            sentence_number += 1
+                else:
+                    # Sequential processing (original behavior)
+                    for i, sentence in enumerate(sentences):
+                        if session['cancellation_requested']:
+                            msg = 'Cancel requested'
+                            print(msg)
+                            return False
+                        if sentence_number in missing_sentences or sentence_number > resume_sentence or (sentence_number == 0 and resume_sentence == 0):
+                            if sentence_number <= resume_sentence and sentence_number > 0:
+                                msg = f'**Recovering missing file sentence {sentence_number}'
+                                print(msg)
+                            sentence = sentence.strip()
+                            success = tts_managers[0].convert_sentence2audio(sentence_number, sentence) if sentence else True
+                            if success:
+                                total_progress = (t.n + 1) / total_iterations
+                                progress_bar(total_progress)
+                                is_sentence = sentence.strip() not in TTS_SML.values()
+                                percentage = total_progress * 100
+                                t.set_description(f'{percentage:.2f}%')
+                                msg = f" | {sentence}" if is_sentence else f" | {sentence}"
+                                print(msg)
+                            else:
+                                return False
+                        if sentence.strip() not in TTS_SML.values():
+                            sentence_number += 1
+                        t.update(1)  # advance for every iteration, including SML
+                
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
                 msg = f"End of Block {chapter_num}"
                 print(msg)
