@@ -2028,11 +2028,11 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                                 print(error)
                 if error is None:
                     if session['script_mode'] == NATIVE:
-                        bool = check_programs('Calibre', 'ebook-convert', '--version')
-                        if not bool:
+                        is_installed = check_programs('Calibre', 'ebook-convert', '--version')
+                        if not is_installed:
                             error = f'check_programs() Calibre failed: {e}'
-                        bool = check_programs('FFmpeg', 'ffmpeg', '-version')
-                        if not bool:
+                        is_installed = check_programs('FFmpeg', 'ffmpeg', '-version')
+                        if not is_installed:
                             error = f'check_programs() FFMPEG failed: {e}'
                     if error is None:
                         old_session_dir = os.path.join(tmp_dir, f"ebook-{session['id']}")
