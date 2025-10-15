@@ -3119,7 +3119,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             else:
                 return gr.update(label=src_label_dir, value=None, file_count='directory'), gr.update(visible=False)
 
-        def change_gr_voice_file(f:Any, id:str):tuple:
+        def change_gr_voice_file(f:Any, id:str)->tuple:
             if f is not None:
                 state = {}
                 if len(voice_options) > max_custom_voices:
