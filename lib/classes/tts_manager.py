@@ -17,14 +17,11 @@ class TTSManager:
             #elif self.session['tts_engine'] in [TTS_ENGINES['NEW_TTS']]:
             #    from lib.classes.tts_engines.new_tts import NewTts
             #    self.tts=NewTts(self.session)
-            if self.tts:
-                return True
-            else:
+            if not self.tts:
                 error='TTS engine could not be created!'
                 print(error)
         else:
             print('Other TTS engines coming soon!')
-        return False
 
     def convert_sentence2audio(self,sentence_number:int,sentence:str)->bool:
         try:
