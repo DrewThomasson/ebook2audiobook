@@ -3,6 +3,7 @@ import torch
 import subprocess
 import shutil
 
+from torch import Tensor
 from typing import Any, Optional, Union, Callable
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
