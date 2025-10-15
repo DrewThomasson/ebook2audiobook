@@ -11,7 +11,7 @@ from lib.lang import language_mapping
 # NOTE: source_lang and target_lang must be iso639-1 (2 letters)
 
 class ArgosTranslator:
-    def __init__(self,neural_machine:str="argostranslate")->None:
+    def __init__(self,neural_machine:str="argostranslate")->ArgosTranslator:
         self.neural_machine=neural_machine
         self.translation=None
         

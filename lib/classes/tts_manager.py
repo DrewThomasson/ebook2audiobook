@@ -4,7 +4,7 @@ from typing import Any, Optional, Union, Callable
 from lib.models import TTS_ENGINES
 
 class TTSManager:
-    def __init__(self, session:Any)->None:   
+    def __init__(self, session:Any)->TTSManager:   
         self.session=session
         self.tts=None
         self._build()
