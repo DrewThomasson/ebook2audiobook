@@ -57,7 +57,7 @@ class VoiceExtractor:
 			process.wait()
 			if process.returncode!= 0:
 				error = f'_convert2wav(): process.returncode: {process.returncode}'
-			elif not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) =  = 0:
+			elif not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
 				error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
 			else:
 				msg = 'Conversion to .wav format for processing successful'
