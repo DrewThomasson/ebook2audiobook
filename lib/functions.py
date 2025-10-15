@@ -1744,7 +1744,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                         return None
                     metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
-                    generate_ffmpeg_metadata(part_chapters, session, metadata_file, default_audio_proc_format)
+                    generate_ffmpeg_metadata(part_chapters, metadata_file, default_audio_proc_format)
                     final_file = os.path.join(
                         session['audiobooks_dir'],
                         f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']
@@ -1766,7 +1766,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
                 all_chapters = list(zip(chapter_files, chapter_titles))
-                generate_ffmpeg_metadata(all_chapters, session, metadata_file, default_audio_proc_format)
+                generate_ffmpeg_metadata(all_chapters, metadata_file, default_audio_proc_format)
                 final_file = os.path.join(session['audiobooks_dir'], session['final_name'])
                 if export_audio(merged_tmp, metadata_file, final_file):
                     exported_files.append(final_file)
