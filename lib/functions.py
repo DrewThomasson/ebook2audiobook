@@ -1967,32 +1967,32 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                     context = ctx
                 id = args['session'] if args['session'] is not None else str(uuid.uuid4())
                 session = context.get_session(id)
-                session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE
-                session['is_gui_process'] = args['is_gui_process']
-                session['ebook'] = args['ebook']
-                session['ebook_list'] = args['ebook_list']
-                session['chapters_control'] = args['chapters_control'] if args['chapters_control'] else None
-                session['device'] = args['device']
-                session['language'] = args['language']
-                session['language_iso1'] = args['language_iso1']
-                session['tts_engine'] = args['tts_engine'] if args['tts_engine'] is not None else get_compatible_tts_engines(args['language'])[0]
-                session['custom_model'] = args['custom_model'] if not session['is_gui_process'] or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
-                session['fine_tuned'] = args['fine_tuned']
-                session['voice'] = args['voice']
-                session['xtts_temperature'] =  args['xtts_temperature']
-                session['xtts_length_penalty'] = args['xtts_length_penalty']
-                session['xtts_num_beams'] = args['xtts_num_beams']
-                session['xtts_repetition_penalty'] = args['xtts_repetition_penalty']
-                session['xtts_top_k'] =  args['xtts_top_k']
-                session['xtts_top_p'] = args['xtts_top_p']
-                session['xtts_speed'] = args['xtts_speed']
-                session['xtts_enable_text_splitting'] = args['xtts_enable_text_splitting']
-                session['bark_text_temp'] =  args['bark_text_temp']
-                session['bark_waveform_temp'] =  args['bark_waveform_temp']
-                session['audiobooks_dir'] = args['audiobooks_dir']
-                session['output_format'] = args['output_format']
-                session['output_split'] = args['output_split']    
-                session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
+                session['script_mode'] = str(args['script_mode']) if args['script_mode'] is not None else NATIVE
+                session['is_gui_process'] = bool(args['is_gui_process'])
+                session['ebook'] = str(args['ebook']) if args['ebook'] else None
+                session['ebook_list'] = list(args['ebook_list']) if args['ebook_list'] else None
+                session['chapters_control'] = bool(args['chapters_control']) if args['chapters_control'] else None
+                session['device'] = str(args['device'])
+                session['language'] = str(args['language'])
+                session['language_iso1'] = str(args['language_iso1'])
+                session['tts_engine'] = str(args['tts_engine']) if args['tts_engine'] is not None else str(get_compatible_tts_engines(args['language'])[0])
+                session['custom_model'] = str(args['custom_model']) if not session['is_gui_process'] or args['custom_model'] is None else os.path.join(session['custom_model_dir'], args['custom_model'])
+                session['fine_tuned'] = str(args['fine_tuned'])
+                session['voice'] = str(args['voice'])
+                session['xtts_temperature'] =  float(args['xtts_temperature'])
+                session['xtts_length_penalty'] = float(args['xtts_length_penalty'])
+                session['xtts_num_beams'] = int(args['xtts_num_beams'])
+                session['xtts_repetition_penalty'] = float(args['xtts_repetition_penalty'])
+                session['xtts_top_k'] =  int(args['xtts_top_k'])
+                session['xtts_top_p'] = float(args['xtts_top_p'])
+                session['xtts_speed'] = float(args['xtts_speed'])
+                session['xtts_enable_text_splitting'] = bool(args['xtts_enable_text_splitting'])
+                session['bark_text_temp'] =  float(args['bark_text_temp'])
+                session['bark_waveform_temp'] =  float(args['bark_waveform_temp'])
+                session['audiobooks_dir'] = str(args['audiobooks_dir']) if args['audiobooks_dir'] else None
+                session['output_format'] = str(args['output_format'])
+                session['output_split'] = bool(args['output_split'])
+                session['output_split_hours'] = int(args['output_split_hours']) if args['output_split_hours'] is not None else int(default_output_split_hours)
                 if not session['is_gui_process']:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -3587,16 +3587,16 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     "output_format": output_format,
                     "xtts_temperature": float(xtts_temperature),
                     "xtts_length_penalty": float(xtts_length_penalty),
-                    "xtts_num_beams": session['xtts_num_beams'],
+                    "xtts_num_beams": int(session['xtts_num_beams']),
                     "xtts_repetition_penalty": float(xtts_repetition_penalty),
                     "xtts_top_k": int(xtts_top_k),
                     "xtts_top_p": float(xtts_top_p),
                     "xtts_speed": float(xtts_speed),
-                    "xtts_enable_text_splitting": xtts_enable_text_splitting,
+                    "xtts_enable_text_splitting": bool(xtts_enable_text_splitting),
                     "bark_text_temp": float(bark_text_temp),
                     "bark_waveform_temp": float(bark_waveform_temp),
-                    "output_split": output_split,
-                    "output_split_hours": output_split_hours,
+                    "output_split": bool(output_split),
+                    "output_split_hours": int(output_split_hours),
                     "event": None
                 }
                 error = None
