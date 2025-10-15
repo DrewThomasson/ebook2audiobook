@@ -3070,10 +3070,10 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error)
             return gr.update(value=None), gr.update(value=None)
 
-        def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->gr.Update:
+        def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->gr.update:
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
 
-        def change_convert_btn(upload_file:any=None, upload_file_mode:str=None, custom_model_file:any=None, session:any=None)->gr.Update:
+        def change_convert_btn(upload_file:any=None, upload_file_mode:str=None, custom_model_file:any=None, session:any=None)->gr.update:
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
