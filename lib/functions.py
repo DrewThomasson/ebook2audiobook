@@ -3031,7 +3031,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
                 )
 
-        def change_gr_audiobook_list(selected:any, id:str)->gr.Update:
+        def change_gr_audiobook_list(selected:any, id:str)->gr.update:
             try:
                 session = context.get_session(id)
                 session['audiobook'] = selected
@@ -3089,7 +3089,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error)
                 gr.update()
 
-        def change_gr_ebook_file(data:any, id:str)->gr.Update:
+        def change_gr_ebook_file(data:any, id:str)->gr.update:
             try:
                 session = context.get_session(id)
                 session['ebook'] = None
