@@ -33,7 +33,7 @@ def detect_gender(voice_path:str)->Optional[str]:
         print(error)
         return None
 
-def trim_audio(audio_data:Union[list[float], Tensor], samplerate:int, silence_threshold:float = 0.003, buffer_sec:float = 0.005)->Tensor:
+def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_threshold: float = 0.003, buffer_sec: float = 0.005) -> Tensor:
     # Ensure audio_data is a PyTorch tensor
     if isinstance(audio_data, list):
         audio_data = torch.tensor(audio_data, dtype=torch.float32)
@@ -41,6 +41,7 @@ def trim_audio(audio_data:Union[list[float], Tensor], samplerate:int, silence_th
         if audio_data.ndim != 1:
             error = "audio_data must be a 1D tensor (mono audio)."
             raise ValueError(error)
+            return torch.tensor([], dtype=torch.float32)  # just for static analyzers
         if audio_data.is_cuda:
             audio_data = audio_data.cpu()
         # Detect non-silent indices
@@ -53,6 +54,7 @@ def trim_audio(audio_data:Union[list[float], Tensor], samplerate:int, silence_th
         return audio_data[start_index:end_index]
     error = "audio_data must be a PyTorch tensor or a list of numerical values."
     raise TypeError(error)
+    return torch.tensor([], dtype=torch.float32)
 
 def normalize_audio(input_file:str, output_file:str, samplerate:int)->bool:
     filter_complex = (

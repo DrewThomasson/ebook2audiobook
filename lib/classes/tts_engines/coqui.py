@@ -12,6 +12,7 @@ torch.load = patched_torch_load
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
 
+from torch import Tensor
 from huggingface_hub import hf_hub_download
 from pathlib import Path
 from pprint import pprint
@@ -793,33 +794,34 @@ class Coqui:
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                         if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                        self.audio_segments.append(audio_tensor)
-                        if not re.search(r'\w$', sentence, flags=re.UNICODE) and sentence[-1] != '—':
-                            silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
-                            break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time))
-                            self.audio_segments.append(break_tensor.clone())
-                        if self.audio_segments:
-                            audio_tensor = torch.cat(self.audio_segments, dim=-1)
-                            start_time = self.sentences_total_time
-                            duration = round((audio_tensor.shape[-1] / settings['samplerate']), 2)
-                            end_time = start_time + duration
-                            self.sentences_total_time = end_time
-                            sentence_obj = {
-                                "start": start_time,
-                                "end": end_time,
-                                "text": sentence,
-                                "resume_check": self.sentence_idx
-                            }
-                            self.sentence_idx = append_sentence2vtt(sentence_obj, self.vtt_path)
-                            if self.sentence_idx:
-                                torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
-                                del audio_tensor
-                        self.audio_segments = []
-                        if os.path.exists(final_sentence_file):
-                            return True
-                        else:
-                            error = f"Cannot create {final_sentence_file}"
-                            print(error)
+                        if audio_tensor:
+                            self.audio_segments.append(audio_tensor)
+                            if not re.search(r'\w$', sentence, flags=re.UNICODE) and sentence[-1] != '—':
+                                silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
+                                break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time))
+                                self.audio_segments.append(break_tensor.clone())
+                            if self.audio_segments:
+                                audio_tensor = torch.cat(self.audio_segments, dim=-1)
+                                start_time = self.sentences_total_time
+                                duration = round((audio_tensor.shape[-1] / settings['samplerate']), 2)
+                                end_time = start_time + duration
+                                self.sentences_total_time = end_time
+                                sentence_obj = {
+                                    "start": start_time,
+                                    "end": end_time,
+                                    "text": sentence,
+                                    "resume_check": self.sentence_idx
+                                }
+                                self.sentence_idx = append_sentence2vtt(sentence_obj, self.vtt_path)
+                                if self.sentence_idx:
+                                    torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
+                                    del audio_tensor
+                            self.audio_segments = []
+                            if os.path.exists(final_sentence_file):
+                                return True
+                            else:
+                                error = f"Cannot create {final_sentence_file}"
+                                print(error)
             else:
                 error = f"convert() error: {self.session['tts_engine']} is None"
                 print(error)
