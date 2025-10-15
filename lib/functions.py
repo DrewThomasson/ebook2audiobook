@@ -98,6 +98,26 @@ class SessionTracker:
             session['tab_id'] = None
             session['status'] = None
             session[socket_hash] = None
+            
+def recursive_proxy(data:Any, manager:Any = None)->Any:
+	if manager is None:
+		manager = Manager()
+	if isinstance(data, dict):
+		proxy_dict = manager.dict()
+		for key, value in data.items():
+			proxy_dict[key] = recursive_proxy(value, manager)
+		return proxy_dict
+	elif isinstance(data, list):
+		proxy_list = manager.list()
+		for item in data:
+			proxy_list.append(recursive_proxy(item, manager))
+		return proxy_list
+	elif isinstance(data, (str, int, float, bool, type(None))):
+		return data
+	else:
+		error = f"Unsupported data type: {type(data)}"
+		print(error)
+		return None
 
 class SessionContext:
     def __init__(self):
@@ -198,27 +218,7 @@ class JSONEncoderWithDictProxy(json.JSONEncoder):
 
 ctx_tracker = SessionTracker()
 
-def recursive_proxy(data: Any, manager:Optional[Manager]=None)->Any:
-	if manager is None:
-		manager = Manager()
-	if isinstance(data, dict):
-		proxy_dict = manager.dict()
-		for key, value in data.items():
-			proxy_dict[key] = recursive_proxy(value, manager)
-		return proxy_dict
-	elif isinstance(data, list):
-		proxy_list = manager.list()
-		for item in data:
-			proxy_list.append(recursive_proxy(item, manager))
-		return proxy_list
-	elif isinstance(data, (str, int, float, bool, type(None))):
-		return data
-	else:
-		error = f"Unsupported data type: {type(data)}"
-		print(error)
-		return None
-
-def prepare_dirs(src, session):
+def prepare_dirs(src:str, session:Any)->bool:
     try:
         resume = False
         os.makedirs(os.path.join(models_dir,'tts'), exist_ok=True)
@@ -241,7 +241,7 @@ def prepare_dirs(src, session):
         DependencyError(e)
         return False
 
-def check_programs(prog_name, command, options):
+def check_programs(prog_name:str, command:str, options:str)->bool:
     try:
         subprocess.run(
             [command, options],
@@ -251,18 +251,18 @@ def check_programs(prog_name, command, options):
             text=True,
             encoding='utf-8'
         )
-        return True, None
+        return True
     except FileNotFoundError:
         e = f'''********** Error: {prog_name} is not installed! if your OS calibre package version 
         is not compatible you still can run ebook2audiobook.sh (linux/mac) or ebook2audiobook.cmd (windows) **********'''
         DependencyError(e)
-        return False, None
+        return False
     except subprocess.CalledProcessError:
         e = f'Error: There was an issue running {prog_name}.'
         DependencyError(e)
-        return False, None
+        return False
 
-def analyze_uploaded_file(zip_path, required_files):
+def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     try:
         if not os.path.exists(zip_path):
             error = f"The file does not exist: {os.path.basename(zip_path)}"
@@ -293,8 +293,9 @@ def analyze_uploaded_file(zip_path, required_files):
     except Exception as e:
         error = f"An error occurred: {e}"
         raise RuntimeError(error)
+    return False
 
-def extract_custom_model(file_src, session, required_files=None):
+def extract_custom_model(file_src:str, session:Any, required_files:Optional[list]=None)->Optional[str]:
     try:
         model_path = None
         if required_files is None:
@@ -339,7 +340,7 @@ def extract_custom_model(file_src, session, required_files=None):
             os.remove(file_src)
         return None
         
-def hash_proxy_dict(proxy_dict):
+def hash_proxy_dict(proxy_dict:Manager)->str:
     return hashlib.md5(str(proxy_dict).encode('utf-8')).hexdigest()
 
 def calculate_hash(filepath, hash_algorithm='sha256'):
@@ -370,7 +371,7 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def convert2epub(id):
+def convert2epub(id:str)->bool:
     session = context.get_session(id)
     if session['cancellation_requested']:
         print('Cancel requested')
@@ -447,27 +448,27 @@ def convert2epub(id):
         DependencyError(e)
         return False
 
-def get_ebook_title(epubBook, all_docs):
+def get_ebook_title(epubBook:Any,all_docs:list[Any])->Optional[str]:
     # 1. Try metadata (official EPUB title)
-    meta_title = epubBook.get_metadata("DC", "title")
+    meta_title = epubBook.get_metadata("DC","title")
     if meta_title and meta_title[0][0].strip():
         return meta_title[0][0].strip()
     # 2. Try <title> in the head of the first XHTML document
     if all_docs:
         html = all_docs[0].get_content().decode("utf-8")
-        soup = BeautifulSoup(html, "html.parser")
+        soup = BeautifulSoup(html,"html.parser")
         title_tag = soup.select_one("head > title")
         if title_tag and title_tag.text.strip():
             return title_tag.text.strip()
-        # 3. Try <img alt="..."> if no visible <title>
-        img = soup.find("img", alt=True)
+        # 3. Try <img alt = "..."> if no visible <title>
+        img = soup.find("img",alt = True)
         if img:
             alt = img['alt'].strip()
             if alt and "cover" not in alt.lower():
                 return alt
     return None
 
-def get_cover(epubBook, session):
+def get_cover(epubBook:Any, session:Any)->bool|str:
     try:
         if session['cancellation_requested']:
             msg = 'Cancel requested'
@@ -489,14 +490,14 @@ def get_cover(epubBook, session):
             # Convert to RGB if needed (JPEG doesn't support alpha)
             if image.mode in ('RGBA', 'P'):
                 image = image.convert('RGB')
-            image.save(cover_path, format='JPEG')
+            image.save(cover_path, format = 'JPEG')
             return cover_path
         return True
     except Exception as e:
         DependencyError(e)
         return False
 
-def get_chapters(epubBook, session):
+def get_chapters(epubBook:Any, session:Any)->tuple[Any,Any]:
     try:
         msg = r'''
 *******************************************************************************
@@ -561,8 +562,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return error, None
 
-def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_compat):
-    def tuple_row(node, last_text_char=None):
+def filter_chapter(doc:Any, lang:str, lang_iso1:str, tts_engine:str, stanza_nlp:Any, is_num2words_compat:bool)->Any:
+    def tuple_row(node:Any, last_text_char:Optional[str]=None)->Any:
         try:
             for child in node.children:
                 if isinstance(child, NavigableString):
@@ -790,9 +791,8 @@ def filter_chapter(doc, lang, lang_iso1, tts_engine, stanza_nlp, is_num2words_co
         DependencyError(error)
         return None
 
-def get_sentences(text, lang, tts_engine):
-
-    def split_inclusive(text, pattern):
+def get_sentences(text:str, lang:str, tts_engine:str)->Any:
+    def split_inclusive(text:str, pattern:Any)->list[str]:
         result = []
         last_end = 0
         for match in pattern.finditer(text):
@@ -804,7 +804,7 @@ def get_sentences(text, lang, tts_engine):
                 result.append(tail)
         return result
 
-    def segment_ideogramms(text):
+    def segment_ideogramms(text:str)->list[str]:
         sml_pattern = "|".join(re.escape(token) for token in sml_tokens)
         segments = re.split(f"({sml_pattern})", text)
         result = []
@@ -838,7 +838,7 @@ def get_sentences(text, lang, tts_engine):
             DependencyError(e)
             return [text] 
 
-    def join_ideogramms(idg_list):
+    def join_ideogramms(idg_list:list[str])->Any:
         try:
             buffer = ''
             for token in idg_list:
@@ -973,12 +973,8 @@ def get_sentences(text, lang, tts_engine):
         error = f'get_sentences() error: {e}'
         print(error)
         return None
-        
-def get_ram():
-    vm = psutil.virtual_memory()
-    return vm.total // (1024 ** 3)
 
-def get_sanitized(str, replacement="_"):
+def get_sanitized(str:str, replacement:str="_")->str:
     str = str.replace('&', 'And')
     forbidden_chars = r'[<>:"/\\|?*\x00-\x1F ()]'
     sanitized = re.sub(r'\s+', replacement, str)
@@ -986,7 +982,7 @@ def get_sanitized(str, replacement="_"):
     sanitized = sanitized.strip("_")
     return sanitized
     
-def get_date_entities(text, stanza_nlp):
+def get_date_entities(text:str, stanza_nlp:Any)->list[tuple[int,int,str]]|bool:
     try:
         doc = stanza_nlp(text)
         date_spans = []
@@ -999,7 +995,7 @@ def get_date_entities(text, stanza_nlp):
         print(error)
         return False
 
-def get_num2words_compat(lang_iso1):
+def get_num2words_compat(lang_iso1:str)->bool:
     try:
         test = num2words(1, lang=lang_iso1.replace('zh', 'zh_CN'))
         return True
@@ -1008,7 +1004,7 @@ def get_num2words_compat(lang_iso1):
     except Exception as e:
         return False
 
-def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: bool, max_single_value: int = 999_999_999_999_999_999):
+def set_formatted_number(text:str, lang:str, lang_iso1:str, is_num2words_compat:bool, max_single_value:int=999_999_999_999_999_999)->str:
     # match up to 18 digits, optional “,…” groups (allowing spaces or NBSP after comma), optional decimal of up to 12 digits
     # handle optional range with dash/en dash/em dash between numbers, and allow trailing punctuation
     number_re = re.compile(
@@ -1020,7 +1016,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
         re.UNICODE
     )
 
-    def normalize_commas(num_str: str) -> str:
+    def normalize_commas(num_str:str)->str:
         """Normalize number string to standard comma format: 1,234,567"""
         tok = num_str.replace('\u00A0', '').replace(' ', '')
         if '.' in tok:
@@ -1032,7 +1028,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
             integer_part = tok.replace(',', '')
             return "{:,}".format(int(integer_part))
 
-    def clean_single_num(num_str):
+    def clean_single_num(num_str:str)->str:
         tok = unicodedata.normalize('NFKC', num_str)
         if tok.lower() in ('inf', 'infinity', 'nan'):
             return tok
@@ -1057,7 +1053,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
             )
             return ' '.join(phoneme_map.get(ch, ch) for ch in str(num))
 
-    def clean_match(match):
+    def clean_match(match:re.Match)->str:
         first_num = clean_single_num(match.group(1))
         dash_char = match.group(2) or ''
         second_num = clean_single_num(match.group(3)) if match.group(3) else ''
@@ -1069,7 +1065,7 @@ def set_formatted_number(text: str, lang, lang_iso1: str, is_num2words_compat: b
 
     return number_re.sub(clean_match, text)
 
-def year2words(year_str, lang, lang_iso1, is_num2words_compat):
+def year2words(year_str:str, lang:str, lang_iso1:str, is_num2words_compat:bool)->str|bool:
     try:
         year = int(year_str)
         first_two = int(year_str[:2])
@@ -1091,12 +1087,12 @@ def year2words(year_str, lang, lang_iso1, is_num2words_compat):
         raise
         return False
 
-def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+def clock2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
     time_rx = re.compile(r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?')
     lc = language_clock.get(lang) if 'language_clock' in globals() else None
     _n2w_cache = {}
 
-    def n2w(n: int) -> str:
+    def n2w(n:int)->str:
         key = (n, lang, is_num2words_compat)
         if key in _n2w_cache:
             return _n2w_cache[key]
@@ -1107,7 +1103,7 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         _n2w_cache[key] = word
         return word
 
-    def repl_num(m: re.Match) -> str:
+    def repl_num(m:re.Match)->str:
         # Parse hh[:mm[:ss]]
         try:
             h = int(m.group(1))
@@ -1159,9 +1155,8 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
     return time_rx.sub(repl_num, text)
 
-def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
-
-    def repl_ambiguous(match):
+def math2words(text:str, lang:str, lang_iso1:str, tts_engine:str, is_num2words_compat:bool)->str:
+    def repl_ambiguous(match:re.Match)->str:
         # handles "num SYMBOL num" and "SYMBOL num"
         if match.group(2) and match.group(2) in ambiguous_replacements:
             return f"{match.group(1)} {ambiguous_replacements[match.group(2)]} {match.group(3)}"
@@ -1169,7 +1164,7 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             return f"{ambiguous_replacements[match.group(3)]} {match.group(4)}"
         return match.group(0)
 
-    def _ordinal_to_words(m):
+    def _ordinal_to_words(m:re.Match)->str:
         n = int(m.group(1))
         if is_num2words_compat:
             try:
@@ -1207,12 +1202,11 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
-def roman2number(text):
-
-    def is_valid_roman(s):
+def roman2number(text:str)->str:
+    def is_valid_roman(s:str)->bool:
         return bool(valid_roman.fullmatch(s))
 
-    def to_int(s):
+    def to_int(s:str)->str:
         s = s.upper()
         i, result = 0, 0
         while i < len(s):
@@ -1222,24 +1216,24 @@ def roman2number(text):
                     i += len(roman)
                     break
             else:
-                return s  # Not even a sequence of roman letters
-        return result
+                return s
+        return str(result)
 
-    def repl_heading(m):
+    def repl_heading(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
         val = to_int(roman)
         return f"{val}{m.group(2)}{m.group(3)}"
 
-    def repl_standalone(m):
+    def repl_standalone(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
         val = to_int(roman)
         return f"{val}{m.group(2)}"
 
-    def repl_word(m):
+    def repl_word(m:re.Match)->str:
         roman = m.group(1)
         if not is_valid_roman(roman):
             return m.group(0)
@@ -1251,24 +1245,21 @@ def roman2number(text):
         r'^(?=.)M{0,3}(CM|CD|D?C{0,3})(XC|XL|L?X{0,3})(IX|IV|V?I{0,3})$',
         re.IGNORECASE
     )
-
     # Your heading/standalone rules stay
     text = re.sub(r'^(?:\s*)([IVXLCDM]+)([.-])(\s+)', repl_heading, text, flags=re.MULTILINE)
     text = re.sub(r'^(?:\s*)([IVXLCDM]+)([.-])(?:\s*)$', repl_standalone, text, flags=re.MULTILINE)
-
     # NEW: only convert whitespace-delimited tokens of length >= 2
     # This avoids: 19C, 19°C, °C, AC/DC, CD-ROM, single-letter "I"
     text = re.sub(r'(?<!\S)([IVXLCDM]{2,})(?!\S)', repl_word, text)
-
     return text
 
-def filter_sml(text):
+def filter_sml(text:str)->str:
     for key, value in TTS_SML.items():
         pattern = re.escape(key) if key == '###' else r'\[' + re.escape(key) + r'\]'
         text = re.sub(pattern, f" {value} ", text)
     return text
 
-def normalize_text(text, lang, lang_iso1, tts_engine):
+def normalize_text(text:str, lang:str, lang_iso1:str, tts_engine:str)->str:
     # Remove emojis
     emoji_pattern = re.compile(f"[{''.join(emojis_list)}]+", flags=re.UNICODE)
     emoji_pattern.sub('', text)
@@ -1327,7 +1318,7 @@ def normalize_text(text, lang, lang_iso1, tts_engine):
     text = ' '.join(text.split())
     return text
 
-def convert_chapters2audio(id):
+def convert_chapters2audio(id:str)->bool:
     session = context.get_session(id)
     try:
         if session['cancellation_requested']:
@@ -1428,7 +1419,7 @@ def convert_chapters2audio(id):
                     if chapter_num <= resume_chapter:
                         msg = f'**Recovering missing file block {chapter_num}'
                         print(msg)
-                    if combine_audio_sentences(chapter_audio_file, start, end, session):
+                    if combine_audio_sentences(chapter_audio_file, int(start), int(end), session):
                         msg = f'Combining block {chapter_num} to audio, sentence {start} to {end}'
                         print(msg)
                     else:
@@ -1440,7 +1431,7 @@ def convert_chapters2audio(id):
         DependencyError(e)
         return False
 
-def combine_audio_sentences(chapter_audio_file, start, end, session):
+def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:Any)->bool:
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
@@ -1448,7 +1439,6 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         start = int(start)
         end = int(end)
         is_gui_process = session.get('is_gui_process', False)
-
         sentence_files = [
             f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1486,7 +1476,6 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
             if not all(results):
                 print("combine_audio_sentences() One or more chunks failed.")
                 return False
-
             final_list = os.path.join(temp_dir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
                 for _, chunk_path, _ in chunk_list:
@@ -1501,9 +1490,8 @@ def combine_audio_sentences(chapter_audio_file, start, end, session):
         DependencyError(e)
         return False
 
-def combine_audio_chapters(id):
-
-    def get_audio_duration(filepath):
+def combine_audio_chapters(id:str)->list[str]|None:
+    def get_audio_duration(filepath:str)->float:
         try:
             ffprobe_cmd = [
                 shutil.which('ffprobe'),
@@ -1525,7 +1513,7 @@ def combine_audio_chapters(id):
             print(error)
             return 0
 
-    def generate_ffmpeg_metadata(part_chapters, session, output_metadata_path, default_audio_proc_format):
+    def generate_ffmpeg_metadata(part_chapters:list[tuple[str,str]], output_metadata_path:str, default_audio_proc_format:str)->str|bool:
         try:
             out_fmt = session['output_format']
             is_mp4_like = out_fmt in ['mp4', 'm4a', 'm4b', 'mov']
@@ -1583,7 +1571,7 @@ def combine_audio_chapters(id):
             print(error)
             return False
 
-    def export_audio(ffmpeg_combined_audio, ffmpeg_metadata_file, ffmpeg_final_file):
+    def export_audio(ffmpeg_combined_audio:str, ffmpeg_metadata_file:str, ffmpeg_final_file:str)->bool:
         try:
             if session['cancellation_requested']:
                 print('Cancel requested')
@@ -1600,17 +1588,14 @@ def combine_audio_chapters(id):
             input_rate = codec_info[1] if len(codec_info) > 1 else None
             ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
             target_codec, target_rate = None, None
-
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
                 target_rate = '44100'
                 ffmpeg_cmd += ['-map', '0:a', '-ar', target_rate, '-sample_fmt', 's16']
-
             elif session['output_format'] == 'aac':
                 target_codec = 'aac'
                 target_rate = '44100'
                 ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart']
-
             elif session['output_format'] == 'flac':
                 target_codec = 'flac'
                 target_rate = '44100'
@@ -1633,8 +1618,7 @@ def combine_audio_chapters(id):
                     target_codec = 'opus'
                     target_rate = '48000'
                     ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
-                ffmpeg_cmd += ['-map_metadata', '1']
-            
+                ffmpeg_cmd += ['-map_metadata', '1'] 
             if input_codec == target_codec and input_rate == target_rate:
                 ffmpeg_cmd = [
                     shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio,
@@ -1726,7 +1710,6 @@ def combine_audio_chapters(id):
             if cur_part:
                 part_files.append(cur_part)
                 part_chapter_indices.append(cur_indices)
-
             temp_export = os.path.join(session['process_dir'], "export")
             os.makedirs(temp_export, exist_ok=True)
             for part_idx, (part_file_list, indices) in enumerate(zip(part_files, part_chapter_indices)):
@@ -1759,11 +1742,9 @@ def combine_audio_chapters(id):
                     if not assemble_chunks(final_list, combined_chapters_file, session['is_gui_process']):
                         print(f"assemble_chunks() Final merge failed for part {part_idx+1}.")
                         return None
-
                     metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
                     part_chapters = [(chapter_files[i], chapter_titles[i]) for i in indices]
                     generate_ffmpeg_metadata(part_chapters, session, metadata_file, default_audio_proc_format)
-
                     final_file = os.path.join(
                         session['audiobooks_dir'],
                         f"{session['final_name'].rsplit('.', 1)[0]}_part{part_idx+1}.{session['output_format']}" if needs_split else session['final_name']
@@ -1792,9 +1773,9 @@ def combine_audio_chapters(id):
         return exported_files if exported_files else None
     except Exception as e:
         DependencyError(e)
-        return False
+        return None
 
-def assemble_chunks(txt_file, out_file, is_gui_process):
+def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
     try:
         total_duration = 0.0
         try:
@@ -1865,7 +1846,7 @@ def assemble_chunks(txt_file, out_file, is_gui_process):
         print(f"assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}")
         return False
 
-def ellipsize_utf8_bytes(s: str, max_bytes: int, ellipsis: str = "...") -> str:
+def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="...")->str:
     s = "" if s is None else str(s)
     if max_bytes <= 0:
         return ""
@@ -1885,13 +1866,13 @@ def ellipsize_utf8_bytes(s: str, max_bytes: int, ellipsis: str = "...") -> str:
         out.extend(b)
     return out.decode("utf-8") + ellipsis
 
-def sanitize_meta_chapter_title(title: str, max_bytes: int = 140) -> str:
+def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     # avoid None and embedded NULs which some muxers accidentally keep
     title = (title or '').replace('\x00', '')
     title = title.replace(TTS_SML['pause'], '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
 
-def delete_unused_tmp_dirs(web_dir, days, session):
+def delete_unused_tmp_dirs(web_dir:str, days:int, session:Any)->None:
     dir_array = [
         tmp_dir,
         web_dir,
@@ -1923,21 +1904,14 @@ def delete_unused_tmp_dirs(web_dir, days, session):
                             error = f"Error deleting {full_dir_path}: {e}"
                             print(error)
 
-def compare_file_metadata(f1, f2):
-    if os.path.getsize(f1) != os.path.getsize(f2):
-        return False
-    if os.path.getmtime(f1) != os.path.getmtime(f2):
-        return False
-    return True
-    
-def get_compatible_tts_engines(language):
+def get_compatible_tts_engines(language:str)->list:
     compatible_engines = [
         tts for tts in models.keys()
         if language in language_tts.get(tts, {})
     ]
     return compatible_engines
 
-def convert_ebook_batch(args, ctx=None):
+def convert_ebook_batch(args:dict, ctx:object|None=None)->tuple:
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
@@ -1947,15 +1921,17 @@ def convert_ebook_batch(args, ctx=None):
                 progress_status, passed = convert_ebook(args, ctx)
                 if passed is False:
                     print(f'Conversion failed: {progress_status}')
-                    sys.exit(1)
+                    if not args['is_gui_process']:
+                        sys.exit(1)
                 args['ebook_list'].remove(file) 
         reset_session(args['session'])
         return progress_status, passed
     else:
         print(f'the ebooks source is not a list!')
-        sys.exit(1)       
+        if not args['is_gui_process']:
+            sys.exit(1)       
 
-def convert_ebook(args, ctx=None):
+def convert_ebook(args:dict, ctx:object|None=None)->tuple:
     try:
         if args['event'] == 'blocks_confirmed':
             return finalize_audiobook(args['id'])
@@ -1983,17 +1959,13 @@ def convert_ebook(args, ctx=None):
                         args['language_iso1'] = None
                 except Exception as e:
                     pass
-
                 if args['language'] not in language_mapping.keys():
                     error = 'The language you provided is not (yet) supported'
                     print(error)
                     return error, false
-
                 if ctx is not None:
                     context = ctx
-
                 id = args['session'] if args['session'] is not None else str(uuid.uuid4())
-
                 session = context.get_session(id)
                 session['script_mode'] = args['script_mode'] if args['script_mode'] is not None else NATIVE
                 session['is_gui_process'] = args['is_gui_process']
@@ -2021,7 +1993,6 @@ def convert_ebook(args, ctx=None):
                 session['output_format'] = args['output_format']
                 session['output_split'] = args['output_split']    
                 session['output_split_hours'] = args['output_split_hours'] if args['output_split_hours'] is not None else default_output_split_hours
-
                 if not session['is_gui_process']:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -2057,10 +2028,10 @@ def convert_ebook(args, ctx=None):
                                 print(error)
                 if error is None:
                     if session['script_mode'] == NATIVE:
-                        bool, e = check_programs('Calibre', 'ebook-convert', '--version')
+                        bool = check_programs('Calibre', 'ebook-convert', '--version')
                         if not bool:
                             error = f'check_programs() Calibre failed: {e}'
-                        bool, e = check_programs('FFmpeg', 'ffmpeg', '-version')
+                        bool = check_programs('FFmpeg', 'ffmpeg', '-version')
                         if not bool:
                             error = f'check_programs() FFMPEG failed: {e}'
                     if error is None:
@@ -2168,7 +2139,7 @@ def convert_ebook(args, ctx=None):
         print(f'convert_ebook() Exception: {e}')
         return e, False
 
-def finalize_audiobook(id):
+def finalize_audiobook(id:str)->tuple:
     session = context.get_session(id)
     if session['chapters'] is not None:
         if convert_chapters2audio(session['id']):
@@ -2189,7 +2160,7 @@ def finalize_audiobook(id):
         error = 'get_chapters() failed!'
     return error, False
 
-def restore_session_from_data(data, session):
+def restore_session_from_data(data:dict, session:dict)->None:
     try:
         for key, value in data.items():
             if key in session:
@@ -2202,7 +2173,7 @@ def restore_session_from_data(data, session):
     except Exception as e:
         DependencyError(e)
 
-def reset_session(id):
+def reset_session(id:str)->None:
     session = context.get_session(id)
     data = {
         "ebook": None,
@@ -2240,7 +2211,7 @@ def reset_session(id):
     }
     restore_session_from_data(data, session)
 
-def get_all_ip_addresses():
+def get_all_ip_addresses()->list:
     ip_addresses = []
     for interface, addresses in psutil.net_if_addrs().items():
         for address in addresses:
@@ -2250,7 +2221,7 @@ def get_all_ip_addresses():
                 ip_addresses.append(address.address)  
     return ip_addresses
 
-def show_alert(state):
+def show_alert(state:dict)->None:
     if isinstance(state, dict):
         if state['type'] is not None:
             if state['type'] == 'error':
@@ -2262,7 +2233,7 @@ def show_alert(state):
             elif state['type'] == 'success':
                 gr.Success(state['msg'])
 
-def web_interface(args, ctx):
+def web_interface(args:dict, ctx:SessionContext)->None:
     global context
     context = ctx
     script_mode = args['script_mode']
@@ -2909,25 +2880,25 @@ def web_interface(args, ctx):
         gr_read_data = gr.JSON(elem_id='gr_read_data', visible='hidden')
         gr_write_data = gr.JSON(elem_id='gr_write_data', visible='hidden') 
 
-        def cleanup_session(req: gr.Request):
+        def cleanup_session(req:gr.Request)->None:
             socket_hash = req.session_hash
             if any(socket_hash in session for session in context.sessions.values()):
                 session_id = context.find_id_by_hash(socket_hash)
                 ctx_tracker.end_session(session_id, socket_hash)
 
-        def disable_components():
+        def disable_components()->tuple:
             outputs = tuple([gr.update(interactive=False) for _ in range(11)])
             return outputs
         
-        def enable_components(id):
+        def enable_components(id:str)->tuple:
             session = context.get_session(id)
             if session['event'] == 'confirm_blocks':
                 outputs = tuple([gr.update() for _ in range(11)])
             else:
                 outputs = tuple([gr.update(interactive=True) for _ in range(11)])
             return outputs
-            
-        def extract_original_uploaded_filename(obj):
+
+        def extract_original_uploaded_filename(obj:any)->str|None:
             if obj is None:
                 return None
             return (
@@ -2936,7 +2907,7 @@ def web_interface(args, ctx):
                 or Path(obj).name
             )
 
-        def show_gr_modal(type, msg):
+        def show_gr_modal(type:str, msg:str)->str:
             return f'''
             <div id="custom-gr_modal" class="gr-modal">
                 <div class="gr-modal-content">
@@ -2946,7 +2917,7 @@ def web_interface(args, ctx):
             </div>
             '''
 
-        def show_confirm_buttons(mode):
+        def show_confirm_buttons(mode:str)->str:
             if mode in ['confirm_deletion', 'confirm_blocks']:
                 button_yes = f'#gr_{mode}_yes_btn'
                 button_no = f'#gr_{mode}_no_btn'
@@ -2959,21 +2930,20 @@ def web_interface(args, ctx):
             else:
                 return '<div class="spinner"></div>'
 
-        def show_rating(tts_engine):
-
-            def yellow_stars(n):
+        def show_rating(tts_engine:str)->str:
+            def yellow_stars(n:int):
                 return "".join(
                     "<span style='color:#f0bc00; font-size:12px'>★</span>" for _ in range(n)
                 )
 
-            def color_box(value):
+            def color_box(value:int)->str:
                 if value <= 4:
                     color = "#4CAF50"  # Green = low
                 elif value <= 8:
                     color = "#FF9800"  # Orange = medium
                 else:
                     color = "#F44336"  # Red = high
-                return f"<span style='background:{color};color:white; padding: 0 3px 0 3px; border-radius:3px; font-size:11px; white-space: nowrap'>{value} GB</span>"
+                return f"<span style='background:{color};color:white; padding: 0 3px 0 3px; border-radius:3px; font-size:11px; white-space: nowrap'>{str(value)} GB</span>"
             
             rating = default_engine_settings[tts_engine]['rating']
             return f'''
@@ -2990,28 +2960,28 @@ def web_interface(args, ctx):
                     ">
                       <tr style="border:none; vertical-align:bottom;">
                         <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                          <b>GPU VRAM:</b> {color_box(rating["GPU VRAM"])}
+                          <b>GPU VRAM:</b> {color_box(int(rating["GPU VRAM"]))}
                         </td>
                         <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                          <b>CPU:</b> {yellow_stars(rating["CPU"])}
+                          <b>CPU:</b> {yellow_stars(int(rating["CPU"]))}
                         </td>
                         <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                          <b>RAM:</b> {color_box(rating["RAM"])}
+                          <b>RAM:</b> {color_box(int(rating["RAM"]))}
                         </td>
                         <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                          <b>Realism:</b> {yellow_stars(rating["Realism"])}
+                          <b>Realism:</b> {yellow_stars(int(rating["Realism"]))}
                         </td>
                       </tr>
                     </table>
                 </div>
             '''
 
-        def alert_exception(error):
+        def alert_exception(error:str)->None:
             print(error)
             gr.Error(error)
             DependencyError(error)
 
-        def restore_dashboard(id, req: gr.Request):
+        def restore_dashboard(id:str, req:gr.Request)->tuple:
             try:
                 session = context.get_session(id)
                 socket_hash = req.session_hash
@@ -3039,7 +3009,7 @@ def web_interface(args, ctx):
                 outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
 
-        def restore_audiobook_player(audiobook):
+        def restore_audiobook_player(audiobook:any)->tuple:
             try:
                 visible = True if audiobook is not None else False
                 return (
@@ -3051,7 +3021,7 @@ def web_interface(args, ctx):
                 outputs = tuple([gr.update() for _ in range(3)])
                 return outputs
 
-        def refresh_interface(id):
+        def refresh_interface(id:str)->tuple:
             session = context.get_session(id)
             if session['event'] == 'confirm_blocks':
                 return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
@@ -3061,7 +3031,7 @@ def web_interface(args, ctx):
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
                 )
 
-        def change_gr_audiobook_list(selected, id):
+        def change_gr_audiobook_list(selected:any, id:str)->gr.Update:
             try:
                 session = context.get_session(id)
                 session['audiobook'] = selected
@@ -3072,7 +3042,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(visible=group_visible)
 
-        def update_audiobook_player(id):
+        def update_audiobook_player(id:str)->tuple:
             try:
                 session = context.get_session(id)
                 if session['audiobook'] is not None: 
@@ -3099,11 +3069,11 @@ def web_interface(args, ctx):
                 print(error)
                 alert_exception(error)
             return gr.update(value=None), gr.update(value=None)
-     
-        def update_gr_glass_mask(str=gr_glass_mask_msg, attr=['gr-glass-mask']):
+
+        def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->gr.Update:
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
-        
-        def change_convert_btn(upload_file=None, upload_file_mode=None, custom_model_file=None, session=None):
+
+        def change_convert_btn(upload_file:any=None, upload_file_mode:str=None, custom_model_file:any=None, session:any=None)->gr.Update:
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
@@ -3117,8 +3087,9 @@ def web_interface(args, ctx):
             except Exception as e:
                 error = f'change_convert_btn(): {e}'
                 alert_exception(error)
+                gr.update()
 
-        def change_gr_ebook_file(data, id):
+        def change_gr_ebook_file(data:any, id:str)->gr.Update:
             try:
                 session = context.get_session(id)
                 session['ebook'] = None
@@ -3139,8 +3110,8 @@ def web_interface(args, ctx):
                 error = f'change_gr_ebook_file(): {e}'
                 alert_exception(error)
             return gr.update(value='', visible=False)
-            
-        def change_gr_ebook_mode(val, id):
+
+        def change_gr_ebook_mode(val:str, id:str)->tuple:
             session = context.get_session(id)
             session['ebook_mode'] = val
             if val == 'single':
@@ -3148,7 +3119,7 @@ def web_interface(args, ctx):
             else:
                 return gr.update(label=src_label_dir, value=None, file_count='directory'), gr.update(visible=False)
 
-        def change_gr_voice_file(f, id):
+        def change_gr_voice_file(f:Any, id:str):tuple:
             if f is not None:
                 state = {}
                 if len(voice_options) > max_custom_voices:
@@ -3179,14 +3150,14 @@ def web_interface(args, ctx):
                 return gr.update(value=None), update_gr_voice_list(id)
             return gr.update(), gr.update()
 
-        def change_gr_voice_list(selected, id):
+        def change_gr_voice_list(selected:Any, id:str)->tuple:
             session = context.get_session(id)
             session['voice'] = next((value for label, value in voice_options if value == selected), None)
             visible = True if session['voice'] is not None else 'hidden'
             min_width = 60 if session['voice'] is not None else 0
             return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible), gr.update(visible=visible)
 
-        def click_gr_voice_del_btn(selected, id):
+        def click_gr_voice_del_btn(selected:Any, id:str)->tuple:
             try:
                 if selected is not None:
                     session = context.get_session(id)
@@ -3229,7 +3200,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
                 return gr.update(), gr.update(visible=False)
 
-        def click_gr_custom_model_del_btn(selected, id):
+        def click_gr_custom_model_del_btn(selected:Any, id:str)->tuple:
             try:
                 if selected is not None:
                     session = context.get_session(id)
@@ -3241,7 +3212,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(), gr.update(visible=False)
 
-        def click_gr_audiobook_del_btn(selected, id):
+        def click_gr_audiobook_del_btn(selected:Any, id:str)->tuple:
             try:
                 if selected is not None:
                     session = context.get_session(id)
@@ -3253,7 +3224,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(), gr.update(visible=False), gr.update(visible=False)
 
-        def confirm_deletion(voice_path, custom_model, audiobook, id, method=None):
+        def confirm_deletion(voice_path:str, custom_model:str, audiobook:str, id:str, method:any=None)->tuple:
             try:
                 if method is not None:
                     session = context.get_session(id)
@@ -3296,7 +3267,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
 
-        def confirm_blocks(choice, id):
+        def confirm_blocks(choice:str, id:str)->gr.update:
             session = context.get_session(id)
             if choice == 'yes':           
                 session['event'] = 'blocks_confirmed'
@@ -3304,7 +3275,7 @@ def web_interface(args, ctx):
                 session['status'] = 'ready'
             return gr.update(value='', visible=False)
 
-        def update_gr_voice_list(id, fine_tuned=None):
+        def update_gr_voice_list(id:str, fine_tuned:Any=None)->gr.update:
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
@@ -3382,7 +3353,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
                 return gr.update()
 
-        def update_gr_tts_engine_list(id):
+        def update_gr_tts_engine_list(id:str)->gr.update:
             try:
                 nonlocal tts_engine_options
                 session = context.get_session(id)
@@ -3394,7 +3365,7 @@ def web_interface(args, ctx):
                 alert_exception(error)              
                 return gr.update()
 
-        def update_gr_custom_model_list(id):
+        def update_gr_custom_model_list(id:str)->gr.update:
             try:
                 nonlocal custom_model_options
                 session = context.get_session(id)
@@ -3414,7 +3385,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
                 return gr.update()
 
-        def update_gr_fine_tuned_list(id):
+        def update_gr_fine_tuned_list(id:str)->gr.update:
             try:
                 nonlocal fine_tuned_options
                 session = context.get_session(id)
@@ -3433,11 +3404,11 @@ def web_interface(args, ctx):
                 alert_exception(error)              
                 return gr.update()
 
-        def change_gr_device(device, id):
+        def change_gr_device(device:str, id:str)->None:
             session = context.get_session(id)
             session['device'] = device
 
-        def change_gr_language(selected, id):
+        def change_gr_language(selected:Any, id:str)->tuple:
             if selected:
                 session = context.get_session(id)
                 prev = session['language']      
@@ -3451,7 +3422,7 @@ def web_interface(args, ctx):
                 )
             return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
-        def check_custom_model_tts(custom_model_dir, tts_engine):
+        def check_custom_model_tts(custom_model_dir:str, tts_engine:str)->any:
             dir_path = None
             if custom_model_dir is not None and tts_engine is not None:
                 dir_path = os.path.join(custom_model_dir, tts_engine)
@@ -3459,7 +3430,7 @@ def web_interface(args, ctx):
                     os.makedirs(dir_path, exist_ok=True)
             return dir_path
 
-        def change_gr_custom_model_file(f, t, id):
+        def change_gr_custom_model_file(f:Any, t:str, id:str)->tuple:
             try:
                 session = context.get_session(id)
                 if f is not None:
@@ -3498,7 +3469,7 @@ def web_interface(args, ctx):
                 state['msg'] = error
             return gr.update(), gr.update()
 
-        def change_gr_tts_engine_list(engine, id):
+        def change_gr_tts_engine_list(engine:str, id:str)->tuple:
             session = context.get_session(id)
             session['tts_engine'] = engine
             session['fine_tuned'] = default_fine_tuned
@@ -3522,7 +3493,7 @@ def web_interface(args, ctx):
                         gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"), gr.update(label=''), update_gr_voice_list(id)
                 )
                 
-        def change_gr_fine_tuned_list(selected, id):
+        def change_gr_fine_tuned_list(selected:Any, id:str)->tuple:
             if selected:
                 session = context.get_session(id)
                 visible = False
@@ -3533,28 +3504,28 @@ def web_interface(args, ctx):
                 return gr.update(visible=visible), update_gr_voice_list(id, selected)
             return gr.update(), gr.update()
 
-        def change_gr_custom_model_list(selected, id):
+        def change_gr_custom_model_list(selected:str, id:str)->tuple:
             session = context.get_session(id)
             session['custom_model'] = next((value for label, value in custom_model_options if value == selected), None)
             visible = True if session['custom_model'] is not None else False
             return gr.update(visible=not visible), gr.update(visible=visible)
         
-        def change_gr_output_format_list(val, id):
+        def change_gr_output_format_list(val:str, id:str)->None:
             session = context.get_session(id)
             session['output_format'] = val
             return
             
-        def change_gr_output_split(val, id):
+        def change_gr_output_split(val:str, id:str)->gr.update:
             session = context.get_session(id)
             session['output_split'] = val
             return gr.update(visible=val)
 
-        def change_gr_playback_time(time, id):
+        def change_gr_playback_time(time:float, id:str)->None:
             session = context.get_session(id)
             session['playback_time'] = time
             return
 
-        def toggle_audiobook_files(audiobook, is_visible):
+        def toggle_audiobook_files(audiobook:Any, is_visible:bool)->tuple:
             if not audiobook:
                 error = 'No audiobook selected.'
                 alert_exception(error)
@@ -3572,7 +3543,7 @@ def web_interface(args, ctx):
                 files.append(str(vtt))
             return gr.update(visible=True, value=files), True
 
-        def change_param(key, val, id, val2=None):
+        def change_param(key:str, val:Any, id:str, val2:Any=None)->None:
             session = context.get_session(id)
             session[key] = val
             state = {}
@@ -3593,10 +3564,10 @@ def web_interface(args, ctx):
             return
 
         def submit_convert_btn(
-                id, device, ebook_file, chapters_control, tts_engine, language, voice, custom_model, fine_tuned, output_format, xtts_temperature, 
-                xtts_length_penalty, xtts_num_beams, xtts_repetition_penalty, xtts_top_k, xtts_top_p, xtts_speed, xtts_enable_text_splitting, bark_text_temp, bark_waveform_temp,
-                output_split, output_split_hours
-            ):
+                id:str, device:str, ebook_file:str, chapters_control:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, xtts_temperature:float, 
+                xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
+                output_split:bool, output_split_hours:str
+            )->tuple:
             try:
                 session = context.get_session(id)
                 args = {
@@ -3694,7 +3665,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(), gr.update()
         
-        def submit_confirmed_blocks(id):
+        def submit_confirmed_blocks(id:str)->tuple:
             try:
                 session = context.get_session(id)
                 error = None
@@ -3741,7 +3712,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
             return gr.update(), gr.update()          
 
-        def update_gr_audiobook_list(id):
+        def update_gr_audiobook_list(id:str)->gr.update:
             try:
                 nonlocal audiobook_options
                 session = context.get_session(id)
@@ -3772,7 +3743,7 @@ def web_interface(args, ctx):
                 alert_exception(error)              
                 return gr.update()
 
-        def change_gr_read_data(data, state, req: gr.Request):
+        def change_gr_read_data(data:Any, state:dict, req:gr.Request)->tuple:
             try:
                 msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                 if data is None or isinstance(data, str) or not data.get('id'):
@@ -3839,7 +3810,7 @@ def web_interface(args, ctx):
                 alert_exception(error)
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
-        async def save_session(id, state):
+        async def save_session(id:str, state:dict)->tuple:
             try:
                 if id:
                     if id in context.sessions:
@@ -3867,7 +3838,7 @@ def web_interface(args, ctx):
                 alert_exception(error)              
                 yield gr.update(), gr.update(value=e), gr.update()
         
-        def clear_event(id):
+        def clear_event(id:str)->None:
             if id:
                 session = context.get_session(id)
                 if session['event'] is not None:

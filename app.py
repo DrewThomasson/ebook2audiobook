@@ -8,14 +8,15 @@ import subprocess
 import sys
 import tempfile
 
+from typing import Any, Optional, Union, Callable
 from pathlib import Path
 from lib import *
 
-def check_virtual_env(script_mode):
-    current_version = sys.version_info[:2]  # (major, minor)
-    if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
-        return True  
-    error = f'''***********
+def check_virtual_env(script_mode:str)->bool:
+    current_version=sys.version_info[:2]  # (major, minor)
+    if str(os.path.basename(sys.prefix))=='python_env' or script_mode==FULL_DOCKER or current_version>=min_python_version and current_version<=max_python_version:
+        return True
+    error=f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
 NOTE: If you are running a Docker so you are probably using an old version of ebook2audiobook.
 To solve this issue go to download the new version at https://github.com/DrewThomasson/ebook2audiobook
@@ -27,7 +28,7 @@ to install it all automatically.
     print(error)
     return False
 
-def check_python_version():
+def check_python_version()->bool:
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
         error = f'''***********
@@ -41,7 +42,7 @@ In order to install and/or use ebook2audiobook correctly you must run
     else:
         return True
 
-def check_and_install_requirements(file_path):
+def check_and_install_requirements(file_path:str)->bool:
     if not os.path.exists(file_path):
         error = f'Warning: File {file_path} not found. Skipping package check.'
         print(error)
@@ -122,7 +123,7 @@ def check_and_install_requirements(file_path):
         raise SystemExit(error)
         return False
        
-def check_dictionary():
+def check_dictionary()->bool:
     import unidic
     unidic_path = unidic.DICDIR
     dicrc = os.path.join(unidic_path, 'dicrc')
@@ -137,11 +138,11 @@ def check_dictionary():
             return False
     return True
 
-def is_port_in_use(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('0.0.0.0', port)) == 0
+def is_port_in_use(port:int)->bool:
+    with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
+        return s.connect_ex(('0.0.0.0',port))==0
 
-def main():
+def main()->None:
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',

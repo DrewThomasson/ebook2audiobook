@@ -1,51 +1,46 @@
-from queue import Queue, Empty
 import time
 import logging
 
+from queue import Queue, Empty
+from typing import Any, Optional, Union, Callable
+
 
 class RedirectConsole:
-    def __init__(self, log_buffer: Queue, real_output):
-        self.log_buffer = log_buffer  # Queue buffer for the log
-        self.real_output = real_output  # Real terminal (sys.__stdout__ or sys.__stderr__)
-
-        # Setup for transformers logging
+    def __init__(self,log_buffer:Queue,real_output:Any)->None:
+        self.log_buffer=log_buffer  # Queue buffer for the log
+        self.real_output=real_output  # Real terminal (sys.__stdout__ or sys.__stderr__)
         self.setup_transformers_logger()
 
-    def write(self, message: str):
+    def write(self,message:str)->None:
         # Write to the real terminal
         self.real_output.write(message)
         self.real_output.flush()
-
-        # Write to the log buffer
         self.log_buffer.put(message)
 
-    def flush(self):
+    def flush(self)->None:
         self.real_output.flush()
 
-    def isatty(self) -> bool:
+    def isatty(self)->bool:
         return self.real_output.isatty()
 
-    def poll_logs(self, stop_event):
-        logs = ""
-        errors = ""
+    def poll_logs(self,stop_event:Any)->Generator[tuple[str,str],None,None]:
+        logs=""
+        errors=""
         while not stop_event.is_set() or not self.log_buffer.empty():
             try:
                 # Read logs from the buffer without blocking
-                log = self.log_buffer.get_nowait()
+                log=self.log_buffer.get_nowait()
                 if "An error occurred" in log:
-                    errors += log  # Capture error messages separately
-                logs += log
+                    errors+=log  # Capture error messages separately
+                logs+=log
             except Empty:
                 pass  # No logs in the buffer
-            yield logs, errors  # Yield updated logs and errors
+            yield logs,errors  # Yield updated logs and errors
             time.sleep(0.1)  # Prevent tight looping
 
-    def setup_transformers_logger(self):
-        # Configure the `transformers` logger
-        transformers_logger = logging.getLogger("transformers")
+    def setup_transformers_logger(self)->None:
+        transformers_logger=logging.getLogger("transformers")
         transformers_logger.setLevel(logging.WARNING)  # Capture warnings and above
-
-        # Create a handler that writes to this instance
-        handler = logging.StreamHandler(self)
+        handler=logging.StreamHandler(self)
         handler.setFormatter(logging.Formatter("%(message)s"))  # Simplified format
         transformers_logger.addHandler(handler)
