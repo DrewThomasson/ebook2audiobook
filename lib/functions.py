@@ -100,24 +100,24 @@ class SessionTracker:
             session[socket_hash] = None
             
 def recursive_proxy(data:Any, manager:Any = None)->Any:
-	if manager is None:
-		manager = Manager()
-	if isinstance(data, dict):
-		proxy_dict = manager.dict()
-		for key, value in data.items():
-			proxy_dict[key] = recursive_proxy(value, manager)
-		return proxy_dict
-	elif isinstance(data, list):
-		proxy_list = manager.list()
-		for item in data:
-			proxy_list.append(recursive_proxy(item, manager))
-		return proxy_list
-	elif isinstance(data, (str, int, float, bool, type(None))):
-		return data
-	else:
-		error = f"Unsupported data type: {type(data)}"
-		print(error)
-		return None
+    if manager is None:
+        manager = Manager()
+    if isinstance(data, dict):
+        proxy_dict = manager.dict()
+        for key, value in data.items():
+            proxy_dict[key] = recursive_proxy(value, manager)
+        return proxy_dict
+    elif isinstance(data, list):
+        proxy_list = manager.list()
+        for item in data:
+            proxy_list.append(recursive_proxy(item, manager))
+        return proxy_list
+    elif isinstance(data, (str, int, float, bool, type(None))):
+        return data
+    else:
+        error = f"Unsupported data type: {type(data)}"
+        print(error)
+        return None
 
 class SessionContext:
     def __init__(self):
