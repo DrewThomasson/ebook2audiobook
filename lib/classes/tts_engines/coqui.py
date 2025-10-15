@@ -793,7 +793,7 @@ class Coqui:
                         audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                         if sentence[-1].isalnum() or sentence[-1] == '—':
                             audio_tensor = trim_audio(audio_tensor.squeeze(), settings['samplerate'], 0.001, trim_audio_buffer).unsqueeze(0)
-                        if audio_tensor:
+                        if audio_tensor is not None and audio_tensor.numel() > 0:
                             self.audio_segments.append(audio_tensor)
                             if not re.search(r'\w$', sentence, flags=re.UNICODE) and sentence[-1] != '—':
                                 silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
