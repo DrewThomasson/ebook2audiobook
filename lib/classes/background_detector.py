@@ -9,7 +9,7 @@ from lib.conf import tts_dir
 from lib.models import default_voice_detection_model
 
 class BackgroundDetector:
-    def __init__(self,wav_file:str)->BackgroundDetector:
+    def __init__(self,wav_file:str)->None:
         self.wav_file=wav_file
         model=Model.from_pretrained(default_voice_detection_model,cache_dir=tts_dir)
         self.pipeline=VoiceActivityDetection(segmentation=model)

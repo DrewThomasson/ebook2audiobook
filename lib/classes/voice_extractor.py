@@ -16,7 +16,7 @@ from lib.models import TTS_ENGINES, models
 from lib.classes.background_detector import BackgroundDetector
 
 class VoiceExtractor:
-    def __init__(self, session:Any, voice_file:str, voice_name:str)->VoiceExtractor:
+    def __init__(self, session:Any, voice_file:str, voice_name:str)->None:
         self.wav_file = None
         self.session = session
         self.voice_file = voice_file
