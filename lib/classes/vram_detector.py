@@ -123,11 +123,11 @@ class VRAMDetector:
 	# ---- main API ----
 	def detect_vram(self,as_json:bool = False)->Any:
 		sys = self.system
-		if sys =  = "windows":
+		if sys == "windows":
 			g = self._get_windows_vram(); s = self._get_windows_shared()
-		elif sys =  = "linux":
+		elif sys == "linux":
 			g = self._get_linux_vram(); s = self._get_linux_shared()
-		elif sys =  = "darwin":
+		elif sys == "darwin":
 			g = self._get_macos_vram(); s = self._get_macos_shared()
 		else:
 			g = []; s = 0
