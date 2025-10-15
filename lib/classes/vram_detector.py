@@ -28,8 +28,8 @@ class VRAMDetector:
 
 	def _fmt(self, b:int)->str:
 		if not b: return "Unknown"
-		if b> = 1024**3: return f"{b/1024**3:.1f} GB"
-		if b> = 1024**2: return f"{b/1024**2:.1f} MB"
+		if b >= 1024**3: return f"{b/1024**3:.1f} GB"
+		if b >= 1024**2: return f"{b/1024**2:.1f} MB"
 		return f"{b} B"
 
 	# ---- Windows GPU detection ----
