@@ -35,40 +35,47 @@ class VoiceExtractor:
         error = f'Unsupported file format: {file_extension}. Supported formats are: {", ".join(voice_formats)}'
         return False,error
 
-    def _convert2wav(self)->tuple[bool,str]:
+    def _convert2wav(self)->tuple[bool, str]:
         try:
-            self.wav_file = os.path.join(self.session['voice_dir'],f'{self.voice_name}.wav')
+            self.wav_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
             ffmpeg_cmd = [
-                shutil.which('ffmpeg'),'-hide_banner','-nostats','-i',self.voice_file,
-                '-ac','1',
-                '-y',self.wav_file
+                shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
+                '-ac', '1', '-y', self.wav_file
             ]
             process = subprocess.Popen(
                 ffmpeg_cmd,
-                env = {},
-                stdout = subprocess.PIPE,
-                stderr = subprocess.STDOUT,
-                text = True,
-                universal_newlines = True,
-                encoding = 'utf-8'
+                env={},
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=False  # <── raw bytes mode (no implicit UTF-8 decoding)
             )
-            for line in process.stdout:
-                print(line,end = '')
+            # Decode safely line by line
+            for raw_line in iter(process.stdout.readline, b''):
+                try:
+                    line = raw_line.decode('utf-8', errors='replace')  # <── replaces invalid bytes
+                except Exception:
+                    line = raw_line.decode('latin-1', errors='replace')
+                print(line, end='')
+
             process.wait()
-            if process.returncode!= 0:
+            if process.returncode != 0:
                 error = f'_convert2wav(): process.returncode: {process.returncode}'
             elif not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
                 error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
             else:
                 msg = 'Conversion to .wav format for processing successful'
-                return True,msg
+                return True, msg
         except subprocess.CalledProcessError as e:
-            error = f'convert2wav fmpeg.Error: {e.stderr.decode()}'
+            try:
+                stderr_text = e.stderr.decode('utf-8', errors='replace')
+            except Exception:
+                stderr_text = str(e)
+            error = f'_convert2wav ffmpeg.Error: {stderr_text}'
             raise ValueError(error)
         except Exception as e:
             error = f'_convert2wav() error: {e}'
             raise ValueError(error)
-        return False,error
+        return False, error
 
     def _detect_background(self)->tuple[bool,bool,str]:
         try:
