@@ -3104,7 +3104,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     session['ebook_list'] = [extract_original_uploaded_filename(f) for f in data]
                 else:
                     session['ebook'] = extract_original_uploaded_filename(data)
-                    print(data)
+                    print(session['ebook'], data)
                 session['cancellation_requested'] = False
             except Exception as e:
                 error = f'change_gr_ebook_file(): {e}'
