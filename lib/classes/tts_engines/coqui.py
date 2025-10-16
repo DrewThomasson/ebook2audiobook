@@ -289,46 +289,27 @@ class Coqui:
                                 print("⚠️ Invalid latent detected — recomputing clean latents...")
                                 gpt_cond_latent, speaker_embedding =  self.tts.get_conditioning_latents(audio_path=[voice_path])
                             fine_tuned_params = {
-                                key.removeprefix("xtts_"): cast_type(self.session[key])
+                                key: cast_type(self.session[key])
                                 for key, cast_type in {
-                                    "xtts_temperature": float,
-                                    "xtts_length_penalty": float,
-                                    "xtts_num_beams": int,
-                                    "xtts_repetition_penalty": float,
-                                    "xtts_top_k": int,
-                                    "xtts_top_p": float,
-                                    "xtts_speed": float,
-                                    "xtts_enable_text_splitting": bool,
+                                    "temperature": float,
+                                    "length_penalty": float,
+                                    "num_beams": int,
+                                    "repetition_penalty": float,
+                                    "top_k": int,
+                                    "top_p": float,
+                                    "speed": float,
+                                    "enable_text_splitting": bool
                                 }.items()
                                 if self.session.get(key) is not None
                             }
-                            # clamp unsafe parameters
-                            fine_tuned_params["temperature"] = min(max(fine_tuned_params.get("temperature", 0.8), 0.1), 3)
-                            fine_tuned_params["top_p"] = min(max(fine_tuned_params.get("top_p", 0.95), 0.5), 1.0)
-                            fine_tuned_params["top_k"] = min(max(fine_tuned_params.get("top_k", 50), 1), 100)
-                            try:
-                                with torch.no_grad():
-                                    result =  self.tts.inference(
-                                        text=default_text.strip(),
-                                        language=self.session['language_iso1'],
-                                        gpt_cond_latent=gpt_cond_latent,
-                                        speaker_embedding=speaker_embedding,
-                                        **fine_tuned_params,
-                                    )
-                            except RuntimeError as e:
-                                if "probability tensor" in str(e):
-                                    print("⚠️ Invalid probability tensor detected — retrying with conservative defaults.")
-                                    fine_tuned_params.update({"temperature": 0.8, "top_p": 0.95, "top_k": 40})
-                                    with torch.no_grad():
-                                        result = self.tts.inference(
-                                            text=default_text.strip(),
-                                            language=self.session['language_iso1'],
-                                            gpt_cond_latent=gpt_cond_latent,
-                                            speaker_embedding=speaker_embedding,
-                                            **fine_tuned_params,
-                                        )
-                                else:
-                                    raise
+                            with torch.no_grad():
+                                result = tts.inference(
+                                    text=default_text,
+                                    language=self.session['language_iso1'],
+                                    gpt_cond_latent=gpt_cond_latent,
+                                    speaker_embedding=speaker_embedding,
+                                    #**fine_tuned_params
+                                )
                             audio_data = result.get('wav') if isinstance(result, dict) else None
                             if audio_data is not None:
                                 audio_data = audio_data.tolist()
