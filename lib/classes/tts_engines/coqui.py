@@ -28,7 +28,7 @@ lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
 class Coqui:
-    def __init__(self,session:Any)->None:
+    def __init__(self,session:Any):
         try:
             self.session=session
             self.cache_dir=tts_dir
