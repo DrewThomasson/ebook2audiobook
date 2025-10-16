@@ -7,9 +7,9 @@ class TTSManager:
     def __init__(self, session:Any):   
         self.session=session
         self.tts=None
-        return self._build()
+        self._build()
  
-    def _build(self)->Any:
+    def _build(self):
         if self.session['tts_engine'] in TTS_ENGINES.values():
             if self.session['tts_engine'] in [TTS_ENGINES['XTTSv2'],TTS_ENGINES['BARK'],TTS_ENGINES['VITS'],TTS_ENGINES['FAIRSEQ'],TTS_ENGINES['TACOTRON2'],TTS_ENGINES['YOURTTS']]:
                 from lib.classes.tts_engines.coqui import Coqui
@@ -17,14 +17,11 @@ class TTSManager:
             #elif self.session['tts_engine'] in [TTS_ENGINES['NEW_TTS']]:
             #    from lib.classes.tts_engines.new_tts import NewTts
             #    self.tts=NewTts(self.session)
-            if self.tts:
-                return self.tts
-            else:
+            if not self.tts:
                 error='TTS engine could not be created!'
                 print(error)
         else:
             print('Other TTS engines coming soon!')
-        return None
 
     def convert_sentence2audio(self,sentence_number:int,sentence:str)->bool:
         try:
