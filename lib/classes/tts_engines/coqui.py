@@ -271,7 +271,7 @@ class Coqui:
                         hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
                         hf_sub = ''
                         self.tts = (loaded_tts.get(tts_internal_key) or {}).get('engine', False)
-                        if not  self.tts:
+                        if not self.tts:
                             for key in list(loaded_tts.keys()):
                                 unload_tts(device, None, key)
                             config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][0]}", cache_dir=self.cache_dir)
