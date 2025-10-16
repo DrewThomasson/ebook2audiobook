@@ -2353,6 +2353,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             }
             .small-btn:hover {
                 background: var(--button-primary-background-fill-hover) !important;
+                font-size: 28px !important;
             }
             .small-btn-red{
                 background: var(--block-background-fill) !important;
@@ -2364,6 +2365,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             }
             .small-btn-red:hover {
                 background-color: #ff5050 !important;
+                font-size: 28px !important;
             }
             .small-btn:active, .small-btn-red:active {
                 background: var(--body-text-color) !important;
