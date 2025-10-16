@@ -2900,15 +2900,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 outputs = tuple([gr.update(interactive=True) for _ in range(11)])
             return outputs
 
-        def extract_original_uploaded_filename(obj:any)->str|None:
-            if obj is None:
-                return None
-            return (
-                getattr(obj, "orig_name", None)
-                or (obj.metadata.get("name") if hasattr(obj, "metadata") and obj.metadata else None)
-                or Path(obj).name
-            )
-
         def show_gr_modal(type:str, msg:str)->str:
             return f'''
             <div id="custom-gr_modal" class="gr-modal">
@@ -3101,12 +3092,9 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         return
                 fileObj = data
                 if isinstance(data, list):
-                    #session['ebook_list'] = [extract_original_uploaded_filename(f) for f in data]
                     session['ebook_list'] = data
                 else:
-                    #session['ebook'] = extract_original_uploaded_filename(data)
                     session['ebook'] = data
-                    print(session['ebook'], data)
                 session['cancellation_requested'] = False
             except Exception as e:
                 error = f'change_gr_ebook_file(): {e}'
