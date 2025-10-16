@@ -3101,9 +3101,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         return
                 fileObj = data
                 if isinstance(data, list):
-                    session['ebook_list'] = [extract_original_uploaded_filename(f) for f in data]
+                    #session['ebook_list'] = [extract_original_uploaded_filename(f) for f in data]
+                    session['ebook_list'] = data
                 else:
-                    session['ebook'] = extract_original_uploaded_filename(data)
+                    #session['ebook'] = extract_original_uploaded_filename(data)
+                    session['ebook'] = data
                     print(session['ebook'], data)
                 session['cancellation_requested'] = False
             except Exception as e:
