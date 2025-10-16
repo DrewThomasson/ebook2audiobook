@@ -166,34 +166,36 @@ class Coqui:
             print(error)
             return False
 
-    def _load_api(self,key:str,model_path:str,device:str)->bool|Any:
+    def _load_api(self, key: str, model_path: str, device: str) -> bool | Any:
         global lock
         try:
-            if key in loaded_tts.keys():
-                return loaded_tts[key]['engine']
-            unload_tts(device,[self.tts_key,self.tts_vc_key])
-            from TTS.api import TTS as coquiAPI
+            if key in loaded_tts:
+                print(f"[LOAD_API] Reusing cached TTS engine for key: {key}")
+                self.tts = loaded_tts[key]['engine']
+                return self.tts
+            unload_tts(device, [self.tts_key, self.tts_vc_key])
+            from TTS.api import TTS as CoquiAPI
             with lock:
-                tts=coquiAPI(model_path)
-                if tts:
-                    if device=='cuda':
-                        tts.cuda()
-                    else:
-                        if device=='mps':
-                            tts.to(torch.device('mps'))
-                        else:
-                            tts.to(device)
-                    loaded_tts[key]={"engine":tts,"config":None}
-                    msg=f'{model_path} Loaded!'
-                    print(msg)
-                    return tts
+                print(f"[LOAD_API] Loading Coqui model from: {model_path}")
+                tts = CoquiAPI(model_path)
+                if not tts:
+                    raise RuntimeError("CoquiAPI returned None (model not loaded)")
+                if device == "cuda" and torch.cuda.is_available():
+                    tts.cuda()
+                elif device == "mps" and torch.backends.mps.is_available():
+                    tts.to(torch.device("mps"))
                 else:
-                    error='TTS engine could not be created!'
-                    print(error)
+                    tts.to(device)
+                loaded_tts[key] = {"engine": tts, "config": None}
+                self.tts = tts
+                msg = f"[LOAD_API] ✅ Model loaded successfully: {model_path} ({device})"
+                print(msg)
+                return self.tts
         except Exception as e:
-            error=f'_load_api() error: {e}'
+            self.tts = None
+            error = f"_load_api() error: {e}"
             print(error)
-        return False
+            return False
 
     def _load_checkpoint(self,**kwargs:Any)->bool|Any:
         global lock
