@@ -278,16 +278,11 @@ class Coqui:
                             checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][1]}", cache_dir=self.cache_dir)
                             vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][2]}", cache_dir=self.cache_dir)
                             self.tts = self._load_checkpoint(tts_engine=TTS_ENGINES['XTTSv2'], key=tts_internal_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
-                        if  self.tts:
+                        if self.tts:
                             if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
-                                gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[
-                                    default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]
-                                ].values()
+                                gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
                             else:
-                                gpt_cond_latent, speaker_embedding =  self.tts.get_conditioning_latents(audio_path=[voice_path])
-                            if not _valid_tensor(gpt_cond_latent) or not _valid_tensor(speaker_embedding):
-                                print("⚠️ Invalid latent detected — recomputing clean latents...")
-                                gpt_cond_latent, speaker_embedding =  self.tts.get_conditioning_latents(audio_path=[voice_path])
+                                gpt_cond_latent, speaker_embedding = self.tts.get_conditioning_latents(audio_path=[voice_path])
                             fine_tuned_params = {
                                 key.removeprefix("xtts_"): cast_type(self.session[key])
                                 for key, cast_type in {
@@ -303,12 +298,12 @@ class Coqui:
                                 if self.session.get(key) is not None
                             }
                             with torch.no_grad():
-                                result =  self.tts.inference(
+                                result = self.tts.inference(
                                     text=default_text.strip(),
                                     language=self.session['language_iso1'],
                                     gpt_cond_latent=gpt_cond_latent,
                                     speaker_embedding=speaker_embedding,
-                                    #**fine_tuned_params,
+                                    **fine_tuned_params,
                                 )
                             audio_data = result.get('wav') if isinstance(result, dict) else None
                             if audio_data is not None:
