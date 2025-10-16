@@ -289,26 +289,26 @@ class Coqui:
                                 print("⚠️ Invalid latent detected — recomputing clean latents...")
                                 gpt_cond_latent, speaker_embedding =  self.tts.get_conditioning_latents(audio_path=[voice_path])
                             fine_tuned_params = {
-                                key: cast_type(self.session[key])
+                                key.removeprefix("xtts_"): cast_type(self.session[key])
                                 for key, cast_type in {
-                                    "temperature": float,
-                                    "length_penalty": float,
-                                    "num_beams": int,
-                                    "repetition_penalty": float,
-                                    "top_k": int,
-                                    "top_p": float,
-                                    "speed": float,
-                                    "enable_text_splitting": bool
+                                    "xtts_temperature": float,
+                                    "xtts_length_penalty": float,
+                                    "xtts_num_beams": int,
+                                    "xtts_repetition_penalty": float,
+                                    "xtts_top_k": int,
+                                    "xtts_top_p": float,
+                                    "xtts_speed": float,
+                                    "xtts_enable_text_splitting": bool,
                                 }.items()
                                 if self.session.get(key) is not None
                             }
                             with torch.no_grad():
-                                result = tts.inference(
-                                    text=default_text,
+                                result =  self.tts.inference(
+                                    text=default_text.strip(),
                                     language=self.session['language_iso1'],
                                     gpt_cond_latent=gpt_cond_latent,
                                     speaker_embedding=speaker_embedding,
-                                    #**fine_tuned_params
+                                    #**fine_tuned_params,
                                 )
                             audio_data = result.get('wav') if isinstance(result, dict) else None
                             if audio_data is not None:
