@@ -2994,7 +2994,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
                     ebook_data = list(session['ebook_list'])
-                    #ebook_data = None
                 elif isinstance(session['ebook'], str) and file_count == 'single':
                     ebook_data = str(session['ebook'])
                 else:
@@ -3102,9 +3101,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         return
                 fileObj = data
                 if isinstance(data, list):
-                    session['ebook_list'] = [extract_original_uploaded_filename(f) for f in data]
+                    #session['ebook_list'] = [extract_original_uploaded_filename(f) for f in data]
+                    session['ebook_list'] = data
                 else:
-                    session['ebook'] = extract_original_uploaded_filename(data)
+                    #session['ebook'] = extract_original_uploaded_filename(data)
+                    session['ebook'] = data
                 session['cancellation_requested'] = False
             except Exception as e:
                 error = f'change_gr_ebook_file(): {e}'
