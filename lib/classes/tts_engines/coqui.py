@@ -36,7 +36,7 @@ class Coqui:
             self.tts = None
             self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
             self.tts_vc_key = default_vc_model.rsplit('/',1)[-1]
-            self.is_bf16 = True if self.session['device'] =  = 'cuda' and torch.cuda.is_bf16_supported()==True else False
+            self.is_bf16 = True if self.session['device'] == 'cuda' and torch.cuda.is_bf16_supported()==True else False
             self.npz_path = None
             self.npz_data = None
             self.sentences_total_time = 0.0
