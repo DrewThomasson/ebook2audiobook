@@ -3343,7 +3343,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         else:
                             session['voice'] = default_voice_path
                 voice_paths = {v[1] for v in voice_options}
-                #print(voice_paths)
                 if session['voice'] not in voice_paths:
                     return gr.update(choices=voice_options)
                 return gr.update(choices=voice_options, value=session['voice'])
@@ -3378,6 +3377,9 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     if os.path.isdir(os.path.join(custom_model_tts_dir, dir))
                 ]
                 session['custom_model'] = session['custom_model'] if session['custom_model'] in [option[1] for option in custom_model_options] else custom_model_options[0][1]
+                model_paths = {v[1] for v in custom_model_options}
+                if session['custom_model'] not in model_paths:
+                    return gr.update(choices=custom_model_options)
                 return gr.update(choices=custom_model_options, value=session['custom_model'])
             except Exception as e:
                 error = f'update_gr_custom_model_list(): {e}!'
@@ -3397,6 +3399,9 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 elif default_fine_tuned in fine_tuned_options:
                     fine_tuned = default_fine_tuned
                 session['fine_tuned'] = fine_tuned
+                fine_tuned_paths = {v[1] fro v in fine_tuned_options}
+                if session['fine_tuned'] not in fine_tuned_paths:
+                    return gr.update(choices=fine_tuned_options)
                 return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
             except Exception as e:
                 error = f'update_gr_fine_tuned_list(): {e}!'
