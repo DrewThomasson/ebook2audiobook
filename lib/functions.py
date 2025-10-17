@@ -3339,6 +3339,9 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                             session['voice'] = current_voice_path
                         else:
                             session['voice'] = default_voice_path
+                voice_paths = {v[1] for v in voice_options}
+                if session['voice'] not in voice_paths:
+                    return gr.update(choices=voice_options)
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
