@@ -2314,7 +2314,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 display: none !important;
             }
             span[data-testid="block-info"] {
-                font-size: 14px !important;
+                font-size: 12px !important;
             }
             /////////////////////
             .wrap-inner {
