@@ -2254,7 +2254,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
     custom_model_options = []
     fine_tuned_options = []
     audiobook_options = []
-    options_output_split_hours = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    options_output_split_hours = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
     
     src_label_file = 'Upload File'
     src_label_dir = 'Select a Directory'
