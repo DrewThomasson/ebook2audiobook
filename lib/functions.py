@@ -2977,34 +2977,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             gr.Error(error)
             DependencyError(error)
 
-        def make_gradio_file_list(folder_path: str, directory_mode: bool = False):
-            """
-            Args:
-                folder_path (str): Path to a folder containing files or representing the directory.
-                directory_mode (bool): If True, returns a single dict representing the directory.
-                                       If False, returns a list of dicts for each file.
-            Returns:
-                dict | list[dict]: Suitable for gr.update(value=...).
-            """
-            if not os.path.exists(folder_path):
-                raise FileNotFoundError(f"Folder not found: {folder_path}")
-            if directory_mode:
-                return {
-                    "path": folder_path,
-                    "orig_name": os.path.basename(folder_path.rstrip("/")),
-                    "meta": {"_type": "gradio.FileData"},
-                }
-            files = []
-            for entry in sorted(os.listdir(folder_path)):
-                full_path = os.path.join(folder_path, entry)
-                if os.path.isfile(full_path):
-                    files.append({
-                        "path": full_path,
-                        "orig_name": entry,
-                        "meta": {"_type": "gradio.FileData"},
-                    })
-            return files
-
         def restore_interface(id:str, req:gr.Request)->tuple:
             try:
                 session = context.get_session(id)
@@ -3015,8 +2987,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
-                    print(os.path.dirname(list(session['ebook_list'])[0]))
-                    ebook_data = make_gradio_file_list(os.path.dirname(list(session['ebook_list'])[0]), directory_mode=True)
+                    ebook_data = os.path.dirname(list(session['ebook_list'])[0])
                 elif isinstance(session['ebook'], str) and file_count == 'single':
                     ebook_data = str(session['ebook'])
                 else:
