@@ -1992,7 +1992,7 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                 session['audiobooks_dir'] = str(args['audiobooks_dir']) if args['audiobooks_dir'] else None
                 session['output_format'] = str(args['output_format'])
                 session['output_split'] = bool(args['output_split'])
-                session['output_split_hours'] = int(args['output_split_hours']) if args['output_split_hours'] is not None else int(default_output_split_hours)
+                session['output_split_hours'] = args['output_split_hours']if args['output_split_hours'] is not None else default_output_split_hours
                 if not session['is_gui_process']:
                     session['session_dir'] = os.path.join(tmp_dir, f"proc-{session['id']}")
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -2995,7 +2995,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return (
                     gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=bool(session['chapters_control'])), gr.update(value=session['device']),
                     gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), gr.update(value=bool(session['output_split'])), gr.update(value=int(session['output_split_hours'])),
+                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), gr.update(value=bool(session['output_split'])), gr.update(value=session['output_split_hours']),
                     update_gr_audiobook_list(id)
                 )
             except Exception as e:
@@ -3599,7 +3599,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     "bark_text_temp": float(bark_text_temp),
                     "bark_waveform_temp": float(bark_waveform_temp),
                     "output_split": bool(output_split),
-                    "output_split_hours": int(output_split_hours),
+                    "output_split_hours": output_split_hours,
                     "event": None
                 }
                 error = None
