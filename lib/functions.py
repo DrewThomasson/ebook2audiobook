@@ -2389,6 +2389,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 padding: 0 3px 0 3px !important;
                 margin: 0 !important;
                 border: none !important;
+                font-size: 24px;
             }
             .gr-col {
                 padding: 0 6px 0 6px !important;
