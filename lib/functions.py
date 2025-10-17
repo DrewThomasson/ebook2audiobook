@@ -2389,6 +2389,8 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 padding: 0 3px 0 3px !important;
                 margin: 0 !important;
                 border: none !important;
+            }
+            .gr-tab button {
                 font-size: 72px !important;
             }
             .gr-col {
