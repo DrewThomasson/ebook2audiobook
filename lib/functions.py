@@ -3399,7 +3399,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 elif default_fine_tuned in fine_tuned_options:
                     fine_tuned = default_fine_tuned
                 session['fine_tuned'] = fine_tuned
-                fine_tuned_paths = {v[1] fro v in fine_tuned_options}
+                fine_tuned_paths = {v[1] for v in fine_tuned_options}
                 if session['fine_tuned'] not in fine_tuned_paths:
                     return gr.update(choices=fine_tuned_options)
                 return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
