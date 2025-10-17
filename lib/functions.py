@@ -3342,7 +3342,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                             session['voice'] = current_voice_path
                         else:
                             session['voice'] = default_voice_path
-                voice_paths = {v[0] for v in voice_options}
+                voice_paths = {v[1] for v in voice_options}
                 print(voice_paths)
                 if session['voice'] not in voice_paths:
                     return gr.update(choices=voice_options)
