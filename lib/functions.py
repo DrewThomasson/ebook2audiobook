@@ -2982,7 +2982,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 session = context.get_session(id)
                 socket_hash = str(req.session_hash)
                 if not session.get(socket_hash):
-                    outputs = tuple([gr.update() for _ in range(13)])
+                    outputs = tuple([gr.update() for _ in range(12)])
                     return outputs
                 ebook_data = None
                 file_count = session['ebook_mode']
@@ -2995,14 +2995,14 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     ebook_data = None
                 return (
                     gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=bool(session['chapters_control'])), gr.update(value=session['device']),
-                    gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
+                    gr.update(value=session['language']), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
                     update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), gr.update(value=bool(session['output_split'])), gr.update(value=int(session['output_split_hours'])),
                     update_gr_audiobook_list(id)
                 )
             except Exception as e:
                 error = f'restore_interface(): {e}'
                 alert_exception(error)
-                outputs = tuple([gr.update() for _ in range(13)])
+                outputs = tuple([gr.update() for _ in range(12)])
                 return outputs
 
         def restore_audiobook_player(audiobook:any)->tuple:
@@ -4148,7 +4148,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             fn=restore_interface,
             inputs=[gr_session],
             outputs=[
-                gr_ebook_file, gr_ebook_mode, gr_chapters_control, gr_device, gr_language, gr_voice_list,
+                gr_ebook_file, gr_ebook_mode, gr_chapters_control, gr_device, gr_language,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
                 gr_output_split, gr_output_split_hours, gr_audiobook_list
             ]
