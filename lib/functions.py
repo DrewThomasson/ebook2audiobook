@@ -3096,7 +3096,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 fileObj = data
                 if isinstance(data, list):
                     session['ebook_list'] = data
-                    print(data)
                 else:
                     session['ebook'] = data
                 session['cancellation_requested'] = False
