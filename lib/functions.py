@@ -2987,7 +2987,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if isinstance(session['ebook_list'], list) and file_count == 'directory':
-                    ebook_data = os.path.dirname(list(session['ebook_list'])[0])
+                    ebook_data = list(session['ebook_list'])
                 elif isinstance(session['ebook'], str) and file_count == 'single':
                     ebook_data = str(session['ebook'])
                 else:
