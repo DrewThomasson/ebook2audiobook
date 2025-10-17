@@ -2314,6 +2314,10 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 display: none !important;
             }
             /////////////////////
+            [data-testid="block-info"] {
+                font-size: 72px !important;
+            }
+            /////////////////////
             .wrap-inner {
                 border: 1px solid #666666;
             }
@@ -2389,9 +2393,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 padding: 0 3px 0 3px !important;
                 margin: 0 !important;
                 border: none !important;
-            }
-            .gr-tab button {
-                font-size: 72px !important;
             }
             .gr-col {
                 padding: 0 6px 0 6px !important;
