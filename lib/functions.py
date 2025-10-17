@@ -2313,7 +2313,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             body:has(#gr_convert_btn:disabled) table.file-preview button.label-clear-button {
                 display: none !important;
             }
-            span[data-testid="block-info"]
+            span[data-testid="block-info"] {
                 font-size: 72px !important;
             }
             /////////////////////
