@@ -2583,7 +2583,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 width: 60px !important;
                 height: 60px !important;
             }
-            #gr_state_update, #gr_restore_json, #gr_save_json,
+            #gr_state_update, #gr_restore_session, #gr_save_session,
             #gr_audiobook_vtt, #gr_playback_time {
                 display: none !important;
             }
@@ -2881,8 +2881,8 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
 
         gr_state_update = gr.State(value={"hash": None})
-        gr_restore_json = gr.JSON(elem_id='gr_restore_json', visible='hidden')
-        gr_save_json = gr.JSON(elem_id='gr_save_json', visible='hidden') 
+        gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
+        gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden') 
 
         def cleanup_session(req:gr.Request)->None:
             socket_hash = req.session_hash
@@ -2989,7 +2989,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if session['ebook_list'] is not None and file_count == 'directory':
-                    ebook_data = json.loads(session['ebook_list'])
+                    ebook_data = session['ebook_list']
                 elif isinstance(session['ebook'], str) and file_count == 'single':
                     ebook_data = str(session['ebook'])
                 else:
@@ -3750,7 +3750,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)              
                 return gr.update()
 
-        def change_gr_restore_json(data:Any, state:dict, req:gr.Request)->tuple:
+        def change_gr_restore_session(data:Any, state:dict, req:gr.Request)->tuple:
             try:
                 msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                 if data is None or isinstance(data, str) or not data.get('id'):
@@ -3813,7 +3813,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 show_alert({"type": "info", "msg": msg})
                 return gr.update(value=json.dumps(session, cls=JSONEncoderWithDictProxy)), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
-                error = f'change_gr_restore_json(): {e}'
+                error = f'change_gr_restore_session(): {e}'
                 alert_exception(error)
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
@@ -4098,7 +4098,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         gr_timer.tick(
             fn=save_session,
             inputs=[gr_session, gr_state_update],
-            outputs=[gr_save_json, gr_state_update, gr_audiobook_list]
+            outputs=[gr_save_session, gr_state_update, gr_audiobook_list]
         ).then(
             fn=clear_event,
             inputs=[gr_session],
@@ -4130,28 +4130,28 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             inputs=[gr_session],
             outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
         )
-        gr_save_json.change(
+        gr_save_session.change(
             fn=None,
-            inputs=[gr_save_json],
+            inputs=[gr_save_session],
             js='''
-                (newStorage)=>{
+                (data)=>{
                     try{
-                        if(newStorage){
+                        if(data){
                             localStorage.clear();
-                            newStorage.playback_time = Number(window.session_storage.playback_time);
-                            newStorage.playback_volume = parseFloat(window.session_storage.playback_volume);
-                            localStorage.setItem("data", JSON.stringify(newStorage));
+                            data.playback_time = Number(window.session_storage.playback_time);
+                            data.playback_volume = parseFloat(window.session_storage.playback_volume);
+                            localStorage.setItem("data", JSON.stringify(data));
                         }
                     }catch(e){
-                        console.warn("gr_save_json.change error: "+e);
+                        console.warn("gr_save_session.change error: "+e);
                     }
                 }
             '''
         )       
-        gr_restore_json.change(
-            fn=change_gr_restore_json,
-            inputs=[gr_restore_json, gr_state_update],
-            outputs=[gr_save_json, gr_state_update, gr_session, gr_glass_mask]
+        gr_restore_session.change(
+            fn=change_gr_restore_session,
+            inputs=[gr_restore_session, gr_state_update],
+            outputs=[gr_save_session, gr_state_update, gr_session, gr_glass_mask]
         ).then(
             fn=restore_interface,
             inputs=[gr_session],
@@ -4694,7 +4694,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     return null;
                 }
             ''',
-            outputs=[gr_restore_json],
+            outputs=[gr_restore_session],
         )
         app.unload(cleanup_session)
     try:
