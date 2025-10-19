@@ -2989,7 +2989,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if session['ebook_list'] is not None and file_count == 'directory':
-                    ebook_data = session['ebook_list']
+                    ebook_data = json.loads(session['ebook_list'])
                 elif isinstance(session['ebook'], str) and file_count == 'single':
                     ebook_data = str(session['ebook'])
                 else:
