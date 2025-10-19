@@ -110,12 +110,12 @@ class SessionContext:
         if isinstance(data, dict):
             proxy_dict = manager.dict()
             for key, value in data.items():
-                proxy_dict[key] = _recursive_proxy(value, manager)
+                proxy_dict[key] = self._recursive_proxy(value, manager)
             return proxy_dict
         elif isinstance(data, list):
             proxy_list = manager.list()
             for item in data:
-                proxy_list.append(_recursive_proxy(item, manager))
+                proxy_list.append(self._recursive_proxy(item, manager))
             return proxy_list
         elif isinstance(data, (str, int, float, bool, type(None))):
             return data
@@ -126,7 +126,7 @@ class SessionContext:
 
     def get_session(self, id:str)->str:
         if id not in self.sessions:
-            self.sessions[id] = _recursive_proxy({
+            self.sessions[id] = self._recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
                 "tab_id": None,
