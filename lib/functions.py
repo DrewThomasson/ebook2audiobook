@@ -2168,6 +2168,8 @@ def restore_session_from_data(data:dict, session:dict)->None:
                 else:
                     if value is None and session[key] is not None:
                         continue
+                    if key == 'ebook_list':
+                        value = json.loads(value)
                     session[key] = value
     except Exception as e:
         DependencyError(e)
