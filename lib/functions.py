@@ -3025,14 +3025,14 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
                 )
                 
-        def handle_directory_change(data, id):
+        def handle_directory_change(data:list, id:str)->str:
             session = context.get_session(id)
             ebook_list = []
             if isinstance(data, list):
                 for f in data:
                     path = f.get("path") if isinstance(f, dict) else str(f)
                     ebook_list.append(path)
-            return json.dumps(session['ebook_list'], indent=2)
+            return json.dumps(ebook_list, indent=2)
 
         def change_gr_audiobook_list(selected:any, id:str)->gr.update:
             try:
