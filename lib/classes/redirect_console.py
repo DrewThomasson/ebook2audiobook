@@ -6,7 +6,7 @@ from typing import Any, Optional, Union, Callable
 
 
 class RedirectConsole:
-    def __init__(self,log_buffer:Queue,real_output:Any)->None:
+    def __init__(self,log_buffer:Queue,real_output:Any):
         self.log_buffer=log_buffer  # Queue buffer for the log
         self.real_output=real_output  # Real terminal (sys.__stdout__ or sys.__stderr__)
         self.setup_transformers_logger()

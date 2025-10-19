@@ -3,7 +3,7 @@ import os, platform, subprocess, re, json, psutil, tempfile, time
 from typing import Any, Optional, Union, Callable
 
 class VRAMDetector:
-    def __init__(self)->None:
+    def __init__(self):
         self.system:str = platform.system().lower()
 
     def _run(self, cmd:list[str], timeout:int = 3)->str:
