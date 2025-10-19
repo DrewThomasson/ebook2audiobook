@@ -97,36 +97,36 @@ class SessionTracker:
             session['tab_id'] = None
             session['status'] = None
             session[socket_hash] = None
-            
-def recursive_proxy(data:Any, manager:Any = None)->Any:
-    if manager is None:
-        manager = Manager()
-    if isinstance(data, dict):
-        proxy_dict = manager.dict()
-        for key, value in data.items():
-            proxy_dict[key] = recursive_proxy(value, manager)
-        return proxy_dict
-    elif isinstance(data, list):
-        proxy_list = manager.list()
-        for item in data:
-            proxy_list.append(recursive_proxy(item, manager))
-        return proxy_list
-    elif isinstance(data, (str, int, float, bool, type(None))):
-        return data
-    else:
-        error = f"Unsupported data type: {type(data)}"
-        print(error)
-        return None
 
 class SessionContext:
     def __init__(self):
         self.manager = Manager()
         self.sessions = self.manager.dict()
         self.cancellation_events = {}
+        
+    def _recursive_proxy(self, data:Any, manager:Any = None)->Any:
+        if manager is None:
+            manager = Manager()
+        if isinstance(data, dict):
+            proxy_dict = manager.dict()
+            for key, value in data.items():
+                proxy_dict[key] = _recursive_proxy(value, manager)
+            return proxy_dict
+        elif isinstance(data, list):
+            proxy_list = manager.list()
+            for item in data:
+                proxy_list.append(_recursive_proxy(item, manager))
+            return proxy_list
+        elif isinstance(data, (str, int, float, bool, type(None))):
+            return data
+        else:
+            error = f"Unsupported data type: {type(data)}"
+            print(error)
+            return None
 
     def get_session(self, id:str)->str:
         if id not in self.sessions:
-            self.sessions[id] = recursive_proxy({
+            self.sessions[id] = _recursive_proxy({
                 "script_mode": NATIVE,
                 "id": id,
                 "tab_id": None,
@@ -2585,7 +2585,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 width: 60px !important;
                 height: 60px !important;
             }
-            #gr_state_update, #gr_read_data, #gr_write_data,
+            #gr_state_update, #gr_restore_json, #gr_save_json,
             #gr_audiobook_vtt, #gr_playback_time {
                 display: none !important;
             }
@@ -2883,8 +2883,8 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
 
         gr_state_update = gr.State(value={"hash": None})
-        gr_read_data = gr.JSON(elem_id='gr_read_data', visible='hidden')
-        gr_write_data = gr.JSON(elem_id='gr_write_data', visible='hidden') 
+        gr_restore_json = gr.JSON(elem_id='gr_restore_json', visible='hidden')
+        gr_save_json = gr.JSON(elem_id='gr_save_json', visible='hidden') 
 
         def cleanup_session(req:gr.Request)->None:
             socket_hash = req.session_hash
@@ -3757,7 +3757,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)              
                 return gr.update()
 
-        def change_gr_read_data(data:Any, state:dict, req:gr.Request)->tuple:
+        def change_gr_restore_json(data:Any, state:dict, req:gr.Request)->tuple:
             try:
                 msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                 if data is None or isinstance(data, str) or not data.get('id'):
@@ -3820,7 +3820,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 show_alert({"type": "info", "msg": msg})
                 return gr.update(value=json.dumps(session, cls=JSONEncoderWithDictProxy)), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
-                error = f'change_gr_read_data(): {e}'
+                error = f'change_gr_restore_json(): {e}'
                 alert_exception(error)
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
@@ -4105,7 +4105,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         gr_timer.tick(
             fn=save_session,
             inputs=[gr_session, gr_state_update],
-            outputs=[gr_write_data, gr_state_update, gr_audiobook_list]
+            outputs=[gr_save_json, gr_state_update, gr_audiobook_list]
         ).then(
             fn=clear_event,
             inputs=[gr_session],
@@ -4137,9 +4137,9 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             inputs=[gr_session],
             outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
         )
-        gr_write_data.change(
+        gr_save_json.change(
             fn=None,
-            inputs=[gr_write_data],
+            inputs=[gr_save_json],
             js='''
                 (newStorage)=>{
                     try{
@@ -4150,15 +4150,15 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                             localStorage.setItem("data", JSON.stringify(newStorage));
                         }
                     }catch(e){
-                        console.warn("gr_write_data.change error: "+e);
+                        console.warn("gr_save_json.change error: "+e);
                     }
                 }
             '''
         )       
-        gr_read_data.change(
-            fn=change_gr_read_data,
-            inputs=[gr_read_data, gr_state_update],
-            outputs=[gr_write_data, gr_state_update, gr_session, gr_glass_mask]
+        gr_restore_json.change(
+            fn=change_gr_restore_json,
+            inputs=[gr_restore_json, gr_state_update],
+            outputs=[gr_save_json, gr_state_update, gr_session, gr_glass_mask]
         ).then(
             fn=restore_interface,
             inputs=[gr_session],
@@ -4701,7 +4701,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     return null;
                 }
             ''',
-            outputs=[gr_read_data],
+            outputs=[gr_restore_json],
         )
         app.unload(cleanup_session)
     try:
