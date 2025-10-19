@@ -94,7 +94,6 @@ class SessionTracker:
         active_sessions.discard(socket_hash)
         with self.lock:
             session = context.get_session(id)
-            session['cancellation_requested'] = True
             session['tab_id'] = None
             session['status'] = None
             session[socket_hash] = None
@@ -3023,6 +3022,15 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
                 )
+                
+        def handle_directory_change(data, id):
+            session = context.get_session(id)
+            ebook_list = []
+            if isinstance(data, list):
+                for f in data:
+                    path = f.get("path") if isinstance(f, dict) else str(f)
+                    ebook_list.append(path)
+            return json.dumps(session['ebook_list'], indent=2)
 
         def change_gr_audiobook_list(selected:any, id:str)->gr.update:
             try:
@@ -3093,11 +3101,10 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         msg = 'Cancellation requested, please wait...'
                         yield gr.update(value=show_gr_modal('wait', msg), visible=True)
                         return
-                fileObj = data
                 if isinstance(data, list):
-                    session['ebook_list'] = data
+                    session['ebook_list'] = handle_directory_change(data, id)
                 else:
-                    session['ebook'] = data
+                    session['ebook'] = data 
                 session['cancellation_requested'] = False
             except Exception as e:
                 error = f'change_gr_ebook_file(): {e}'
