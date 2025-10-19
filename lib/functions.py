@@ -2973,7 +2973,10 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 </div>
             '''
 
-        def alert_exception(error:str)->None:
+        def alert_exception(error:str, id:str=None)->None:
+            if id is not None:
+                session = context.get_session(id)
+                session['status'] = 'ready'
             print(error)
             gr.Error(error)
             DependencyError(error)
@@ -3001,7 +3004,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 )
             except Exception as e:
                 error = f'restore_interface(): {e}'
-                alert_exception(error)
+                alert_exception(error, id)
                 outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
 
@@ -3042,7 +3045,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return gr.update(visible=group_visible)
             except Exception as e:
                 error = f'change_gr_audiobook_list(): {e}'
-                alert_exception(error)
+                alert_exception(error, id)
             return gr.update(visible=group_visible)
 
         def update_audiobook_player(id:str)->tuple:
@@ -3053,7 +3056,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     if not os.path.exists(session['audiobook']) or not os.path.exists(vtt):
                         error = f"{Path(session['audiobook']).name} does not exist!"
                         print(error)
-                        alert_exception(error)
+                        alert_exception(error, id)
                         return gr.update(value=None), gr.update(value=None)
                     session['playback_time'] = 0
                     audio_info = mediainfo(session['audiobook'])
@@ -3066,11 +3069,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     else:
                         error = f"{Path(session['audiobook']).name} corrupted or not encoded!"
                         print(error)
-                        alert_exception(error)
+                        alert_exception(error, id)
             except Exception as e:
                 error = f'update_audiobook_player(): {e}'
                 print(error)
-                alert_exception(error)
+                alert_exception(error, id)
             return gr.update(value=None), gr.update(value=None)
 
         def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->gr.update:
@@ -3110,7 +3113,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 session['cancellation_requested'] = False
             except Exception as e:
                 error = f'change_gr_ebook_file(): {e}'
-                alert_exception(error)
+                alert_exception(error, id)
             return gr.update(value='', visible=False)
 
         def change_gr_ebook_mode(val:str, id:str)->tuple:
@@ -3193,13 +3196,13 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                             return gr.update(), gr.update(visible=False)
                     except Exception as e:
                         error = f'Could not delete the voice file {selected}!\n{e}'
-                        alert_exception(error)
+                        alert_exception(error, id)
                         return gr.update(), gr.update(visible=False)
                 # Fallback/default return if not selected or after errors
                 return gr.update(), gr.update(visible=False)
             except Exception as e:
                 error = f'click_gr_voice_del_btn(): {e}'
-                alert_exception(error)
+                alert_exception(error, id)
                 return gr.update(), gr.update(visible=False)
 
         def click_gr_custom_model_del_btn(selected:Any, id:str)->tuple:
@@ -3211,7 +3214,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     return gr.update(value='confirm_custom_model_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
             except Exception as e:
                 error = f'Could not delete the custom model {selected_name}!'
-                alert_exception(error)
+                alert_exception(error, id)
             return gr.update(), gr.update(visible=False)
 
         def click_gr_audiobook_del_btn(selected:Any, id:str)->tuple:
@@ -3223,7 +3226,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     return gr.update(value='confirm_audiobook_del'), gr.update(value=show_gr_modal('confirm_deletion', msg), visible=True)
             except Exception as e:
                 error = f'Could not delete the audiobook {selected_name}!'
-                alert_exception(error)
+                alert_exception(error, id)
             return gr.update(), gr.update(visible=False), gr.update(visible=False)
 
         def confirm_deletion(voice_path:str, custom_model:str, audiobook:str, id:str, method:any=None)->tuple:
@@ -3266,7 +3269,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
             except Exception as e:
                 error = f'confirm_deletion(): {e}!'
-                alert_exception(error)
+                alert_exception(error, id)
             return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
 
         def confirm_blocks(choice:str, id:str)->gr.update:
@@ -3355,7 +3358,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
-                alert_exception(error)
+                alert_exception(error, id)
                 return gr.update()
 
         def update_gr_tts_engine_list(id:str)->gr.update:
@@ -3367,7 +3370,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return gr.update(choices=tts_engine_options, value=session['tts_engine'])
             except Exception as e:
                 error = f'update_gr_tts_engine_list(): {e}!'
-                alert_exception(error)              
+                alert_exception(error, id)              
                 return gr.update()
 
         def update_gr_custom_model_list(id:str)->gr.update:
@@ -3390,7 +3393,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return gr.update(choices=custom_model_options, value=session['custom_model'])
             except Exception as e:
                 error = f'update_gr_custom_model_list(): {e}!'
-                alert_exception(error)
+                alert_exception(error, id)
                 return gr.update()
 
         def update_gr_fine_tuned_list(id:str)->gr.update:
@@ -3412,7 +3415,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return gr.update(choices=fine_tuned_options, value=session['fine_tuned'])
             except Exception as e:
                 error = f'update_gr_fine_tuned_list(): {e}!'
-                alert_exception(error)              
+                alert_exception(error, id)              
                 return gr.update()
 
         def change_gr_device(device:str, id:str)->None:
@@ -3673,7 +3676,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
-                alert_exception(error)
+                alert_exception(error, id)
             return gr.update(), gr.update()
         
         def submit_confirmed_blocks(id:str)->tuple:
@@ -3720,7 +3723,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     show_alert({"type": "warning", "msg": error})
             except Exception as e:
                 error = f'submit_confirmed_blocks(): {e}'
-                alert_exception(error)
+                alert_exception(error, id)
             return gr.update(), gr.update()          
 
         def update_gr_audiobook_list(id:str)->gr.update:
@@ -3751,7 +3754,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     return gr.update(choices=audiobook_options, value=None)
             except Exception as e:
                 error = f'update_gr_audiobook_list(): {e}!'
-                alert_exception(error)              
+                alert_exception(error, id)              
                 return gr.update()
 
         def change_gr_read_data(data:Any, state:dict, req:gr.Request)->tuple:
@@ -3846,7 +3849,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 yield gr.update(), gr.update(), gr.update()
             except Exception as e:
                 error = f'save_session(): {e}!'
-                alert_exception(error)              
+                alert_exception(error, id)              
                 yield gr.update(), gr.update(value=e), gr.update()
         
         def clear_event(id:str)->None:
