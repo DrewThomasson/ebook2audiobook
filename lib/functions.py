@@ -3109,12 +3109,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 else:
                     session["ebook"] = data
                 session["cancellation_requested"] = False
-                session_dict = dict(session)
-                yield gr.update(value=json.dumps(session_dict, indent=2))
+                return gr.update(value='', visible=False)
             except Exception as e:
                 error = f"change_gr_ebook_file(): {e}"
                 alert_exception(error, id)
-                return gr.update(value='', visible=False)
+            return gr.update(value='', visible=False)
 
         def change_gr_ebook_mode(val:str, id:str)->tuple:
             session = context.get_session(id)
