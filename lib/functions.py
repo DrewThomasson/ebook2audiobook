@@ -2984,7 +2984,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             gr.Error(error)
             DependencyError(error)
 
-        def restore_interface(id:str, req:gr.Request)->tuple:
+        def restore_interface(id: str, req: gr.Request) -> tuple:
             try:
                 session = context.get_session(id)
                 socket_hash = str(req.session_hash)
@@ -2994,15 +2994,29 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if session['ebook_list'] is not None and file_count == 'directory':
-                    ebook_data = list(session["ebook_list"])
+                    ebook_data = [f for f in session["ebook_list"] if os.path.exists(f)]
+                    if not ebook_data:
+                        ebook_data = None
                 elif isinstance(session['ebook'], str) and file_count == 'single':
-                    ebook_data = str(session['ebook'])
+                    if os.path.exists(session['ebook']):
+                        ebook_data = session['ebook']
+                    else:
+                        ebook_data = None
                 else:
                     ebook_data = None
                 return (
-                    gr.update(value=ebook_data), gr.update(value=session['ebook_mode']), gr.update(value=bool(session['chapters_control'])), gr.update(value=session['device']),
-                    gr.update(value=session['language']), update_gr_voice_list(id), update_gr_tts_engine_list(id), update_gr_custom_model_list(id),
-                    update_gr_fine_tuned_list(id), gr.update(value=session['output_format']), gr.update(value=bool(session['output_split'])), gr.update(value=session['output_split_hours']),
+                    gr.update(value=ebook_data),
+                    gr.update(value=session['ebook_mode']),
+                    gr.update(value=bool(session['chapters_control'])),
+                    gr.update(value=session['device']),
+                    gr.update(value=session['language']),
+                    update_gr_voice_list(id),
+                    update_gr_tts_engine_list(id),
+                    update_gr_custom_model_list(id),
+                    update_gr_fine_tuned_list(id),
+                    gr.update(value=session['output_format']),
+                    gr.update(value=bool(session['output_split'])),
+                    gr.update(value=session['output_split_hours']),
                     update_gr_audiobook_list(id)
                 )
             except Exception as e:
