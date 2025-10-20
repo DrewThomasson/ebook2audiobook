@@ -26,6 +26,7 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
+torch.cuda.empty_cache()
 
 class Coqui:
     def __init__(self,session:Any):
