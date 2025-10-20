@@ -3119,9 +3119,9 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             session = context.get_session(id)
             session['ebook_mode'] = val
             if val == 'single':
-                return gr.update(label=src_label_file, value=None, file_count='single'), gr.update(visible=True)
+                return gr.update(label=src_label_file, file_count='single'), gr.update(visible=True)
             else:
-                return gr.update(label=src_label_dir, value=None, file_count='directory'), gr.update(visible=False)
+                return gr.update(label=src_label_dir, file_count='directory'), gr.update(visible=False)
 
         def change_gr_voice_file(f:Any, id:str)->tuple:
             if f is not None:
