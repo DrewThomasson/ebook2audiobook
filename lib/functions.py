@@ -3403,7 +3403,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     name for name, details in models.get(session['tts_engine'], {}).items()
                     if details.get('lang') in ('multi', session['language'])
                 ]
-                fine_tuned_paths = {v[1] for v in fine_tuned_options}
+                fine_tuned_paths = {v[0] for v in fine_tuned_options}
                 if session['fine_tuned'] in fine_tuned_paths:
                     fine_tuned = session['fine_tuned']
                 else:
