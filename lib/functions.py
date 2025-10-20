@@ -339,8 +339,13 @@ def extract_custom_model(file_src:str, session:Any, required_files:Optional[list
             os.remove(file_src)
         return None
         
-def hash_proxy_dict(proxy_dict:Manager)->str:
-    return hashlib.md5(str(proxy_dict).encode('utf-8')).hexdigest()
+def hash_proxy_dict(proxy_dict) -> str:
+	try:
+		data = dict(proxy_dict)
+	except Exception:
+		data = {}
+	data_str = json.dumps(data, sort_keys=True, default=str)
+	return hashlib.md5(data_str.encode("utf-8")).hexdigest()
 
 def calculate_hash(filepath, hash_algorithm='sha256'):
     hash_func = hashlib.new(hash_algorithm)
@@ -2880,7 +2885,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         gr_confirm_deletion_yes_btn = gr.Button(elem_id='gr_confirm_deletion_yes_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm', min_width=0)
         gr_confirm_deletion_no_btn = gr.Button(elem_id='gr_confirm_deletion_no_btn', elem_classes=['hide-elem'], value='', variant='secondary', visible=True, scale=0, size='sm',  min_width=0)
 
-        gr_state_update = gr.State(value={"hash": None})
         gr_restore_session = gr.JSON(elem_id='gr_restore_session', visible='hidden')
         gr_save_session = gr.JSON(elem_id='gr_save_session', visible='hidden') 
 
@@ -2989,7 +2993,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if session['ebook_list'] is not None and file_count == 'directory':
-                    ebook_data = session['ebook_list']
+                    ebook_data = list(session["ebook_list"])
                 elif isinstance(session['ebook'], str) and file_count == 'single':
                     ebook_data = str(session['ebook'])
                 else:
@@ -3084,30 +3088,32 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error)
                 gr.update()
 
-        def change_gr_ebook_file(data:any, id:str)->gr.update:
+        def change_gr_ebook_file(data: any, id: str):
             try:
                 session = context.get_session(id)
-                session['ebook'] = None
-                session['ebook_list'] = None
+                session["ebook"] = None
+                session["ebook_list"] = None
                 if data is None:
-                    if session['status'] == 'converting':
-                        session['cancellation_requested'] = True
-                        msg = 'Cancellation requested, please wait...'
-                        yield gr.update(value=show_gr_modal('wait', msg), visible=True)
+                    if session.get("status") == "converting":
+                        session["cancellation_requested"] = True
+                        msg = "Cancellation requested, please wait..."
+                        yield gr.update(value=show_gr_modal("wait", msg), visible=True)
                         return
                 if isinstance(data, list):
                     ebook_list = []
                     for f in data:
                         path = f.get("path") if isinstance(f, dict) else str(f)
                         ebook_list.append(path)
-                    session['ebook_list'] = json.dumps({"ebook_list": ebook_list}, indent=2)
+                    session["ebook_list"] = ebook_list
                 else:
-                    session['ebook'] = data 
-                session['cancellation_requested'] = False
+                    session["ebook"] = data
+                session["cancellation_requested"] = False
+                session_dict = dict(session)
+                yield gr.update(value=json.dumps(session_dict, indent=2))
             except Exception as e:
-                error = f'change_gr_ebook_file(): {e}'
+                error = f"change_gr_ebook_file(): {e}"
                 alert_exception(error, id)
-            return gr.update(value='', visible=False)
+                return gr.update(value='', visible=False)
 
         def change_gr_ebook_mode(val:str, id:str)->tuple:
             session = context.get_session(id)
@@ -3819,30 +3825,53 @@ def web_interface(args:dict, ctx:SessionContext)->None:
 
         async def save_session(id:str, state:dict)->tuple:
             try:
-                if id:
-                    if id in context.sessions:
-                        session = context.get_session(id)
-                        if session:
-                            previous_hash = state['hash']
-                            if session['status'] == 'converting':
-                                if session['progress'] != len(audiobook_options):
-                                    session['progress'] = len(audiobook_options)
+                if id and id in context.sessions:
+                    session = context.get_session(id)
+                    if session:
+                        previous_hash = state.get("hash")
+                        if session.get("status") == "converting":
+                            try:
+                                if session.get("progress") != len(audiobook_options):
+                                    session["progress"] = len(audiobook_options)
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
-                                    state['hash'] = new_hash
-                                    session_dict = json.dumps(session, cls=JSONEncoderWithDictProxy)
-                                    yield gr.update(value=session_dict), gr.update(value=state), update_gr_audiobook_list(id)
-                            else:
-                                new_hash = hash_proxy_dict(MappingProxyType(session))
-                                if previous_hash == new_hash:
-                                    yield gr.update(), gr.update(), gr.update()
+                                    state["hash"] = new_hash
+                                    session_dict = json.dumps(
+                                        session, cls=JSONEncoderWithDictProxy
+                                    )
+                                    yield (
+                                        gr.update(value=session_dict),
+                                        gr.update(value=state),
+                                        update_gr_audiobook_list(id),
+                                    )
                                 else:
-                                    state['hash'] = new_hash
-                                    session_dict = json.dumps(session, cls=JSONEncoderWithDictProxy)
-                                    yield gr.update(value=session_dict), gr.update(value=state), gr.update()
+                                    yield gr.update(), gr.update(), gr.update()
+                            except NameError:
+                                new_hash = hash_proxy_dict(MappingProxyType(session))
+                                state["hash"] = new_hash
+                                session_dict = json.dumps(
+                                    session, cls=JSONEncoderWithDictProxy
+                                )
+                                yield (
+                                    gr.update(value=session_dict),
+                                    gr.update(value=state),
+                                    gr.update(),
+                                )
+                        else:
+                            new_hash = hash_proxy_dict(MappingProxyType(session))
+                            if previous_hash == new_hash:
+                                yield gr.update(), gr.update(), gr.update()
+                            else:
+                                state["hash"] = new_hash
+                                session_dict = json.dumps(session, cls=JSONEncoderWithDictProxy)
+                                yield (
+                                    gr.update(value=session_dict),
+                                    gr.update(value=state),
+                                    gr.update(),
+                                )
                 yield gr.update(), gr.update(), gr.update()
             except Exception as e:
-                error = f'save_session(): {e}!'
-                alert_exception(error, id)              
+                error = f"save_session(): {e}!"
+                alert_exception(error, id)
                 yield gr.update(), gr.update(value=e), gr.update()
         
         def clear_event(id:str)->None:
