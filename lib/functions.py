@@ -3654,7 +3654,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                                 error = 'Conversion cancelled.'
                             else:
                                 error = 'Conversion failed.'
-                            session['status'] = 'ready'
                         else:
                             if progress_status == 'confirm_blocks':
                                 session['event'] = progress_status
@@ -3673,6 +3672,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             except Exception as e:
                 error = f'submit_convert_btn(): {e}'
                 alert_exception(error, id)
+            session['status'] = 'ready'
             return gr.update(), gr.update()
         
         def submit_confirmed_blocks(id:str)->tuple:
