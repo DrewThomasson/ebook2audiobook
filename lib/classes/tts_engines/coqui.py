@@ -787,7 +787,6 @@ class Coqui:
                         else:
                             voice_key = default_engine_settings[TTS_ENGINES['YOURTTS']]['voices']['ElectroMale-2']
                             speaker_argument = {"speaker": voice_key}
-                        print("speaker_argument: ", speaker_argument)
                         with torch.no_grad():
                             audio_sentence = self.tts.tts(
                                 text=sentence.replace('—', '').strip(),
