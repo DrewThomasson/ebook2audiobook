@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 
+from importlib.metadata import version, PackageNotFoundError
 from typing import Any, Optional, Union, Callable
 from pathlib import Path
 from lib import *
@@ -43,85 +44,122 @@ In order to install and/or use ebook2audiobook correctly you must run
         return True
 
 def check_and_install_requirements(file_path:str)->bool:
-    if not os.path.exists(file_path):
-        error = f'Warning: File {file_path} not found. Skipping package check.'
-        print(error)
-        return False
-    try:
-        from importlib.metadata import version, PackageNotFoundError
-        try:
-            from packaging.specifiers import SpecifierSet
-        except ImportError:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
-            from packaging.specifiers import SpecifierSet
-        import re as regex
-        from tqdm import tqdm
-        with open(file_path, 'r') as f:
-            contents = f.read().replace('\r', '\n')
-            packages = [
-                pkg.strip()
-                for pkg in contents.splitlines()
-                if pkg.strip() and regex.search(r'[a-zA-Z0-9]', pkg)
-            ]
-        missing_packages = []
-        for package in packages:
-            # remove extras so '[lang]==x.y' becomes 'pkg==x.y'
-            clean_pkg = regex.sub(r'\[.*?\]', '', package)
-            pkg_name  = regex.split(r'[<>=]', clean_pkg, 1)[0].strip()
-            try:
-                installed_version = version(pkg_name)
-                if pkg_name == 'num2words':
-                    code = "ZH_CN"
-                    spec = importlib.util.find_spec(f"num2words.lang_{code}")
-                    if spec is None:
-                        missing_packages.append(package)
-            except PackageNotFoundError:
-                error = f'{package} is missing.'
-                print(error)
-                missing_packages.append(package)
-            else:
-                # get specifier from clean_pkg, not from the raw string
-                spec_str = clean_pkg[len(pkg_name):].strip()
-                if spec_str:
-                    spec = SpecifierSet(spec_str)
-                    if installed_version not in spec:
-                        error = (f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".')
-                        print(error)
-                        missing_packages.append(package)
-        if missing_packages:
-            msg = '\nInstalling missing or upgrade packages...\n'
-            print(msg)
-            tmp_dir = tempfile.mkdtemp()
-            os.environ['TMPDIR'] = tmp_dir
-            result = subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-            with tqdm(total=len(packages),
-                      desc='Installation 0.00%',
-                      bar_format='{desc}: {n_fmt}/{total_fmt} ',
-                      unit='step') as t:
-                for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
-                    try:
-                        if package == 'num2words':
-                            pkgs = ['git+https://github.com/savoirfairelinux/num2words.git', '--force']
-                        else:
-                            pkgs = [package]
-                        subprocess.check_call([
-                            sys.executable, '-m', 'pip', 'install',
-                            '--no-cache-dir', '--use-pep517',
-                            *pkgs
-                        ])
-                        t.update(1)
-                    except subprocess.CalledProcessError as e:
-                        error = f'Failed to install {package}: {e}'
-                        print(error)
-                        return False
-            msg = '\nAll required packages are installed.'
-            print(msg)
-        return True
-    except Exception as e:
-        error = f'check_and_install_requirements() error: {e}'
-        raise SystemExit(error)
-        return False
+	if not os.path.exists(file_path):
+		error = f'Warning: File {file_path} not found. Skipping package check.'
+		print(error)
+		return False
+	try:
+		from importlib.metadata import version, PackageNotFoundError
+		try:
+			from packaging.specifiers import SpecifierSet
+			from packaging.version import Version
+		except ImportError:
+			subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
+			from packaging.specifiers import SpecifierSet
+			from packaging.version import Version
+		import re as regex
+		from tqdm import tqdm
+		with open(file_path, 'r') as f:
+			contents = f.read().replace('\r', '\n')
+			packages = [
+				pkg.strip()
+				for pkg in contents.splitlines()
+				if pkg.strip() and regex.search(r'[a-zA-Z0-9]', pkg)
+			]
+		missing_packages = []
+		for package in packages:
+			clean_pkg = regex.sub(r'\[.*?\]', '', package)
+			pkg_name  = regex.split(r'[<>=]', clean_pkg, 1)[0].strip()
+			try:
+				installed_version = version(pkg_name)
+				if pkg_name == 'num2words':
+					code = "ZH_CN"
+					spec = importlib.util.find_spec(f"num2words.lang_{code}")
+					if spec is None:
+						missing_packages.append(package)
+			except PackageNotFoundError:
+				error = f'{package} is missing.'
+				print(error)
+				missing_packages.append(package)
+			else:
+				spec_str = clean_pkg[len(pkg_name):].strip()
+				if spec_str:
+					spec = SpecifierSet(spec_str)
+					norm_match = regex.match(r'^(\d+\.\d+)', installed_version)
+					short_version = norm_match.group(1) if norm_match else installed_version
+					try:
+						installed_v = Version(short_version)
+					except Exception:
+						installed_v = Version("0")
+					req_match = regex.search(r'(\d+\.\d+)', spec_str)
+					if req_match:
+						req_v = Version(req_match.group(1))
+						imajor, iminor = installed_v.major, installed_v.minor
+						rmajor, rminor = req_v.major, req_v.minor
+						if "==" in spec_str:
+							if imajor != rmajor or iminor != rminor:
+								error = f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_v}.'
+								print(error)
+								missing_packages.append(package)
+						elif ">=" in spec_str:
+							if (imajor < rmajor) or (imajor == rmajor and iminor < rminor):
+								error = f'{pkg_name} (installed {installed_version}) < required {req_v}.'
+								print(error)
+								missing_packages.append(package)
+						elif "<=" in spec_str:
+							if (imajor > rmajor) or (imajor == rmajor and iminor > rminor):
+								error = f'{pkg_name} (installed {installed_version}) > allowed {req_v}.'
+								print(error)
+								missing_packages.append(package)
+						elif ">" in spec_str:
+							if (imajor < rmajor) or (imajor == rmajor and iminor <= rminor):
+								error = f'{pkg_name} (installed {installed_version}) <= required {req_v}.'
+								print(error)
+								missing_packages.append(package)
+						elif "<" in spec_str:
+							if (imajor > rmajor) or (imajor == rmajor and iminor >= rminor):
+								error = f'{pkg_name} (installed {installed_version}) >= restricted {req_v}.'
+								print(error)
+								missing_packages.append(package)
+					else:
+						if installed_v not in spec:
+							error = (f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".')
+							print(error)
+							missing_packages.append(package)
+		if missing_packages:
+			msg = '\nInstalling missing or upgrade packages...\n'
+			print(msg)
+			tmp_dir = tempfile.mkdtemp()
+			os.environ['TMPDIR'] = tmp_dir
+			result = subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
+			subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
+			with tqdm(total=len(packages),
+					  desc='Installation 0.00%',
+					  bar_format='{desc}: {n_fmt}/{total_fmt} ',
+					  unit='step') as t:
+				for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
+					try:
+						if package == 'num2words':
+							pkgs = ['git+https://github.com/savoirfairelinux/num2words.git', '--force']
+						else:
+							pkgs = [package]
+						subprocess.check_call([
+							sys.executable, '-m', 'pip', 'install',
+							'--no-cache-dir', '--use-pep517',
+							*pkgs
+						])
+						t.update(1)
+					except subprocess.CalledProcessError as e:
+						error = f'Failed to install {package}: {e}'
+						print(error)
+						return False
+			msg = '\nAll required packages are installed.'
+			print(msg)
+		return True
+	except Exception as e:
+		error = f'check_and_install_requirements() error: {e}'
+		raise SystemExit(error)
+		return False
        
 def check_dictionary()->bool:
     import unidic

@@ -30,7 +30,7 @@ phonemizer-fork
 pydub
 pyannote-audio==3.4.0
 demucs==4.0.1
-gradio>=5.49.1
+gradio>=5.49
 transformers==4.51.3
 coqui-tts[languages]==0.26.0
 torch<2.8
