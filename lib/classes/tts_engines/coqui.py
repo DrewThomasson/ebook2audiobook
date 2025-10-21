@@ -172,16 +172,16 @@ class Coqui:
         global lock
         try:
             if key in loaded_tts:
-                print(f"[LOAD_API] Reusing cached TTS engine for key: {key}")
+                print(f"Reusing cached TTS engine for key: {key}")
                 tts = loaded_tts[key]['engine']
                 return tts
             unload_tts(device, [self.tts_key, self.tts_vc_key])
             from TTS.api import TTS as CoquiAPI
             with lock:
-                print(f"[LOAD_API] Loading Coqui model from: {model_path}")
+                print(f"Loading Coqui model from: {model_path}")
                 tts = CoquiAPI(model_path)
                 if not tts:
-                    raise RuntimeError("CoquiAPI returned None (model not loaded)")
+                    return False
                 if device == "cuda" and torch.cuda.is_available():
                     tts.cuda()
                 elif device == "mps" and torch.backends.mps.is_available():
@@ -189,7 +189,7 @@ class Coqui:
                 else:
                     tts.to(device)
                 loaded_tts[key] = {"engine": tts, "config": None}
-                msg = f"[LOAD_API] ✅ Model loaded successfully: {model_path} ({device})"
+                msg = f"Model loaded successfully: {model_path} ({device})"
                 print(msg)
                 return tts
         except Exception as e:
