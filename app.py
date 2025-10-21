@@ -7,11 +7,14 @@ import socket
 import subprocess
 import sys
 import tempfile
+import warnings
 
 from importlib.metadata import version, PackageNotFoundError
 from typing import Any, Optional, Union, Callable
 from pathlib import Path
 from lib import *
+
+warnings.filterwarnings("ignore", message=".*torchaudio._backend.list_audio_backends has been deprecated.*")
 
 def check_virtual_env(script_mode:str)->bool:
     current_version=sys.version_info[:2]  # (major, minor)

@@ -1969,7 +1969,7 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                     return error, false
                 if ctx is not None:
                     context = ctx
-                id = args['session'] if args['session'] is not None else str(uuid.uuid4())
+                id = str(args['session']) if args['session'] is not None else str(uuid.uuid4())
                 session = context.get_session(id)
                 session['script_mode'] = str(args['script_mode']) if args['script_mode'] is not None else NATIVE
                 session['is_gui_process'] = bool(args['is_gui_process'])
@@ -1982,7 +1982,7 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                 session['tts_engine'] = str(args['tts_engine']) if args['tts_engine'] is not None else str(get_compatible_tts_engines(args['language'])[0])
                 session['custom_model'] =  os.path.join(session['custom_model_dir'], args['custom_model']) if session['custom_model'] is not None else None
                 session['fine_tuned'] = str(args['fine_tuned'])
-                session['voice'] = str(args['voice'])
+                session['voice'] = str(args['voice']) if args['voice'] is not None else None
                 session['xtts_temperature'] =  float(args['xtts_temperature'])
                 session['xtts_length_penalty'] = float(args['xtts_length_penalty'])
                 session['xtts_num_beams'] = int(args['xtts_num_beams'])
@@ -2220,9 +2220,9 @@ def get_all_ip_addresses()->list:
     for interface, addresses in psutil.net_if_addrs().items():
         for address in addresses:
             if address.family == socket.AF_INET:
-                ip_addresses.append(address.address)
+                ip_addresses.append(f'{address.address}:{interface_port}')
             elif address.family == socket.AF_INET6:
-                ip_addresses.append(address.address)  
+                ip_addresses.append(f'{address.address}:{interface_port}')  
     return ip_addresses
 
 def show_alert(state:dict)->None:

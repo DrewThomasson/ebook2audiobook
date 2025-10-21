@@ -779,6 +779,7 @@ class Coqui:
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
                         trim_audio_buffer = 0.002
                         speaker_argument = {}
+                        not_supported_punc_pattern = re.compile(r'[—]')
                         language = self.session['language_iso1'] if self.session['language_iso1'] == 'en' else 'fr-fr' if self.session['language_iso1'] == 'fr' else 'pt-br' if self.session['language_iso1'] == 'pt' else 'en'
                         if settings['voice_path'] is not None:
                             speaker_wav = settings['voice_path']
@@ -788,7 +789,7 @@ class Coqui:
                             speaker_argument = {"speaker": voice_key}
                         with torch.no_grad():
                             audio_sentence = self.tts.tts(
-                                text=sentence.replace('—', '').strip(),
+                                text=re.sub(not_supported_punc_pattern, '', sentence),
                                 language=language,
                                 **speaker_argument
                             )
