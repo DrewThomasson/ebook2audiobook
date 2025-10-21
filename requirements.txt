@@ -33,6 +33,6 @@ demucs==4.0.1
 gradio>=5.49
 transformers==4.51.3
 coqui-tts[languages]==0.26.0
-torch<2.8
-torchaudio<2.8
+torch<2.9
+torchaudio<2.9
 torchvggish

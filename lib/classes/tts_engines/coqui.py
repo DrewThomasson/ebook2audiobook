@@ -1,6 +1,8 @@
 import torch
+import warnings
 from typing import Any, Optional, Union, Callable
 
+warnings.filterwarnings("ignore", message="Can't initialize NVML")
 _original_load = torch.load
 
 def patched_torch_load(*args, **kwargs):
@@ -26,7 +28,6 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
-torch.cuda.empty_cache()
 
 class Coqui:
     def __init__(self,session:Any):
