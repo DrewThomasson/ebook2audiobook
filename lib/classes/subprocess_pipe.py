@@ -1,11 +1,12 @@
 import subprocess, re, sys, gradio as gr
 
 from typing import Any, Optional, Union, Callable
+from lib.functions import context
 
 class SubprocessPipe:
-    def __init__(self,cmd:str,session:Any,total_duration:float):
+    def __init__(self,cmd:str,id:str,total_duration:float):
         self.cmd=cmd
-        self.session=session
+        self.session = context.get_session(id)
         self.total_duration=total_duration
         self.process=None
         self._stop_requested=False

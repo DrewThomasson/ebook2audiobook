@@ -1442,7 +1442,8 @@ def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:
         batch_size = 1024
         start = int(start)
         end = int(end)
-        is_gui_process = session.get('is_gui_process', False)
+        is_gui_process = session.get('is_gui_process')
+        id = session.get('id')
         sentence_files = [
             f for f in os.listdir(chapters_dir_sentences)
             if f.endswith(f'.{default_audio_proc_format}')
@@ -1469,8 +1470,7 @@ def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:
                 with open(txt, 'w') as f:
                     for file in batch:
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
-                # include is_gui_process for each tuple
-                chunk_list.append((txt, out, is_gui_process))
+                chunk_list.append((txt, out, is_gui_process, id))
             try:
                 with Pool(cpu_count()) as pool:
                     results = pool.starmap(assemble_chunks, chunk_list)
@@ -1484,7 +1484,7 @@ def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:
             with open(final_list, 'w') as f:
                 for _, chunk_path, _ in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
+            if assemble_chunks(final_list, chapter_audio_file, is_gui_process, id):
                 print(f'********* Combined block audio file saved in {chapter_audio_file}')
                 return True
             else:
@@ -1590,48 +1590,48 @@ def combine_audio_chapters(id:str)->list[str]|None:
             codec_info = probe.stdout.strip().splitlines()
             input_codec = codec_info[0] if len(codec_info) > 0 else None
             input_rate = codec_info[1] if len(codec_info) > 1 else None
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
+            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-hwaccel', 'auto', '-thread_queue_size', '1024', '-i', ffmpeg_combined_audio]
             target_codec, target_rate = None, None
             if session['output_format'] == 'wav':
                 target_codec = 'pcm_s16le'
                 target_rate = '44100'
-                ffmpeg_cmd += ['-map', '0:a', '-ar', target_rate, '-sample_fmt', 's16']
+                cmd += ['-map', '0:a', '-ar', target_rate, '-sample_fmt', 's16']
             elif session['output_format'] == 'aac':
                 target_codec = 'aac'
                 target_rate = '44100'
-                ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart']
+                cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart']
             elif session['output_format'] == 'flac':
                 target_codec = 'flac'
                 target_rate = '44100'
-                ffmpeg_cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', target_rate]
+                cmd += ['-c:a', 'flac', '-compression_level', '5', '-ar', target_rate]
             else:
-                ffmpeg_cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
+                cmd += ['-f', 'ffmetadata', '-i', ffmpeg_metadata_file, '-map', '0:a']
                 if session['output_format'] in ['m4a', 'm4b', 'mp4', 'mov']:
                     target_codec = 'aac'
                     target_rate = '44100'
-                    ffmpeg_cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart+use_metadata_tags']
+                    cmd += ['-c:a', 'aac', '-b:a', '192k', '-ar', target_rate, '-movflags', '+faststart+use_metadata_tags']
                 elif session['output_format'] == 'mp3':
                     target_codec = 'mp3'
                     target_rate = '44100'
-                    ffmpeg_cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', target_rate]
+                    cmd += ['-c:a', 'libmp3lame', '-b:a', '192k', '-ar', target_rate]
                 elif session['output_format'] == 'webm':
                     target_codec = 'opus'
                     target_rate = '48000'
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', target_rate]
+                    cmd += ['-c:a', 'libopus', '-b:a', '192k', '-ar', target_rate]
                 elif session['output_format'] == 'ogg':
                     target_codec = 'opus'
                     target_rate = '48000'
-                    ffmpeg_cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
-                ffmpeg_cmd += ['-map_metadata', '1'] 
+                    cmd += ['-c:a', 'libopus', '-compression_level', '0', '-b:a', '192k', '-ar', target_rate]
+                cmd += ['-map_metadata', '1'] 
             if input_codec == target_codec and input_rate == target_rate:
-                ffmpeg_cmd = [
+                cmd = [
                     shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', ffmpeg_combined_audio,
                     '-f', 'ffmetadata', '-i', ffmpeg_metadata_file,
                     '-map', '0:a', '-map_metadata', '1', '-c', 'copy',
                     '-y', ffmpeg_final_file
                 ]
             else:
-                ffmpeg_cmd += [
+                cmd += [
                     '-filter_threads', '0',
                     '-filter_complex_threads', '0',
                     '-af', 'loudnorm=I=-16:LRA=11:TP=-1.5:linear=true,afftdn=nf=-70',
@@ -1639,7 +1639,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
-            proc_pipe = SubprocessPipe(ffmpeg_cmd, session=session, total_duration=get_audio_duration(ffmpeg_combined_audio))
+            proc_pipe = SubprocessPipe(cmd, session=session, total_duration=get_audio_duration(ffmpeg_combined_audio))
             if proc_pipe:
                 if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
@@ -1730,7 +1730,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                                 f.write(f"file '{path}'\n")
                         chunk_list.append((txt, out))
                     with Pool(cpu_count()) as pool:
-                        results = pool.starmap(assemble_chunks, chunk_list, session['is_gui_process'])
+                        results = pool.starmap(assemble_chunks, chunk_list, session['is_gui_process'], session['id'])
                     if not all(results):
                         print(f"assemble_chunks() One or more chunks failed for part {part_idx+1}.")
                         return None
@@ -1743,7 +1743,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     with open(final_list, 'w') as f:
                         for _, chunk_path in chunk_list:
                             f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-                    if not assemble_chunks(final_list, combined_chapters_file, session['is_gui_process']):
+                    if not assemble_chunks(final_list, combined_chapters_file, session['is_gui_process'], session['id']):
                         print(f"assemble_chunks() Final merge failed for part {part_idx+1}.")
                         return None
                     metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
@@ -1765,7 +1765,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     for file in chapter_files:
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
-                if not assemble_chunks(txt, merged_tmp, session['is_gui_process']):
+                if not assemble_chunks(txt, merged_tmp, session['is_gui_process'], session['id']):
                     print("assemble_chunks() Final merge failed.")
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
@@ -1779,7 +1779,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
+def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool, id:str)->bool:
     try:
         total_duration = 0.0
         try:
@@ -1798,50 +1798,20 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
                                 total_duration += float(result.stdout.strip())
                             except ValueError:
                                 pass
-        except Exception:
-            pass
-        if is_gui_process:
-            progress_bar = gr.Progress(track_tqdm=False)
-            progress_bar(progress=0.0, desc=f"Combining → {os.path.basename(out_file)}")
-        ffmpeg_cmd = [
+        except Exception as e:
+            print(f"assemble_chunks() open file {txt_file} Error: {e}")
+            return False
+        cmd = [
             shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
             '-safe', '0', '-f', 'concat', '-i', txt_file,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
         ]
-        process = subprocess.Popen(
-            ffmpeg_cmd,
-            env={},
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            encoding='utf-8',
-            errors='ignore'
-        )
-        time_pattern = re.compile(r"time=(\d{2}):(\d{2}):(\d{2}\.\d{2})")
-        last_progress = -1
-        for line in process.stdout:
-            match = time_pattern.search(line)
-            if match and total_duration > 0:
-                h, m, s = match.groups()
-                current_time = int(h) * 3600 + int(m) * 60 + float(s)
-                percent = min((current_time / total_duration) * 100, 100)
-                if int(percent) != int(last_progress):
-                    last_progress = percent
-                    if is_gui_process:
-                        progress_bar(progress=percent / 100, desc=f"Combining {percent:.1f}% → {os.path.basename(out_file)}")
-                    sys.stdout.write(f"\rCombining {os.path.basename(out_file)}: {percent:.2f}%")
-                    sys.stdout.flush()
-        process.wait()
-        print()
-        if process.returncode == 0:
-            if is_gui_process:
-                progress_bar(progress=1.0, desc=f"Completed → {os.path.basename(out_file)}")
+        proc_pipe = SubprocessPipe(cmd, id=id, total_duration=total_duration)
+        if proc_pipe:
             print(f"Completed → {out_file}")
             return True
         else:
-            if is_gui_process:
-                progress_bar(progress=0.0, desc=f"Failed → {os.path.basename(out_file)}")
-            print(f"Failed ({process.returncode}) → {out_file}")
-            print(ffmpeg_cmd)
+            error = f"Failed (proc_pipe) → {out_file}"
             return False
     except subprocess.CalledProcessError as e:
         DependencyError(e)
