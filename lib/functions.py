@@ -2573,7 +2573,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             }
             #gr_voice_player_hidden {
                 position: absolute !important;
-                visibility: hidden !important;
+                /*visibility: hidden !important;*/
                 height: 0 !important;
                 width: 0 !important;
                 overflow: hidden !important;
