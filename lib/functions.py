@@ -3170,8 +3170,8 @@ def web_interface(args:dict, ctx:SessionContext)->None:
 
         def change_gr_voice_list(selected:Any, id:str)->tuple:
             session = context.get_session(id)
-            print("SELECTED: ", selected)
             session['voice'] = next((value for label, value in voice_options if value == selected), None)
+            print("session['voice']: ", session['voice'])
             visible = True if session['voice'] is not None else 'hidden'
             min_width = 60 if session['voice'] is not None else 0
             return gr.update(value=session['voice'], visible=visible, min_width=min_width), gr.update(visible=visible), gr.update(visible=visible)
