@@ -2699,7 +2699,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                                 gr_voice_file = gr.File(label='Upload Voice', elem_id='gr_voice_file', file_types=voice_formats, value=None, height=100)
                                 gr_row_voice_player = gr.Row(elem_id='gr_row_voice_player')
                                 with gr_row_voice_player:
-                                    gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, show_share_button=True, show_label=False, scale=0, min_width=60)
+                                    gr_voice_player_hidden = gr.Audio(elem_id='gr_voice_player_hidden', type='filepath', interactive=False, waveform_options=gr.WaveformOptions(show_recording_waveform=False), show_download_button=False, container=False, visible='hidden', show_share_button=True, show_label=False, scale=0, min_width=60)
                                     gr_voice_play = gr.Button('▶', elem_id='gr_voice_play', elem_classes=['small-btn'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                                     gr_voice_list = gr.Dropdown(label='Voices', elem_id='gr_voice_list', choices=voice_options, type='value', interactive=True, scale=2)
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
@@ -3163,7 +3163,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         def change_gr_voice_list(selected:Any, id:str)->tuple:
             session = context.get_session(id)
             session['voice'] = next((value for label, value in voice_options if value == selected), None)
-            visible = True if session['voice'] is not None else 'hidden'
+            visible = True if session['voice'] is not None else False
             return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
 
         def click_gr_voice_del_btn(selected:Any, id:str)->tuple:
