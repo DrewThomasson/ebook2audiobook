@@ -8,14 +8,16 @@ import subprocess
 import sys
 import tempfile
 
+from importlib.metadata import version, PackageNotFoundError
+from typing import Any, Optional, Union, Callable
 from pathlib import Path
 from lib import *
 
-def check_virtual_env(script_mode):
-    current_version = sys.version_info[:2]  # (major, minor)
-    if str(os.path.basename(sys.prefix)) == 'python_env' or script_mode == FULL_DOCKER or current_version >= min_python_version and current_version <= max_python_version:
-        return True  
-    error = f'''***********
+def check_virtual_env(script_mode:str)->bool:
+    current_version=sys.version_info[:2]  # (major, minor)
+    if str(os.path.basename(sys.prefix))=='python_env' or script_mode==FULL_DOCKER or current_version>=min_python_version and current_version<=max_python_version:
+        return True
+    error=f'''***********
 Wrong launch! ebook2audiobook must run in its own virtual environment!
 NOTE: If you are running a Docker so you are probably using an old version of ebook2audiobook.
 To solve this issue go to download the new version at https://github.com/DrewThomasson/ebook2audiobook
@@ -27,7 +29,7 @@ to install it all automatically.
     print(error)
     return False
 
-def check_python_version():
+def check_python_version()->bool:
     current_version = sys.version_info[:2]  # (major, minor)
     if current_version < min_python_version or current_version > max_python_version:
         error = f'''***********
@@ -41,88 +43,125 @@ In order to install and/or use ebook2audiobook correctly you must run
     else:
         return True
 
-def check_and_install_requirements(file_path):
-    if not os.path.exists(file_path):
-        error = f'Warning: File {file_path} not found. Skipping package check.'
-        print(error)
-        return False
-    try:
-        from importlib.metadata import version, PackageNotFoundError
-        try:
-            from packaging.specifiers import SpecifierSet
-        except ImportError:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
-            from packaging.specifiers import SpecifierSet
-        import regex as re
-        from tqdm import tqdm
-        with open(file_path, 'r') as f:
-            contents = f.read().replace('\r', '\n')
-            packages = [
-                pkg.strip()
-                for pkg in contents.splitlines()
-                if pkg.strip() and re.search(r'[a-zA-Z0-9]', pkg)
-            ]
-        missing_packages = []
-        for package in packages:
-            # remove extras so '[lang]==x.y' becomes 'pkg==x.y'
-            clean_pkg = re.sub(r'\[.*?\]', '', package)
-            pkg_name  = re.split(r'[<>=]', clean_pkg, 1)[0].strip()
-            try:
-                installed_version = version(pkg_name)
-                if pkg_name == 'num2words':
-                    code = "ZH_CN"
-                    spec = importlib.util.find_spec(f"num2words.lang_{code}")
-                    if spec is None:
-                        missing_packages.append(package)
-            except PackageNotFoundError:
-                error = f'{package} is missing.'
-                print(error)
-                missing_packages.append(package)
-            else:
-                # get specifier from clean_pkg, not from the raw string
-                spec_str = clean_pkg[len(pkg_name):].strip()
-                if spec_str:
-                    spec = SpecifierSet(spec_str)
-                    if installed_version not in spec:
-                        error = (f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".')
-                        print(error)
-                        missing_packages.append(package)
-        if missing_packages:
-            msg = '\nInstalling missing or upgrade packages...\n'
-            print(msg)
-            tmp_dir = tempfile.mkdtemp()
-            os.environ['TMPDIR'] = tmp_dir
-            result = subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-            with tqdm(total=len(packages),
-                      desc='Installation 0.00%',
-                      bar_format='{desc}: {n_fmt}/{total_fmt} ',
-                      unit='step') as t:
-                for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
-                    try:
-                        if package == 'num2words':
-                            pkgs = ['git+https://github.com/savoirfairelinux/num2words.git', '--force']
-                        else:
-                            pkgs = [package]
-                        subprocess.check_call([
-                            sys.executable, '-m', 'pip', 'install',
-                            '--no-cache-dir', '--use-pep517',
-                            *pkgs
-                        ])
-                        t.update(1)
-                    except subprocess.CalledProcessError as e:
-                        error = f'Failed to install {package}: {e}'
-                        print(error)
-                        return False
-            msg = '\nAll required packages are installed.'
-            print(msg)
-        return True
-    except Exception as e:
-        error = f'check_and_install_requirements() error: {e}'
-        raise SystemExit(error)
-        return False
+def check_and_install_requirements(file_path:str)->bool:
+	if not os.path.exists(file_path):
+		error = f'Warning: File {file_path} not found. Skipping package check.'
+		print(error)
+		return False
+	try:
+		from importlib.metadata import version, PackageNotFoundError
+		try:
+			from packaging.specifiers import SpecifierSet
+			from packaging.version import Version
+		except ImportError:
+			subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
+			from packaging.specifiers import SpecifierSet
+			from packaging.version import Version
+		import re as regex
+		from tqdm import tqdm
+		with open(file_path, 'r') as f:
+			contents = f.read().replace('\r', '\n')
+			packages = [
+				pkg.strip()
+				for pkg in contents.splitlines()
+				if pkg.strip() and regex.search(r'[a-zA-Z0-9]', pkg)
+			]
+		missing_packages = []
+		for package in packages:
+			clean_pkg = regex.sub(r'\[.*?\]', '', package)
+			pkg_name  = regex.split(r'[<>=]', clean_pkg, 1)[0].strip()
+			try:
+				installed_version = version(pkg_name)
+				if pkg_name == 'num2words':
+					code = "ZH_CN"
+					spec = importlib.util.find_spec(f"num2words.lang_{code}")
+					if spec is None:
+						missing_packages.append(package)
+			except PackageNotFoundError:
+				error = f'{package} is missing.'
+				print(error)
+				missing_packages.append(package)
+			else:
+				spec_str = clean_pkg[len(pkg_name):].strip()
+				if spec_str:
+					spec = SpecifierSet(spec_str)
+					norm_match = regex.match(r'^(\d+\.\d+)', installed_version)
+					short_version = norm_match.group(1) if norm_match else installed_version
+					try:
+						installed_v = Version(short_version)
+					except Exception:
+						installed_v = Version("0")
+					req_match = regex.search(r'(\d+\.\d+)', spec_str)
+					if req_match:
+						req_v = Version(req_match.group(1))
+						imajor, iminor = installed_v.major, installed_v.minor
+						rmajor, rminor = req_v.major, req_v.minor
+						if "==" in spec_str:
+							if imajor != rmajor or iminor != rminor:
+								error = f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_v}.'
+								print(error)
+								missing_packages.append(package)
+						elif ">=" in spec_str:
+							if (imajor < rmajor) or (imajor == rmajor and iminor < rminor):
+								error = f'{pkg_name} (installed {installed_version}) < required {req_v}.'
+								print(error)
+								missing_packages.append(package)
+						elif "<=" in spec_str:
+							if (imajor > rmajor) or (imajor == rmajor and iminor > rminor):
+								error = f'{pkg_name} (installed {installed_version}) > allowed {req_v}.'
+								print(error)
+								missing_packages.append(package)
+						elif ">" in spec_str:
+							if (imajor < rmajor) or (imajor == rmajor and iminor <= rminor):
+								error = f'{pkg_name} (installed {installed_version}) <= required {req_v}.'
+								print(error)
+								missing_packages.append(package)
+						elif "<" in spec_str:
+							if (imajor > rmajor) or (imajor == rmajor and iminor >= rminor):
+								error = f'{pkg_name} (installed {installed_version}) >= restricted {req_v}.'
+								print(error)
+								missing_packages.append(package)
+					else:
+						if installed_v not in spec:
+							error = (f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".')
+							print(error)
+							missing_packages.append(package)
+		if missing_packages:
+			msg = '\nInstalling missing or upgrade packages...\n'
+			print(msg)
+			tmp_dir = tempfile.mkdtemp()
+			os.environ['TMPDIR'] = tmp_dir
+			result = subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
+			subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
+			with tqdm(total=len(packages),
+					  desc='Installation 0.00%',
+					  bar_format='{desc}: {n_fmt}/{total_fmt} ',
+					  unit='step') as t:
+				for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
+					try:
+						if package == 'num2words':
+							pkgs = ['git+https://github.com/savoirfairelinux/num2words.git', '--force']
+						else:
+							pkgs = [package]
+						subprocess.check_call([
+							sys.executable, '-m', 'pip', 'install',
+							'--no-cache-dir', '--use-pep517',
+							*pkgs
+						])
+						t.update(1)
+					except subprocess.CalledProcessError as e:
+						error = f'Failed to install {package}: {e}'
+						print(error)
+						return False
+			msg = '\nAll required packages are installed.'
+			print(msg)
+		return True
+	except Exception as e:
+		error = f'check_and_install_requirements() error: {e}'
+		raise SystemExit(error)
+		return False
        
-def check_dictionary():
+def check_dictionary()->bool:
     import unidic
     unidic_path = unidic.DICDIR
     dicrc = os.path.join(unidic_path, 'dicrc')
@@ -137,11 +176,11 @@ def check_dictionary():
             return False
     return True
 
-def is_port_in_use(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        return s.connect_ex(('0.0.0.0', port)) == 0
+def is_port_in_use(port:int)->bool:
+    with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
+        return s.connect_ex(('0.0.0.0',port))==0
 
-def main():
+def main()->None:
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
@@ -166,7 +205,8 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         '--script_mode', '--session', '--share', '--headless', 
         '--ebook', '--ebooks_dir', '--language', '--voice', '--device', '--tts_engine', 
         '--custom_model', '--fine_tuned', '--output_format',
-        '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', '--top_k', '--top_p', '--speed', '--enable_text_splitting',
+        '--temperature', '--length_penalty', '--num_beams', '--repetition_penalty', 
+        '--top_k', '--top_p', '--speed', '--enable_text_splitting',
         '--text_temp', '--waveform_temp',
         '--output_dir', '--version', '--workflow', '--help'
     ]
@@ -264,11 +304,19 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False
+            args['chapters_control'] = False
             args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
             args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
             args['output_split_hours'] = default_output_split_hours
+            engine_setting_keys = {engine: list(settings.keys()) for engine, settings in default_engine_settings.items()}
+            valid_model_keys = engine_setting_keys.get(args['tts_engine'], [])
+            renamed_args = {}
+            for key in valid_model_keys:
+                if key in args:
+                    renamed_args[f"{args['tts_engine']}_{key}"] = args.pop(key)
+            args.update(renamed_args)
             # Condition to stop if both --ebook and --ebooks_dir are provided
             if args['ebook'] and args['ebooks_dir']:
                 error = 'Error: You cannot specify both --ebook and --ebooks_dir in headless mode.'
