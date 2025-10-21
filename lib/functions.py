@@ -3163,9 +3163,8 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         def change_gr_voice_list(selected:Any, id:str)->tuple:
             session = context.get_session(id)
             session['voice'] = next((value for label, value in voice_options if value == selected), None)
-            voice = session['voice'] if session['voice'] is not None else ''
             visible = True if session['voice'] is not None else 'hidden'
-            return gr.update(value=voice, visible=visible), gr.update(visible=visible), gr.update(visible=visible)
+            return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
 
         def click_gr_voice_del_btn(selected:Any, id:str)->tuple:
             try:
