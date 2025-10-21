@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.poetry]
 name = "ebook2audiobook"
-version = "0.0.0"
+version = "25.10.25"
 
 [tool.setuptools.dynamic]
 version = {file = "VERSION.txt"}
@@ -52,8 +52,8 @@ dependencies = [
 	"gradio>=5.49",
 	"transformers==4.51.3",
 	"coqui-tts[languages]==0.26.0",
-	"torch<2.9",
-	"torchaudio<2.9",
+	"torch>=2.8.0,<2.9",
+	"torchaudio>=2.8.0,<2.9",
 	"torchvggish"
 ]
 readme = "README.md"
