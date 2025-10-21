@@ -1,8 +1,6 @@
 import torch
-import warnings
 from typing import Any, Optional, Union, Callable
 
-warnings.filterwarnings("ignore", message="Can't initialize NVML")
 _original_load = torch.load
 
 def patched_torch_load(*args, **kwargs):

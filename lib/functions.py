@@ -54,6 +54,7 @@ from lib.classes.tts_manager import TTSManager
 #from lib.classes.argos_translator import ArgosTranslator
 
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
+warnings.filterwarnings("ignore", message="Can't initialize NVML")
 
 context = None
 active_sessions = set()
