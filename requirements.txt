@@ -1,69 +1,38 @@
-[build-system]
-name = "ebook2audiobook"
-requires = ["setuptools >= 64"]
-build-backend = "setuptools.build_meta"
-
-[tool.poetry]
-name = "ebook2audiobook"
-version = "25.10.25"
-
-[tool.setuptools.dynamic]
-version = {file = "VERSION.txt"}
-
-[project]
-name = "ebook2audiobook"
-description = "Convert eBooks to audiobooks with chapters and metadata"
-authors = [
-    { name = "Drew Thomasson" }
-]
-dependencies = [
-	"regex",
-	"tqdm",
-	"cutlet",
-	"deep_translator",
-	"docker",
-	"ebooklib",
-	"fastapi",
-	"num2words",
-	"argostranslate",
-	"beautifulsoup4",
-	"fugashi",
-	"sudachipy",
-	"sudachidict_core",
-	"ray",
-	"unidic",
-	"pymupdf4llm",
-	"translate",
-	"hangul-romanize",
-	"indic-nlp-library",
-	"iso639-lang",
-	"jieba",
-	"pycantonese",
-	"soynlp",
-	"pypinyin",
-	"pythainlp",
-	"mutagen",
-	"PyOpenGL",
-	"nvidia-ml-py",
-	"phonemizer-fork",
-	"pydub",
-	"pyannote-audio==3.4.0",
-	"demucs==4.0.1",
-	"gradio>=5.49",
-	"transformers==4.51.3",
-	"coqui-tts[languages]==0.26.0",
-	"torch>=2.8.0,<2.9",
-	"torchaudio>=2.8.0,<2.9",
-	"torchvggish"
-]
-readme = "README.md"
-requires-python = ">3.9,<3.13"
-classifiers = [
-    "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-]
-scripts = { "ebook2audiobook" = "app:main" }
-
-[project.urls]
-"Homepage" = "https://github.com/DrewThomasson/ebook2audiobook"
+regex
+tqdm
+cutlet
+deep_translator
+docker
+ebooklib
+fastapi
+num2words
+argostranslate
+beautifulsoup4
+fugashi
+sudachipy
+sudachidict_core
+ray
+unidic
+pymupdf4llm
+translate
+hangul-romanize
+indic-nlp-library
+iso639-lang
+jieba
+pycantonese
+soynlp
+pypinyin
+pythainlp
+mutagen
+PyOpenGL
+nvidia-ml-py
+phonemizer-fork
+pydub
+pyannote-audio==3.4.0
+demucs==4.0.1
+gradio>=5.49
+transformers==4.51.3
+coqui-tts[languages]==0.26.0
+torch>=2.8.0,<2.9
+torchaudio>=2.8.0,<2.9
+torchvggish
