@@ -2572,19 +2572,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 color: #ffffff !important;
             }
             #gr_voice_player_hidden {
+                z-index: -100 !important;
                 position: absolute !important;
-                /*visibility: hidden !important;*/
-                height: 0 !important;
-                width: 0 !important;
                 overflow: hidden !important;
                 margin: 0 !important;
                 padding: 0 !important;
-                width: 60px !important;
-                height: 60px !important;
-            }
-            #gr_voice_player_hidden > div {
-                padding: 0 !important;
-                margin: 0 !important;
                 width: 60px !important;
                 height: 60px !important;
             }
