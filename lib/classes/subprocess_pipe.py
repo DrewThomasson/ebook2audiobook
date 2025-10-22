@@ -3,7 +3,7 @@ import subprocess, re, sys, gradio as gr
 from typing import Any, Optional, Union, Callable
 
 class SubprocessPipe:
-    def __init__(self,cmd:str, is_gui_process:is_gui_process, total_duration:float):
+    def __init__(self,cmd:str, is_gui_process:bool, total_duration:float):
         self.cmd = cmd
         self.total_duration = total_duration
         self.process = None
