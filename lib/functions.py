@@ -1806,7 +1806,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
             '-safe', '0', '-f', 'concat', '-i', txt_file,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
         ]
-        proc_pipe = SubprocessPipe(cmd, is_gui_process:is_gui_process, total_duration=total_duration)
+        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration)
         if proc_pipe:
             print(f"Completed → {out_file}")
             return True
