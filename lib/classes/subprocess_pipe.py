@@ -1,10 +1,10 @@
 import subprocess, re, sys, gradio as gr
-
 from typing import Any, Optional, Union, Callable
 
 class SubprocessPipe:
     def __init__(self,cmd:str, is_gui_process:bool, total_duration:float):
         self.cmd = cmd
+        self.is_gui_process = is_gui_process
         self.total_duration = total_duration
         self.process = None
         self._stop_requested = False
@@ -12,25 +12,24 @@ class SubprocessPipe:
         self.start()
 
     def _on_start(self)->None:
-        print('Export started')
-        if is_gui_process:
+        if self.is_gui_process:
             self.progress_bar=gr.Progress(track_tqdm=False)
-            self.progress_bar(0.0,desc='Starting export...')
+            self.progress_bar(0.0,desc='Starting encoding...')
 
     def _on_progress(self,percent:float)->None:
         sys.stdout.write(f'\rFinal Encoding: {percent:.1f}%')
         sys.stdout.flush()
-        if is_gui_process:
+        if self.is_gui_process:
             self.progress_bar(percent/100,desc='Final Encoding')
 
     def _on_complete(self)->None:
         print('\nExport completed successfully')
-        if is_gui_process:
+        if self.is_gui_process:
             self.progress_bar(1.0,desc='Export completed')
 
     def _on_error(self,err:Exception)->None:
         print(f'\nExport failed: {err}')
-        if is_gui_process:
+        if self.is_gui_process:
             self.progress_bar(0.0,desc='Export failed')
 
     def start(self)->bool:
