@@ -3033,7 +3033,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
                 )
 
-        def change_gr_audiobook_list(selected:any, id:str)->gr.update:
+        def change_gr_audiobook_list(selected:any, id:str)->gr.Update:
             try:
                 session = context.get_session(id)
                 session['audiobook'] = selected
@@ -3072,10 +3072,10 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)
             return gr.update(value=None), gr.update(value=None)
 
-        def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->gr.update:
+        def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->gr.Update:
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
 
-        def change_convert_btn(upload_file:any=None, upload_file_mode:str=None, custom_model_file:any=None, session:any=None)->gr.update:
+        def change_convert_btn(upload_file:any=None, upload_file_mode:str=None, custom_model_file:any=None, session:any=None)->gr.Update:
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
@@ -3091,7 +3091,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error)
                 gr.update()
 
-        def change_gr_ebook_file(data:Any, id:str)->gr.update:
+        def change_gr_ebook_file(data:Any, id:str)->gr.Update:
             try:
                 session = context.get_session(id)
                 session["ebook"] = None
@@ -3272,7 +3272,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)
             return gr.update(), gr.update(), gr.update(value='', visible=False), gr.update()
 
-        def confirm_blocks(choice:str, id:str)->gr.update:
+        def confirm_blocks(choice:str, id:str)->gr.Update:
             session = context.get_session(id)
             if choice == 'yes':           
                 session['event'] = 'blocks_confirmed'
@@ -3280,7 +3280,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 session['status'] = 'ready'
             return gr.update(value='', visible=False)
 
-        def update_gr_voice_list(id:str, fine_tuned:Any=None)->gr.update:
+        def update_gr_voice_list(id:str, fine_tuned:str=None)->gr.Update:
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
@@ -3361,7 +3361,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)
                 return gr.update()
 
-        def update_gr_tts_engine_list(id:str)->gr.update:
+        def update_gr_tts_engine_list(id:str)->gr.Update:
             try:
                 nonlocal tts_engine_options
                 session = context.get_session(id)
@@ -3373,7 +3373,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)              
                 return gr.update()
 
-        def update_gr_custom_model_list(id:str)->gr.update:
+        def update_gr_custom_model_list(id:str)->gr.Update:
             try:
                 nonlocal custom_model_options
                 session = context.get_session(id)
@@ -3396,7 +3396,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)
                 return gr.update()
 
-        def update_gr_fine_tuned_list(id:str)->gr.update:
+        def update_gr_fine_tuned_list(id:str)->gr.Update:
             try:
                 nonlocal fine_tuned_options
                 session = context.get_session(id)
@@ -3504,7 +3504,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"), gr.update(label=''), update_gr_voice_list(id)
                 )
                 
-        def change_gr_fine_tuned_list(selected:Any, id:str)->tuple:
+        def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
             if selected:
                 session = context.get_session(id)
                 visible = False
@@ -3526,7 +3526,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             session['output_format'] = val
             return
             
-        def change_gr_output_split(val:str, id:str)->gr.update:
+        def change_gr_output_split(val:str, id:str)->gr.Update:
             session = context.get_session(id)
             session['output_split'] = val
             return gr.update(visible=val)
@@ -3723,7 +3723,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)
             return gr.update(), gr.update()          
 
-        def update_gr_audiobook_list(id:str)->gr.update:
+        def update_gr_audiobook_list(id:str)->gr.Update:
             try:
                 nonlocal audiobook_options
                 session = context.get_session(id)
