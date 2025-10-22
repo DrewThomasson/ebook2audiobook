@@ -2217,10 +2217,8 @@ def get_all_ip_addresses()->list:
     ip_addresses = []
     for interface, addresses in psutil.net_if_addrs().items():
         for address in addresses:
-            if address.family == socket.AF_INET:
-                ip_addresses.append(f'{address.address}:{interface_port}')
-            elif address.family == socket.AF_INET6:
-                ip_addresses.append(f'{address.address}:{interface_port}')  
+            if address.family in [socket.AF_INET, socket.AF_INET6]:
+                ip_addresses.append(address.address) 
     return ip_addresses
 
 def show_alert(state:dict)->None:
