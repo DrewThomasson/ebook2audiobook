@@ -3,35 +3,34 @@ import subprocess, re, sys, gradio as gr
 from typing import Any, Optional, Union, Callable
 
 class SubprocessPipe:
-    def __init__(self,cmd:str, id:str, total_duration:float):
-        self.cmd=cmd
-        self.session = session
-        self.total_duration=total_duration
-        self.process=None
-        self._stop_requested=False
-        self.progress_bar=None
+    def __init__(self,cmd:str, is_gui_process:is_gui_process, total_duration:float):
+        self.cmd = cmd
+        self.total_duration = total_duration
+        self.process = None
+        self._stop_requested = False
+        self.progress_bar = None
         self.start()
 
     def _on_start(self)->None:
         print('Export started')
-        if self.session.get('is_gui_process'):
+        if is_gui_process:
             self.progress_bar=gr.Progress(track_tqdm=False)
             self.progress_bar(0.0,desc='Starting export...')
 
     def _on_progress(self,percent:float)->None:
         sys.stdout.write(f'\rFinal Encoding: {percent:.1f}%')
         sys.stdout.flush()
-        if self.session.get('is_gui_process'):
+        if is_gui_process:
             self.progress_bar(percent/100,desc='Final Encoding')
 
     def _on_complete(self)->None:
         print('\nExport completed successfully')
-        if self.session.get('is_gui_process'):
+        if is_gui_process:
             self.progress_bar(1.0,desc='Export completed')
 
     def _on_error(self,err:Exception)->None:
         print(f'\nExport failed: {err}')
-        if self.session.get('is_gui_process'):
+        if is_gui_process:
             self.progress_bar(0.0,desc='Export failed')
 
     def start(self)->bool:
@@ -48,9 +47,6 @@ class SubprocessPipe:
             last_percent=0.0
             for raw_line in self.process.stderr:
                 line=raw_line.decode(errors='ignore')
-                if self._stop_requested or self.session.get('cancellation_requested'):
-                    print('\nExport cancelled')
-                    return self.stop()
                 match=time_pattern.search(raw_line)
                 if match and self.total_duration>0:
                     current_time=int(match.group(1))/1_000_000

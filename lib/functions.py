@@ -1470,7 +1470,7 @@ def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:
                 with open(txt, 'w') as f:
                     for file in batch:
                         f.write(f"file '{file.replace(os.sep, '/')}'\n")
-                chunk_list.append((txt, out, is_gui_process, id))
+                chunk_list.append((txt, out, is_gui_process))
             try:
                 with Pool(cpu_count()) as pool:
                     results = pool.starmap(assemble_chunks, chunk_list)
@@ -1484,7 +1484,7 @@ def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:
             with open(final_list, 'w') as f:
                 for _, chunk_path, _ in chunk_list:
                     f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-            if assemble_chunks(final_list, chapter_audio_file, is_gui_process, id):
+            if assemble_chunks(final_list, chapter_audio_file, is_gui_process):
                 print(f'********* Combined block audio file saved in {chapter_audio_file}')
                 return True
             else:
@@ -1730,7 +1730,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                                 f.write(f"file '{path}'\n")
                         chunk_list.append((txt, out))
                     with Pool(cpu_count()) as pool:
-                        results = pool.starmap(assemble_chunks, chunk_list, session['is_gui_process'], session['id'])
+                        results = pool.starmap(assemble_chunks, chunk_list, session['is_gui_process'])
                     if not all(results):
                         print(f"assemble_chunks() One or more chunks failed for part {part_idx+1}.")
                         return None
@@ -1743,7 +1743,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     with open(final_list, 'w') as f:
                         for _, chunk_path in chunk_list:
                             f.write(f"file '{chunk_path.replace(os.sep, '/')}'\n")
-                    if not assemble_chunks(final_list, combined_chapters_file, session['is_gui_process'], session['id']):
+                    if not assemble_chunks(final_list, combined_chapters_file, session['is_gui_process']):
                         print(f"assemble_chunks() Final merge failed for part {part_idx+1}.")
                         return None
                     metadata_file = os.path.join(session['process_dir'], f'metadata_part{part_idx+1}.txt')
@@ -1765,7 +1765,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     for file in chapter_files:
                         path = os.path.join(session['chapters_dir'], file).replace("\\", "/")
                         f.write(f"file '{path}'\n")
-                if not assemble_chunks(txt, merged_tmp, session['is_gui_process'], session['id']):
+                if not assemble_chunks(txt, merged_tmp, session['is_gui_process']):
                     print("assemble_chunks() Final merge failed.")
                     return None
                 metadata_file = os.path.join(session['process_dir'], 'metadata.txt')
@@ -1779,7 +1779,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
         DependencyError(e)
         return None
 
-def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool, id:str)->bool:
+def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
     try:
         total_duration = 0.0
         try:
@@ -1806,8 +1806,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool, id:str)->bo
             '-safe', '0', '-f', 'concat', '-i', txt_file,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
         ]
-        session = context.get_session(id)
-        proc_pipe = SubprocessPipe(cmd, session=session, total_duration=total_duration)
+        proc_pipe = SubprocessPipe(cmd, is_gui_process:is_gui_process, total_duration=total_duration)
         if proc_pipe:
             print(f"Completed → {out_file}")
             return True
