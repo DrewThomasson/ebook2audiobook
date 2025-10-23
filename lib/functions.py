@@ -1158,6 +1158,7 @@ def year2words(year_str, lang, lang_iso1, is_num2words_compat):
         return False
 
 def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+    # Fix 3: Add dot separator to regex pattern
     time_rx = re.compile(r'(\d{1,2})[:.](\d{1,2})(?:[:.](\d{1,2}))?')
     lang_lc = (lang or "").lower()
     lc = language_clock.get(lang_lc) if 'language_clock' in globals() else None
@@ -1170,7 +1171,7 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         if is_num2words_compat:
             word = num2words(n, lang=lang_lc)
         else:
-            word = math2words(str(n), lang, lang_iso1, tts_engine, is_num2words_compat)
+            word = math2words(n, lang, lang_iso1, tts_engine, is_num2words_compat)
         _n2w_cache[key] = word
         return word
 
@@ -1182,23 +1183,41 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             sec = m.group(3)
             sec = int(sec) if sec is not None else None
         except Exception:
+            # If parsing fails, return original matched string
             return m.group(0)
+            
         # basic validation; if out of range, keep original
         if not (0 <= h <= 23 and 0 <= mnt <= 59 and (sec is None or 0 <= sec <= 59)):
             return m.group(0)
-        # If no language clock rules, just say numbers plainly
-        if not lc:
+            
+        # Fix 4: Unified handling for cases with seconds (sec > 0), fallback to numeric reading.
+        # This avoids h:00:s misusing oclock template logic issues.
+        has_seconds = sec is not None and sec > 0
+
+        # If no lc or has seconds, use numeric reading
+        if not lc or has_seconds:
             parts = [n2w(h)]
-            if mnt != 0:
+            
+            # Minute reading: if mnt != 0, or mnt = 0 with seconds, then read out
+            if mnt != 0 or has_seconds:
                 parts.append(n2w(mnt))
-            if sec is not None and sec > 0:
+                
+            # Second reading
+            if has_seconds:
                 parts.append(n2w(sec))
+            
+            # If no lc and is h:00:00, only read hour (original logic)
+            if not lc and mnt == 0 and not has_seconds:
+                return " ".join([n2w(h)]) 
+                
             return " ".join(parts)
 
+        # --- Below is for cases without seconds (sec is None or sec == 0) and with lc ---
         next_hour = (h + 1) % 24
         special_hours = lc.get("special_hours", {})
+        
         # Build main phrase
-        if mnt == 0 and (sec is None or sec == 0):
+        if mnt == 0: # Handle h:00
             if h in special_hours:
                 phrase = special_hours[h]
             else:
@@ -1214,19 +1233,33 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         elif mnt == 45:
             phrase = lc["quarter_to"].format(next_hour=n2w(next_hour))
         elif mnt < 30:
-            phrase = lc["past"].format(hour=n2w(h), minute=n2w(mnt)) if mnt != 0 else lc["oclock"].format(hour=n2w(h))
+            # mnt between [1, 29] and not equal to 15
+            phrase = lc["past"].format(hour=n2w(h), minute=n2w(mnt)) 
         else:
+            # mnt between [31, 59] and not equal to 45
             minute_to_hour = 60 - mnt
             phrase = lc["to"].format(next_hour=n2w(next_hour), minute=n2w(minute_to_hour))
-        # Append seconds if present
-        if sec is not None and sec > 0:
-            second_phrase = lc["second"].format(second=n2w(sec))
-            phrase = lc["full"].format(phrase=phrase, second_phrase=second_phrase)
+            
+        # Since has_seconds logic is already handled above, no need to append seconds logic here.
+        # If preserving seconds language expression is needed, more complex lc templates and logic are required.
+        
         return phrase
 
     return time_rx.sub(repl_num, text)
 
 def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
+    # Fix 1: Add robust input type checking
+    if text is None:
+        return ""
+        
+    # If not expected numeric type, try to convert to string
+    if not isinstance(text, (int, float, str)):
+        try:
+            text = str(text)
+        except Exception:
+            return "" 
+            
+    text = str(text)  # Ensure string, even numbers will be converted to "123"
 
     def repl_ambiguous(match):
         # handles "num SYMBOL num" and "SYMBOL num"
@@ -1249,18 +1282,26 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
 
     # Matches any digits + optional space/NBSP + st/nd/rd/th, not glued into words.
     re_ordinal = re.compile(r'(?<!\w)(\d+)(?:\s|\u00A0)*(?:st|nd|rd|th)(?!\w)')
+    
+    # Fix 2: Double-check text is string before re.sub operations (though previous check covers this)
+    if not isinstance(text, str):
+        text = str(text)
+        
     text = re.sub(r'(\d)\)', r'\1 : ', text)
     text = re_ordinal.sub(_ordinal_to_words, text)
+    
     # Symbol phonemes
     ambiguous_symbols = {"-", "/", "*", "x"}
     phonemes_list = language_math_phonemes.get(lang, language_math_phonemes[default_language_code])
     replacements = {k: v for k, v in phonemes_list.items() if not k.isdigit() and k not in [',', '.']}
     normal_replacements  = {k: v for k, v in replacements.items() if k not in ambiguous_symbols}
     ambiguous_replacements = {k: v for k, v in replacements.items() if k in ambiguous_symbols}
+    
     # Replace unambiguous symbols everywhere
     if normal_replacements:
         sym_pat = r'(' + '|'.join(map(re.escape, normal_replacements.keys())) + r')'
         text = re.sub(sym_pat, lambda m: f" {normal_replacements[m.group(1)]} ", text)
+        
     # Replace ambiguous symbols only in valid equation contexts
     if ambiguous_replacements:
         ambiguous_pattern = (
@@ -1271,6 +1312,7 @@ def math2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
             r'(?<!\S)([-/*x])\s*(\d+)(?!\S)'  # SYMBOL num
         )
         text = re.sub(ambiguous_pattern, repl_ambiguous, text)
+        
     text = set_formatted_number(text, lang, lang_iso1, is_num2words_compat)
     return text
 
