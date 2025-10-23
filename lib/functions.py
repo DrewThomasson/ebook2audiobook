@@ -1936,7 +1936,7 @@ def convert_ebook_batch(args:dict, ctx:object|None)->tuple:
         if not args['is_gui_process']:
             sys.exit(1)       
 
-def convert_ebook(args:dict, ctx:object|None->tuple:
+def convert_ebook(args:dict, ctx:object|None)->tuple:
     try:
         if args['event'] == 'blocks_confirmed':
             return finalize_audiobook(args['id'])
