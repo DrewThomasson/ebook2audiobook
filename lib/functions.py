@@ -6,7 +6,7 @@
 # WHICH IS LESS GENERIC FOR THE DEVELOPERS
 
 import torch
-from typing import Any, Optional, Union, Callable
+from typing import Generator, Any, Optional, Union, Callable
 
 _original_load = torch.load
 
@@ -30,12 +30,15 @@ from collections.abc import Mapping
 from collections.abc import MutableMapping
 from datetime import datetime
 from ebooklib import epub
+from ebooklib.epub import EpubBook
+from ebooklib.epub import EpubHtml
 from glob import glob
 from iso639 import Lang
 from markdown import markdown
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
+from stanza.pipeline.core import Pipeline
 from num2words import num2words
 from pathlib import Path
 from pydub import AudioSegment
@@ -100,11 +103,11 @@ class SessionTracker:
 
 class SessionContext:
     def __init__(self):
-        self.manager = Manager()
-        self.sessions = self.manager.dict()
+        self.manager:Manager = Manager()
+        self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
         self.cancellation_events = {}
         
-    def _recursive_proxy(self, data:Any, manager:Any = None)->Any:
+    def _recursive_proxy(self, data:Any, manager:Optional[Manager]=None)->Any:
         if manager is None:
             manager = Manager()
         if isinstance(data, dict):
@@ -205,7 +208,7 @@ class SessionContext:
                 return session['id']
         return None
 
-class JSONEncoderWithDictProxy(json.JSONEncoder):
+class JSONDictProxyEncoder(json.JSONEncoder):
     def default(self, o:Any)->Any:
         if isinstance(o, DictProxy):
             return dict(o)
@@ -217,7 +220,7 @@ class JSONEncoderWithDictProxy(json.JSONEncoder):
 
 ctx_tracker = SessionTracker()
 
-def prepare_dirs(src:str, session:Any)->bool:
+def prepare_dirs(src:str, session:DictProxy[str,Any])->bool:
     try:
         resume = False
         os.makedirs(os.path.join(models_dir,'tts'), exist_ok=True)
@@ -294,7 +297,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         raise RuntimeError(error)
     return False
 
-def extract_custom_model(file_src:str, session:Any, required_files:Optional[list]=None)->Optional[str]:
+def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_files:Optional[list]=None)->Optional[str]:
     try:
         model_path = None
         if required_files is None:
@@ -453,7 +456,7 @@ def convert2epub(id:str)->bool:
         DependencyError(e)
         return False
 
-def get_ebook_title(epubBook:Any,all_docs:list[Any])->Optional[str]:
+def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->Optional[str]:
     # 1. Try metadata (official EPUB title)
     meta_title = epubBook.get_metadata("DC","title")
     if meta_title and meta_title[0][0].strip():
@@ -473,7 +476,7 @@ def get_ebook_title(epubBook:Any,all_docs:list[Any])->Optional[str]:
                 return alt
     return None
 
-def get_cover(epubBook:Any, session:Any)->bool|str:
+def get_cover(epubBook:EpubBook, session:DictProxy[str,Any])->bool|str:
     try:
         if session['cancellation_requested']:
             msg = 'Cancel requested'
@@ -502,7 +505,7 @@ def get_cover(epubBook:Any, session:Any)->bool|str:
         DependencyError(e)
         return False
 
-def get_chapters(epubBook:Any, session:Any)->tuple[Any,Any]:
+def get_chapters(epubBook:EpubBook, session:DictProxy[str,Any])->tuple[Any,Any]:
     try:
         msg = r'''
 *******************************************************************************
@@ -567,8 +570,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         DependencyError(error)
         return error, None
 
-def filter_chapter(doc:Any, lang:str, lang_iso1:str, tts_engine:str, stanza_nlp:Any, is_num2words_compat:bool)->Any:
-    def tuple_row(node:Any, last_text_char:Optional[str]=None)->Any:
+def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
+    def tuple_row(node:Any, last_text_char:Optional[str]=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             for child in node.children:
                 if isinstance(child, NavigableString):
@@ -796,8 +799,8 @@ def filter_chapter(doc:Any, lang:str, lang_iso1:str, tts_engine:str, stanza_nlp:
         DependencyError(error)
         return None
 
-def get_sentences(text:str, lang:str, tts_engine:str)->Any:
-    def split_inclusive(text:str, pattern:Any)->list[str]:
+def get_sentences(text:str, lang:str, tts_engine:str)->list|None:
+    def split_inclusive(text:str, pattern:re.Pattern[str])->list[str]:
         result = []
         last_end = 0
         for match in pattern.finditer(text):
@@ -843,7 +846,7 @@ def get_sentences(text:str, lang:str, tts_engine:str)->Any:
             DependencyError(e)
             return [text] 
 
-    def join_ideogramms(idg_list:list[str])->Any:
+    def join_ideogramms(idg_list:list[str])->str:
         try:
             buffer = ''
             for token in idg_list:
@@ -987,7 +990,7 @@ def get_sanitized(str:str, replacement:str="_")->str:
     sanitized = sanitized.strip("_")
     return sanitized
     
-def get_date_entities(text:str, stanza_nlp:Any)->list[tuple[int,int,str]]|bool:
+def get_date_entities(text:str, stanza_nlp:Pipeline)->list[tuple[int,int,str]]|bool:
     try:
         doc = stanza_nlp(text)
         date_spans = []
@@ -1437,7 +1440,7 @@ def convert_chapters2audio(id:str)->bool:
         DependencyError(e)
         return False
 
-def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:Any)->bool:
+def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:DictProxy[str,Any])->bool:
     try:
         chapter_audio_file = os.path.join(session['chapters_dir'], chapter_audio_file)
         chapters_dir_sentences = session['chapters_dir_sentences']
@@ -1874,7 +1877,7 @@ def sanitize_meta_chapter_title(title:str, max_bytes:int=140)->str:
     title = title.replace(TTS_SML['pause'], '')
     return ellipsize_utf8_bytes(title, max_bytes=max_bytes, ellipsis="…")
 
-def delete_unused_tmp_dirs(web_dir:str, days:int, session:Any)->None:
+def delete_unused_tmp_dirs(web_dir:str, days:int, session:DictProxy[str,Any])->None:
     dir_array = [
         tmp_dir,
         web_dir,
@@ -1913,7 +1916,7 @@ def get_compatible_tts_engines(language:str)->list:
     ]
     return compatible_engines
 
-def convert_ebook_batch(args:dict, ctx:object|None=None)->tuple:
+def convert_ebook_batch(args:dict, ctx:Optional[object]=None)->tuple:
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
@@ -1933,7 +1936,7 @@ def convert_ebook_batch(args:dict, ctx:object|None=None)->tuple:
         if not args['is_gui_process']:
             sys.exit(1)       
 
-def convert_ebook(args:dict, ctx:object|None=None)->tuple:
+def convert_ebook(args:dict, ctx:Optional[object]=None)->tuple:
     try:
         if args['event'] == 'blocks_confirmed':
             return finalize_audiobook(args['id'])
@@ -2964,7 +2967,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 </div>
             '''
 
-        def alert_exception(error:str, id:str=None)->None:
+        def alert_exception(error:str, id:Optional[str]=None)->None:
             if id is not None:
                 session = context.get_session(id)
                 session['status'] = 'ready'
@@ -3013,7 +3016,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 outputs = tuple([gr.update() for _ in range(13)])
                 return outputs
 
-        def restore_audiobook_player(audiobook:any)->tuple:
+        def restore_audiobook_player(audiobook:Optional[str]=None)->tuple:
             try:
                 visible = True if audiobook is not None else False
                 return gr.update(visible=visible), gr.update(value=audiobook), gr.update(active=True)
@@ -3033,7 +3036,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
                 )
 
-        def change_gr_audiobook_list(selected:any, id:str)->gr.Update:
+        def change_gr_audiobook_list(selected:Optional[str]=None, id:str)->gr.Update:
             try:
                 session = context.get_session(id)
                 session['audiobook'] = selected
@@ -3075,7 +3078,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->gr.Update:
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
 
-        def change_convert_btn(upload_file:any=None, upload_file_mode:str=None, custom_model_file:any=None, session:any=None)->gr.Update:
+        def change_convert_btn(upload_file:Optional[str]=None, upload_file_mode:Optional[str]=None, custom_model_file:Optional[str]=None, session:DictProxy[str,Any])->gr.Update:
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
@@ -3091,7 +3094,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error)
                 gr.update()
 
-        def change_gr_ebook_file(data:Any, id:str)->gr.Update:
+        def change_gr_ebook_file(data:Optional[str]=None, id:str)->gr.Update:
             try:
                 session = context.get_session(id)
                 session["ebook"] = None
@@ -3125,7 +3128,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             else:
                 return gr.update(label=src_label_dir, file_count='directory'), gr.update(visible=False)
 
-        def change_gr_voice_file(f:Any, id:str)->tuple:
+        def change_gr_voice_file(f:Optional[str]=None, id:str)->tuple:
             if f is not None:
                 state = {}
                 if len(voice_options) > max_custom_voices:
@@ -3156,13 +3159,13 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return gr.update(value=None), update_gr_voice_list(id)
             return gr.update(), gr.update()
 
-        def change_gr_voice_list(selected:Any, id:str)->tuple:
+        def change_gr_voice_list(selected:Optional[str]=None, id:str)->tuple:
             session = context.get_session(id)
             session['voice'] = next((value for label, value in voice_options if value == selected), None)
             visible = True if session['voice'] is not None else False
             return gr.update(value=session['voice']), gr.update(visible=visible), gr.update(visible=visible)
 
-        def click_gr_voice_del_btn(selected:Any, id:str)->tuple:
+        def click_gr_voice_del_btn(selected:str, id:str)->tuple:
             try:
                 if selected is not None:
                     session = context.get_session(id)
@@ -3205,7 +3208,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)
                 return gr.update(), gr.update(visible=False)
 
-        def click_gr_custom_model_del_btn(selected:Any, id:str)->tuple:
+        def click_gr_custom_model_del_btn(selected:str, id:str)->tuple:
             try:
                 if selected is not None:
                     session = context.get_session(id)
@@ -3217,7 +3220,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)
             return gr.update(), gr.update(visible=False)
 
-        def click_gr_audiobook_del_btn(selected:Any, id:str)->tuple:
+        def click_gr_audiobook_del_btn(selected:str, id:str)->tuple:
             try:
                 if selected is not None:
                     session = context.get_session(id)
@@ -3229,7 +3232,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)
             return gr.update(), gr.update(visible=False), gr.update(visible=False)
 
-        def confirm_deletion(voice_path:str, custom_model:str, audiobook:str, id:str, method:any=None)->tuple:
+        def confirm_deletion(voice_path:str, custom_model:str, audiobook:str, id:str, method:Optional[str]=None)->tuple:
             try:
                 if method is not None:
                     session = context.get_session(id)
@@ -3280,7 +3283,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 session['status'] = 'ready'
             return gr.update(value='', visible=False)
 
-        def update_gr_voice_list(id:str, fine_tuned:str=None)->gr.Update:
+        def update_gr_voice_list(id:str, fine_tuned:str|None=None)->gr.Update:
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
@@ -3419,7 +3422,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             session = context.get_session(id)
             session['device'] = device
 
-        def change_gr_language(selected:Any, id:str)->tuple:
+        def change_gr_language(selected:str, id:str)->tuple:
             if selected:
                 session = context.get_session(id)
                 prev = session['language']      
@@ -3433,7 +3436,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 )
             return gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
 
-        def check_custom_model_tts(custom_model_dir:str, tts_engine:str)->any:
+        def check_custom_model_tts(custom_model_dir:str, tts_engine:str)->str|None:
             dir_path = None
             if custom_model_dir is not None and tts_engine is not None:
                 dir_path = os.path.join(custom_model_dir, tts_engine)
@@ -3441,7 +3444,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     os.makedirs(dir_path, exist_ok=True)
             return dir_path
 
-        def change_gr_custom_model_file(f:Any, t:str, id:str)->tuple:
+        def change_gr_custom_model_file(f:Optional[str]=None, t:str, id:str)->tuple:
             try:
                 session = context.get_session(id)
                 if f is not None:
@@ -3536,7 +3539,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             session['playback_time'] = time
             return
 
-        def toggle_audiobook_files(audiobook:Any, is_visible:bool)->tuple:
+        def toggle_audiobook_files(audiobook:str, is_visible:bool)->tuple:
             if not audiobook:
                 error = 'No audiobook selected.'
                 alert_exception(error)
@@ -3754,7 +3757,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)              
                 return gr.update()
 
-        def change_gr_restore_session(data:Any, state:dict, req:gr.Request)->tuple:
+        def change_gr_restore_session(data:Optional[DictProxy[str,Any]]=None, state:dict, req:gr.Request)->tuple:
             try:
                 msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                 if data is None or isinstance(data, str) or not data.get('id'):
@@ -3815,7 +3818,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 new_hash = hash_proxy_dict(MappingProxyType(session))
                 state['hash'] = new_hash
                 show_alert({"type": "info", "msg": msg})
-                return gr.update(value=json.dumps(session, cls=JSONEncoderWithDictProxy)), gr.update(value=state), gr.update(value=session['id']), gr.update()
+                return gr.update(value=json.dumps(session, cls=JSONDictProxyEncoder)), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
                 error = f'change_gr_restore_session(): {e}'
                 alert_exception(error)
@@ -3834,7 +3837,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                                     new_hash = hash_proxy_dict(MappingProxyType(session))
                                     state["hash"] = new_hash
                                     session_dict = json.dumps(
-                                        session, cls=JSONEncoderWithDictProxy
+                                        session, cls=JSONDictProxyEncoder
                                     )
                                     yield (
                                         gr.update(value=session_dict),
@@ -3847,7 +3850,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                                 new_hash = hash_proxy_dict(MappingProxyType(session))
                                 state["hash"] = new_hash
                                 session_dict = json.dumps(
-                                    session, cls=JSONEncoderWithDictProxy
+                                    session, cls=JSONDictProxyEncoder
                                 )
                                 yield (
                                     gr.update(value=session_dict),
@@ -3860,7 +3863,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                                 yield gr.update(), gr.update(), gr.update()
                             else:
                                 state["hash"] = new_hash
-                                session_dict = json.dumps(session, cls=JSONEncoderWithDictProxy)
+                                session_dict = json.dumps(session, cls=JSONDictProxyEncoder)
                                 yield (
                                     gr.update(value=session_dict),
                                     gr.update(value=state),

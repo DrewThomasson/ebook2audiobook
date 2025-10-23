@@ -12,6 +12,7 @@ torch.load = patched_torch_load
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
 
+from multiprocessing.managers import DictProxy
 from torch import Tensor
 from huggingface_hub import hf_hub_download
 from pathlib import Path
@@ -28,7 +29,7 @@ lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
 class Coqui:
-    def __init__(self,session:Any):
+    def __init__(self,session:DictProxy[str,Any]):
         try:
             self.session = session
             self.cache_dir = tts_dir

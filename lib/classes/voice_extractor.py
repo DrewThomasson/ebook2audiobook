@@ -6,6 +6,7 @@ import soundfile as sf
 import subprocess
 import shutil
 
+from multiprocessing.managers import DictProxy
 from typing import Any, Optional, Union, Callable
 from io import BytesIO
 from pydub import AudioSegment, silence
@@ -16,7 +17,7 @@ from lib.models import TTS_ENGINES, models
 from lib.classes.background_detector import BackgroundDetector
 
 class VoiceExtractor:
-    def __init__(self, session:Any, voice_file:str, voice_name:str):
+    def __init__(self, session:DictProxy[str,Any], voice_file:str, voice_name:str):
         self.wav_file = None
         self.session = session
         self.voice_file = voice_file
