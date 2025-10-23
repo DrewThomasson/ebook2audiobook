@@ -3758,7 +3758,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)              
                 return gr.update()
 
-        def change_gr_restore_session(data:DictProxy[str,Any]|None, state:dict, req:gr.Request)->tuple:
+        def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
             try:
                 msg = 'Error while loading saved session. Please try to delete your cookies and refresh the page'
                 if data is None or isinstance(data, str) or not data.get('id'):
