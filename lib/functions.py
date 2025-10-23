@@ -572,7 +572,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         return error, None
 
 def filter_chapter(doc:EpubHtml, lang:str, lang_iso1:str, tts_engine:str, stanza_nlp:Pipeline, is_num2words_compat:bool)->list|None:
-    def tuple_row(node:Any, last_text_char:str|None)->Generator[tuple[str, Any], None, None]|None:
+    def tuple_row(node:Any, last_text_char:str|None=None)->Generator[tuple[str, Any], None, None]|None:
         try:
             for child in node.children:
                 if isinstance(child, NavigableString):
@@ -1917,7 +1917,7 @@ def get_compatible_tts_engines(language:str)->list:
     ]
     return compatible_engines
 
-def convert_ebook_batch(args:dict, ctx:object|None)->tuple:
+def convert_ebook_batch(args:dict, ctx:object|None=None)->tuple:
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
@@ -2968,7 +2968,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 </div>
             '''
 
-        def alert_exception(error:str, id:str|None)->None:
+        def alert_exception(error:str, id:str|None=None)->None:
             if id is not None:
                 session = context.get_session(id)
                 session['status'] = 'ready'
