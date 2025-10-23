@@ -3079,7 +3079,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->dict:
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
 
-        def change_convert_btn(upload_file:str|None, upload_file_mode:str|None, custom_model_file:str|None, session:DictProxy)->dict:
+        def change_convert_btn(upload_file:str|None=None, upload_file_mode:str|None=None, custom_model_file:str|None=None, session:DictProxy=None)->dict:
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
