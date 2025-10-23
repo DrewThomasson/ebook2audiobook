@@ -1916,7 +1916,7 @@ def get_compatible_tts_engines(language:str)->list:
     ]
     return compatible_engines
 
-def convert_ebook_batch(args:dict, ctx:object|None->tuple:
+def convert_ebook_batch(args:dict, ctx:object|None)->tuple:
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
