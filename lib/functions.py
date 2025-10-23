@@ -3079,7 +3079,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->gr.Update:
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
 
-        def change_convert_btn(upload_file:str|None, upload_file_mode:str|None, custom_model_file:str|None, session:DictProxy[str,Any])->gr.Update:
+        def change_convert_btn(session:DictProxy[str,Any], upload_file:str|None, upload_file_mode:str|None, custom_model_file:str|None)->gr.Update:
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
@@ -3884,7 +3884,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
 
         gr_ebook_file.change(
             fn=change_convert_btn,
-            inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
+            inputs=[gr_session, gr_ebook_file, gr_ebook_mode, gr_custom_model_file],
             outputs=[gr_convert_btn]
         ).then(
             fn=change_gr_ebook_file,
