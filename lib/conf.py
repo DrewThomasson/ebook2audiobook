@@ -30,7 +30,7 @@ os.environ['STANZA_RESOURCES_DIR'] = os.path.join(models_dir, 'stanza')
 os.environ['ARGOS_TRANSLATE_PACKAGE_PATH'] = os.path.join(models_dir, 'argostranslate')
 os.environ['TORCH_FORCE_NO_WEIGHTS_ONLY_LOAD'] = '1'
 os.environ['PYTORCH_ENABLE_MPS_FALLBACK'] = '1'
-os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:512'
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:512, expandable_segments:True'
 os.environ['SUNO_OFFLOAD_CPU'] = 'False' # BARK option: False needs A GPU
 os.environ['SUNO_USE_SMALL_MODELS'] = 'False' # BARK option: False needs a GPU with VRAM > 4GB
 if platform.system() == 'Windows':
