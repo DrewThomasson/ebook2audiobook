@@ -107,7 +107,7 @@ class SessionContext:
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
         self.cancellation_events = {}
         
-    def _recursive_proxy(self, data:Any, manager:multiprocessing.Manager|None)->Any:
+    def _recursive_proxy(self, data:Any, manager:"Manager | None")->Any:
         if manager is None:
             manager = Manager()
         if isinstance(data, dict):
