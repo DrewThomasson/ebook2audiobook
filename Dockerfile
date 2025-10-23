@@ -24,8 +24,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Copy the application
 WORKDIR /app
 COPY . /app
-# Install numpy and pandas first to avoid compilation issues
-RUN pip install --no-cache-dir "numpy<2.0.0" "pandas==2.2.3"
+# Note: Version constraints are managed in requirements.txt
 
 # Install UniDic (non-torch dependent)
 RUN pip install --no-cache-dir unidic-lite unidic && \
