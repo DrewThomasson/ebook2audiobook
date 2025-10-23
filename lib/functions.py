@@ -3095,7 +3095,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error)
                 gr.update()
 
-        def change_gr_ebook_file(data:str|None, id:str)->gr.Update:
+        def change_gr_ebook_file(id:str, data:str|None)->gr.Update:
             try:
                 session = context.get_session(id)
                 session["ebook"] = None
@@ -3888,7 +3888,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             outputs=[gr_convert_btn]
         ).then(
             fn=change_gr_ebook_file,
-            inputs=[gr_ebook_file, gr_session],
+            inputs=[gr_session, gr_ebook_file],
             outputs=[gr_modal]
         )
         gr_ebook_mode.change(
