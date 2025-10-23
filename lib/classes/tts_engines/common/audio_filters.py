@@ -4,11 +4,11 @@ import subprocess
 import shutil
 
 from torch import Tensor
-from typing import Any, Optional, Union, Callable
+from typing import Any, Union
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
 
-def detect_gender(voice_path:str)->Optional[str]:
+def detect_gender(voice_path:str)->str|None:
     try:
         samplerate, signal = wav.read(voice_path)
         # Ensure mono

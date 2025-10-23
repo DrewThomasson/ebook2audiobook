@@ -1,6 +1,6 @@
 import os, platform, subprocess, re, json, psutil, tempfile, time
 
-from typing import Any, Optional, Union, Callable
+from typing import Any
 
 class VRAMDetector:
     def __init__(self):

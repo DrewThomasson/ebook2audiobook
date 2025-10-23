@@ -7,7 +7,7 @@ import subprocess
 import shutil
 
 from multiprocessing.managers import DictProxy
-from typing import Any, Optional, Union, Callable
+from typing import Any
 from io import BytesIO
 from pydub import AudioSegment, silence
 from pydub.silence import detect_silence

@@ -1,5 +1,5 @@
 import torch
-from typing import Any, Optional, Union, Callable
+from typing import Any
 
 _original_load = torch.load
 
