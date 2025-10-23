@@ -3079,7 +3079,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->gr.Update:
             return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
 
-        def change_convert_btn(session:DictProxy[str,Any], upload_file:str|None, upload_file_mode:str|None, custom_model_file:str|None)->gr.Update:
+        def change_convert_btn(upload_file:str|None, upload_file_mode:str|None, custom_model_file:str|None, session:DictProxy)->gr.Update:
             try:
                 if session is None:
                     return gr.update(variant='primary', interactive=False)
@@ -3095,7 +3095,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error)
                 gr.update()
 
-        def change_gr_ebook_file(id:str, data:str|None)->gr.Update:
+        def change_gr_ebook_file(data:str|None, id:str)->gr.Update:
             try:
                 session = context.get_session(id)
                 session["ebook"] = None
@@ -3884,11 +3884,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
 
         gr_ebook_file.change(
             fn=change_convert_btn,
-            inputs=[gr_session, gr_ebook_file, gr_ebook_mode, gr_custom_model_file],
+            inputs=[gr_ebook_file, gr_ebook_mode, gr_custom_model_file, gr_session],
             outputs=[gr_convert_btn]
         ).then(
             fn=change_gr_ebook_file,
-            inputs=[gr_session, gr_ebook_file],
+            inputs=[gr_ebook_file, gr_session],
             outputs=[gr_modal]
         )
         gr_ebook_mode.change(
