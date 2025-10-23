@@ -3233,7 +3233,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 alert_exception(error, id)
             return gr.update(), gr.update(visible=False), gr.update(visible=False)
 
-        def confirm_deletion(voice_path:str, custom_model:str, audiobook:str, id:str, method:str|None)->tuple:
+        def confirm_deletion(voice_path:str, custom_model:str, audiobook:str, id:str, method:str|None=None)->tuple:
             try:
                 if method is not None:
                     session = context.get_session(id)
