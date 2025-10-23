@@ -1170,7 +1170,7 @@ def clock2words(text, lang, lang_iso1, tts_engine, is_num2words_compat):
         if is_num2words_compat:
             word = num2words(n, lang=lang_lc)
         else:
-            word = math2words(n, lang, lang_iso1, tts_engine, is_num2words_compat)
+            word = math2words(str(n), lang, lang_iso1, tts_engine, is_num2words_compat)
         _n2w_cache[key] = word
         return word
 
