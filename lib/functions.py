@@ -297,7 +297,7 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         raise RuntimeError(error)
     return False
 
-def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_files:list|None->str|None:
+def extract_custom_model(file_src:str, session:DictProxy[str,Any], required_files:list|None)->str|None:
     try:
         model_path = None
         if required_files is None:
