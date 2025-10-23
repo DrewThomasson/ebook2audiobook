@@ -6,7 +6,7 @@ import stanza
 from typing import Any, Union
 from lib.models import loaded_tts, max_tts_in_memory, TTS_ENGINES
 
-def unload_tts(device:str, reserved_keys:list[str]|None, tts_key:str|None->bool:
+def unload_tts(device:str, reserved_keys:list[str]|None, tts_key:str|None=None)->bool:
     try:
         if len(loaded_tts) >= max_tts_in_memory:
             if reserved_keys is None:
