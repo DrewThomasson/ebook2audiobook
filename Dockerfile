@@ -8,9 +8,14 @@ ENV PATH="/root/.local/bin:$PATH"
 ENV DEBIAN_FRONTEND=noninteractive
 # Install system packages
 RUN apt-get update && \
-    apt-get install -y gcc g++ make wget git calibre ffmpeg libmecab-dev mecab mecab-ipadic-utf8 libsndfile1-dev libc-dev curl espeak-ng sox && \
+    apt-get install -y curl && \
     curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y \
+        gcc g++ make wget git calibre ffmpeg \
+        libmecab-dev mecab mecab-ipadic-utf8 \
+        libsndfile1-dev libc6-dev \
+        espeak-ng sox \
+        build-essential libffi-dev libssl-dev python3-dev nodejs && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 # Install Rust compiler
@@ -19,6 +24,9 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 # Copy the application
 WORKDIR /app
 COPY . /app
+# Install numpy and pandas first to avoid compilation issues
+RUN pip install --no-cache-dir "numpy<2.0.0" "pandas==2.2.3"
+
 # Install UniDic (non-torch dependent)
 RUN pip install --no-cache-dir unidic-lite unidic && \
     python3 -m unidic download && \
@@ -94,7 +102,7 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
                     ;; \
             esac; \
         fi && \
-        # Install remaining requirements, skipping torch packages that might be there
+        # Install remaining requirements, skipping torch packages
         grep -v -E "^torch==|^torchvision==|^torchaudio==|^torchvision$" requirements.txt > requirements_no_torch.txt && \
         pip install --no-cache-dir --upgrade -r requirements_no_torch.txt && \
         rm requirements_no_torch.txt; \
