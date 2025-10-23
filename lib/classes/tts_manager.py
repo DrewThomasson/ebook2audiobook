@@ -1,11 +1,10 @@
 import os
 
-from multiprocessing.managers import DictProxy
 from typing import Any
 from lib.models import TTS_ENGINES
 
 class TTSManager:
-    def __init__(self, session:DictProxy[str,Any]):   
+    def __init__(self, session:Any):   
         self.session = session
         self.engine = None
         self._build()

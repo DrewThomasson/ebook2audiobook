@@ -10,7 +10,6 @@ import tempfile
 import warnings
 
 from importlib.metadata import version, PackageNotFoundError
-from typing import Any, Optional, Union, Callable
 from pathlib import Path
 from lib import *
 
