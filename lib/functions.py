@@ -19,6 +19,7 @@ torch.load = patched_torch_load
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
 import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn
 
+from __future__ import annotations
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
 from sudachipy import dictionary, tokenizer
@@ -107,7 +108,7 @@ class SessionContext:
         self.sessions:DictProxy[str, DictProxy[str, Any]] = self.manager.dict()
         self.cancellation_events = {}
         
-    def _recursive_proxy(self, data:Any, manager:"Manager | None")->Any:
+    def _recursive_proxy(self, data:Any, manager:Manager|None)->Any:
         if manager is None:
             manager = Manager()
         if isinstance(data, dict):
