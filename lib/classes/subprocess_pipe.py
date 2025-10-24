@@ -22,7 +22,7 @@ class SubprocessPipe:
             self.progress_bar(percent/100,desc='Encoding')
 
     def _on_complete(self)->None:
-        print('\Encoding completed successfully')
+        print('Encoding completed')
         if self.is_gui_process:
             self.progress_bar(1.0,desc='Encoding completed')
 
