@@ -2064,7 +2064,7 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                             total_vram_bytes = vram_dict.get('total_vram_bytes', 0)
                             total_vram_gb = total_vram_bytes / (1024 ** 3)
                             if total_vram_gb <= 4:
-                                msg_extra += '<br/>- VRAM not detected! restrict to 4GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}GB'
+                                msg_extra += '<br/>VRAM not detected! restrict to 4GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}GB'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
@@ -3160,12 +3160,13 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         msg = f'Voice {voice_name} added to the voices list'
                         state['type'] = 'success'
                         state['msg'] = msg
+                        show_alert(state)
+                        return update_gr_voice_list(id)
                     else:
                         error = 'failed! Check if you audio file is compatible.'
                         state['type'] = 'warning'
                         state['msg'] = error
                 show_alert(state)
-                return update_gr_voice_list(id)
             return gr.update()
 
         def change_gr_voice_list(selected:str|None, id:str)->tuple:
