@@ -210,7 +210,7 @@ class VoiceExtractor:
             DependencyError(e)
             return 0
         except Exception as e:
-            error = f"get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}"
+            error = f"get_audio_duration() Error: Failed to process {filepath}: {e}"
             print(error)
             return 0
 
