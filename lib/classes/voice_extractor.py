@@ -32,7 +32,7 @@ class VoiceExtractor:
     def _validate_format(self)->tuple[bool,str]:
         file_extension = os.path.splitext(self.voice_file)[1].lower()
         if file_extension in voice_formats:
-            msg = 'Input file valid'
+            msg = 'Input file is valid'
             return True,msg
         error = f'Unsupported file format: {file_extension}. Supported formats are: {", ".join(voice_formats)}'
         return False,error
