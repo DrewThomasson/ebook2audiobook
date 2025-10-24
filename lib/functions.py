@@ -3164,8 +3164,8 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         state['type'] = 'warning'
                         state['msg'] = error
                 show_alert(state)
-                return gr.update(value=None), update_gr_voice_list(id)
-            return gr.update(), gr.update()
+                return update_gr_voice_list(id)
+            return gr.update()
 
         def change_gr_voice_list(selected:str|None, id:str)->tuple:
             session = context.get_session(id)
@@ -3915,7 +3915,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         ).then(
             fn=lambda: gr.update(value=None),
             inputs=None,
-            outputs=gr_voice_file
+            outputs=[gr_voice_file]
         )
         gr_voice_list.change(
             fn=change_gr_voice_list,
