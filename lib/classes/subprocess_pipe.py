@@ -30,9 +30,6 @@ class SubprocessPipe:
 
     def _run_process(self)->bool:
         try:
-            if self.is_gui_process:
-                self.progress_bar=gr.Progress(track_tqdm=False)
-                self.progress_bar(0.0,desc='Start encoding...')
             self.process=subprocess.Popen(
                 self.cmd,
                 stdout=subprocess.DEVNULL,
