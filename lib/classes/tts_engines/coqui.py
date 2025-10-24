@@ -170,9 +170,9 @@ class Coqui:
             if key in loaded_tts:
                 print(f"Reusing cached TTS engine for key: {key}")
                 if key == self.tts_vc_key:
-                    self.tts_vc = oaded_tts[key]['engine']
+                    self.tts_vc = loaded_tts[key]['engine']
                 else:
-                    self.tts = oaded_tts[key]['engine']
+                    self.tts = loaded_tts[key]['engine']
             else:
                 unload_tts(device, [self.tts_key, self.tts_vc_key], key)
                 from TTS.api import TTS as CoquiAPI
