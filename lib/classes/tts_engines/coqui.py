@@ -87,7 +87,6 @@ class Coqui:
                     if self.session['custom_model'] is not None:
                         msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                         print(msg)
-                        return False
                     else:
                         hf_repo = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                         hf_sub = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
@@ -99,8 +98,7 @@ class Coqui:
                 elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
                     if self.session['custom_model'] is not None:
                         msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                        print(msg)     
-                        return False
+                        print(msg)
                     else:
                         iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
                         sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
@@ -115,12 +113,10 @@ class Coqui:
                         else:
                             msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                             print(msg)
-                            return False
                 elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                     if self.session['custom_model'] is not None:
                         msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                         print(msg)
-                        return False
                     else:
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang]", self.session['language'])
                         self.tts_key = model_path
@@ -128,8 +124,7 @@ class Coqui:
                 elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
                     if self.session['custom_model'] is not None:
                         msg = f"{self.session['tts_engine']} custom model not implemented yet!"
-                        print(msg)     
-                        return False
+                        print(msg)
                     else:
                         iso_dir = language_tts[self.session['tts_engine']][self.session['language']]
                         sub_dict = models[self.session['tts_engine']][self.session['fine_tuned']]['sub']
@@ -147,12 +142,10 @@ class Coqui:
                         else:
                             msg = f"{self.session['tts_engine']} checkpoint for {self.session['language']} not found!"
                             print(msg)
-                            return False
                 elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
                     if self.session['custom_model'] is not None:
                         msg = f"{self.session['tts_engine']} custom model not implemented yet!"
                         print(msg)
-                        return False
                     else:
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                         self._load_api(self.tts_key, model_path, self.session['device'])
@@ -163,11 +156,9 @@ class Coqui:
                         msg = f"Loading TTS {self.tts_vc_key} zeroshot model, it takes a while, please be patient..."
                         print(msg)
                         self._load_api(self.tts_vc_key, default_vc_model, self.session['device'])
-            return (loaded_tts.get(self.tts_key) or {}).get('engine', False)
         except Exception as e:
             error = f'build() error: {e}'
             print(error)
-            return None
 
     def _load_api(self, key:str, model_path:str, device:str)->None:
         global lock

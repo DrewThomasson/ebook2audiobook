@@ -17,7 +17,7 @@ class TTSManager:
             #elif self.session['tts_engine'] in [TTS_ENGINES['NEW_TTS']]:
             #    from lib.classes.tts_engines.new_tts import NewTts
             #    self.engine = NewTts(self.session)
-            if not self.engine:
+            if not self.engine.tts:
                 error='TTS engine could not be created!'
                 print(error)
         else:
