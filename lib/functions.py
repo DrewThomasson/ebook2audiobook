@@ -40,7 +40,7 @@ from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
 from stanza.pipeline.core import Pipeline
-from stanza.resources.common import DownloadMethod
+from stanza.resources.common import default_model_directory, is_language_installed, DownloadMethod
 from num2words import num2words
 from pathlib import Path
 from pydub import AudioSegment
@@ -553,7 +553,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         stanza_nlp = False
         if session['language'] in year_to_decades_languages:
             try:
-                stanza.download(lang, download_method=DownloadMethod.REUSE_RESOURCES)
+                if not is_language_installed(lang, default_model_directory()):
+                    stanza.download(lang, download_method=DownloadMethod.REUSE_RESOURCES)
                 stanza_nlp = stanza.Pipeline(lang, processors='tokenize,ner', download_method=DownloadMethod.REUSE_RESOURCES)
             except (ConnectionError, TimeoutError) as e:
                 error = f'Stanza model download connection error: {e}. Retry later'
