@@ -6,7 +6,7 @@ from lib.models import TTS_ENGINES
 class TTSManager:
     def __init__(self, session:Any):   
         self.session = session
-        self.engine = None
+        self.engine = False
         self._build()
  
     def _build(self)->None:
