@@ -190,7 +190,7 @@ class VoiceExtractor:
             error = f'_trim_and_clean() error: {e}'
             raise ValueError(error)
 
-    def _get_audio_duration(filepath:str)->float:
+    def _get_audio_duration(self, filepath:str)->float:
         try:
             ffprobe_cmd = [
                 shutil.which('ffprobe'),
