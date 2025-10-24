@@ -46,10 +46,10 @@ class SubprocessPipe:
             for raw_line in self.process.stderr:
                 line=raw_line.decode(errors='ignore')
                 match=time_pattern.search(raw_line)
-                if match and self.total_duration>0:
+                if match and self.total_duration > 0:
                     current_time=int(match.group(1))/1_000_000
                     percent=min((current_time/self.total_duration)*100,100)
-                    if abs(percent-last_percent)>=0.5:
+                    if abs(percent-last_percent) >= 0.5:
                         self._on_progress(percent)
                         last_percent=percent
                 elif b'progress=end' in raw_line:
