@@ -192,16 +192,18 @@ class VoiceExtractor:
 
     def _get_audio_duration(self, filepath:str)->float:
         try:
-            ffprobe_cmd = [
+            cmd = [
                 shutil.which('ffprobe'),
                 '-v', 'error',
                 '-show_entries', 'format=duration',
                 '-of', 'json',
                 filepath
             ]
-            result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+            result = subprocess.run(cmd, capture_output=True, text=True)
             try:
-                return float(json.loads(result.stdout)['format']['duration'])
+                duration = json.loads(result.stdout)['format']['duration']
+                print(f'---------------{duration}-----------')
+                return float(duration)
             except Exception:
                 return 0
         except subprocess.CalledProcessError as e:

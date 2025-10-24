@@ -13,23 +13,23 @@ class SubprocessPipe:
     def _on_start(self)->None:
         if self.is_gui_process:
             self.progress_bar=gr.Progress(track_tqdm=False)
-            self.progress_bar(0.0,desc='Starting encoding...')
+            self.progress_bar(0.0,desc='Start encoding...')
 
     def _on_progress(self,percent:float)->None:
-        sys.stdout.write(f'\rFinal Encoding: {percent:.1f}%')
+        sys.stdout.write(f'\rEncoding: {percent:.1f}%')
         sys.stdout.flush()
         if self.is_gui_process:
-            self.progress_bar(percent/100,desc='Final Encoding')
+            self.progress_bar(percent/100,desc='Encoding')
 
     def _on_complete(self)->None:
-        print('\nExport completed successfully')
+        print('\Encoding completed successfully')
         if self.is_gui_process:
-            self.progress_bar(1.0,desc='Export completed')
+            self.progress_bar(1.0,desc='Encoding completed')
 
     def _on_error(self,err:Exception)->None:
-        print(f'\nExport failed: {err}')
+        print(f'\nEncoding failed: {err}')
         if self.is_gui_process:
-            self.progress_bar(0.0,desc='Export failed')
+            self.progress_bar(0.0,desc='Encoding failed')
 
     def start(self)->bool:
         try:
