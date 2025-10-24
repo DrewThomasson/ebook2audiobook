@@ -8,6 +8,7 @@ def patched_torch_load(*args, **kwargs):
     return _original_load(*args, **kwargs)
 
 torch.load = patched_torch_load
+torch.cuda.empty_cache()
 
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
