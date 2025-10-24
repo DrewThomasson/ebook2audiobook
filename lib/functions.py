@@ -555,7 +555,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 stanza.download(session['language_iso1'])
                 stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
             except (ConnectionError, TimeoutError) as e:
-                error = error = f'Stanza model download connection error: {e}'
+                error = error = f'Stanza model download connection error: {e}. Retry later'
                 return error, None
             except Exception as e:
                 error = f'Stanza model download error: {e}'

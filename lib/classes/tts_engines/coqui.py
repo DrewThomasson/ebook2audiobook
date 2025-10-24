@@ -48,7 +48,7 @@ class Coqui:
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             self.resampler_cache={}
             self.audio_segments=[]
-            return self._build()
+            self._build()
         except Exception as e:
             error = f'__init__() error: {e}'
             print(error)
