@@ -3911,7 +3911,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         gr_voice_file.upload(
             fn=change_gr_voice_file,
             inputs=[gr_voice_file, gr_session],
-            outputs=[gr_voice_file, gr_voice_list]
+            outputs=[gr_voice_list]
+        ).then(
+            fn=lambda: gr.update(value=None),
+            inputs=None,
+            outputs=gr_voice_file
         )
         gr_voice_list.change(
             fn=change_gr_voice_list,
