@@ -201,7 +201,6 @@ class VoiceExtractor:
                 filepath
             ]
             result = subprocess.run(cmd, capture_output=True, text=True)
-            print(json.loads(result.stdout))
             try:
                 duration = json.loads(result.stdout)['format']['duration']
                 return float(duration)
