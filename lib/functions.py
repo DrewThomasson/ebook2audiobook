@@ -40,7 +40,7 @@ from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
 from stanza.pipeline.core import Pipeline
-from stanza.resources.common import default_model_directory, is_language_installed, DownloadMethod
+from stanza.resources.common import is_language_installed, DownloadMethod
 from num2words import num2words
 from pathlib import Path
 from pydub import AudioSegment
