@@ -248,7 +248,7 @@ class VoiceExtractor:
                         msg = 'Audio normalization successful!'
                         return True, msg
                 else:
-                    error = f'normalize_audio() error: {final_voice_file}')
+                    error = f'normalize_audio() error: {final_voice_file}'
                     return False, error
             except subprocess.CalledProcessError as e:
                 error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
