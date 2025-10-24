@@ -16,7 +16,7 @@ def patched_torch_load(*args, **kwargs)->Any:
     return _original_load(*args, **kwargs)
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
-import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn
+import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -55,6 +55,8 @@ from lib.classes.tts_manager import TTSManager
 #from lib.classes.redirect_console import RedirectConsole
 #from lib.classes.argos_translator import ArgosTranslator
 
+gc.collect()
+
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 
 context = None
@@ -66,13 +68,16 @@ active_sessions = set()
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
-
 torch.load = patched_torch_load
+
 if torch.cuda.is_available():
     torch.cuda.empty_cache()
+    torch.cuda.ipc_collect()
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
-    torch.cuda.set_per_process_memory_fraction(0.85, 0)
+    torch.cuda.init()
+    _ = torch.tensor([0.0], device="cuda")
+    torch.cuda.synchronize()
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
