@@ -6,9 +6,11 @@ _original_load = torch.load
 def patched_torch_load(*args, **kwargs):
     kwargs.setdefault("weights_only", False)
     return _original_load(*args, **kwargs)
+    
+torch.load = patched_torch_load
 
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
-import numpy as np, regex as re, soundfile as sf, torchaudio, gc
+import numpy as np, regex as re, soundfile as sf, torchaudio
 
 from multiprocessing.managers import DictProxy
 from torch import Tensor
@@ -23,19 +25,16 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
 
-gc.collect()
-
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
-torch.load = patched_torch_load
-if torch.cuda.is_available():
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
-    torch.cuda.init()
-    _ = torch.tensor([0.0], device="cuda")
-    torch.cuda.synchronize()
+
+#if torch.cuda.is_available():
+#    torch.cuda.empty_cache()
+#    torch.backends.cudnn.benchmark = False
+#    torch.backends.cudnn.deterministic = True
+#    torch.cuda.init()
+#    _ = torch.tensor([0.0], device="cuda")
+#    torch.cuda.synchronize()
 
 class Coqui:
     def __init__(self,session:DictProxy):
