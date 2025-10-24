@@ -7,9 +7,6 @@ def patched_torch_load(*args, **kwargs):
     kwargs.setdefault("weights_only", False)
     return _original_load(*args, **kwargs)
 
-torch.load = patched_torch_load
-torch.cuda.empty_cache()
-
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
 
@@ -28,6 +25,12 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
+torch.load = patched_torch_load
+if torch.cuda.is_available():
+    torch.cuda.empty_cache()
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.cuda.set_per_process_memory_fraction(0.85, 0)
 
 class Coqui:
     def __init__(self,session:DictProxy):
