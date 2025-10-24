@@ -15,8 +15,6 @@ def patched_torch_load(*args, **kwargs)->Any:
     kwargs.setdefault("weights_only", False)
     return _original_load(*args, **kwargs)
 
-torch.load = patched_torch_load
-
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
 import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn
 
@@ -67,6 +65,14 @@ active_sessions = set()
 #    level=logging.INFO, # DEBUG for more verbosity
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
+
+
+torch.load = patched_torch_load
+if torch.cuda.is_available():
+    torch.cuda.empty_cache()
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.cuda.set_per_process_memory_fraction(0.85, 0)
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
