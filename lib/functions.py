@@ -551,8 +551,15 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         chapters = []
         stanza_nlp = False
         if session['language'] in year_to_decades_languages:
-            stanza.download(session['language_iso1'])
-            stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner')
+            try:
+                stanza.download(language)
+                stanza_nlp = stanza.Pipeline(language, processors='tokenize,ner')
+            except (ConnectionError, TimeoutError) as e:
+                error = error = f'Stanza model download connection error: {e}'
+                return error, None
+            except Exception as e:
+                error = f'Stanza model download error: {e}'
+                return error, None
         is_num2words_compat = get_num2words_compat(session['language_iso1'])
         msg = 'Analyzing numbers, maths signs, dates and time to convert in words...'
         print(msg)
