@@ -3292,7 +3292,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 session['status'] = 'ready'
             return gr.update(value='', visible=False)
 
-        def update_gr_voice_list(id:str, fine_tuned:str|None=None)->dict:
+        def update_gr_voice_list(id:str, fine_tuned:str=False)->dict:
             try:
                 nonlocal voice_options
                 session = context.get_session(id)
@@ -3339,7 +3339,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 else:
                     voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
                 default_voice_path = models[session['tts_engine']]['internal']['voice']
-                if fine_tuned is not None and fine_tuned != 'internal':
+                if fine_tuned and fine_tuned != 'internal':
                     session['voice'] = models[session['tts_engine']][fine_tuned]['voice']
                 else:
                     if session['voice'] is None:
@@ -3516,7 +3516,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"), gr.update(label=''), update_gr_voice_list(id)
                 )
                 
-        def change_gr_fine_tuned_list(selected:str|None=None, id:str)->tuple:
+        def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
             if selected:
                 session = context.get_session(id)
                 visible = False
