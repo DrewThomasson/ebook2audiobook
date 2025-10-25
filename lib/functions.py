@@ -3166,7 +3166,9 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         state['type'] = 'warning'
                         state['msg'] = error
                 show_alert(state)
-            return update_gr_voice_list(id)
+                return update_gr_voice_list(id)
+            else:
+                return gr.update()
 
         def change_gr_voice_list(selected:str|None, id:str)->tuple:
             session = context.get_session(id)
@@ -3367,7 +3369,8 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 voice_paths = {v[1] for v in voice_options}
                 if session['voice'] not in voice_paths:
                     return gr.update(choices=voice_options)
-                return gr.update(choices=voice_options, value=session['voice'])
+                else:
+                    return gr.update(choices=voice_options, value=session['voice'])
             except Exception as e:
                 error = f'update_gr_voice_list(): {e}!'
                 alert_exception(error, id)
