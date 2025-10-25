@@ -39,7 +39,7 @@ from markdown import markdown
 from multiprocessing import Pool, cpu_count
 from multiprocessing import Manager, Event
 from multiprocessing.managers import DictProxy, ListProxy
-from stanaz import DownloadMethod
+from stanza import DownloadMethod
 from stanza.pipeline.core import Pipeline
 from num2words import num2words
 from pathlib import Path
