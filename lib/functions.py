@@ -3516,7 +3516,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         gr.update(visible=False), update_gr_fine_tuned_list(id), gr.update(label=f"*Upload Custom Model not available for {session['tts_engine']}"), gr.update(label=''), update_gr_voice_list(id)
                 )
                 
-        def change_gr_fine_tuned_list(selected:str, id:str)->tuple:
+        def change_gr_fine_tuned_list(selected:str|None=None, id:str)->tuple:
             if selected:
                 session = context.get_session(id)
                 visible = False
