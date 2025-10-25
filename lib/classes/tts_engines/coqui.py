@@ -287,6 +287,8 @@ class Coqui:
                             checkpoint_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][1]}", cache_dir=self.cache_dir)
                             vocab_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][2]}", cache_dir=self.cache_dir)
                             self._load_checkpoint(tts_engine=TTS_ENGINES['XTTSv2'], key=tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
+                            if not self.tts:
+                                return False
                         tts = (loaded_tts.get(tts_key) or {}).get('engine', False)
                         if tts:
                             if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
@@ -369,6 +371,8 @@ class Coqui:
                         fine_model_path = hf_hub_download(repo_id=hf_repo,filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][2]}",cache_dir=self.cache_dir)
                         checkpoint_dir = os.path.dirname(text_model_path)
                         self._load_checkpoint(tts_engine=TTS_ENGINES['BARK'],key=tts_key,checkpoint_dir=checkpoint_dir,device=device)
+                        if not self.tts:
+                            return False
                     if tts:
                         if self.session['tts_engine'] == TTS_ENGINES['BARK']:
                             self.tts = tts

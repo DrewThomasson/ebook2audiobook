@@ -18,6 +18,7 @@ class TTSManager:
             #    from lib.classes.tts_engines.new_tts import NewTts
             #    self.engine = NewTts(self.session)
             if not self.engine.tts:
+                self.engine = False
                 error='TTS engine could not be created!'
                 print(error)
         else:
