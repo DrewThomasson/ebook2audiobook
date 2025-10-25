@@ -6,7 +6,6 @@ docker
 ebooklib
 fastapi
 num2words
-argostranslate
 beautifulsoup4
 fugashi
 sudachipy
@@ -28,6 +27,8 @@ PyOpenGL
 nvidia-ml-py
 phonemizer-fork
 pydub
+stanza==1.10.1
+argostranslate==1.10.0
 pyannote-audio==3.4.0
 demucs==4.0.1
 gradio>=5.49
