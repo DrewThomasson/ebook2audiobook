@@ -3161,13 +3161,12 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         state['type'] = 'success'
                         state['msg'] = msg
                         show_alert(state)
-                        return update_gr_voice_list(id)
                     else:
                         error = 'failed! Check if you audio file is compatible.'
                         state['type'] = 'warning'
                         state['msg'] = error
                 show_alert(state)
-            return gr.update()
+            return update_gr_voice_list(id)
 
         def change_gr_voice_list(selected:str|None, id:str)->tuple:
             session = context.get_session(id)
