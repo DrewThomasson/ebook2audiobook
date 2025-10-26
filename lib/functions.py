@@ -3772,7 +3772,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             except Exception as e:
                 error = f'update_gr_audiobook_list(): {e}!'
                 alert_exception(error, id)              
-                return gr.update()
+            return gr.update()
 
         def change_gr_restore_session(data:DictProxy|None, state:dict, req:gr.Request)->tuple:
             try:
