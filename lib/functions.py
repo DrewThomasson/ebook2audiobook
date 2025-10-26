@@ -3747,11 +3747,12 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             try:
                 nonlocal audiobook_options
                 session = context.get_session(id)
-                audiobook_options = [
-                    (f, os.path.join(session['audiobooks_dir'], str(f)))
-                    for f in os.listdir(session['audiobooks_dir'])
-                    if not f.lower().endswith(".vtt")
-                ]
+                if session['audiobooks_dir'] is not None
+                    audiobook_options = [
+                        (f, os.path.join(session['audiobooks_dir'], str(f)))
+                        for f in os.listdir(session['audiobooks_dir'])
+                        if not f.lower().endswith(".vtt")
+                    ]
                 audiobook_options.sort(
                     key=lambda x: os.path.getmtime(x[1]),
                     reverse=True
