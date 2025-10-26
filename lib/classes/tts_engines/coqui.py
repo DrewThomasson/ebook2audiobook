@@ -28,13 +28,10 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
-#if torch.cuda.is_available():
-#    torch.cuda.empty_cache()
-#    torch.backends.cudnn.benchmark = False
-#    torch.backends.cudnn.deterministic = True
-#    torch.cuda.init()
-#    _ = torch.tensor([0.0], device="cuda")
-#    torch.cuda.synchronize()
+if torch.cuda.is_available():
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.cuda.empty_cache()
 
 class Coqui:
     def __init__(self,session:DictProxy):

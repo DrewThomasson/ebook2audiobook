@@ -64,6 +64,11 @@ from lib.classes.tts_manager import TTSManager
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
+if torch.cuda.is_available():
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
+    torch.cuda.empty_cache()
+
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 context = None
 active_sessions = set()
