@@ -3747,7 +3747,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             try:
                 nonlocal audiobook_options
                 session = context.get_session(id)
-                if session['audiobooks_dir'] is not None
+                if session['audiobooks_dir'] is not None:
                     audiobook_options = [
                         (f, os.path.join(session['audiobooks_dir'], str(f)))
                         for f in os.listdir(session['audiobooks_dir'])
