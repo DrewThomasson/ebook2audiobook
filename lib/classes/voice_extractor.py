@@ -44,7 +44,7 @@ class VoiceExtractor:
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
                 '-ac', '1', '-y', self.wav_file
             ]   
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_file))
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_file), msg='Convert')
             if proc_pipe:
                 if not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
                     error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
@@ -239,7 +239,7 @@ class VoiceExtractor:
                 '-y', proc_voice_file
             ]
             try:
-                proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_track))
+                proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_track), msg='Normalize')
                 if proc_pipe:
                     if not os.path.exists(proc_voice_file) or os.path.getsize(proc_voice_file) == 0:
                         error = f'_normalize_audio() error: {proc_voice_file} was not created or is empty.'

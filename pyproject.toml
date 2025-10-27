@@ -52,10 +52,10 @@ dependencies = [
 	"demucs==4.0.1",
 	"gradio>=5.49",
 	"transformers==4.51.3",
-	"coqui-tts[languages]==0.26.0",
 	"torch==2.7.1",
 	"torchaudio==2.7.1",
-	"torchvggish"
+	"torchvggish",
+	"coqui-tts[languages]==0.27.2",
 ]
 readme = "README.md"
 requires-python = ">3.9,<3.13"

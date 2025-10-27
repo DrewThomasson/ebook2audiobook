@@ -558,7 +558,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         if session['language'] in year_to_decades_languages:
             try:
                 stanza_model = os.path.join(os.getenv("STANZA_RESOURCES_DIR"), session['language_iso1'], 'default.zip')
-                stanza.download(session['language_iso1'], download_method=DownloadMethod.REUSE_RESOURCES)
+                stanza.download(session['language_iso1'])
                 stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=False)
             except (ConnectionError, TimeoutError) as e:
                 error = f'Stanza model download connection error: {e}. Retry later'
@@ -1667,7 +1667,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                     '-progress', 'pipe:2',
                     '-y', ffmpeg_final_file
                 ]
-            proc_pipe = SubprocessPipe(cmd, is_gui_process=session['is_gui_process'], total_duration=get_audio_duration(ffmpeg_combined_audio))
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=session['is_gui_process'], total_duration=get_audio_duration(ffmpeg_combined_audio), msg='Export')
             if proc_pipe:
                 if os.path.exists(ffmpeg_final_file) and os.path.getsize(ffmpeg_final_file) > 0:
                     if session['output_format'] in ['mp3', 'm4a', 'm4b', 'mp4']:
@@ -1851,7 +1851,7 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
             '-safe', '0', '-f', 'concat', '-i', txt_file,
             '-c:a', default_audio_proc_format, '-map_metadata', '-1', '-threads', '1', out_file
         ]
-        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration)
+        proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble')
         if proc_pipe:
             print(f"Completed → {out_file}")
             return True

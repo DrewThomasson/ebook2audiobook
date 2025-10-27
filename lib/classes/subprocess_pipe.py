@@ -1,10 +1,11 @@
 import subprocess, re, sys, gradio as gr
 
 class SubprocessPipe:
-    def __init__(self,cmd:str, is_gui_process:bool, total_duration:float):
+    def __init__(self,cmd:str, is_gui_process:bool, total_duration:float, msg:str='Processing'):
         self.cmd = cmd
         self.is_gui_process = is_gui_process
         self.total_duration = total_duration
+        self.msg = msg
         self.process = None
         self._stop_requested = False
         self.progress_bar = None
@@ -13,19 +14,19 @@ class SubprocessPipe:
         self._run_process()
 
     def _on_progress(self,percent:float)->None:
-        sys.stdout.write(f'\rEncoding: {percent:.1f}%')
+        sys.stdout.write(f'\r{self.msg}: {percent:.1f}%')
         sys.stdout.flush()
         if self.is_gui_process:
-            self.progress_bar(percent/100,desc='Encoding')
+            self.progress_bar(percent/100,desc=self.msg)
 
     def _on_complete(self)->None:
-        msg = 'Encoding completed'
+        msg = f'{self.msg} completed'
         print(msg)
         if self.is_gui_process:
             self.progress_bar(1.0,desc=msg)
 
     def _on_error(self, err:Exception)->None:
-        error = f'Encoding failed: {err}'
+        error = f'{self.msg} failed: {err}'
         print(error)
         if self.is_gui_process:
             self.progress_bar(0.0,desc=error)

@@ -102,7 +102,7 @@ def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_proc
         '-ar', str(samplerate),
         '-y', output_file
     ]
-    proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(input_file))
+    proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(input_file), msg='Normalize')
     if proc_pipe:
         return True
     else:

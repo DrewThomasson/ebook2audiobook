@@ -274,7 +274,7 @@ class Coqui:
                     if os.path.exists(default_text_file):
                         msg = f"Converting builtin eng voice to {self.session['language']}..."
                         print(msg)
-                        tts_key = TTS_ENGINES['XTTSv2']
+                        tts_key = f"{TTS_ENGINES['XTTSv2']}-internal"
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
                         hf_sub = ''
@@ -286,10 +286,12 @@ class Coqui:
                             self._load_checkpoint(tts_engine=TTS_ENGINES['XTTSv2'], key=tts_key, checkpoint_path=checkpoint_path, config_path=config_path, vocab_path=vocab_path, device=device)
                             if not self.tts:
                                 return False
-                        tts = (loaded_tts.get(tts_key) or {}).get('engine', False)
+                            tts = self.tts
+                        else:
+                            tts = (loaded_tts.get(tts_key) or {}).get('engine', False)
                         if tts:
-                            if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                                self.tts = tts
+                            if tts_key != self.tts_key:
+                                self.tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
                             if speaker in default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'].keys():
                                 gpt_cond_latent, speaker_embedding = xtts_builtin_speakers_list[default_engine_settings[TTS_ENGINES['XTTSv2']]['voices'][speaker]].values()
                             else:
@@ -327,7 +329,7 @@ class Coqui:
                                 torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate'], format='wav')
                                 if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
                                     del audio_data, sourceTensor, audio_tensor
-                                    if self.session['tts_engine'] != TTS_ENGINES['XTTSv2']:
+                                    if tts_key != self.tts_key:
                                         del tts
                                         unload_tts(device, None, tts_key)
                                     return new_voice_path
@@ -370,9 +372,12 @@ class Coqui:
                         self._load_checkpoint(tts_engine=TTS_ENGINES['BARK'],key=tts_key,checkpoint_dir=checkpoint_dir,device=device)
                         if not self.tts:
                             return False
+                        tts = self.tts
+                    else:
+                        tts = (loaded_tts.get(tts_key) or {}).get('engine', False)
                     if tts:
-                        if self.session['tts_engine'] == TTS_ENGINES['BARK']:
-                            self.tts = tts
+                        if tts_key != self.tts_key:
+                            self.tts = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
                         voice_temp = os.path.splitext(npz_file)[0]+'.wav'
                         shutil.copy(voice_path,voice_temp)
                         default_text_file = os.path.join(voices_dir,self.session['language'],'default.txt')
@@ -397,9 +402,9 @@ class Coqui:
                             )
                         os.remove(voice_temp)
                         del audio_data
-                        if self.session['tts_engine'] != TTS_ENGINES['BARK']:
+                        if tts_key != self.tts_key:
                             del tts
-                            unload_tts(device,None,tts_key)
+                            unload_tts(device, None, tts_key)
                         msg = f"Saved NPZ file: {npz_file}"
                         print(msg)
                         return True
