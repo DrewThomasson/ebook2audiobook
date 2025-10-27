@@ -143,14 +143,15 @@ def check_and_install_requirements(file_path:str)->bool:
                       unit='step') as t:
                 for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
                     try:
-                        if package == 'num2words':
-                            pkgs = ['git+https://github.com/savoirfairelinux/num2words.git', '--force']
-                        else:
-                            pkgs = [package]
+                        #if package == 'num2words':
+                        #    pkgs = ['git+https://github.com/savoirfairelinux/num2words.git', '--force']
+                        #else:
+                        #    pkgs = [package]
+                        pkgs = [package]
                         subprocess.check_call([
                             sys.executable, '-m', 'pip', 'install',
                             '--no-cache-dir', '--use-pep517',
-                            *pkgs
+                            *pkgs, '--no-deps'
                         ])
                         t.update(1)
                     except subprocess.CalledProcessError as e:
