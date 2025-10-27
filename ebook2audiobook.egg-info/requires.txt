@@ -170,7 +170,7 @@ python-multipart==0.0.20
 pytorch-lightning==2.5.5
 pytorch-metric-learning==2.9.0
 pytz==2025.2
-pywin32==311
+pywin32; sys_platform == "win32"
 PyYAML==6.0.3
 ray==2.50.1
 rdflib==7.3.0
