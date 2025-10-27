@@ -59,6 +59,7 @@ def check_and_install_requirements(file_path:str)->bool:
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'tqdm'])
         import re as regex
         from tqdm import tqdm
         with open(file_path, 'r') as f:
