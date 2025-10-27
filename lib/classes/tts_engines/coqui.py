@@ -323,6 +323,7 @@ class Coqui:
                                 audio_data = audio_data.tolist()
                                 sourceTensor = self._tensor_type(audio_data)
                                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
+                                # CON is a reserved name on windows
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                                 new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
                                 proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
@@ -335,6 +336,7 @@ class Coqui:
                                     return new_voice_path
                                 else:
                                     error = 'normalize_audio() error:'
+                                Path(proc_voice_path).unlink(missing_ok=True)
                             else:
                                 error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
                         else:

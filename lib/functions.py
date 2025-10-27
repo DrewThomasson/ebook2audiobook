@@ -3335,10 +3335,10 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 if session['voice_dir'] is not None:
-                    parent_dir = Path(session['voice_dir']).parent
+                    session_voice_dir = Path(session['voice_dir'])
                     voice_options += [
                         (os.path.splitext(f.name)[0], str(f))
-                        for f in parent_dir.rglob(file_pattern)
+                        for f in session_voice_dir.rglob(file_pattern)
                         if f.is_file()
                     ]
                 if session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2'], TTS_ENGINES['YOURTTS']]:
