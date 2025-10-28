@@ -10,7 +10,7 @@ x-gpu-disabled: &gpu-disabled
 
 services:
   ebook2audiobook:
-    #image: docker.io/athomasson2/ebook2audiobook:latest # Uncomment to pull from latest working image instead of building
+    #image: docker.io/athomasson2/ebook2audiobook:latest  # <-- Use prebuilt image instead of building
     build:
       context: .
       args:
