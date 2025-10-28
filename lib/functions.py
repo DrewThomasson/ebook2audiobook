@@ -158,7 +158,7 @@ class SessionContext:
                 "ebook": None,
                 "ebook_list": None,
                 "ebook_mode": "single",
-                "chapters_control": default_chapters_control,
+                "chapters_preview": default_chapters_preview,
                 "chapters_dir": None,
                 "chapters_dir_sentences": None,
                 "epub_path": None,
@@ -1990,7 +1990,7 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                 session['is_gui_process'] = bool(args['is_gui_process'])
                 session['ebook'] = str(args['ebook']) if args['ebook'] else None
                 session['ebook_list'] = list(args['ebook_list']) if args['ebook_list'] else None
-                session['chapters_control'] = bool(args['chapters_control']) if args['chapters_control'] else None
+                session['chapters_preview'] = bool(args['chapters_preview']) if args['chapters_preview'] else None
                 session['device'] = str(args['device'])
                 session['language'] = str(args['language'])
                 session['language_iso1'] = str(args['language_iso1'])
@@ -2134,10 +2134,11 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                                 if session['cover']:
                                     session['toc'], session['chapters'] = get_chapters(epubBook, session)
                                     if session['chapters'] is not None:
-                                        if session['chapters_control']:
-                                            return 'confirm_blocks', True
-                                        else:
-                                            return finalize_audiobook(id)
+                                        #if session['chapters_preview']:
+                                        #    return 'confirm_blocks', True
+                                        #else:
+                                        #    return finalize_audiobook(id)
+                                        return finalize_audiobook(id)
                                     else:
                                         error = 'get_chapters() failed! '+session['toc']
                                 else:
@@ -2551,7 +2552,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 display: none !important;
             }
             #gr_row_ebook_mode { align-items: center !important; }
-            #gr_chapters_control {
+            #gr_chapters_preview {
                 align-self: center !important; 
                 overflow: visible !important;
                 padding: 20px 0 20px 10px !important;
@@ -2702,7 +2703,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                                 gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                                 with gr_row_ebook_mode:
                                     gr_ebook_mode = gr.Dropdown(label='', elem_id='gr_ebook_mode', choices=[('File','single'), ('Directory','directory')], interactive=True, scale=2)
-                                    gr_chapters_control = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_control', value=False, interactive=True, scale=1)
+                                    gr_chapters_preview = gr.Checkbox(label='Chapters Preview', elem_id='gr_chapters_preview', value=False, interactive=True, scale=1)
                             with gr.Group(elem_id='gr_group_language', elem_classes=['gr-group']):
                                 gr_language_markdown = gr.Markdown(elem_id='gr_language_markdown', elem_classes=['gr-markdown'], value='Language')
                                 gr_language = gr.Dropdown(label='', elem_id='gr_language', choices=language_options, value=default_language_code, type='value', interactive=True)
@@ -3012,7 +3013,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return (
                     gr.update(value=ebook_data),
                     gr.update(value=session['ebook_mode']),
-                    gr.update(value=bool(session['chapters_control'])),
+                    gr.update(value=bool(session['chapters_preview'])),
                     gr.update(value=session['device']),
                     gr.update(value=session['language']),
                     update_gr_voice_list(id),
@@ -3578,7 +3579,12 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             session = context.get_session(id)
             session[key] = val
             state = {}
-            if key == 'xtts_length_penalty':
+            if key == "chapters_preview":
+                msg = 'Chapters preview feature will be available to the coming version 25.11.1'   
+                state['type'] = 'info'
+                state['msg'] = msg
+                show_alert(state)
+            elif key == 'xtts_length_penalty':
                 if val2 is not None:
                     if float(val) > float(val2):
                         error = 'Length penalty must be always lower than num beams if greater than 1.0 or equal if 1.0'   
@@ -3595,7 +3601,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             return
 
         def submit_convert_btn(
-                id:str, device:str, ebook_file:str, chapters_control:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, xtts_temperature:float, 
+                id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, xtts_temperature:float, 
                 xtts_length_penalty:int, xtts_num_beams:int, xtts_repetition_penalty:float, xtts_top_k:int, xtts_top_p:float, xtts_speed:float, xtts_enable_text_splitting:bool, bark_text_temp:float, bark_waveform_temp:float,
                 output_split:bool, output_split_hours:str
             )->tuple:
@@ -3605,7 +3611,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     "is_gui_process": session['is_gui_process'],
                     "session": id,
                     "script_mode": script_mode,
-                    "chapters_control": chapters_control,
+                    "chapters_preview": chapters_preview,
                     "device": device.lower(),
                     "tts_engine": tts_engine,
                     "ebook": ebook_file if isinstance(ebook_file, str) else None,
@@ -3641,7 +3647,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                     session['status'] = 'converting'
                     session['progress'] = len(audiobook_options)
                     if isinstance(args['ebook_list'], list):
-                        args['chapters_control'] = None
+                        args['chapters_preview'] = None
                         ebook_list = args['ebook_list'][:]
                         for file in ebook_list:
                             if any(file.endswith(ext) for ext in ebook_formats):
@@ -3911,11 +3917,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         gr_ebook_mode.change(
             fn=change_gr_ebook_mode,
             inputs=[gr_ebook_mode, gr_session],
-            outputs=[gr_ebook_file, gr_chapters_control]
+            outputs=[gr_ebook_file, gr_chapters_preview]
         )
-        gr_chapters_control.change(
-            fn=lambda val, id: change_param('chapters_control', bool(val), id),
-            inputs=[gr_chapters_control, gr_session],
+        gr_chapters_preview.change(
+            fn=lambda val, id: change_param('chapters_preview', bool(val), id),
+            inputs=[gr_chapters_preview, gr_session],
             outputs=None
         )
         gr_voice_file.upload(
@@ -4163,11 +4169,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         ).then(
             fn=disable_components,
             inputs=None,
-            outputs=[gr_ebook_mode, gr_chapters_control, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
+            outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
         ).then(
             fn=submit_convert_btn,
             inputs=[
-                gr_session, gr_device, gr_ebook_file, gr_chapters_control, gr_tts_engine_list, gr_language, gr_voice_list,
+                gr_session, gr_device, gr_ebook_file, gr_chapters_preview, gr_tts_engine_list, gr_language, gr_voice_list,
                 gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list,
                 gr_xtts_temperature, gr_xtts_length_penalty, gr_xtts_num_beams, gr_xtts_repetition_penalty, gr_xtts_top_k, gr_xtts_top_p, gr_xtts_speed, gr_xtts_enable_text_splitting,
                 gr_bark_text_temp, gr_bark_waveform_temp, gr_output_split, gr_output_split_hours
@@ -4176,7 +4182,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         ).then(
             fn=enable_components,
             inputs=[gr_session],
-            outputs=[gr_ebook_mode, gr_chapters_control, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
+            outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list, gr_output_format_list]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
@@ -4208,7 +4214,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             fn=restore_interface,
             inputs=[gr_session],
             outputs=[
-                gr_ebook_file, gr_ebook_mode, gr_chapters_control, gr_device, gr_language, gr_voice_list,
+                gr_ebook_file, gr_ebook_mode, gr_chapters_preview, gr_device, gr_language, gr_voice_list,
                 gr_tts_engine_list, gr_custom_model_list, gr_fine_tuned_list, gr_output_format_list, 
                 gr_output_split, gr_output_split_hours, gr_audiobook_list
             ]
@@ -4248,7 +4254,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         ).then(
             fn=enable_components,
             inputs=[gr_session],
-            outputs=[gr_ebook_mode, gr_chapters_control, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+            outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
@@ -4265,7 +4271,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         ).then(
             fn=enable_components,
             inputs=[gr_session],
-            outputs=[gr_ebook_mode, gr_chapters_control, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
+            outputs=[gr_ebook_mode, gr_chapters_preview, gr_language, gr_voice_file, gr_voice_list, gr_device, gr_tts_engine_list, gr_fine_tuned_list, gr_custom_model_file, gr_custom_model_list]
         )
         app.load(
             fn=None,

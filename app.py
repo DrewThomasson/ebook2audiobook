@@ -71,12 +71,22 @@ def check_and_install_requirements(file_path: str) -> bool:
 			]
 		missing_packages = []
 		for package in packages:
-			if package.startswith('git+') or '://' in package:
-				print(f"URL-based package detected: {package}")
-				missing_packages.append(package)
+			# handle git/url packages
+			if 'git+' in package or '://' in package:
+				pkg_name_match = regex.search(r'([\w\-]+)\s*@?\s*git\+', package)
+				pkg_name = pkg_name_match.group(1) if pkg_name_match else None
+				if pkg_name:
+					spec = importlib.util.find_spec(pkg_name)
+					if spec is None:
+						print(f'{pkg_name} (git package) is missing.')
+						missing_packages.append(package)
+				else:
+					print(f'Unrecognized git package: {package}')
+					missing_packages.append(package)
 				continue
+			# handle normal pypi packages
 			clean_pkg = regex.sub(r'\[.*?\]', '', package)
-			pkg_name = regex.split(r'[<>=@]', clean_pkg, 1)[0].strip()
+			pkg_name = regex.split(r'[<>=]', clean_pkg, 1)[0].strip()
 			try:
 				installed_version = version(pkg_name)
 				if pkg_name == 'num2words':
@@ -140,17 +150,16 @@ def check_and_install_requirements(file_path: str) -> bool:
 			os.environ['TMPDIR'] = tmp_dir
 			subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
 			subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
-			with tqdm(total=len(packages), desc='Installation 0.00%', bar_format='{desc}: {n_fmt}/{total_fmt} ', unit='step') as t:
+			with tqdm(total=len(packages),
+			          desc='Installation 0.00%',
+			          bar_format='{desc}: {n_fmt}/{total_fmt} ',
+			          unit='step') as t:
 				for package in tqdm(missing_packages, desc="Installing", unit="pkg"):
 					try:
-						if package.startswith('git+') or '://' in package:
-							pkgs = [package]
-						else:
-							pkgs = [package]
 						subprocess.check_call([
 							sys.executable, '-m', 'pip', 'install',
 							'--no-cache-dir', '--use-pep517',
-							*pkgs, '--no-deps'
+							package, '--no-deps'
 						])
 						t.update(1)
 					except subprocess.CalledProcessError as e:
