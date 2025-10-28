@@ -10,6 +10,7 @@ x-gpu-disabled: &gpu-disabled
 
 services:
   ebook2audiobook:
+    #image: docker.io/athomasson2/ebook2audiobook:latest  # <-- Use prebuilt image instead of building
     build:
       context: .
       args:
@@ -40,3 +41,4 @@ services:
 # After: nothing needed  or just -> `docker run athomasson2/ebook2audiobook`
 # Extra arguments after app.py can still be added to the -> command: [] 
 # Example adding extra arguments -> command: ["--share"] or -> command: ["--help"]
+
