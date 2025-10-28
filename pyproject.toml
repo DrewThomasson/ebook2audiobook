@@ -52,9 +52,9 @@ dependencies = [
     "argostranslate==1.10.0",
     "demucs==4.0.1",
     "gradio>=5.49.1",
-    "torch==2.7.1",
-    "torchaudio==2.7.1",
     "coqui-tts[languages]==0.27.2",
+    "torch==2.7.1",
+    "torchaudio==2.7.1"
 ]
 readme = "README.md"
 requires-python = ">3.9,<3.13"

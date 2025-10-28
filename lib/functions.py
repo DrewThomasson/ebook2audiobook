@@ -3919,7 +3919,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             inputs=[gr_ebook_mode, gr_session],
             outputs=[gr_ebook_file, gr_chapters_preview]
         )
-        gr_chapters_preview.change(
+        gr_chapters_preview.click(
             fn=lambda val, id: change_param('chapters_preview', bool(val), id),
             inputs=[gr_chapters_preview, gr_session],
             outputs=None
