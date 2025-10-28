@@ -42,19 +42,19 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
                 echo "Installing PyTorch for CUDA 11.8..." && \
                 pip install --no-cache-dir --upgrade -r requirements.txt && pip install pyannote-audio=3.4.0 && pip install --no-cache-dir --upgrade torch==2.7.1 torchvision==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu118; \
             else \
-                echo "Attempting to install PyTorch nightly for CUDA $CUDA_VERSION..." && \
-                if ! pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
-                    echo "❌ Nightly build for CUDA $CUDA_VERSION not available or failed" && \
-                    echo "🔄 Trying stable release for CUDA $CUDA_VERSION..." && \
-                    if pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
-                        echo "✅ Successfully installed stable PyTorch for CUDA $CUDA_VERSION"; \
+                echo "Attempting to install stable PyTorch for CUDA $CUDA_VERSION..." && \
+                if ! pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
+                    echo "❌ Stable build for CUDA $CUDA_VERSION not available or failed" && \
+                    echo "🔄 Trying nightly release for CUDA $CUDA_VERSION..." && \
+                    if pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
+                        echo "✅ Successfully installed nightly PyTorch for CUDA $CUDA_VERSION"; \
                     else \
-                        echo "❌ Both nightly and stable builds failed for CUDA $CUDA_VERSION"; \
+                        echo "❌ Both stable and nightly builds failed for CUDA $CUDA_VERSION"; \
                         echo "💡 This CUDA version may not be supported by PyTorch"; \
                         exit 1; \
                     fi; \
                 else \
-                    echo "✅ Successfully installed nightly PyTorch for CUDA $CUDA_VERSION"; \
+                    echo "✅ Successfully installed stable PyTorch for CUDA $CUDA_VERSION"; \
                 fi; \
             fi; \
         else \
