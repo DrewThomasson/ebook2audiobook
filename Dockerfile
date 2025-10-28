@@ -30,6 +30,10 @@ ARG TORCH_VERSION=""
 # Add parameter to control whether to skip the XTTS test
 ARG SKIP_XTTS_TEST="false"
 
+# Copy the application
+WORKDIR /app
+COPY . /app
+
 # Install requirements.txt or PyTorch variants based on TORCH_VERSION
 RUN if [ ! -z "$TORCH_VERSION" ]; then \
         # Check if TORCH_VERSION contains "cuda" and extract version number
@@ -92,9 +96,6 @@ RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
     else \
         echo "Skipping XTTS test run as requested."; \
     fi
-
-# Copy the application
-COPY . /app
 
 # Expose the required port
 EXPOSE 7860
