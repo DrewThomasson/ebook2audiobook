@@ -1,3 +1,4 @@
+num2words @ git+https://github.com/savoirfairelinux/num2words.git
 regex
 tqdm
 cutlet

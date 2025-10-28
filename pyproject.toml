@@ -17,6 +17,7 @@ authors = [
     { name = "Drew Thomasson" }
 ]
 dependencies = [
+	"num2words @ git+https://github.com/savoirfairelinux/num2words.git",
     "regex",
     "tqdm",
     "cutlet",
@@ -24,7 +25,6 @@ dependencies = [
     "docker",
     "ebooklib",
     "fastapi",
-    "num2words",
     "beautifulsoup4",
     "fugashi",
     "sudachipy",
