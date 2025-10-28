@@ -55,13 +55,13 @@ def check_and_install_requirements(file_path:str)->bool:
         try:
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version
+            from tqdm import tqdm
         except ImportError:
-            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging', 'tqdm'])
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'tqdm'])
+            from tqdm import tqdm
         import re as regex
-        from tqdm import tqdm
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
             packages = [
