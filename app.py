@@ -183,7 +183,7 @@ def check_dictionary()->bool:
             error = 'UniDic dictionary not found or incomplete. Downloading now...'
             print(error)
             subprocess.run(['python', '-m', 'unidic', 'download'], check=True)
-        except subprocess.CalledProcessError as e:
+        except (subprocess.CalledProcessError, ConnectionError, OSError) as e:
             error = f'Failed to download UniDic dictionary. Error: {e}. Unable to continue without UniDic. Exiting...'
             raise SystemExit(error)
             return False
