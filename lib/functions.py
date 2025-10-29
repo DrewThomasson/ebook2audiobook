@@ -454,11 +454,11 @@ def convert2epub(id:str)->bool:
         print(result.stdout)
         return True
     except subprocess.CalledProcessError as e:
-        print(f"Subprocess error: {e.stderr}")
+        print(f"convert2epub subprocess.CalledProcessError: {e.stderr}")
         DependencyError(e)
         return False
     except FileNotFoundError as e:
-        print(f"Utility not found: {e}")
+        print(f"convert2epub FileNotFoundError: {e}")
         DependencyError(e)
         return False
 
@@ -2107,42 +2107,45 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                             print(msg.replace('<br/>','\n'))
                             session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
                             if convert2epub(id):
-                                epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})       
-                                metadata = dict(session['metadata'])
-                                for key, value in metadata.items():
-                                    data = epubBook.get_metadata('DC', key)
-                                    if data:
-                                        for value, attributes in data:
-                                            metadata[key] = value
-                                metadata['language'] = session['language']
-                                metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
-                                metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
-                                session['metadata'] = metadata                  
-                                try:
-                                    if len(session['metadata']['language']) == 2:
-                                        lang_dict = Lang(session['language'])
-                                        if lang_dict:
-                                            session['metadata']['language'] = lang_dict.pt3
-                                except Exception as e:
-                                    pass                         
-                                if session['metadata']['language'] != session['language']:
-                                    error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                    print(error)
-                                    if session['is_gui_process']:
-                                        show_alert({"type": "warning", "msg": error})
-                                session['cover'] = get_cover(epubBook, session)
-                                if session['cover']:
-                                    session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                    if session['chapters'] is not None:
-                                        #if session['chapters_preview']:
-                                        #    return 'confirm_blocks', True
-                                        #else:
-                                        #    return finalize_audiobook(id)
-                                        return finalize_audiobook(id)
+                                epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
+                                if epubBook:
+                                    metadata = dict(session['metadata'])
+                                    for key, value in metadata.items():
+                                        data = epubBook.get_metadata('DC', key)
+                                        if data:
+                                            for value, attributes in data:
+                                                metadata[key] = value
+                                    metadata['language'] = session['language']
+                                    metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
+                                    metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                    session['metadata'] = metadata                  
+                                    try:
+                                        if len(session['metadata']['language']) == 2:
+                                            lang_dict = Lang(session['language'])
+                                            if lang_dict:
+                                                session['metadata']['language'] = lang_dict.pt3
+                                    except Exception as e:
+                                        pass                         
+                                    if session['metadata']['language'] != session['language']:
+                                        error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                        print(error)
+                                        if session['is_gui_process']:
+                                            show_alert({"type": "warning", "msg": error})
+                                    session['cover'] = get_cover(epubBook, session)
+                                    if session['cover']:
+                                        session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                        if session['chapters'] is not None:
+                                            #if session['chapters_preview']:
+                                            #    return 'confirm_blocks', True
+                                            #else:
+                                            #    return finalize_audiobook(id)
+                                            return finalize_audiobook(id)
+                                        else:
+                                            error = 'get_chapters() failed! '+session['toc']
                                     else:
-                                        error = 'get_chapters() failed! '+session['toc']
+                                        error = 'get_cover() failed!'
                                 else:
-                                    error = 'get_cover() failed!'
+                                    error = 'epubBook.read_epub failed!'
                             else:
                                 error = 'convert2epub() failed!'
                         else:
