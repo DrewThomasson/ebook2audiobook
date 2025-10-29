@@ -93,8 +93,8 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Docker Run (pre-built)](#running-the-pre-built-docker-container)
   - [Docker Build (Manual)](#building-the-docker-container)
   - [Docker Build Arguments (GPU Options)](#docker-build-arguments)
+  - [Docker Headless (Manual)](#docker-headless-guide)
   - [Docker container file locations](#docker-container-file-locations)
-  - [Docker Headless Guide](#docker-headless-guide)
   - [Common Docker issues](#common-docker-issues)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-formats)
@@ -380,7 +380,7 @@ A headless example is already contained within the `docker-compose.yml` file.
 The `docker-compose.yml` file will act as the base dir for any headless commands added.
 
 
-#### Running the pre-built Docker Container
+### Running the pre-built Docker Container
 
 Available pre-build tags: `latest` (CUDA 11.8)
 
@@ -397,7 +397,7 @@ This command will start the Gradio interface on port 7860.(localhost:7860)
 - For more options add the parameter `--help`
 
 
-#### Building the Docker Container
+### Building the Docker Container
 > [!IMPORTANT]
 **Check out the Build [Arguments](docker-build-arguments) .** <br>
 
@@ -406,10 +406,9 @@ This command will start the Gradio interface on port 7860.(localhost:7860)
 docker build -t athomasson2/ebook2audiobook .
 ```
 
-#### Docker Build Arguments
+### Docker Build Arguments
 
 #### Edit: IF GPU isn't detected then you'll have to build the image with [Compose](docker-compose) or [Manual](#building-the-docker-container)
-
 
 Docker Build Arguments (GPU Options)
 
@@ -420,14 +419,7 @@ All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
 `--build-arg SKIP_XTTS_TEST=true` (Saves space by not baking XTTSv2 model into docker image)
 
 
-## Docker container file locations
-All ebook2audiobooks will have the base dir of `/app/`
-For example:
-`tmp` = `/app/tmp`
-`audiobooks` = `/app/audiobooks`
-
-
-## Docker headless guide
+### Docker headless guide
 
 > [!IMPORTANT]
 **For simpler headless setup use the [Compose](#compose-headless).** <br>
@@ -449,7 +441,7 @@ docker run --pull always --rm \
   in your local dir you ran this docker command in
 
 
-## To get the help command for the other parameters this program has you can run this 
+#### To get the help command for the other parameters this program has you can run this 
 
 ```bash
 docker run --pull always --rm athomasson2/ebook2audiobook --help
@@ -459,7 +451,14 @@ That will output this
 [Help command output](#help-command-output)
 
 
-## Common Docker Issues
+### Docker container file locations
+All ebook2audiobooks will have the base dir of `/app/`
+For example:
+`tmp` = `/app/tmp`
+`audiobooks` = `/app/audiobooks`
+
+
+### Common Docker Issues
 
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
 
