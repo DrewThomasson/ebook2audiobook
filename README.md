@@ -90,7 +90,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Docker](#docker-compose)
   - [Docker Compose (Recommended)](#docker-compose)
   - [Docker Compose Headless](#docker-headless-guide)
-  - [Docker Run (pre-built)](#running-the-pre-built-docker-container)
+  - [Docker Run (pre-built image)](#running-the-pre-built-docker-container)
   - [Docker Build (Manual)](#building-the-docker-container)
   - [Docker Build Arguments (GPU Options)](#docker-build-arguments)
   - [Docker Headless (Manual)](#docker-headless-guide)
