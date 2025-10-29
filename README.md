@@ -363,10 +363,12 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
 3. **Start the service:**
     ```bash
     # Docker
-    docker-compose up -d # To rebuild add --build
+    docker-compose up -d # To rebuild add --build 
+    # To stop -> docker-compose down
 
     # Podman
     podman compose -f podman-compose.yml up -d # To rebuild add --build
+    # To stop -> podman compose -f podman-compose.yml down
     ```
 4. **Access the service:**
   The service will be available at http://localhost:7860.
