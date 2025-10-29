@@ -87,17 +87,8 @@ def check_and_install_requirements(file_path: str) -> bool:
 			# handle normal pypi packages
 			clean_pkg = regex.sub(r'\[.*?\]', '', package)
 			pkg_name = regex.split(r'[<>=]', clean_pkg, 1)[0].strip()
-			try:
-				installed_version = version(pkg_name)
-				if pkg_name == 'num2words':
-					code = "ZH_CN"
-					spec = importlib.util.find_spec(f"num2words.lang_{code}")
-					if spec is None:
-						missing_packages.append(package)
-			except PackageNotFoundError:
-				error = f'{package} is missing.'
-				print(error)
-				missing_packages.append(package)
+            if "+" in installed_version:
+                continue
 			else:
 				spec_str = clean_pkg[len(pkg_name):].strip()
 				if spec_str:
@@ -158,8 +149,7 @@ def check_and_install_requirements(file_path: str) -> bool:
 					try:
 						subprocess.check_call([
 							sys.executable, '-m', 'pip', 'install',
-							'--no-cache-dir', '--use-pep517',
-							package, '--no-deps'
+							'--no-cache-dir', '--use-pep517', package
 						])
 						t.update(1)
 					except subprocess.CalledProcessError as e:
