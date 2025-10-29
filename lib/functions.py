@@ -3580,7 +3580,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             session[key] = val
             state = {}
             if key == "chapters_preview":
-                msg = 'Chapters preview feature will be available to the coming version 25.11.1'   
+                msg = 'Chapters preview feature will be available to the next version'   
                 state['type'] = 'info'
                 state['msg'] = msg
                 show_alert(state)
@@ -3598,7 +3598,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         state['type'] = 'warning'
                         state['msg'] = error
                         show_alert(state)
-            return
 
         def submit_convert_btn(
                 id:str, device:str, ebook_file:str, chapters_preview:bool, tts_engine:str, language:str, voice:str, custom_model:str, fine_tuned:str, output_format:str, xtts_temperature:float, 
@@ -3919,7 +3918,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             inputs=[gr_ebook_mode, gr_session],
             outputs=[gr_ebook_file, gr_chapters_preview]
         )
-        gr_chapters_preview.click(
+        gr_chapters_preview.select(
             fn=lambda val, id: change_param('chapters_preview', bool(val), id),
             inputs=[gr_chapters_preview, gr_session],
             outputs=None
@@ -3983,7 +3982,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             inputs=[gr_output_format_list, gr_session],
             outputs=None
         )
-        gr_output_split.change(
+        gr_output_split.select(
             fn=change_gr_output_split,
             inputs=[gr_output_split, gr_session],
             outputs=[gr_row_output_split_hours]
@@ -4116,7 +4115,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             inputs=[gr_xtts_speed, gr_session],
             outputs=None
         )
-        gr_xtts_enable_text_splitting.change(
+        gr_xtts_enable_text_splitting.select(
             fn=lambda val, id: change_param('xtts_enable_text_splitting', bool(val), id),
             inputs=[gr_xtts_enable_text_splitting, gr_session],
             outputs=None
