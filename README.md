@@ -368,14 +368,6 @@ For pre-built image enable `#image: docker.io/athomasson2/ebook2audiobook:latest
 5. **Access the service:**
   The service will be available at http://localhost:7860.
 
-### Compose Headless
-
-[Headless Wiki for more info](https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide)
-```bash
-A headless example is already contained within the `docker-compose.yml` file.
-
-The `docker-compose.yml` file will act as the base dir for any headless commands added.
-```
 
 ### Compose Build Arguments
 
@@ -384,6 +376,15 @@ SKIP_XTTS_TEST: "true" # (Saves space by not baking xtts model into docker image
 TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] # All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
 ```
 
+
+### Compose Headless
+
+[Headless Wiki for more info](https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide)
+```bash
+A headless example is already contained within the `docker-compose.yml` file.
+
+The `docker-compose.yml` file will act as the base dir for any headless commands added.
+```
 
 ### Compose container file locations
 
