@@ -401,7 +401,7 @@ This command will start the Gradio interface on port 7860.(localhost:7860)
 > [!IMPORTANT]
 **Check out the Build [Arguments](docker-build-arguments) .** <br>
 
-- You can build the docker image with the command:
+- You can manually build the docker image with the command:
 ```powershell
 docker build -t athomasson2/ebook2audiobook .
 ```
