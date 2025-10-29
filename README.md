@@ -90,12 +90,10 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Docker](#docker-compose)
   - [Docker Compose (Recommended)](#docker-compose)
   - [Docker Compose Headless](#docker-headless-guide)
-  - [Docker Run (pre-built image)](#running-the-pre-built-docker-container)
-  - [Docker Build (Manual)](#building-the-docker-container)
-  - [Docker Build Arguments (GPU Options)](#docker-build-arguments)
-  - [Docker Headless (Manual)](#docker-headless-guide)
-  - [Docker container file locations](#docker-container-file-locations)
+  - [Compose Build Arguments](#compose-build-arguments)
+  - [Compose container file locations](#compose-container-file-locations)
   - [Common Docker issues](#common-docker-issues)
+  - [Docker Build (Manual)](https://github.com/DrewThomasson/ebook2audiobook/wiki/Manual-Docker-Guide)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-formats)
 - [Updating to Latest Version](#updating-to-latest-version)
@@ -344,11 +342,8 @@ TIP: if it needs some more pauses, just add '###' or '[pause]' between the words
 
 
 ### Docker Compose
-> [!IMPORTANT]
-**Recommended for Containers.** <br>
 
-This project uses Docker Compose to run locally. You can enable or disable GPU support 
-by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
+For pre-built image enable `#image: docker.io/athomasson2/ebook2audiobook:latest` in `docker-compose.yml`
 
 
 
@@ -360,7 +355,7 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
    ```
 2. **Set GPU Support (disabled by default)**
   To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
-3. **Start the service:**
+4. **Start the service:**
     ```bash
     # Docker
     docker-compose up -d # To rebuild add --build 
@@ -370,113 +365,36 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
     podman compose -f podman-compose.yml up -d # To rebuild add --build
     # To stop -> podman compose -f podman-compose.yml down
     ```
-4. **Access the service:**
+5. **Access the service:**
   The service will be available at http://localhost:7860.
 
 ### Compose Headless
 
 [Headless Wiki for more info](https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide)
-
+```bash
 A headless example is already contained within the `docker-compose.yml` file.
 
 The `docker-compose.yml` file will act as the base dir for any headless commands added.
-
-
-### Running the pre-built Docker Container
-
-Available pre-build tags: `latest` (CUDA 11.8)
-
- -Run with CPU only
-```powershell
-docker run --pull always --rm -p 7860:7860 athomasson2/ebook2audiobook:latest
-```
- -Run with GPU Speedup (NVIDIA compatible only)
-```powershell
-docker run --pull always --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook:latest
 ```
 
-This command will start the Gradio interface on port 7860.(localhost:7860)
-- For more options add the parameter `--help`
-
-
-### Building the Docker Container
-> [!IMPORTANT]
-**Check out the Build [Arguments](docker-build-arguments) .** <br>
-
-- You can manually build the docker image with the command:
-```powershell
-docker build -t athomasson2/ebook2audiobook .
-```
-
-### Docker Build Arguments
-
-#### Edit: IF GPU isn't detected then you'll have to build the image with [Compose](docker-compose) or [Manual](#building-the-docker-container)
-
-Docker Build Arguments (GPU Options)
-
-GPU Options -> `--build-arg TORCH_VERSION=cuda118` Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] 
-
-All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
-
-`--build-arg SKIP_XTTS_TEST=true` (Saves space by not baking XTTSv2 model into docker image)
-
-
-### Docker headless guide
-
-> [!IMPORTANT]
-**For simpler headless setup use the [Compose](#compose-headless).** <br>
-
-- Before you do run this you need to create a dir named "input-folder" in your current dir
-  which will be linked, This is where you can put your input files for the docker image to see
-```bash
-mkdir input-folder && mkdir Audiobooks
-```
-- In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
-```bash
-docker run --pull always --rm \
-    -v $(pwd)/input-folder:/app/input_folder \
-    -v $(pwd)/audiobooks:/app/audiobooks \
-    athomasson2/ebook2audiobook \
-    --headless --ebook /input_folder/YOUR_EBOOK_FILE
-```
-- The output Audiobooks will be found in the Audiobook folder which will also be located
-  in your local dir you ran this docker command in
-
-
-#### To get the help command for the other parameters this program has you can run this 
+### Compose Build Arguments
 
 ```bash
-docker run --pull always --rm athomasson2/ebook2audiobook --help
-
+SKIP_XTTS_TEST: "true" # (Saves space by not baking xtts model into docker image)
+TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] # All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
 ```
-That will output this 
-[Help command output](#help-command-output)
 
 
-### Docker container file locations
-All ebook2audiobooks will have the base dir of `/app/`
-For example:
-`tmp` = `/app/tmp`
-`audiobooks` = `/app/audiobooks`
+### Compose container file locations
+
+```bash
+By Default: All compose containers share the contents your local `ebook2audiobook` folder
+```
 
 
 ### Common Docker Issues
 
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
-
-- `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory` (Just remove all post arguments as I replaced the `CMD` with `ENTRYPOINT` in the [Dockerfile](Dockerfile))
-  - Example: `docker run --pull always athomasson2/ebook2audiobook app.py --script_mode full_docker` - > corrected - > `docker run --pull always athomasson2/ebook2audiobook`
-  - Arguments can be easily added like this now `docker run --pull always athomasson2/ebook2audiobook --share`
-
-- Docker gets stuck downloading Fine-Tuned models.
-  (This does not happen for every computer but some appear to run into this issue)
-  Disabling the progress bar appears to fix the issue,
-  as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
-  Example of adding this fix in the `docker run` command
-```Dockerfile
-docker run --pull always --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
-    -p 7860:7860 athomasson2/ebook2audiobook
-```
 
 
 ## Fine Tuned TTS models
