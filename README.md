@@ -87,13 +87,14 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
-- [Docker](#docker) 
-  - [GPU options](#docker-gpu-options)
-  - [Docker Run](#running-the-pre-built-docker-container)
-  - [Docker Build](#building-the-docker-container)
+- [Docker](#docker-compose)
   - [Docker Compose (Recommended)](#docker-compose)
-  - [Docker headless guide](#docker-headless-guide)
+  - [Docker Compose Headless](#docker-headless-guide)
+  - [Docker Run (pre-built)](#running-the-pre-built-docker-container)
+  - [Docker Build (Manual)](#building-the-docker-container)
+  - [Docker Build Arguments (GPU Options)](#docker-build-arguments)
   - [Docker container file locations](#docker-container-file-locations)
+  - [Docker Headless Guide](#docker-headless-guide)
   - [Common Docker issues](#common-docker-issues)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-formats)
@@ -341,24 +342,55 @@ NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] 
 
 TIP: if it needs some more pauses, just add '###' or '[pause]' between the words you wish more pause. one [pause] equals to 1.4 seconds
 
-### Docker
+
+### Docker Compose
 > [!IMPORTANT]
-**[Compose](#docker-compose) is recommended.** <br>
+**Recommended for Containers.** <br>
 
-#### Docker GPU Options
+This project uses Docker Compose to run locally. You can enable or disable GPU support 
+by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
 
-Available pre-build tags: `latest` (CUDA 11.8)
-#### Edit: IF GPU isn't detected then you'll have to build the image -> [Building the Docker Container](#building-the-docker-container)
+
+
+#### Steps to Run
+1. **Clone the Repository** (if you haven't already):
+   ```bash
+   git clone https://github.com/DrewThomasson/ebook2audiobook.git
+   cd ebook2audiobook
+   ```
+2. **Set GPU Support (disabled by default)**
+  To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
+3. **Start the service:**
+    ```bash
+    # Docker
+    docker-compose up -d # To rebuild add --build
+
+    # Podman
+    podman compose -f podman-compose.yml up -d # To rebuild add --build
+    ```
+4. **Access the service:**
+  The service will be available at http://localhost:7860.
+
+### Compose Headless
+
+[Headless Wiki for more info](https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide)
+
+A headless example is already contained within the `docker-compose.yml` file.
+
+The `docker-compose.yml` file will act as the base dir for any headless commands added.
+
 
 #### Running the pre-built Docker Container
 
+Available pre-build tags: `latest` (CUDA 11.8)
+
  -Run with CPU only
 ```powershell
-docker run --pull always --rm -p 7860:7860 athomasson2/ebook2audiobook
+docker run --pull always --rm -p 7860:7860 athomasson2/ebook2audiobook:latest
 ```
  -Run with GPU Speedup (NVIDIA compatible only)
 ```powershell
-docker run --pull always --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
+docker run --pull always --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook:latest
 ```
 
 This command will start the Gradio interface on port 7860.(localhost:7860)
@@ -366,13 +398,22 @@ This command will start the Gradio interface on port 7860.(localhost:7860)
 
 
 #### Building the Docker Container
+> [!IMPORTANT]
+**Check out the Build [Arguments](docker-build-arguments) .** <br>
+
 - You can build the docker image with the command:
 ```powershell
 docker build -t athomasson2/ebook2audiobook .
 ```
-#### Avalible Docker Build Arguments
 
-`--build-arg TORCH_VERSION=cuda118` Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] 
+#### Docker Build Arguments
+
+#### Edit: IF GPU isn't detected then you'll have to build the image with [Compose](docker-compose) or [Manual](#building-the-docker-container)
+
+
+Docker Build Arguments (GPU Options)
+
+GPU Options -> `--build-arg TORCH_VERSION=cuda118` Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] 
 
 All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
 
@@ -416,41 +457,6 @@ docker run --pull always --rm athomasson2/ebook2audiobook --help
 ```
 That will output this 
 [Help command output](#help-command-output)
-
-
-### Docker Compose
-This project uses Docker Compose to run locally. You can enable or disable GPU support 
-by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
-
-
-#### Steps to Run
-1. **Clone the Repository** (if you haven't already):
-   ```bash
-   git clone https://github.com/DrewThomasson/ebook2audiobook.git
-   cd ebook2audiobook
-   ```
-2. **Set GPU Support (disabled by default)**
-  To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
-3. **Start the service:**
-    ```bash
-    # Docker
-    docker-compose up -d # To rebuild add --build
-
-    # Podman
-    podman compose -f podman-compose.yml up -d # To rebuild add --build
-    ```
-4. **Access the service:**
-  The service will be available at http://localhost:7860.
-
-### Compose Headless
-
-[Headless Wiki for more info](https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide)
-
-A headless example is already contained within the `docker-compose.yml` file.
-
-The `docker-compose.yml` file will act as the base dir for any headless commands added.
-
-
 
 
 ## Common Docker Issues
