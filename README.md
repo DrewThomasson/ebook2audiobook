@@ -89,7 +89,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
   - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
 - [Docker](#docker-compose)
   - [Docker Compose (Recommended)](#docker-compose)
-  - [Docker Compose Headless](#docker-headless-guide)
+  - [Docker Compose Headless](#compose-headless)
   - [Compose Build Arguments](#compose-build-arguments)
   - [Compose container file locations](#compose-container-file-locations)
   - [Common Docker issues](#common-docker-issues)
