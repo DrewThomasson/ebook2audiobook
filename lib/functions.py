@@ -556,10 +556,8 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         stanza_nlp = False
         if session['language'] in year_to_decades_languages:
             try:
-                stanza_model = os.path.join(os.getenv("STANZA_RESOURCES_DIR"), session['language_iso1'], 'default.zip')
-                if not os.path.exists(stanza_model):
-                    stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
-                stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=False)
+                stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
+                stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=True, download_method="reuse_resources")
             except (ConnectionError, TimeoutError) as e:
                 error = f'Stanza model download connection error: {e}. Retry later'
                 return error, None
