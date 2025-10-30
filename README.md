@@ -176,9 +176,9 @@ cd ebook2audiobook
    
 1. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks. `http://localhost:7860/`
 2. **For Public Link**:
-   `python app.py --share` (all OS)
    `./ebook2audiobook.sh --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
+   `python app.py --share` (all OS)
 
 > [!IMPORTANT]
 **If the script is stopped and run again, you need to refresh your gradio GUI interface<br>
