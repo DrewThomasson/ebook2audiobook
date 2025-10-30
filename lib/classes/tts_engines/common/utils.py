@@ -1,4 +1,5 @@
 import os
+import gc
 import torch
 import regex as re
 import stanza
@@ -16,6 +17,7 @@ def unload_tts(device:str, reserved_keys:list[str]|None, tts_key:str)->bool:
                 if tts_key not in reserved_keys:
                     if tts_key in loaded_tts:
                         del loaded_tts[tts_key]
+            gc.collect()
             if device == "cuda":
                 torch.cuda.empty_cache()
                 torch.cuda.ipc_collect()
