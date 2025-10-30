@@ -7,6 +7,8 @@ import socket
 import subprocess
 import sys
 import tempfile
+import psutil
+import time
 import warnings
 
 from importlib.metadata import version, PackageNotFoundError
@@ -184,7 +186,28 @@ def is_port_in_use(port:int)->bool:
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
         return s.connect_ex(('0.0.0.0',port))==0
 
+def kill_previous_instances(script_name: str):
+    current_pid = os.getpid()
+    this_script_path = os.path.realpath(script_name)
+    for proc in psutil.process_iter(['pid', 'cmdline']):
+        try:
+            cmdline = proc.info['cmdline']
+            if not cmdline:
+                continue
+            # unify case and absolute paths for comparison
+            joined_cmd = " ".join(cmdline).lower()
+            if this_script_path.lower().endswith(script_name.lower()) and \
+               (script_name.lower() in joined_cmd) and \
+               proc.info['pid'] != current_pid:
+                print(f"[WARN] Found running instance PID={proc.info['pid']} -> killing it.")
+                proc.kill()
+                proc.wait(timeout=3)
+        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+            continue
+
 def main()->None:
+    script_name = os.path.basename(sys.argv[0])
+    kill_previous_instances(script_name)
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
