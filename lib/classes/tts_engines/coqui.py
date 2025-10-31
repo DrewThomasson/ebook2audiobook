@@ -33,7 +33,6 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     torch.cuda.empty_cache()
-    torch.cuda.set_allocator_settings(os.environ["PYTORCH_CUDA_ALLOC_CONF"])
 
 class Coqui:
     def __init__(self,session:DictProxy):
