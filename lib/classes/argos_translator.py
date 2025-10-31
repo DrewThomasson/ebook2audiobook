@@ -76,6 +76,9 @@ class ArgosTranslator:
                     target_package=pkg
                     break
             if target_package:
+                #tmp_dir = os.path.join(session['process_dir'], "tmp")
+                #os.makedirs(tmp_dir, exist_ok=True)
+                #with tempfile.TemporaryDirectory(dir=tmp_dir) as tmpdirname:
                 with tempfile.TemporaryDirectory() as tmpdirname:
                     print(f"Downloading package for translation from {source_lang} to {target_lang}...")
                     package_path=target_package.download()

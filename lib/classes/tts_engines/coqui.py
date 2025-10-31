@@ -450,7 +450,9 @@ class Coqui:
             waveform = resampler(waveform)
         wav_tensor = waveform.squeeze(0)
         wav_numpy = wav_tensor.cpu().numpy()
-        tmp_fh = tempfile.NamedTemporaryFile(suffix=".wav",delete=False)
+        os.path.join(self.session['process_dir'], 'tmp')
+        os.makedirs(tmp_dir, exist_ok=True)
+        tmp_fh = tempfile.NamedTemporaryFile(dir=tmp_dir, suffix=".wav", delete=False)
         tmp_path = tmp_fh.name
         tmp_fh.close()
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")

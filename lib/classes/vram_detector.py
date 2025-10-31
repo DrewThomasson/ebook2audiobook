@@ -45,7 +45,10 @@ class VRAMDetector:
                 gpus.append({"name":name.group(1).strip(),"vram_bytes":val,"vram":self._fmt(val)})
         if any(g["vram_bytes"]>0 for g in gpus):
             return gpus
-        with tempfile.NamedTemporaryFile(delete = False, suffix = ".txt") as tf:
+        #temp_dir = os.path.join(session['process_dir'], "tmp")
+        #os.makedirs(temp_dir, exist_ok=True)
+        #with tempfile.NamedTemporaryFile(dir=temp_dir, suffix=".txt", delete=False) as tf:
+        with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tf:
             path = tf.name
         try:
             subprocess.Popen(["dxdiag","/t",path],stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
@@ -69,7 +72,10 @@ class VRAMDetector:
 
     def _get_windows_shared(self)->int:
         try:
-            with tempfile.NamedTemporaryFile(delete = False, suffix = ".txt") as tf:
+            #temp_dir = os.path.join(session['process_dir'], "tmp")
+            #os.makedirs(temp_dir, exist_ok=True)
+            #with tempfile.NamedTemporaryFile(dir=temp_dir, suffix=".txt", delete=False) as tf:
+            with tempfile.NamedTemporaryFile(suffix=".txt", delete=False) as tf:
                 path = tf.name
             subprocess.Popen(["dxdiag","/t",path],stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
             for _ in range(30):
