@@ -443,9 +443,13 @@ def convert2epub(id:str)->bool:
         if title:
             cmd += ['--title', title]
         if author:
-            cmd += ['--authors', author]
+            cmd += ['--authors', author]        
+        clean_env = os.environ.copy()
+        for var in ("PYTHONPATH", "PYTHONHOME", "VIRTUAL_ENV"):
+            clean_env.pop(var, None)
         result = subprocess.run(
             cmd,
+            env=clean_env,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
