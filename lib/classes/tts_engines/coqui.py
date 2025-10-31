@@ -463,7 +463,8 @@ class Coqui:
             dtype = torch.bfloat16 if getattr(self, "is_bfloat", False) and torch.cuda.is_bf16_supported() else torch.float16
             return torch.amp.autocast("cuda", dtype=dtype)
         else:
-            dtype = torch.bfloat16 if torch.cpu.is_bf16_supported() else torch.float32
+            cpu_bf16_supported = getattr(torch.cpu, "is_bf16_supported", lambda: False)()
+            dtype = torch.bfloat16 if cpu_bf16_supported else torch.float32
             return torch.amp.autocast("cpu", dtype=dtype)
 
     def convert(self, s_n:int, s:str)->bool:
