@@ -68,6 +68,7 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     torch.cuda.empty_cache()
+    torch.cuda.synchronize()
 
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 context = None
@@ -580,6 +581,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             gc.collect()
             if sesion['device'] == 'cuda':
                 torch.cuda.empty_cache()
+                torch.cuda.synchronize()
         if len(chapters) == 0:
             error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
             return error, None

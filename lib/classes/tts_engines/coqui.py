@@ -858,6 +858,7 @@ class Coqui:
                                     if self.session['device'] == 'cuda' and torch.cuda.is_available():
                                         torch.cuda.empty_cache()
                                         torch.cuda.ipc_collect()
+                                        torch.cuda.synchronize()
                                     gc.collect()
                             self.audio_segments = []
                             if os.path.exists(final_sentence_file):
