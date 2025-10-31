@@ -2067,14 +2067,14 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                             msg_extra = ''
                             vram_dict = VRAMDetector().detect_vram(session['device'])
                             free_vram_bytes = vram_dict.get('free_bytes', 0)
-                            total_vram_gb = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100)
-                            if total_vram_gb <= 4.0:
-                                msg_extra += '<br/>VRAM not detected! restrict to 4GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}GB'
+                            total_vram_gb = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
+                            if total_vram_gb == 0:
+                                msg_extra += '<br/>VRAM not detected! restrict to 1GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}GB'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
                             else:
-                                msg_extra += f'<br/>Free VRAM detected: {total_vram_gb}GB'
+                                msg_extra += f'<br/>Free VRAM available: {total_vram_gb}GB'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
                             if session['device'] == 'cuda':
