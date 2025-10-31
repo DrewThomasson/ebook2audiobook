@@ -2067,9 +2067,9 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                             msg = ''
                             msg_extra = ''
                             vram_dict = VRAMDetector().detect_vram(session['device'])
-                            total_vram_bytes = float(re.findall(r'[\d.]+', vram_dict.get('free_human', 0))[0])
-                            total_vram_gb = int(total_vram_bytes / (1024 ** 3) * 100) / 100
-                            if total_vram_gb <= 4:
+                            free_vram_bytes = vram_dict.get('free_bytes', 0)
+                            total_vram_gb = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100)
+                            if total_vram_gb <= 4.0:
                                 msg_extra += '<br/>VRAM not detected! restrict to 4GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}GB'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
