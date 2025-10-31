@@ -459,12 +459,12 @@ class Coqui:
         return tmp_path
 
     def _autocast_context(self):
-        if torch.cuda.is_available():
+        if self.session['device'] == 'cuda' and torch.cuda.is_available():
             dtype = torch.bfloat16 if getattr(self, "is_bfloat", False) and torch.cuda.is_bf16_supported() else torch.float16
-            return torch.cuda.amp.autocast(dtype=dtype)
+            return torch.amp.autocast("cuda", dtype=dtype)
         else:
             dtype = torch.bfloat16 if torch.cpu.is_bf16_supported() else torch.float32
-            return torch.cpu.amp.autocast(dtype=dtype)
+            return torch.amp.autocast("cpu", dtype=dtype)
 
     def convert(self, s_n:int, s:str)->bool:
         global xtts_builtin_speakers_list
@@ -854,7 +854,7 @@ class Coqui:
                                 if self.sentence_idx:
                                     torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
                                     del audio_tensor
-                                    if torch.cuda.is_available():
+                                    if self.session['device'] == 'cuda' and torch.cuda.is_available():
                                         torch.cuda.empty_cache()
                                         torch.cuda.ipc_collect()
                                     gc.collect()
