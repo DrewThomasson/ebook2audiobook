@@ -2075,8 +2075,9 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
                             else:
                                 msg_extra += f'<br/>Free VRAM available: {total_vram_gb}GB'
-                                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
+                                if total_vram_gb > 4.0:
+                                    if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                        os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
                             if session['device'] == 'cuda':
                                 session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
                                 if session['device'] == 'cpu':
