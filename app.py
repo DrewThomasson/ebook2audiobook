@@ -254,7 +254,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
     headless_optional_group.add_argument(options[7], type=str, default=None, help='''(Optional) Path to the voice cloning file for TTS engine. 
     Uses the default voice if not present.''')
     headless_optional_group.add_argument(options[8], type=str, default=default_device, choices=list(devices.values()), help=f'''(Optional) Pprocessor unit type for the conversion. 
-    Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.''')
+    Default is set in ./lib/conf.py if not present. Fall back to CPU if CUDA or MPS is not available.''')
     headless_optional_group.add_argument(options[9], type=str, default=None, choices=tts_engine_list_keys+tts_engine_list_values, help=f'''(Optional) Preferred TTS engine (available are: {tts_engine_list_keys+tts_engine_list_values}.
     Default depends on the selected language. The tts engine should be compatible with the chosen language''')
     headless_optional_group.add_argument(options[10], type=str, default=None, help=f'''(Optional) Path to the custom model zip file cntaining mandatory model files. 
@@ -333,7 +333,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             args['chapters_preview'] = False
             args['event'] = ''
             args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
-            args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
+            args['device'] = devices['CUDA'] if args['device'] == devices['CUDA'] else args['device']
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
             args['output_split_hours'] = default_output_split_hours
