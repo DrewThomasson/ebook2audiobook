@@ -579,7 +579,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         if stanza_nlp:
             del stanza_nlp
             gc.collect()
-            if sesion['device'] == 'cuda':
+            if session['device'] == 'cuda':
                 torch.cuda.empty_cache()
                 torch.cuda.synchronize()
         if len(chapters) == 0:
