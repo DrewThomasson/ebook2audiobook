@@ -312,7 +312,7 @@ class Coqui:
                                 }.items()
                                 if self.session.get(key) is not None
                             }
-                            with torch.no_grad(), self.get_autocast_context():
+                            with torch.no_grad(), self._get_autocast_context():
                                 result = tts.inference(
                                     text=default_text.strip(),
                                     language=self.session['language_iso1'],
@@ -394,7 +394,7 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        with torch.no_grad(), self.get_autocast_context():
+                        with torch.no_grad(), self._get_autocast_context():
                             torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
                                 default_text,
@@ -530,7 +530,7 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        with torch.no_grad(), self.get_autocast_context():
+                        with torch.no_grad(), self._get_autocast_context():
                             result = self.tts.inference(
                                 text=sentence.replace('.', ' —'),
                                 language=self.session['language_iso1'],
@@ -580,7 +580,7 @@ class Coqui:
                                 self.npz_data["coarse_prompt"],
                                 self.npz_data["fine_prompt"]
                         ]
-                        with torch.no_grad(), self.get_autocast_context():
+                        with torch.no_grad(), self._get_autocast_context():
                             torch.manual_seed(67878789)
                             audio_sentence, _ = self.tts.generate_audio(
                                 sentence,
@@ -603,7 +603,7 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            with torch.no_grad(), self.get_autocast_context():
+                            with torch.no_grad(), self._get_autocast_context():
                                 self.tts.tts_to_file(
                                     text=sentence,
                                     file_path=tmp_in_wav,
@@ -662,7 +662,7 @@ class Coqui:
                             if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
-                            with torch.no_grad(), self.get_autocast_context():
+                            with torch.no_grad(), self._get_autocast_context():
                                 audio_sentence = self.tts.tts(
                                     text=sentence,
                                     **speaker_argument
@@ -675,7 +675,7 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            with torch.no_grad(), self.get_autocast_context():
+                            with torch.no_grad(), self._get_autocast_context():
                                 self.tts.tts_to_file(
                                     text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                     file_path=tmp_in_wav,
@@ -732,7 +732,7 @@ class Coqui:
                             if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
-                            with torch.no_grad(), self.get_autocast_context():
+                            with torch.no_grad(), self._get_autocast_context():
                                 audio_sentence = self.tts.tts(
                                     text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                     **speaker_argument
@@ -745,7 +745,7 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            with torch.no_grad(), self.get_autocast_context():
+                            with torch.no_grad(), self._get_autocast_context():
                                 self.tts.tts_to_file(
                                     text=re.sub(not_supported_punc_pattern, '', sentence),
                                     file_path=tmp_in_wav,
@@ -804,7 +804,7 @@ class Coqui:
                             if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
-                            with torch.no_grad(), self.get_autocast_context():
+                            with torch.no_grad(), self._get_autocast_context():
                                 audio_sentence = self.tts.tts(
                                     text=re.sub(not_supported_punc_pattern, '', sentence),
                                     **speaker_argument
@@ -820,7 +820,7 @@ class Coqui:
                         else:
                             voice_key = default_engine_settings[TTS_ENGINES['YOURTTS']]['voices']['ElectroMale-2']
                             speaker_argument = {"speaker": voice_key}
-                        with torch.no_grad(), self.get_autocast_context():
+                        with torch.no_grad(), self._get_autocast_context():
                             audio_sentence = self.tts.tts(
                                 text=re.sub(not_supported_punc_pattern, '', sentence),
                                 language=language,
