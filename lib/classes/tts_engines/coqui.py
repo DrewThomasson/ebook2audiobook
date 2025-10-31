@@ -17,6 +17,7 @@ from torch import Tensor
 from huggingface_hub import hf_hub_download
 from pathlib import Path
 from pprint import pprint
+import gc
 
 from lib import *
 from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
@@ -32,6 +33,7 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     torch.cuda.empty_cache()
+    torch.cuda.set_allocator_settings(os.environ["PYTORCH_CUDA_ALLOC_CONF"])
 
 class Coqui:
     def __init__(self,session:DictProxy):
@@ -310,7 +312,7 @@ class Coqui:
                                 }.items()
                                 if self.session.get(key) is not None
                             }
-                            with torch.no_grad():
+                            with torch.no_grad(), self.get_autocast_context():
                                 result = tts.inference(
                                     text=default_text.strip(),
                                     language=self.session['language_iso1'],
@@ -392,7 +394,7 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        with torch.no_grad():
+                        with torch.no_grad(), self.get_autocast_context():
                             torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
                                 default_text,
@@ -454,6 +456,14 @@ class Coqui:
         tmp_fh.close()
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
         return tmp_path
+
+    def _autocast_context(self):
+        if torch.cuda.is_available():
+            dtype = torch.bfloat16 if getattr(self, "is_bfloat", False) and torch.cuda.is_bf16_supported() else torch.float16
+            return torch.cuda.amp.autocast(dtype=dtype)
+        else:
+            dtype = torch.bfloat16 if torch.cpu.is_bf16_supported() else torch.float32
+            return torch.cpu.amp.autocast(dtype=dtype)
 
     def convert(self, s_n:int, s:str)->bool:
         global xtts_builtin_speakers_list
@@ -520,7 +530,7 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        with torch.no_grad():
+                        with torch.no_grad(), self.get_autocast_context():
                             result = self.tts.inference(
                                 text=sentence.replace('.', ' —'),
                                 language=self.session['language_iso1'],
@@ -570,7 +580,7 @@ class Coqui:
                                 self.npz_data["coarse_prompt"],
                                 self.npz_data["fine_prompt"]
                         ]
-                        with torch.no_grad():
+                        with torch.no_grad(), self.get_autocast_context():
                             torch.manual_seed(67878789)
                             audio_sentence, _ = self.tts.generate_audio(
                                 sentence,
@@ -593,11 +603,12 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            self.tts.tts_to_file(
-                                text=sentence,
-                                file_path=tmp_in_wav,
-                                **speaker_argument
-                            )
+                            with torch.no_grad(), self.get_autocast_context():
+                                self.tts.tts_to_file(
+                                    text=sentence,
+                                    file_path=tmp_in_wav,
+                                    **speaker_argument
+                                )
                             if settings['voice_path'] in settings['semitones'].keys():
                                 semitones = settings['semitones'][settings['voice_path']]
                             else:
@@ -651,10 +662,11 @@ class Coqui:
                             if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
-                            audio_sentence = self.tts.tts(
-                                text=sentence,
-                                **speaker_argument
-                            )
+                            with torch.no_grad(), self.get_autocast_context():
+                                audio_sentence = self.tts.tts(
+                                    text=sentence,
+                                    **speaker_argument
+                                )
                     elif self.session['tts_engine'] == TTS_ENGINES['FAIRSEQ']:
                         speaker_argument = {}
                         not_supported_punc_pattern = re.compile(r"[.:—]")
@@ -663,11 +675,12 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            self.tts.tts_to_file(
-                                text=re.sub(not_supported_punc_pattern, ' ', sentence),
-                                file_path=tmp_in_wav,
-                                **speaker_argument
-                            )
+                            with torch.no_grad(), self.get_autocast_context():
+                                self.tts.tts_to_file(
+                                    text=re.sub(not_supported_punc_pattern, ' ', sentence),
+                                    file_path=tmp_in_wav,
+                                    **speaker_argument
+                                )
                             if settings['voice_path'] in settings['semitones'].keys():
                                 semitones = settings['semitones'][settings['voice_path']]
                             else:
@@ -719,10 +732,11 @@ class Coqui:
                             if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
-                            audio_sentence = self.tts.tts(
-                                text=re.sub(not_supported_punc_pattern, ' ', sentence),
-                                **speaker_argument
-                            )
+                            with torch.no_grad(), self.get_autocast_context():
+                                audio_sentence = self.tts.tts(
+                                    text=re.sub(not_supported_punc_pattern, ' ', sentence),
+                                    **speaker_argument
+                                )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
                         speaker_argument = {}
                         not_supported_punc_pattern = re.compile(r'["—…¡¿]')
@@ -731,11 +745,12 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            self.tts.tts_to_file(
-                                text=re.sub(not_supported_punc_pattern, '', sentence),
-                                file_path=tmp_in_wav,
-                                **speaker_argument
-                            )
+                            with torch.no_grad(), self.get_autocast_context():
+                                self.tts.tts_to_file(
+                                    text=re.sub(not_supported_punc_pattern, '', sentence),
+                                    file_path=tmp_in_wav,
+                                    **speaker_argument
+                                )
                             if settings['voice_path'] in settings['semitones'].keys():
                                 semitones = settings['semitones'][settings['voice_path']]
                             else:
@@ -789,10 +804,11 @@ class Coqui:
                             if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
-                            audio_sentence = self.tts.tts(
-                                text=re.sub(not_supported_punc_pattern, '', sentence),
-                                **speaker_argument
-                            )
+                            with torch.no_grad(), self.get_autocast_context():
+                                audio_sentence = self.tts.tts(
+                                    text=re.sub(not_supported_punc_pattern, '', sentence),
+                                    **speaker_argument
+                                )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
                         trim_audio_buffer = 0.002
                         speaker_argument = {}
@@ -804,7 +820,7 @@ class Coqui:
                         else:
                             voice_key = default_engine_settings[TTS_ENGINES['YOURTTS']]['voices']['ElectroMale-2']
                             speaker_argument = {"speaker": voice_key}
-                        with torch.no_grad():
+                        with torch.no_grad(), self.get_autocast_context():
                             audio_sentence = self.tts.tts(
                                 text=re.sub(not_supported_punc_pattern, '', sentence),
                                 language=language,
@@ -837,6 +853,10 @@ class Coqui:
                                 if self.sentence_idx:
                                     torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
                                     del audio_tensor
+                                    if torch.cuda.is_available():
+                                        torch.cuda.empty_cache()
+                                        torch.cuda.ipc_collect()
+                                    gc.collect()
                             self.audio_segments = []
                             if os.path.exists(final_sentence_file):
                                 return True

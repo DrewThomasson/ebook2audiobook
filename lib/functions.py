@@ -16,6 +16,7 @@ def patched_torch_load(*args, **kwargs)->Any:
     return _original_load(*args, **kwargs)
 
 torch.load = patched_torch_load
+torch.cuda.set_allocator_settings(os.environ["PYTORCH_CUDA_ALLOC_CONF"])
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
 import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn
