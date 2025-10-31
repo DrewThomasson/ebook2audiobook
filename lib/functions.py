@@ -450,8 +450,7 @@ def convert2epub(id:str)->bool:
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            encoding='utf-8',
-            env={}
+            encoding='utf-8'
         )
         print(result.stdout)
         return True
@@ -2075,7 +2074,7 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
                             else:
-                                msg_extra += f'<br/>VRAM detected with {total_vram_gb}GB'
+                                msg_extra += f'<br/>Free VRAM detected: {total_vram_gb}GB'
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
                             if session['device'] == 'cuda':
