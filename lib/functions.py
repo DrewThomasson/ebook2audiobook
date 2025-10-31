@@ -48,6 +48,7 @@ from queue import Queue, Empty
 from types import MappingProxyType
 from urllib.parse import urlparse
 from starlette.requests import ClientDisconnect
+from numba import cuda
 
 from lib import *
 from lib.classes.subprocess_pipe import SubprocessPipe
@@ -68,8 +69,8 @@ if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     torch.cuda.empty_cache()
-    torch.cuda.select_device(0)
-    torch.cuda.get_current_device().reset()
+    cuda.select_device(0)
+    cuda.get_current_device().reset()
 
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 context = None
