@@ -577,7 +577,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             elif len(sentences_list) > 0:
                 chapters.append(sentences_list)
         if stanza_nlp:
-            del stanza, stanza_nlp
+            del stanza_nlp
             gc.collect()
             if sesion['device'] == 'cuda':
                 torch.cuda.empty_cache()
