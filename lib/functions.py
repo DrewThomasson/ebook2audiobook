@@ -2730,7 +2730,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
                                 gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
-                                gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[key for key, value in devices.items()], type='value', value=default_device, interactive=True)
+                                gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=list(devices.items()), type='value', value=default_device, interactive=True)
                         with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_tts_engine', elem_classes=['gr-group']):
                                 gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value='TTS Engine')
