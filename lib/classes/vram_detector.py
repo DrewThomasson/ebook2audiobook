@@ -6,37 +6,37 @@ class VRAMDetector:
 		self.system = platform.system().lower()
 
 	@staticmethod
-	def _fmt(b: int) -> str:
+	def _fmt(b:int)->str:
 		if not b: return "Unknown"
 		if b >= 1024**3: return f"{b/1024**3:.2f} GB"
 		if b >= 1024**2: return f"{b/1024**2:.2f} MB"
 		if b >= 1024: return f"{b/1024:.2f} KB"
 		return f"{b} B"
 
-	def detect_vram(self, as_json: bool = False) -> Any:
+	def detect_vram(self, device:str, as_json:bool=False)->Any:
 		info = {}
-
 		# ───────────────────────────── CUDA (NVIDIA)
 		try:
 			import torch
-			if torch.cuda.is_available():
-				free, total = torch.cuda.mem_get_info()
-				alloc = torch.cuda.memory_allocated()
-				resv = torch.cuda.memory_reserved()
-				info = {
-					"os": self.system,
-					"device_type": "cuda",
-					"device_name": torch.cuda.get_device_name(0),
-					"free_bytes": free,
-					"total_bytes": total,
-					"allocated_bytes": alloc,
-					"reserved_bytes": resv,
-					"free_human": self._fmt(free),
-					"total_human": self._fmt(total),
-					"allocated_human": self._fmt(alloc),
-					"reserved_human": self._fmt(resv),
-				}
-				return json.dumps(info, indent=2) if as_json else info
+            if device == 'cuda':
+                if torch.cuda.is_available():
+                    free, total = torch.cuda.mem_get_info()
+                    alloc = torch.cuda.memory_allocated()
+                    resv = torch.cuda.memory_reserved()
+                    info = {
+                        "os": self.system,
+                        "device_type": "cuda",
+                        "device_name": torch.cuda.get_device_name(0),
+                        "free_bytes": free,
+                        "total_bytes": total,
+                        "allocated_bytes": alloc,
+                        "reserved_bytes": resv,
+                        "free_human": self._fmt(free),
+                        "total_human": self._fmt(total),
+                        "allocated_human": self._fmt(alloc),
+                        "reserved_human": self._fmt(resv),
+                    }
+                    return json.dumps(info, indent=2) if as_json else info
 
 			# ─────────────────────────── ROCm (AMD)
 			if hasattr(torch, "hip") and torch.hip.is_available():
