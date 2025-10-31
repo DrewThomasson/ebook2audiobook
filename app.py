@@ -7,7 +7,6 @@ import socket
 import subprocess
 import sys
 import tempfile
-import psutil
 import time
 import warnings
 
@@ -189,6 +188,7 @@ def is_port_in_use(port:int)->bool:
 def kill_previous_instances(script_name: str):
     current_pid = os.getpid()
     this_script_path = os.path.realpath(script_name)
+    import psutil
     for proc in psutil.process_iter(['pid', 'cmdline']):
         try:
             cmdline = proc.info['cmdline']
@@ -206,8 +206,6 @@ def kill_previous_instances(script_name: str):
             continue
 
 def main()->None:
-    script_name = os.path.basename(sys.argv[0])
-    kill_previous_instances(script_name)
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
         description='Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.',
@@ -217,12 +215,12 @@ Windows:
     Gradio/GUI:
     ebook2audiobook.cmd
     Headless mode:
-    ebook2audiobook.cmd --headless --ebook '/path/to/file'
+    ebook2audiobook.cmd --headless --ebook '/path/to/file' --language eng
 Linux/Mac:
     Gradio/GUI:
     ./ebook2audiobook.sh
     Headless mode:
-    ./ebook2audiobook.sh --headless --ebook '/path/to/file'
+    ./ebook2audiobook.sh --headless --ebook '/path/to/file' --language eng
     
 Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         ''',
@@ -263,27 +261,27 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
     Please refer to ./lib/models.py''')
     headless_optional_group.add_argument(options[11], type=str, default=default_fine_tuned, help='''(Optional) Fine tuned model path. Default is builtin model.''')
     headless_optional_group.add_argument(options[12], type=str, default=default_output_format, help=f'''(Optional) Output audio format. Default is set in ./lib/conf.py''')
-    headless_optional_group.add_argument(options[13], type=float, default=None, help=f"""(xtts only, optional) Temperature for the model. 
+    headless_optional_group.add_argument(options[13], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['temperature'], help=f"""(xtts only, optional) Temperature for the model. 
     Default to config.json model. Higher temperatures lead to more creative outputs.""")
-    headless_optional_group.add_argument(options[14], type=float, default=None, help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder. 
+    headless_optional_group.add_argument(options[14], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['length_penalty'], help=f"""(xtts only, optional) A length penalty applied to the autoregressive decoder. 
     Default to config.json model. Not applied to custom models.""")
-    headless_optional_group.add_argument(options[15], type=int, default=None, help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
+    headless_optional_group.add_argument(options[15], type=int, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['num_beams'], help=f"""(xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[16], type=float, default=None, help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
+    headless_optional_group.add_argument(options[16], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['repetition_penalty'], help=f"""(xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[17], type=int, default=None, help=f"""(xtts only, optional) Top-k sampling. 
+    headless_optional_group.add_argument(options[17], type=int, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['top_k'], help=f"""(xtts only, optional) Top-k sampling. 
     Lower values mean more likely outputs and increased audio generation speed. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[18], type=float, default=None, help=f"""(xtts only, optional) Top-p sampling. 
+    headless_optional_group.add_argument(options[18], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['top_p'], help=f"""(xtts only, optional) Top-p sampling. 
     Lower values mean more likely outputs and increased audio generation speed. Default to config.json model.""")
-    headless_optional_group.add_argument(options[19], type=float, default=None, help=f"""(xtts only, optional) Speed factor for the speech generation. 
+    headless_optional_group.add_argument(options[19], type=float, default=default_engine_settings[TTS_ENGINES['XTTSv2']]['speed'], help=f"""(xtts only, optional) Speed factor for the speech generation. 
     Default to config.json model.""")
     headless_optional_group.add_argument(options[20], action='store_true', help=f"""(xtts only, optional) Enable TTS text splitting. This option is known to not be very efficient. 
     Default to config.json model.""")
-    headless_optional_group.add_argument(options[21], type=float, default=None, help=f"""(bark only, optional) Text Temperature for the model. 
-    Default to {default_engine_settings[TTS_ENGINES['BARK']]['text_temp']}. Higher temperatures lead to more creative outputs.""")
-    headless_optional_group.add_argument(options[22], type=float, default=None, help=f"""(bark only, optional) Waveform Temperature for the model. 
-    Default to {default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp']}. Higher temperatures lead to more creative outputs.""")
+    headless_optional_group.add_argument(options[21], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['text_temp'], help=f"""(bark only, optional) Text Temperature for the model. 
+    Default to config.json model.""")
+    headless_optional_group.add_argument(options[22], type=float, default=default_engine_settings[TTS_ENGINES['BARK']]['waveform_temp'], help=f"""(bark only, optional) Waveform Temperature for the model. 
+    Default to config.json model.""")
     headless_optional_group.add_argument(options[23], type=str, help=f'''(Optional) Path to the output directory. Default is set in ./lib/conf.py''')
     headless_optional_group.add_argument(options[24], action='version', version=f'ebook2audiobook version {prog_version}', help='''Show the version of the script and exit''')
     headless_optional_group.add_argument(options[25], action='store_true', help=argparse.SUPPRESS)
@@ -331,12 +329,23 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False
-            args['chapters_control'] = False
+            args['chapters_preview'] = False
+            args['event'] = ''
             args['audiobooks_dir'] = os.path.abspath(args['output_dir']) if args['output_dir'] else audiobooks_cli_dir
             args['device'] = 'cuda' if args['device'] == 'gpu' else args['device']
             args['tts_engine'] = TTS_ENGINES[args['tts_engine']] if args['tts_engine'] in TTS_ENGINES.keys() else args['tts_engine'] if args['tts_engine'] in TTS_ENGINES.values() else None
             args['output_split'] = default_output_split
             args['output_split_hours'] = default_output_split_hours
+            args['xtts_temperature'] = args['temperature']
+            args['xtts_length_penalty'] = args['length_penalty']
+            args['xtts_num_beams'] = args['num_beams']
+            args['xtts_repetition_penalty'] = args['repetition_penalty']
+            args['xtts_top_k'] = args['top_k']
+            args['xtts_top_p'] = args['top_p']
+            args['xtts_speed'] = args['speed']
+            args['xtts_enable_text_splitting'] = False
+            args['bark_text_temp'] = args['text_temp']
+            args['bark_waveform_temp'] = args['waveform_temp']
             engine_setting_keys = {engine: list(settings.keys()) for engine, settings in default_engine_settings.items()}
             valid_model_keys = engine_setting_keys.get(args['tts_engine'], [])
             renamed_args = {}
@@ -397,10 +406,13 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             allowed_arguments = {'--share', '--script_mode'}
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
-                 web_interface(args, ctx)
+                web_interface(args, ctx)
+                #script_name = os.path.basename(sys.argv[0])
+                #kill_previous_instances(script_name)
             else:
                 error = 'Error: In non-headless mode, no option or only --share can be passed'
                 print(error)
                 sys.exit(1)
+
 if __name__ == '__main__':
     main()
