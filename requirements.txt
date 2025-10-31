@@ -10,6 +10,7 @@ beautifulsoup4
 fugashi
 sudachipy
 sudachidict_core
+mechanize
 ray
 unidic
 pymupdf4llm
