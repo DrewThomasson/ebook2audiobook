@@ -42,7 +42,7 @@ class Coqui:
             self.tts_vc = False
             self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
             self.tts_vc_key = default_vc_model.rsplit('/',1)[-1]
-            self.is_bf16 = True if self.session['device'] == 'cuda' and torch.cuda.is_bf16_supported()==True else False
+            self.is_bf16 = True if self.session['device'] == devices['CUDA'] and torch.cuda.is_bf16_supported()==True else False
             self.npz_path = None
             self.npz_data = None
             self.sentences_total_time = 0.0
@@ -246,11 +246,11 @@ class Coqui:
                             eval = True
                         )
             if self.tts:
-                if device=='cuda':
+                if device == devices['CUDA']:
                     self.tts.cuda()
                 else:
-                    if device=='mps':
-                        self.tts.to(torch.device('mps'))
+                    if device == devices['MPS']:
+                        self.tts.to(torch.device(devices['MPS']))
                     else:
                         self.tts.to(device)
                 loaded_tts[key]={"engine":self.tts,"config":config}
@@ -457,20 +457,18 @@ class Coqui:
         return tmp_path
 
     def _autocast_context(self):
-        device = self.session.get('device', 'cpu')
-        if device == 'cuda' and torch.cuda.is_available():
-            # ✅ CUDA autocast (supports float16 / bfloat16)
+        device = self.session.get('device', devices['CPU'])
+        if device == devices['CUDA'] and torch.cuda.is_available():
             dtype = (
                 torch.bfloat16
                 if getattr(self, "is_bfloat", False) and torch.cuda.is_bf16_supported()
                 else torch.float16
             )
-            return torch.cuda.amp.autocast(dtype=dtype)
-        if device == 'cpu':
-            # ✅ CPU autocast (supports only bfloat16)
+            return torch.cuda.amp.autocast(devices['CUDA'], dtype=dtype)
+        if device == devices['CPU']:
             cpu_bf16_supported = getattr(torch.cpu, "is_bf16_supported", lambda: False)()
             if cpu_bf16_supported:
-                return torch.cpu.amp.autocast()  # defaults to bfloat16
+                return torch.cpu.amp.autocast()
         return nullcontext()
 
     def convert(self, s_n:int, s:str)->bool:

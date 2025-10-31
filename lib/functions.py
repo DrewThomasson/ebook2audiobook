@@ -562,7 +562,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         if session['language'] in year_to_decades_languages:
             try:
                 stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
-                stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=True if session['device'] == 'cuda' else False, download_method="reuse_resources")
+                stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=True if session['device'] == devices['CUDA'] else False, download_method="reuse_resources")
             except (ConnectionError, TimeoutError) as e:
                 error = f'Stanza model download connection error: {e}. Retry later'
                 return error, None
@@ -2084,19 +2084,19 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                                 if total_vram_gb > 4.0:
                                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                                         os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
-                            if session['device'] == 'cuda':
-                                session['device'] = session['device'] if torch.cuda.is_available() else 'cpu'
-                                if session['device'] == 'cpu':
+                            if session['device'] == devices['CUDA']:
+                                session['device'] = session['device'] if torch.cuda.is_available() else devices['CPU']
+                                if session['device'] == devices['CPU']:
                                     msg += f"- GPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
-                            elif session['device'] == 'mps':
+                            elif session['device'] == devices['MPS']:
                                 if not torch.backends.mps.is_available():
-                                    session['device'] = 'cpu'
+                                    session['device'] = devices['CPU']
                                     if not torch.backends.mps.is_built():
                                         msg += "- MPS not available because the current PyTorch was not built with MPS enabled"
                                     else:
                                         msg += "- MPS not available because the current device does not have MPS-enabled"
                                     msg += f"<br/>- Read {default_gpu_wiki}<br/>- Switching to CPU for now"
-                            if session['device'] == 'cpu':
+                            if session['device'] == devices['CPU']:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_OFFLOAD_CPU'] = 'True'
                             if default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] == True:
@@ -2730,7 +2730,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                                     gr_voice_del_btn = gr.Button('🗑', elem_id='gr_voice_del_btn', elem_classes=['small-btn-red'], variant='secondary', interactive=True, visible=False, scale=0, min_width=60)
                             with gr.Group(elem_id='gr_group_device', elem_classes=['gr-group']):
                                 gr_device_markdown = gr.Markdown(elem_id='gr_device_markdown', elem_classes=['gr-markdown'], value='Processor')
-                                gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[('CPU','cpu'), ('GPU','cuda'), ('MPS','mps')], type='value', value=default_device, interactive=True)
+                                gr_device = gr.Dropdown(label='', elem_id='gr_device', choices=[(key if key != "CUDA" else "GPU", value) for key, value in devices.items()], type='value', value=default_device, interactive=True)
                         with gr.Column(elem_id='gr_col_2', elem_classes=['gr-col'], scale=3):
                             with gr.Group(elem_id='gr_group_tts_engine', elem_classes=['gr-group']):
                                 gr_tts_rating = gr.Markdown(elem_id='gr_tts_rating', elem_classes=['gr-markdown'], value='TTS Engine')
