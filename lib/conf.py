@@ -49,7 +49,7 @@ FULL_DOCKER = 'full_docker'
 
 debug_mode = True
 
-devices = {"CPU": "cpu", "GPU": "gpu", "MPS": "mps"}
+devices = {"CPU": "cpu", "CUDA": "cuda", "MPS": "mps"}
 default_device = devices['CPU']
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">howto wiki</a>'
 default_chapters_preview = False
