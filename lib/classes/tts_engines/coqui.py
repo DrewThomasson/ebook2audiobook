@@ -8,10 +8,13 @@ def patched_torch_load(*args, **kwargs):
     return _original_load(*args, **kwargs)
     
 torch.load = patched_torch_load
+torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.deterministic = True
 
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
 
+from contextlib import nullcontext
 from multiprocessing.managers import DictProxy
 from torch import Tensor
 from huggingface_hub import hf_hub_download
@@ -20,7 +23,7 @@ from pprint import pprint
 import gc
 
 from lib import *
-from lib.classes.tts_engines.common.utils import unload_tts, append_sentence2vtt
+from lib.classes.tts_engines.common.utils import cleanup_garbage, unload_tts, append_sentence2vtt
 from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_audio, normalize_audio, is_audio_data_valid
 
 #import logging
@@ -28,11 +31,6 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
-
-if torch.cuda.is_available():
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
-    torch.cuda.empty_cache()
 
 class Coqui:
     def __init__(self,session:DictProxy):
@@ -459,13 +457,21 @@ class Coqui:
         return tmp_path
 
     def _autocast_context(self):
-        if self.session['device'] == 'cuda' and torch.cuda.is_available():
-            dtype = torch.bfloat16 if getattr(self, "is_bfloat", False) and torch.cuda.is_bf16_supported() else torch.float16
-            return torch.amp.autocast("cuda", dtype=dtype)
-        else:
+        device = self.session.get('device', 'cpu')
+        if device == 'cuda' and torch.cuda.is_available():
+            # ✅ CUDA autocast (supports float16 / bfloat16)
+            dtype = (
+                torch.bfloat16
+                if getattr(self, "is_bfloat", False) and torch.cuda.is_bf16_supported()
+                else torch.float16
+            )
+            return torch.cuda.amp.autocast(dtype=dtype)
+        if device == 'cpu':
+            # ✅ CPU autocast (supports only bfloat16)
             cpu_bf16_supported = getattr(torch.cpu, "is_bf16_supported", lambda: False)()
-            dtype = torch.bfloat16 if cpu_bf16_supported else torch.float32
-            return torch.amp.autocast("cpu", dtype=dtype)
+            if cpu_bf16_supported:
+                return torch.cpu.amp.autocast()  # defaults to bfloat16
+        return nullcontext()
 
     def convert(self, s_n:int, s:str)->bool:
         global xtts_builtin_speakers_list
@@ -855,11 +861,7 @@ class Coqui:
                                 if self.sentence_idx:
                                     torchaudio.save(final_sentence_file, audio_tensor, settings['samplerate'], format=default_audio_proc_format)
                                     del audio_tensor
-                                    if self.session['device'] == 'cuda' and torch.cuda.is_available():
-                                        torch.cuda.empty_cache()
-                                        torch.cuda.ipc_collect()
-                                        torch.cuda.synchronize()
-                                    gc.collect()
+                                    cleanup_garbage()
                             self.audio_segments = []
                             if os.path.exists(final_sentence_file):
                                 return True

@@ -16,6 +16,8 @@ def patched_torch_load(*args, **kwargs)->Any:
     return _original_load(*args, **kwargs)
 
 torch.load = patched_torch_load
+torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.deterministic = True
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
 import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc
@@ -62,13 +64,6 @@ from lib.classes.tts_manager import TTSManager
 #    level=logging.INFO, # DEBUG for more verbosity
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
-
-gc.collect()
-if torch.cuda.is_available():
-    torch.backends.cudnn.benchmark = False
-    torch.backends.cudnn.deterministic = True
-    torch.cuda.empty_cache()
-    torch.cuda.synchronize()
 
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 context = None
@@ -226,6 +221,13 @@ class JSONDictProxyEncoder(json.JSONEncoder):
 ###############
 
 ctx_tracker = SessionTracker()
+
+def cleanup_garbage():
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        torch.cuda.synchronize()
 
 def prepare_dirs(src:str, session:DictProxy[str,Any])->bool:
     try:
@@ -578,10 +580,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 chapters.append(sentences_list)
         if stanza_nlp:
             del stanza_nlp
-            gc.collect()
-            if session['device'] == 'cuda':
-                torch.cuda.empty_cache()
-                torch.cuda.synchronize()
+            cleanup_garbage()
         if len(chapters) == 0:
             error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
             return error, None

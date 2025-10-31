@@ -7,6 +7,13 @@ import stanza
 from typing import Any, Union
 from lib.models import loaded_tts, max_tts_in_memory, TTS_ENGINES
 
+def cleanup_garbage():
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        torch.cuda.synchronize()
+
 def unload_tts(device:str, reserved_keys:list[str]|None, tts_key:str)->bool:
     try:
         if len(loaded_tts) >= max_tts_in_memory:
@@ -17,10 +24,7 @@ def unload_tts(device:str, reserved_keys:list[str]|None, tts_key:str)->bool:
                 if tts_key not in reserved_keys:
                     if tts_key in loaded_tts:
                         del loaded_tts[tts_key]
-        gc.collect()
-        if device == "cuda":
-            torch.cuda.empty_cache()
-            torch.cuda.ipc_collect()
+        cleanup_garbage()
         return True
     except Exception as e:
         error = f"unload_tts() error: {e}"
