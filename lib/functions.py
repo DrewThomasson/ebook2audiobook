@@ -18,7 +18,7 @@ def patched_torch_load(*args, **kwargs)->Any:
 torch.load = patched_torch_load
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
-import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn
+import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -63,10 +63,13 @@ from lib.classes.tts_manager import TTSManager
 #    format="%(asctime)s [%(levelname)s] %(message)s"
 #)
 
+gc.collect()
 if torch.cuda.is_available():
     torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
     torch.cuda.empty_cache()
+    cuda.select_device(0)
+    cuda.get_current_device().reset()
 
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 context = None
@@ -446,11 +449,11 @@ def convert2epub(id:str)->bool:
             cmd += ['--authors', author]        
         result = subprocess.run(
             cmd,
-            env={},
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            encoding='utf-8'
+            encoding='utf-8',
+            env={}
         )
         print(result.stdout)
         return True
