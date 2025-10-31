@@ -575,6 +575,11 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 break
             elif len(sentences_list) > 0:
                 chapters.append(sentences_list)
+        if stanza_nlp:
+            del stanza, stanza_nlp
+            gc.collect()
+            if sesion['device'] == 'cuda':
+                torch.cuda.empty_cache()
         if len(chapters) == 0:
             error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
             return error, None
