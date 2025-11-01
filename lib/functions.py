@@ -224,6 +224,8 @@ ctx_tracker = SessionTracker()
 def cleanup_garbage():
     gc.collect()
     if torch.cuda.is_available():
+        torch.set_float32_matmul_precision("medium")
+        torch.cuda.set_per_process_memory_fraction(0.95)
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
         torch.backends.cuda.matmul.allow_tf32 = True
@@ -231,7 +233,6 @@ def cleanup_garbage():
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
         torch.cuda.synchronize()
-        torch.cuda.set_per_process_memory_fraction(0.95)
 
 def prepare_dirs(src:str, session:DictProxy[str,Any])->bool:
     try:
