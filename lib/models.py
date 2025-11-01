@@ -46,10 +46,6 @@ default_engine_settings = {
         "top_p": 0.85,
         "speed": 1.0,
         "enable_text_splitting": False,
-        # to enable deepspeed, you must install it first:
-        # conda activate ./python_env (linux/mac) or .\python_env (windows)
-        # pip install deepspeed
-        # conda deactivate
         "use_deepspeed": False,
         "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav', 'speakers_xtts.pth'],
         "voices": {

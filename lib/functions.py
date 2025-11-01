@@ -16,8 +16,6 @@ def patched_torch_load(*args, **kwargs)->Any:
     return _original_load(*args, **kwargs)
 
 torch.load = patched_torch_load
-torch.backends.cudnn.benchmark = False
-torch.backends.cudnn.deterministic = True
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
 import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc
@@ -136,6 +134,7 @@ class SessionContext:
                 "id": id,
                 "tab_id": None,
                 "is_gui_process": False,
+                "free_vram_gb": 0,
                 "process_id": None,
                 "status": None,
                 "event": None,
@@ -225,9 +224,14 @@ ctx_tracker = SessionTracker()
 def cleanup_garbage():
     gc.collect()
     if torch.cuda.is_available():
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
         torch.cuda.synchronize()
+        torch.cuda.set_per_process_memory_fraction(0.95)
 
 def prepare_dirs(src:str, session:DictProxy[str,Any])->bool:
     try:
@@ -563,6 +567,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             try:
                 stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
                 stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=True if session['device'] == devices['CUDA'] else False, download_method="reuse_resources")
+                #stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=False, download_method="reuse_resources")
             except (ConnectionError, TimeoutError) as e:
                 error = f'Stanza model download connection error: {e}. Retry later'
                 return error, None
@@ -2073,15 +2078,16 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                             msg_extra = ''
                             vram_dict = VRAMDetector().detect_vram(session['device'])
                             free_vram_bytes = vram_dict.get('free_bytes', 0)
-                            total_vram_gb = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
-                            if total_vram_gb == 0:
-                                msg_extra += '<br/>VRAM not detected! restrict to 1GB max' if total_vram_gb == 0 else f'<br/>VRAM detected with {total_vram_gb}GB'
+                            session['free_vram_gb'] = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
+                            if session['free_vram_gb'] == 0:
+                                sessin['free_vram_gb'] = 1.0
+                                msg_extra += '<br/>VRAM not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>VRAM detected with {session['free_vram_gb']}GB"
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
                             else:
-                                msg_extra += f'<br/>Free VRAM available: {total_vram_gb}GB'
-                                if total_vram_gb > 4.0:
+                                msg_extra += f'<br/>Free VRAM available: {session['free_vram_gb']}GB'
+                                if session['free_vram_gb'] > 4.0:
                                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                                         os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
                             if session['device'] == devices['CUDA']:

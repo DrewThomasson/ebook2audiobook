@@ -8,8 +8,6 @@ def patched_torch_load(*args, **kwargs):
     return _original_load(*args, **kwargs)
     
 torch.load = patched_torch_load
-torch.backends.cudnn.benchmark = False
-torch.backends.cudnn.deterministic = True
 
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
@@ -243,6 +241,7 @@ class Coqui:
                         self.tts.load_checkpoint(
                             config,
                             checkpoint_dir = checkpoint_dir,
+                            use_deepspeed = default_engine_settings[TTS_ENGINES['BARK']]['use_deepspeed'],
                             eval = True
                         )
             if self.tts:
@@ -461,7 +460,7 @@ class Coqui:
         if device == devices['CUDA'] and torch.cuda.is_available():
             dtype = (
                 torch.bfloat16
-                if getattr(self, "is_bfloat", False) and torch.cuda.is_bf16_supported()
+                if getattr(self, "is_bfloat", False) and torch.cuda.is_bf16_supported() and self.sessin['free_vram_gb'] > 4.0
                 else torch.float16
             )
             return torch.amp.autocast(devices['CUDA'], dtype=dtype)
