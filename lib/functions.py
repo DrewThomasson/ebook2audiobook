@@ -3018,16 +3018,18 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 ebook_data = None
                 file_count = session['ebook_mode']
                 if session['ebook_list'] is not None and file_count == 'directory':
+                    session['ebook'] = None
                     ebook_data = [f for f in session["ebook_list"] if os.path.exists(f)]
                     if not ebook_data:
                         ebook_data = None
                 elif isinstance(session['ebook'], str) and file_count == 'single':
+                    session['ebook_list'] = None
                     if os.path.exists(session['ebook']):
                         ebook_data = session['ebook']
                     else:
-                        ebook_data = None
+                        ebook_data = session['ebook'] = None
                 else:
-                    ebook_data = None
+                    ebook_data = session['ebook'] = None
                 return (
                     gr.update(value=ebook_data),
                     gr.update(value=session['ebook_mode']),
