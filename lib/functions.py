@@ -226,7 +226,7 @@ def cleanup_garbage():
     if torch.cuda.is_available():
         torch.set_float32_matmul_precision("medium")
         torch.cuda.set_per_process_memory_fraction(0.95)
-        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.benchmark = True
         torch.backends.cudnn.deterministic = True
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True

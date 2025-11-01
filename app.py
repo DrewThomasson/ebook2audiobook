@@ -75,8 +75,7 @@ def check_and_install_requirements(file_path: str)->bool:
                 marker_part=marker_part.strip()
                 try:
                     marker=Marker(marker_part)
-                    if not marker.evaluate():
-                        print(f'Skipping {pkg_part.strip()} (marker "{marker_part}" not satisfied).')
+                    if not marker.evaluate(): 
                         continue
                 except Exception as e:
                     print(f'Warning: Could not evaluate marker "{marker_part}" for {pkg_part}: {e}')
