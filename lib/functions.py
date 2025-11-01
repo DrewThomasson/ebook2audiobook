@@ -3847,7 +3847,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 os.makedirs(session['custom_model_dir'], exist_ok=True)
                 os.makedirs(session['voice_dir'], exist_ok=True)
                 # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
-                [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]                
+                #[shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]                
                 if is_gui_shared:
                     msg = f' Note: access limit time: {interface_shared_tmp_expire} days'
                     session['audiobooks_dir'] = os.path.join(audiobooks_gradio_dir, f"web-{session['id']}")
