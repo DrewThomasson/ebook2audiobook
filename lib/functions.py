@@ -3062,10 +3062,11 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         def refresh_interface(id:str)->tuple:
             session = context.get_session(id)
             if session['event'] == 'confirm_blocks':
-                return gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update(), gr.update()
+                outputs = tuple([gr.update() for _ in range(9)])
+                return outputs
             else:
                 return (
-                    gr.update(interactive=False), gr.update(value=None), update_gr_audiobook_list(id), 
+                    gr.update(interactive=False), gr.update(value=None), gr.update(value=session['device'], update_gr_audiobook_list(id), 
                     gr.update(value=session['audiobook']), gr.update(visible=False), update_gr_voice_list(id), gr.update(value='')
                 )
 
@@ -4203,7 +4204,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
-            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+            outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
         )
         gr_save_session.change(
             fn=None,
@@ -4275,7 +4276,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         ).then(
             fn=refresh_interface,
             inputs=[gr_session],
-            outputs=[gr_convert_btn, gr_ebook_file, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
+            outputs=[gr_convert_btn, gr_ebook_file, gr_device, gr_audiobook_list, gr_audiobook_player, gr_modal, gr_voice_list, gr_progress]
         )
         gr_confirm_blocks_no_btn.click(
             fn=lambda session: confirm_blocks("no", session),

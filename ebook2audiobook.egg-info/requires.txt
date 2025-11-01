@@ -28,7 +28,7 @@ nvidia-ml-py
 phonemizer-fork
 pydub
 torchvggish
-onnxruntime-directml; sys_platform == "win32"
+onnxruntime-directml; sys_platform=="win32"
 pyannote-audio==3.4.0
 stanza==1.10.1
 argostranslate==1.10.0
