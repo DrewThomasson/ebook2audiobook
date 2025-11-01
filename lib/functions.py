@@ -2087,7 +2087,7 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
                             else:
-                                msg_extra += f'<br/>Free VRAM available: {session['free_vram_gb']}GB'
+                                msg_extra += f"<br/>Free VRAM available: {session['free_vram_gb']}GB"
                                 if session['free_vram_gb'] > 4.0:
                                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                                         os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
