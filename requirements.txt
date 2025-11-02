@@ -28,7 +28,6 @@ nvidia-ml-py
 phonemizer-fork
 pydub
 torchvggish
-onnxruntime-directml; sys_platform=="win32"
 pyannote-audio==3.4.0
 stanza==1.10.1
 argostranslate==1.10.0
@@ -37,3 +36,4 @@ gradio>=5.49.1
 coqui-tts[languages]==0.27.2
 torch==2.7.1
 torchaudio==2.7.1
+deepspeed

@@ -2103,7 +2103,7 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                             if session['device'] == devices['CUDA'] and session['free_vram_gb'] > 4.0:
                                 torch.set_float32_matmul_precision("medium")
                                 if torch.cuda.is_available():
-                                    torch.cuda.set_per_process_memory_fraction(0.95
+                                    torch.cuda.set_per_process_memory_fraction(0.95)
                                     torch.backends.cuda.matmul.allow_tf32 = True
                                     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
                                     torch.backends.cudnn.benchmark = True
