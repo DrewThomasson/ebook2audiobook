@@ -42,7 +42,7 @@ class Coqui:
             self.tts_vc_key = default_vc_model.rsplit('/',1)[-1]
             self.is_bf16 = True if self.session['device'] == devices['CUDA'] and torch.cuda.is_bf16_supported()==True else False
             self.npz_path = None
-            self.npz_data = None
+            #self.npz_data = None
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
             self.params={TTS_ENGINES['XTTSv2']:{"latent_embedding":{}},TTS_ENGINES['BARK']:{},TTS_ENGINES['VITS']:{"semitones":{}},TTS_ENGINES['FAIRSEQ']:{"semitones":{}},TTS_ENGINES['TACOTRON2']:{"semitones":{}},TTS_ENGINES['YOURTTS']:{}}
@@ -577,6 +577,7 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
+                        '''
                         if self.npz_path is None or self.npz_path != npz_file:
                             self.npz_path = npz_file
                             self.npz_data = np.load(self.npz_path, allow_pickle=True)
@@ -590,6 +591,17 @@ class Coqui:
                             audio_sentence, _ = self.tts.generate_audio(
                                 sentence,
                                 history_prompt=history_prompt,
+                                silent=True,
+                                **fine_tuned_params
+                            )
+                        '''
+                        with torch.no_grad(), self._autocast_context():
+                            torch.manual_seed(67878789)
+                            audio_data = tts.synthesize(
+                                sentence,
+                                loaded_tts[tts_key]['config'],
+                                speaker_id=speaker,
+                                voice_dirs=bark_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )

@@ -45,7 +45,7 @@ if platform.system() == 'Windows':
 prog_version = (lambda: open('VERSION.txt').read().strip())()
 
 min_python_version = (3,10)
-max_python_version = (3,12)
+max_python_version = (3,13)
 
 NATIVE = 'native'
 FULL_DOCKER = 'full_docker'
