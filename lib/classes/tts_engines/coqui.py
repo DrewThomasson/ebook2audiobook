@@ -597,7 +597,7 @@ class Coqui:
                         '''
                         with torch.no_grad(), self._autocast_context():
                             torch.manual_seed(67878789)
-                            audio_data = tts.synthesize(
+                            audio_data = self.tts.synthesize(
                                 sentence,
                                 loaded_tts[tts_key]['config'],
                                 speaker_id=speaker,
