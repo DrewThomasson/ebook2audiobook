@@ -1,7 +1,9 @@
 import os
 import platform
+import tempfile
 
 tmp_dir = os.path.abspath('tmp')
+tempfile.tempdir = tmp_dir
 tmp_expire = 7 # days
 
 models_dir = os.path.abspath('models')

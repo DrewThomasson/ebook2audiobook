@@ -2029,7 +2029,7 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                     session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
                     os.makedirs(session['voice_dir'], exist_ok=True)
                     # As now uploaded voice files are in their respective language folder so check if no wav and bark folder are on the voice_dir root from previous versions
-                    [shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
+                    #[shutil.move(src, os.path.join(session['voice_dir'], os.path.basename(src))) for src in glob(os.path.join(os.path.dirname(session['voice_dir']), '*.wav')) + ([os.path.join(os.path.dirname(session['voice_dir']), 'bark')] if os.path.isdir(os.path.join(os.path.dirname(session['voice_dir']), 'bark')) and not os.path.exists(os.path.join(session['voice_dir'], 'bark')) else [])]
                     session['custom_model_dir'] = os.path.join(models_dir, '__sessions',f"model-{session['id']}")
                     if session['custom_model'] is not None:
                         if not os.path.exists(session['custom_model_dir']):
@@ -3030,6 +3030,13 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         ebook_data = session['ebook'] = None
                 else:
                     ebook_data = session['ebook'] = None
+                if ebook_data is not None:
+                    current_dir_cache = tempfile.gettempdir()
+                    current_dir_cache_norm = os.path.normpath(current_dir_cache)
+                    prev_cache_dir = os.path.normpath(os.path.dirname(ebook_data[0]) if isinstance(ebook_data, list) else os.path.dirname(ebook_data))
+                    if prev_cache_dir != current_dir_cache_norm:
+                        ebook_data = None
+                    session['ebook'] = ebook_data
                 return (
                     gr.update(value=ebook_data),
                     gr.update(value=session['ebook_mode']),
