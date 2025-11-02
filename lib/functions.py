@@ -224,12 +224,6 @@ ctx_tracker = SessionTracker()
 def cleanup_garbage():
     gc.collect()
     if torch.cuda.is_available():
-        torch.set_float32_matmul_precision("medium")
-        torch.cuda.set_per_process_memory_fraction(0.95)
-        torch.backends.cudnn.benchmark = True
-        torch.backends.cudnn.deterministic = True
-        torch.backends.cuda.matmul.allow_tf32 = True
-        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
         torch.cuda.synchronize()
@@ -2106,14 +2100,20 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                             if session['device'] == devices['CPU']:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_OFFLOAD_CPU'] = 'True'
-                            if default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] == True:
-                                try:
-                                    import deepspeed
-                                except:
-                                    default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] = False
-                                    msg_extra += '<br/>Deepseed not installed or package is broken. set to False'
-                                else: 
-                                    msg_extra += '<br/>Deepspeed detected and ready!'
+                            if session['device'] == devices['CUDA'] and session['free_vram_gb'] > 4.0:
+                                torch.set_float32_matmul_precision("medium")
+                                torch.cuda.set_per_process_memory_fraction(0.95)
+                                torch.backends.cudnn.benchmark = True
+                                torch.backends.cudnn.deterministic = False
+                                torch.backends.cuda.matmul.allow_tf32 = True
+                                torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
+                            else:
+                                torch.set_float32_matmul_precision("high")
+                                torch.cuda.set_per_process_memory_fraction(0.7)
+                                torch.backends.cudnn.benchmark = False
+                                torch.backends.cudnn.deterministic = True
+                                torch.backends.cuda.matmul.allow_tf32 = False
+                                torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False                                  
                             if msg == '':
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;
