@@ -396,7 +396,7 @@ class Coqui:
                                 default_text,
                                 loaded_tts[tts_key]['config'],
                                 speaker_id=speaker,
-                                voice_dir=bark_dir,
+                                voice_dir=npz_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
@@ -568,6 +568,7 @@ class Coqui:
                                 error = 'Could not create npz file!'
                                 print(error)
                                 return False
+                        npz_dir = os.path.join(bark_dir, speaker)
                         npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
                         fine_tuned_params = {
                             key.removeprefix("bark_"): cast_type(self.session[key])
@@ -601,7 +602,7 @@ class Coqui:
                                 sentence,
                                 loaded_tts.get(self.tts_key, {}).get('config', None),
                                 speaker_id=speaker,
-                                voice_dir=bark_dir,
+                                voice_dir=npz_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
