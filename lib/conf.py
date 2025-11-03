@@ -50,6 +50,8 @@ max_python_version = (3,13)
 NATIVE = 'native'
 FULL_DOCKER = 'full_docker'
 
+debug_mode = False
+
 devices = {"CPU": "cpu", "CUDA": "cuda", "MPS": "mps"}
 default_device = devices['CPU']
 default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">howto wiki</a>'
