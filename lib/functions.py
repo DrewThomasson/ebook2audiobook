@@ -17,7 +17,7 @@ def patched_torch_load(*args, **kwargs)->Any:
 
 torch.load = patched_torch_load
 
-import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, subprocess, sys, tempfile, threading, time, traceback
+import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, subprocess, sys, tempfile, threading, time, traceback, socket
 import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc
 
 from soynlp.tokenizer import LTokenizer
