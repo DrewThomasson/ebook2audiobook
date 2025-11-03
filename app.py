@@ -340,7 +340,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                 sys.exit(1)
 
         from lib.functions import SessionContext, cleanup_garbage, convert_ebook_batch, convert_ebook, web_interface
-        #cleanup_garbage()
+        cleanup_garbage()
         ctx = SessionContext()
         # Conditions based on the --headless flag
         if args['headless']:
