@@ -425,6 +425,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                 app = build_interface(args, ctx)
                 if app:
                     app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, favicon_path='./favicon.ico', server_name=interface_host, server_port=interface_port, share= args['share'], max_file_size=max_upload_size)
+                    app.launch()
                 #script_name = os.path.basename(sys.argv[0])
                 #kill_previous_instances(script_name)
             else:
