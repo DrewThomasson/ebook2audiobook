@@ -460,8 +460,8 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                 except Exception as e:
                     error = f'An unexpected error occurred: {e}'
                     alert_exception(error, None)
-           else:
-                error = 'Error: In non-headless mode, no option or only --share can be passed'
+            else:
+                error = 'Error: In GUI mode, no option or only --share can be passed'
                 print(error)
                 sys.exit(1)
 

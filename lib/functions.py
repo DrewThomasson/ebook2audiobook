@@ -66,6 +66,7 @@ from lib.classes.tts_manager import TTSManager
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
 
 context = None
+context_tracker = None
 active_sessions = None
 
 class DependencyError(Exception):
