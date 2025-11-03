@@ -2271,7 +2271,15 @@ def show_alert(state:dict)->None:
             elif state['type'] == 'success':
                 gr.Success(state['msg'])
 
-def web_interface(args:dict, ctx:SessionContext)->None:
+def alert_exception(error:str, id:str|None)->None:
+    if id is not None:
+        session = context.get_session(id)
+        session['status'] = 'ready'
+    print(error)
+    gr.Error(error)
+    DependencyError(error)
+
+def build_interface(args:dict, ctx:SessionContext)->gr.Blocks:
     global context
     context = ctx
     script_mode = args['script_mode']
@@ -3002,14 +3010,6 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 </div>
             '''
 
-        def alert_exception(error:str, id:str|None=None)->None:
-            if id is not None:
-                session = context.get_session(id)
-                session['status'] = 'ready'
-            print(error)
-            gr.Error(error)
-            DependencyError(error)
-
         def restore_interface(id: str, req: gr.Request) -> tuple:
             try:
                 session = context.get_session(id)
@@ -3066,7 +3066,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return gr.update(visible=visible), gr.update(value=audiobook), gr.update(active=True)
             except Exception as e:
                 error = f'restore_audiobook_player(): {e}'
-                alert_exception(error)
+                alert_exception(error, None)
                 outputs = tuple([gr.update() for _ in range(3)])
                 return outputs
 
@@ -3136,7 +3136,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                         return gr.update(variant='primary', interactive=False)
             except Exception as e:
                 error = f'change_convert_btn(): {e}'
-                alert_exception(error)
+                alert_exception(error, None)
                 gr.update()
 
         def change_gr_ebook_file(data:str|None, id:str)->tuple:
@@ -3590,14 +3590,14 @@ def web_interface(args:dict, ctx:SessionContext)->None:
         def toggle_audiobook_files(audiobook:str, is_visible:bool)->tuple:
             if not audiobook:
                 error = 'No audiobook selected.'
-                alert_exception(error)
+                alert_exception(error, None)
                 return gr.update(), False
             if is_visible:
                 return gr.update(visible=False, value=None), False
             p = Path(audiobook)
             if not p.exists():
                 error = f'Audio not found: {p}'
-                alert_exception(error)
+                alert_exception(error, None)
                 return gr.update(), False
             files = [str(p)]
             vtt = p.with_suffix(".vtt")
@@ -3874,7 +3874,7 @@ def web_interface(args:dict, ctx:SessionContext)->None:
                 return gr.update(value=json.dumps(session, cls=JSONDictProxyEncoder)), gr.update(value=state), gr.update(value=session['id']), gr.update()
             except Exception as e:
                 error = f'change_gr_restore_session(): {e}'
-                alert_exception(error)
+                alert_exception(error, None)
                 return gr.update(), gr.update(), gr.update(), gr.update()
 
         async def save_session(id:str, state:dict)->tuple:
@@ -4784,21 +4784,26 @@ def web_interface(args:dict, ctx:SessionContext)->None:
             outputs=[gr_restore_session],
         )
         app.unload(cleanup_session)
-    try:
         all_ips = get_all_ip_addresses()
         msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
         show_alert({"type": "info", "msg": msg})
         os.environ['no_proxy'] = ' ,'.join(all_ips)
-        app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, favicon_path='./favicon.ico', server_name=interface_host, server_port=interface_port, share=is_gui_shared, max_file_size=max_upload_size)
+    return app
+
+def gui(args:dict, ctx:SessionContext)->Any:
+    app:gr.Blocks = build_interface(dict, SessionContext)
+    try:
+        app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, favicon_path='./favicon.ico', server_name=interface_host, server_port=interface_port, share= args['share'], max_file_size=max_upload_size)
     except OSError as e:
         error = f'Connection error: {e}'
-        alert_exception(error)
+        alert_exception(error, None)
     except socket.error as e:
         error = f'Socket error: {e}'
-        alert_exception(error)
+        alert_exception(error, None)
     except KeyboardInterrupt:
         error = 'Server interrupted by user. Shutting down...'
-        alert_exception(error)
+        alert_exception(error, None)
     except Exception as e:
         error = f'An unexpected error occurred: {e}'
-        alert_exception(error)
+        alert_exception(error, None)
+   
