@@ -2260,7 +2260,7 @@ def show_alert(state:dict)->None:
                 gr.Success(state['msg'])
 
 def alert_exception(error:str, id:str|None)->None:
-    if id is not None:
+    if id is not None and context is not None:
         session = context.get_session(id)
         session['status'] = 'ready'
     print(error)
