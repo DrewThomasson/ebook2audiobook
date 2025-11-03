@@ -396,7 +396,7 @@ class Coqui:
                                 default_text,
                                 loaded_tts[tts_key]['config'],
                                 speaker_id=speaker,
-                                voice_dirs=bark_dir,
+                                voice_dir=bark_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
@@ -601,7 +601,7 @@ class Coqui:
                                 sentence,
                                 loaded_tts.get(self.tts_key, {}).get('config', None),
                                 speaker_id=speaker,
-                                voice_dirs=bark_dir,
+                                voice_dir=bark_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
