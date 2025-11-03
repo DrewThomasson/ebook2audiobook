@@ -220,6 +220,14 @@ def kill_previous_instances(script_name: str):
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
 
+def get_all_ip_addresses()->list:
+    ip_addresses = []
+    for interface, addresses in psutil.net_if_addrs().items():
+        for address in addresses:
+            if address.family in [socket.AF_INET, socket.AF_INET6]:
+                ip_addresses.append(address.address) 
+    return ip_addresses
+
 def main()->None:
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(
@@ -339,9 +347,11 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                 print(error)
                 sys.exit(1)
 
-        from lib.functions import SessionContext, cleanup_garbage, convert_ebook_batch, convert_ebook, build_interface
+        from lib.functions import SessionContext, SessionTracker, context, context_tracker, active_sessions, cleanup_garbage, convert_ebook_batch, convert_ebook
         cleanup_garbage()
-        ctx = SessionContext()
+        context = SessionContext() if context is None else context
+        context_tracker = SessionTracker() if context_tracker is None else context_tracker
+        active_sessions = set() if active_sessions is None else active_sessions
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False
@@ -396,7 +406,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                         args['ebook_list'].append(full_path)
-                progress_status, passed = convert_ebook_batch(args, ctx)
+                progress_status, passed = convert_ebook_batch(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
@@ -407,7 +417,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
                     print(error)
                     sys.exit(1) 
-                progress_status, passed = convert_ebook(args, ctx)
+                progress_status, passed = convert_ebook(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
@@ -422,10 +432,35 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             allowed_arguments = {'--share', '--script_mode'}
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
-                build_interface(args, ctx)
-                #script_name = os.path.basename(sys.argv[0])
-                #kill_previous_instances(script_name)
-            else:
+                from lib.functions import alert_exception, build_interface
+                try:
+                    #script_name = os.path.basename(sys.argv[0])
+                    #kill_previous_instances(script_name)
+                    app = build_interface(args)
+                    if app is not None:
+                        app.queue(
+                            default_concurrency_limit=interface_concurrency_limit
+                        ).launch(
+                            debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),
+                            show_error=debug_mode, favicon_path='./favicon.ico', 
+                            server_name=interface_host, 
+                            server_port=interface_port, 
+                            share= args['share'], 
+                            max_file_size=max_upload_size
+                        )
+                except OSError as e:
+                    error = f'Connection error: {e}'
+                    alert_exception(error, None)
+                except socket.error as e:
+                    error = f'Socket error: {e}'
+                    alert_exception(error, None)
+                except KeyboardInterrupt:
+                    error = 'Server interrupted by user. Shutting down...'
+                    alert_exception(error, None)
+                except Exception as e:
+                    error = f'An unexpected error occurred: {e}'
+                    alert_exception(error, None)
+           else:
                 error = 'Error: In non-headless mode, no option or only --share can be passed'
                 print(error)
                 sys.exit(1)

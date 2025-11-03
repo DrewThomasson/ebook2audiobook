@@ -17,7 +17,7 @@ def patched_torch_load(*args, **kwargs)->Any:
 
 torch.load = patched_torch_load
 
-import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, socket, subprocess, sys, tempfile, threading, time, traceback
+import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, subprocess, sys, tempfile, threading, time, traceback
 import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc
 
 from soynlp.tokenizer import LTokenizer
@@ -64,8 +64,9 @@ from lib.classes.tts_manager import TTSManager
 #)
 
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
+
 context = None
-active_sessions = set()
+active_sessions = None
 
 class DependencyError(Exception):
     def __init__(self, message:str|None):
@@ -216,10 +217,6 @@ class JSONDictProxyEncoder(json.JSONEncoder):
         elif isinstance(o, ListProxy):
             return list(o)
         return super().default(o)
-
-###############
-
-ctx_tracker = SessionTracker()
 
 def cleanup_garbage():
     gc.collect()
@@ -1936,14 +1933,14 @@ def get_compatible_tts_engines(language:str)->list:
     ]
     return compatible_engines
 
-def convert_ebook_batch(args:dict, ctx:object|None=None)->tuple:
+def convert_ebook_batch(args:dict)->tuple:
     if isinstance(args['ebook_list'], list):
         ebook_list = args['ebook_list'][:]
         for file in ebook_list: # Use a shallow copy
             if any(file.endswith(ext) for ext in ebook_formats):
                 args['ebook'] = file
                 print(f'Processing eBook file: {os.path.basename(file)}')
-                progress_status, passed = convert_ebook(args, ctx)
+                progress_status, passed = convert_ebook(args)
                 if passed is False:
                     print(f'Conversion failed: {progress_status}')
                     if not args['is_gui_process']:
@@ -1956,7 +1953,7 @@ def convert_ebook_batch(args:dict, ctx:object|None=None)->tuple:
         if not args['is_gui_process']:
             sys.exit(1)       
 
-def convert_ebook(args:dict, ctx:object|None=None)->tuple:
+def convert_ebook(args:dict)->tuple:
     try:
         if args.get('event') == 'blocks_confirmed':
             return finalize_audiobook(args['id'])
@@ -1988,8 +1985,6 @@ def convert_ebook(args:dict, ctx:object|None=None)->tuple:
                     error = 'The language you provided is not (yet) supported'
                     print(error)
                     return error, false
-                if ctx is not None:
-                    context = ctx
                 id = str(args['session']) if args['session'] is not None else str(uuid.uuid4())
                 session = context.get_session(id)
                 session['script_mode'] = str(args['script_mode']) if args.get('script_mode') is not None else NATIVE
@@ -2251,14 +2246,6 @@ def reset_session(id:str)->None:
     }
     restore_session_from_data(data, session)
 
-def get_all_ip_addresses()->list:
-    ip_addresses = []
-    for interface, addresses in psutil.net_if_addrs().items():
-        for address in addresses:
-            if address.family in [socket.AF_INET, socket.AF_INET6]:
-                ip_addresses.append(address.address) 
-    return ip_addresses
-
 def show_alert(state:dict)->None:
     if isinstance(state, dict):
         if state['type'] is not None:
@@ -2279,10 +2266,8 @@ def alert_exception(error:str, id:str|None)->None:
     gr.Error(error)
     DependencyError(error)
 
-def build_interface(args:dict, ctx:SessionContext)->gr.Blocks:
+def build_interface(args:dict)->gr.Blocks:
     try:
-        global context
-        context = ctx
         script_mode = args['script_mode']
         is_gui_process = args['is_gui_process']
         is_gui_shared = args['share']
@@ -2928,7 +2913,7 @@ def build_interface(args:dict, ctx:SessionContext)->gr.Blocks:
                 socket_hash = req.session_hash
                 if any(socket_hash in session for session in context.sessions.values()):
                     session_id = context.find_id_by_hash(socket_hash)
-                    ctx_tracker.end_session(session_id, socket_hash)
+                    context_tracker.end_session(session_id, socket_hash)
 
             def disable_components()->tuple:
                 outputs = tuple([gr.update(interactive=False) for _ in range(11)])
@@ -3820,7 +3805,7 @@ def build_interface(args:dict, ctx:SessionContext)->gr.Blocks:
                     if len(active_sessions) == 0 or session['status'] is None:
                         restore_session_from_data(data, session)
                         session['status'] = None
-                    if not ctx_tracker.start_session(session['id']):
+                    if not context_tracker.start_session(session['id']):
                         error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                         return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
                     else:
@@ -4326,8 +4311,8 @@ def build_interface(args:dict, ctx:SessionContext)->gr.Blocks:
                             if(typeof window.onElementAvailable !== "function"){
                                 window.onElementAvailable = (selector, callback, { root = (window.gradioApp && window.gradioApp()) || document, once = false } = {})=> {
                                     const seen = new WeakSet();
-                                    const fireFor = (ctx) => {
-                                        ctx.querySelectorAll(selector).forEach((el) => {
+                                    const fireFor = (context) => {
+                                        context.querySelectorAll(selector).forEach((el) => {
                                             if (seen.has(el)) return;
                                             const success = callback(el);
                                             if (success !== false) {
@@ -4789,16 +4774,8 @@ def build_interface(args:dict, ctx:SessionContext)->gr.Blocks:
             msg = f'IPs available for connection:\n{all_ips}\nNote: 0.0.0.0 is not the IP to connect. Instead use an IP above to connect and port {interface_port}'
             show_alert({"type": "info", "msg": msg})
             os.environ['no_proxy'] = ' ,'.join(all_ips)
-            app.queue(default_concurrency_limit=interface_concurrency_limit).launch(debug=bool(int(os.environ.get('GRADIO_DEBUG', '0'))),show_error=debug_mode, favicon_path='./favicon.ico', server_name=interface_host, server_port=interface_port, share= args['share'], max_file_size=max_upload_size)
-    except OSError as e:
-        error = f'Connection error: {e}'
-        alert_exception(error, None)
-    except socket.error as e:
-        error = f'Socket error: {e}'
-        alert_exception(error, None)
-    except KeyboardInterrupt:
-        error = 'Server interrupted by user. Shutting down...'
-        alert_exception(error, None)
+            return app
     except Exception as e:
         error = f'An unexpected error occurred: {e}'
         alert_exception(error, None)
+    return None
