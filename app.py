@@ -220,14 +220,6 @@ def kill_previous_instances(script_name: str):
         except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
             continue
 
-def get_all_ip_addresses()->list:
-    ip_addresses = []
-    for interface, addresses in psutil.net_if_addrs().items():
-        for address in addresses:
-            if address.family in [socket.AF_INET, socket.AF_INET6]:
-                ip_addresses.append(address.address) 
-    return ip_addresses
-
 def main()->None:
     # Argument parser to handle optional parameters with descriptions
     parser = argparse.ArgumentParser(

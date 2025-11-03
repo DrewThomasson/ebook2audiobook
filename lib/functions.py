@@ -2267,6 +2267,14 @@ def alert_exception(error:str, id:str|None)->None:
     gr.Error(error)
     DependencyError(error)
 
+def get_all_ip_addresses()->list:
+    ip_addresses = []
+    for interface, addresses in psutil.net_if_addrs().items():
+        for address in addresses:
+            if address.family in [socket.AF_INET, socket.AF_INET6]:
+                ip_addresses.append(address.address) 
+    return ip_addresses
+
 def build_interface(args:dict)->gr.Blocks:
     try:
         script_mode = args['script_mode']
