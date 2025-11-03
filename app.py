@@ -340,7 +340,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                 sys.exit(1)
 
         from lib.functions import SessionContext, cleanup_garbage, convert_ebook_batch, convert_ebook, web_interface
-        cleanup_garbage()
+        #cleanup_garbage()
         ctx = SessionContext()
         # Conditions based on the --headless flag
         if args['headless']:
@@ -422,8 +422,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             allowed_arguments = {'--share', '--script_mode'}
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
-                print('OK')
-                #web_interface(args, ctx)
+                web_interface(args, ctx)
                 #script_name = os.path.basename(sys.argv[0])
                 #kill_previous_instances(script_name)
             else:
