@@ -599,7 +599,7 @@ class Coqui:
                             torch.manual_seed(67878789)
                             audio_data = self.tts.synthesize(
                                 sentence,
-                                loaded_tts[tts_key]['config'],
+                                loaded_tts[self.tts_key]['config'],
                                 speaker_id=speaker,
                                 voice_dirs=bark_dir,
                                 silent=True,
