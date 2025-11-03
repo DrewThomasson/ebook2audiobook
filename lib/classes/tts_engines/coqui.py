@@ -360,7 +360,7 @@ class Coqui:
                     return True
                 else:
                     os.makedirs(npz_dir,exist_ok=True)
-                    tts_key = TTS_ENGINES['BARK']
+                    tts_key = f"{TTS_ENGINES['BARK']}-internal"
                     hf_repo = models[TTS_ENGINES['BARK']]['internal']['repo']
                     hf_sub = models[TTS_ENGINES['BARK']]['internal']['sub'] 
                     if not (loaded_tts.get(tts_key) or {}).get('engine', False):
@@ -599,7 +599,7 @@ class Coqui:
                             torch.manual_seed(67878789)
                             audio_data = self.tts.synthesize(
                                 sentence,
-                                loaded_tts[self.tts_key]['config'],
+                                loaded_tts.get(self.tts_key, {}).get('config', None),
                                 speaker_id=speaker,
                                 voice_dirs=bark_dir,
                                 silent=True,
