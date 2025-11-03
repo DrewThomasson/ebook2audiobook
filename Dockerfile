@@ -44,7 +44,7 @@ RUN if [ ! -z "$TORCH_VERSION" ]; then \
             # Special handling for CUDA 11.8
             if [ "$CUDA_VERSION" = "118" ]; then \
                 echo "Installing PyTorch for CUDA 11.8..." && \
-                pip install --no-cache-dir --upgrade -r requirements.txt && pip install pyannote-audio=3.4.0 && pip install --no-cache-dir --upgrade torch==2.7.1 torchvision==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu118; \
+                pip install --no-cache-dir --upgrade -r requirements.txt && pip install pyannote-audio==3.4.0 && pip install --no-cache-dir --upgrade torch==2.7.1 torchvision==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu118; \
             else \
                 echo "Attempting to install stable PyTorch for CUDA $CUDA_VERSION..." && \
                 if ! pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
