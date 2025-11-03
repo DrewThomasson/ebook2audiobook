@@ -339,10 +339,11 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                 print(error)
                 sys.exit(1)
 
-        lib.functions.cleanup_garbage()
-        lib.functions.context = lib.functions.SessionContext() if lib.functions.context is None else lib.functions.context
-        lib.functions.context_tracker = lib.functions.SessionTracker() if lib.functions.context_tracker is None else lib.functions.context_tracker
-        lib.functions.active_sessions = set() if lib.functions.active_sessions is None else lib.functions.active_sessions
+        from lib.functions import SessionContext, SessionTracker, context, context_tracker, active_sessions, cleanup_garbage, convert_ebook_batch, convert_ebook, build_interface
+        cleanup_garbage()
+        context = SessionContext() if context is None else context
+        context_tracker = SessionTracker() if context_tracker is None else context_tracker
+        active_sessions = set() if active_sessions is None else active_sessions
         # Conditions based on the --headless flag
         if args['headless']:
             args['is_gui_process'] = False
@@ -397,7 +398,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     if any(file.endswith(ext) for ext in ebook_formats):
                         full_path = os.path.abspath(os.path.join(args['ebooks_dir'], file))
                         args['ebook_list'].append(full_path)
-                progress_status, passed = lib.functions.convert_ebook_batch(args)
+                progress_status, passed = convert_ebook_batch(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
@@ -408,7 +409,7 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                     error = f'Error: The provided --ebook "{args["ebook"]}" does not exist.'
                     print(error)
                     sys.exit(1) 
-                progress_status, passed = lib.functions.convert_ebook(args)
+                progress_status, passed = convert_ebook(args)
                 if passed is False:
                     error = f'Conversion failed: {progress_status}'
                     print(error)
@@ -423,10 +424,11 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
             allowed_arguments = {'--share', '--script_mode'}
             passed_args_set = {arg for arg in passed_arguments if arg.startswith('--')}
             if passed_args_set.issubset(allowed_arguments):
+                from lib.functions import alert_exception, build_interface
                 try:
                     #script_name = os.path.basename(sys.argv[0])
                     #kill_previous_instances(script_name)
-                    app = lib.functions.build_interface(args)
+                    app = build_interface(args)
                     if app is not None:
                         app.queue(
                             default_concurrency_limit=interface_concurrency_limit
@@ -440,16 +442,16 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                         )
                 except OSError as e:
                     error = f'Connection error: {e}'
-                    lib.functions.alert_exception(error, None)
+                    alert_exception(error, None)
                 except socket.error as e:
                     error = f'Socket error: {e}'
-                    lib.functions.alert_exception(error, None)
+                    alert_exception(error, None)
                 except KeyboardInterrupt:
                     error = 'Server interrupted by user. Shutting down...'
-                    lib.functions.alert_exception(error, None)
+                    alert_exception(error, None)
                 except Exception as e:
                     error = f'An unexpected error occurred: {e}'
-                    lib.functions.alert_exception(error, None)
+                    alert_exception(error, None)
             else:
                 error = 'Error: In GUI mode, no option or only --share can be passed'
                 print(error)
