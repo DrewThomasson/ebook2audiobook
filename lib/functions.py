@@ -2073,9 +2073,6 @@ def convert_ebook(args:dict)->tuple:
                             if session['free_vram_gb'] == 0:
                                 sessin['free_vram_gb'] = 1.0
                                 msg_extra += '<br/>VRAM not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>VRAM detected with {session['free_vram_gb']}GB"
-                                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
-                                    msg_extra += f"<br/>Switching BARK to SMALL models"
                             else:
                                 msg_extra += f"<br/>Free VRAM available: {session['free_vram_gb']}GB"
                                 if session['free_vram_gb'] > 4.0:
@@ -2096,6 +2093,10 @@ def convert_ebook(args:dict)->tuple:
                             if session['device'] == devices['CPU']:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_OFFLOAD_CPU'] = 'True'
+                            if session['free_vram_gb'] <= 4.0:
+                                if session['tts_engine'] == TTS_ENGINES['BARK']:
+                                    os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
+                                    msg_extra += f"<br/>Switching BARK to SMALL models"
                             if session['device'] == devices['CUDA'] and session['free_vram_gb'] > 4.0:
                                 torch.set_float32_matmul_precision("medium")
                                 if torch.cuda.is_available():
