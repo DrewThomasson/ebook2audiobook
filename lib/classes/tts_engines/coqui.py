@@ -8,6 +8,11 @@ def patched_torch_load(*args, **kwargs):
     return _original_load(*args, **kwargs)
     
 torch.load = patched_torch_load
+torch_with_cuda = torch.cuda.is_available()
+torch_with_mps = torch.backends.mps.is_available()
+torch_with_xpu = torch.xpu.is_available()
+torch_cuda_is_bf16 = True if torch.cuda.is_bf16_supported() else False
+torch_xpu_is_bf16 = True if torch.xpu.is_bf16_supported() else False
 
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
@@ -40,7 +45,6 @@ class Coqui:
             self.tts_vc = False
             self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
             self.tts_vc_key = default_vc_model.rsplit('/',1)[-1]
-            self.is_bf16 = True if self.session['device'] == devices['CUDA'] and torch.cuda.is_bf16_supported()==True else False
             self.npz_path = None
             #self.npz_data = None
             self.sentences_total_time = 0.0
@@ -181,20 +185,24 @@ class Coqui:
                     else:
                         self.tts = CoquiAPI(model_path)
             if key == self.tts_vc_key:
-                if device == "cuda" and torch.cuda.is_available():
-                    self.tts_vc.cuda()
-                elif device == "mps" and torch.backends.mps.is_available():
-                    self.tts_vc.to(torch.device("mps"))
+                if device == devices['CUDA'] and torch_with_cuda:
+                    self.tts_vc.to(devices['CUDA'])
+                elif device == devices['MPS'] and torch_with_mps:
+                    self.tts_vc.to(devices['MPS'])
+                elif device == devices['XPU'] and torch_with_xpu:
+                    self.tts_vc.to(devices['XPU'])
                 else:
-                    self.tts_vc.to(device)
+                    self.tts_vc.to(devices['CPU'])
                 loaded_tts[key] = {"engine": self.tts_vc, "config": None}                        
             else:
-                if device == "cuda" and torch.cuda.is_available():
+                if device == devices['CUDA'] and torch_with_cuda:
                     self.tts.cuda()
-                elif device == "mps" and torch.backends.mps.is_available():
-                    self.tts.to(torch.device("mps"))
+                elif device == devices['MPS'] and torch_with_mps:
+                    self.tts.to(devices['MPS'])
+                elif device == devices['XPU'] and torch_with_xpu:
+                    self.tts.to(devices['XPU'])
                 else:
-                    self.tts.to(device)
+                    self.tts.to(devices['CPU'])
                 loaded_tts[key] = {"engine": self.tts, "config": None}
             msg = f"Model loaded successfully: {model_path} ({device})"
             print(msg)
@@ -245,14 +253,15 @@ class Coqui:
                             eval = True
                         )
             if self.tts:
-                if device == devices['CUDA']:
-                    self.tts.cuda()
+                if device == devices['CUDA'] and torch_with_cuda:
+                    self.tts.to(devices['CUDA'])
+                elif device == devices['MPS'] and torch_with_mps:
+                    self.tts.to(devices['MPS'])
+                elif device == devices['XPU'] and torch_with_xpu:
+                    self.tts.to(devices['XPU'])
                 else:
-                    if device == devices['MPS']:
-                        self.tts.to(torch.device(devices['MPS']))
-                    else:
-                        self.tts.to(device)
-                loaded_tts[key]={"engine":self.tts,"config":config}
+                    self.tts.to(devices['CPU'])
+                loaded_tts[key] = {"engine":self.tts,"config":config}
                 msg = f'{tts_engine} Loaded!'
                 print(msg)
             else:
@@ -457,14 +466,21 @@ class Coqui:
 
     def _autocast_context(self):
         device = self.session.get('device', devices['CPU'])
-        if device == devices['CUDA'] and torch.cuda.is_available():
+        if device == devices['CUDA'] and torch_with_cuda:
             dtype = (
                 torch.bfloat16
-                if getattr(self, "is_bfloat", False) and torch.cuda.is_bf16_supported() and self.sessin['free_vram_gb'] > 4.0
+                if torch_cuda_is_bf16 and self.sessin['free_vram_gb'] > 4.0
                 else torch.float16
             )
             return torch.amp.autocast(devices['CUDA'], dtype=dtype)
-        if device == devices['CPU']:
+        if device == devices['XPU'] and torch_with_xpu:
+            dtype = (
+                torch.bfloat16
+                if torch_xpu_is_bf16 and self.sessin['free_vram_gb'] > 4.0
+                else torch.float16
+            )
+            return torch.amp.autocast(devices['XPU'], dtype=dtype)
+        else:
             cpu_bf16_supported = getattr(torch.cpu, "is_bf16_supported", lambda: False)()
             if cpu_bf16_supported:
                 return torch.amp.autocast(devices['CPU'])

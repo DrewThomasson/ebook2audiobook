@@ -16,6 +16,11 @@ def patched_torch_load(*args, **kwargs)->Any:
     return _original_load(*args, **kwargs)
 
 torch.load = patched_torch_load
+torch_with_cuda = torch.cuda.is_available()
+torch_with_mps = torch.backends.mps.is_available()
+torch_with_xpu = torch.xpu.is_available()
+torch_cuda_is_bf16 = True if torch.cuda.is_bf16_supported() else False
+torch_xpu_is_bf16 = True if torch.xpu.is_bf16_supported() else False
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, subprocess, sys, tempfile, threading, time, traceback, socket
 import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc
@@ -221,7 +226,7 @@ class JSONDictProxyEncoder(json.JSONEncoder):
 
 def cleanup_garbage():
     gc.collect()
-    if torch.cuda.is_available():
+    if torch_with_cuda:
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
         torch.cuda.synchronize()
@@ -558,8 +563,9 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         stanza_nlp = False
         if session['language'] in year_to_decades_languages:
             try:
+                use_gpu = True if torch_with_cuda or torch_with_xpu else False
                 stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
-                stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=True if session['device'] == devices['CUDA'] else False, download_method="reuse_resources")
+                stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method="reuse_resources")
                 #stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=False, download_method="reuse_resources")
             except (ConnectionError, TimeoutError) as e:
                 error = f'Stanza model download connection error: {e}. Retry later'
@@ -2079,27 +2085,31 @@ def convert_ebook(args:dict)->tuple:
                                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                                         os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
                             if session['device'] == devices['CUDA']:
-                                session['device'] = session['device'] if torch.cuda.is_available() else devices['CPU']
+                                session['device'] = session['device'] if torch_with_cuda else devices['CPU']
                                 if session['device'] == devices['CPU']:
                                     msg += f"- CUDA not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
                             elif session['device'] == devices['MPS']:
-                                if not torch.backends.mps.is_available():
+                                if not torch_with_mps:
                                     session['device'] = devices['CPU']
                                     if not torch.backends.mps.is_built():
                                         msg += "- MPS not available because the current PyTorch was not built with MPS enabled"
                                     else:
                                         msg += "- MPS not available because the current device does not have MPS-enabled"
                                     msg += f"<br/>- Read {default_gpu_wiki}<br/>- Switching to CPU for now"
-                            if session['device'] == devices['CPU']:
-                                if session['tts_engine'] == TTS_ENGINES['BARK']:
-                                    os.environ['SUNO_OFFLOAD_CPU'] = 'True'
+                            elif session['device'] == devices['XPU']:
+                                session['device'] = session['device'] if torch_with_xpu else devices['CPU']
+                                if session['device'] == devices['CPU']:
+                                    msg += f"- XPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
                             if session['free_vram_gb'] <= 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
-                            if session['device'] == devices['CUDA'] and session['free_vram_gb'] > 4.0:
+                                    os.environ['SUNO_OFFLOAD_CPU'] = 'False'
+                            using_gpu = session['device'] != devices['CPU']
+                            enough_vram = session['free_vram_gb'] > 4.0
+                            if using_gpu and enough_vram:
                                 torch.set_float32_matmul_precision("medium")
-                                if torch.cuda.is_available():
+                                if torch_with_cuda:
                                     torch.cuda.set_per_process_memory_fraction(0.95)
                                     torch.backends.cuda.matmul.allow_tf32 = True
                                     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
@@ -2107,7 +2117,7 @@ def convert_ebook(args:dict)->tuple:
                                     torch.backends.cudnn.deterministic = False
                             else:
                                 torch.set_float32_matmul_precision("high")
-                                if torch.cuda.is_available():
+                                if torch_with_cuda:
                                     torch.cuda.set_per_process_memory_fraction(0.7)
                                     torch.backends.cudnn.benchmark = False
                                     torch.backends.cudnn.deterministic = True
