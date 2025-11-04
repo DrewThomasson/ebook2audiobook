@@ -602,6 +602,7 @@ class Coqui:
                                 self.npz_data["coarse_prompt"],
                                 self.npz_data["fine_prompt"]
                         ]
+                        '''
                         with torch.no_grad(), self._autocast_context():
                             torch.manual_seed(67878789)
                             audio_sentence, _ = self.tts.generate_audio(
@@ -621,7 +622,6 @@ class Coqui:
                                 silent=True,
                                 **fine_tuned_params
                             )
-                        '''
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
