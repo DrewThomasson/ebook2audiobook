@@ -2719,7 +2719,7 @@ def build_interface(args:dict)->gr.Blocks:
             </style>
         '''
         
-        with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(86400, 86400)) as app:
+        with gr.Blocks(theme=theme, title=title, css=header_css, delete_cache=(604800, 86400)) as app:
             with gr.Group(visible=True, elem_id='gr_group_main', elem_classes='gr-group-main') as gr_group_main:
                 with gr.Tabs(elem_id='gr_tabs'):
                     gr_tab_main = gr.Tab('Dashboard', elem_id='gr_tab_main', elem_classes='gr-tab')
