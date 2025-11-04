@@ -469,14 +469,14 @@ class Coqui:
         if device == devices['CUDA'] and torch_with_cuda:
             dtype = (
                 torch.bfloat16
-                if torch_cuda_is_bf16 and self.sessin['free_vram_gb'] > 4.0
+                if torch_cuda_is_bf16 and self.session['free_vram_gb'] > 4.0
                 else torch.float16
             )
             return torch.amp.autocast(devices['CUDA'], dtype=dtype)
         if device == devices['XPU'] and torch_with_xpu:
             dtype = (
                 torch.bfloat16
-                if torch_xpu_is_bf16 and self.sessin['free_vram_gb'] > 4.0
+                if torch_xpu_is_bf16 and self.session['free_vram_gb'] > 4.0
                 else torch.float16
             )
             return torch.amp.autocast(devices['XPU'], dtype=dtype)

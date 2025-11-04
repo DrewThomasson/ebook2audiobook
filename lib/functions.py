@@ -2077,7 +2077,7 @@ def convert_ebook(args:dict)->tuple:
                             free_vram_bytes = vram_dict.get('free_bytes', 0)
                             session['free_vram_gb'] = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
                             if session['free_vram_gb'] == 0:
-                                sessin['free_vram_gb'] = 1.0
+                                session['free_vram_gb'] = 1.0
                                 msg_extra += '<br/>VRAM not detected! restrict to 1GB max' if session['free_vram_gb'] == 0 else f"<br/>VRAM detected with {session['free_vram_gb']}GB"
                             else:
                                 msg_extra += f"<br/>Free VRAM available: {session['free_vram_gb']}GB"
