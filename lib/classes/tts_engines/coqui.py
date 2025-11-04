@@ -395,8 +395,8 @@ class Coqui:
                             audio_data = tts.synthesize(
                                 default_text,
                                 loaded_tts[tts_key]['config'],
-                                speaker=speaker,
-                                voice_dir=npz_dir,
+                                speaker_id=speaker,
+                                voice_dirs=bark_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
@@ -578,7 +578,6 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        '''
                         if self.npz_path is None or self.npz_path != npz_file:
                             self.npz_path = npz_file
                             self.npz_data = np.load(self.npz_path, allow_pickle=True)
@@ -598,7 +597,6 @@ class Coqui:
                         '''
                         with torch.no_grad(), self._autocast_context():
                             torch.manual_seed(67878789)
-                            print(f"-----------{sentence}-----------")
                             audio_data = self.tts.synthesize(
                                 sentence,
                                 loaded_tts.get(self.tts_key, {}).get('config', None),
@@ -607,6 +605,7 @@ class Coqui:
                                 silent=True,
                                 **fine_tuned_params
                             )
+                        '''
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
