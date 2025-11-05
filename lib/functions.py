@@ -83,9 +83,12 @@ class SessionTracker:
         active_sessions.discard(socket_hash)
         with self.lock:
             session = context.get_session(id)
-            session['cancellation_requested'] = True
+            # Don't cancel the conversion process when Gradio disconnects
+            # Only clean up UI-related session metadata
+            # session['cancellation_requested'] = True  # Removed - process should continue
             session['tab_id'] = None
-            session['status'] = None
+            # Keep status to allow process to continue
+            # session['status'] = None  # Removed - maintain conversion state
             session[socket_hash] = None
 
 class SessionContext:
