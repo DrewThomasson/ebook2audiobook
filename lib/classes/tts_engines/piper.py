@@ -130,7 +130,7 @@ class Coqui:
         try:
             if key in loaded_tts.keys():
                 return loaded_tts[key]['engine']
-            unload_tts(device, [self.tts_key, self.tts_vc_key])
+            unload_tts(device, [self.tts_key, self.tts_vc_key], self.tts_key)
             with lock:
                 # Download the model files if needed
                 model_file, config_file = self._download_model(model_path)
@@ -154,7 +154,7 @@ class Coqui:
         try:
             if key in loaded_tts.keys():
                 return loaded_tts[key]['engine']
-            unload_tts(device, [self.tts_vc_key])
+            unload_tts(device, [self.tts_vc_key], self.tts_vc_key)
             with lock:
                 try:
                     from TTS.api import TTS as CoquiAPI  # Lazy import to avoid hard dependency if not needed
@@ -257,7 +257,7 @@ class Coqui:
                 return loaded_tts[key]['engine']
             tts_engine = kwargs.get('tts_engine')
             device = kwargs.get('device')
-            unload_tts(device, [self.tts_key])
+            unload_tts(device, [self.tts_key], self.tts_key)  
             with lock:
                 checkpoint_dir = kwargs.get('checkpoint_dir')
                 model_file = os.path.join(checkpoint_dir, 'model.onnx')
