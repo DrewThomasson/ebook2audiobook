@@ -1,21 +1,15 @@
 import torch
 from typing import Any
 
-#_original_load = torch.load
+_original_load = torch.load
 
-#def patched_torch_load(*args, **kwargs):
-#    kwargs.setdefault("weights_only", False)
-#    return _original_load(*args, **kwargs)
-    
-#torch.load = patched_torch_load
-torch_with_cuda = torch.cuda.is_available()
-torch_with_mps = torch.backends.mps.is_available()
-torch_with_xpu = torch.xpu.is_available()
-torch_cuda_is_bf16 = True if torch.cuda.is_bf16_supported() else False
-torch_xpu_is_bf16 = True if torch.xpu.is_bf16_supported() else False
+def patched_torch_load(*args, **kwargs):
+    kwargs.setdefault("weights_only", False)
+    return _original_load(*args, **kwargs)
 
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
+import gc
 
 from contextlib import nullcontext
 from multiprocessing.managers import DictProxy
@@ -23,7 +17,6 @@ from torch import Tensor
 from huggingface_hub import hf_hub_download
 from pathlib import Path
 from pprint import pprint
-import gc
 
 from lib import *
 from lib.classes.tts_engines.common.utils import cleanup_garbage, unload_tts, append_sentence2vtt
@@ -31,6 +24,8 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
+
+processors = {"has_cuda": torch.cuda.is_available(), "has_mps": torch.backends.mps.is_available(), "has_xpu": torch.xpu.is_available()}
 
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
@@ -185,21 +180,21 @@ class Coqui:
                     else:
                         self.tts = CoquiAPI(model_path)
             if key == self.tts_vc_key:
-                if device == devices['CUDA'] and torch_with_cuda:
+                if device == devices['CUDA'] and processors['has_cuda']:
                     self.tts_vc.to(devices['CUDA'])
-                elif device == devices['MPS'] and torch_with_mps:
+                elif device == devices['MPS'] and processors['has_mps']:
                     self.tts_vc.to(devices['MPS'])
-                elif device == devices['XPU'] and torch_with_xpu:
+                elif device == devices['XPU'] and processors['has_xpu']:
                     self.tts_vc.to(devices['XPU'])
                 else:
                     self.tts_vc.to(devices['CPU'])
                 loaded_tts[key] = {"engine": self.tts_vc, "config": None}                        
             else:
-                if device == devices['CUDA'] and torch_with_cuda:
+                if device == devices['CUDA'] and processors['has_cuda']:
                     self.tts.cuda()
-                elif device == devices['MPS'] and torch_with_mps:
+                elif device == devices['MPS'] and processors['has_mps']:
                     self.tts.to(devices['MPS'])
-                elif device == devices['XPU'] and torch_with_xpu:
+                elif device == devices['XPU'] and processors['has_xpu']:
                     self.tts.to(devices['XPU'])
                 else:
                     self.tts.to(devices['CPU'])
@@ -253,11 +248,11 @@ class Coqui:
                             eval = True
                         )
             if self.tts:
-                if device == devices['CUDA'] and torch_with_cuda:
+                if device == devices['CUDA'] and processors['has_cuda']:
                     self.tts.to(devices['CUDA'])
-                elif device == devices['MPS'] and torch_with_mps:
+                elif device == devices['MPS'] and processors['has_mps']:
                     self.tts.to(devices['MPS'])
-                elif device == devices['XPU'] and torch_with_xpu:
+                elif device == devices['XPU'] and processors['has_xpu']:
                     self.tts.to(devices['XPU'])
                 else:
                     self.tts.to(devices['CPU'])
@@ -399,14 +394,14 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        #with torch.no_grad(), self._autocast_context():
-                        with torch.no_grad():
+                        with torch.no_grad(), self._autocast_context():
                             torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
                                 default_text,
-                                #speaker=speaker,
-                                #voice_dir=npz_dir,
-                                #**fine_tuned_params
+                                speaker=speaker,
+                                voice_dir=npz_dir,
+                                silent=True,
+                                **fine_tuned_params
                             )
                         os.remove(voice_temp)
                         del audio_data
@@ -465,14 +460,16 @@ class Coqui:
 
     def _autocast_context(self):
         device = self.session.get('device', devices['CPU'])
-        if device == devices['CUDA'] and torch_with_cuda:
+        if device == devices['CUDA'] and processors['has_cuda']:
+            torch_cuda_is_bf16 = True if torch.cuda.is_bf16_supported() else False
             dtype = (
                 torch.bfloat16
                 if torch_cuda_is_bf16 and self.session['free_vram_gb'] > 4.0
                 else torch.float16
             )
             return torch.amp.autocast(devices['CUDA'], dtype=dtype)
-        if device == devices['XPU'] and torch_with_xpu:
+        if device == devices['XPU'] and processors['has_xpu']:
+            torch_xpu_is_bf16 = True if torch.xpu.is_bf16_supported() else False
             dtype = (
                 torch.bfloat16
                 if torch_xpu_is_bf16 and self.session['free_vram_gb'] > 4.0
@@ -611,14 +608,14 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         '''
-                        #with torch.no_grad(), self._autocast_context():
-                        with torch.no_grad():
+                        with torch.no_grad(), self._autocast_context():
                             torch.manual_seed(67878789)
                             audio_data = self.tts.synthesize(
                                 sentence,
-                                #speaker=speaker,
-                                #voice_dir=npz_dir,
-                                #**fine_tuned_params
+                                speaker=speaker,
+                                voice_dir=npz_dir,
+                                silent=True,
+                                **fine_tuned_params
                             )
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
