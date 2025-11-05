@@ -150,8 +150,8 @@ jobs:
       - name: Create Audiobook Output folders for Artifacts
         shell: bash
         run: |
-          mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
-          find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
+          mkdir -p ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
+          find ~/ebook2audiobook/audiobooks/{PIPER,TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
 
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
         shell: bash
@@ -161,6 +161,15 @@ jobs:
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
           sed -i '' '1s;^;set -e\n;' ebook2audiobook.sh
+
+      - name: English PIPER headless single test
+        shell: bash
+        run: |
+          echo "Running English PIPER headless single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine PIPER --output_dir ~/ebook2audiobook/audiobooks/PIPER
 
       - name: English TACOTRON2 Custom-Voice headless single test
         shell: bash
