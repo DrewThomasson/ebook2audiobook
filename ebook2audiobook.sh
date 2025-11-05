@@ -307,18 +307,17 @@ else
 		mkdir -p "$MACOS" "$RESOURCES"
 
 		# Create the executable script inside the bundle
-		cat > "$MACOS/$APP_NAME" << 'EOF'
+		cat > "$MACOS/$APP_NAME" << EOF
 #!/bin/bash
 
 # Create a temporary script file to run in Terminal
-TEMP_SCRIPT=$(mktemp)
+TEMP_SCRIPT=\$(mktemp)
 
-cat > "$TEMP_SCRIPT" << 'SCRIPT'
+cat > "\$TEMP_SCRIPT" << 'SCRIPT'
 #!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SCRIPT_DIR"
 conda deactivate
-./ebook2audiobook.sh
+bash ebook2audiobook.sh
 
 # Wait 10 seconds for the server to start
 sleep 10
@@ -328,14 +327,14 @@ open http://localhost:7860/
 
 SCRIPT
 
-		chmod +x "$TEMP_SCRIPT"
+chmod +x "\$TEMP_SCRIPT"
 
-		# Open Terminal and run the script
-		open -a Terminal "$TEMP_SCRIPT"
+# Open Terminal and run the script
+open -a Terminal "\$TEMP_SCRIPT"
 
-		# Clean up the temp script after 60 seconds
-		sleep 60
-		rm "$TEMP_SCRIPT"
+# Clean up the temp script after 60 seconds
+sleep 60
+rm "\$TEMP_SCRIPT"
 
 EOF
 
@@ -423,7 +422,7 @@ PLIST
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
-				create_app_bundle # idk I put it here cause I'm unsure where else to put this
+				create_app_bundle
 				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate
 				conda deactivate
