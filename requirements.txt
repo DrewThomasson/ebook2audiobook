@@ -37,3 +37,7 @@ coqui-tts[languages]==0.27.2
 torch==2.7.1
 torchaudio==2.7.1
 deepspeed
+
+piper-tts
+numpy
+huggingface_hub
