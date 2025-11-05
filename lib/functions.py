@@ -9,13 +9,13 @@ from __future__ import annotations
 import torch
 from typing import Generator, Any
 
-_original_load = torch.load
+#_original_load = torch.load
 
-def patched_torch_load(*args, **kwargs)->Any:
-    kwargs.setdefault("weights_only", False)
-    return _original_load(*args, **kwargs)
+#def patched_torch_load(*args, **kwargs)->Any:
+#    kwargs.setdefault("weights_only", False)
+#    return _original_load(*args, **kwargs)
 
-torch.load = patched_torch_load
+#torch.load = patched_torch_load
 torch_with_cuda = torch.cuda.is_available()
 torch_with_mps = torch.backends.mps.is_available()
 torch_with_xpu = torch.xpu.is_available()

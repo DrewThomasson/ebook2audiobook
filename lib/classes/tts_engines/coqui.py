@@ -1,13 +1,13 @@
 import torch
 from typing import Any
 
-_original_load = torch.load
+#_original_load = torch.load
 
-def patched_torch_load(*args, **kwargs):
-    kwargs.setdefault("weights_only", False)
-    return _original_load(*args, **kwargs)
+#def patched_torch_load(*args, **kwargs):
+#    kwargs.setdefault("weights_only", False)
+#    return _original_load(*args, **kwargs)
     
-torch.load = patched_torch_load
+#torch.load = patched_torch_load
 torch_with_cuda = torch.cuda.is_available()
 torch_with_mps = torch.backends.mps.is_available()
 torch_with_xpu = torch.xpu.is_available()
@@ -403,9 +403,8 @@ class Coqui:
                             torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
                                 default_text,
-                                loaded_tts[tts_key]['config'],
-                                speaker_id=speaker,
-                                voice_dirs=bark_dir,
+                                speaker=speaker,
+                                voice_dir=npz_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
@@ -616,7 +615,6 @@ class Coqui:
                             torch.manual_seed(67878789)
                             audio_data = self.tts.synthesize(
                                 sentence,
-                                loaded_tts.get(self.tts_key, {}).get('config', None),
                                 speaker=speaker,
                                 voice_dir=npz_dir,
                                 silent=True,
