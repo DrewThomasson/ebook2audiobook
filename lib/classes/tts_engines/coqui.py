@@ -399,13 +399,13 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        with torch.no_grad(), self._autocast_context():
+                        #with torch.no_grad(), self._autocast_context():
+                        with torch.no_grad():
                             torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
                                 default_text,
                                 speaker=speaker,
                                 voice_dir=npz_dir,
-                                silent=True,
                                 **fine_tuned_params
                             )
                         os.remove(voice_temp)
@@ -611,13 +611,13 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         '''
-                        with torch.no_grad(), self._autocast_context():
+                        #with torch.no_grad(), self._autocast_context():
+                        with torch.no_grad()
                             torch.manual_seed(67878789)
                             audio_data = self.tts.synthesize(
                                 sentence,
                                 speaker=speaker,
                                 voice_dir=npz_dir,
-                                silent=True,
                                 **fine_tuned_params
                             )
                         if is_audio_data_valid(audio_sentence):
