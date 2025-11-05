@@ -404,9 +404,9 @@ class Coqui:
                             torch.manual_seed(67878789)
                             audio_data = tts.synthesize(
                                 default_text,
-                                speaker=speaker,
-                                voice_dir=npz_dir,
-                                **fine_tuned_params
+                                #speaker=speaker,
+                                #voice_dir=npz_dir,
+                                #**fine_tuned_params
                             )
                         os.remove(voice_temp)
                         del audio_data
@@ -616,9 +616,9 @@ class Coqui:
                             torch.manual_seed(67878789)
                             audio_data = self.tts.synthesize(
                                 sentence,
-                                speaker=speaker,
-                                voice_dir=npz_dir,
-                                **fine_tuned_params
+                                #speaker=speaker,
+                                #voice_dir=npz_dir,
+                                #**fine_tuned_params
                             )
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
