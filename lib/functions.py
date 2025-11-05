@@ -3445,9 +3445,14 @@ def web_interface(args, ctx):
                 if data is None:
                     data = context.get_session(str(uuid.uuid4()))
                 session = context.get_session(data['id'])
+                # Check if conversion was in progress before restoring
+                was_converting = data.get('status') == 'converting'
                 if data.get('tab_id') == session.get('tab_id') or len(active_sessions) == 0:
                     restore_session_from_data(data, session)
-                    session['status'] = None
+                    # Only reset status if conversion was not in progress
+                    # This allows the process to continue and resync
+                    if not was_converting:
+                        session['status'] = None
                 if not ctx_tracker.start_session(session['id']):
                     error = "Your session is already active.<br>If it's not the case please close your browser and relaunch it."
                     return gr.update(), gr.update(), gr.update(value=''), update_gr_glass_mask(str=error)
@@ -3463,7 +3468,7 @@ def web_interface(args, ctx):
                         session['voice'] = None
                 if session['custom_model'] is not None:
                     if not os.path.exists(session['custom_model_dir']):
-                        session['custom_model'] = None 
+                        session['custom_model'] = None
                 if session['fine_tuned'] is not None:
                     if session['tts_engine'] is not None:
                         if session['tts_engine'] in models.keys():
@@ -3475,8 +3480,15 @@ def web_interface(args, ctx):
                 if session['audiobook'] is not None:
                     if not os.path.exists(session['audiobook']):
                         session['audiobook'] = None
-                if session['status'] == 'converting':
-                    session['status'] = 'ready'
+                # If conversion was in progress and is still ongoing, keep it as 'converting'
+                # If it completed while disconnected, it will already be 'ready' from the conversion process
+                if was_converting and session['status'] == 'converting':
+                    # Conversion is still in progress, keep status
+                    pass
+                elif was_converting and session['status'] != 'converting':
+                    # Conversion completed while disconnected, ensure status is correct
+                    if session['status'] != 'ready':
+                        session['status'] = 'ready'
                 session['system'] = (f"{platform.system()}-{platform.release()}").lower()
                 session['custom_model_dir'] = os.path.join(models_dir, '__sessions', f"model-{session['id']}")
                 session['voice_dir'] = os.path.join(voices_dir, '__sessions', f"voice-{session['id']}", session['language'])
@@ -4065,7 +4077,11 @@ def web_interface(args, ctx):
                                 const saved = JSON.parse(localStorage.getItem("data") || "{}");
                                 if (saved.tab_id == window.tab_id || !saved.tab_id) {
                                     saved.tab_id = undefined;
-                                    saved.status = undefined;
+                                    // Don't clear status if conversion is in progress
+                                    // This allows the process to continue and resync on reconnect
+                                    if (saved.status !== 'converting') {
+                                        saved.status = undefined;
+                                    }
                                     localStorage.setItem("data", JSON.stringify(saved));
                                 }
                             } catch (e) {
