@@ -78,33 +78,6 @@ def check_and_install_requirements(file_path: str) -> bool:
             except Exception:
                 pass
         try:
-            import importlib.metadata
-            torch_version = importlib.metadata.version("torch")
-            from packaging.version import Version
-            if Version(torch_version) < Version("2.3.1"):
-                import numpy
-                if Version(numpy.__version__) >= Version("2.0"):
-                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'numpy<2'])
-                    try:
-                        import importlib.metadata
-                        from packaging.version import Version
-                        import numpy
-                        numpy_major = Version(numpy.__version__).major
-                        if numpy_major < 2:
-                            dependents = ["scipy", "pandas", "matplotlib", "scikit-learn", "numba", "thinc", "spacy", "opencv-python", "transformers"]
-                        else:
-                            dependents = ["scipy", "pandas", "matplotlib", "scikit-learn", "numba", "thinc", "spacy", "opencv-python", "transformers"]
-                        installed = {d.metadata["Name"].lower() for d in importlib.metadata.distributions()}
-                        dependents = [p for p in dependents if p in installed]
-                        numpy_version_pin = f"numpy=={numpy.__version__}"
-                        for pkg in dependents:
-                            subprocess.check_call([sys.executable, "-m", "pip", "install", "--force-reinstall", "--no-cache-dir", "--no-deps", pkg])
-                        subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", numpy_version_pin])
-                    except Exception:
-                        pass
-        except Exception:
-            pass
-        try:
             import torch
             devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available()
             devices['MPS']['found'] = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
