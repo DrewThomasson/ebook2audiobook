@@ -65,7 +65,7 @@ def check_and_install_requirements(file_path:str)->bool:
             from tqdm import tqdm
             from packaging.markers import Marker
         import re as regex
-        flexible_packages={"torch","torchaudio","torchvision","transformers","deepspeed","numpy","scipy","pandas","sentencepiece","tokenizers","llvmlite","numba","protobuf"}
+        flexible_packages={"torch","torchaudio","numpy"}
         has_cuda=False
         try:
             import torch
