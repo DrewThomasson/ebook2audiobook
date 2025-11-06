@@ -12,6 +12,7 @@ sudachipy
 sudachidict_core
 ray
 unidic
+pymupdf-layout
 pymupdf4llm
 translate
 hangul-romanize
