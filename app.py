@@ -373,7 +373,6 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
                 sys.exit(1)
 
         import lib.functions as f
-        f.cleanup_garbage()
         f.context = f.SessionContext() if f.context is None else f.context
         f.context_tracker = f.SessionTracker() if f.context_tracker is None else f.context_tracker
         f.active_sessions = set() if f.active_sessions is None else f.active_sessions
