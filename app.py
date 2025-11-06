@@ -66,6 +66,18 @@ def check_and_install_requirements(file_path: str) -> bool:
             from packaging.markers import Marker
         import re as regex
         flexible_packages = {"torch", "torchaudio", "numpy"}
+        import sys
+        special_packages = []
+        if sys.version_info > (3, 10):
+            special_packages.append("pymupdf-layout")
+        for pkg in special_packages:
+            try:
+                import importlib.util
+                spec = importlib.util.find_spec(pkg.replace("-", "_"))
+                if spec is None:
+                    subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", pkg])
+            except Exception:
+                pass
         try:
             import importlib.metadata
             torch_version = importlib.metadata.version("torch")
@@ -85,8 +97,10 @@ def check_and_install_requirements(file_path: str) -> bool:
                             dependents = ["scipy", "pandas", "matplotlib", "scikit-learn", "numba", "thinc", "spacy", "opencv-python", "transformers"]
                         installed = {d.metadata["Name"].lower() for d in importlib.metadata.distributions()}
                         dependents = [p for p in dependents if p in installed]
+                        numpy_version_pin = f"numpy=={numpy.__version__}"
                         for pkg in dependents:
-                            subprocess.check_call([sys.executable, "-m", "pip", "install", "--force-reinstall", "--no-cache-dir", pkg])
+                            subprocess.check_call([sys.executable, "-m", "pip", "install", "--force-reinstall", "--no-cache-dir", "--no-deps", pkg])
+                        subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", numpy_version_pin])
                     except Exception:
                         pass
         except Exception:
@@ -200,7 +214,7 @@ def check_and_install_requirements(file_path: str) -> bool:
             with tqdm(total = len(packages), desc = 'Installation 0.00%', bar_format = '{desc}: {n_fmt}/{total_fmt} ', unit = 'step') as t:
                 for package in tqdm(missing_packages, desc = "Installing", unit = "pkg"):
                     try:
-                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', package])
+                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', '--no-deps', package])
                         t.update(1)
                     except subprocess.CalledProcessError as e:
                         error = f'Failed to install {package}: {e}'
