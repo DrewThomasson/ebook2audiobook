@@ -25,8 +25,6 @@ from lib.classes.tts_engines.common.audio_filters import detect_gender, trim_aud
 #import logging
 #logging.basicConfig(level=logging.DEBUG)
 
-processors = {"has_cuda": torch.cuda.is_available(), "has_mps": torch.backends.mps.is_available(), "has_xpu": torch.xpu.is_available()}
-
 lock = threading.Lock()
 xtts_builtin_speakers_list = None
 
@@ -84,24 +82,24 @@ class Coqui:
                     else:
                         self.tts = CoquiAPI(model_path)
             if key == self.tts_zs_key:
-                if device == devices['CUDA'] and processors['has_cuda']:
-                    self.tts_zs.to(devices['CUDA'])
-                elif device == devices['MPS'] and processors['has_mps']:
-                    self.tts_zs.to(devices['MPS'])
-                elif device == devices['XPU'] and processors['has_xpu']:
-                    self.tts_zs.to(devices['XPU'])
+                if device == devices['CUDA']['proc'] and devices['CUDA']['found']:
+                    self.tts_zs.to(devices['CUDA']['proc'])
+                elif device == devices['MPS']['proc'] and devices['MPS']['found']:
+                    self.tts_zs.to(devices['MPS']['proc'])
+                elif device == devices['XPU']['proc'] and devices['XPU']['found']:
+                    self.tts_zs.to(devices['XPU']['proc'])
                 else:
-                    self.tts_zs.to(devices['CPU'])
+                    self.tts_zs.to(devices['CPU']['proc'])
                 loaded_tts[key] = {"engine": self.tts_zs, "config": None}                        
             else:
-                if device == devices['CUDA'] and processors['has_cuda']:
+                if device == devices['CUDA']['proc']['proc'] and devices['CUDA']['found']:
                     self.tts.cuda()
-                elif device == devices['MPS'] and processors['has_mps']:
-                    self.tts.to(devices['MPS'])
-                elif device == devices['XPU'] and processors['has_xpu']:
-                    self.tts.to(devices['XPU'])
+                elif device == devices['MPS']['proc'] and devices['MPS']['found']:
+                    self.tts.to(devices['MPS']['proc'])
+                elif device == devices['XPU']['proc'] and devices['XPU']['found']:
+                    self.tts.to(devices['XPU']['proc'])
                 else:
-                    self.tts.to(devices['CPU'])
+                    self.tts.to(devices['CPU']['proc'])
                 loaded_tts[key] = {"engine": self.tts, "config": None}
             msg = f"Model loaded successfully: {model_path} ({device})"
             print(msg)
@@ -152,14 +150,14 @@ class Coqui:
                             eval = True
                         )
             if self.tts:
-                if device == devices['CUDA'] and processors['has_cuda']:
-                    self.tts.to(devices['CUDA'])
-                elif device == devices['MPS'] and processors['has_mps']:
-                    self.tts.to(devices['MPS'])
-                elif device == devices['XPU'] and processors['has_xpu']:
-                    self.tts.to(devices['XPU'])
+                if device == devices['CUDA']['proc']['proc'] and devices['CUDA']['found']:
+                    self.tts.to(devices['CUDA']['proc'])
+                elif device == devices['MPS']['proc'] and devices['MPS']['found']:
+                    self.tts.to(devices['MPS']['proc'])
+                elif device == devices['XPU']['proc'] and devices['XPU']['found']:
+                    self.tts.to(devices['XPU']['proc'])
                 else:
-                    self.tts.to(devices['CPU'])
+                    self.tts.to(devices['CPU']['proc'])
                 loaded_tts[key] = {"engine":self.tts,"config":config}
                 msg = f'{tts_engine} Loaded!'
                 print(msg)
@@ -465,27 +463,27 @@ class Coqui:
         return tmp_path
 
     def _autocast_context(self):
-        device = self.session.get('device', devices['CPU'])
-        if device == devices['CUDA'] and processors['has_cuda']:
+        device = self.session.get('device', devices['CPU']['proc'])
+        if device == devices['CUDA']['proc'] and devices['CUDA']['found']:
             torch_cuda_is_bf16 = True if torch.cuda.is_bf16_supported() else False
             dtype = (
                 torch.bfloat16
                 if torch_cuda_is_bf16 and self.session['free_vram_gb'] > 4.0
                 else torch.float16
             )
-            return torch.amp.autocast(devices['CUDA'], dtype=dtype)
-        if device == devices['XPU'] and processors['has_xpu']:
+            return torch.amp.autocast(devices['CUDA']['proc'], dtype=dtype)
+        if device == devices['XPU']['proc'] and devices['XPU']['found']:
             torch_xpu_is_bf16 = True if torch.xpu.is_bf16_supported() else False
             dtype = (
                 torch.bfloat16
                 if torch_xpu_is_bf16 and self.session['free_vram_gb'] > 4.0
                 else torch.float16
             )
-            return torch.amp.autocast(devices['XPU'], dtype=dtype)
+            return torch.amp.autocast(devices['XPU']['proc'], dtype=dtype)
         else:
             cpu_bf16_supported = getattr(torch.cpu, "is_bf16_supported", lambda: False)()
             if cpu_bf16_supported:
-                return torch.amp.autocast(devices['CPU'])
+                return torch.amp.autocast(devices['CPU']['proc'])
         return nullcontext()
 
     def convert(self, s_n:int, s:str)->bool:

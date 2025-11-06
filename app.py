@@ -66,10 +66,11 @@ def check_and_install_requirements(file_path:str)->bool:
             from packaging.markers import Marker
         import re as regex
         flexible_packages={"torch","torchaudio","numpy"}
-        has_cuda=False
         try:
             import torch
-            has_cuda=torch.cuda.is_available()
+            devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available()
+            devices['MPS']['found'] = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
+            devices['XPU']['found'] = getattr(torch, "xpu", None) is not None and torch.xpu.is_available()
         except ImportError:
             pass
         cuda_only_packages={'deepspeed'}
@@ -79,7 +80,7 @@ def check_and_install_requirements(file_path:str)->bool:
         missing_packages=[]
         for package in packages:
             pkg_name_lower=package.lower().split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].strip()
-            if any(x in pkg_name_lower for x in cuda_only_packages)and not has_cuda:
+            if any(x in pkg_name_lower for x in cuda_only_packages) and not devices['CUDA']['found']:
                 continue
             if ';'in package:
                 pkg_part,marker_part=package.split(';',1)

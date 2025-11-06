@@ -8,7 +8,7 @@
 from __future__ import annotations
 
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, subprocess, sys, tempfile, threading, time, traceback, socket
-import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc, torch
+import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -54,8 +54,6 @@ from lib.classes.tts_manager import TTSManager
 #)
 
 warnings.filterwarnings("ignore", category=UserWarning, module="jieba._compat")
-
-processors = {"has_cuda": torch.cuda.is_available(), "has_mps": torch.backends.mps.is_available(), "has_xpu": torch.xpu.is_available()}
 
 context = None
 context_tracker = None
@@ -213,7 +211,7 @@ class JSONDictProxyEncoder(json.JSONEncoder):
 
 def cleanup_garbage():
     gc.collect()
-    if processors['has_cuda']:
+    if devices['CUDA']['found']:
         torch.cuda.empty_cache()
         torch.cuda.ipc_collect()
         torch.cuda.synchronize()
@@ -550,7 +548,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         stanza_nlp = False
         if session['language'] in year_to_decades_languages:
             try:
-                use_gpu = True if processors['has_cuda'] or processors['has_xpu'] else False
+                use_gpu = True if devices['CUDA']['found'] or devices['XPU']['found'] else False
                 stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
                 stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method="reuse_resources")
                 #stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=False, download_method="reuse_resources")
@@ -2071,32 +2069,32 @@ def convert_ebook(args:dict)->tuple:
                                 if session['free_vram_gb'] > 4.0:
                                     if session['tts_engine'] == TTS_ENGINES['BARK']:
                                         os.environ['SUNO_USE_SMALL_MODELS'] = 'False'                        
-                            if session['device'] == devices['CUDA']:
-                                session['device'] = session['device'] if processors['has_cuda'] else devices['CPU']
-                                if session['device'] == devices['CPU']:
+                            if session['device'] == devices['CUDA']['proc']:
+                                session['device'] = session['device'] if devices['CUDA']['found'] else devices['CPU']['proc']
+                                if session['device'] == devices['CPU']['proc']:
                                     msg += f"- CUDA not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
-                            elif session['device'] == devices['MPS']:
-                                if not processors['has_mps']:
-                                    session['device'] = devices['CPU']
+                            elif session['device'] == devices['MPS']['proc']:
+                                if not devices['MPS']['found']:
+                                    session['device'] = devices['CPU']['proc']
                                     if not torch.backends.mps.is_built():
                                         msg += "- MPS not available because the current PyTorch was not built with MPS enabled"
                                     else:
                                         msg += "- MPS not available because the current device does not have MPS-enabled"
                                     msg += f"<br/>- Read {default_gpu_wiki}<br/>- Switching to CPU for now"
-                            elif session['device'] == devices['XPU']:
-                                session['device'] = session['device'] if processors['has_xpu'] else devices['CPU']
-                                if session['device'] == devices['CPU']:
+                            elif session['device'] == devices['XPU']['proc']:
+                                session['device'] = session['device'] if devices['XPU']['found'] else devices['CPU']['proc']
+                                if session['device'] == devices['CPU']['proc']:
                                     msg += f"- XPU not recognized by torch! Read {default_gpu_wiki} - Switching to CPU"
                             if session['free_vram_gb'] <= 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
                                     os.environ['SUNO_OFFLOAD_CPU'] = 'False'
-                            using_gpu = session['device'] != devices['CPU']
+                            using_gpu = session['device'] != devices['CPU']['proc']
                             enough_vram = session['free_vram_gb'] > 4.0
                             if using_gpu and enough_vram:
                                 torch.set_float32_matmul_precision("medium")
-                                if processors['has_cuda']:
+                                if devices['CUDA']['found']:
                                     torch.cuda.set_per_process_memory_fraction(0.95)
                                     torch.backends.cuda.matmul.allow_tf32 = True
                                     torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
@@ -2104,7 +2102,7 @@ def convert_ebook(args:dict)->tuple:
                                     torch.backends.cudnn.deterministic = False
                             else:
                                 torch.set_float32_matmul_precision("high")
-                                if processors['has_cuda']:
+                                if devices['CUDA']['found']:
                                     torch.cuda.set_per_process_memory_fraction(0.7)
                                     torch.backends.cudnn.benchmark = False
                                     torch.backends.cudnn.deterministic = True
