@@ -105,10 +105,11 @@ class Coqui:
         global lock
         try:
             with lock:
+                print('_load_checkpoint called')
                 key = kwargs.get('key')
                 device = kwargs.get('device')
                 engine = loaded_tts(key, {}).get('engine', False)
-                engine_name = kwargs.get('tts_engine', TTS_ENGINES['XTTSv2'])
+                engine_name = kwargs.get('tts_engine', False)
                 if not engine:
                     print('engine must be loaded')
                     if engine_name == TTS_ENGINES['XTTSv2']:
