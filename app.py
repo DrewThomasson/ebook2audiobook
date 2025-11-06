@@ -52,7 +52,6 @@ def check_and_install_requirements(file_path: str) -> bool:
         print(error)
         return False
     try:
-        from importlib.metadata import version, PackageNotFoundError
         try:
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version
@@ -71,7 +70,6 @@ def check_and_install_requirements(file_path: str) -> bool:
             special_packages.append("pymupdf-layout")
         for pkg in special_packages:
             try:
-                import importlib.util
                 spec = importlib.util.find_spec(pkg.replace("-", "_"))
                 if spec is None:
                     subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", pkg])
