@@ -91,7 +91,8 @@ class Coqui:
                 if not engine:
                     print(f"Loading Coqui model from: {model_path}")
                     engine = TTSEngine(model_path)
-                    loaded_tts[key] = {"engine": engine, "config": None}
+                    if engine:
+                        loaded_tts[key] = {"engine": engine, "config": None}
                 msg = f"Model loaded successfully: {model_path} ({device})"
                 print(msg)
                 return engine
@@ -106,7 +107,6 @@ class Coqui:
             with lock:
                 key = kwargs.get('key')
                 device = kwargs.get('device')
-                unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                 engine = loaded_tts(key, {}).get('engine', False)
                 engine_name = kwargs.get('tts_engine')
                 if not engine:
@@ -149,8 +149,9 @@ class Coqui:
                             checkpoint_dir = checkpoint_dir,
                             eval = True
                         )
+                    if engine:
+                        loaded_tts[key] = {"engine": engine, "config": config}
                 if engine:
-                    loaded_tts[key] = {"engine": engine, "config": config}
                     msg = f'{engine_name} Loaded!'
                     print(msg)
                     return engine
@@ -281,7 +282,6 @@ class Coqui:
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         engine = loaded_tts.get(key, {}).get('engine', False)
                         if not engine:
-                            unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                             hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
                             hf_sub = ''
                             config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][0]}", cache_dir=self.cache_dir)
@@ -361,7 +361,6 @@ class Coqui:
                     key = f"{TTS_ENGINES['BARK']}-internal"
                     engine = loaded_tts.get(key, {}).get('engine', False)
                     if not engine:
-                        unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                         hf_repo = models[TTS_ENGINES['BARK']]['internal']['repo']
                         hf_sub = models[TTS_ENGINES['BARK']]['internal']['sub'] 
                         text_model_path = hf_hub_download(repo_id=hf_repo,filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][0]}",cache_dir=self.cache_dir)
