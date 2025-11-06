@@ -209,13 +209,6 @@ class JSONDictProxyEncoder(json.JSONEncoder):
             return list(o)
         return super().default(o)
 
-def cleanup_garbage():
-    gc.collect()
-    if devices['CUDA']['found']:
-        torch.cuda.empty_cache()
-        torch.cuda.ipc_collect()
-        torch.cuda.synchronize()
-
 def prepare_dirs(src:str, session:DictProxy[str,Any])->bool:
     try:
         resume = False
@@ -569,7 +562,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 chapters.append(sentences_list)
         if stanza_nlp:
             del stanza_nlp
-            cleanup_garbage()
+            gc.collect()
         if len(chapters) == 0:
             error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
             return error, None
@@ -2076,11 +2069,8 @@ def convert_ebook(args:dict)->tuple:
                             elif session['device'] == devices['MPS']['proc']:
                                 if not devices['MPS']['found']:
                                     session['device'] = devices['CPU']['proc']
-                                    if not torch.backends.mps.is_built():
-                                        msg += "- MPS not available because the current PyTorch was not built with MPS enabled"
-                                    else:
-                                        msg += "- MPS not available because the current device does not have MPS-enabled"
-                                    msg += f"<br/>- Read {default_gpu_wiki}<br/>- Switching to CPU for now"
+                                    msg += "- MPS not supported or not recognized by torch"
+                                    msg += f"<br/>- Read {default_gpu_wiki}<br/>Switching to CPU"
                             elif session['device'] == devices['XPU']['proc']:
                                 session['device'] = session['device'] if devices['XPU']['found'] else devices['CPU']['proc']
                                 if session['device'] == devices['CPU']['proc']:
@@ -2089,25 +2079,7 @@ def convert_ebook(args:dict)->tuple:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
                                     msg_extra += f"<br/>Switching BARK to SMALL models"
-                                    os.environ['SUNO_OFFLOAD_CPU'] = 'False'
-                            using_gpu = session['device'] != devices['CPU']['proc']
-                            enough_vram = session['free_vram_gb'] > 4.0
-                            if using_gpu and enough_vram:
-                                torch.set_float32_matmul_precision("medium")
-                                if devices['CUDA']['found']:
-                                    torch.cuda.set_per_process_memory_fraction(0.95)
-                                    torch.backends.cuda.matmul.allow_tf32 = True
-                                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
-                                    torch.backends.cudnn.benchmark = True
-                                    torch.backends.cudnn.deterministic = False
-                            else:
-                                torch.set_float32_matmul_precision("high")
-                                if devices['CUDA']['found']:
-                                    torch.cuda.set_per_process_memory_fraction(0.7)
-                                    torch.backends.cudnn.benchmark = False
-                                    torch.backends.cudnn.deterministic = True
-                                    torch.backends.cuda.matmul.allow_tf32 = False
-                                    torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False                                  
+                                    os.environ['SUNO_OFFLOAD_CPU'] = 'False'                               
                             if msg == '':
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;

@@ -59,6 +59,24 @@ class Coqui:
             if xtts_builtin_speakers_list is None:
                 self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
                 xtts_builtin_speakers_list = torch.load(self.speakers_path)
+                using_gpu = session['device'] != devices['CPU']['proc']
+                enough_vram = session['free_vram_gb'] > 4.0
+                if using_gpu and enough_vram:
+                    torch.set_float32_matmul_precision("medium")
+                    if devices['CUDA']['found']:
+                        torch.cuda.set_per_process_memory_fraction(0.95)
+                        torch.backends.cuda.matmul.allow_tf32 = True
+                        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
+                        torch.backends.cudnn.benchmark = True
+                        torch.backends.cudnn.deterministic = False
+                else:
+                    torch.set_float32_matmul_precision("high")
+                    if devices['CUDA']['found']:
+                        torch.cuda.set_per_process_memory_fraction(0.7)
+                        torch.backends.cudnn.benchmark = False
+                        torch.backends.cudnn.deterministic = True
+                        torch.backends.cuda.matmul.allow_tf32 = False
+                        torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
         except Exception as e:
             error = f'build() error: {e}'
             print(error)
