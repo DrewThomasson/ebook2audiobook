@@ -110,7 +110,9 @@ class Coqui:
                 engine = loaded_tts(key, {}).get('engine', False)
                 engine_name = kwargs.get('tts_engine', TTS_ENGINES['XTTSv2'])
                 if not engine:
+                    print('engine must be loaded')
                     if engine_name == TTS_ENGINES['XTTSv2']:
+                        print('engine is xtts')
                         from TTS.tts.configs.xtts_config import XttsConfig
                         from TTS.tts.models.xtts import Xtts
                         checkpoint_path = kwargs.get('checkpoint_path')
@@ -130,9 +132,10 @@ class Coqui:
                             config,
                             checkpoint_path = checkpoint_path,
                             vocab_path = vocab_path,
-                            #use_deepspeed = default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'],
+                            use_deepspeed = default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'],
                             eval = True
                         )
+                        print(engine)
                     elif engine_name == TTS_ENGINES['BARK']:
                         from TTS.tts.configs.bark_config import BarkConfig
                         from TTS.tts.models.bark import Bark
