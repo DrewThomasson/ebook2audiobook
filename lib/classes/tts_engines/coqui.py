@@ -359,7 +359,7 @@ class Coqui:
                 else:
                     os.makedirs(npz_dir,exist_ok=True)
                     key = f"{TTS_ENGINES['BARK']}-internal"
-                    engine = (loaded_tts.get(key, {}).get('engine', False)
+                    engine = loaded_tts.get(key, {}).get('engine', False)
                     if not engine:
                         #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                         hf_repo = models[TTS_ENGINES['BARK']]['internal']['repo']
