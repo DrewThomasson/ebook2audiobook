@@ -253,8 +253,10 @@ else
 			echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
 			if [[ "$OSTYPE" = "darwin"* ]]; then
 				curl -fsSLo "$CONDA_INSTALLER" "$CONDA_URL"
+				shell_name="zsh"
 			else
 				wget -O "$CONDA_INSTALLER" "$CONDA_URL"
+				shell_name="bash"
 			fi
 			if [[ -f "$CONDA_INSTALLER" ]]; then
 				echo -e "\e[33mInstalling Miniforge3...\e[0m"
@@ -262,8 +264,10 @@ else
 				rm -f "$CONDA_INSTALLER"
 				if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
 					$CONDA_INSTALL_DIR/bin/conda config --set auto_activate_base false
-					source $CONDA_ENV
 					[ -f $CONFIG_FILE ] || touch $CONFIG_FILE; grep -qxF 'export PATH="$HOME/miniforge3/bin:$PATH"' $CONFIG_FILE || echo 'export PATH="$HOME/miniforge3/bin:$PATH"' >> $CONFIG_FILE source $CONFIG_FILE
+					conda init shell_name
+					source $CONFIG_FILE
+					source $CONDA_ENV
 					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 				else
 					echo -e "\e[31mconda installation failed.\e[0m"		
