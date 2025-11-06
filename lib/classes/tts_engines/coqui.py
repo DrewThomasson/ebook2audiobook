@@ -45,8 +45,8 @@ class Coqui:
             self.params={TTS_ENGINES['XTTSv2']:{"latent_embedding":{}},TTS_ENGINES['BARK']:{},TTS_ENGINES['VITS']:{"semitones":{}},TTS_ENGINES['FAIRSEQ']:{"semitones":{}},TTS_ENGINES['TACOTRON2']:{"semitones":{}},TTS_ENGINES['YOURTTS']:{}}
             self.params[self.session['tts_engine']]['samplerate']=models[self.session['tts_engine']][self.session['fine_tuned']]['samplerate']
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
-            self.resampler_cache={}
-            self.audio_segments=[]
+            self.resampler_cache = {}
+            self.audio_segments = []
             self._build()
         except Exception as e:
             error = f'__init__() error: {e}'
@@ -87,7 +87,7 @@ class Coqui:
             with lock:
                 #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                 from TTS.api import TTS as TTSEngine
-                engine = loaded_tts[key].get("engine")
+                engine = loaded_tts.get(key, {}).get('engine', False)
                 if not engine:
                     print(f"Loading Coqui model from: {model_path}")
                     engine = TTSEngine(model_path)
@@ -107,7 +107,7 @@ class Coqui:
                 key = kwargs.get('key')
                 device = kwargs.get('device')
                 #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
-                engine = loaded_tts[key].get("engine")
+                engine = loaded_tts(key, {}).get('engine', False)
                 engine_name = kwargs.get('tts_engine')
                 if not engine:
                     if engine_name == TTS_ENGINES['XTTSv2']:
@@ -150,7 +150,7 @@ class Coqui:
                             eval = True
                         )
                 if engine:
-                    loaded_tts[key] = {"engine":engine,"config":config}
+                    loaded_tts[key] = {"engine": engine, "config": config}
                     msg = f'{engine_name} Loaded!'
                     print(msg)
                     return engine
@@ -162,7 +162,7 @@ class Coqui:
 
     def _plug_engine(self):
         try:
-            engine = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
+            engine = (loaded_tts.get(self.tts_key, {}).get('engine', False)
             if engine:
                 return engine
             msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
@@ -257,7 +257,7 @@ class Coqui:
     def _plug_engine_zs(self):
         try:
             if load_zeroshot:
-                engine_zs = (loaded_tts.get(self.tts_zs_key) or {}).get('engine', False)
+                engine_zs = (loaded_tts.get(self.tts_zs_key, {}).get('engine', False)
                 if engine_zs:
                     return engine_zs
                 if self.session['voice'] is not None:
@@ -279,7 +279,7 @@ class Coqui:
                         print(msg)
                         key = f"{TTS_ENGINES['XTTSv2']}-internal"
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
-                        engine = (loaded_tts.get(key) or {}).get('engine', False)
+                        engine = (loaded_tts.get(key, {}).get('engine', False)
                         if not engine:
                             #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                             hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
@@ -359,7 +359,7 @@ class Coqui:
                 else:
                     os.makedirs(npz_dir,exist_ok=True)
                     key = f"{TTS_ENGINES['BARK']}-internal"
-                    engine = (loaded_tts.get(key) or {}).get('engine', False)
+                    engine = (loaded_tts.get(key, {}).get('engine', False)
                     if not engine:
                         #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                         hf_repo = models[TTS_ENGINES['BARK']]['internal']['repo']
