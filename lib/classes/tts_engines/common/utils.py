@@ -16,14 +16,14 @@ def cleanup_garbage():
 
 def unload_tts(device:str, reserved_keys:list[str]|None, tts_key:str)->bool:
     try:
-        if len(loaded_tts) >= max_tts_in_memory:
+        if len(loaded_tts) > max_tts_in_memory:
             if reserved_keys is None:
                 if tts_key in loaded_tts:
-                    del loaded_tts[tts_key]
+                    loaded_tts.pop(tts_key, False)
             else:
                 if tts_key not in reserved_keys:
                     if tts_key in loaded_tts:
-                        del loaded_tts[tts_key]
+                        loaded_tts.pop(tts_key, False)
         cleanup_garbage()
         return True
     except Exception as e:

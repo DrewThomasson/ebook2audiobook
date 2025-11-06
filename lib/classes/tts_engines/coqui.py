@@ -336,7 +336,6 @@ class Coqui:
                                 if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
                                     del audio_data, sourceTensor, audio_tensor
                                     if key != self.tts_key:
-                                        del engine
                                         unload_tts(device, None, key)
                                     return new_voice_path
                                 else:
@@ -403,7 +402,6 @@ class Coqui:
                         os.remove(voice_temp)
                         del audio_data
                         if key != self.tts_key:
-                            del engine
                             unload_tts(device, None, key)
                         msg = f"Saved NPZ file: {npz_file}"
                         print(msg)
