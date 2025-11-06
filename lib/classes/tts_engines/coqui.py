@@ -88,9 +88,9 @@ class Coqui:
                 #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                 from TTS.api import TTS as TTSEngine
                 engine = loaded_tts[key].get("engine")
-                if not isinstance(engine, TTSEngine):
+                if not engine:
                     print(f"Loading Coqui model from: {model_path}")
-                    engine = TTSEngine(model_path)  
+                    engine = TTSEngine(model_path)
                     loaded_tts[key] = {"engine": engine, "config": None}
                 msg = f"Model loaded successfully: {model_path} ({device})"
                 print(msg)
@@ -109,10 +109,10 @@ class Coqui:
                 #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                 engine = loaded_tts[key].get("engine")
                 engine_name = kwargs.get('tts_engine')
-                if engine_name == TTS_ENGINES['XTTSv2']:
-                    from TTS.tts.configs.xtts_config import XttsConfig
-                    from TTS.tts.models.xtts import Xtts
-                    if not isinstance(engine, Xtts):
+                if not engine:
+                    if engine_name == TTS_ENGINES['XTTSv2']:
+                        from TTS.tts.configs.xtts_config import XttsConfig
+                        from TTS.tts.models.xtts import Xtts
                         checkpoint_path = kwargs.get('checkpoint_path')
                         config_path = kwargs.get('config_path',None)
                         vocab_path = kwargs.get('vocab_path',None)
@@ -133,15 +133,9 @@ class Coqui:
                             use_deepspeed = default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'],
                             eval = True
                         )
-                        if engine:
-                            loaded_tts[key] = {"engine":engine,"config":config}
-                            msg = f'{engine_name} Loaded!'
-                            print(msg)
-                            return engine
-                elif engine_name == TTS_ENGINES['BARK']:
-                    from TTS.tts.configs.bark_config import BarkConfig
-                    from TTS.tts.models.bark import Bark
-                    if not isinstance(engine, Bark):
+                    elif engine_name == TTS_ENGINES['BARK']:
+                        from TTS.tts.configs.bark_config import BarkConfig
+                        from TTS.tts.models.bark import Bark
                         checkpoint_dir = kwargs.get('checkpoint_dir')
                         if not checkpoint_dir or not os.path.exists(checkpoint_dir):
                             raise FileNotFoundError(f"Missing or invalid checkpoint_dir: {checkpoint_dir}")
@@ -155,11 +149,11 @@ class Coqui:
                             checkpoint_dir = checkpoint_dir,
                             eval = True
                         )
-                        if engine:
-                            loaded_tts[key] = {"engine":engine,"config":config}
-                            msg = f'{engine_name} Loaded!'
-                            print(msg)
-                            return engine
+                if engine:
+                    loaded_tts[key] = {"engine":engine,"config":config}
+                    msg = f'{engine_name} Loaded!'
+                    print(msg)
+                    return engine
                 error='TTS engine could not be created!'
                 print(error)
         except Exception as e:
