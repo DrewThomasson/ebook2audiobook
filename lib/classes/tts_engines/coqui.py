@@ -257,7 +257,7 @@ class Coqui:
     def _plug_engine_zs(self):
         try:
             if load_zeroshot:
-                engine_zs = (loaded_tts.get(self.tts_zs_key, {}).get('engine', False)
+                engine_zs = loaded_tts.get(self.tts_zs_key, {}).get('engine', False)
                 if engine_zs:
                     return engine_zs
                 if self.session['voice'] is not None:
