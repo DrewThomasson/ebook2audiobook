@@ -115,7 +115,7 @@ class SessionContext:
         elif isinstance(data, (str, int, float, bool, type(None))):
             return data
         else:
-            error = f"Unsupported data type: {type(data)}"
+            error = f'Unsupported data type: {type(data)}'
             print(error)
             return None
 
@@ -256,7 +256,7 @@ def check_programs(prog_name:str, command:str, options:str)->bool:
 def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
     try:
         if not os.path.exists(zip_path):
-            error = f"The file does not exist: {os.path.basename(zip_path)}"
+            error = f'The file does not exist: {os.path.basename(zip_path)}'
             print(error)
             return False
         files_in_zip = {}
@@ -274,15 +274,17 @@ def analyze_uploaded_file(zip_path:str, required_files:list[str])->bool:
         missing_files = [f for f in required_files if f not in files_in_zip]
         required_empty_files = [f for f in required_files if f in empty_files]
         if missing_files:
-            print(f"Missing required files: {missing_files}")
+            msg = f'Missing required files: {missing_files}'
+            print(msg)
         if required_empty_files:
-            print(f"Required files with 0 KB: {required_empty_files}")
+            msg = f'Required files with 0 KB: {required_empty_files}'
+            print(msg)
         return not missing_files and not required_empty_files
     except zipfile.BadZipFile:
-        error = "The file is not a valid ZIP archive."
+        error = 'The file is not a valid ZIP archive.'
         raise ValueError(error)
     except Exception as e:
-        error = f"An error occurred: {e}"
+        error = f'An error occurred: {e}'
         raise RuntimeError(error)
     return False
 
@@ -383,7 +385,7 @@ def convert2epub(id:str)->bool:
             return False
         file_input = session['ebook']
         if os.path.getsize(file_input) == 0:
-            error = f"Input file is empty: {file_input}"
+            error = f'Input file is empty: {file_input}'
             print(error)
             return False
         file_ext = os.path.splitext(file_input)[1].lower()
@@ -438,11 +440,13 @@ def convert2epub(id:str)->bool:
         print(result.stdout)
         return True
     except subprocess.CalledProcessError as e:
-        print(f"convert2epub subprocess.CalledProcessError: {e.stderr}")
+        error = f'convert2epub subprocess.CalledProcessError: {e.stderr}'
+        print(error)
         DependencyError(e)
         return False
     except FileNotFoundError as e:
-        print(f"convert2epub FileNotFoundError: {e}")
+        error = f'convert2epub FileNotFoundError: {e}'
+        print(error)
         DependencyError(e)
         return False
 
@@ -524,7 +528,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 )) is not None
             ]
         except Exception as toc_error:
-            error = f"Error extracting Table of Content: {toc_error}"
+            error = f'Error extracting Table of Content: {toc_error}'
             show_alert({"type": "warning", "msg": error})
         # Get spine item IDs
         spine_ids = [item[0] for item in epubBook.spine]
@@ -1360,7 +1364,7 @@ def convert_chapters2audio(id:str)->bool:
         )
         if existing_sentences:
             resume_sentence = max(int(re.search(r'\d+', f).group()) for f in existing_sentences)
-            msg = f"Resuming from sentence {resume_sentence}"
+            msg = f'Resuming from sentence {resume_sentence}'
             print(msg)
             existing_sentence_numbers = {int(re.search(r'\d+', f).group()) for f in existing_sentences}
             missing_sentences = [
@@ -1412,7 +1416,7 @@ def convert_chapters2audio(id:str)->bool:
                             is_sentence = sentence.strip() not in TTS_SML.values()
                             percentage = total_progress * 100
                             t.set_description(f"{percentage:.2f}%")
-                            msg = f" : {sentence}" if is_sentence else f" : {sentence}"
+                            msg = f' : {sentence}' if is_sentence else f' : {sentence}'
                             print(msg)
                         else:
                             return False
@@ -1420,7 +1424,7 @@ def convert_chapters2audio(id:str)->bool:
                         sentence_number += 1
                     t.update(1)
                 end = sentence_number - 1 if sentence_number > 1 else sentence_number
-                msg = f"End of Block {chapter_num}"
+                msg = f'End of Block {chapter_num}'
                 print(msg)
                 if chapter_num in missing_chapters or sentence_number > resume_sentence:
                     if chapter_num <= resume_chapter:
@@ -1482,10 +1486,12 @@ def combine_audio_sentences(chapter_audio_file:str, start:int, end:int, session:
                 with Pool(cpu_count()) as pool:
                     results = pool.starmap(assemble_chunks, chunk_list)
             except Exception as e:
-                print(f"combine_audio_sentences() multiprocessing error: {e}")
+                error = f'combine_audio_sentences() multiprocessing error: {e}'
+                print(error)
                 return False
             if not all(results):
-                print("combine_audio_sentences() One or more chunks failed.")
+                error = 'combine_audio_sentences() One or more chunks failed.'
+                print(error)
                 return False
             final_list = os.path.join(temp_dir, 'sentences_final.txt')
             with open(final_list, 'w') as f:
@@ -1520,7 +1526,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
             DependencyError(e)
             return 0
         except Exception as e:
-            error = f"get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}"
+            error = f'get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}'
             print(error)
             return 0
 
@@ -1582,7 +1588,7 @@ def combine_audio_chapters(id:str)->list[str]|None:
                 f.write(ffmpeg_metadata)
             return output_metadata_path
         except Exception as e:
-            error = f"generate_ffmpeg_metadata() Error: Failed to process {txt_file} → {out_file}: {e}"
+            error = f'generate_ffmpeg_metadata() Error: Failed to process {txt_file} → {out_file}: {e}'
             print(error)
             return False
 
@@ -1828,7 +1834,8 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
                             except ValueError:
                                 pass
         except Exception as e:
-            print(f"assemble_chunks() open file {txt_file} Error: {e}")
+            error = f'assemble_chunks() open file {txt_file} Error: {e}'
+            print(error)
             return False
         cmd = [
             shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-y',
@@ -1837,16 +1844,18 @@ def assemble_chunks(txt_file:str, out_file:str, is_gui_process:bool)->bool:
         ]
         proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=total_duration, msg='Assemble chunks')
         if proc_pipe:
-            print(f"Completed → {out_file}")
+            msg = f'Completed → {out_file}'
+            print(msg)
             return True
         else:
-            error = f"Failed (proc_pipe) → {out_file}"
+            error = f'Failed (proc_pipe) → {out_file}'
             return False
     except subprocess.CalledProcessError as e:
         DependencyError(e)
         return False
     except Exception as e:
-        print(f"assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}")
+        error = f'assemble_chunks() Error: Failed to process {txt_file} → {out_file}: {e}'
+        print(error)
         return False
 
 def ellipsize_utf8_bytes(s:str, max_bytes:int, ellipsis:str="...")->str:
@@ -1901,10 +1910,10 @@ def delete_unused_tmp_dirs(web_dir:str, days:int, session:DictProxy[str,Any])->N
                             dir_ctime = os.path.getctime(full_dir_path)
                             if dir_mtime < threshold_time and dir_ctime < threshold_time:
                                 shutil.rmtree(full_dir_path, ignore_errors=True)
-                                msg = f"Deleted expired session: {full_dir_path}"
+                                msg = f'Deleted expired session: {full_dir_path}'
                                 print(msg)
                         except Exception as e:
-                            error = f"Error deleting {full_dir_path}: {e}"
+                            error = f'Error deleting {full_dir_path}: {e}'
                             print(error)
 
 def get_compatible_tts_engines(language:str)->list:
@@ -3119,7 +3128,7 @@ def build_interface(args:dict)->gr.Blocks:
                     session["cancellation_requested"] = False
                     return gr.update(value='', visible=False)
                 except Exception as e:
-                    error = f"change_gr_ebook_file(): {e}"
+                    error = f'change_gr_ebook_file(): {e}'
                     alert_exception(error, id)
                 return gr.update(value='', visible=False)
 
@@ -3882,7 +3891,7 @@ def build_interface(args:dict)->gr.Blocks:
                                     )
                     yield gr.update(), gr.update(), gr.update()
                 except Exception as e:
-                    error = f"save_session(): {e}!"
+                    error = f'save_session(): {e}!'
                     alert_exception(error, id)
                     yield gr.update(), gr.update(value=e), gr.update()
             
