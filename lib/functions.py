@@ -3604,7 +3604,7 @@ def build_interface(args:dict)->gr.Blocks:
                         "session": id,
                         "script_mode": script_mode,
                         "chapters_preview": chapters_preview,
-                        "device": device.lower(),
+                        "device": device,
                         "tts_engine": tts_engine,
                         "ebook": ebook_file if isinstance(ebook_file, str) else None,
                         "ebook_list": ebook_file if isinstance(ebook_file, list) else None,
