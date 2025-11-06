@@ -54,7 +54,7 @@ debug_mode = False
 
 devices = {"CPU": {"proc": "cpu", "found": True}, "CUDA": {"proc": "cuda", "found": False}, "MPS": {"proc": "mps", "found": False}, "XPU": {"proc": "xpu", "found": False}}
 default_device = devices['CPU']['proc']
-default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">howto wiki</a>'
+default_gpu_wiki = '<a href="https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES">GPU howto wiki</a>'
 default_chapters_preview = False
 
 python_env_dir = os.path.abspath(os.path.join('.','python_env'))
