@@ -46,7 +46,7 @@ In order to install and/or use ebook2audiobook correctly you must run
     else:
         return True
 
-def check_and_install_requirements(file_path:str)->bool:
+def check_and_install_requirements(file_path: str) -> bool:
     if not os.path.exists(file_path):
         error = f'Warning: File {file_path} not found. Skipping package check.'
         print(error)
@@ -74,6 +74,21 @@ def check_and_install_requirements(file_path:str)->bool:
                 import numpy
                 if Version(numpy.__version__) >= Version("2.0"):
                     subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'numpy<2'])
+                    try:
+                        import importlib.metadata
+                        from packaging.version import Version
+                        import numpy
+                        numpy_major = Version(numpy.__version__).major
+                        if numpy_major < 2:
+                            dependents = ["scipy", "pandas", "matplotlib", "scikit-learn", "numba", "thinc", "spacy", "opencv-python", "transformers"]
+                        else:
+                            dependents = ["scipy", "pandas", "matplotlib", "scikit-learn", "numba", "thinc", "spacy", "opencv-python", "transformers"]
+                        installed = {d.metadata["Name"].lower() for d in importlib.metadata.distributions()}
+                        dependents = [p for p in dependents if p in installed]
+                        for pkg in dependents:
+                            subprocess.check_call([sys.executable, "-m", "pip", "install", "--force-reinstall", "--no-cache-dir", pkg])
+                    except Exception:
+                        pass
         except Exception:
             pass
         try:
