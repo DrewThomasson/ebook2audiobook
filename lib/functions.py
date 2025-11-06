@@ -3429,9 +3429,10 @@ def build_interface(args:dict)->gr.Blocks:
                     alert_exception(error, id)              
                     return gr.update()
 
-            def change_gr_device(device:str, id:str)->None:
+            def change_gr_device(selected:str, id:str)->None:
+                print(f'---------{selected}--------')
                 session = context.get_session(id)
-                session['device'] = device
+                session['device'] = selected
 
             def change_gr_language(selected:str, id:str)->tuple:
                 if selected:
