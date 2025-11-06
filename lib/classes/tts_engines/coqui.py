@@ -166,7 +166,7 @@ class Coqui:
             error = f'_load_checkpoint() error: {e}'
         return False
 
-    def _plug_engine():
+    def _plug_engine(self):
         try:
             engine = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
             if not engine:
@@ -261,7 +261,7 @@ class Coqui:
             error = f'_plug_engine() error: {e}'
         return False
 
-    def _plug_engine_zs():
+    def _plug_engine_zs(self):
         try:
             if load_zeroshot:
                 engine_zs = (loaded_tts.get(self.tts_zs_key) or {}).get('engine', False)
