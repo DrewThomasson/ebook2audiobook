@@ -480,8 +480,8 @@ class Coqui:
     def convert(self, s_n:int, s:str)->bool:
         global xtts_builtin_speakers_list
         try:
-            engine = _plug_engine()
-            engine_zs = _plug_engine_zs()
+            engine = self._plug_engine()
+            engine_zs = self._plug_engine_zs()
             if engine:
                 engine.to(self.session['device'])
                 sentence_number = s_n
