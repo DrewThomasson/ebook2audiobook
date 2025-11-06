@@ -59,8 +59,8 @@ class Coqui:
             if xtts_builtin_speakers_list is None:
                 self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
                 xtts_builtin_speakers_list = torch.load(self.speakers_path)
-                using_gpu = session['device'] != devices['CPU']['proc']
-                enough_vram = session['free_vram_gb'] > 4.0
+                using_gpu = self.session['device'] != devices['CPU']['proc']
+                enough_vram = self.session['free_vram_gb'] > 4.0
                 if using_gpu and enough_vram:
                     torch.set_float32_matmul_precision("medium")
                     if devices['CUDA']['found']:
