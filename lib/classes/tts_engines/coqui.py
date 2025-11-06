@@ -279,7 +279,7 @@ class Coqui:
                         print(msg)
                         key = f"{TTS_ENGINES['XTTSv2']}-internal"
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
-                        engine = (loaded_tts.get(key, {}).get('engine', False)
+                        engine = loaded_tts.get(key, {}).get('engine', False)
                         if not engine:
                             #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                             hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
