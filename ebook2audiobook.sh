@@ -263,6 +263,7 @@ else
 				if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
 					$CONDA_INSTALL_DIR/bin/conda config --set auto_activate_base false
 					source $CONDA_ENV
+					[ -f $CONFIG_FILE ] || touch $CONFIG_FILE; grep -qxF 'export PATH="$HOME/miniforge3/bin:$PATH"' $CONFIG_FILE || echo 'export PATH="$HOME/miniforge3/bin:$PATH"' >> $CONFIG_FILE source $CONFIG_FILE
 					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 				else
 					echo -e "\e[31mconda installation failed.\e[0m"		
