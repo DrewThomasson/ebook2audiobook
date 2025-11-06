@@ -68,6 +68,7 @@ def check_and_install_requirements(file_path: str) -> bool:
         flexible_packages = {"torch", "torchaudio", "numpy"}
         import sys
         special_packages = []
+        print(f'------------{sys.version_info}-------------')
         if sys.version_info > (3, 10):
             special_packages.append("pymupdf-layout")
         for pkg in special_packages:
