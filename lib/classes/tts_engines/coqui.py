@@ -85,7 +85,7 @@ class Coqui:
         global lock
         try:
             with lock:
-                unload_tts(device, [self.tts_key, self.tts_zs_key], key)
+                #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                 from TTS.api import TTS as TTSEngine
                 engine = loaded_tts[key].get("engine")
                 if not isinstance(engine, TTSEngine):
@@ -106,7 +106,7 @@ class Coqui:
             with lock:
                 key = kwargs.get('key')
                 device = kwargs.get('device')
-                unload_tts(device, [self.tts_key, self.tts_zs_key], key)
+                #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                 engine = loaded_tts[key].get("engine")
                 engine_name = kwargs.get('tts_engine')
                 if engine_name == TTS_ENGINES['XTTSv2']:
@@ -168,12 +168,12 @@ class Coqui:
 
     def _plug_engine(self):
         try:
-            #engine = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
-            #if engine:
-            #    return engine
+            engine = (loaded_tts.get(self.tts_key) or {}).get('engine', False)
+            if engine:
+                return engine
+            msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
+            print(msg)
             if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
-                msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
-                print(msg)
                 if self.session['custom_model'] is not None:
                     config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
                     checkpoint_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][1])
@@ -215,8 +215,6 @@ class Coqui:
                     if sub is not None:
                         self.params[self.session['tts_engine']]['samplerate'] = models[TTS_ENGINES['VITS']][self.session['fine_tuned']]['samplerate'][sub]
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
-                        msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
-                        print(msg)
                         self.tts_key = model_path
                         return self._load_api(self.tts_key, model_path, self.session['device'])
                     else:
@@ -289,7 +287,7 @@ class Coqui:
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         engine = (loaded_tts.get(key) or {}).get('engine', False)
                         if not engine:
-                            unload_tts(device, [self.tts_key, self.tts_zs_key], key)
+                            #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                             hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
                             hf_sub = ''
                             config_path = hf_hub_download(repo_id=hf_repo, filename=f"{hf_sub}{models[TTS_ENGINES['XTTSv2']]['internal']['files'][0]}", cache_dir=self.cache_dir)
@@ -335,8 +333,8 @@ class Coqui:
                                 torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate'], format='wav')
                                 if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
                                     del audio_data, sourceTensor, audio_tensor
-                                    if key != self.tts_key:
-                                        unload_tts(device, None, key)
+                                    #if key != self.tts_key:
+                                        #unload_tts(device, None, key)
                                     return new_voice_path
                                 else:
                                     error = 'normalize_audio() error:'
@@ -369,7 +367,7 @@ class Coqui:
                     key = f"{TTS_ENGINES['BARK']}-internal"
                     engine = (loaded_tts.get(key) or {}).get('engine', False)
                     if not engine:
-                        unload_tts(device, [self.tts_key, self.tts_zs_key], key)
+                        #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                         hf_repo = models[TTS_ENGINES['BARK']]['internal']['repo']
                         hf_sub = models[TTS_ENGINES['BARK']]['internal']['sub'] 
                         text_model_path = hf_hub_download(repo_id=hf_repo,filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][0]}",cache_dir=self.cache_dir)
@@ -401,8 +399,8 @@ class Coqui:
                             )
                         os.remove(voice_temp)
                         del audio_data
-                        if key != self.tts_key:
-                            unload_tts(device, None, key)
+                        #if key != self.tts_key:
+                        #    unload_tts(device, None, key)
                         msg = f"Saved NPZ file: {npz_file}"
                         print(msg)
                         return True
