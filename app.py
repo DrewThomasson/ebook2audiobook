@@ -59,13 +59,23 @@ def check_and_install_requirements(file_path:str)->bool:
             from tqdm import tqdm
             from packaging.markers import Marker
         except ImportError:
-            subprocess.check_call([sys.executable,'-m','pip','install','--no-cache-dir','packaging','tqdm'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'packaging', 'tqdm'])
             from packaging.specifiers import SpecifierSet
             from packaging.version import Version
             from tqdm import tqdm
             from packaging.markers import Marker
         import re as regex
-        flexible_packages={"torch","torchaudio","numpy"}
+        flexible_packages = {"torch", "torchaudio", "numpy"}
+        try:
+            import importlib.metadata
+            torch_version = importlib.metadata.version("torch")
+            from packaging.version import Version
+            if Version(torch_version) < Version("2.3.1"):
+                import numpy
+                if Version(numpy.__version__) >= Version("2.0"):
+                    subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', 'numpy<2'])
+        except Exception:
+            pass
         try:
             import torch
             devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available()
@@ -73,31 +83,31 @@ def check_and_install_requirements(file_path:str)->bool:
             devices['XPU']['found'] = getattr(torch, "xpu", None) is not None and torch.xpu.is_available()
         except ImportError:
             pass
-        cuda_only_packages={'deepspeed'}
-        with open(file_path,'r') as f:
-            contents=f.read().replace('\r','\n')
-            packages=[pkg.strip()for pkg in contents.splitlines()if pkg.strip()and regex.search(r'[a-zA-Z0-9]',pkg)]
-        missing_packages=[]
+        cuda_only_packages = {'deepspeed'}
+        with open(file_path, 'r') as f:
+            contents = f.read().replace('\r', '\n')
+            packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and regex.search(r'[a-zA-Z0-9]', pkg)]
+        missing_packages = []
         for package in packages:
-            pkg_name_lower=package.lower().split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].strip()
+            pkg_name_lower = package.lower().split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].strip()
             if any(x in pkg_name_lower for x in cuda_only_packages) and not devices['CUDA']['found']:
                 continue
-            if ';'in package:
-                pkg_part,marker_part=package.split(';',1)
-                marker_part=marker_part.strip()
+            if ';' in package:
+                pkg_part, marker_part = package.split(';', 1)
+                marker_part = marker_part.strip()
                 try:
-                    marker=Marker(marker_part)
+                    marker = Marker(marker_part)
                     if not marker.evaluate():
                         continue
                 except Exception as e:
                     error = f'Warning: Could not evaluate marker "{marker_part}" for {pkg_part}: {e}'
                     print(error)
-                package=pkg_part.strip()
-            if'git+'in package or'://'in package:
-                pkg_name_match=regex.search(r'([\w\-]+)\s*@?\s*git\+',package)
-                pkg_name=pkg_name_match.group(1)if pkg_name_match else None
+                package = pkg_part.strip()
+            if 'git+' in package or '://' in package:
+                pkg_name_match = regex.search(r'([\w\-]+)\s*@?\s*git\+', package)
+                pkg_name = pkg_name_match.group(1) if pkg_name_match else None
                 if pkg_name:
-                    spec=importlib.util.find_spec(pkg_name)
+                    spec = importlib.util.find_spec(pkg_name)
                     if spec is None:
                         msg = f'{pkg_name} (git package) is missing.'
                         print(msg)
@@ -107,10 +117,10 @@ def check_and_install_requirements(file_path:str)->bool:
                     print(error)
                     missing_packages.append(package)
                 continue
-            clean_pkg=regex.sub(r'\[.*?\]','',package)
-            pkg_name=regex.split(r'[<>=]',clean_pkg,1)[0].strip()
+            clean_pkg = regex.sub(r'\[.*?\]', '', package)
+            pkg_name = regex.split(r'[<>=]', clean_pkg, 1)[0].strip()
             try:
-                installed_version=version(pkg_name)
+                installed_version = version(pkg_name)
             except PackageNotFoundError:
                 error = f'{pkg_name} is not installed.'
                 print(error)
@@ -118,74 +128,74 @@ def check_and_install_requirements(file_path:str)->bool:
                 continue
             if pkg_name.lower() in flexible_packages:
                 continue
-            if"+"in installed_version:
+            if "+" in installed_version:
                 continue
             else:
-                spec_str=clean_pkg[len(pkg_name):].strip()
+                spec_str = clean_pkg[len(pkg_name):].strip()
                 if spec_str:
-                    spec=SpecifierSet(spec_str)
-                    norm_match=regex.match(r'^(\d+\.\d+(?:\.\d+)?)',installed_version)
-                    short_version=norm_match.group(1)if norm_match else installed_version
+                    spec = SpecifierSet(spec_str)
+                    norm_match = regex.match(r'^(\d+\.\d+(?:\.\d+)?)', installed_version)
+                    short_version = norm_match.group(1) if norm_match else installed_version
                     try:
-                        installed_v=Version(short_version)
+                        installed_v = Version(short_version)
                     except Exception:
-                        installed_v=Version("0")
-                    req_match=regex.search(r'(\d+\.\d+(?:\.\d+)?)',spec_str)
+                        installed_v = Version("0")
+                    req_match = regex.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
                     if req_match:
-                        req_v=Version(req_match.group(1))
-                        imajor,iminor=installed_v.major,installed_v.minor
-                        rmajor,rminor=req_v.major,req_v.minor
-                        if"=="in spec_str:
-                            if imajor!=rmajor or iminor!=rminor:
-                                error=f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_v}.'
+                        req_v = Version(req_match.group(1))
+                        imajor, iminor = installed_v.major, installed_v.minor
+                        rmajor, rminor = req_v.major, req_v.minor
+                        if "==" in spec_str:
+                            if imajor != rmajor or iminor != rminor:
+                                error = f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
-                        elif">="in spec_str:
-                            if(imajor<rmajor)or(imajor==rmajor and iminor<rminor):
-                                error=f'{pkg_name} (installed {installed_version}) < required {req_v}.'
+                        elif ">=" in spec_str:
+                            if (imajor < rmajor) or (imajor == rmajor and iminor < rminor):
+                                error = f'{pkg_name} (installed {installed_version}) < required {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
-                        elif"<="in spec_str:
-                            if(imajor>rmajor)or(imajor==rmajor and iminor>rminor):
-                                error=f'{pkg_name} (installed {installed_version}) > allowed {req_v}.'
+                        elif "<=" in spec_str:
+                            if (imajor > rmajor) or (imajor == rmajor and iminor > rminor):
+                                error = f'{pkg_name} (installed {installed_version}) > allowed {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
-                        elif">"in spec_str:
-                            if(imajor<rmajor)or(imajor==rmajor and iminor<=rminor):
-                                error=f'{pkg_name} (installed {installed_version}) <= required {req_v}.'
+                        elif ">" in spec_str:
+                            if (imajor < rmajor) or (imajor == rmajor and iminor <= rminor):
+                                error = f'{pkg_name} (installed {installed_version}) <= required {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
-                        elif"<"in spec_str:
-                            if(imajor>rmajor)or(imajor==rmajor and iminor>=rminor):
-                                error=f'{pkg_name} (installed {installed_version}) >= restricted {req_v}.'
+                        elif "<" in spec_str:
+                            if (imajor > rmajor) or (imajor == rmajor and iminor >= rminor):
+                                error = f'{pkg_name} (installed {installed_version}) >= restricted {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
                         else:
                             if installed_v not in spec:
-                                error=f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".'
+                                error = f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".'
                                 print(error)
                                 missing_packages.append(package)
         if missing_packages:
-            msg='\nInstalling missing or upgrade packages...\n'
+            msg = '\nInstalling missing or upgrade packages...\n'
             print(msg)
-            tmp_dir=tempfile.mkdtemp()
-            os.environ['TMPDIR']=tmp_dir
-            subprocess.call([sys.executable,'-m','pip','cache','purge'])
-            subprocess.check_call([sys.executable,'-m','pip','install','--upgrade','pip'])
-            with tqdm(total=len(packages),desc='Installation 0.00%',bar_format='{desc}: {n_fmt}/{total_fmt} ',unit='step')as t:
-                for package in tqdm(missing_packages,desc="Installing",unit="pkg"):
+            tmp_dir = tempfile.mkdtemp()
+            os.environ['TMPDIR'] = tmp_dir
+            subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
+            subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
+            with tqdm(total = len(packages), desc = 'Installation 0.00%', bar_format = '{desc}: {n_fmt}/{total_fmt} ', unit = 'step') as t:
+                for package in tqdm(missing_packages, desc = "Installing", unit = "pkg"):
                     try:
-                        subprocess.check_call([sys.executable,'-m','pip','install','--no-cache-dir','--use-pep517',package])
+                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', package])
                         t.update(1)
                     except subprocess.CalledProcessError as e:
-                        error=f'Failed to install {package}: {e}'
+                        error = f'Failed to install {package}: {e}'
                         print(error)
                         return False
-            msg='\nAll required packages are installed.'
+            msg = '\nAll required packages are installed.'
             print(msg)
         return True
     except Exception as e:
-        error=f'check_and_install_requirements() error: {e}'
+        error = f'check_and_install_requirements() error: {e}'
         raise SystemExit(error)
         return False
        
