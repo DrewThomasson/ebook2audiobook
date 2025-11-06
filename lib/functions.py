@@ -1336,10 +1336,6 @@ def convert_chapters2audio(id:str)->bool:
             print(msg)
             return False
         tts_manager = TTSManager(session)
-        if not tts_manager.engine:
-            error = f"TTS engine {session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
-            print(error)
-            return False
         resume_chapter = 0
         missing_chapters = []
         resume_sentence = 0

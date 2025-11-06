@@ -913,7 +913,7 @@ class Coqui:
                                 error = f"Cannot create {final_sentence_file}"
                                 print(error)
             else:
-                error = f"convert() error: {self.session['tts_engine']} is None"
+                error = f"TTS engine {self.session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory.\nTry to lower max_tts_in_memory in ./lib/models.py"
                 print(error)
         except Exception as e:
             error = f'Coquit.convert(): {e}'
