@@ -66,7 +66,6 @@ def check_and_install_requirements(file_path: str) -> bool:
             from packaging.markers import Marker
         import re as regex
         flexible_packages = {"torch", "torchaudio", "numpy"}
-        import sys
         special_packages = []
         print(f'------------{sys.version_info}-------------')
         if sys.version_info >= (3, 11):
