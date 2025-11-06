@@ -162,7 +162,7 @@ class Coqui:
 
     def _plug_engine(self):
         try:
-            engine = (loaded_tts.get(self.tts_key, {}).get('engine', False)
+            engine = loaded_tts.get(self.tts_key, {}).get('engine', False)
             if engine:
                 return engine
             msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
