@@ -3351,7 +3351,7 @@ def build_interface(args:dict)->gr.Blocks:
                             if default_voice_path is not None:
                                 default_name = Path(default_voice_path).stem
                                 for name, value in voice_options:
-                                    if name == default_name:
+                                    if name == default_name and isinstance(value, str):
                                         session['voice'] = value
                                         break
                                 else:
