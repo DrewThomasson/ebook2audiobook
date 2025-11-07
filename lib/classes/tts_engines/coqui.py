@@ -475,6 +475,8 @@ class Coqui:
     def convert(self, s_n:int, s:str)->bool:
         global xtts_builtin_speakers_list
         try:
+            speaker = None
+            audio_data = False
             settings = self.params[self.session['tts_engine']]
             settings['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
@@ -495,8 +497,6 @@ class Coqui:
                 engine.to(self.session['device'])
                 sentence_number = s_n
                 sentence = s
-                speaker = None
-                audio_data = False
                 trim_audio_buffer = 0.004
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
                 if sentence == TTS_SML['break']:
