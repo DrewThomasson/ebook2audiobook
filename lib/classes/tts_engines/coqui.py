@@ -52,7 +52,7 @@ class Coqui:
             error = f'__init__() error: {e}'
             print(error)
 
-    def _build(self)->bool:
+    def _build(self)->None:
         try:
             global xtts_builtin_speakers_list
             load_zeroshot = True if self.session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2']] else False
@@ -81,7 +81,7 @@ class Coqui:
             error = f'build() error: {e}'
             print(error)
 
-    def _load_api(self, key:str, model_path:str, device:str)->None:
+    def _load_api(self, key:str, model_path:str, device:str)->Any:
         global lock
         try:
             with lock:
@@ -101,7 +101,7 @@ class Coqui:
             print(error)
         return False
 
-    def _load_checkpoint(self,**kwargs:Any)->None:
+    def _load_checkpoint(self,**kwargs:Any)->Any:
         global lock
         try:
             with lock:
@@ -159,7 +159,7 @@ class Coqui:
             error = f'_load_checkpoint() error: {e}'
         return False
 
-    def _plug_engine(self):
+    def _plug_engine(self)->Any:
         try:
             engine = loaded_tts.get(self.tts_key, {}).get('engine', False)
             if engine:
@@ -254,7 +254,7 @@ class Coqui:
         cleanup_garbage()
         return False
 
-    def _plug_engine_zs(self):
+    def _plug_engine_zs(self)->Any:
         try:
             if load_zeroshot:
                 engine_zs = loaded_tts.get(self.tts_zs_key, {}).get('engine', False)
