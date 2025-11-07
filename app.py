@@ -184,9 +184,11 @@ def check_and_install_requirements(file_path: str) -> bool:
             with tqdm(total = len(packages), desc = 'Installation 0.00%', bar_format = '{desc}: {n_fmt}/{total_fmt} ', unit = 'step') as t:
                 for package in tqdm(missing_packages, desc = "Installing", unit = "pkg"):
                     try:
-                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', '--no-deps', package])
+                        subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', package])
                         t.update(1)
                     except subprocess.CalledProcessError as e:
+                        if package in flexible_packages:
+                            continue
                         error = f'Failed to install {package}: {e}'
                         print(error)
                         return False
