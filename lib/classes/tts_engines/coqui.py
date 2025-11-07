@@ -886,4 +886,5 @@ class Coqui:
         except Exception as e:
             error = f'Coquit.convert(): {e}'
             raise ValueError(e)
+        cleanup_garbage()
         return False
