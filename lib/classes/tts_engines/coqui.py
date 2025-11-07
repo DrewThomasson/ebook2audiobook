@@ -315,10 +315,10 @@ class Coqui:
                                     speaker_embedding=speaker_embedding,
                                     **fine_tuned_params,
                                 )
-                            audio_data = result.get('wav') if isinstance(result, dict) else None
-                            if audio_data is not None:
-                                audio_data = audio_data.tolist()
-                                sourceTensor = self._tensor_type(audio_data)
+                            audio_sentence = result.get('wav') if isinstance(result, dict) else None
+                            if audio_sentence is not None:
+                                audio_sentence = audio_sentence.tolist()
+                                sourceTensor = self._tensor_type(audio_sentence)
                                 audio_tensor = sourceTensor.clone().detach().unsqueeze(0).cpu()
                                 # CON is a reserved name on windows
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
@@ -326,7 +326,7 @@ class Coqui:
                                 proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
                                 torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate'], format='wav')
                                 if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
-                                    del audio_data, sourceTensor, audio_tensor
+                                    del audio_sentence, sourceTensor, audio_tensor
                                     if key != self.tts_key:
                                         unload_tts(device, None, key)
                                     return new_voice_path
@@ -384,7 +384,7 @@ class Coqui:
                         }
                         with torch.no_grad(), self._autocast_context():
                             torch.manual_seed(67878789)
-                            audio_data = engine.synthesize(
+                            audio_sentence = engine.synthesize(
                                 default_text,
                                 speaker=speaker,
                                 voice_dir=npz_dir,
@@ -392,7 +392,7 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         os.remove(voice_temp)
-                        del audio_data
+                        del audio_sentence
                         if key != self.tts_key:
                             unload_tts(device, None, key)
                         msg = f"Saved NPZ file: {npz_file}"
@@ -474,7 +474,7 @@ class Coqui:
         global xtts_builtin_speakers_list
         try:
             speaker = None
-            audio_data = False
+            audio_sentence = False
             settings = self.params[self.session['tts_engine']]
             settings['voice_path'] = (
                 self.session['voice'] if self.session['voice'] is not None 
@@ -601,7 +601,7 @@ class Coqui:
                         '''
                         with torch.no_grad(), self._autocast_context():
                             torch.manual_seed(67878789)
-                            audio_data = engine.synthesize(
+                            audio_sentence = engine.synthesize(
                                 sentence,
                                 speaker=speaker,
                                 voice_dir=npz_dir,
