@@ -253,6 +253,7 @@ class Coqui:
                     return self._load_api(self.tts_key, model_path, self.session['device'])
         except Exception as e:
             error = f'_plug_engine() error: {e}'
+        cleanup_garbage()
         return False
 
     def _plug_engine_zs(self):
@@ -267,6 +268,7 @@ class Coqui:
                     return self._load_api(self.tts_zs_key, default_vc_model, self.session['device'])
         except Exception as e:
             error = f'_plug_engine_zs() error: {e}'
+        cleanup_garbage()
         return False
 
     def _check_xtts_builtin_speakers(self, voice_path:str, speaker:str, device:str)->str|bool:
@@ -347,12 +349,13 @@ class Coqui:
         except Exception as e:
             error = f'_check_xtts_builtin_speakers() error: {e}'
             print(error)
+        cleanup_garbage()
         return False
 
     def _check_bark_npz(self, voice_path:str, bark_dir:str, speaker:str, device:str)->bool:
         try:
             if self.session['language'] in language_tts[TTS_ENGINES['BARK']].keys():
-                npz_dir = os.path.join(bark_dir,speaker)
+                npz_dir = os.path.join(bark_dir, speaker)
                 npz_file = os.path.join(npz_dir,f'{speaker}.npz')
                 if os.path.exists(npz_file):
                     return True
@@ -363,15 +366,15 @@ class Coqui:
                     if not engine:
                         hf_repo = models[TTS_ENGINES['BARK']]['internal']['repo']
                         hf_sub = models[TTS_ENGINES['BARK']]['internal']['sub'] 
-                        text_model_path = hf_hub_download(repo_id=hf_repo,filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][0]}",cache_dir=self.cache_dir)
-                        coarse_model_path = hf_hub_download(repo_id=hf_repo,filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][1]}",cache_dir=self.cache_dir)
-                        fine_model_path = hf_hub_download(repo_id=hf_repo,filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][2]}",cache_dir=self.cache_dir)
+                        text_model_path = hf_hub_download(repo_id=hf_repo,filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][0]}", cache_dir=self.cache_dir)
+                        coarse_model_path = hf_hub_download(repo_id=hf_repo,filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][1]}", cache_dir=self.cache_dir)
+                        fine_model_path = hf_hub_download(repo_id=hf_repo,filename=f"{hf_sub}{models[TTS_ENGINES['BARK']]['internal']['files'][2]}", cache_dir=self.cache_dir)
                         checkpoint_dir = os.path.dirname(text_model_path)
                         engine = self._load_checkpoint(tts_engine=TTS_ENGINES['BARK'],key=key,checkpoint_dir=checkpoint_dir,device=device)
                     if engine:
                         voice_temp = os.path.splitext(npz_file)[0]+'.wav'
                         shutil.copy(voice_path,voice_temp)
-                        default_text_file = os.path.join(voices_dir,self.session['language'],'default.txt')
+                        default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         fine_tuned_params = {
                             key.removeprefix("bark_"):cast_type(self.session[key])
@@ -405,6 +408,7 @@ class Coqui:
         except Exception as e:
             error = f'_check_bark_npz() error: {e}'
             print(error)
+        cleanup_garbage()
         return False
         
     def _tensor_type(self,audio_data:Any)->torch.Tensor:
