@@ -75,7 +75,7 @@ def check_and_install_requirements(file_path:str)->bool:
                     subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", pkg])
             except Exception:
                 pass
-        cuda_packages = ["deepspeed", "xformers"]
+        cuda_packages = ["deepspeed"]
         try:
             import torch
             torch_version = torch.__version__
