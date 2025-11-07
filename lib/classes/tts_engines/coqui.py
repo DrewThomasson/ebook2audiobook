@@ -471,6 +471,20 @@ class Coqui:
     def convert(self, s_n:int, s:str)->bool:
         global xtts_builtin_speakers_list
         try:
+            settings = self.params[self.session['tts_engine']]
+            settings['voice_path'] = (
+                self.session['voice'] if self.session['voice'] is not None 
+                else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
+                else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
+            )
+            if settings['voice_path'] is not None:
+                speaker = re.sub(r'\.wav$', '', os.path.basename(settings['voice_path']))
+                if settings['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and os.path.basename(settings['voice_path']) != 'ref.wav':
+                    self.session['voice'] = settings['voice_path'] = self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device'])
+                    if not settings['voice_path']:
+                        msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
+                        print(msg)
+                        return False
             engine = self._plug_engine()
             engine_zs = self._plug_engine_zs()
             if engine:
@@ -480,21 +494,7 @@ class Coqui:
                 speaker = None
                 audio_data = False
                 trim_audio_buffer = 0.004
-                settings = self.params[self.session['tts_engine']]
                 final_sentence_file = os.path.join(self.session['chapters_dir_sentences'], f'{sentence_number}.{default_audio_proc_format}')
-                settings['voice_path'] = (
-                    self.session['voice'] if self.session['voice'] is not None 
-                    else os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], 'ref.wav') if self.session['custom_model'] is not None
-                    else models[self.session['tts_engine']][self.session['fine_tuned']]['voice']
-                )
-                if settings['voice_path'] is not None:
-                    speaker = re.sub(r'\.wav$', '', os.path.basename(settings['voice_path']))
-                    if settings['voice_path'] not in default_engine_settings[TTS_ENGINES['BARK']]['voices'].keys() and os.path.basename(settings['voice_path']) != 'ref.wav':
-                        self.session['voice'] = settings['voice_path'] = self._check_xtts_builtin_speakers(settings['voice_path'], speaker, self.session['device'])
-                        if not settings['voice_path']:
-                            msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
-                            print(msg)
-                            return False
                 if sentence == TTS_SML['break']:
                     silence_time = int(np.random.uniform(0.3, 0.6) * 100) / 100
                     break_tensor = torch.zeros(1, int(settings['samplerate'] * silence_time)) # 0.4 to 0.7 seconds
