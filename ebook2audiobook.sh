@@ -8,7 +8,9 @@ fi
 unset SWITCHED_TO_ZSH
 
 ARCH=$(uname -m)
-PYTHON_VERSION="3.12"
+PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+MIN_PYTHON_VERSION="3.10"
+MAX_PYTHON_VERSION="3.13"
 
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
@@ -48,7 +50,7 @@ SCRIPT_MODE="$NATIVE"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 WGET=$(which wget 2>/dev/null)
-REQUIRED_PROGRAMS=("curl" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox")
+REQUIRED_PROGRAMS=("curl" "calibre" "ffmpeg" "nodejs" "espeak-ng" "rust" "sox" "tesseract")
 PYTHON_ENV="python_env"
 CURRENT_ENV=""
 
@@ -60,9 +62,6 @@ fi
 if [[ "$OSTYPE" = "darwin"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-MacOSX-$(uname -m).sh"
 	CONFIG_FILE="$HOME/.zshrc"
-	if [[ "$ARCH" == "x86_64" ]]; then
-		PYTHON_VERSION="3.11"
-	fi
 elif [[ "$OSTYPE" = "linux"* ]]; then
 	CONDA_URL="https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
 	CONFIG_FILE="$HOME/.bashrc"
@@ -123,14 +122,20 @@ else
 		local programs=("$@")
 		programs_missing=()
 		for program in "${programs[@]}"; do
+			bin="$program"
 			if [ "$program" = "nodejs" ]; then
 				bin="node"
-			elif [ "$program" = "rust" ]; then
-				if command -v apt-get &> /dev/null; then
+			fi
+			if [ "$program" = "rust" ]; then
+				if command -v apt-get &>/dev/null; then
+					program="rustc"
 					bin="rustc"
 				fi
-			else
-				bin="$program"
+			fi
+			if [ "$program" = "tesseract" ]; then
+				if command -v apt-get &>/dev/null || command -v zypper &>/dev/null || command -v apk &>/dev/null; then
+					program="tesseract-ocr"
+				fi
 			fi
 			if ! command -v "$bin" >/dev/null 2>&1; then
 				echo -e "\e[33m$program is not installed.\e[0m"
@@ -219,12 +224,7 @@ else
 						echo "$program installation failed."
 					fi
 				fi	
-			elif [ "$program" = "rust" ]; then
-				if command -v apt-get &> /dev/null; then
-					app="rustc"
-				else
-					app="$program"
-				fi
+			elif [[ "$program" = "rust" ] || [ "$program" = "rustc" ]]; then
 				curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 				source $HOME/.cargo/env
 				if command -v $app &>/dev/null; then
@@ -280,6 +280,15 @@ else
 			fi
 		fi
 		if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
+			if [[ "$OSTYPE" = "darwin"* ] && [ "$ARCH" == "x86_64" ]]; then
+				PYTHON_VERSION="3.11"
+			else
+				if (( $(echo "$PYTHON_VERSION < 3.10" | bc -l) )); then
+					PYTHON_VERSION="$MIN_PYTHON_VERSION"
+				elif (( $(echo "$PYTHON_VERSION > 3.13" | bc -l) )); then
+					PYTHON_VERSION"$MAX_PYTHON_VERSION"
+				fi
+			fi
 			# Use this condition to chmod writable folders once
 			chmod -R 777 ./audiobooks ./tmp ./models
 			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y

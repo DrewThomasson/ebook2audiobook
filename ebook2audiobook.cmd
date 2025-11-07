@@ -17,7 +17,7 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 
-set "PROGRAMS_LIST=calibre-normal ffmpeg nodejs espeak-ng sox"
+set "PROGRAMS_LIST=calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
 
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"

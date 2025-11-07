@@ -7,8 +7,10 @@
 
 from __future__ import annotations
 
-import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, platform, random, shutil, subprocess, sys, tempfile, threading, time, traceback, socket
-import warnings, unicodedata, urllib.request, uuid, zipfile, ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, uvicorn, gc
+import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract
+import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
+import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, fitz
+import ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, gc
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -32,6 +34,7 @@ from multiprocessing.managers import DictProxy, ListProxy
 from stanza.pipeline.core import Pipeline
 from num2words import num2words
 from pathlib import Path
+from PIL import Image
 from pydub import AudioSegment
 from pydub.utils import mediainfo
 from queue import Queue, Empty
@@ -394,7 +397,6 @@ def convert2epub(id:str)->bool:
             print(error)
             return False
         if file_ext == '.pdf':
-            import fitz
             msg = 'File input is a PDF. flatten it in MarkDown...'
             print(msg)
             doc = fitz.open(session['ebook'])
@@ -403,6 +405,31 @@ def convert2epub(id:str)->bool:
             title = pdf_metadata.get('title') or filename_no_ext
             author = pdf_metadata.get('author') or False
             markdown_text = pymupdf4llm.to_markdown(session['ebook'])
+            # Remove single asterisks for italics (but not bold **)
+            markdown_text = re.sub(r'(?<!\*)\*(?!\*)(.*?)\*(?!\*)', r'\1', markdown_text)
+            # Remove single underscores for italics (but not bold __)
+            markdown_text = re.sub(r'(?<!_)_(?!_)(.*?)_(?!_)', r'\1', markdown_text)
+            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
+            with open(file_input, "w", encoding="utf-8") as html_file:
+                html_file.write(markdown_text)
+                
+            msg = 'File input is a PDF. flatten it in MarkDown...'
+            print(msg)
+            doc = fitz.open(session['ebook'])
+            pdf_metadata = doc.metadata
+            filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
+            title = pdf_metadata.get('title') or filename_no_ext
+            author = pdf_metadata.get('author') or False
+            markdown_pages = []
+            for i, page in enumerate(doc):
+                text = page.get_text("markdown").strip()
+                if not text:
+                    pix = page.get_pixmap(dpi=300)
+                    img = Image.open(io.BytesIO(pix.tobytes("png")))
+                    text = pytesseract.image_to_string(img, lang="eng").strip()
+                    text = text.replace("\n", "  \n")
+                markdown_pages.append(f"## Page {i+1}\n{text}\n")
+            markdown_text = "\n".join(markdown_pages)
             # Remove single asterisks for italics (but not bold **)
             markdown_text = re.sub(r'(?<!\*)\*(?!\*)(.*?)\*(?!\*)', r'\1', markdown_text)
             # Remove single underscores for italics (but not bold __)

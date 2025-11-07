@@ -10,8 +10,9 @@ beautifulsoup4
 fugashi
 sudachipy
 sudachidict_core
+fitz
+pytesseract
 unidic
-pymupdf4llm
 hangul-romanize
 indic-nlp-library
 iso639-lang
