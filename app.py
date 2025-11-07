@@ -46,7 +46,7 @@ In order to install and/or use ebook2audiobook correctly you must run
     else:
         return True
 
-def check_and_install_requirements(file_path:str)->bool:
+def check_and_install_requirements(file_path: str)->bool:
     if not os.path.exists(file_path):
         error = f'Warning: File {file_path} not found. Skipping package check.'
         print(error)
@@ -79,7 +79,7 @@ def check_and_install_requirements(file_path:str)->bool:
         try:
             import torch
             torch_version = torch.__version__
-            if "+" in torch_version:
+            if any(x in torch_version for x in ("+cu", "+nv")):
                 for pkg in cuda_packages:
                     try:
                         spec = importlib.util.find_spec(pkg.replace("-", "_"))
