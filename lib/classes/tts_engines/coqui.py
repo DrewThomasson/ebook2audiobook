@@ -127,7 +127,6 @@ class Coqui:
                         config.load_json(config_path)
                         engine = Xtts.init_from_config(config)
                         engine.load_checkpoint(
-                            config,
                             checkpoint_path = checkpoint_path,
                             vocab_path = vocab_path,
                             use_deepspeed = default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'],
@@ -145,7 +144,6 @@ class Coqui:
                         config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS','false').lower() == 'true'
                         engine = Bark.init_from_config(config)
                         engine.load_checkpoint(
-                            config,
                             checkpoint_dir = checkpoint_dir,
                             eval = True
                         )
