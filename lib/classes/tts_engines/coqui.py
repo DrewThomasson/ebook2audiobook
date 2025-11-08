@@ -771,7 +771,7 @@ class Coqui:
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             with torch.no_grad(), self._autocast_context():
                                 engine.tts_to_file(
-                                    text=re.sub(not_supported_punc_pattern, '', sentence),
+                                    text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                     file_path=tmp_in_wav,
                                     **speaker_argument
                                 )
@@ -830,7 +830,7 @@ class Coqui:
                         else:
                             with torch.no_grad(), self._autocast_context():
                                 audio_sentence = engine.tts(
-                                    text=re.sub(not_supported_punc_pattern, '', sentence),
+                                    text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                     **speaker_argument
                                 )
                     elif self.session['tts_engine'] == TTS_ENGINES['YOURTTS']:
@@ -846,7 +846,7 @@ class Coqui:
                             speaker_argument = {"speaker": voice_key}
                         with torch.no_grad(), self._autocast_context():
                             audio_sentence = engine.tts(
-                                text=re.sub(not_supported_punc_pattern, '', sentence),
+                                text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                 language=language,
                                 **speaker_argument
                             )
