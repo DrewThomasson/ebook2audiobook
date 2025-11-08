@@ -150,6 +150,24 @@ else
 				if command -v apt-get &>/dev/null || command -v zypper &>/dev/null || command -v apk &>/dev/null; then
 					program="tesseract-ocr"
 				fi
+				if command -v emerge &> /dev/null; then
+					program="tesseract"
+				elif command -v dnf &> /dev/null; then
+					program="tesseract"
+				elif command -v yum &> /dev/null; then
+					program="tesseract"
+				elif command -v zypper &> /dev/null; then
+					program="tesseract-ocr"
+				elif command -v pacman &> /dev/null; then
+					program="tesseract"
+				elif command -v apt-get &> /dev/null; then
+					program="tesseract-ocr"
+				elif command -v apk &> /dev/null; then
+					program="tesseract-ocr"
+				else
+					echo "Cannot recognize your applications package manager. Please install the required applications manually."
+					return 1
+				fi
 			fi
 			if ! command -v "$bin" >/dev/null 2>&1; then
 				echo -e "\e[33m$program is not installed.\e[0m"
@@ -206,7 +224,6 @@ else
 				echo "Cannot recognize your applications package manager. Please install the required applications manually."
 				return 1
 			fi
-
 		fi
 		if [ -z "$WGET" ]; then
 			echo -e "\e[33m wget is missing! trying to install it... \e[0m"
