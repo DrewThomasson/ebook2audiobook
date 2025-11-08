@@ -205,7 +205,7 @@ else
 			fi
 		fi
 		for program in "${programs_missing[@]}"; do
-			if [ "$program" = "calibre" ];then				
+			if [ "$program" = "calibre" ]; then				
 				# avoid conflict with calibre builtin lxml
 				#pip uninstall lxml -y 2>/dev/null
 				echo -e "\e[33mInstalling Calibre...\e[0m"
@@ -224,7 +224,7 @@ else
 						echo "$program installation failed."
 					fi
 				fi	
-			elif [[ "$program" = "rust" ] || [ "$program" = "rustc" ]]; then
+			elif [[ "$program" = "rust" || "$program" = "rustc" ]]; then
 				curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 				source $HOME/.cargo/env
 				if command -v $app &>/dev/null; then
@@ -232,7 +232,7 @@ else
 				else
 					echo "$program installation failed."
 				fi
-			elif [[ "$program" = "tesseract" ] || [ "$program" = "tesseract-ocr" ]]; then
+			elif [[ "$program" = "tesseract" || "$program" = "tesseract-ocr" ]]; then
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
