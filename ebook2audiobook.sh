@@ -327,9 +327,9 @@ else
 			if [[ "$OSTYPE" = "darwin"* && "$ARCH" = "x86_64" ]]; then
 				PYTHON_VERSION="3.11"
 			else
-				if (( $(echo "$PYTHON_VERSION < 3.10" | bc -l) )); then
+				if [[ "$(printf '%s\n' "$PYTHON_VERSION" "$MIN_PYTHON_VERSION" | sort -V | head -n1)" != "$PYTHON_VERSION" ]]; then
 					PYTHON_VERSION="$MIN_PYTHON_VERSION"
-				elif (( $(echo "$PYTHON_VERSION > 3.13" | bc -l) )); then
+				elif [[ "$(printf '%s\n' "$PYTHON_VERSION" "$MAX_PYTHON_VERSION" | sort -V | tail -n1)" != "$PYTHON_VERSION" ]]; then
 					PYTHON_VERSION="$MAX_PYTHON_VERSION"
 				fi
 			fi
