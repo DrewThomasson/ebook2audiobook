@@ -109,7 +109,7 @@ def check_and_install_requirements(file_path: str)->bool:
                     missing_packages.append(package)
                 continue
             clean_pkg = regex.sub(r'\[.*?\]', '', package)
-            pkg_name = regex.split(r'[<>=]', clean_pkg, 1)[0].strip()
+            pkg_name = regex.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
             try:
                 installed_version = version(pkg_name)
             except PackageNotFoundError:
