@@ -232,7 +232,7 @@ else
 				else
 					echo "$program installation failed."
 				fi
-			elif [ "$program" = "tesseract" ] || [ "$program" = "tesseract-ocr" ]; then
+			elif [[ "$program" = "tesseract" ] || [ "$program" = "tesseract-ocr" ]]; then
 				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
