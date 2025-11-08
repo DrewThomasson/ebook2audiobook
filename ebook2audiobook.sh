@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
 if [[ "$OSTYPE" = "darwin"* && -z "$SWITCHED_TO_ZSH" && "$(ps -p $$ -o comm=)" != "zsh" ]]; then
-    export SWITCHED_TO_ZSH=1
-    exec env zsh "$0" "$@"
+	export SWITCHED_TO_ZSH=1
+	exec env zsh "$0" "$@"
 fi
 
-unset SWITCHED_TO_ZSH
+#unset SWITCHED_TO_ZSH
 
 ARCH=$(uname -m)
 PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
@@ -129,8 +129,8 @@ else
 			if [ "$program" = "rust" ]; then
 				if command -v apt-get &>/dev/null; then
 					program="rustc"
-					bin="rustc"
 				fi
+				bin="rustc"
 			fi
 			if [ "$program" = "tesseract" ]; then
 				if command -v apt-get &>/dev/null || command -v zypper &>/dev/null || command -v apk &>/dev/null; then
@@ -227,7 +227,7 @@ else
 			elif [[ "$program" = "rust" || "$program" = "rustc" ]]; then
 				curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 				source $HOME/.cargo/env
-				if command -v $app &>/dev/null; then
+				if command -v $program &>/dev/null; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 				else
 					echo "$program installation failed."
@@ -265,7 +265,7 @@ else
 						echo "Cannot recognize your applications package manager. Please install the required applications manually."
 						return 1
 					fi
-					if [ "$langpack" = "" ]; then
+					if [ -n "$langpack" ]; then
 						eval "$SUDO $PACK_MGR $langpack $PACK_MGR_OPTIONS"
 						if tesseract --list-langs | grep -q "$tess_lang"; then
 							echo "Tesseract OCR language '$tess_lang' successfully installed."
@@ -308,10 +308,10 @@ else
 				rm -f "$CONDA_INSTALLER"
 				if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
 					$CONDA_INSTALL_DIR/bin/conda config --set auto_activate_base false
-					[ -f $CONFIG_FILE ] || touch $CONFIG_FILE; grep -qxF 'export PATH="$HOME/miniforge3/bin:$PATH"' $CONFIG_FILE || echo 'export PATH="$HOME/miniforge3/bin:$PATH"' >> $CONFIG_FILE source $CONFIG_FILE
-					conda init shell_name
-					source $CONFIG_FILE
-					source $CONDA_ENV
+					[ -f "$CONFIG_FILE" ] || touch "$CONFIG_FILE"
+					grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$CONFIG_FILE" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$CONFIG_FILE"
+					source "$CONFIG_FILE"
+					conda init "$shell_name"
 					echo -e "\e[32m===============>>> conda is installed! <<===============\e[0m"
 				else
 					echo -e "\e[31mconda installation failed.\e[0m"		
@@ -324,17 +324,17 @@ else
 			fi
 		fi
 		if [[ ! -d "$SCRIPT_DIR/$PYTHON_ENV" ]]; then
-			if [[ "$OSTYPE" = "darwin"* ] && [ "$ARCH" == "x86_64" ]]; then
+			if [[ "$OSTYPE" = "darwin"* && "$ARCH" = "x86_64" ]]; then
 				PYTHON_VERSION="3.11"
 			else
 				if (( $(echo "$PYTHON_VERSION < 3.10" | bc -l) )); then
 					PYTHON_VERSION="$MIN_PYTHON_VERSION"
 				elif (( $(echo "$PYTHON_VERSION > 3.13" | bc -l) )); then
-					PYTHON_VERSION"$MAX_PYTHON_VERSION"
+					PYTHON_VERSION="$MAX_PYTHON_VERSION"
 				fi
 			fi
 			# Use this condition to chmod writable folders once
-			chmod -R 777 ./audiobooks ./tmp ./models
+			chmod -R u+rwX,go+rX ./audiobooks ./tmp ./models
 			conda create --prefix "$SCRIPT_DIR/$PYTHON_ENV" python=$PYTHON_VERSION -y
 			conda init > /dev/null 2>&1
 			source $CONDA_ENV
@@ -344,7 +344,7 @@ else
 			python -m pip install --upgrade --no-cache-dir --use-pep517 --progress-bar=on -r requirements.txt
 			tts_version=$(python -c "import importlib.metadata; print(importlib.metadata.version('coqui-tts'))" 2>/dev/null)
 			if [[ -n "$tts_version" ]]; then
-				if [[ "$(printf '%s\n' "$tts_version" "0.26.1" | sort -V | tail -n1)" == "0.26.1" ]]; then
+				if [[ "$(printf '%s\n' "$tts_version" "0.26.1" | sort -V | tail -n1)" = "0.26.1" ]]; then
 					python -m pip install --no-cache-dir --use-pep517 --progress-bar=on 'transformers<=4.51.3'
 				fi
 			fi
@@ -358,15 +358,13 @@ else
 		conda deactivate
 		conda deactivate
 	elif [ "$SCRIPT_MODE" = "$NATIVE" ]; then
-		pass=true
-		if [ "$SCRIPT_MODE" = "$NATIVE" ]; then		   
-			if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
-				if ! install_programs; then
-					pass=false
-				fi
+		pass=true	   
+		if ! required_programs_check "${REQUIRED_PROGRAMS[@]}"; then
+			if ! install_programs; then
+				pass=false
 			fi
 		fi
-		if [ $pass = true ]; then
+		if [ "$pass" = true ]; then
 			if conda_check; then
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
