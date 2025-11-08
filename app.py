@@ -65,30 +65,6 @@ def check_and_install_requirements(file_path: str)->bool:
             from packaging.markers import Marker
         import re as regex
         flexible_packages = {"torch", "torchaudio", "numpy"}
-        special_packages = []
-        if sys.version_info >= (3, 11):
-            special_packages.append("pymupdf-layout")
-        for pkg in special_packages:
-            try:
-                spec = importlib.util.find_spec(pkg.replace("-", "_"))
-                if spec is None:
-                    subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", pkg])
-            except Exception:
-                pass
-        cuda_packages = ["deepspeed"]
-        try:
-            import torch
-            torch_version = torch.__version__
-            if any(x in torch_version for x in ("+cu", "+nv")):
-                for pkg in cuda_packages:
-                    try:
-                        spec = importlib.util.find_spec(pkg.replace("-", "_"))
-                        if spec is None:
-                            subprocess.check_call([sys.executable, "-m", "pip", "install", "--no-cache-dir", pkg])
-                    except Exception:
-                        pass
-        except Exception:
-            pass
         try:
             import torch
             devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available()
@@ -100,10 +76,10 @@ def check_and_install_requirements(file_path: str)->bool:
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
             packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and regex.search(r'[a-zA-Z0-9]', pkg)]
+        if sys.version_info >= (3, 11):
+            packages.append("pymupdf-layout")
         missing_packages = []
         for package in packages:
-            if package in cuda_packages:
-                continue
             pkg_name_lower = package.lower().split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].strip()
             if any(x in pkg_name_lower for x in cuda_only_packages) and not devices['CUDA']['found']:
                 continue
