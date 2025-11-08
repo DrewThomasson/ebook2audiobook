@@ -295,7 +295,7 @@ else
 	function conda_check {
 		if ! command -v conda &> /dev/null || [ ! -f "$CONDA_ENV" ]; then
 			echo -e "\e[33mDownloading Miniforge3 installer...\e[0m"
-			if [[ "$OSTYPE" = "darwin"* ]]; then
+			if [ "$OSTYPE" = "darwin"* ]; then
 				curl -fsSLo "$CONDA_INSTALLER" "$CONDA_URL"
 				shell_name="zsh"
 			else
