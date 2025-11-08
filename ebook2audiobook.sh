@@ -8,7 +8,10 @@ fi
 #unset SWITCHED_TO_ZSH
 
 ARCH=$(uname -m)
-PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "")
+if [ -z "$PYTHON_VERSION" ]; then
+	PYTHON_VERSION="3.12"
+fi
 MIN_PYTHON_VERSION="3.10"
 MAX_PYTHON_VERSION="3.13"
 
