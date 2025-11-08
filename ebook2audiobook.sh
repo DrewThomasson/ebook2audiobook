@@ -147,10 +147,9 @@ else
 				bin="rustc"
 			fi
 			if [ "$program" = "tesseract" ]; then
-				if command -v apt-get &>/dev/null || command -v zypper &>/dev/null || command -v apk &>/dev/null; then
-					program="tesseract-ocr"
-				fi
-				if command -v emerge &> /dev/null; then
+				if command -v brew &> /dev/null; then
+					program="tesseract"
+				elif command -v emerge &> /dev/null; then
 					program="tesseract"
 				elif command -v dnf &> /dev/null; then
 					program="tesseract"
