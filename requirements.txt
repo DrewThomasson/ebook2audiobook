@@ -10,7 +10,7 @@ beautifulsoup4
 fugashi
 sudachipy
 sudachidict_core
-fitz
+PyMuPDF
 pytesseract
 unidic
 hangul-romanize
