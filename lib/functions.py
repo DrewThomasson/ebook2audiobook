@@ -408,6 +408,8 @@ def convert2epub(id:str)->bool:
             for i, page in enumerate(doc):
                 text = page.get_text("markdown").strip()
                 if not text:
+                    msg = f'The page {page} seems to be text image. Using OCR to convert it to real text...'
+                    print(msg)
                     pix = page.get_pixmap(dpi=300)
                     img = Image.open(io.BytesIO(pix.tobytes("png")))
                     text = pytesseract.image_to_string(img, lang=session['language']).strip()

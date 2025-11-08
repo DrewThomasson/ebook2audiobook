@@ -261,6 +261,19 @@ else
 						ar) tess_lang="ara" ;;
 						tr) tess_lang="tur" ;;
 						ru) tess_lang="rus" ;;
+						bn) tess_lang="ben" ;;
+						zh) tess_lang="chi_sim" ;;
+						fa) tess_lang="fas" ;;
+						hi) tess_lang="hin" ;;
+						hu) tess_lang="hun" ;;
+						id) tess_lang="ind" ;;
+						jv) tess_lang="jav" ;;
+						ja) tess_lang="jpn" ;;
+						ko) tess_lang="kor" ;;
+						pl) tess_lang="pol" ;;
+						ta) tess_lang="tam" ;;
+						te) tess_lang="tel" ;;
+						yo) tess_lang="yor" ;;
 						*) tess_lang="eng" ;;
 					esac
 					echo "Detected system language: $sys_lang → installing Tesseract OCR language: $tess_lang"
