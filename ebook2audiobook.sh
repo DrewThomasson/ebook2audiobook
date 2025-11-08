@@ -75,6 +75,20 @@ CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
 export TMPDIR="$SCRIPT_DIR/.cache"
 export PATH="$CONDA_PATH:$PATH"
 
+compare_versions() {
+    local ver1=$1
+    local ver2=$2
+    # Pad each version to 3 parts
+    IFS='.' read -r v1_major v1_minor <<<"$ver1"
+    IFS='.' read -r v2_major v2_minor <<<"$ver2"
+
+    ((v1_major < v2_major)) && return 1
+    ((v1_major > v2_major)) && return 2
+    ((v1_minor < v2_minor)) && return 1
+    ((v1_minor > v2_minor)) && return 2
+    return 0
+}
+
 # Check if the current script is run inside a docker container
 if [[ -n "$container" || -f /.dockerenv ]]; then
 	SCRIPT_MODE="$FULL_DOCKER"
@@ -327,11 +341,14 @@ else
 			if [[ "$OSTYPE" = "darwin"* && "$ARCH" = "x86_64" ]]; then
 				PYTHON_VERSION="3.11"
 			else
-				if [[ "$(printf '%s\n' "$PYTHON_VERSION" "$MIN_PYTHON_VERSION" | sort -V | head -n1)" != "$PYTHON_VERSION" ]]; then
-					PYTHON_VERSION="$MIN_PYTHON_VERSION"
-				elif [[ "$(printf '%s\n' "$PYTHON_VERSION" "$MAX_PYTHON_VERSION" | sort -V | tail -n1)" != "$PYTHON_VERSION" ]]; then
-					PYTHON_VERSION="$MAX_PYTHON_VERSION"
-				fi
+				compare_versions "$PYTHON_VERSION" "$MIN_PYTHON_VERSION"
+				case $? in
+					1) PYTHON_VERSION="$MIN_PYTHON_VERSION" ;;
+				esac
+				compare_versions "$PYTHON_VERSION" "$MAX_PYTHON_VERSION"
+				case $? in
+					2) PYTHON_VERSION="$MAX_PYTHON_VERSION" ;;
+				esac
 			fi
 			# Use this condition to chmod writable folders once
 			chmod -R u+rwX,go+rX ./audiobooks ./tmp ./models
