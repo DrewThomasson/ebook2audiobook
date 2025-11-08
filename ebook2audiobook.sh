@@ -180,7 +180,7 @@ else
 				PACK_MGR="zypper install"
 				PACK_MGR_OPTIONS="-y"
 			elif command -v pacman &> /dev/null; then
-				PACK_MGR="pacman -Sy"
+				PACK_MGR="pacman -Sy --noconfirm"
 			elif command -v apt-get &> /dev/null; then
 				$SUDO apt-get update
 				PACK_MGR="apt-get install"
@@ -207,7 +207,7 @@ else
 		for program in "${programs_missing[@]}"; do
 			if [ "$program" = "calibre" ];then				
 				# avoid conflict with calibre builtin lxml
-				pip uninstall lxml -y 2>/dev/null
+				#pip uninstall lxml -y 2>/dev/null
 				echo -e "\e[33mInstalling Calibre...\e[0m"
 				if [[ "$OSTYPE" = "darwin"* ]]; then
 					eval "$PACK_MGR --cask calibre"
@@ -232,8 +232,52 @@ else
 				else
 					echo "$program installation failed."
 				fi
+			elif [ "$program" = "tesseract" ] || [ "$program" = "tesseract-ocr" ]; then
+				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
+				if command -v $program >/dev/null 2>&1; then
+					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
+					sys_lang=$(echo "${LANG:-en}" | cut -d_ -f1 | tr '[:upper:]' '[:lower:]')
+					case "$sys_lang" in
+						en) tess_lang="eng" ;;
+						fr) tess_lang="fra" ;;
+						de) tess_lang="deu" ;;
+						it) tess_lang="ita" ;;
+						es) tess_lang="spa" ;;
+						pt) tess_lang="por" ;;
+						ar) tess_lang="ara" ;;
+						tr) tess_lang="tur" ;;
+						ru) tess_lang="rus" ;;
+						*) tess_lang="eng" ;;
+					esac
+					echo "Detected system language: $sys_lang → installing Tesseract OCR language: $tess_lang"
+					langpack=""
+					if command -v apt-get &>/dev/null; then
+						langpack="tesseract-ocr-$tess_lang"
+					elif command -v dnf &>/dev/null || command -v yum &>/dev/null; then
+						langpack="tesseract-langpack-$tess_lang"
+					elif command -v zypper &>/dev/null; then
+						langpack="tesseract-ocr-$tess_lang"
+					elif command -v pacman &>/dev/null; then
+						langpack="tesseract-data-$tess_lang"
+					elif command -v apk &>/dev/null; then
+						langpack="tesseract-ocr-$tess_lang"
+					else
+						echo "Cannot recognize your applications package manager. Please install the required applications manually."
+						return 1
+					fi
+					if [ "$langpack" = "" ]; then
+						eval "$SUDO $PACK_MGR $langpack $PACK_MGR_OPTIONS"
+						if tesseract --list-langs | grep -q "$tess_lang"; then
+							echo "Tesseract OCR language '$tess_lang' successfully installed."
+						else
+							echo "Tesseract OCR language '$tess_lang' not installed properly."
+						fi
+					fi
+				else
+					echo "$program installation failed."
+				fi
 			else
-				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"				
+				eval "$SUDO $PACK_MGR $program $PACK_MGR_OPTIONS"
 				if command -v $program >/dev/null 2>&1; then
 					echo -e "\e[32m===============>>> $program is installed! <<===============\e[0m"
 				else

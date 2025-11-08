@@ -396,23 +396,7 @@ def convert2epub(id:str)->bool:
             error = f'Unsupported file format: {file_ext}'
             print(error)
             return False
-        if file_ext == '.pdf':
-            msg = 'File input is a PDF. flatten it in MarkDown...'
-            print(msg)
-            doc = fitz.open(session['ebook'])
-            pdf_metadata = doc.metadata
-            filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
-            title = pdf_metadata.get('title') or filename_no_ext
-            author = pdf_metadata.get('author') or False
-            markdown_text = pymupdf4llm.to_markdown(session['ebook'])
-            # Remove single asterisks for italics (but not bold **)
-            markdown_text = re.sub(r'(?<!\*)\*(?!\*)(.*?)\*(?!\*)', r'\1', markdown_text)
-            # Remove single underscores for italics (but not bold __)
-            markdown_text = re.sub(r'(?<!_)_(?!_)(.*?)_(?!_)', r'\1', markdown_text)
-            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
-            with open(file_input, "w", encoding="utf-8") as html_file:
-                html_file.write(markdown_text)
-                
+        if file_ext == '.pdf':  
             msg = 'File input is a PDF. flatten it in MarkDown...'
             print(msg)
             doc = fitz.open(session['ebook'])
@@ -426,7 +410,7 @@ def convert2epub(id:str)->bool:
                 if not text:
                     pix = page.get_pixmap(dpi=300)
                     img = Image.open(io.BytesIO(pix.tobytes("png")))
-                    text = pytesseract.image_to_string(img, lang="eng").strip()
+                    text = pytesseract.image_to_string(img, lang=session['language']).strip()
                     text = text.replace("\n", "  \n")
                 markdown_pages.append(f"## Page {i+1}\n{text}\n")
             markdown_text = "\n".join(markdown_pages)

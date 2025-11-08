@@ -175,6 +175,31 @@ if not "%PROGRAMS_CHECK%"=="0" (
 		call scoop bucket add versions
 	)
     for %%p in (%missing_prog_array%) do (
+		if "%%p"=="tesseract" (
+			set "syslang=%LANG%"
+			if not defined syslang set "syslang=en"
+			for /f "tokens=1 delims=_." %%L in ("%syslang%") do set "syslang=%%L"
+			set "tesslang=eng"
+			if /I "!syslang!"=="fr" set "tesslang=fra"
+			if /I "!syslang!"=="de" set "tesslang=deu"
+			if /I "!syslang!"=="it" set "tesslang=ita"
+			if /I "!syslang!"=="es" set "tesslang=spa"
+			if /I "!syslang!"=="pt" set "tesslang=por"
+			if /I "!syslang!"=="ar" set "tesslang=ara"
+			if /I "!syslang!"=="tr" set "tesslang=tur"
+			if /I "!syslang!"=="ru" set "tesslang=rus"
+			echo Detected system language: !syslang! → downloading OCR language: !tesslang!
+			set "tessdata=C:\Program Files\Tesseract-OCR\tessdata"
+			if not exist "!tessdata!" set "tessdata=%LOCALAPPDATA%\Programs\Tesseract-OCR\tessdata"
+			if not exist "!tessdata!\!tesslang!.traineddata" (
+				powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
+			)
+			if exist "!tessdata!\!tesslang!.traineddata" (
+				echo Tesseract OCR language !tesslang! installed in !tessdata!
+			) else (
+				echo Failed to install OCR language !tesslang!
+			)
+		)
 		call scoop install %%p
 		set "prog=%%p"
 		if "%%p"=="nodejs" (
