@@ -175,8 +175,9 @@ else
 				if ! command -v brew &> /dev/null; then
 					echo -e "\e[33mHomebrew is not installed. Installing Homebrew...\e[0m"
 					/usr/bin/env bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-					echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $HOME/.zprofile
-					eval "$(/opt/homebrew/bin/brew shellenv)"
+					echo >> $HOME/.zprofile
+					echo 'eval "$(/usr/local/bin/brew shellenv)"' >> $HOME/.zprofile
+					eval "$(/usr/local/bin/brew shellenv)"
 				fi
 		else
 			SUDO="sudo"
@@ -278,7 +279,9 @@ else
 					esac
 					echo "Detected system language: $sys_lang → installing Tesseract OCR language: $tess_lang"
 					langpack=""
-					if command -v apt-get &>/dev/null; then
+					if command -v brew &> /dev/null; then
+						langpack="tesseract-lang-$tess_lang"
+					elif command -v apt-get &>/dev/null; then
 						langpack="tesseract-ocr-$tess_lang"
 					elif command -v dnf &>/dev/null || command -v yum &>/dev/null; then
 						langpack="tesseract-langpack-$tess_lang"
