@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract
 import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, fitz
-import ebooklib, gradio as gr, psutil, pymupdf4llm, regex as re, requests, stanza, gc
+import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, gc
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
