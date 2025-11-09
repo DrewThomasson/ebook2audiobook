@@ -97,7 +97,7 @@ def check_and_install_requirements(file_path: str)->bool:
                     if not marker.evaluate():
                         continue
                 except Exception as e:
-                    error = f'Warning: Could not evaluate marker '{marker_part}' for {pkg_part}: {e}'
+                    error = f'Warning: Could not evaluate marker {marker_part} for {pkg_part}: {e}'
                     print(error)
                 package = pkg_part.strip()
             if 'git+' in package or '://' in package:
