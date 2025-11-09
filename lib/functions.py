@@ -2107,10 +2107,7 @@ def convert_ebook(args:dict)->tuple:
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;
                             device_vram_required = default_engine_settings[session['device']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['device']]['rating']['VRAM']
-                            if total_vram_gb < device_vram_required:
-                                if session['is_gui_process']:
-                                    error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
-                            else:
+                            if total_vram_gb >= device_vram_required:
                                 if session['is_gui_process']:
                                     show_alert({"type": "warning", "msg": msg})
                                 print(msg.replace('<br/>','\n'))
@@ -2157,6 +2154,8 @@ def convert_ebook(args:dict)->tuple:
                                         error = 'epubBook.read_epub failed!'
                                 else:
                                     error = 'convert2epub() failed!'
+                            else:
+                                error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
                         else:
                             error = f"Temporary directory {session['process_dir']} not removed due to failure."
             else:
