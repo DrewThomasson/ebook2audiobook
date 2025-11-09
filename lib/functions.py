@@ -2090,7 +2090,7 @@ def convert_ebook(args:dict)->tuple:
                                 if not devices['MPS']['found']:
                                     session['device'] = devices['CPU']['proc']
                                     msg += f'- MPS not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
-                            if session['device'] == devices['ROCM']['proc']:
+                            elif session['device'] == devices['ROCM']['proc']:
                                 session['device'] = session['device'] if devices['ROCM']['found'] else devices['CPU']['proc']
                                 if session['device'] == devices['CPU']['proc']:
                                     msg += f'- ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
@@ -2107,7 +2107,7 @@ def convert_ebook(args:dict)->tuple:
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;
                             device_vram_required = default_engine_settings[session['device']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['device']]['rating']['VRAM']
-                            if total_vram_gb >= device_vram_required:
+                            if float(total_vram_gb) >= float(device_vram_required):
                                 if session['is_gui_process']:
                                     show_alert({"type": "warning", "msg": msg})
                                 print(msg.replace('<br/>','\n'))
