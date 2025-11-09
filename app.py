@@ -110,6 +110,7 @@ def check_and_install_requirements(file_path: str)->bool:
             clean_pkg = regex.sub(r'\[.*?\]', '', package)
             pkg_name = regex.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
             if pkg_name in cuda_only_packages:
+                print(f'----------------{torch_version}--------------')
                 has_cuda_build = False
                 if torch_version:
                     has_cuda_build = any(marker in torch_version for marker in cuda_markers)
