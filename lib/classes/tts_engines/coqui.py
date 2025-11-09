@@ -38,7 +38,7 @@ class Coqui:
             self.speakers_path = None
             self.tts_key = f"{self.session['tts_engine']}-{self.session['fine_tuned']}"
             self.tts_zs_key = default_vc_model.rsplit('/',1)[-1]
-            self.npz_path = None
+            self.pth_voice_file = None
             #self.npz_data = None
             self.sentences_total_time = 0.0
             self.sentence_idx = 1
@@ -586,9 +586,9 @@ class Coqui:
                             if self.session.get(key) is not None
                         }
                         '''
-                        if self.npz_path is None or self.npz_path != pth_voice_file:
-                            self.npz_path = pth_voice_file
-                            self.npz_data = np.load(self.npz_path, allow_pickle=True)
+                        if self.pth_voice_file is None or self.pth_voice_file != pth_voice_file:
+                            self.pth_voice_file = pth_voice_file
+                            self.npz_data = np.load(self.pth_voice_file, allow_pickle=True)
                         history_prompt = [
                                 self.npz_data["semantic_prompt"],
                                 self.npz_data["coarse_prompt"],
