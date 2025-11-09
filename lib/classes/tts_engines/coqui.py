@@ -390,7 +390,7 @@ class Coqui:
                                 default_text,
                                 loaded_tts[self.tts_key]['config'],
                                 speaker_id=speaker,
-                                voices_dir=bark_dir,
+                                voice_dir=npz_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
