@@ -67,6 +67,7 @@ def check_and_install_requirements(file_path: str)->bool:
         flexible_packages = {"torch", "torchaudio", "numpy"}
         try:
             import torch
+            torch_version = getattr(torch, '__version__', '')
             devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available()
             devices['MPS']['found'] = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
             devices['XPU']['found'] = getattr(torch, "xpu", None) is not None and torch.xpu.is_available()
@@ -79,10 +80,15 @@ def check_and_install_requirements(file_path: str)->bool:
         if sys.version_info >= (3, 11):
             packages.append("pymupdf-layout")
         missing_packages = []
+        cuda_markers = ('+cu', '+xpu', '+nv', '+git')
         for package in packages:
             pkg_name_lower = package.lower().split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].strip()
-            if any(x in pkg_name_lower for x in cuda_only_packages) and not devices['CUDA']['found']:
-                continue
+            if pkg_name_lower in cuda_only_packages:
+                has_cuda_build = False
+                if torch_version:
+                    has_cuda_build = any(marker in torch_version for marker in cuda_markers)
+                if not has_cuda_build:
+                    continue
             if ';' in package:
                 pkg_part, marker_part = package.split(';', 1)
                 marker_part = marker_part.strip()
@@ -91,7 +97,7 @@ def check_and_install_requirements(file_path: str)->bool:
                     if not marker.evaluate():
                         continue
                 except Exception as e:
-                    error = f'Warning: Could not evaluate marker "{marker_part}" for {pkg_part}: {e}'
+                    error = f'Warning: Could not evaluate marker '{marker_part}' for {pkg_part}: {e}'
                     print(error)
                 package = pkg_part.strip()
             if 'git+' in package or '://' in package:
@@ -119,7 +125,7 @@ def check_and_install_requirements(file_path: str)->bool:
                 continue
             if pkg_name.lower() in flexible_packages:
                 continue
-            if "+" in installed_version:
+            if '+' in installed_version:
                 continue
             else:
                 spec_str = clean_pkg[len(pkg_name):].strip()
@@ -130,40 +136,40 @@ def check_and_install_requirements(file_path: str)->bool:
                     try:
                         installed_v = Version(short_version)
                     except Exception:
-                        installed_v = Version("0")
+                        installed_v = Version('0')
                     req_match = regex.search(r'(\d+\.\d+(?:\.\d+)?)', spec_str)
                     if req_match:
                         req_v = Version(req_match.group(1))
                         imajor, iminor = installed_v.major, installed_v.minor
                         rmajor, rminor = req_v.major, req_v.minor
-                        if "==" in spec_str:
+                        if '==' in spec_str:
                             if imajor != rmajor or iminor != rminor:
                                 error = f'{pkg_name} (installed {installed_version}) not in same major.minor as required {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
-                        elif ">=" in spec_str:
+                        elif '>=' in spec_str:
                             if (imajor < rmajor) or (imajor == rmajor and iminor < rminor):
                                 error = f'{pkg_name} (installed {installed_version}) < required {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
-                        elif "<=" in spec_str:
+                        elif '<=' in spec_str:
                             if (imajor > rmajor) or (imajor == rmajor and iminor > rminor):
                                 error = f'{pkg_name} (installed {installed_version}) > allowed {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
-                        elif ">" in spec_str:
+                        elif '>' in spec_str:
                             if (imajor < rmajor) or (imajor == rmajor and iminor <= rminor):
                                 error = f'{pkg_name} (installed {installed_version}) <= required {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
-                        elif "<" in spec_str:
+                        elif '<' in spec_str:
                             if (imajor > rmajor) or (imajor == rmajor and iminor >= rminor):
                                 error = f'{pkg_name} (installed {installed_version}) >= restricted {req_v}.'
                                 print(error)
                                 missing_packages.append(package)
                         else:
                             if installed_v not in spec:
-                                error = f'{pkg_name} (installed {installed_version}) does not satisfy "{spec_str}".'
+                                error = f'{pkg_name} (installed {installed_version}) does not satisfy {spec_str}.'
                                 print(error)
                                 missing_packages.append(package)
         if missing_packages:
@@ -174,7 +180,7 @@ def check_and_install_requirements(file_path: str)->bool:
             subprocess.call([sys.executable, '-m', 'pip', 'cache', 'purge'])
             subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--upgrade', 'pip'])
             with tqdm(total = len(packages), desc = 'Installation 0.00%', bar_format = '{desc}: {n_fmt}/{total_fmt} ', unit = 'step') as t:
-                for package in tqdm(missing_packages, desc = "Installing", unit = "pkg"):
+                for package in tqdm(missing_packages, desc = 'Installing', unit = 'pkg'):
                     try:
                         subprocess.check_call([sys.executable, '-m', 'pip', 'install', '--no-cache-dir', '--use-pep517', package])
                         t.update(1)
@@ -221,7 +227,7 @@ def kill_previous_instances(script_name: str):
             if not cmdline:
                 continue
             # unify case and absolute paths for comparison
-            joined_cmd = " ".join(cmdline).lower()
+            joined_cmd = ' '.join(cmdline).lower()
             if this_script_path.lower().endswith(script_name.lower()) and \
                (script_name.lower() in joined_cmd) and \
                proc.info['pid'] != current_pid:
