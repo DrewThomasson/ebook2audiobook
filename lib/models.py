@@ -148,7 +148,7 @@ default_engine_settings = {
         "samplerate": 16000,
         "files": ['config.json', 'model_file.pth'],
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
-        "rating": {"VRAM": 0.5, "CPU": 5, "RAM": 1, "Realism": 2}
+        "rating": {"VRAM": 0, "CPU": 5, "RAM": 1, "Realism": 2}
     }
 }
 models = {

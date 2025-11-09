@@ -2960,10 +2960,10 @@ def build_interface(args:dict)->gr.Blocks:
                         "<span style='color:#f0bc00; font-size:12px'>★</span>" for _ in range(n)
                     )
 
-                def color_box(value:float)->str:
-                    if value <= 4.0:
+                def color_box(value:int)->str:
+                    if value <= 4:
                         color = "#4CAF50"  # Green = low
-                    elif value <= 8.0:
+                    elif value <= 8:
                         color = "#FF9800"  # Orange = medium
                     else:
                         color = "#F44336"  # Red = high
@@ -2984,13 +2984,13 @@ def build_interface(args:dict)->gr.Blocks:
                         ">
                           <tr style="border:none; vertical-align:bottom;">
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                              <b>VRAM:</b> {color_box(float(rating["VRAM"]))}
+                              <b>VRAM:</b> {color_box(int(rating["VRAM"]))}
                             </td>
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
                               <b>CPU:</b> {yellow_stars(int(rating["CPU"]))}
                             </td>
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                              <b>RAM:</b> {color_box(float(rating["RAM"]))}
+                              <b>RAM:</b> {color_box(int(rating["RAM"]))}
                             </td>
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
                               <b>Realism:</b> {yellow_stars(int(rating["Realism"]))}
