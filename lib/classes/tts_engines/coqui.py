@@ -389,7 +389,7 @@ class Coqui:
                             audio_sentence = engine.synthesize(
                                 default_text,
                                 speaker=speaker,
-                                voice_dir=npz_dir,
+                                voices_dir=npz_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
