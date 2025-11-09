@@ -78,11 +78,11 @@ exit /b
 :conda_check
 where /Q conda
 if %errorlevel% neq 0 (
-	call rmdir /s /q "%CONDA_INSTALL_DIR%" 2>nul
-	echo Miniforge3 is not installed. 
+	echo Miniforge3 is not installed.
 	set "CONDA_CHECK=1"
 	goto :install_components
 )
+
 :: Check if running in a Conda environment
 if defined CONDA_DEFAULT_ENV (
 	set "CURRENT_ENV=%CONDA_PREFIX%"
@@ -158,7 +158,9 @@ if not "%CONDA_CHECK%"=="0" (
 		echo Conda installation failed.
 		goto :failed
 	)
-	call conda config --set auto_activate_base false
+	if not exist "%USERPROFILE%\.condarc" (
+		call conda config --set auto_activate false
+	)
 	call conda update conda -y
 	del "%CONDA_INSTALLER%"
 	set "CONDA_CHECK=0"

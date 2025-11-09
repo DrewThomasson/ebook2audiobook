@@ -353,7 +353,9 @@ else
 				bash "$CONDA_INSTALLER" -b -u -p "$CONDA_INSTALL_DIR"
 				rm -f "$CONDA_INSTALLER"
 				if [[ -f "$CONDA_INSTALL_DIR/bin/conda" ]]; then
-					$CONDA_INSTALL_DIR/bin/conda config --set auto_activate_base false
+					if [ ! -f "$HOME/.condarc" ]; then
+						$CONDA_INSTALL_DIR/bin/conda config --set auto_activate false
+					fi
 					[ -f "$CONFIG_FILE" ] || touch "$CONFIG_FILE"
 					grep -qxF 'export PATH="$HOME/Miniforge3/bin:$PATH"' "$CONFIG_FILE" || echo 'export PATH="$HOME/Miniforge3/bin:$PATH"' >> "$CONFIG_FILE"
 					source "$CONFIG_FILE"
