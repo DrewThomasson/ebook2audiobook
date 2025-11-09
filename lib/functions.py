@@ -2109,7 +2109,7 @@ def convert_ebook(args:dict)->tuple:
                             device_vram_required = default_engine_settings[session['device']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['device']]['rating']['VRAM']
                             if total_vram_gb < device_vram_required:
                                 if session['is_gui_process']:
-                                    error = f"Your device has not enough memory ({total_vram_gb}GB) to run {} model ({device_vram_required}GB)"
+                                    error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
                             else:
                                 if session['is_gui_process']:
                                     show_alert({"type": "warning", "msg": msg})
