@@ -46,7 +46,7 @@ default_engine_settings = {
         "top_p": 0.85,
         "speed": 1.0,
         "enable_text_splitting": False,
-        "use_deepspeed": True,
+        "use_deepspeed": False,
         "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav', 'speakers_xtts.pth'],
         "voices": {
             "ClaribelDervla": "Claribel Dervla", "DaisyStudious": "Daisy Studious", "GracieWise": "Gracie Wise",
@@ -148,7 +148,7 @@ default_engine_settings = {
         "samplerate": 16000,
         "files": ['config.json', 'model_file.pth'],
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
-        "rating": {"VRAM": 0.5, "CPU": 5, "RAM": 2, "Realism": 2}
+        "rating": {"VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 2}
     }
 }
 models = {
