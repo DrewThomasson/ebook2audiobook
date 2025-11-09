@@ -127,6 +127,7 @@ class Coqui:
                         config.load_json(config_path)
                         engine = Xtts.init_from_config(config)
                         engine.load_checkpoint(
+                            config,
                             checkpoint_path = checkpoint_path,
                             vocab_path = vocab_path,
                             use_deepspeed = default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed' if self.session['device'] == in [devices['CUDA']['proc'], devices['XPU']['proc'], devices['ROCM']['proc']],
