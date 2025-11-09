@@ -83,6 +83,7 @@ def check_and_install_requirements(file_path: str)->bool:
         cuda_markers = ('+cu', '+xpu', '+nv', '+git')
         for package in packages:
             pkg_name_lower = package.lower().split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].strip()
+            print(f'--------------{pkg_name_lower}-------------')
             if pkg_name_lower in cuda_only_packages:
                 has_cuda_build = False
                 if torch_version:
