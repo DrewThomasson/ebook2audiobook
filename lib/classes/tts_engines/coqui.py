@@ -389,8 +389,8 @@ class Coqui:
                             audio_sentence = engine.synthesize(
                                 default_text,
                                 loaded_tts[self.tts_key]['config'],
-                                speaker_id=speaker,
-                                voice_dirs=bark_dir,
+                                speaker=speaker,
+                                voice_dir=npz_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
