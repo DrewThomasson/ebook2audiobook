@@ -571,11 +571,11 @@ class Coqui:
                         else:
                             bark_dir = os.path.join(os.path.dirname(settings['voice_path']), 'bark')       
                             if not self._check_bark_npz(settings['voice_path'], bark_dir, speaker, self.session['device']):
-                                error = 'Could not create npz file!'
+                                error = 'Could not create pth file!'
                                 print(error)
                                 return False
                         npz_dir = os.path.join(bark_dir, speaker)
-                        npz_file = os.path.join(bark_dir, speaker, f'{speaker}.npz')
+                        npz_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
                         fine_tuned_params = {
                             key.removeprefix("bark_"): cast_type(self.session[key])
                             for key, cast_type in {
