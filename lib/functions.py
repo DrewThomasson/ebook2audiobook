@@ -2106,52 +2106,56 @@ def convert_ebook(args:dict)->tuple:
                             if msg == '':
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;
-                            if session['is_gui_process']:
-                                show_alert({"type": "warning", "msg": msg})
-                            print(msg.replace('<br/>','\n'))
-                            session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
-                            if convert2epub(id):
-                                epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
-                                if epubBook:
-                                    metadata = dict(session['metadata'])
-                                    for key, value in metadata.items():
-                                        data = epubBook.get_metadata('DC', key)
-                                        if data:
-                                            for value, attributes in data:
-                                                metadata[key] = value
-                                    metadata['language'] = session['language']
-                                    metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
-                                    metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
-                                    session['metadata'] = metadata                  
-                                    try:
-                                        if len(session['metadata']['language']) == 2:
-                                            lang_dict = Lang(session['language'])
-                                            if lang_dict:
-                                                session['metadata']['language'] = lang_dict.pt3
-                                    except Exception as e:
-                                        pass                         
-                                    if session['metadata']['language'] != session['language']:
-                                        error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                        print(error)
-                                        if session['is_gui_process']:
-                                            show_alert({"type": "warning", "msg": error})
-                                    session['cover'] = get_cover(epubBook, session)
-                                    if session['cover']:
-                                        session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                        if session['chapters'] is not None:
-                                            #if session['chapters_preview']:
-                                            #    return 'confirm_blocks', True
-                                            #else:
-                                            #    return finalize_audiobook(id)
-                                            return finalize_audiobook(id)
+                            device_vram_required = default_engine_settings[session['tts_engine']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['tts_engine']]['rating']['VRAM']
+                            if float(total_vram_gb) >= float(device_vram_required):
+                                if session['is_gui_process']:
+                                    show_alert({"type": "warning", "msg": msg})
+                                print(msg.replace('<br/>','\n'))
+                                session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
+                                if convert2epub(id):
+                                    epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
+                                    if epubBook:
+                                        metadata = dict(session['metadata'])
+                                        for key, value in metadata.items():
+                                            data = epubBook.get_metadata('DC', key)
+                                            if data:
+                                                for value, attributes in data:
+                                                    metadata[key] = value
+                                        metadata['language'] = session['language']
+                                        metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
+                                        metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                        session['metadata'] = metadata                  
+                                        try:
+                                            if len(session['metadata']['language']) == 2:
+                                                lang_dict = Lang(session['language'])
+                                                if lang_dict:
+                                                    session['metadata']['language'] = lang_dict.pt3
+                                        except Exception as e:
+                                            pass                         
+                                        if session['metadata']['language'] != session['language']:
+                                            error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                            print(error)
+                                            if session['is_gui_process']:
+                                                show_alert({"type": "warning", "msg": error})
+                                        session['cover'] = get_cover(epubBook, session)
+                                        if session['cover']:
+                                            session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                            if session['chapters'] is not None:
+                                                #if session['chapters_preview']:
+                                                #    return 'confirm_blocks', True
+                                                #else:
+                                                #    return finalize_audiobook(id)
+                                                return finalize_audiobook(id)
+                                            else:
+                                                error = 'get_chapters() failed! '+session['toc']
                                         else:
-                                            error = 'get_chapters() failed! '+session['toc']
+                                            error = 'get_cover() failed!'
                                     else:
-                                        error = 'get_cover() failed!'
+                                        error = 'epubBook.read_epub failed!'
                                 else:
-                                    error = 'epubBook.read_epub failed!'
+                                    error = 'convert2epub() failed!'
                             else:
-                                error = 'convert2epub() failed!'
+                                error = f"Your device has not enough memory ({total_vram_gb}GB) to run {session['tts_engine']} engine ({device_vram_required}GB)"
                         else:
                             error = f"Temporary directory {session['process_dir']} not removed due to failure."
             else:
