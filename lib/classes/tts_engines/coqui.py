@@ -608,7 +608,6 @@ class Coqui:
                                 sentence,
                                 loaded_tts[self.tts_key]['config'],
                                 speaker=speaker,
-                                voice_dir=npz_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
