@@ -323,7 +323,6 @@ class Coqui:
                                     **fine_tuned_params,
                                 )
                             audio_sentence = result.get('wav') if isinstance(result, dict) else None
-                            proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
                             if audio_sentence is not None:
                                 audio_sentence = audio_sentence.tolist()
                                 sourceTensor = self._tensor_type(audio_sentence)
@@ -331,17 +330,18 @@ class Coqui:
                                 # CON is a reserved name on windows
                                 lang_dir = 'con-' if self.session['language'] == 'con' else self.session['language']
                                 new_voice_path = re.sub(r'([\\/])eng([\\/])', rf'\1{lang_dir}\2', voice_path)
+                                proc_voice_path = new_voice_path.replace('.wav', '_temp.wav')
                                 torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate'], format='wav')
                                 if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
                                     del audio_sentence, sourceTensor, audio_tensor
                                     if key != self.tts_key:
                                         unload_tts(device, None, key)
+                                    Path(proc_voice_path).unlink(missing_ok=True)
                                     return new_voice_path
                                 else:
                                     error = 'normalize_audio() error:'
                             else:
                                 error = f'No audio waveform found in _check_xtts_builtin_speakers() result: {result}'
-                            Path(proc_voice_path).unlink(missing_ok=True)
                         else:
                             error = f"_check_xtts_builtin_speakers() error: {TTS_ENGINES['XTTSv2']} is False"
                     else:
