@@ -1,5 +1,5 @@
 import torch
-
+'''
 _original_load = torch.load
 
 def patched_torch_load(*args, **kwargs):
@@ -7,7 +7,7 @@ def patched_torch_load(*args, **kwargs):
     return _original_load(*args, **kwargs)
     
 torch.load = patched_torch_load
-
+'''
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
 import gc
@@ -54,6 +54,7 @@ class Coqui:
                 xtts_builtin_speakers_list = torch.load(self.speakers_path)
                 using_gpu = self.session['device'] != devices['CPU']['proc']
                 enough_vram = self.session['free_vram_gb'] > 4.0
+                '''
                 if using_gpu and enough_vram:
                     torch.set_float32_matmul_precision("medium")
                     if devices['CUDA']['found'] or devices['ROCM']['found']:
@@ -75,6 +76,7 @@ class Coqui:
                         torch.backends.cudnn.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
+                '''
         except Exception as e:
             error = f'__init__() error: {e}'
             print(error)
