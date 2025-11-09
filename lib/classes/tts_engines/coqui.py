@@ -33,6 +33,7 @@ xtts_builtin_speakers_list = None
 class Coqui:
     def __init__(self,session:DictProxy):
         try:
+            global xtts_builtin_speakers_list
             self.session = session
             self.cache_dir = tts_dir
             self.speakers_path = None
@@ -47,14 +48,6 @@ class Coqui:
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             self.resampler_cache = {}
             self.audio_segments = []
-            self._build()
-        except Exception as e:
-            error = f'__init__() error: {e}'
-            print(error)
-
-    def _build(self)->None:
-        try:
-            global xtts_builtin_speakers_list
             load_zeroshot = True if self.session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2']] else False
             if xtts_builtin_speakers_list is None:
                 self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
@@ -83,7 +76,7 @@ class Coqui:
                         torch.backends.cuda.matmul.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
         except Exception as e:
-            error = f'build() error: {e}'
+            error = f'__init__() error: {e}'
             print(error)
 
     def _load_api(self, key:str, model_path:str, device:str)->Any:
