@@ -388,8 +388,9 @@ class Coqui:
                             torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
                                 default_text,
-                                speaker=speaker,
-                                voices_dir=npz_dir,
+                                loaded_tts[self.tts_key]['config'],
+                                speaker_id=speaker,
+                                voice_dirs=bark_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
@@ -605,6 +606,7 @@ class Coqui:
                             torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
                                 sentence,
+                                loaded_tts[self.tts_key]['config'],
                                 speaker=speaker,
                                 voice_dir=npz_dir,
                                 silent=True,
