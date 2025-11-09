@@ -68,7 +68,8 @@ def check_and_install_requirements(file_path:str)->bool:
         try:
             import torch
             torch_version = getattr(torch, '__version__', '')
-            devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available()
+            devices['CUDA']['found'] = getattr(torch, "cuda", None) is not None and torch.cuda.is_available() and not (hasattr(torch.version, "hip") and torch.version.hip is not None)
+            devices['ROCM']['found'] = hasattr(torch.version, "hip") and torch.version.hip is not None and torch.cuda.is_available()
             devices['MPS']['found'] = getattr(torch.backends, "mps", None) is not None and torch.backends.mps.is_available()
             devices['XPU']['found'] = getattr(torch, "xpu", None) is not None and torch.xpu.is_available()
         except ImportError:

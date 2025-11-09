@@ -558,7 +558,7 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         stanza_nlp = False
         if session['language'] in year_to_decades_languages:
             try:
-                use_gpu = True if (session['device'] == devices['CUDA']['proc'] or session['device'] == devices['XPU']['proc']) and (devices['CUDA']['found'] or devices['XPU']['found']) else False
+                use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
                 stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
                 stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method="reuse_resources")
                 #stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=False, download_method="reuse_resources")
@@ -2070,6 +2070,8 @@ def convert_ebook(args:dict)->tuple:
                             msg = ''
                             msg_extra = ''
                             vram_dict = VRAMDetector().detect_vram(session['device'])
+                            total_vram_bytes = vram_dict.get('total_bytes', 4096)
+                            total_vram_gb = float(int(total_vram_bytes / (1024 ** 3) * 100) / 100) if total_vram_bytes > 0 else 0
                             free_vram_bytes = vram_dict.get('free_bytes', 0)
                             session['free_vram_gb'] = float(int(free_vram_bytes / (1024 ** 3) * 100) / 100) if free_vram_bytes > 0 else 0
                             if session['free_vram_gb'] == 0:
@@ -2088,6 +2090,10 @@ def convert_ebook(args:dict)->tuple:
                                 if not devices['MPS']['found']:
                                     session['device'] = devices['CPU']['proc']
                                     msg += f'- MPS not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
+                            if session['device'] == devices['ROCM']['proc']:
+                                session['device'] = session['device'] if devices['ROCM']['found'] else devices['CPU']['proc']
+                                if session['device'] == devices['CPU']['proc']:
+                                    msg += f'- ROCM not supported by the Torch installed!<br/>Read {default_gpu_wiki}<br/>Switching to CPU'
                             elif session['device'] == devices['XPU']['proc']:
                                 session['device'] = session['device'] if devices['XPU']['found'] else devices['CPU']['proc']
                                 if session['device'] == devices['CPU']['proc']:
@@ -2100,52 +2106,57 @@ def convert_ebook(args:dict)->tuple:
                             if msg == '':
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;
-                            if session['is_gui_process']:
-                                show_alert({"type": "warning", "msg": msg})
-                            print(msg.replace('<br/>','\n'))
-                            session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
-                            if convert2epub(id):
-                                epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
-                                if epubBook:
-                                    metadata = dict(session['metadata'])
-                                    for key, value in metadata.items():
-                                        data = epubBook.get_metadata('DC', key)
-                                        if data:
-                                            for value, attributes in data:
-                                                metadata[key] = value
-                                    metadata['language'] = session['language']
-                                    metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
-                                    metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
-                                    session['metadata'] = metadata                  
-                                    try:
-                                        if len(session['metadata']['language']) == 2:
-                                            lang_dict = Lang(session['language'])
-                                            if lang_dict:
-                                                session['metadata']['language'] = lang_dict.pt3
-                                    except Exception as e:
-                                        pass                         
-                                    if session['metadata']['language'] != session['language']:
-                                        error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
-                                        print(error)
-                                        if session['is_gui_process']:
-                                            show_alert({"type": "warning", "msg": error})
-                                    session['cover'] = get_cover(epubBook, session)
-                                    if session['cover']:
-                                        session['toc'], session['chapters'] = get_chapters(epubBook, session)
-                                        if session['chapters'] is not None:
-                                            #if session['chapters_preview']:
-                                            #    return 'confirm_blocks', True
-                                            #else:
-                                            #    return finalize_audiobook(id)
-                                            return finalize_audiobook(id)
-                                        else:
-                                            error = 'get_chapters() failed! '+session['toc']
-                                    else:
-                                        error = 'get_cover() failed!'
-                                else:
-                                    error = 'epubBook.read_epub failed!'
+                            device_vram_required = default_engine_settings[session['device']]['rating']['RAM'] if session['device'] == devices['CPU']['proc'] else default_engine_settings[session['device']]['rating']['VRAM']
+                            if total_vram_gb < device_vram_required:
+                                if session['is_gui_process']:
+                                    error = f"Your device has not enough memory ({total_vram_gb}GB) to run {} model ({device_vram_required}GB)"
                             else:
-                                error = 'convert2epub() failed!'
+                                if session['is_gui_process']:
+                                    show_alert({"type": "warning", "msg": msg})
+                                print(msg.replace('<br/>','\n'))
+                                session['epub_path'] = os.path.join(session['process_dir'], '__' + session['filename_noext'] + '.epub')
+                                if convert2epub(id):
+                                    epubBook = epub.read_epub(session['epub_path'], {'ignore_ncx': True})
+                                    if epubBook:
+                                        metadata = dict(session['metadata'])
+                                        for key, value in metadata.items():
+                                            data = epubBook.get_metadata('DC', key)
+                                            if data:
+                                                for value, attributes in data:
+                                                    metadata[key] = value
+                                        metadata['language'] = session['language']
+                                        metadata['title'] = metadata['title'] = metadata['title'] or Path(session['ebook']).stem.replace('_',' ')
+                                        metadata['creator'] =  False if not metadata['creator'] or metadata['creator'] == 'Unknown' else metadata['creator']
+                                        session['metadata'] = metadata                  
+                                        try:
+                                            if len(session['metadata']['language']) == 2:
+                                                lang_dict = Lang(session['language'])
+                                                if lang_dict:
+                                                    session['metadata']['language'] = lang_dict.pt3
+                                        except Exception as e:
+                                            pass                         
+                                        if session['metadata']['language'] != session['language']:
+                                            error = f"WARNING!!! language selected {session['language']} differs from the EPUB file language {session['metadata']['language']}"
+                                            print(error)
+                                            if session['is_gui_process']:
+                                                show_alert({"type": "warning", "msg": error})
+                                        session['cover'] = get_cover(epubBook, session)
+                                        if session['cover']:
+                                            session['toc'], session['chapters'] = get_chapters(epubBook, session)
+                                            if session['chapters'] is not None:
+                                                #if session['chapters_preview']:
+                                                #    return 'confirm_blocks', True
+                                                #else:
+                                                #    return finalize_audiobook(id)
+                                                return finalize_audiobook(id)
+                                            else:
+                                                error = 'get_chapters() failed! '+session['toc']
+                                        else:
+                                            error = 'get_cover() failed!'
+                                    else:
+                                        error = 'epubBook.read_epub failed!'
+                                else:
+                                    error = 'convert2epub() failed!'
                         else:
                             error = f"Temporary directory {session['process_dir']} not removed due to failure."
             else:
@@ -2974,7 +2985,7 @@ def build_interface(args:dict)->gr.Blocks:
                         ">
                           <tr style="border:none; vertical-align:bottom;">
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
-                              <b>GPU VRAM:</b> {color_box(int(rating["GPU VRAM"]))}
+                              <b>VRAM:</b> {color_box(int(rating["VRAM"]))}
                             </td>
                             <td style="padding:0 5px 0 2.5px; border:none; vertical-align:bottom;">
                               <b>CPU:</b> {yellow_stars(int(rating["CPU"]))}
