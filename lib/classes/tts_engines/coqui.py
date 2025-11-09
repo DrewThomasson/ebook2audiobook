@@ -142,7 +142,7 @@ class Coqui:
                             return False
                         config = BarkConfig()
                         config.CACHE_DIR = self.cache_dir
-                        config.USE_SMALLER_MODELS = True os.environ['SUNO_USE_SMALL_MODELS'] == 'true' else False
+                        config.USE_SMALLER_MODELS = True if os.environ['SUNO_USE_SMALL_MODELS'] == 'true' else False
                         engine = Bark.init_from_config(config)
                         engine.load_checkpoint(
                             config,
