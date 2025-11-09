@@ -145,7 +145,6 @@ class Coqui:
                         config.USE_SMALLER_MODELS = os.environ.get('SUNO_USE_SMALL_MODELS','false').lower() == 'true'
                         engine = Bark.init_from_config(config)
                         engine.load_checkpoint(
-                            config,
                             checkpoint_dir = checkpoint_dir,
                             eval = True
                         )
