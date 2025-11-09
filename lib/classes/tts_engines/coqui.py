@@ -355,12 +355,12 @@ class Coqui:
     def _check_bark_npz(self, voice_path:str, bark_dir:str, speaker:str, device:str)->bool:
         try:
             if self.session['language'] in language_tts[TTS_ENGINES['BARK']].keys():
-                npz_dir = os.path.join(bark_dir, speaker)
-                npz_file = os.path.join(npz_dir,f'{speaker}.npz')
-                if os.path.exists(npz_file):
+                pth_voice_dir = os.path.join(bark_dir, speaker)
+                pth_voice_file = os.path.join(pth_voice_dir,f'{speaker}.pth')
+                if os.path.exists(pth_voice_file):
                     return True
                 else:
-                    os.makedirs(npz_dir,exist_ok=True)
+                    os.makedirs(pth_voice_dir,exist_ok=True)
                     key = f"{TTS_ENGINES['BARK']}-internal"
                     engine = loaded_tts.get(key, {}).get('engine', False)
                     if not engine:
@@ -372,7 +372,7 @@ class Coqui:
                         checkpoint_dir = os.path.dirname(text_model_path)
                         engine = self._load_checkpoint(tts_engine=TTS_ENGINES['BARK'],key=key,checkpoint_dir=checkpoint_dir,device=device)
                     if engine:
-                        voice_temp = os.path.splitext(npz_file)[0]+'.wav'
+                        voice_temp = os.path.splitext(pth_voice_file)[0]+'.wav'
                         shutil.copy(voice_path,voice_temp)
                         default_text_file = os.path.join(voices_dir, self.session['language'], 'default.txt')
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
@@ -391,7 +391,7 @@ class Coqui:
                                 loaded_tts[self.tts_key]['config'],
                                 speaker_wav=voice_path,
                                 speaker=speaker,
-                                voice_dir=npz_dir,
+                                voice_dir=pth_voice_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
@@ -399,7 +399,7 @@ class Coqui:
                         del audio_sentence
                         if key != self.tts_key:
                             unload_tts(device, None, key)
-                        msg = f"Saved NPZ file: {npz_file}"
+                        msg = f"Saved file: {pth_voice_file}"
                         print(msg)
                         return True
                     else:
@@ -575,8 +575,8 @@ class Coqui:
                                 error = 'Could not create pth file!'
                                 print(error)
                                 return False
-                        npz_dir = os.path.join(bark_dir, speaker)
-                        npz_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
+                        pth_voice_dir = os.path.join(bark_dir, speaker)
+                        pth_voice_file = os.path.join(bark_dir, speaker, f'{speaker}.pth')
                         fine_tuned_params = {
                             key.removeprefix("bark_"): cast_type(self.session[key])
                             for key, cast_type in {
@@ -586,8 +586,8 @@ class Coqui:
                             if self.session.get(key) is not None
                         }
                         '''
-                        if self.npz_path is None or self.npz_path != npz_file:
-                            self.npz_path = npz_file
+                        if self.npz_path is None or self.npz_path != pth_voice_file:
+                            self.npz_path = pth_voice_file
                             self.npz_data = np.load(self.npz_path, allow_pickle=True)
                         history_prompt = [
                                 self.npz_data["semantic_prompt"],
@@ -609,7 +609,7 @@ class Coqui:
                                 sentence,
                                 loaded_tts[self.tts_key]['config'],
                                 speaker=speaker,
-                                voice_dir=npz_dir,
+                                voice_dir=pth_voice_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
