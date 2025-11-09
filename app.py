@@ -73,7 +73,7 @@ def check_and_install_requirements(file_path: str)->bool:
             devices['XPU']['found'] = getattr(torch, "xpu", None) is not None and torch.xpu.is_available()
         except ImportError:
             pass
-        cuda_only_packages = {'deepspeed'}
+        cuda_only_packages = ('deepspeed')
         with open(file_path, 'r') as f:
             contents = f.read().replace('\r', '\n')
             packages = [pkg.strip() for pkg in contents.splitlines() if pkg.strip() and regex.search(r'[a-zA-Z0-9]', pkg)]
@@ -82,14 +82,6 @@ def check_and_install_requirements(file_path: str)->bool:
         missing_packages = []
         cuda_markers = ('+cu', '+xpu', '+nv', '+git')
         for package in packages:
-            pkg_name_lower = package.lower().split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].strip()
-            print(f'--------------{pkg_name_lower}-------------')
-            if pkg_name_lower in cuda_only_packages:
-                has_cuda_build = False
-                if torch_version:
-                    has_cuda_build = any(marker in torch_version for marker in cuda_markers)
-                if not has_cuda_build:
-                    continue
             if ';' in package:
                 pkg_part, marker_part = package.split(';', 1)
                 marker_part = marker_part.strip()
@@ -117,6 +109,12 @@ def check_and_install_requirements(file_path: str)->bool:
                 continue
             clean_pkg = regex.sub(r'\[.*?\]', '', package)
             pkg_name = regex.split(r'[<>=]', clean_pkg, maxsplit=1)[0].strip()
+            if pkg_name in cuda_only_packages:
+                has_cuda_build = False
+                if torch_version:
+                    has_cuda_build = any(marker in torch_version for marker in cuda_markers)
+                if not has_cuda_build:
+                    continue
             try:
                 installed_version = version(pkg_name)
             except PackageNotFoundError:
@@ -124,7 +122,7 @@ def check_and_install_requirements(file_path: str)->bool:
                 print(error)
                 missing_packages.append(package)
                 continue
-            if pkg_name.lower() in flexible_packages:
+            if pkg_name in flexible_packages:
                 continue
             if '+' in installed_version:
                 continue
