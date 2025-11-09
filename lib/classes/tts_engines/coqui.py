@@ -63,7 +63,7 @@ class Coqui:
                 enough_vram = self.session['free_vram_gb'] > 4.0
                 if using_gpu and enough_vram:
                     torch.set_float32_matmul_precision("medium")
-                    if devices['CUDA']['found']:
+                    if devices['CUDA']['found'] or devices['ROCM']['found']:
                         torch.cuda.set_per_process_memory_fraction(0.95)
                         torch.backends.cudnn.enabled = True
                         torch.backends.cudnn.benchmark = True
@@ -74,7 +74,7 @@ class Coqui:
                         
                 else:
                     torch.set_float32_matmul_precision("high")
-                    if devices['CUDA']['found']:
+                    if devices['CUDA']['found'] or devices['ROCM']['found']:
                         torch.cuda.set_per_process_memory_fraction(0.7)
                         torch.backends.cudnn.enabled = True
                         torch.backends.cudnn.benchmark = False
@@ -457,7 +457,7 @@ class Coqui:
 
     def _autocast_context(self):
         device = self.session.get('device', devices['CPU']['proc'])
-        if device == devices['CUDA']['proc'] and devices['CUDA']['found']:
+        if device == devices['CUDA']['proc'] and devices['CUDA']['found'] or device == devices['ROCM']['proc'] and devices['ROCM']['found']:
             torch_cuda_is_bf16 = True if torch.cuda.is_bf16_supported() else False
             dtype = (
                 torch.bfloat16
