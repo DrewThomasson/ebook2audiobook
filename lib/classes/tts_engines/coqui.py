@@ -48,7 +48,6 @@ class Coqui:
             self.vtt_path = os.path.join(self.session['process_dir'],Path(self.session['final_name']).stem+'.vtt')
             self.resampler_cache = {}
             self.audio_segments = []
-            load_zeroshot = True if self.session['tts_engine'] in [TTS_ENGINES['VITS'], TTS_ENGINES['FAIRSEQ'], TTS_ENGINES['TACOTRON2']] else False
             if xtts_builtin_speakers_list is None:
                 self.speakers_path = hf_hub_download(repo_id=models[TTS_ENGINES['XTTSv2']]['internal']['repo'], filename=default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][4], cache_dir=self.cache_dir)
                 xtts_builtin_speakers_list = torch.load(self.speakers_path)
@@ -74,8 +73,7 @@ class Coqui:
                         torch.backends.cuda.matmul.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
             self._load_engine()
-            if load_zeroshot:
-                self._load_engine_zs()
+            self._load_engine_zs()
         except Exception as e:
             error = f'__init__() error: {e}'
             print(error)
@@ -86,12 +84,12 @@ class Coqui:
             with lock:
                 unload_tts()
                 from TTS.api import TTS as TTSEngine
+                msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                 engine = loaded_tts.get(key, False)
                 if engine:
                     msg = f'{key} Loaded!'
                     print(msg)
                     return engine
-                print(f"Loading Coqui model from: {model_path}")
                 engine = TTSEngine(model_path)
                 if engine:
                     loaded_tts[key] = engine
@@ -241,8 +239,6 @@ class Coqui:
                             sub = next((key for key, lang_list in sub_dict.items() if iso_dir in lang_list), None)
                         if sub is not None:
                             model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo'].replace("[lang_iso1]", iso_dir).replace("[xxx]", sub)
-                            msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
-                            print(msg)
                             self.tts_key = model_path
                             self.engine = self._load_api(self.tts_key, model_path, self.session['device'])
                         else:
@@ -262,15 +258,12 @@ class Coqui:
 
     def _load_engine_zs(self)->Any:
         try:
-            if load_zeroshot:
-                cleanup_garbage()
-                self.engine_zs = loaded_tts.get(self.tts_zs_key, False)
-                if not self.engine_zs:
-                    msg = f"Loading TTS {self.tts_zs_key} zeroshot model, it takes a while, please be patient..."
-                    print(msg)
-                    self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model, self.session['device'])
-                    if self.engine_zs:
-                        self.session['model_zs_cache'] = self.tts_zs_key
+            cleanup_garbage()
+            self.engine_zs = loaded_tts.get(self.tts_zs_key, False)
+            if not self.engine_zs:
+                self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model, self.session['device'])
+                if self.engine_zs:
+                    self.session['model_zs_cache'] = self.tts_zs_key
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
 
