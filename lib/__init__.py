@@ -2,7 +2,7 @@ from .models import (
     TTS_ENGINES, TTS_VOICE_CONVERSION, TTS_SML, default_fine_tuned, default_tts_engine, 
     default_engine_settings, default_vc_model, default_voice_detection_model,
     loaded_tts, max_custom_model, max_custom_voices,
-    max_tts_in_memory, max_upload_size, models, os, voices_dir
+    max_upload_size, models, os, voices_dir
 )
 
 from .conf import (
@@ -32,7 +32,7 @@ __all__ = [
     "TTS_ENGINES", "TTS_VOICE_CONVERSION", "TTS_SML", "default_fine_tuned", "default_tts_engine",
     "default_engine_settings", "default_vc_model", "default_voice_detection_model",
     "loaded_tts", "max_custom_model",
-    "max_custom_voices", "max_tts_in_memory", "max_upload_size",
+    "max_custom_voices", "max_upload_size",
     "models", "os", "voices_dir",
 
     # from conf
