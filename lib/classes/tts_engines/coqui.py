@@ -604,7 +604,7 @@ class Coqui:
                             )
                         '''
                         #with torch.no_grad(), self._autocast_context():
-                        with torch.no_grad()
+                        with torch.no_grad():
                             #torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
                                 sentence,
