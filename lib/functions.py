@@ -3401,6 +3401,8 @@ def build_interface(args:dict)->gr.Blocks:
                                     session['voice'] = default_voice_path
                     voice_paths = {v[1] for v in voice_options}
                     if session['voice'] not in voice_paths:
+                        if voice_paths[0] is not None:
+                            session['voice'] = default_voice_path
                         return gr.update(choices=voice_options)
                     else:
                         return gr.update(choices=voice_options, value=session['voice'])
