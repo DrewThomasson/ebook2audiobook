@@ -157,6 +157,7 @@ class Coqui:
                 print(error)
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
+            print(error)
         return False
 
     def _plug_engine(self)->Any:
