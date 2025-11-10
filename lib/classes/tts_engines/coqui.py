@@ -766,7 +766,7 @@ class Coqui:
                                 )
                     elif self.session['tts_engine'] == TTS_ENGINES['TACOTRON2']:
                         speaker_argument = {}
-                        if session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
+                        if self.session['language'] in ['zho', 'jpn', 'kor', 'tha', 'lao', 'mya', 'khm']:
                             not_supported_punc_pattern = re.compile(r'\p{P}+')
                         else:
                             not_supported_punc_pattern = re.compile(r'["—…¡¿]')
