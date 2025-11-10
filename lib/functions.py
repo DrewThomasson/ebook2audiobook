@@ -560,13 +560,18 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
             try:
                 stanza_model = f"stanza-{session['language_iso1']}"
                 stanza_nlp = loaded_tts.get(stanza_model, False)
-                if not stanza_nlp:
+                if stanza_nlp:
+                    msg = f"Stanza NLP {stanza_model} loaded!"
+                    print(msg)
+                else:
                     use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
                     stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
                     stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method="reuse_resources")
                     if stanza_nlp:
                         session['stanza_cache'] = stanza_model
                         loaded_tts[stanza_model] = stanza_nlp
+                        msg = f"Stanza NLP {stanza_model} loaded!"
+                        print(msg)
             except (ConnectionError, TimeoutError) as e:
                 error = f'Stanza model download connection error: {e}. Retry later'
                 return error, None
