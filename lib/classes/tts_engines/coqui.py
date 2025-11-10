@@ -607,11 +607,7 @@ class Coqui:
                         with torch.no_grad():
                             #torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
-                                sentence,
-                                speaker=speaker,
-                                voice_dir=pth_voice_dir,
-                                silent=True,
-                                **fine_tuned_params
+                                sentence
                             )
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
