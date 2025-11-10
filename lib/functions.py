@@ -91,10 +91,7 @@ class SessionTracker:
     def end_session(self, id:str, socket_hash:str)->None:
         active_sessions.discard(socket_hash)
         with self.lock:
-            session = context.get_session(id)
-            session['tab_id'] = None
-            session['status'] = None
-            session[socket_hash] = None
+            context.sessions.pop(id, None)
 
 class SessionContext:
     def __init__(self):
@@ -138,6 +135,7 @@ class SessionContext:
                 "device": default_device,
                 "tts_engine": default_tts_engine,
                 "fine_tuned": default_fine_tuned,
+                "model_cache": None,
                 "system": None,
                 "client": None,
                 "language": default_language_code,

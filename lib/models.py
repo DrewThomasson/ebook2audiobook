@@ -30,7 +30,6 @@ default_fine_tuned = 'internal'
 default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
 default_voice_detection_model = 'drewThomasson/segmentation'
 
-max_tts_in_memory = 2 # TTS main models and zeroshort to keep in memory (1 tts engine ~= 1GB to 8GB RAM).
 max_custom_model = 100
 max_custom_voices = 1000
 max_upload_size = '6GB'

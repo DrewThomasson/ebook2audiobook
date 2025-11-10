@@ -6,6 +6,7 @@ import stanza
 
 from typing import Any, Union
 from lib.models import loaded_tts, max_tts_in_memory, TTS_ENGINES
+from lib.functions import context
 
 def cleanup_garbage():
     gc.collect()
@@ -14,22 +15,16 @@ def cleanup_garbage():
         torch.cuda.ipc_collect()
         torch.cuda.synchronize()
 
-def unload_tts(device:str, reserved_keys:list[str]|None, tts_key:str)->bool:
+def unload_tts()->None:
     try:
-        if len(loaded_tts) > max_tts_in_memory:
-            if reserved_keys is None:
-                if tts_key in loaded_tts:
-                    loaded_tts.pop(tts_key, False)
-            else:
-                if tts_key not in reserved_keys:
-                    if tts_key in loaded_tts:
-                        loaded_tts.pop(tts_key, False)
+        active_models = {session_data['model_cache'] for session_data in context.sessions.values()}
+        for key in list(loaded_tts.keys()):
+            if key not in active_models:
+                del loaded_tts[key]
         cleanup_garbage()
-        return True
     except Exception as e:
         error = f"unload_tts() error: {e}"
         print(error)
-        return False
 
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 
