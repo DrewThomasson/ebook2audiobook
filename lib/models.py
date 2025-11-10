@@ -69,7 +69,7 @@ default_engine_settings = {
             "FerranSimen": "Ferran Simen", "XavierHayasaka": "Xavier Hayasaka", "LuisMoray": "Luis Moray",
             "MarcosRudaski": "Marcos Rudaski"
         },
-        "rating": {"VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 5}
+        "rating": {"VRAM": 2, "CPU": 2, "RAM": 4, "Realism": 5}
     },
     TTS_ENGINES['BARK']: {
         "samplerate": 24000,
