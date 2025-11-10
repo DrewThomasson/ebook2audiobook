@@ -10,7 +10,7 @@ from __future__ import annotations
 import argparse, asyncio, csv, fnmatch, hashlib, io, json, math, os, pytesseract
 import platform, random, shutil, subprocess, sys, tempfile, threading, time, uvicorn
 import traceback, socket, warnings, unicodedata, urllib.request, uuid, zipfile, fitz
-import ebooklib, gradio as gr, psutil, regex as re, requests, stanza, gc
+import ebooklib, gradio as gr, psutil, regex as re, requests, stanza
 
 from soynlp.tokenizer import LTokenizer
 from pythainlp.tokenize import word_tokenize
@@ -137,6 +137,7 @@ class SessionContext:
                 "fine_tuned": default_fine_tuned,
                 "model_cache": None,
                 "model_zs_cache": None,
+                "stanza_cache": None,
                 "system": None,
                 "client": None,
                 "language": default_language_code,
@@ -557,10 +558,13 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
         stanza_nlp = False
         if session['language'] in year_to_decades_languages:
             try:
-                use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
-                stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
-                stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method="reuse_resources")
-                #stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=False, download_method="reuse_resources")
+                stanza_nlp = loaded_tts.get(f"stanza-{session['language_iso1']}", False)
+                if not stanza_nlp:
+                    use_gpu = True if (session['device'] == devices['CUDA']['proc'] and devices['CUDA']['found']) or (session['device'] == devices['ROCM']['proc'] and devices['ROCM']['found']) or (session['device'] == devices['XPU']['proc'] and devices['XPU']['found'])else False
+                    stanza.download(session['language_iso1'], model_dir=os.getenv('STANZA_RESOURCES_DIR'))
+                    stanza_nlp = stanza.Pipeline(session['language_iso1'], processors='tokenize,ner,mwt', use_gpu=use_gpu, download_method="reuse_resources")
+                    if stanza_nlp:
+                        session['stanza_cache'] = stanza_nlp
             except (ConnectionError, TimeoutError) as e:
                 error = f'Stanza model download connection error: {e}. Retry later'
                 return error, None
@@ -576,9 +580,6 @@ YOU CAN IMPROVE IT OR ASK TO A TRAINING MODEL EXPERT.
                 break
             elif len(sentences_list) > 0:
                 chapters.append(sentences_list)
-        if stanza_nlp:
-            del stanza_nlp
-            gc.collect()
         if len(chapters) == 0:
             error = 'No chapters found! possible reason: file corrupted or need to convert images to text with OCR'
             return error, None

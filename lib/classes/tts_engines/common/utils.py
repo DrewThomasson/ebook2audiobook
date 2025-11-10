@@ -20,7 +20,7 @@ def unload_tts()->None:
         active_models = {
             cache
             for session in context.sessions.values()
-            for cache in (session.get('model_cache'), session.get('model_zs_cache'))
+            for cache in (session.get('model_cache'), session.get('model_zs_cache'), session.get('stanza_cache'))
             if cache is not None
         }
         for key in list(loaded_tts.keys()):
