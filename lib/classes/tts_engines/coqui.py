@@ -536,7 +536,11 @@ class Coqui:
                         with torch.no_grad():
                             #torch.manual_seed(67878789)
                             audio_sentence = self.engine.synthesize(
-                                sentence
+                                sentence,
+                                speaker=speaker,
+                                voice_dir=pth_voice_dir,
+                                silent=True,
+                                **fine_tuned_params
                             )
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
@@ -816,6 +820,10 @@ class Coqui:
                                 error = f"Cannot create {final_sentence_file}"
                                 print(error)
                                 return False
+                    else:
+                        error = f"audio_sentence not valide"
+                        print(error)
+                        return False
             else:
                 error = f"TTS engine {self.session['tts_engine']} could not be loaded!\nPossible reason can be not enough VRAM/RAM memory"
                 print(error)
