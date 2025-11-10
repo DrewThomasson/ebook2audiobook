@@ -2721,7 +2721,7 @@ def build_interface(args:dict)->gr.Blocks:
                         with gr.Row(elem_id='gr_row_tab_main'):
                             with gr.Column(elem_id='gr_col_1', elem_classes=['gr-col'], scale=3):
                                 with gr.Group(elem_id='gr_group_ebook_file', elem_classes=['gr-group']):
-                                    gr_selection_markdown = gr.Markdown(elem_id='gr_selection_markdown', elem_classes=['gr-markdown'], value='Selection')
+                                    gr_import_markdown = gr.Markdown(elem_id='gr_import_markdown', elem_classes=['gr-markdown'], value='Import')
                                     gr_ebook_file = gr.File(label=src_label_file, elem_id='gr_ebook_file', file_types=ebook_formats, file_count='single', allow_reordering=True, height=100)
                                     gr_row_ebook_mode = gr.Row(elem_id='gr_row_ebook_mode')
                                     with gr_row_ebook_mode:
