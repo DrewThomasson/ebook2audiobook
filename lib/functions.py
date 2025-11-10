@@ -2101,8 +2101,7 @@ def convert_ebook(args:dict)->tuple:
                             if session['free_vram_gb'] <= 4.0:
                                 if session['tts_engine'] == TTS_ENGINES['BARK']:
                                     os.environ['SUNO_USE_SMALL_MODELS'] = 'True'
-                                    msg_extra += f"<br/>Switching BARK to SMALL models"
-                                    os.environ['SUNO_OFFLOAD_CPU'] = 'False'                               
+                                    msg_extra += f"<br/>Switching BARK to SMALL models"                          
                             if msg == '':
                                 msg = f"Using {session['device'].upper()}"
                             msg += msg_extra;
