@@ -88,14 +88,14 @@ class Coqui:
                 from TTS.api import TTS as TTSEngine
                 engine = loaded_tts.get('engine', None)
                 if engine is not None:
-                    msg = f'{engine_name} Loaded!'
+                    msg = f'{key} Loaded!'
                     print(msg)
                     return engine
                 print(f"Loading Coqui model from: {model_path}")
                 engine = TTSEngine(model_path)
                 if engine:
                     loaded_tts[key] = engine
-                    msg = f'{engine_name} Loaded!'
+                    msg = f'{key} Loaded!'
                     print(msg)
                 return engine
         except Exception as e:
@@ -112,7 +112,7 @@ class Coqui:
                 unload_tts()
                 engine = loaded_tts.get('engine', None)
                 if engine is not None:
-                    msg = f'{engine_name} Loaded!'
+                    msg = f'{key} Loaded!'
                     print(msg)
                     return engine
                 engine_name = kwargs.get('tts_engine', None)
