@@ -136,6 +136,7 @@ class SessionContext:
                 "tts_engine": default_tts_engine,
                 "fine_tuned": default_fine_tuned,
                 "model_cache": None,
+                "model_zs_cache": None,
                 "system": None,
                 "client": None,
                 "language": default_language_code,

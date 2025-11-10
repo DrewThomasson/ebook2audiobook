@@ -255,6 +255,8 @@ class Coqui:
                     else:
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                         self.engine = self._load_api(self.tts_key, model_path, self.session['device'])
+                if self.engine:
+                    self.session['model_cache'] = self.tts_key
         except Exception as e:
             error = f'_load_engine() error: {e}'
 
@@ -267,6 +269,7 @@ class Coqui:
                     msg = f"Loading TTS {self.tts_zs_key} zeroshot model, it takes a while, please be patient..."
                     print(msg)
                     self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model, self.session['device'])
+                    self.session['model_zs_cache'] = self.tts_zs_key
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
 

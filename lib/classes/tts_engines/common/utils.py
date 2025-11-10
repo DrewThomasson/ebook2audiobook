@@ -17,7 +17,12 @@ def cleanup_garbage():
 
 def unload_tts()->None:
     try:
-        active_models = {session_data['model_cache'] for session_data in context.sessions.values()}
+        active_models = {
+            cache
+            for session in context.sessions.values()
+            for cache in (session.get('model_cache'), session.get('model_zs_cache'))
+            if cache is not None
+        }
         for key in list(loaded_tts.keys()):
             if key not in active_models:
                 del loaded_tts[key]
