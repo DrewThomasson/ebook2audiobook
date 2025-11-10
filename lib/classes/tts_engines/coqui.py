@@ -85,7 +85,7 @@ class Coqui:
         global lock
         try:
             with lock:
-                unload_tts(device, [self.tts_key, self.tts_zs_key], key)
+                #unload_tts(device, [self.tts_key, self.tts_zs_key], key)
                 from TTS.api import TTS as TTSEngine
                 engine = loaded_tts.get(key, {}).get('engine', False)
                 if not engine:
@@ -329,8 +329,8 @@ class Coqui:
                                 torchaudio.save(proc_voice_path, audio_tensor, default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate'], format='wav')
                                 if normalize_audio(proc_voice_path, new_voice_path, default_audio_proc_samplerate, self.session['is_gui_process']):
                                     del audio_sentence, sourceTensor, audio_tensor
-                                    if key != self.tts_key:
-                                        unload_tts(device, None, key)
+                                    #if key != self.tts_key:
+                                    #    unload_tts(device, None, key)
                                     Path(proc_voice_path).unlink(missing_ok=True)
                                     return new_voice_path
                                 else:
@@ -397,8 +397,8 @@ class Coqui:
                             )
                         os.remove(voice_temp)
                         del audio_sentence
-                        if key != self.tts_key:
-                            unload_tts(device, None, key)
+                        #if key != self.tts_key:
+                        #    unload_tts(device, None, key)
                         msg = f"Saved file: {pth_voice_file}"
                         print(msg)
                         return True
@@ -603,10 +603,15 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         '''
-                        with torch.no_grad(), self._autocast_context():
-                            torch.manual_seed(67878789)
+                        #with torch.no_grad(), self._autocast_context():
+                        with torch.no_grad()
+                            #torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
-                                sentence
+                                sentence,
+                                speaker=speaker,
+                                voice_dir=pth_voice_dir,
+                                silent=True,
+                                **fine_tuned_params
                             )
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
