@@ -252,7 +252,7 @@ class Coqui:
                     return self._load_api(self.tts_key, model_path, self.session['device'])
         except Exception as e:
             error = f'_plug_engine() error: {e}'
-        cleanup_garbage()
+        #cleanup_garbage()
         return False
 
     def _plug_engine_zs(self)->Any:
@@ -267,7 +267,7 @@ class Coqui:
                     return self._load_api(self.tts_zs_key, default_vc_model, self.session['device'])
         except Exception as e:
             error = f'_plug_engine_zs() error: {e}'
-        cleanup_garbage()
+        #cleanup_garbage()
         return False
 
     def _check_xtts_builtin_speakers(self, voice_path:str, speaker:str, device:str)->str|bool:
