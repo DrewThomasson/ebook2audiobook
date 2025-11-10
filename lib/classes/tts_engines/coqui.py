@@ -498,7 +498,7 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         audio_sentence = result.get('wav')
-                        if audio_sentence and is_audio_data_valid(audio_sentence):
+                        if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['BARK']:
                         trim_audio_buffer = 0.002
@@ -542,7 +542,7 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         audio_sentence = result.get('wav')
-                        if audio_sentence and is_audio_data_valid(audio_sentence):
+                        if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
                         speaker_argument = {}
