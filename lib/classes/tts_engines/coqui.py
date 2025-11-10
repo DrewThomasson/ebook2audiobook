@@ -85,14 +85,11 @@ class Coqui:
                 unload_tts()
                 from TTS.api import TTS as TTSEngine
                 engine = loaded_tts.get(key, False)
-                if engine:
-                    msg = f'{key} Loaded!'
-                    print(msg)
-                    return engine
-                engine = TTSEngine(model_path)
+                if not engine:
+                    engine = TTSEngine(model_path)
                 if engine:
                     loaded_tts[key] = engine
-                    msg = f'{key} Loaded!'
+                    msg = f'TTS {key} Loaded!'
                     print(msg)
                 return engine
         except Exception as e:
@@ -108,53 +105,50 @@ class Coqui:
                 device = kwargs.get('device')
                 unload_tts()
                 engine = loaded_tts.get(key, False)
-                if engine:
-                    msg = f'{key} Loaded!'
-                    print(msg)
-                    return engine
-                engine_name = kwargs.get('tts_engine', None)
-                if engine_name == TTS_ENGINES['XTTSv2']:
-                    from TTS.tts.configs.xtts_config import XttsConfig
-                    from TTS.tts.models.xtts import Xtts
-                    checkpoint_path = kwargs.get('checkpoint_path')
-                    config_path = kwargs.get('config_path',None)
-                    vocab_path = kwargs.get('vocab_path',None)
-                    if not checkpoint_path or not os.path.exists(checkpoint_path):
-                        raise FileNotFoundError(f"Missing or invalid checkpoint_path: {checkpoint_path}")
-                        return False
-                    if not config_path or not os.path.exists(config_path):
-                        raise FileNotFoundError(f"Missing or invalid config_path: {config_path}")
-                        return False
-                    config = XttsConfig()
-                    config.models_dir = os.path.join("models","tts")
-                    config.load_json(config_path)
-                    engine = Xtts.init_from_config(config)
-                    engine.load_checkpoint(
-                        config,
-                        checkpoint_path = checkpoint_path,
-                        vocab_path = vocab_path,
-                        use_deepspeed = default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] if self.session['device'] in [devices['CUDA']['proc'], devices['XPU']['proc'], devices['ROCM']['proc']] else False,
-                        eval = True
-                    )
-                elif engine_name == TTS_ENGINES['BARK']:
-                    from TTS.tts.configs.bark_config import BarkConfig
-                    from TTS.tts.models.bark import Bark
-                    checkpoint_dir = kwargs.get('checkpoint_dir')
-                    if not checkpoint_dir or not os.path.exists(checkpoint_dir):
-                        raise FileNotFoundError(f"Missing or invalid checkpoint_dir: {checkpoint_dir}")
-                        return False
-                    config = BarkConfig()
-                    config.CACHE_DIR = self.cache_dir
-                    config.USE_SMALLER_MODELS = True if os.environ['SUNO_USE_SMALL_MODELS'] == 'True' else False
-                    engine = Bark.init_from_config(config)
-                    engine.load_checkpoint(
-                        config,
-                        checkpoint_dir = checkpoint_dir,
-                        eval = True
-                    )  
+                if not engine:
+                    engine_name = kwargs.get('tts_engine', None)
+                    if engine_name == TTS_ENGINES['XTTSv2']:
+                        from TTS.tts.configs.xtts_config import XttsConfig
+                        from TTS.tts.models.xtts import Xtts
+                        checkpoint_path = kwargs.get('checkpoint_path')
+                        config_path = kwargs.get('config_path',None)
+                        vocab_path = kwargs.get('vocab_path',None)
+                        if not checkpoint_path or not os.path.exists(checkpoint_path):
+                            raise FileNotFoundError(f"Missing or invalid checkpoint_path: {checkpoint_path}")
+                            return False
+                        if not config_path or not os.path.exists(config_path):
+                            raise FileNotFoundError(f"Missing or invalid config_path: {config_path}")
+                            return False
+                        config = XttsConfig()
+                        config.models_dir = os.path.join("models","tts")
+                        config.load_json(config_path)
+                        engine = Xtts.init_from_config(config)
+                        engine.load_checkpoint(
+                            config,
+                            checkpoint_path = checkpoint_path,
+                            vocab_path = vocab_path,
+                            use_deepspeed = default_engine_settings[TTS_ENGINES['XTTSv2']]['use_deepspeed'] if self.session['device'] in [devices['CUDA']['proc'], devices['XPU']['proc'], devices['ROCM']['proc']] else False,
+                            eval = True
+                        )
+                    elif engine_name == TTS_ENGINES['BARK']:
+                        from TTS.tts.configs.bark_config import BarkConfig
+                        from TTS.tts.models.bark import Bark
+                        checkpoint_dir = kwargs.get('checkpoint_dir')
+                        if not checkpoint_dir or not os.path.exists(checkpoint_dir):
+                            raise FileNotFoundError(f"Missing or invalid checkpoint_dir: {checkpoint_dir}")
+                            return False
+                        config = BarkConfig()
+                        config.CACHE_DIR = self.cache_dir
+                        config.USE_SMALLER_MODELS = True if os.environ['SUNO_USE_SMALL_MODELS'] == 'True' else False
+                        engine = Bark.init_from_config(config)
+                        engine.load_checkpoint(
+                            config,
+                            checkpoint_dir = checkpoint_dir,
+                            eval = True
+                        )  
                 if engine:
                     loaded_tts[key] = engine
-                    msg = f'{engine_name} Loaded!'
+                    msg = f'TTS {key} Loaded!'
                     print(msg)
                 return engine
         except Exception as e:
