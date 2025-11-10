@@ -559,24 +559,6 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        '''
-                        if self.pth_voice_file is None or self.pth_voice_file != pth_voice_file:
-                            self.pth_voice_file = pth_voice_file
-                            self.npz_data = np.load(self.pth_voice_file, allow_pickle=True)
-                        history_prompt = [
-                                self.npz_data["semantic_prompt"],
-                                self.npz_data["coarse_prompt"],
-                                self.npz_data["fine_prompt"]
-                        ]
-                        with torch.no_grad()
-                            #torch.manual_seed(67878789)
-                            audio_sentence, _ = engine.generate_audio(
-                                sentence,
-                                history_prompt=history_prompt,
-                                silent=True,
-                                **fine_tuned_params
-                            )
-                        '''
                         with torch.no_grad()
                             #torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
