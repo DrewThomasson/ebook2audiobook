@@ -124,7 +124,7 @@ default_engine_settings = {
             "zh_speaker_6": "Speaker 6", "zh_speaker_7": "Speaker 7", "zh_speaker_8": "Speaker 8",
             "zh_speaker_9": "Speaker 9"
         },
-        "rating": {"VRAM": 6, "CPU": 1, "RAM": 16, "Realism": 4}
+        "rating": {"VRAM": 6, "CPU": 1, "RAM": 16, "Realism": 5}
     },
     TTS_ENGINES['VITS']: {
         "samplerate": 22050,
