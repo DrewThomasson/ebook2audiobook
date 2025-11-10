@@ -124,25 +124,25 @@ default_engine_settings = {
             "zh_speaker_6": "Speaker 6", "zh_speaker_7": "Speaker 7", "zh_speaker_8": "Speaker 8",
             "zh_speaker_9": "Speaker 9"
         },
-        "rating": {"VRAM": 4, "CPU": 1, "RAM": 16, "Realism": 4}
+        "rating": {"VRAM": 6, "CPU": 1, "RAM": 16, "Realism": 4}
     },
     TTS_ENGINES['VITS']: {
         "samplerate": 22050,
         "files": ['config.json', 'model_file.pth', 'language_ids.json'],
         "voices": {},
-        "rating": {"VRAM": 1, "CPU": 3, "RAM": 4, "Realism": 3}
+        "rating": {"VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
     },
     TTS_ENGINES['FAIRSEQ']: {
         "samplerate": 16000,
         "files": ['config.json', 'G_100000.pth', 'vocab.json'],
         "voices": {},
-        "rating": {"VRAM": 1, "CPU": 3, "RAM": 4, "Realism": 3}
+        "rating": {"VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
     },
     TTS_ENGINES['TACOTRON2']: {
         "samplerate": 22050,
         "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
         "voices": {},
-        "rating": {"VRAM": 1, "CPU": 3, "RAM": 4, "Realism": 3}
+        "rating": {"VRAM": 1, "CPU": 3, "RAM": 2, "Realism": 3}
     },
     TTS_ENGINES['YOURTTS']: {
         "samplerate": 16000,
