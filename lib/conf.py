@@ -37,8 +37,8 @@ os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:32,garbage_collection
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
 os.environ["CUDA_CACHE_MAXSIZE"] = "2147483648"
-os.environ['SUNO_OFFLOAD_CPU'] = 'True' # BARK option: False needs A GPU
-os.environ['SUNO_USE_SMALL_MODELS'] = 'True' # BARK option: False needs a GPU with VRAM > 4GB
+os.environ['SUNO_OFFLOAD_CPU'] = 'False'
+os.environ['SUNO_USE_SMALL_MODELS'] = 'False'
 if platform.system() == 'Windows':
     os.environ['ESPEAK_DATA_PATH'] = os.path.expandvars(r"%USERPROFILE%\scoop\apps\espeak-ng\current\eSpeak NG\espeak-ng-data")
 
