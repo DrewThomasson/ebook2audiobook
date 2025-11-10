@@ -129,19 +129,19 @@ default_engine_settings = {
         "samplerate": 22050,
         "files": ['config.json', 'model_file.pth', 'language_ids.json'],
         "voices": {},
-        "rating": {"VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
+        "rating": {"VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
     },
     TTS_ENGINES['FAIRSEQ']: {
         "samplerate": 16000,
         "files": ['config.json', 'G_100000.pth', 'vocab.json'],
         "voices": {},
-        "rating": {"VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
+        "rating": {"VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
     },
     TTS_ENGINES['TACOTRON2']: {
         "samplerate": 22050,
         "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
         "voices": {},
-        "rating": {"VRAM": 1, "CPU": 3, "RAM": 2, "Realism": 3}
+        "rating": {"VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 3}
     },
     TTS_ENGINES['YOURTTS']: {
         "samplerate": 16000,
