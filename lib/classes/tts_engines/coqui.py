@@ -84,7 +84,6 @@ class Coqui:
             with lock:
                 unload_tts()
                 from TTS.api import TTS as TTSEngine
-                msg = f"Loading TTS {model_path} model, it takes a while, please be patient..."
                 engine = loaded_tts.get(key, False)
                 if engine:
                     msg = f'{key} Loaded!'
@@ -165,11 +164,11 @@ class Coqui:
 
     def _load_engine(self)->None:
         try:
+            msg = f"Loading TTS {self.tts_key} model, it takes a while, please be patient..."
+            print(msg)
             cleanup_garbage()
             self.engine = loaded_tts.get(self.tts_key, False)
             if not self.engine:
-                msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
-                print(msg)
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
                     if self.session['custom_model'] is not None:
                         config_path = os.path.join(self.session['custom_model_dir'], self.session['tts_engine'], self.session['custom_model'], default_engine_settings[TTS_ENGINES['XTTSv2']]['files'][0])
@@ -258,6 +257,8 @@ class Coqui:
 
     def _load_engine_zs(self)->Any:
         try:
+            msg = f"Loading TTS {self.tts_zs_key} model, it takes a while, please be patient..."
+            print(msg)
             cleanup_garbage()
             self.engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not self.engine_zs:
