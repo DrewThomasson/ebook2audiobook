@@ -606,12 +606,7 @@ class Coqui:
                         with torch.no_grad(), self._autocast_context():
                             torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
-                                sentence,
-                                loaded_tts[self.tts_key]['config'],
-                                speaker=speaker,
-                                voice_dir=pth_voice_dir,
-                                silent=True,
-                                **fine_tuned_params
+                                sentence
                             )
                         if is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
