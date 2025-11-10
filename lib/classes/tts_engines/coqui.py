@@ -86,8 +86,8 @@ class Coqui:
             with lock:
                 unload_tts()
                 from TTS.api import TTS as TTSEngine
-                engine = loaded_tts.get('engine', None)
-                if engine is not None:
+                engine = loaded_tts.get(key, False)
+                if engine:
                     msg = f'{key} Loaded!'
                     print(msg)
                     return engine
@@ -110,8 +110,8 @@ class Coqui:
                 key = kwargs.get('key')
                 device = kwargs.get('device')
                 unload_tts()
-                engine = loaded_tts.get('engine', None)
-                if engine is not None:
+                engine = loaded_tts.get(key, False)
+                if engine:
                     msg = f'{key} Loaded!'
                     print(msg)
                     return engine
@@ -168,8 +168,8 @@ class Coqui:
     def _load_engine(self)->None:
         try:
             cleanup_garbage()
-            self.engine = loaded_tts.get(self.tts_key, {}).get('engine', None)
-            if self.engine is None:
+            self.engine = loaded_tts.get(self.tts_key, False)
+            if not self.engine:
                 msg = f"Loading TTS {self.session['tts_engine']} model, it takes a while, please be patient..."
                 print(msg)
                 if self.session['tts_engine'] == TTS_ENGINES['XTTSv2']:
@@ -257,8 +257,6 @@ class Coqui:
                         self.engine = self._load_api(self.tts_key, model_path, self.session['device'])
                 if self.engine:
                     self.session['model_cache'] = self.tts_key
-                else: 
-                    self.engine = None
         except Exception as e:
             error = f'_load_engine() error: {e}'
 
@@ -266,15 +264,13 @@ class Coqui:
         try:
             if load_zeroshot:
                 cleanup_garbage()
-                self.engine_zs = loaded_tts.get(self.tts_zs_key, {}).get('engine', None)
-                if self.engine_zs is None:
+                self.engine_zs = loaded_tts.get(self.tts_zs_key, False)
+                if not self.engine_zs:
                     msg = f"Loading TTS {self.tts_zs_key} zeroshot model, it takes a while, please be patient..."
                     print(msg)
                     self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model, self.session['device'])
                     if self.engine_zs:
                         self.session['model_zs_cache'] = self.tts_zs_key
-                    else:
-                        self.engine_zs = None
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
 
@@ -290,7 +286,7 @@ class Coqui:
                         key = f"{TTS_ENGINES['XTTSv2']}-internal"
                         default_text = Path(default_text_file).read_text(encoding="utf-8")
                         cleanup_garbage()
-                        engine = loaded_tts.get(key, {}).get('engine', False)
+                        engine = loaded_tts.get(key, False)
                         if not engine:
                             hf_repo = models[TTS_ENGINES['XTTSv2']]['internal']['repo']
                             hf_sub = ''
@@ -369,7 +365,7 @@ class Coqui:
                 else:
                     os.makedirs(pth_voice_dir,exist_ok=True)
                     key = f"{TTS_ENGINES['BARK']}-internal"
-                    engine = loaded_tts.get(key, {}).get('engine', False)
+                    engine = loaded_tts.get(key, False)
                     if not engine:
                         hf_repo = models[TTS_ENGINES['BARK']]['internal']['repo']
                         hf_sub = models[TTS_ENGINES['BARK']]['internal']['sub'] 
@@ -475,7 +471,7 @@ class Coqui:
                         msg = f"Could not create the builtin speaker selected voice in {self.session['language']}"
                         print(msg)
                         return False
-            if self.engine is not None:
+            if self.engine:
                 self.engine.to(self.session['device'])
                 sentence_number = s_n
                 sentence = s
