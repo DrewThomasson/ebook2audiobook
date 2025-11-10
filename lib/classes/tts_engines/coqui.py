@@ -307,7 +307,7 @@ class Coqui:
                                 }.items()
                                 if self.session.get(key) is not None
                             }
-                            with torch.no_grad(), self._autocast_context():
+                            with torch.no_grad()
                                 result = engine.inference(
                                     text=default_text.strip(),
                                     language=self.session['language_iso1'],
@@ -382,7 +382,7 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        with torch.no_grad(), self._autocast_context():
+                        with torch.no_grad()
                             #torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
                                 default_text,
@@ -447,30 +447,6 @@ class Coqui:
         tmp_fh.close()
         sf.write(tmp_path,wav_numpy,expected_sr,subtype="PCM_16")
         return tmp_path
-
-    def _autocast_context(self):
-        device = self.session.get('device', devices['CPU']['proc'])
-        if device == devices['CUDA']['proc'] and devices['CUDA']['found'] or device == devices['ROCM']['proc'] and devices['ROCM']['found']:
-            torch_cuda_is_bf16 = True if torch.cuda.is_bf16_supported() else False
-            dtype = (
-                torch.bfloat16
-                if torch_cuda_is_bf16 and self.session['free_vram_gb'] > 4.0
-                else torch.float16
-            )
-            return torch.amp.autocast(devices['CUDA']['proc'], dtype=dtype)
-        if device == devices['XPU']['proc'] and devices['XPU']['found']:
-            torch_xpu_is_bf16 = True if torch.xpu.is_bf16_supported() else False
-            dtype = (
-                torch.bfloat16
-                if torch_xpu_is_bf16 and self.session['free_vram_gb'] > 4.0
-                else torch.float16
-            )
-            return torch.amp.autocast(devices['XPU']['proc'], dtype=dtype)
-        else:
-            cpu_bf16_supported = getattr(torch.cpu, "is_bf16_supported", lambda: False)()
-            if cpu_bf16_supported:
-                return torch.amp.autocast(devices['CPU']['proc'])
-        return nullcontext()
 
     def convert(self, s_n:int, s:str)->bool:
         global xtts_builtin_speakers_list
@@ -540,7 +516,7 @@ class Coqui:
                             }.items()
                             if self.session.get(key) is not None
                         }
-                        with torch.no_grad(), self._autocast_context():
+                        with torch.no_grad()
                             result = engine.inference(
                                 text=sentence.replace('.', ' —'),
                                 language=self.session['language_iso1'],
@@ -592,7 +568,7 @@ class Coqui:
                                 self.npz_data["coarse_prompt"],
                                 self.npz_data["fine_prompt"]
                         ]
-                        with torch.no_grad(), self._autocast_context():
+                        with torch.no_grad()
                             #torch.manual_seed(67878789)
                             audio_sentence, _ = engine.generate_audio(
                                 sentence,
@@ -601,7 +577,7 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         '''
-                        with torch.no_grad(), self._autocast_context():
+                        with torch.no_grad()
                             #torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
                                 sentence,
@@ -625,7 +601,7 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            with torch.no_grad(), self._autocast_context():
+                            with torch.no_grad()
                                 engine.tts_to_file(
                                     text=sentence,
                                     file_path=tmp_in_wav,
@@ -684,7 +660,7 @@ class Coqui:
                             if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
-                            with torch.no_grad(), self._autocast_context():
+                            with torch.no_grad()
                                 audio_sentence = engine.tts(
                                     text=sentence,
                                     **speaker_argument
@@ -697,7 +673,7 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            with torch.no_grad(), self._autocast_context():
+                            with torch.no_grad()
                                 engine.tts_to_file(
                                     text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                     file_path=tmp_in_wav,
@@ -756,7 +732,7 @@ class Coqui:
                             if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
-                            with torch.no_grad(), self._autocast_context():
+                            with torch.no_grad()
                                 audio_sentence = engine.tts(
                                     text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                     **speaker_argument
@@ -772,7 +748,7 @@ class Coqui:
                             os.makedirs(proc_dir, exist_ok=True)
                             tmp_in_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
                             tmp_out_wav = os.path.join(proc_dir, f"{uuid.uuid4()}.wav")
-                            with torch.no_grad(), self._autocast_context():
+                            with torch.no_grad()
                                 engine.tts_to_file(
                                     text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                     file_path=tmp_in_wav,
@@ -831,7 +807,7 @@ class Coqui:
                             if os.path.exists(source_wav):
                                 os.remove(source_wav)
                         else:
-                            with torch.no_grad(), self._autocast_context():
+                            with torch.no_grad()
                                 audio_sentence = engine.tts(
                                     text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                     **speaker_argument
@@ -847,7 +823,7 @@ class Coqui:
                         else:
                             voice_key = default_engine_settings[TTS_ENGINES['YOURTTS']]['voices']['ElectroMale-2']
                             speaker_argument = {"speaker": voice_key}
-                        with torch.no_grad(), self._autocast_context():
+                        with torch.no_grad()
                             audio_sentence = engine.tts(
                                 text=re.sub(not_supported_punc_pattern, ' ', sentence),
                                 language=language,
