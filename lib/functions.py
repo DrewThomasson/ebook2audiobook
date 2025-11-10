@@ -3206,7 +3206,7 @@ def build_interface(args:dict)->gr.Blocks:
                     if selected is not None:
                         session = context.get_session(id)
                         speaker_path = os.path.abspath(selected)
-                        speaker = re.sub(r'\.wav$|\.npz$', '', os.path.basename(selected))
+                        speaker = re.sub(r'\.wav$|\.npz|\.pth$', '', os.path.basename(selected))
                         builtin_root = os.path.join(voices_dir, session['language'])
                         sessions_root = os.path.join(voices_dir, '__sessions')
                         is_in_sessions = os.path.commonpath([speaker_path, os.path.abspath(sessions_root)]) == os.path.abspath(sessions_root)
