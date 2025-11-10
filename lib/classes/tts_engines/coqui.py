@@ -498,7 +498,7 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         audio_sentence = result.get('wav')
-                        if is_audio_data_valid(audio_sentence):
+                        if audio_sentence and is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['BARK']:
                         trim_audio_buffer = 0.002
@@ -534,14 +534,15 @@ class Coqui:
                         }
                         with torch.no_grad():
                             #torch.manual_seed(67878789)
-                            audio_sentence = self.engine.synthesize(
+                            result = self.engine.synthesize(
                                 sentence,
                                 speaker=speaker,
                                 voice_dir=pth_voice_dir,
                                 silent=True,
                                 **fine_tuned_params
                             )
-                        if is_audio_data_valid(audio_sentence):
+                        audio_sentence = result.get('wav', False)
+                        if audio_sentence and is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
                         speaker_argument = {}
