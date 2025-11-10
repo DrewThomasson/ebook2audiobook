@@ -541,7 +541,7 @@ class Coqui:
                                 silent=True,
                                 **fine_tuned_params
                             )
-                        audio_sentence = result.get('wav', False)
+                        audio_sentence = result.get('wav')
                         if audio_sentence and is_audio_data_valid(audio_sentence):
                             audio_sentence = audio_sentence.tolist()
                     elif self.session['tts_engine'] == TTS_ENGINES['VITS']:
