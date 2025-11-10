@@ -1,6 +1,6 @@
 import os
-
 from lib.conf import tts_dir, voices_dir
+
 loaded_tts = {}
 
 TTS_ENGINES = {
@@ -74,8 +74,8 @@ default_engine_settings = {
     },
     TTS_ENGINES['BARK']: {
         "samplerate": 24000,
-        "text_temp": 0.50,
-        "waveform_temp": 0.50,
+        "text_temp": 0.3,
+        "waveform_temp": 0.3,
         "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
         "speakers_path": os.path.join(voices_dir, '__bark'),
         "voices": {

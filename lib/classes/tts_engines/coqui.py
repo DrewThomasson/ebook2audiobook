@@ -1,5 +1,5 @@
 import torch
-'''
+
 _original_load = torch.load
 
 def patched_torch_load(*args, **kwargs):
@@ -7,7 +7,7 @@ def patched_torch_load(*args, **kwargs):
     return _original_load(*args, **kwargs)
     
 torch.load = patched_torch_load
-'''
+
 import hashlib, math, os, shutil, subprocess, tempfile, threading, uuid
 import numpy as np, regex as re, soundfile as sf, torchaudio
 import gc
@@ -54,9 +54,8 @@ class Coqui:
                 xtts_builtin_speakers_list = torch.load(self.speakers_path)
                 using_gpu = self.session['device'] != devices['CPU']['proc']
                 enough_vram = self.session['free_vram_gb'] > 4.0
-                '''
                 if using_gpu and enough_vram:
-                    torch.set_float32_matmul_precision("medium")
+                    #torch.set_float32_matmul_precision("medium")
                     if devices['CUDA']['found'] or devices['ROCM']['found']:
                         torch.cuda.set_per_process_memory_fraction(0.95)
                         torch.backends.cudnn.enabled = True
@@ -67,7 +66,7 @@ class Coqui:
                         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = True
                         
                 else:
-                    torch.set_float32_matmul_precision("high")
+                    #torch.set_float32_matmul_precision("high")
                     if devices['CUDA']['found'] or devices['ROCM']['found']:
                         torch.cuda.set_per_process_memory_fraction(0.7)
                         torch.backends.cudnn.enabled = True
@@ -76,7 +75,6 @@ class Coqui:
                         torch.backends.cudnn.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_tf32 = False
                         torch.backends.cuda.matmul.allow_fp16_reduced_precision_reduction = False
-                '''
         except Exception as e:
             error = f'__init__() error: {e}'
             print(error)
@@ -142,7 +140,7 @@ class Coqui:
                             return False
                         config = BarkConfig()
                         config.CACHE_DIR = self.cache_dir
-                        config.USE_SMALLER_MODELS = True if os.environ['SUNO_USE_SMALL_MODELS'] == 'true' else False
+                        config.USE_SMALLER_MODELS = True if os.environ['SUNO_USE_SMALL_MODELS'] == 'True' else False
                         engine = Bark.init_from_config(config)
                         engine.load_checkpoint(
                             config,
@@ -385,7 +383,7 @@ class Coqui:
                             if self.session.get(key) is not None
                         }
                         with torch.no_grad(), self._autocast_context():
-                            torch.manual_seed(67878789)
+                            #torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
                                 default_text,
                                 loaded_tts[self.tts_key]['config'],
@@ -595,7 +593,7 @@ class Coqui:
                                 self.npz_data["fine_prompt"]
                         ]
                         with torch.no_grad(), self._autocast_context():
-                            torch.manual_seed(67878789)
+                            #torch.manual_seed(67878789)
                             audio_sentence, _ = engine.generate_audio(
                                 sentence,
                                 history_prompt=history_prompt,
@@ -603,8 +601,7 @@ class Coqui:
                                 **fine_tuned_params
                             )
                         '''
-                        #with torch.no_grad(), self._autocast_context():
-                        with torch.no_grad():
+                        with torch.no_grad(), self._autocast_context():
                             #torch.manual_seed(67878789)
                             audio_sentence = engine.synthesize(
                                 sentence,
