@@ -369,7 +369,6 @@ class Coqui:
                         #torch.manual_seed(67878789)
                         audio_sentence = self.engine.synthesize(
                             default_text,
-                            loaded_tts[self.tts_key]['config'],
                             speaker_wav=voice_path,
                             speaker=speaker,
                             voice_dir=pth_voice_dir,
