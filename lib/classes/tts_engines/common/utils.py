@@ -5,7 +5,7 @@ import regex as re
 import stanza
 
 from typing import Any, Union
-from lib.models import loaded_tts, max_tts_in_memory, TTS_ENGINES
+from lib.models import loaded_tts, TTS_ENGINES
 from lib.functions import context
 
 def cleanup_garbage():
