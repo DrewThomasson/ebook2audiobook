@@ -274,7 +274,8 @@ optional parameters:
                         (Optional) Pprocessor unit type for the conversion. 
                             Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.
   --tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}
-                        (Optional) Preferred TTS engine (available are: ['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
+                        (Optional) Preferred TTS engine (available are:
+                        ['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
                             Default depends on the selected language. The tts engine should be compatible with the chosen language
   --custom_model CUSTOM_MODEL
                         (Optional) Path to the custom model zip file cntaining mandatory model files. 
@@ -368,7 +369,8 @@ For pre-built image enable `#image: docker.io/athomasson2/ebook2audiobook:latest
 
 ```bash
 SKIP_XTTS_TEST: "true" # (Saves space by not baking xtts model into docker image)
-TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] # All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
+TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu]
+# All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
 ```
 
 
