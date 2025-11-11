@@ -1,31 +1,35 @@
 import os
+import gc
 import torch
 import regex as re
 import stanza
 
-from typing import Any, Optional, Union, Callable
-from lib.models import loaded_tts, max_tts_in_memory, TTS_ENGINES
+from typing import Any, Union
+from lib.models import loaded_tts, TTS_ENGINES
+from lib.functions import context
 
-def unload_tts(device:str, reserved_keys:Optional[list[str]] = None, tts_key:Optional[str] = None)->bool:
+def cleanup_garbage():
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        torch.cuda.synchronize()
+
+def unload_tts()->None:
     try:
-        if len(loaded_tts) >= max_tts_in_memory:
-            if reserved_keys is None:
-                reserved_keys = []
-            if tts_key is not None:
-                if tts_key in loaded_tts:
-                    del loaded_tts[tts_key]
-                if device == "cuda":
-                    torch.cuda.empty_cache()
-                    torch.cuda.ipc_collect()
-            else:
-                for key in list(loaded_tts.keys()):
-                    if key not in reserved_keys:
-                        del loaded_tts[key]
-        return True
+        active_models = {
+            cache
+            for session in context.sessions.values()
+            for cache in (session.get('model_cache'), session.get('model_zs_cache'), session.get('stanza_cache'))
+            if cache is not None
+        }
+        for key in list(loaded_tts.keys()):
+            if key not in active_models:
+                del loaded_tts[key]
+        cleanup_garbage()
     except Exception as e:
         error = f"unload_tts() error: {e}"
         print(error)
-        return False
 
 def append_sentence2vtt(sentence_obj:dict[str, Any], path:str)->Union[int, bool]:
 

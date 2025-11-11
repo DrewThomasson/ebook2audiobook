@@ -1,7 +1,8 @@
 import os
-
 from lib.conf import tts_dir, voices_dir
+
 loaded_tts = {}
+xtts_builtin_speakers_list = []
 
 TTS_ENGINES = {
     "XTTSv2": "xtts", 
@@ -30,7 +31,6 @@ default_fine_tuned = 'internal'
 default_vc_model = TTS_VOICE_CONVERSION['knnvc']['path']
 default_voice_detection_model = 'drewThomasson/segmentation'
 
-max_tts_in_memory = 2 # TTS engines to keep in memory (1 tts engine ~= 4GB to 8GB RAM).
 max_custom_model = 100
 max_custom_voices = 1000
 max_upload_size = '6GB'
@@ -46,10 +46,6 @@ default_engine_settings = {
         "top_p": 0.85,
         "speed": 1.0,
         "enable_text_splitting": False,
-        # to enable deepspeed, you must install it first:
-        # conda activate ./python_env (linux/mac) or .\python_env (windows)
-        # pip install deepspeed
-        # conda deactivate
         "use_deepspeed": False,
         "files": ['config.json', 'model.pth', 'vocab.json', 'ref.wav', 'speakers_xtts.pth'],
         "voices": {
@@ -74,12 +70,12 @@ default_engine_settings = {
             "FerranSimen": "Ferran Simen", "XavierHayasaka": "Xavier Hayasaka", "LuisMoray": "Luis Moray",
             "MarcosRudaski": "Marcos Rudaski"
         },
-        "rating": {"GPU VRAM": 4, "CPU": 3, "RAM": 8, "Realism": 5}
+        "rating": {"VRAM": 2, "CPU": 2, "RAM": 4, "Realism": 5}
     },
     TTS_ENGINES['BARK']: {
         "samplerate": 24000,
-        "text_temp": 0.50,
-        "waveform_temp": 0.50,
+        "text_temp": 0.4,
+        "waveform_temp": 0.6,
         "files": ["text_2.pt", "coarse_2.pt", "fine_2.pt"],
         "speakers_path": os.path.join(voices_dir, '__bark'),
         "voices": {
@@ -128,31 +124,31 @@ default_engine_settings = {
             "zh_speaker_6": "Speaker 6", "zh_speaker_7": "Speaker 7", "zh_speaker_8": "Speaker 8",
             "zh_speaker_9": "Speaker 9"
         },
-        "rating": {"GPU VRAM": 4, "CPU": 1, "RAM": 16, "Realism": 4}
+        "rating": {"VRAM": 6, "CPU": 1, "RAM": 8, "Realism": 5}
     },
     TTS_ENGINES['VITS']: {
         "samplerate": 22050,
         "files": ['config.json', 'model_file.pth', 'language_ids.json'],
         "voices": {},
-        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
+        "rating": {"VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
     },
     TTS_ENGINES['FAIRSEQ']: {
         "samplerate": 16000,
         "files": ['config.json', 'G_100000.pth', 'vocab.json'],
         "voices": {},
-        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
+        "rating": {"VRAM": 2, "CPU": 4, "RAM": 4, "Realism": 4}
     },
     TTS_ENGINES['TACOTRON2']: {
         "samplerate": 22050,
         "files": ['config.json', 'best_model.pth', 'vocoder_config.json', 'vocoder_model.pth'],
         "voices": {},
-        "rating": {"GPU VRAM": 2, "CPU": 3, "RAM": 4, "Realism": 3}
+        "rating": {"VRAM": 1, "CPU": 5, "RAM": 2, "Realism": 3}
     },
     TTS_ENGINES['YOURTTS']: {
         "samplerate": 16000,
         "files": ['config.json', 'model_file.pth'],
         "voices": {"Machinella-5": "female-en-5", "ElectroMale-2": "male-en-2", 'Machinella-4': 'female-pt-4\n', 'ElectroMale-3': 'male-pt-3\n'},
-        "rating": {"GPU VRAM": 1, "CPU": 5, "RAM": 4, "Realism": 2}
+        "rating": {"VRAM": 0, "CPU": 5, "RAM": 1, "Realism": 2}
     }
 }
 models = {
@@ -330,6 +326,14 @@ models = {
             "repo": "drewThomasson/fineTunedTTSModels",
             "sub": "xtts-v2/eng/NeilGaiman/",
             "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'NeilGaiman.wav'),
+            "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
+        },
+        "PeterGriffinFamilyGuy": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/PeterGriffinFamilyGuy/",
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'PeterGriffinFamilyGuy.wav'),
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },

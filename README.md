@@ -1,6 +1,6 @@
 # 📚 ebook2audiobook
 CPU/GPU Converter from eBooks to audiobooks with chapters and metadata<br/>
-using XTTSv2, Bark, Vits, Fairseq, YourTTS, Tacotron and more. Supports voice cloning and +1110 languages!
+using XTTSv2, Bark, Vits, Fairseq, YourTTS, Tacotron2 and more. Supports voice cloning and +1110 languages!
 > [!IMPORTANT]
 **This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
@@ -83,18 +83,18 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
     - [Basic Headless Usage](#basic--usage)
     - [Headless Custom XTTS Model Usage](#example-of-custom-model-zip-upload)
     - [Help command output](#help-command-output)
-  - [Run Remotely](#run-remotely)  
+  - [Run Remotely](#run-remotely)
+  - [Docker](#docker-compose)
+    - [Docker Compose (Recommended)](#docker-compose)
+    - [Docker Compose Headless](#compose-headless)
+    - [Compose Build Arguments](#compose-build-arguments)
+    - [Compose container file locations](#compose-container-file-locations)
+    - [Common Docker issues](#common-docker-issues)
+    - [Docker Build (Manual)](https://github.com/DrewThomasson/ebook2audiobook/wiki/Manual-Docker-Guide)
+  
 - [Fine Tuned TTS models](#fine-tuned-tts-models)
   - [Collection of Fine-Tuned TTS Models](#fine-tuned-tts-collection)
   - [Train XTTSv2](#fine-tune-your-own-xttsv2-model)
-- [Docker](#docker-gpu-options) 
-  - [GPU options](#docker-gpu-options)
-  - [Docker Run](#running-the-pre-built-docker-container)
-  - [Docker Build](#building-the-docker-container)
-  - [Docker Compose](#docker-compose)
-  - [Docker headless guide](#docker-headless-guide)
-  - [Docker container file locations](#docker-container-file-locations)
-  - [Common Docker issues](#common-docker-issues)
 - [Supported eBook Formats](#supported-ebook-formats)
 - [Output Formats](#output-formats)
 - [Updating to Latest Version](#updating-to-latest-version)
@@ -125,7 +125,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ##  Hardware Requirements
-- 4gb RAM minimum, 8GB recommended
+- 2gb RAM minimum, 8GB recommended
 - Virtualization enabled if running on windows (Docker only)
 - CPU (intel, AMD, ARM), GPU (Nvidia, AMD*, Intel*) (Recommended), MPS (Apple Silicon CPU)
 *available very soon
@@ -147,16 +147,18 @@ cd ebook2audiobook
 ```
 
 ### Launching Gradio Web Interface  
-1. **Run ebook2audiobook**:  
+1. **Run ebook2audiobook**:
+
    - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.sh  # Run launch script
      ```
-
+     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     
    - **Mac Launcher**  
      Double click `Mac Ebook2Audiobook Launcher.command`
 
-  
+
    - **Windows**  
      ```bash
      ebook2audiobook.cmd  # Run launch script or double click on it
@@ -164,22 +166,12 @@ cd ebook2audiobook
      
    - **Windows Launcher**  
      Double click `ebook2audiobook.cmd`
-
-
-   - **Manual Python Install**
-     ```bash
-     # (for experts only!)
-     REQUIRED_PROGRAMS=("calibre" "ffmpeg" "nodejs" "mecab" "espeak-ng" "rust" "sox")
-     REQUIRED_PYTHON_VERSION="3.12"
-     pip install -r requirements.txt  # Install Python Requirements
-     python app.py  # Run Ebook2Audiobook
-     ```
    
 1. **Open the Web App**: Click the URL provided in the terminal to access the web app and convert eBooks. `http://localhost:7860/`
 2. **For Public Link**:
-   `python app.py --share` (all OS)
    `./ebook2audiobook.sh --share` (Linux/MacOS)
    `ebook2audiobook.cmd --share` (Windows)
+   `python app.py --share` (all OS)
 
 > [!IMPORTANT]
 **If the script is stopped and run again, you need to refresh your gradio GUI interface<br>
@@ -341,84 +333,11 @@ NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] 
 
 TIP: if it needs some more pauses, just add '###' or '[pause]' between the words you wish more pause. one [pause] equals to 1.4 seconds
 
-#### Docker GPU Options
-
-Available pre-build tags: `latest` (CUDA 11.8)
-#### Edit: IF GPU isn't detected then you'll have to build the image -> [Building the Docker Container](#building-the-docker-container)
-
-
-
-#### Running the pre-built Docker Container
-
- -Run with CPU only
-```powershell
-docker run --pull always --rm -p 7860:7860 athomasson2/ebook2audiobook
-```
- -Run with GPU Speedup (NVIDIA compatible only)
-```powershell
-docker run --pull always --rm --gpus all -p 7860:7860 athomasson2/ebook2audiobook
-```
-
-This command will start the Gradio interface on port 7860.(localhost:7860)
-- For more options add the parameter `--help`
-
-
-#### Building the Docker Container
-- You can build the docker image with the command:
-```powershell
-docker build -t athomasson2/ebook2audiobook .
-```
-#### Avalible Docker Build Arguments
-
-`--build-arg TORCH_VERSION=cuda118` Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] 
-
-All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
-
-`--build-arg SKIP_XTTS_TEST=true` (Saves space by not baking XTTSv2 model into docker image)
-
-
-## Docker container file locations
-All ebook2audiobooks will have the base dir of `/app/`
-For example:
-`tmp` = `/app/tmp`
-`audiobooks` = `/app/audiobooks`
-
-
-## Docker headless guide
-
-> [!IMPORTANT]
-**For simpler headless setup use the [Compose](#compose-headless).** <br>
-
-- Before you do run this you need to create a dir named "input-folder" in your current dir
-  which will be linked, This is where you can put your input files for the docker image to see
-```bash
-mkdir input-folder && mkdir Audiobooks
-```
-- In the command below swap out **YOUR_INPUT_FILE.TXT** with the name of your input file 
-```bash
-docker run --pull always --rm \
-    -v $(pwd)/input-folder:/app/input_folder \
-    -v $(pwd)/audiobooks:/app/audiobooks \
-    athomasson2/ebook2audiobook \
-    --headless --ebook /input_folder/YOUR_EBOOK_FILE
-```
-- The output Audiobooks will be found in the Audiobook folder which will also be located
-  in your local dir you ran this docker command in
-
-
-## To get the help command for the other parameters this program has you can run this 
-
-```bash
-docker run --pull always --rm athomasson2/ebook2audiobook --help
-
-```
-That will output this 
-[Help command output](#help-command-output)
-
 
 ### Docker Compose
-This project uses Docker Compose to run locally. You can enable or disable GPU support 
-by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
+
+For pre-built image enable `#image: docker.io/athomasson2/ebook2audiobook:latest` in `docker-compose.yml`
+
 
 
 #### Steps to Run
@@ -429,45 +348,47 @@ by setting either `*gpu-enabled` or `*gpu-disabled` in `docker-compose.yml`
    ```
 2. **Set GPU Support (disabled by default)**
   To enable GPU support, modify `docker-compose.yml` and change `*gpu-disabled` to `*gpu-enabled`
-3. **Start the service:**
+4. **Start the service:**
     ```bash
     # Docker
-    docker-compose up -d # To rebuild add --build
+    docker-compose up -d # To rebuild add --build 
+    # To stop -> docker-compose down
 
     # Podman
     podman compose -f podman-compose.yml up -d # To rebuild add --build
+    # To stop -> podman compose -f podman-compose.yml down
     ```
-4. **Access the service:**
+5. **Access the service:**
   The service will be available at http://localhost:7860.
+
+
+### Compose Build Arguments
+
+```bash
+SKIP_XTTS_TEST: "true" # (Saves space by not baking xtts model into docker image)
+TORCH_VERSION: cuda118 # Available tags: [cuda121, cuda118, cuda128, rocm, xpu, cpu] # All CUDA version numbers should work, Ex: CUDA 11.6-> cuda116
+```
+
 
 ### Compose Headless
 
 [Headless Wiki for more info](https://github.com/DrewThomasson/ebook2audiobook/wiki/Docker-Compose-Headless-guide)
-
+```bash
 A headless example is already contained within the `docker-compose.yml` file.
 
 The `docker-compose.yml` file will act as the base dir for any headless commands added.
+```
+
+### Compose container file locations
+
+```bash
+By Default: All compose containers share the contents your local `ebook2audiobook` folder
+```
 
 
-
-
-## Common Docker Issues
+### Common Docker Issues
 
 - My NVIDIA GPU isnt being detected?? -> [GPU ISSUES Wiki Page](https://github.com/DrewThomasson/ebook2audiobook/wiki/GPU-ISSUES)
-
-- `python: can't open file '/home/user/app/app.py': [Errno 2] No such file or directory` (Just remove all post arguments as I replaced the `CMD` with `ENTRYPOINT` in the [Dockerfile](Dockerfile))
-  - Example: `docker run --pull always athomasson2/ebook2audiobook app.py --script_mode full_docker` - > corrected - > `docker run --pull always athomasson2/ebook2audiobook`
-  - Arguments can be easily added like this now `docker run --pull always athomasson2/ebook2audiobook --share`
-
-- Docker gets stuck downloading Fine-Tuned models.
-  (This does not happen for every computer but some appear to run into this issue)
-  Disabling the progress bar appears to fix the issue,
-  as discussed [here in #191](https://github.com/DrewThomasson/ebook2audiobook/issues/191)
-  Example of adding this fix in the `docker run` command
-```Dockerfile
-docker run --pull always --rm --gpus all -e HF_HUB_DISABLE_PROGRESS_BARS=1 -e HF_HUB_ENABLE_HF_TRANSFER=0 \
-    -p 7860:7860 athomasson2/ebook2audiobook
-```
 
 
 ## Fine Tuned TTS models
