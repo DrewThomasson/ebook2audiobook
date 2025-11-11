@@ -89,7 +89,6 @@ class Coqui:
                     engine = TTSEngine(model_path)
                 if engine:
                     loaded_tts[key] = engine
-                    msg = f'TTS {key} Loaded!'
                     print(msg)
                 return engine
         except Exception as e:
@@ -148,7 +147,6 @@ class Coqui:
                         )  
                 if engine:
                     loaded_tts[key] = engine
-                    msg = f'TTS {key} Loaded!'
                     print(msg)
                 return engine
         except Exception as e:
@@ -244,8 +242,9 @@ class Coqui:
                     else:
                         model_path = models[self.session['tts_engine']][self.session['fine_tuned']]['repo']
                         self.engine = self._load_api(self.tts_key, model_path, self.session['device'])
-                if self.engine:
-                    self.session['model_cache'] = self.tts_key
+            if self.engine:
+                self.session['model_cache'] = self.tts_key
+                msg = f'TTS {key} Loaded!'
         except Exception as e:
             error = f'_load_engine() error: {e}'
 
@@ -257,8 +256,9 @@ class Coqui:
             self.engine_zs = loaded_tts.get(self.tts_zs_key, False)
             if not self.engine_zs:
                 self.engine_zs = self._load_api(self.tts_zs_key, default_vc_model, self.session['device'])
-                if self.engine_zs:
-                    self.session['model_zs_cache'] = self.tts_zs_key
+            if self.engine_zs:
+                self.session['model_zs_cache'] = self.tts_zs_key
+                msg = f'ZeroShot {key} Loaded!'
         except Exception as e:
             error = f'_load_engine_zs() error: {e}'
 
