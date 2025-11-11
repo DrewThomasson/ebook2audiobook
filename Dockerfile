@@ -16,7 +16,6 @@ RUN apt-get update && \
 # Install Rust compiler
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 ENV PATH="/root/.cargo/bin:${PATH}"
-# Set the working directory
 WORKDIR /app
 # Install UniDic (non-torch dependent)
 RUN pip install --no-cache-dir unidic-lite unidic && \
@@ -31,74 +30,61 @@ ARG TORCH_VERSION=""
 # Add parameter to control whether to skip the XTTS test
 ARG SKIP_XTTS_TEST="false"
 
+# Copy the application
+WORKDIR /app
+COPY . /app
 
-# Extract torch versions from requirements.txt or set to empty strings if not found
-RUN TORCH_VERSION_REQ=$(grep -E "^torch==" requirements.txt | cut -d'=' -f3 || echo "") && \
-    TORCHAUDIO_VERSION_REQ=$(grep -E "^torchaudio==" requirements.txt | cut -d'=' -f3 || echo "") && \
-    TORCHVISION_VERSION_REQ=$(grep -E "^torchvision==" requirements.txt | cut -d'=' -f3 || echo "") && \
-    echo "Found in requirements: torch==$TORCH_VERSION_REQ torchaudio==$TORCHAUDIO_VERSION_REQ torchvision==$TORCHVISION_VERSION_REQ"
-
-# Install PyTorch with CUDA support if specified
+# Install requirements.txt or PyTorch variants based on TORCH_VERSION
 RUN if [ ! -z "$TORCH_VERSION" ]; then \
-        # Check if we need to use specific versions or get the latest
-        if [ ! -z "$TORCH_VERSION_REQ" ] && [ ! -z "$TORCHVISION_VERSION_REQ" ] && [ ! -z "$TORCHAUDIO_VERSION_REQ" ]; then \
-            echo "Using specific versions from requirements.txt" && \
-            TORCH_SPEC="torch==${TORCH_VERSION_REQ}" && \
-            TORCHVISION_SPEC="torchvision==${TORCHVISION_VERSION_REQ}" && \
-            TORCHAUDIO_SPEC="torchaudio==${TORCHAUDIO_VERSION_REQ}"; \
-        else \
-            echo "Using latest versions for the selected variant" && \
-            TORCH_SPEC="torch" && \
-            TORCHVISION_SPEC="torchvision" && \
-            TORCHAUDIO_SPEC="torchaudio"; \
-        fi && \
-        \
         # Check if TORCH_VERSION contains "cuda" and extract version number
         if echo "$TORCH_VERSION" | grep -q "cuda"; then \
             CUDA_VERSION=$(echo "$TORCH_VERSION" | sed 's/cuda//g') && \
             echo "Detected CUDA version: $CUDA_VERSION" && \
-            echo "Attempting to install PyTorch nightly for CUDA $CUDA_VERSION..." && \
-            #if ! pip install --no-cache-dir --pre $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
-            if ! pip install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
-                echo "❌ Nightly build for CUDA $CUDA_VERSION not available or failed" && \
-                echo "🔄 Trying stable release for CUDA $CUDA_VERSION..." && \
-                #if pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
-                if pip install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
-                    echo "✅ Successfully installed stable PyTorch for CUDA $CUDA_VERSION"; \
-                else \
-                    echo "❌ Both nightly and stable builds failed for CUDA $CUDA_VERSION"; \
-                    echo "💡 This CUDA version may not be supported by PyTorch"; \
-                    exit 1; \
-                fi; \
+            \
+            # Special handling for CUDA 11.8
+            if [ "$CUDA_VERSION" = "118" ]; then \
+                echo "Installing PyTorch for CUDA 11.8..." && \
+                pip install --no-cache-dir --upgrade -r requirements.txt && pip install pyannote-audio==3.4.0 && pip install --no-cache-dir --upgrade torch==2.7.1 torchvision==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu118; \
+            elif [ "$CUDA_VERSION" = "128" ]; then \
+                echo "Installing PyTorch for CUDA 12.8..." && \
+                pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch==2.7.1 torchaudio==2.7.1 --index-url https://download.pytorch.org/whl/cu128; \
             else \
-                echo "✅ Successfully installed nightly PyTorch for CUDA $CUDA_VERSION"; \
+                echo "Attempting to install stable PyTorch for CUDA $CUDA_VERSION..." && \
+                if ! pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION}; then \
+                    echo "❌ Stable build for CUDA $CUDA_VERSION not available or failed" && \
+                    echo "🔄 Trying nightly release for CUDA $CUDA_VERSION..." && \
+                    if pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu${CUDA_VERSION}; then \
+                        echo "✅ Successfully installed nightly PyTorch for CUDA $CUDA_VERSION"; \
+                    else \
+                        echo "❌ Both stable and nightly builds failed for CUDA $CUDA_VERSION"; \
+                        echo "💡 This CUDA version may not be supported by PyTorch"; \
+                        exit 1; \
+                    fi; \
+                else \
+                    echo "✅ Successfully installed stable PyTorch for CUDA $CUDA_VERSION"; \
+                fi; \
             fi; \
         else \
-            # Handle non-CUDA cases (existing functionality)
+            # Handle non-CUDA cases
             case "$TORCH_VERSION" in \
                 "rocm") \
-                    # Using the correct syntax for ROCm PyTorch installation
-                    pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/rocm6.2 \
+                    pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/rocm6.2 \
                     ;; \
                 "xpu") \
-                    # Install PyTorch with Intel XPU support through IPEX
-                    pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC && \
+                    pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio && \
                     pip install --no-cache-dir intel-extension-for-pytorch --extra-index-url https://pytorch-extension.intel.com/release-whl/stable/xpu/us/ \
                     ;; \
                 "cpu") \
-                    pip install --no-cache-dir $TORCH_SPEC $TORCHVISION_SPEC $TORCHAUDIO_SPEC --extra-index-url https://download.pytorch.org/whl/cpu \
+                    pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu \
                     ;; \
                 *) \
-                    pip install --no-cache-dir $TORCH_VERSION \
+                    echo "Installing custom PyTorch specification: $TORCH_VERSION" && \
+                    pip install --no-cache-dir --upgrade -r requirements.txt && pip install --no-cache-dir --upgrade $TORCH_VERSION \
                     ;; \
             esac; \
-        fi && \
-        # Install remaining requirements, skipping torch packages that might be there
-        grep -v -E "^torch==|^torchvision==|^torchaudio==|^torchvision$" requirements.txt > requirements_no_torch.txt && \
-        pip install --no-cache-dir --upgrade -r requirements_no_torch.txt && \
-        rm requirements_no_torch.txt; \
+        fi; \
     else \
-        # Install all requirements as specified
+        echo "No TORCH_VERSION specified, using packages from requirements.txt" && \
         pip install --no-cache-dir --upgrade -r requirements.txt; \
     fi
 
@@ -114,9 +100,6 @@ RUN if [ "$SKIP_XTTS_TEST" != "true" ]; then \
         echo "Skipping XTTS test run as requested."; \
     fi
 
-# Copy the application
-COPY . /app
-
 # Expose the required port
 EXPOSE 7860
 # Start the Gradio app with the required flag
@@ -126,3 +109,12 @@ ENTRYPOINT ["python", "app.py", "--script_mode", "full_docker"]
 #docker build --pull --build-arg BASE_IMAGE=athomasson2/ebook2audiobook:latest -t your-image-name .
 #The --pull flag forces Docker to always try to pull the latest version of the image, even if it already exists locally.
 #Without --pull, Docker will only use the local version if it exists, which might not be the latest.
+
+# Example build commands:
+# For CUDA 11.8: docker build --build-arg TORCH_VERSION=cuda118 -t your-image-name .
+# For CUDA 12.8: docker build --build-arg TORCH_VERSION=cuda128 -t your-image-name .
+# For CUDA 12.1: docker build --build-arg TORCH_VERSION=cuda121 -t your-image-name .
+# For ROCm: docker build --build-arg TORCH_VERSION=rocm -t your-image-name .
+# For CPU: docker build --build-arg TORCH_VERSION=cpu -t your-image-name .
+# For XPU: docker build --build-arg TORCH_VERSION=xpu -t your-image-name .
+# Default (no TORCH_VERSION): docker build -t your-image-name .
