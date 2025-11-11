@@ -3372,10 +3372,14 @@ def build_interface(args:dict)->gr.Blocks:
                         voice_options = [('Default', None)] + sorted(voice_options, key=lambda x: x[0].lower())
                     else:
                         voice_options = sorted(voice_options, key=lambda x: x[0].lower())                           
-                    default_voice_path = models[session['tts_engine']]['internal']['voice']
                     if fine_tuned and fine_tuned != 'internal':
                         session['voice'] = models[session['tts_engine']][fine_tuned]['voice']
                     else:
+                        voice_paths = {v[1] for v in voice_options}
+                        if models[session['tts_engine']]['internal']['voice'] in voice_paths:
+                            default_voice_path = models[session['tts_engine']]['internal']['voice']
+                        else:
+                            default_voice_path = voice_options[0][1]
                         if session['voice'] is None:
                             if default_voice_path is not None:
                                 default_name = Path(default_voice_path).stem
@@ -3390,7 +3394,6 @@ def build_interface(args:dict)->gr.Blocks:
                                     else:
                                         session['voice'] = voice_options[0][1]
                         else:
-                            voice_paths = {v[1] for v in voice_options}
                             if session['voice'] not in voice_paths:
                                 session['voice'] = default_voice_path
                     return gr.update(choices=voice_options, value=session['voice'])
