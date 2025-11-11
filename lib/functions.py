@@ -396,10 +396,11 @@ def convert2epub(id:str)->bool:
 			error = f'Unsupported file format: {file_ext}'
 			print(error)
 			return False
-		if file_ext == '.pdf':  
+		if file_ext == '.pdf':
+			import fitz
 			msg = 'File input is a PDF. flatten it in XHTML...'
 			print(msg)
-			doc = fitz.open(session['ebook'])
+			doc = fitz.open(file_input)
 			pdf_metadata = doc.metadata
 			filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
 			title = pdf_metadata.get('title') or filename_no_ext
@@ -412,7 +413,7 @@ def convert2epub(id:str)->bool:
 					print(f"Error extracting text from page {i+1}: {e}")
 					text = ""
 				if not text:
-					msg = f'The page {page} seems to be text image. Using OCR to convert it to real text...'
+					msg = f'The page {page} seems to be image-based. Using OCR to convert it to real text...'
 					print(msg)
 					pix = page.get_pixmap(dpi=300)
 					img = Image.open(io.BytesIO(pix.tobytes("png")))
@@ -420,12 +421,11 @@ def convert2epub(id:str)->bool:
 					text = text.replace("\n", "<br/>\n")
 				xhtml_pages.append(f"<h2>Page {i+1}</h2>\n{text}\n")
 			xhtml_body = "\n".join(xhtml_pages)
-			# Wrap into a valid XHTML structure
 			xhtml_text = (
 				'<?xml version="1.0" encoding="utf-8"?>\n'
 				'<html xmlns="http://www.w3.org/1999/xhtml">\n'
 				'<head>\n'
-				f'<title>{title}</title>\n'
+				f'<meta charset="utf-8"/>\n<title>{title}</title>\n'
 				'</head>\n'
 				'<body>\n'
 				f'{xhtml_body}\n'
@@ -454,7 +454,7 @@ def convert2epub(id:str)->bool:
 		if title:
 			cmd += ['--title', title]
 		if author:
-			cmd += ['--authors', author]        
+			cmd += ['--authors', author]
 		result = subprocess.run(
 			cmd,
 			stdout=subprocess.PIPE,
