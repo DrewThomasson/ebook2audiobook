@@ -372,7 +372,7 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def ocr_image_to_xhtml(img: Image.Image, lang: str) -> str:
+def ocr2xhtml(img: Image.Image, lang: str) -> str:
 	try:
 		debug = True
 		try:
@@ -450,7 +450,7 @@ def ocr_image_to_xhtml(img: Image.Image, lang: str) -> str:
 			print('========================')
 		return '\n'.join(xhtml_parts)
 	except Exception as e:
-		error = f'ocr_image_to_xhtml error: {e}'
+		error = f'ocr2xhtml error: {e}'
 		print(error)
 		DependencyError(e)
 		return ''
@@ -497,9 +497,11 @@ def convert2epub(id:str)-> bool:
 				if not text:
 					msg = f'The page {i+1} seems to be image-based. Using OCR...'
 					print(msg)
+                    if session['is_gui_process']:
+                        show_alert({"type": "warning", "msg": msg}
 					pix = page.get_pixmap(dpi=300)
 					img = Image.open(io.BytesIO(pix.tobytes('png')))
-					xhtml_content = ocr_image_to_xhtml(img, session['language'])
+					xhtml_content = ocr2xhtml(img, session['language'])
 				else:
 					xhtml_content = text
 				xhtml_pages.append(xhtml_content)
@@ -528,7 +530,7 @@ def convert2epub(id:str)-> bool:
 			for i, frame in enumerate(ImageSequence.Iterator(img)):
 				page_count += 1
 				frame = frame.convert('RGB')
-				xhtml_content = ocr_image_to_xhtml(frame, session['language'])
+				xhtml_content = ocr2xhtml(frame, session['language'])
 				xhtml_pages.append(xhtml_content)
 			xhtml_body = '\n'.join(xhtml_pages)
 			xhtml_text = (
