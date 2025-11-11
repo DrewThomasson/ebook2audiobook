@@ -397,19 +397,17 @@ def convert2epub(id:str)->bool:
 			print(error)
 			return False
 		if file_ext == '.pdf':  
-			from markdownify import markdownify
-			msg = 'File input is a PDF. flatten it in MarkDown...'
+			msg = 'File input is a PDF. flatten it in XHTML...'
 			print(msg)
 			doc = fitz.open(session['ebook'])
 			pdf_metadata = doc.metadata
 			filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
 			title = pdf_metadata.get('title') or filename_no_ext
 			author = pdf_metadata.get('author') or False
-			markdown_pages = []
+			xhtml_pages = []
 			for i, page in enumerate(doc):
 				try:
-					xhtml = page.get_text("xhtml")
-					text = markdownify(xhtml).strip()
+					text = page.get_text("xhtml").strip()
 				except Exception as e:
 					print(f"Error extracting text from page {i+1}: {e}")
 					text = ""
@@ -419,16 +417,24 @@ def convert2epub(id:str)->bool:
 					pix = page.get_pixmap(dpi=300)
 					img = Image.open(io.BytesIO(pix.tobytes("png")))
 					text = pytesseract.image_to_string(img, lang=session['language']).strip()
-					text = text.replace("\n", "  \n")
-				markdown_pages.append(f"## Page {i+1}\n{text}\n")
-			markdown_text = "\n".join(markdown_pages)
-			# Remove single asterisks for italics (but not bold **)
-			markdown_text = re.sub(r'(?<!\*)\*(?!\*)(.*?)\*(?!\*)', r'\1', markdown_text)
-			# Remove single underscores for italics (but not bold __)
-			markdown_text = re.sub(r'(?<!_)_(?!_)(.*?)_(?!_)', r'\1', markdown_text)
-			file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
+					text = text.replace("\n", "<br/>\n")
+				xhtml_pages.append(f"<h2>Page {i+1}</h2>\n{text}\n")
+			xhtml_body = "\n".join(xhtml_pages)
+			# Wrap into a valid XHTML structure
+			xhtml_text = (
+				'<?xml version="1.0" encoding="utf-8"?>\n'
+				'<html xmlns="http://www.w3.org/1999/xhtml">\n'
+				'<head>\n'
+				f'<title>{title}</title>\n'
+				'</head>\n'
+				'<body>\n'
+				f'{xhtml_body}\n'
+				'</body>\n'
+				'</html>\n'
+			)
+			file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
 			with open(file_input, "w", encoding="utf-8") as html_file:
-				html_file.write(markdown_text)
+				html_file.write(xhtml_text)
 		msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
 		print(msg)
 		cmd = [
