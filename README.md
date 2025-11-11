@@ -1,6 +1,6 @@
 # 📚 ebook2audiobook
 CPU/GPU Converter from eBooks to audiobooks with chapters and metadata<br/>
-using XTTSv2, Bark, Vits, Fairseq, YourTTS, Tacotron and more. Supports voice cloning and +1110 languages!
+using XTTSv2, Bark, Vits, Fairseq, YourTTS, Tacotron2 and more. Supports voice cloning and +1110 languages!
 > [!IMPORTANT]
 **This tool is intended for use with non-DRM, legally acquired eBooks only.** <br>
 The authors are not responsible for any misuse of this software or any resulting legal consequences. <br>
@@ -125,7 +125,7 @@ https://github.com/user-attachments/assets/81c4baad-117e-4db5-ac86-efc2b7fea921
 
 
 ##  Hardware Requirements
-- 4gb RAM minimum, 8GB recommended
+- 2gb RAM minimum, 8GB recommended
 - Virtualization enabled if running on windows (Docker only)
 - CPU (intel, AMD, ARM), GPU (Nvidia, AMD*, Intel*) (Recommended), MPS (Apple Silicon CPU)
 *available very soon
@@ -147,16 +147,18 @@ cd ebook2audiobook
 ```
 
 ### Launching Gradio Web Interface  
-1. **Run ebook2audiobook**:  
+1. **Run ebook2audiobook**:
+
    - **Linux/MacOS**  
      ```bash
      ./ebook2audiobook.sh  # Run launch script
      ```
-
+     <i>Note for MacOS users: homebrew is installed to install missing programs.</i>
+     
    - **Mac Launcher**  
      Double click `Mac Ebook2Audiobook Launcher.command`
 
-  
+
    - **Windows**  
      ```bash
      ebook2audiobook.cmd  # Run launch script or double click on it
