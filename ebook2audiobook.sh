@@ -411,7 +411,7 @@ else
 		local CONTENTS="$APP_BUNDLE/Contents"
 		local MACOS="$CONTENTS/MacOS"
 		local RESOURCES="$CONTENTS/Resources"
-		local ICON_PATH="$SCRIPT_DIR/icons/mac/appIcon.icns"
+		local ICON_PATH="$SCRIPT_DIR/tools/icons/mac/appIcon.icns"
 
 		echo "🚀 Creating $APP_NAME.app bundle..."
 		mkdir -p "$MACOS" "$RESOURCES"
