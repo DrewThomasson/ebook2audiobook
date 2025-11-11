@@ -3646,7 +3646,7 @@ def build_interface(args:dict)->gr.Blocks:
                     state['type'] = 'error'
                     state['msg'] = error
                 except Exception as e:
-                    error = f'change_gr_custom_model_file() exception: {str(e)}'
+                    error = f'change_gr_custom_model_file() error: {str(e)}'
                     state['type'] = 'error'
                     state['msg'] = error
                 return gr.update(), gr.update(), gr.update(visible=True)
