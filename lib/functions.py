@@ -498,7 +498,7 @@ def convert2epub(id:str)-> bool:
                     msg = f'The page {i+1} seems to be image-based. Using OCR...'
                     print(msg)
                     if session['is_gui_process']:
-                        show_alert({"type": "warning", "msg": msg}
+                        show_alert({"type": "warning", "msg": msg})
                     pix = page.get_pixmap(dpi=300)
                     img = Image.open(io.BytesIO(pix.tobytes('png')))
                     xhtml_content = ocr2xhtml(img, session['language'])
