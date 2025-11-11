@@ -171,6 +171,24 @@ jobs:
           conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine TACOTRON2 --voice "voices/eng/elder/male/DavidAttenborough.wav" --output_dir ~/ebook2audiobook/audiobooks/TACOTRON2
 
+      - name: English FAIRSEQ OCR headless single test
+        shell: bash
+        run: |
+          echo "Running English FAIRSEQ OCR headless single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/ocr_eng_script_font.jpg" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+
+      - name: Haitian Creole FAIRSEQ OCR headless single test
+        shell: bash
+        run: |
+          echo "Running Haitian Creole FAIRSEQ OCR headless single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          ./ebook2audiobook.sh --headless  --language hat --ebook "tools/workflow-testing/odc_test_haitian.pdf" --tts_engine FAIRSEQ --output_dir ~/ebook2audiobook/audiobooks/FAIRSEQ
+
 
       - name: English FAIRSEQ Custom-Voice headless single test
         shell: bash
