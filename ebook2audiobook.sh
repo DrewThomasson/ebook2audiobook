@@ -404,6 +404,115 @@ else
 		return 0
 	}
 
+	function create_macos_app_bundle {
+		local APP_NAME="ebook2audiobook"
+		local APP_BUNDLE="$HOME/Applications/$APP_NAME.app"
+		local CONTENTS="$APP_BUNDLE/Contents"
+		local MACOS="$CONTENTS/MacOS"
+		local RESOURCES="$CONTENTS/Resources"
+		local ICON_PATH="$SCRIPT_DIR/icons/mac/appIcon.icns"
+
+		echo "🚀 Creating $APP_NAME.app bundle..."
+		mkdir -p "$MACOS" "$RESOURCES"
+
+		# Create the executable script inside the bundle
+		cat > "$MACOS/$APP_NAME" << EOF
+#!/bin/bash
+
+# Create a temporary script file to run in Terminal
+TEMP_SCRIPT=\$(mktemp)
+
+cat > "\$TEMP_SCRIPT" << 'SCRIPT'
+#!/bin/bash
+cd "$SCRIPT_DIR"
+conda deactivate
+bash ebook2audiobook.sh
+
+# Wait 10 seconds for the server to start
+sleep 10
+
+# Open the browser
+open http://localhost:7860/
+
+SCRIPT
+
+chmod +x "\$TEMP_SCRIPT"
+
+# Open Terminal and run the script
+open -a Terminal "\$TEMP_SCRIPT"
+
+# Clean up the temp script after 60 seconds
+sleep 60
+rm "\$TEMP_SCRIPT"
+
+EOF
+
+		chmod +x "$MACOS/$APP_NAME"
+
+		# Copy the icon to the bundle
+		if [ -f "$ICON_PATH" ]; then
+			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
+			echo "✓ Icon copied to bundle"
+		else
+			echo "⚠️  Warning: Icon not found at $ICON_PATH"
+		fi
+
+		# Create the Info.plist file (required for macOS app bundles)
+		cat > "$CONTENTS/Info.plist" << 'PLIST'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>ebook2audiobook</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.local.ebook2audiobook</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>ebook2audiobook</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.9</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
+</dict>
+</plist>
+PLIST
+
+		echo "✓ Info.plist created"
+
+		# Update macOS cache to recognize the new app
+		touch "$APP_BUNDLE"
+
+		echo ""
+		echo "✅ Application bundle created successfully!"
+		echo "📍 Location: $APP_BUNDLE"
+		echo ""
+	}
+
+	function create_linux_app_launcher {
+		# Linux desktop entry creation goes here
+		return 0
+	}
+
+	function create_app_bundle {
+		if [[ "$OSTYPE" = "darwin"* ]]; then
+			create_macos_app_bundle
+		elif [[ "$OSTYPE" = "linux"* ]]; then
+			create_linux_app_launcher
+		fi
+	}
+
 	if [ "$SCRIPT_MODE" = "$FULL_DOCKER" ]; then
 		python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 		conda deactivate
@@ -420,6 +529,7 @@ else
 				conda init > /dev/null 2>&1
 				source $CONDA_ENV
 				conda activate "$SCRIPT_DIR/$PYTHON_ENV"
+				create_app_bundle
 				python app.py --script_mode "$SCRIPT_MODE" "${ARGS[@]}"
 				conda deactivate
 				conda deactivate
