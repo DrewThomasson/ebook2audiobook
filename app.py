@@ -65,6 +65,7 @@ def check_and_install_requirements(file_path:str)->bool:
             from packaging.markers import Marker
         import re as regex
         flexible_packages = {"torch", "torchaudio", "numpy"}
+        torch_version = False
         try:
             import torch
             torch_version = getattr(torch, '__version__', '')
