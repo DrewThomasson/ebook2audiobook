@@ -248,7 +248,7 @@ class Coqui:
 
     def _load_engine_zs(self)->Any:
         try:
-            msg = f"Loading TTS {self.tts_zs_key} model, it takes a while, please be patient..."
+            msg = f"Loading ZeroShot {self.tts_zs_key} model, it takes a while, please be patient..."
             print(msg)
             cleanup_garbage()
             self.engine_zs = loaded_tts.get(self.tts_zs_key, False)
