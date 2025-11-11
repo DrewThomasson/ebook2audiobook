@@ -5,8 +5,9 @@ import scipy.fftpack
 import soundfile as sf
 import subprocess
 import shutil
+import json
 
-from typing import Any, Optional, Union, Callable
+from typing import Any
 from io import BytesIO
 from pydub import AudioSegment, silence
 from pydub.silence import detect_silence
@@ -14,6 +15,7 @@ from pydub.silence import detect_silence
 from lib.conf import voice_formats, default_audio_proc_samplerate
 from lib.models import TTS_ENGINES, models
 from lib.classes.background_detector import BackgroundDetector
+from lib.classes.subprocess_pipe import SubprocessPipe
 
 class VoiceExtractor:
     def __init__(self, session:Any, voice_file:str, voice_name:str):
@@ -30,7 +32,7 @@ class VoiceExtractor:
     def _validate_format(self)->tuple[bool,str]:
         file_extension = os.path.splitext(self.voice_file)[1].lower()
         if file_extension in voice_formats:
-            msg = 'Input file valid'
+            msg = 'Input file is valid'
             return True,msg
         error = f'Unsupported file format: {file_extension}. Supported formats are: {", ".join(voice_formats)}'
         return False,error
@@ -38,33 +40,21 @@ class VoiceExtractor:
     def _convert2wav(self)->tuple[bool, str]:
         try:
             self.wav_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
-            ffmpeg_cmd = [
+            cmd = [
                 shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_file,
                 '-ac', '1', '-y', self.wav_file
-            ]
-            process = subprocess.Popen(
-                ffmpeg_cmd,
-                env={},
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=False  # <── raw bytes mode (no implicit UTF-8 decoding)
-            )
-            # Decode safely line by line
-            for raw_line in iter(process.stdout.readline, b''):
-                try:
-                    line = raw_line.decode('utf-8', errors='replace')  # <── replaces invalid bytes
-                except Exception:
-                    line = raw_line.decode('latin-1', errors='replace')
-                print(line, end='')
-
-            process.wait()
-            if process.returncode != 0:
-                error = f'_convert2wav(): process.returncode: {process.returncode}'
-            elif not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
-                error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
+            ]   
+            proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_file), msg='Convert')
+            if proc_pipe:
+                if not os.path.exists(self.wav_file) or os.path.getsize(self.wav_file) == 0:
+                    error = f'_convert2wav output error: {self.wav_file} was not created or is empty.'
+                    return False, error
+                else:
+                    msg = 'Conversion to .wav format for processing successful'
+                    return True, msg
             else:
-                msg = 'Conversion to .wav format for processing successful'
-                return True, msg
+                error = f'_convert2wav() error:: {self.wav_file}'
+                return False, error
         except subprocess.CalledProcessError as e:
             try:
                 stderr_text = e.stderr.decode('utf-8', errors='replace')
@@ -201,12 +191,35 @@ class VoiceExtractor:
             error = f'_trim_and_clean() error: {e}'
             raise ValueError(error)
 
+    def _get_audio_duration(self, filepath:str)->float:
+        try:
+            cmd = [
+                shutil.which('ffprobe'),
+                '-v', 'error',
+                '-show_entries', 'format=duration',
+                '-of', 'json',
+                filepath
+            ]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            try:
+                duration = json.loads(result.stdout)['format']['duration']
+                return float(duration)
+            except Exception:
+                return 0
+        except subprocess.CalledProcessError as e:
+            DependencyError(e)
+            return 0
+        except Exception as e:
+            error = f"get_audio_duration() Error: Failed to process {filepath}: {e}"
+            print(error)
+            return 0
+
     def _normalize_audio(self)->tuple[bool, str]:
         error = ''
         try:
             proc_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}_proc.wav')
             final_voice_file = os.path.join(self.session['voice_dir'], f'{self.voice_name}.wav')
-            ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_track]
+            cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', self.voice_track]
             filter_complex = (
                 'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
                 'afftdn=nf=-70,'
@@ -219,33 +232,26 @@ class VoiceExtractor:
                 'equalizer=f=9000:t=q:w=2:g=-2,'
                 'highpass=f=63[audio]'
             )
-            ffmpeg_cmd += [
+            cmd += [
                 '-filter_complex', filter_complex,
                 '-map', '[audio]',
                 '-ar', f'{default_audio_proc_samplerate}',
                 '-y', proc_voice_file
             ]
             try:
-                process = subprocess.Popen(
-                    ffmpeg_cmd,
-                    env = {},
-                    stdout = subprocess.PIPE, 
-                    stderr = subprocess.PIPE,
-                    encoding = 'utf-8',
-                    errors = 'ignore'
-                )
-                for line in process.stdout:
-                    print(line, end = '')
-                process.wait()
-                if process.returncode != 0:
-                    error = f'_normalize_audio(): process.returncode: {process.returncode}'
-                elif not os.path.exists(proc_voice_file) or os.path.getsize(proc_voice_file) == 0:
-                    error = f'_normalize_audio() error: {proc_voice_file} was not created or is empty.'
+                proc_pipe = SubprocessPipe(cmd, is_gui_process=self.session['is_gui_process'], total_duration=self._get_audio_duration(self.voice_track), msg='Normalize')
+                if proc_pipe:
+                    if not os.path.exists(proc_voice_file) or os.path.getsize(proc_voice_file) == 0:
+                        error = f'_normalize_audio() error: {proc_voice_file} was not created or is empty.'
+                        return False, error
+                    else:
+                        os.replace(proc_voice_file, final_voice_file)
+                        shutil.rmtree(self.demucs_dir, ignore_errors = True)
+                        msg = 'Audio normalization successful!'
+                        return True, msg
                 else:
-                    os.replace(proc_voice_file, final_voice_file)
-                    shutil.rmtree(self.demucs_dir, ignore_errors = True)
-                    msg = 'Audio normalization successful!'
-                    return True, msg
+                    error = f'normalize_audio() error: {final_voice_file}'
+                    return False, error
             except subprocess.CalledProcessError as e:
                 error = f'_normalize_audio() ffmpeg.Error: {e.stderr.decode()}'
         except FileNotFoundError as e:

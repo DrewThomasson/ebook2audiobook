@@ -3,7 +3,6 @@ import tempfile
 import argostranslate.package
 import argostranslate.translate
 
-from typing import Any, Optional, Union, Callable
 from iso639 import Lang
 from lib.conf import models_dir
 from lib.lang import language_mapping
@@ -50,7 +49,7 @@ class ArgosTranslator:
         ]
         return language_translate_options
         
-    def get_all_target_packages(self,source_lang:str)->list[Any]:
+    def get_all_target_packages(self,source_lang:str)->list:
         available_packages=argostranslate.package.get_available_packages()
         return [pkg for pkg in available_packages if pkg.from_code==source_lang]
 
@@ -64,7 +63,7 @@ class ArgosTranslator:
             error=f'is_package_installed() error: {e}'
             return False
 
-    def download_and_install_argos_package(self,source_lang:str,target_lang:str)->tuple[Optional[str],bool]:
+    def download_and_install_argos_package(self,source_lang:str,target_lang:str)->tuple[str|None,bool]:
         try:
             if self.is_package_installed(source_lang,target_lang):
                 print(f"Package for translation from {source_lang} to {target_lang} is already installed.")
@@ -77,6 +76,9 @@ class ArgosTranslator:
                     target_package=pkg
                     break
             if target_package:
+                #tmp_dir = os.path.join(session['process_dir'], "tmp")
+                #os.makedirs(tmp_dir, exist_ok=True)
+                #with tempfile.TemporaryDirectory(dir=tmp_dir) as tmpdirname:
                 with tempfile.TemporaryDirectory() as tmpdirname:
                     print(f"Downloading package for translation from {source_lang} to {target_lang}...")
                     package_path=target_package.download()
@@ -97,7 +99,7 @@ class ArgosTranslator:
             error=f'AgrosTranslator.process() error: {e}'
             return error,False
 
-    def start(self,source_lang:str,target_lang:str)->tuple[Optional[str],bool]:
+    def start(self,source_lang:str,target_lang:str)->tuple[str|None,bool]:
         try:
             if self.neural_machine!="argostranslate":
                 error=f"Neural machine '{self.neural_machine}' is not supported."

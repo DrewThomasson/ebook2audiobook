@@ -17,7 +17,7 @@ set "PYTHONUTF8=1"
 set "PYTHONIOENCODING=utf-8"
 set "CURRENT_ENV="
 
-set "PROGRAMS_LIST=calibre-normal ffmpeg nodejs espeak-ng sox"
+set "PROGRAMS_LIST=calibre-normal ffmpeg nodejs espeak-ng sox tesseract"
 
 set "TMP=%SCRIPT_DIR%\tmp"
 set "TEMP=%SCRIPT_DIR%\tmp"
@@ -78,11 +78,11 @@ exit /b
 :conda_check
 where /Q conda
 if %errorlevel% neq 0 (
-	call rmdir /s /q "%CONDA_INSTALL_DIR%" 2>nul
-	echo Miniforge3 is not installed. 
+	echo Miniforge3 is not installed.
 	set "CONDA_CHECK=1"
 	goto :install_components
 )
+
 :: Check if running in a Conda environment
 if defined CONDA_DEFAULT_ENV (
 	set "CURRENT_ENV=%CONDA_PREFIX%"
@@ -158,7 +158,9 @@ if not "%CONDA_CHECK%"=="0" (
 		echo Conda installation failed.
 		goto :failed
 	)
-	call conda config --set auto_activate_base false
+	if not exist "%USERPROFILE%\.condarc" (
+		call conda config --set auto_activate false
+	)
 	call conda update conda -y
 	del "%CONDA_INSTALLER%"
 	set "CONDA_CHECK=0"
@@ -169,26 +171,66 @@ if not "%CONDA_CHECK%"=="0" (
 :: Install missing packages one by one
 if not "%PROGRAMS_CHECK%"=="0" (
     echo Installing missing programs...
-	if "%SCOOP_CHECK%"=="0" (
-		call scoop bucket add muggle b https://github.com/hu3rror/scoop-muggle.git
-		call scoop bucket add extras
-		call scoop bucket add versions
-	)
-    for %%p in (%missing_prog_array%) do (
-		call scoop install %%p
-		set "prog=%%p"
-		if "%%p"=="nodejs" (
-			set "prog=node"
-		)
-		if "%%p"=="calibre-normal" set "prog=calibre"
-		where /Q !prog!
-		if !errorlevel! neq 0 (
-			echo %%p installation failed...
-			goto :failed
-		)
+    if "%SCOOP_CHECK%"=="0" (
+        call scoop bucket add muggle b https://github.com/hu3rror/scoop-muggle.git
+        call scoop bucket add extras
+        call scoop bucket add versions
     )
-	call powershell -command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + '%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%;', 'User')"
-	set "SCOOP_CHECK=0"
+    for %%p in (%missing_prog_array%) do (
+        set "prog=%%p"
+        call scoop install %%p
+        if "%%p"=="tesseract" (
+            where /Q !prog!
+            if !errorlevel! equ 0 (
+                set "syslang=%LANG%"
+                if not defined syslang set "syslang=en"
+                set "syslang=!syslang:~0,2!"
+                set "tesslang=eng"
+                if /I "!syslang!"=="fr" set "tesslang=fra"
+                if /I "!syslang!"=="de" set "tesslang=deu"
+                if /I "!syslang!"=="it" set "tesslang=ita"
+                if /I "!syslang!"=="es" set "tesslang=spa"
+                if /I "!syslang!"=="pt" set "tesslang=por"
+                if /I "!syslang!"=="ar" set "tesslang=ara"
+                if /I "!syslang!"=="tr" set "tesslang=tur"
+                if /I "!syslang!"=="ru" set "tesslang=rus"
+                if /I "!syslang!"=="bn" set "tesslang=ben"
+                if /I "!syslang!"=="zh" set "tesslang=chi_sim"
+                if /I "!syslang!"=="fa" set "tesslang=fas"
+                if /I "!syslang!"=="hi" set "tesslang=hin"
+                if /I "!syslang!"=="hu" set "tesslang=hun"
+                if /I "!syslang!"=="id" set "tesslang=ind"
+                if /I "!syslang!"=="jv" set "tesslang=jav"
+                if /I "!syslang!"=="ja" set "tesslang=jpn"
+                if /I "!syslang!"=="ko" set "tesslang=kor"
+                if /I "!syslang!"=="pl" set "tesslang=pol"
+                if /I "!syslang!"=="ta" set "tesslang=tam"
+                if /I "!syslang!"=="te" set "tesslang=tel"
+                if /I "!syslang!"=="yo" set "tesslang=yor"
+                echo Detected system language: !syslang! → downloading OCR language: !tesslang!
+                set "tessdata=%SCOOP_APPS%\tesseract\current\tessdata"
+                if not exist "!tessdata!\!tesslang!.traineddata" (
+                    powershell -Command "Invoke-WebRequest -Uri https://github.com/tesseract-ocr/tessdata_best/raw/main/!tesslang!.traineddata -OutFile '!tessdata!\!tesslang!.traineddata'"
+                )
+                if exist "!tessdata!\!tesslang!.traineddata" (
+                    echo Tesseract OCR language !tesslang! installed in !tessdata!
+                ) else (
+                    echo Failed to install OCR language !tesslang!
+                )
+            )
+        ) else if "%%p"=="nodejs" (
+            set "prog=node"
+        ) else if "%%p"=="calibre-normal" (
+            set "prog=calibre"
+        )
+        where /Q !prog!
+        if !errorlevel! neq 0 (
+            echo %%p installation failed...
+            goto :failed
+        )
+    )
+    call powershell -Command "[System.Environment]::SetEnvironmentVariable('Path', [System.Environment]::GetEnvironmentVariable('Path', 'User') + ';%SCOOP_SHIMS%;%SCOOP_APPS%;%CONDA_PATH%;%NODE_PATH%', 'User')"
+    set "SCOOP_CHECK=0"
     set "PROGRAMS_CHECK=0"
     set "missing_prog_array="
 )

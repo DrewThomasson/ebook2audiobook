@@ -2,7 +2,6 @@ import os
 import numpy as np
 import librosa
 
-from typing import Any, Optional, Union, Callable
 from pyannote.audio import Model
 from pyannote.audio.pipelines import VoiceActivityDetection
 from lib.conf import tts_dir

@@ -1,12 +1,12 @@
 import os
 
-from typing import Any, Optional, Union, Callable
+from typing import Any
 from lib.models import TTS_ENGINES
 
 class TTSManager:
     def __init__(self, session:Any):   
         self.session = session
-        self.engine = None
+        self.engine = False
         self._build()
  
     def _build(self)->None:
@@ -17,9 +17,6 @@ class TTSManager:
             #elif self.session['tts_engine'] in [TTS_ENGINES['NEW_TTS']]:
             #    from lib.classes.tts_engines.new_tts import NewTts
             #    self.engine = NewTts(self.session)
-            if not self.engine:
-                error='TTS engine could not be created!'
-                print(error)
         else:
             print('Other TTS engines coming soon!')
 
@@ -32,4 +29,3 @@ class TTSManager:
         except Exception as e:
             error=f'convert_sentence2audio(): {e}'
             raise ValueError(e)
-        return False

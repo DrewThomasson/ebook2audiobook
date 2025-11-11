@@ -2,13 +2,16 @@ import numpy as np
 import torch
 import subprocess
 import shutil
+import json
 
 from torch import Tensor
-from typing import Any, Optional, Union, Callable
+from typing import Any, Union
 from scipy.io import wavfile as wav
 from scipy.signal import find_peaks
 
-def detect_gender(voice_path:str)->Optional[str]:
+from lib.classes.subprocess_pipe import SubprocessPipe
+
+def detect_gender(voice_path:str)->str|None:
     try:
         samplerate, signal = wav.read(voice_path)
         # Ensure mono
@@ -57,7 +60,29 @@ def trim_audio(audio_data: Union[list[float], Tensor], samplerate: int, silence_
     raise TypeError(error)
     return torch.tensor([], dtype=torch.float32)
 
-def normalize_audio(input_file:str, output_file:str, samplerate:int)->bool:
+def get_audio_duration(filepath:str)->float:
+    try:
+        ffprobe_cmd = [
+            shutil.which('ffprobe'),
+            '-v', 'error',
+            '-show_entries', 'format=duration',
+            '-of', 'json',
+            filepath
+        ]
+        result = subprocess.run(ffprobe_cmd, capture_output=True, text=True)
+        try:
+            return float(json.loads(result.stdout)['format']['duration'])
+        except Exception:
+            return 0
+    except subprocess.CalledProcessError as e:
+        DependencyError(e)
+        return 0
+    except Exception as e:
+        error = f"get_audio_duration() Error: Failed to process {txt_file} → {out_file}: {e}"
+        print(error)
+        return 0
+
+def normalize_audio(input_file:str, output_file:str, samplerate:int, is_gui_process:bool)->bool:
     filter_complex = (
         'agate=threshold=-25dB:ratio=1.4:attack=10:release=250,'
         'afftdn=nf=-70,'
@@ -70,24 +95,17 @@ def normalize_audio(input_file:str, output_file:str, samplerate:int)->bool:
         'equalizer=f=9000:t=q:w=2:g=-2,'
         'highpass=f=63[audio]'
     )
-    ffmpeg_cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', input_file]
-    ffmpeg_cmd += [
+    cmd = [shutil.which('ffmpeg'), '-hide_banner', '-nostats', '-i', input_file]
+    cmd += [
         '-filter_complex', filter_complex,
         '-map', '[audio]',
         '-ar', str(samplerate),
         '-y', output_file
     ]
-    try:
-        subprocess.run(
-            ffmpeg_cmd,
-            env={},
-            stdout=subprocess.PIPE, 
-            stderr=subprocess.PIPE,
-            encoding='utf-8',
-            errors='ignore'
-        )
+    proc_pipe = SubprocessPipe(cmd, is_gui_process=is_gui_process, total_duration=get_audio_duration(input_file), msg='Normalize')
+    if proc_pipe:
         return True
-    except subprocess.CalledProcessError as e:
+    else:
         error = f"normalize_audio() error: {input_file}: {e}"
         print(error)
         return False
