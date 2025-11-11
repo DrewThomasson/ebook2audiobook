@@ -201,13 +201,15 @@ to let the web page reconnect to the new connection socket.**
    - **Linux/MacOS**
      ```bash
      ./ebook2audiobook.sh --headless --ebook <ebook_file_path> \
-         --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
+         --language <language> --custom_model <custom_model_path>
      ```
    - **Windows**
      ```bash
      ebook2audiobook.cmd --headless --ebook <ebook_file_path> \
-         --voice <target_voice_file_path> --language <language> --custom_model <custom_model_path>
+         --language <language> --custom_model <custom_model_path>
      ```
+     <i>Note: the ref.wav of your custom model is always the voice selected for the conversion</i>
+     
 - **<custom_model_path>**: Path to `model_name.zip` file,
       which must contain (according to the tts engine) all the mandatory files<br>
       (see ./lib/models.py).
@@ -397,9 +399,6 @@ By Default: All compose containers share the contents your local `ebook2audioboo
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/xtts-finetune-webui-gpu) [![Kaggle](https://img.shields.io/badge/Kaggle-035a7d?style=flat&logo=kaggle&logoColor=white)](https://github.com/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/kaggle-xtts-finetune-webui-gradio-gui.ipynb) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DrewThomasson/ebook2audiobook/blob/v25/Notebooks/finetune/xtts/colab_xtts_finetune_webui.ipynb)
 
 
-
-
-
 #### De-noise training data
 
 [![Hugging Face](https://img.shields.io/badge/Hugging%20Face-Spaces-yellow?style=flat&logo=huggingface)](https://huggingface.co/spaces/drewThomasson/DeepFilterNet2_no_limit) [![GitHub Repo](https://img.shields.io/badge/DeepFilterNet-181717?logo=github)](https://github.com/Rikorose/DeepFilterNet)
@@ -418,7 +417,6 @@ For an XTTSv2 custom model a ref audio clip of the voice reference is mandatory:
   `.snb`, `.cbc`, `.rb`, `.tcr`
 - **Best results**: `.epub` or `.mobi` for automatic chapter detection
 
-
 ## Output Formats
 - Creates a `['m4b', 'm4a', 'mp4', 'webm', 'mov', 'mp3', 'flac', 'wav', 'ogg', 'aac']` (set in ./lib/conf.py) file with metadata and chapters.
 
@@ -428,6 +426,12 @@ git pull # Locally/Compose
 
 docker pull athomasson2/ebook2audiobook:latest # For Pre-build docker images
 ```
+
+## Your own Ebook2Audiobook customization
+You are free to modify libs/conf.py to add or remove the settings you wish. If you plan to do it just make
+a copy of the original conf.py so on each ebook2audiobook update you will backup your modified conf.py and put
+back the original one. You must plan the same process for models.py. If you wish to make your own custom model
+as an official ebook2audiobook fine tuned model so please contact us and we'll ad it to the models.py list.
 
 ## Reverting to older Versions
 Releases can be found -> [here](https://github.com/DrewThomasson/ebook2audiobook/releases)
