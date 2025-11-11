@@ -337,6 +337,14 @@ models = {
             "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
             "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
         },
+        "RafeBeckley": {
+            "lang": "eng",
+            "repo": "drewThomasson/fineTunedTTSModels",
+            "sub": "xtts-v2/eng/RafeBeckley/",
+            "voice": os.path.join(voices_dir, 'eng', 'adult', 'male', 'RafeBeckley.wav'),
+            "files": default_engine_settings[TTS_ENGINES['XTTSv2']]['files'],
+            "samplerate": default_engine_settings[TTS_ENGINES['XTTSv2']]['samplerate']
+        },
         "RainyDayHeadSpace": {
             "lang": "eng",
             "repo": "drewThomasson/fineTunedTTSModels",
