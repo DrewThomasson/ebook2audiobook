@@ -423,7 +423,6 @@ else
 			return 0
 		fi
 
-		echo "🚀 Creating $APP_NAME.app bundle..."
 		mkdir -p "$MACOS" "$RESOURCES"
 
 		# Create the executable script inside the bundle
@@ -463,7 +462,6 @@ EOF
 		# Copy the icon to the bundle
 		if [ -f "$ICON_PATH" ]; then
 			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
-			echo "Icon copied to bundle"
 		else
 			echo "Warning: Icon not found at $ICON_PATH"
 		fi
@@ -500,13 +498,11 @@ EOF
 </plist>
 PLIST
 
-		echo "✓ Info.plist created"
 
 		# Update macOS cache to recognize the new app
 		touch "$APP_BUNDLE"
 
 		echo ""
-		echo "Application bundle created successfully!"
 		echo "E2A Launcher located at: $APP_BUNDLE"
 		echo ""
 	}
