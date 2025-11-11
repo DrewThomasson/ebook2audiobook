@@ -3244,7 +3244,7 @@ def build_interface(args:dict)->gr.Blocks:
                     error = f'update_audiobook_player(): {e}'
                     print(error)
                     alert_exception(error, id)
-                return gr.update(), gr.update(value=None), gr.update(value=None)
+                return gr.update(value=0), gr.update(value=None), gr.update(value=None)
 
             def update_gr_glass_mask(str:str=gr_glass_mask_msg, attr:list=['gr-glass-mask'])->dict:
                 return gr.update(value=str, elem_id='gr_glass_mask', elem_classes=attr)
