@@ -9,7 +9,7 @@ fi
 
 ARCH=$(uname -m)
 PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "3.12")
-MIN_PYTHON_VERSION="3.10"
+MIN_PYTHON_VERSION="3.8"
 MAX_PYTHON_VERSION="3.13"
 
 export PYTHONUTF8="1"

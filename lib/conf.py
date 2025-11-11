@@ -63,7 +63,7 @@ requirements_file = os.path.abspath(os.path.join('.','requirements.txt'))
 interface_host = '0.0.0.0'
 interface_port = 7860
 interface_shared_tmp_expire = 3 # in days
-interface_concurrency_limit = 1 # or None for unlimited
+interface_concurrency_limit = 1 # or None for unlimited multiple parallele user conversion
 
 interface_component_options = {
     "gr_tab_xtts_params": True,
