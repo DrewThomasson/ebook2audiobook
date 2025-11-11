@@ -373,100 +373,106 @@ def compare_dict_keys(d1, d2):
     return None
 
 def convert2epub(id:str)->bool:
-    session = context.get_session(id)
-    if session['cancellation_requested']:
-        msg = 'Cancel requested'
-        print(msg)
-        return False
-    try:
-        title = False
-        author = False
-        util_app = shutil.which('ebook-convert')
-        if not util_app:
-            error = "The 'ebook-convert' utility is not installed or not found."
-            print(error)
-            return False
-        file_input = session['ebook']
-        if os.path.getsize(file_input) == 0:
-            error = f'Input file is empty: {file_input}'
-            print(error)
-            return False
-        file_ext = os.path.splitext(file_input)[1].lower()
-        if file_ext not in ebook_formats:
-            error = f'Unsupported file format: {file_ext}'
-            print(error)
-            return False
-        if file_ext == '.pdf':  
-            msg = 'File input is a PDF. flatten it in MarkDown...'
-            print(msg)
-            doc = fitz.open(session['ebook'])
-            pdf_metadata = doc.metadata
-            filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
-            title = pdf_metadata.get('title') or filename_no_ext
-            author = pdf_metadata.get('author') or False
-            markdown_pages = []
-            for i, page in enumerate(doc):
-                text = page.get_text("markdown").strip()
-                if not text:
-                    msg = f'The page {page} seems to be text image. Using OCR to convert it to real text...'
-                    print(msg)
-                    pix = page.get_pixmap(dpi=300)
-                    img = Image.open(io.BytesIO(pix.tobytes("png")))
-                    text = pytesseract.image_to_string(img, lang=session['language']).strip()
-                    text = text.replace("\n", "  \n")
-                markdown_pages.append(f"## Page {i+1}\n{text}\n")
-            markdown_text = "\n".join(markdown_pages)
-            # Remove single asterisks for italics (but not bold **)
-            markdown_text = re.sub(r'(?<!\*)\*(?!\*)(.*?)\*(?!\*)', r'\1', markdown_text)
-            # Remove single underscores for italics (but not bold __)
-            markdown_text = re.sub(r'(?<!_)_(?!_)(.*?)_(?!_)', r'\1', markdown_text)
-            file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
-            with open(file_input, "w", encoding="utf-8") as html_file:
-                html_file.write(markdown_text)
-        msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
-        print(msg)
-        cmd = [
-                util_app, file_input, session['epub_path'],
-                '--input-encoding=utf-8',
-                '--output-profile=generic_eink',
-                '--epub-version=3',
-                '--flow-size=0',
-                '--chapter-mark=pagebreak',
-                '--page-breaks-before',
-                "//*[name()='h1' or name()='h2' or name()='h3' or name()='h4' or name()='h5']",
-                '--disable-font-rescaling',
-                '--pretty-print',
-                '--smarten-punctuation',
-                '--verbose'
-            ]
-        if title:
-            cmd += ['--title', title]
-        if author:
-            cmd += ['--authors', author]        
-        result = subprocess.run(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            encoding='utf-8'
-        )
-        print(result.stdout)
-        return True
-    except subprocess.CalledProcessError as e:
-        error = f'convert2epub subprocess.CalledProcessError: {e.stderr}'
-        print(error)
-        DependencyError(e)
-        return False
-    except FileNotFoundError as e:
-        error = f'convert2epub FileNotFoundError: {e}'
-        print(error)
-        DependencyError(e)
-        return False
-    except Exception as e:
-        error = f'convert2epub error: {e}'
-        print(error)
-        DependencyError(e)
-        return False
+	session = context.get_session(id)
+	if session['cancellation_requested']:
+		msg = 'Cancel requested'
+		print(msg)
+		return False
+	try:
+		title = False
+		author = False
+		util_app = shutil.which('ebook-convert')
+		if not util_app:
+			error = "The 'ebook-convert' utility is not installed or not found."
+			print(error)
+			return False
+		file_input = session['ebook']
+		if os.path.getsize(file_input) == 0:
+			error = f'Input file is empty: {file_input}'
+			print(error)
+			return False
+		file_ext = os.path.splitext(file_input)[1].lower()
+		if file_ext not in ebook_formats:
+			error = f'Unsupported file format: {file_ext}'
+			print(error)
+			return False
+		if file_ext == '.pdf':  
+			from markdownify import markdownify
+			msg = 'File input is a PDF. flatten it in MarkDown...'
+			print(msg)
+			doc = fitz.open(session['ebook'])
+			pdf_metadata = doc.metadata
+			filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
+			title = pdf_metadata.get('title') or filename_no_ext
+			author = pdf_metadata.get('author') or False
+			markdown_pages = []
+			for i, page in enumerate(doc):
+				try:
+					xhtml = page.get_text("xhtml")
+					text = markdownify(xhtml).strip()
+				except Exception as e:
+					print(f"Error extracting text from page {i+1}: {e}")
+					text = ""
+				if not text:
+					msg = f'The page {page} seems to be text image. Using OCR to convert it to real text...'
+					print(msg)
+					pix = page.get_pixmap(dpi=300)
+					img = Image.open(io.BytesIO(pix.tobytes("png")))
+					text = pytesseract.image_to_string(img, lang=session['language']).strip()
+					text = text.replace("\n", "  \n")
+				markdown_pages.append(f"## Page {i+1}\n{text}\n")
+			markdown_text = "\n".join(markdown_pages)
+			# Remove single asterisks for italics (but not bold **)
+			markdown_text = re.sub(r'(?<!\*)\*(?!\*)(.*?)\*(?!\*)', r'\1', markdown_text)
+			# Remove single underscores for italics (but not bold __)
+			markdown_text = re.sub(r'(?<!_)_(?!_)(.*?)_(?!_)', r'\1', markdown_text)
+			file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.md')
+			with open(file_input, "w", encoding="utf-8") as html_file:
+				html_file.write(markdown_text)
+		msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
+		print(msg)
+		cmd = [
+				util_app, file_input, session['epub_path'],
+				'--input-encoding=utf-8',
+				'--output-profile=generic_eink',
+				'--epub-version=3',
+				'--flow-size=0',
+				'--chapter-mark=pagebreak',
+				'--page-breaks-before',
+				"//*[name()='h1' or name()='h2' or name()='h3' or name()='h4' or name()='h5']",
+				'--disable-font-rescaling',
+				'--pretty-print',
+				'--smarten-punctuation',
+				'--verbose'
+			]
+		if title:
+			cmd += ['--title', title]
+		if author:
+			cmd += ['--authors', author]        
+		result = subprocess.run(
+			cmd,
+			stdout=subprocess.PIPE,
+			stderr=subprocess.PIPE,
+			text=True,
+			encoding='utf-8'
+		)
+		print(result.stdout)
+		return True
+	except subprocess.CalledProcessError as e:
+		error = f'convert2epub subprocess.CalledProcessError: {e.stderr}'
+		print(error)
+		DependencyError(e)
+		return False
+	except FileNotFoundError as e:
+		error = f'convert2epub FileNotFoundError: {e}'
+		print(error)
+		DependencyError(e)
+		return False
+	except Exception as e:
+		error = f'convert2epub error: {e}'
+		print(error)
+		DependencyError(e)
+		return False
 
 def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
     # 1. Try metadata (official EPUB title)
