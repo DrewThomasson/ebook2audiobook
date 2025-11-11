@@ -2,7 +2,7 @@ import os
 import platform
 import tempfile
 
-min_python_version = (3,8)
+min_python_version = (3,9)
 max_python_version = (3,13)
 
 tmp_dir = os.path.abspath('tmp')
