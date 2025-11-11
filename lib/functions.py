@@ -3406,7 +3406,7 @@ def build_interface(args:dict)->gr.Blocks:
                                 session['voice'] = default_voice_path
                             else:
                                 session['voice'] = voice_options[0][1]
-                        return gr.update(choices=voice_options, value=session['voice'])
+                        #return gr.update(choices=voice_options, value=session['voice'])
                     return gr.update()
                 except Exception as e:
                     error = f'update_gr_voice_list(): {e}!'
