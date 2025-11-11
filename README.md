@@ -243,7 +243,8 @@ usage: app.py [-h] [--session SESSION] [--share] [--headless] [--ebook EBOOK]
               [--text_temp TEXT_TEMP] [--waveform_temp WAVEFORM_TEMP]
               [--output_dir OUTPUT_DIR] [--version]
 
-Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or run the script in headless mode for direct conversion.
+Convert eBooks to Audiobooks using a Text-to-Speech model. You can either launch the Gradio interface or
+run the script in headless mode for direct conversion.
 
 options:
   -h, --help            show this help message and exit
@@ -274,9 +275,9 @@ optional parameters:
                         (Optional) Pprocessor unit type for the conversion. 
                             Default is set in ./lib/conf.py if not present. Fall back to CPU if GPU not available.
   --tts_engine {XTTSv2,BARK,VITS,FAIRSEQ,TACOTRON2,YOURTTS,xtts,bark,vits,fairseq,tacotron,yourtts}
-                        (Optional) Preferred TTS engine (available are:
-                        ['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
-                            Default depends on the selected language. The tts engine should be compatible with the chosen language
+            (Optional) Preferred TTS engine (available are:
+            ['XTTSv2', 'BARK', 'VITS', 'FAIRSEQ', 'TACOTRON2', 'YOURTTS', 'xtts', 'bark', 'vits', 'fairseq', 'tacotron', 'yourtts'].
+            Default depends on the selected language. The tts engine should be compatible with the chosen language
   --custom_model CUSTOM_MODEL
                         (Optional) Path to the custom model zip file cntaining mandatory model files. 
                             Please refer to ./lib/models.py
@@ -291,7 +292,8 @@ optional parameters:
                         (xtts only, optional) A length penalty applied to the autoregressive decoder. 
                             Default to config.json model. Not applied to custom models.
   --num_beams NUM_BEAMS
-                        (xtts only, optional) Controls how many alternative sequences the model explores. Must be equal or greater than length penalty. 
+                        (xtts only, optional) Controls how many alternative sequences the model explores.
+                            Must be equal or greater than length penalty. 
                             Default to config.json model.
   --repetition_penalty REPETITION_PENALTY
                         (xtts only, optional) A penalty that prevents the autoregressive decoder from repeating itself. 
@@ -300,7 +302,8 @@ optional parameters:
                             Lower values mean more likely outputs and increased audio generation speed. 
                             Default to config.json model.
   --top_p TOP_P         (xtts only, optional) Top-p sampling. 
-                            Lower values mean more likely outputs and increased audio generation speed. Default to config.json model.
+                            Lower values mean more likely outputs and increased audio generation speed.
+                            Default to config.json model.
   --speed SPEED         (xtts only, optional) Speed factor for the speech generation. 
                             Default to config.json model.
   --enable_text_splitting
@@ -334,7 +337,9 @@ Tip: to add of silence (1.4 seconds) into your text just use "###" or "[pause]".
 
 NOTE: in gradio/gui mode, to cancel a running conversion, just click on the [X] from the ebook upload component.
 
-TIP: if it needs some more pauses, just add '###' or '[pause]' between the words you wish more pause. one [pause] equals to 1.4 seconds
+TIP: if it needs some more pauses, just add '###' or 
+'[pause]' between the words you wish more pause. 
+one [pause] equals to 1.4 seconds
 
 
 ### Docker Compose
