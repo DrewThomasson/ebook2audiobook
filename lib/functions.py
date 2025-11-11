@@ -546,7 +546,7 @@ def convert2epub(id:str)-> bool:
 			with open(file_input, 'w', encoding='utf-8') as html_file:
 				html_file.write(xhtml_text)
 			print(f'OCR completed for {page_count} image page(s).')
-		msg = f'Running command: {util_app} {file_input} {session['epub_path']}'
+		msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
 		print(msg)
 		cmd = [
 				util_app, file_input, session['epub_path'],
