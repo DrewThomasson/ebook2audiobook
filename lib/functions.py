@@ -435,6 +435,37 @@ def convert2epub(id:str)->bool:
 			file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
 			with open(file_input, "w", encoding="utf-8") as html_file:
 				html_file.write(xhtml_text)
+		elif file_ext in ['.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp']:
+			from PIL import Image, ImageSequence
+			import pytesseract, io
+			filename_no_ext = os.path.splitext(os.path.basename(session['ebook']))[0]
+			msg = f"File input is an image ({file_ext}). Running OCR..."
+			print(msg)
+			img = Image.open(file_input)
+			xhtml_pages = []
+			page_count = 0
+			for i, frame in enumerate(ImageSequence.Iterator(img)):
+				page_count += 1
+				frame = frame.convert("RGB")
+				text = pytesseract.image_to_string(frame, lang=session['language']).strip()
+				text = text.replace("\n", "<br/>\n")
+				xhtml_pages.append(f"<h2>Page {i+1}</h2>\n{text}\n")
+			xhtml_body = "\n".join(xhtml_pages)
+			xhtml_text = (
+				'<?xml version="1.0" encoding="utf-8"?>\n'
+				'<html xmlns="http://www.w3.org/1999/xhtml">\n'
+				'<head>\n'
+				f'<meta charset="utf-8"/>\n<title>{filename_no_ext}</title>\n'
+				'</head>\n'
+				'<body>\n'
+				f'{xhtml_body}\n'
+				'</body>\n'
+				'</html>\n'
+			)
+			file_input = os.path.join(session['process_dir'], f'{filename_no_ext}.xhtml')
+			with open(file_input, "w", encoding="utf-8") as html_file:
+				html_file.write(xhtml_text)
+			print(f"OCR completed for {page_count} image page(s).")
 		msg = f"Running command: {util_app} {file_input} {session['epub_path']}"
 		print(msg)
 		cmd = [
