@@ -89,7 +89,6 @@ class Coqui:
                     engine = TTSEngine(model_path)
                 if engine:
                     loaded_tts[key] = engine
-                    print(msg)
                 return engine
         except Exception as e:
             error = f"_load_api() error: {e}"
@@ -147,7 +146,6 @@ class Coqui:
                         )  
                 if engine:
                     loaded_tts[key] = engine
-                    print(msg)
                 return engine
         except Exception as e:
             error = f'_load_checkpoint() error: {e}'
