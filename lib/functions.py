@@ -378,22 +378,22 @@ def ocr_image_to_xhtml(img: Image.Image, lang: str) -> str:
 		try:
 			data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
 		except Exception as e:
-			print(f"The OCR '{lang}' trained model must be downloaded.")
+			print(f'The OCR {lang} trained model must be downloaded.')
 			try:
-				tessdata_dir = os.environ["TESSDATA_PREFIX"]
-				url = f"https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata"
-				dest_path = os.path.join(tessdata_dir, f"{lang}.traineddata")
-				print(f"Downloading {lang}.traineddata into {tessdata_dir}...")
+				tessdata_dir = os.environ['TESSDATA_PREFIX']
+				url = f'https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata'
+				dest_path = os.path.join(tessdata_dir, f'{lang}.traineddata')
+				print(f'Downloading {lang}.traineddata into {tessdata_dir}...')
 				response = requests.get(url, timeout=15)
 				if response.status_code == 200:
-					with open(dest_path, "wb") as f:
+					with open(dest_path, 'wb') as f:
 						f.write(response.content)
-					print(f"Downloaded and installed {lang}.traineddata successfully.")
+					print(f'Downloaded and installed {lang}.traineddata successfully.')
 					data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
 				else:
-					raise RuntimeError(f"Failed to download traineddata for {lang} (HTTP {response.status_code})")
+					raise RuntimeError(f'Failed to download traineddata for {lang} (HTTP {response.status_code})')
 			except Exception as ex:
-				print(f"Automatic download failed: {ex}")
+				print(f'Automatic download failed: {ex}')
 				raise
 		data = data.dropna(subset=['text'])
 		lines = []
@@ -448,7 +448,6 @@ def ocr_image_to_xhtml(img: Image.Image, lang: str) -> str:
 			for line in debug_dump:
 				print(line)
 			print('========================')
-
 		return '\n'.join(xhtml_parts)
 	except Exception as e:
 		error = f'ocr_image_to_xhtml error: {e}'
@@ -456,7 +455,7 @@ def ocr_image_to_xhtml(img: Image.Image, lang: str) -> str:
 		DependencyError(e)
 		return ''
 
-def convert2epub(id: str) -> bool:
+def convert2epub(id:str)-> bool:
 	session = context.get_session(id)
 	if session['cancellation_requested']:
 		msg = 'Cancel requested'
@@ -467,7 +466,7 @@ def convert2epub(id: str) -> bool:
 		author = False
 		util_app = shutil.which('ebook-convert')
 		if not util_app:
-			error = 'The 'ebook-convert' utility is not installed or not found.'
+			error = 'ebook-convert utility is not installed or not found.'
 			print(error)
 			return False
 		file_input = session['ebook']
