@@ -462,6 +462,11 @@ def convert2epub(id:str)->bool:
         print(error)
         DependencyError(e)
         return False
+    except Exception as e:
+        error = f'convert2epub error: {e}'
+        print(error)
+        DependencyError(e)
+        return False
 
 def get_ebook_title(epubBook:EpubBook,all_docs:list[Any])->str|None:
     # 1. Try metadata (official EPUB title)
