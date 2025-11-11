@@ -420,7 +420,6 @@ else
 
 		# Return early if app bundle already exists
 		if [ -d "$APP_BUNDLE" ]; then
-			echo "✓ $APP_NAME.app bundle already exists at $APP_BUNDLE"
 			return 0
 		fi
 
@@ -464,9 +463,9 @@ EOF
 		# Copy the icon to the bundle
 		if [ -f "$ICON_PATH" ]; then
 			cp "$ICON_PATH" "$RESOURCES/AppIcon.icns"
-			echo "✓ Icon copied to bundle"
+			echo "Icon copied to bundle"
 		else
-			echo "⚠️  Warning: Icon not found at $ICON_PATH"
+			echo "Warning: Icon not found at $ICON_PATH"
 		fi
 
 		# Create the Info.plist file (required for macOS app bundles)
@@ -507,8 +506,8 @@ PLIST
 		touch "$APP_BUNDLE"
 
 		echo ""
-		echo "✅ Application bundle created successfully!"
-		echo "📍 Location: $APP_BUNDLE"
+		echo "Application bundle created successfully!"
+		echo "E2A Launcher located at: $APP_BUNDLE"
 		echo ""
 	}
 
