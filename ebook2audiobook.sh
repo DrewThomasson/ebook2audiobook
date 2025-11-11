@@ -14,7 +14,6 @@ MAX_PYTHON_VERSION="3.13"
 
 export PYTHONUTF8="1"
 export PYTHONIOENCODING="utf-8"
-export TTS_CACHE="./models"
 
 ARGS=("$@")
 
@@ -72,6 +71,8 @@ CONDA_INSTALL_DIR="$HOME/Miniforge3"
 CONDA_PATH="$CONDA_INSTALL_DIR/bin"
 CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
 
+export TTS_CACHE="$SCRIPT_DIR/models"
+export TESSDATA_PREFIX="$SCRIPT_DIR/models"
 export TMPDIR="$SCRIPT_DIR/.cache"
 export PATH="$CONDA_PATH:$PATH"
 
