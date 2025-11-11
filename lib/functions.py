@@ -3391,9 +3391,7 @@ def build_interface(args:dict)->gr.Blocks:
                                         session['voice'] = voice_options[0][1]
                         else:
                             voice_paths = {v[1] for v in voice_options}
-                            if session['voice'] in voice_paths:
-                                session['voice'] = current_voice_path
-                            else:
+                            if session['voice'] not in voice_paths:
                                 session['voice'] = default_voice_path
                     return gr.update(choices=voice_options, value=session['voice'])
                 except Exception as e:
