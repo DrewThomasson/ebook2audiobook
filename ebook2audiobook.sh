@@ -72,7 +72,7 @@ CONDA_PATH="$CONDA_INSTALL_DIR/bin"
 CONDA_ENV="$CONDA_INSTALL_DIR/etc/profile.d/conda.sh"
 
 export TTS_CACHE="$SCRIPT_DIR/models"
-export TESSDATA_PREFIX="$SCRIPT_DIR/models"
+export TESSDATA_PREFIX="$SCRIPT_DIR/models/tessdata"
 export TMPDIR="$SCRIPT_DIR/.cache"
 export PATH="$CONDA_PATH:$PATH"
 

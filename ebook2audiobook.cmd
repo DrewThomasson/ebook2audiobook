@@ -34,7 +34,7 @@ set "CONDA_INSTALLER=Miniforge3-Windows-x86_64.exe"
 set "CONDA_ENV=%CONDA_INSTALL_DIR%\condabin\conda.bat"
 set "CONDA_PATH=%CONDA_INSTALL_DIR%\condabin"
 
-set "TESSDATA_PREFIX=%SCRIPT_DIR%\models"
+set "TESSDATA_PREFIX=%SCRIPT_DIR%\models\tessdata"
 
 set "NODE_PATH=%SCOOP_HOME%\apps\nodejs\current"
 

@@ -372,73 +372,89 @@ def compare_dict_keys(d1, d2):
             return {key: nested_result}
     return None
 
-def ocr_image_to_xhtml(img:Image.Image, lang:str)->str:
-    try:
-        debug = True
-        try:
-            data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
-        except Exception as e:
-            error = f'The OCR {lang} trained model must be downloaded'
-            print error
-        data = data.dropna(subset=['text'])
-        lines = []
-        last_block = None
-        for _, row in data.iterrows():
-            text = row['text'].strip()
-            if not text:
-                continue
-            block = row['block_num']
-            if last_block is not None and block != last_block:
-                lines.append('')  # blank line between blocks
-            lines.append(text)
-            last_block = block
-        joined = '\n'.join(lines)
-        raw_lines = [l.strip() for l in joined.split('\n')]
-        # Normalize line breaks
-        merged_lines = []
-        buffer = ''
-        for i, line in enumerate(raw_lines):
-            if not line:
-                if buffer:
-                    merged_lines.append(buffer.strip())
-                    buffer = ''
-                continue
-            if buffer and not buffer.endswith(('.', '?', '!', ':')) and not line[0].isupper():
-                buffer += ' ' + line
-            else:
-                if buffer:
-                    merged_lines.append(buffer.strip())
-                buffer = line
-        if buffer:
-            merged_lines.append(buffer.strip())
-        # Detect heading-like lines
-        xhtml_parts = []
-        debug_dump = []
-        for i, p in enumerate(merged_lines):
-            is_heading = False
-            if p.isupper() and len(p.split()) <= 8:
-                is_heading = True
-            elif len(p.split()) <= 5 and p.istitle():
-                is_heading = True
-            elif (i == 0 or (i > 0 and merged_lines[i-1] == '')) and len(p.split()) <= 10:
-                is_heading = True
-            if is_heading:
-                xhtml_parts.append(f'<h2>{p}</h2>')
-                debug_dump.append(f'[H2] {p}')
-            else:
-                xhtml_parts.append(f'<p>{p}</p>')
-                debug_dump.append(f'[P ] {p}')
-        if debug:
-            print('=== OCR DEBUG OUTPUT ===')
-            for line in debug_dump:
-                print(line)
-            print('========================')
-        return '\n'.join(xhtml_parts)
+def ocr_image_to_xhtml(img: Image.Image, lang: str) -> str:
+	try:
+		debug = True
+		try:
+			data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
+		except Exception as e:
+			print(f"The OCR '{lang}' trained model must be downloaded.")
+			try:
+				tessdata_dir = os.environ["TESSDATA_PREFIX"]
+				url = f"https://github.com/tesseract-ocr/tessdata_best/raw/main/{lang}.traineddata"
+				dest_path = os.path.join(tessdata_dir, f"{lang}.traineddata")
+				print(f"Downloading {lang}.traineddata into {tessdata_dir}...")
+				response = requests.get(url, timeout=15)
+				if response.status_code == 200:
+					with open(dest_path, "wb") as f:
+						f.write(response.content)
+					print(f"Downloaded and installed {lang}.traineddata successfully.")
+					data = pytesseract.image_to_data(img, lang=lang, output_type=pytesseract.Output.DATAFRAME)
+				else:
+					raise RuntimeError(f"Failed to download traineddata for {lang} (HTTP {response.status_code})")
+			except Exception as ex:
+				print(f"Automatic download failed: {ex}")
+				raise
+		data = data.dropna(subset=['text'])
+		lines = []
+		last_block = None
+		for _, row in data.iterrows():
+			text = row['text'].strip()
+			if not text:
+				continue
+			block = row['block_num']
+			if last_block is not None and block != last_block:
+				lines.append('')  # blank line between blocks
+			lines.append(text)
+			last_block = block
+		joined = '\n'.join(lines)
+		raw_lines = [l.strip() for l in joined.split('\n')]
+		# Normalize line breaks
+		merged_lines = []
+		buffer = ''
+		for i, line in enumerate(raw_lines):
+			if not line:
+				if buffer:
+					merged_lines.append(buffer.strip())
+					buffer = ''
+				continue
+			if buffer and not buffer.endswith(('.', '?', '!', ':')) and not line[0].isupper():
+				buffer += ' ' + line
+			else:
+				if buffer:
+					merged_lines.append(buffer.strip())
+				buffer = line
+		if buffer:
+			merged_lines.append(buffer.strip())
+		# Detect heading-like lines
+		xhtml_parts = []
+		debug_dump = []
+		for i, p in enumerate(merged_lines):
+			is_heading = False
+			if p.isupper() and len(p.split()) <= 8:
+				is_heading = True
+			elif len(p.split()) <= 5 and p.istitle():
+				is_heading = True
+			elif (i == 0 or (i > 0 and merged_lines[i-1] == '')) and len(p.split()) <= 10:
+				is_heading = True
+			if is_heading:
+				xhtml_parts.append(f'<h2>{p}</h2>')
+				debug_dump.append(f'[H2] {p}')
+			else:
+				xhtml_parts.append(f'<p>{p}</p>')
+				debug_dump.append(f'[P ] {p}')
+		if debug:
+			print('=== OCR DEBUG OUTPUT ===')
+			for line in debug_dump:
+				print(line)
+			print('========================')
+
+		return '\n'.join(xhtml_parts)
 	except Exception as e:
 		error = f'ocr_image_to_xhtml error: {e}'
 		print(error)
 		DependencyError(e)
-		return False
+		return ''
 
 def convert2epub(id: str) -> bool:
 	session = context.get_session(id)
