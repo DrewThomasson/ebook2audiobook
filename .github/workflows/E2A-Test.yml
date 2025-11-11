@@ -150,8 +150,8 @@ jobs:
       - name: Create Audiobook Output folders for Artifacts
         shell: bash
         run: |
-          mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK}
-          find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,BARK} -mindepth 1 -exec rm -rf {} +
+          mkdir -p ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK}
+          find ~/ebook2audiobook/audiobooks/{TACOTRON2,FAIRSEQ,UnFAIRSEQ,VITS,YOURTTS,XTTSv2,XTTSv2FineTune,XTTSv2FineTuneCustom,BARK} -mindepth 1 -exec rm -rf {} +
 
       - name: Add set -e at beginning of ebook2audiobook.sh (for error passing)
         shell: bash
@@ -246,6 +246,17 @@ jobs:
           source "$(conda info --base)/etc/profile.d/conda.sh"
           conda deactivate
           ./ebook2audiobook.sh --headless  --language eng --ebook "tools/workflow-testing/test1.txt" --tts_engine XTTSv2 --fine_tuned AiExplained --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTune
+
+      - name: English XTTSv2 headless custom fine-tuned XTTSv2 model single test
+        shell: bash
+        run: |
+          echo "English XTTSv2 headless custom fine-tuned XTTSv2 model single test..."
+          cd ~/ebook2audiobook
+          source "$(conda info --base)/etc/profile.d/conda.sh"
+          conda deactivate
+          [ ! -f BadCartmanSouthPark.zip ] && curl -L "https://huggingface.co/drewThomasson/fineTunedTTSModels/resolve/main/xtts-v2/eng/BadCartmanSouthPark/BadCartmanSouthPark.zip" -o BadCartmanSouthPark.zip || echo "BadCartmanSouthPark.zip already exists"
+          ./ebook2audiobook.sh --headless --language eng --ebook "tools/workflow-testing/test1.txt" --custom_model "BadCartmanSouthPark.zip" --tts_engine XTTSv2 --output_dir ~/ebook2audiobook/audiobooks/XTTSv2FineTuneCustom
+          rm -rf ./models/__sessions
 
       - name: English BARK Custom-Voice headless single test
         shell: bash
